@@ -12,15 +12,18 @@ images labeled with hashtags~\cite{mahajan}, or trained to reconstruct the maske
 images~\cite{mae}, are fine-tuned for image classification and object detection. In collider physics,
 EveNet is pretrained on simulated collision events and then adapted to searches for heavy resonances and
 for exotic decays of the Higgs boson~\cite{evenet}. In each case, what the pretrained model transfers to a new task is determined by
-the pretraining data and by the pretraining objective. In this paper we study the second factor for jet
-tagging at the Large Hadron Collider (LHC)~\cite{lhc}, where a common pretraining objective is the
+the pretraining data and by the pretraining objective. In this paper we study the second factor for models of
+jets at the Large Hadron Collider (LHC)~\cite{lhc}. A jet is a collimated spray of particles produced by a
+quark, a gluon or the decay of a heavy particle. A common pretraining objective for models of jets is the
 classification of simulated jets into a set of classes chosen by the designer of the model.
 
 % P2. Jets and jet tagging.
+The transverse momentum of a particle is the component of its momentum perpendicular to the beam axis.
 When a heavy particle such as a top quark, a $W$, $Z$ or Higgs boson, or a hypothetical new resonance is
-produced with transverse momentum much larger than its mass, its decay products are reconstructed as a
-single large-radius jet. Jet tagging is the task of identifying the particle that produced a jet from the
-jet substructure~\cite{larkoski,kogler,cmshbb,cmszprime}. Three properties of the jet are especially
+produced with transverse momentum much larger than its mass, its decay products are collimated. They are
+then reconstructed as a single jet with a large radius in angle. Jet tagging is the task of identifying the
+particle that produced a jet from the jet substructure, which is the distribution of the particles and of
+their energy within the jet~\cite{larkoski,kogler,cmshbb,cmszprime}. Three properties of the jet are especially
 informative: the number of prongs, that is, the number of distinct energy deposits left by the decay
 products; the flavor of the quarks, which $b$ and $c$ hadrons reveal through decay vertices displaced by a
 few millimeters from the interaction point~\cite[Sec.~4.1]{cmsbtag}; and the jet mass. State-of-the-art
@@ -31,31 +34,41 @@ gluons, referred to as quantum chromodynamics (QCD) jets~\cite{particlenet,part,
 % P3. Jet foundation models and their label sets.
 Several foundation models for jets have been proposed. Some are pretrained without labels, by
 reconstructing masked particles or by generating jets~\cite{mpm,omnijet,hepjepa}. Others are pretrained to
-classify simulated jets~\cite{part,omnilearn,sophon}.
-The Signature-Oriented Pre-training for Heavy-resonance ObservatioN (Sophon) model~\cite{sophon} is
-pretrained to classify the jets of the JetClass-II dataset~\cite{jetclasstwo} into \Kfull{} classes. An
-analysis that uses such a model builds the discriminant it needs by summing the output scores of the fine
-classes into a signal and a background~\cite{sophon,glopartdp}. The set of classes that a model is trained
-to separate is called its label set. Label sets of this kind are growing. The Global Particle Transformer
+classify simulated jets~\cite{part,omnilearn,sophon}. The set of classes that such a model is trained to
+separate is called its label set. The label granularity is how finely the label set divides the jets. The
+Signature-Oriented Pre-training for Heavy-resonance ObservatioN (Sophon) model~\cite{sophon} is
+pretrained to classify the jets of the JetClass-II dataset~\cite{jetclasstwo} into \Kfull{} classes. For
+each jet, a classifier gives one output score per class, which estimates the probability that the jet
+belongs to that class. A discriminant is a single variable computed from the scores, on which an analysis
+selects jets. An analysis that uses a model with many classes builds the discriminant it needs by summing
+the scores of the fine classes into a signal and a background~\cite{sophon,glopartdp}. Label sets of this
+kind are growing. The Global Particle Transformer
 (GloParT) of the Compact Muon Solenoid (CMS) experiment has \LitGlopartVoneNClasses{} classes in its first
 version and \LitGlopartVthreeNClasses{} in its third~\cite{glopartdp}.
 
 % P4. The gap: Sophon's properties concern the output, not the backbone; published comparisons changed
 % the training jets with the labels.
-For an ideal classifier, a finer label set has no cost at the output. Sophon shows that the score of a
+An ideal classifier is one with enough capacity and training data to reach the minimum of its training
+loss. For an ideal classifier, a finer label set has no cost at the output. Sophon shows that the score of a
 class divided into exclusive subclasses equals the sum of the subclass scores, and that adding classes
 leaves the ratios between the scores of the original classes unchanged~\cite[Sec.~III, Properties~1
 and~2]{sophon}. A model trained on fine classes therefore provides every coarser discriminant. These
-properties concern the output of the classifier and not its backbone. The backbone is the network up to
-and including the class-attention blocks; its output, the class token, is the input to the classification
-head. The backbone is the part of the model that is reused when the model is adapted to a new task.
+properties concern the output of the classifier and not its backbone. The backbone is the part of the
+network that maps the particles of a jet to a vector of fixed length. The classification head is the small
+network that maps this vector to the class scores. The backbone is the part of the model that is reused
+when the model is adapted to a new task.
 Whether the label set changes what the backbone learns has not been tested, because each published
 comparison changed the training jets together with the labels. Sophon's
 \LitSophonAblationNClasses-class model separates $X\to b\bar b$ jets from QCD jets less well than the
-\Kfull-class model, but it was trained only on two-prong decays and QCD jets, and on fewer jets per
-epoch~\cite[Sec.~III, App.~B.2]{sophon}. In the thesis that introduced GloParT, two-prong and top-quark
-classes were added to a classifier of $H\to WW^*$ decays together with their training jets. The area under
-the receiver operating characteristic (ROC) curve (AUC) against QCD jets increased from
+\Kfull-class model, where $X$ is a hypothetical heavy resonance. However, the
+\LitSophonAblationNClasses-class model was trained only on two-prong decays and QCD jets, and on fewer
+training examples~\cite[Sec.~III, App.~B.2]{sophon}. In the thesis that introduced GloParT, two-prong and top-quark
+classes were added to a classifier of $H\to WW^*$ decays together with their training jets. The signal
+efficiency of a tagger is the fraction of signal jets that it accepts, and its background efficiency is
+the fraction of background jets that it accepts. The receiver operating characteristic (ROC) curve gives
+the background efficiency as a function of the signal efficiency. The area under the ROC curve (AUC)
+increases as the tagger improves. The background rejection is the inverse of the background efficiency at
+a fixed signal efficiency. In the GloParT thesis, the AUC against QCD jets increased from
 \LitGlopartAddedAucBase{} to \LitGlopartAddedAucTop, and the author describes the effect as
 minor~\cite[Sec.~11.4.1]{glopart}.\footnote{Studies that vary the composition of the pretraining data
 also change the labels together with the jets. Uslu et~al.~\cite{datacomp} change which JetClass-II
@@ -76,23 +89,29 @@ disappears~\cite{mahajan}. Label sets for jets have not been studied in this way
 
 % P6. Design, with the one figure reference.
 In this paper we pretrain Sophon's network, which is based on the Particle Transformer
-(ParT)~\cite{part}, on the jets of JetClass-II and change only the label set. Models pretrained with the
-same seed see the same jets in the same order and start from the same initial weights. The only other
+(ParT)~\cite{part}, on the jets of JetClass-II and change only the label set. Each pretraining run has a seed, which
+fixes the initial weights of the network and the order of the training jets. Models pretrained with the
+same seed therefore see the same jets in the same order and start from the same initial weights. The only other
 difference between them is the width of the output layer, which equals the number of classes.
 Figure~\ref{fig:design} shows the design of the study. The label sets are four levels of a class hierarchy,
 with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes. Each level is obtained from the one above by merging
-classes, and each merge removes a named set of distinctions. The first merge removes the quark content of
-QCD jets, and the last removes quark flavor, so that the \Kcoarse{} classes describe only the number and
+classes, and each merge removes a named set of distinctions. The \Kfull{} classes are Sophon's. They
+contain one class for each resonant decay, which is a decay of a heavy particle, and
+\LitJetClassTwoNQcdClasses{} classes of QCD jets that differ in their numbers of $b$, $c$ and $s$
+quarks. The first merge combines the QCD classes into one. The last merge combines decays that differ only
+in quark flavor, so that the \Kcoarse{} classes describe only the number and
 type of the prongs. Each level is pretrained \MlstNRunsWord{} times with different seeds. Two kinds of
-control have \Kcoarse{} classes. A random partition assigns the resonant classes to groups at random. A
-flavor boundary is a class boundary between decays that differ only in quark flavor. A controlled
-partition is a random partition whose groups are built to contain no flavor boundary, the $b$-quark
+control have \Kcoarse{} classes. A random partition assigns the classes of resonant decays to groups at random. A
+flavor boundary is a class boundary between decays that differ only in quark flavor. The $b$-quark boundary is the flavor boundary between decays with and
+without a $b$ quark. A controlled partition is a random partition whose groups are built to contain no flavor boundary, the $b$-quark
 boundary, or one flavor boundary chosen at random. We also pretrain the \Kres- and \Kcoarse-class levels
 with an auxiliary mass regression, in which an additional output of the head is trained to predict the jet
 mass. We evaluate the frozen features with linear probes and with MLP probes, which are small multilayer
-perceptrons (MLPs) trained on the frozen features. We fine-tune the pretrained models on JetClass-II, on
-the JetClass dataset~\cite{part}, on top tagging~\cite{toptag}, and on quark/gluon discrimination with
-Pythia and Herwig jets~\cite{efn,qgpythia,qgherwig}. We also test Sophon's benchmark of $X\to b\bar b$ and % CHECK: pending Xbx* (drop this sentence with section 4.7 if the samples are not staged by 12 Nov)
+perceptrons (MLPs) trained on the frozen features. We fine-tune the pretrained models on four tasks.
+These are the classification of JetClass-II jets, the classification of the jets of the JetClass
+dataset~\cite{part}, top tagging, which separates jets from top quarks from QCD jets~\cite{toptag}, and
+quark/gluon discrimination, which separates jets from quarks from jets from gluons. The quark and gluon
+jets are simulated with two event generators, Pythia and Herwig~\cite{efn,qgpythia,qgherwig}. We also test Sophon's benchmark of $X\to b\bar b$ and % CHECK: pending Xbx* (drop this sentence with section 4.7 if the samples are not staged by 12 Nov)
 $X\to bs$ tagging~\cite{sophon}.
 
 \begin{figure}[tbp]
@@ -127,10 +146,11 @@ classes remain. A single flavor boundary, at the $b$ quark or chosen at random, 
 linear probe compared with the controlled partition without one. After fine-tuning, the differences between
 the label sets are smaller but do not vanish. On JetClass, which is simulated independently of JetClass-II
 and provides every input of the network, the \Kcoarse-class models reject less background than the
-\Kfull-class models for several signal classes. The public top-tagging and quark/gluon datasets lack some
-of the input features of the network. On these two tasks the label sets agree within the spread between
+\Kfull-class models for several signal classes. The public top-tagging and quark/gluon datasets lack some of the input features of the network, which we refer to as missing
+inputs. On these two tasks the label sets agree within the spread between
 pretraining runs. With the missing inputs set to zero, a linear probe on the pretrained features performs
-no better than a linear probe on a randomly initialized network. On top tagging, replacing the zeros with
+no better than a linear probe on a randomly initialized network, which is the same network with its
+initial weights and without pretraining. On top tagging, replacing the zeros with
 values drawn from real particles raises the background rejection of the linear probe several times. With
 the auxiliary mass regression, the jet mass is predicted more accurately from the frozen features, and
 selections on the classifier output distort the mass distribution of QCD jets less. The auxiliary mass

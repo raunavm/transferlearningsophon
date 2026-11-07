@@ -7,10 +7,14 @@
 % Register (PI brief for draft 93, template docs/SOPHON_TEMPLATE.md section III): setup, "Table N
 % compares ...", the result with its comparison, the physics reason; one statement per sentence; the
 % replacement values for the missing inputs are defined here, where they are used.
-The top-tagging dataset~\cite{toptag} provides only the four-momenta of the particles in each jet. The
-charge, the five particle-type flags and the four displacement variables are therefore missing inputs.
-They are \FillTopNZero{} of the \FillNFeatures{} input features of the network, and they are set to zero
-for every model before fine-tuning. Table~\ref{tab:benchtop} compares the fine-tuned models with published
+The network describes each particle by \FillNFeatures{} input features. Of these, \FillTopNPresent{} are kinematic
+variables computed from the four-momentum of the particle, which consists of its energy and its
+momentum. The others are the electric charge, five flags that mark the type of the particle (electron,
+muon, photon, charged hadron or neutral hadron), and four variables that describe the displacement of its
+track from the interaction point. The top-tagging dataset~\cite{toptag} provides only the four-momenta of
+the particles in each jet. The charge, the type flags and the displacement variables are therefore
+missing inputs, \FillTopNZero{} of the \FillNFeatures{} features. They are set to zero for every model
+before fine-tuning. Table~\ref{tab:benchtop} compares the fine-tuned models with published
 taggers, and figure~\ref{fig:f6}(a) shows their ROC curves.
 
 \input{tables/mlst_bench_top}
@@ -31,13 +35,13 @@ jets pass.}
 % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull agree with 1 within the run-to-run SD (today 0.97 +- 0.10 for 17 classes)
 % CHECK: MlstFtTopRfiftyCoarseOverFull (today 0.932 +- 0.018) of the size of the counting uncertainty sqrt(1/n_17 + 1/n_188) (about 6.6%)
 Pretraining increases the rejection of QCD jets on top tagging. As listed in table~\ref{tab:benchtop}, the
-\Kfull-class model gives \MlstFtTopRthirtyFullOverScratchPr{} at 30\% signal efficiency than the same
-network trained from scratch. Every run of every label set has a higher rejection than every run trained
+\Kfull-class model gives \MlstFtTopRthirtyFullOverScratchPr{} at 30\% signal efficiency than the same network trained from scratch. A network trained from scratch starts from random initial
+weights and is trained on the task alone. Every run of every label set has a higher rejection than every run trained
 from scratch. The \Kres-, \Kmid- and \Kcoarse-class models agree with the \Kfull-class model within the
 spread between runs. A top-quark jet differs from a QCD jet by its three prongs and by its mass. Every label
 set distinguishes jets by their number of prongs, because even the \Kcoarse{} classes are defined by the
-number and type of the prongs. In addition, the pairwise features of the network are computed from the
-four-momenta and do not depend on the missing inputs. At 50\% signal efficiency the \Kcoarse-class model
+number and type of the prongs. The attention layers of the network also use pairwise features, which are computed for each pair of
+particles from their four-momenta. The pairwise features do not depend on the missing inputs. At 50\% signal efficiency the \Kcoarse-class model
 has a few per cent less rejection than the \Kfull-class model. This difference is of the same size as the
 statistical uncertainty from the number of QCD jets in the test set that pass the selection, which
 appendix~\ref{sec:app-boot} estimates with a bootstrap. The size of the test set may therefore limit this
@@ -83,7 +87,8 @@ replacement whose linear probes have the lowest validation loss. For top tagging
 \MlstLpTopRthirtyDrawOverZeroFullPr{} that it gives with zeros. This rejection is about the same as that
 of the linear probe on the kinematic-only model, which has no missing inputs. The loss of the linear probe
 is therefore caused by the zero values and not by the absence of the information. Fine-tuning does not
-show this loss, because it retrains the input layer on jets with zeros. A constant replacement value used
+show this loss, because it retrains the input layer, the first layer of the network, which maps the features of each
+particle to a vector, on jets with zeros. A constant replacement value used
 in both training and testing is consistent for a model trained with it~\cite[Theorem~3]{josse}.
 
 \subsection{Quark/gluon discrimination, Pythia and Herwig}\label{sec:qg}
