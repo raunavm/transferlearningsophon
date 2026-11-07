@@ -1,31 +1,58 @@
-\begin{table}[t]
-\centering
+\begin{center}
 \small
-\caption{Linear probes on JetClass-II (natural composition, largest training set) with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run. The class-balanced probes use the checkpoints as trained, so this check uses the natural-composition test set. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
+\begin{minipage}{\linewidth}
+\captionof{table}{Linear probes on JetClass-II (natural composition, largest training set) with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run. The class-balanced probes use the checkpoints as trained, so this check uses the natural-composition test set. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run.}
 \label{tab:bn}
+\end{minipage}
+\par\nopagebreak
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
 \toprule
- & \multicolumn{2}{c}{AUC} & \multicolumn{2}{c}{$\rho$} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
-pretraining & as trained & recomputed & as trained & recomputed \\
+ & \multicolumn{2}{c}{AUC} \\
+\cmidrule(lr){2-3}
+pretraining & as trained & recomputed \\
 \midrule
-\Kfull{} classes & 0.9760\,$\pm$\,$<$0.0001 & 0.9760\,$\pm$\,$<$0.0001 & 1.00 & 1.00 \\
-\Kres{} classes & 0.9748\,$\pm$\,0.0003 & 0.9748\,$\pm$\,0.0003 & 1.049\,$\pm$\,0.014 & 1.050\,$\pm$\,0.014 \\
-\Kmid{} classes & 0.9719\,$\pm$\,0.0006 & 0.9719\,$\pm$\,0.0006 & 1.171\,$\pm$\,0.024 & 1.172\,$\pm$\,0.025 \\
-\Kcoarse{} classes & 0.9631\,$\pm$\,0.0006 & 0.9631\,$\pm$\,0.0006 & 1.538\,$\pm$\,0.025 & 1.537\,$\pm$\,0.026 \\
-\Kres{} classes, mass regression & 0.9735, 0.9740 & 0.9735, 0.9740 & 1.106, 1.082 & 1.105, 1.083 \\
-\Kcoarse{} classes, mass regression & 0.9623, 0.9632 & 0.9623, 0.9632 & 1.571, 1.530 & 1.572, 1.530 \\
-random partition 1, seed 1 & 0.972 & 0.972 & 1.17 & 1.17 \\
-random partition 2, seed 2 & 0.972 & 0.972 & 1.17 & 1.17 \\
-random partition 3, seed 1 & 0.972 & 0.972 & 1.15 & 1.15 \\
-random partition 4, seed 2 & 0.972 & 0.972 & 1.15 & 1.15 \\
-random partition 5, seed 2 & 0.972 & 0.972 & 1.16 & 1.16 \\
-random partition, no flavor boundary & 0.9657, 0.9645 & 0.9657, 0.9645 & 1.432, 1.477 & 1.432, 1.477 \\
-random partition, $b$-quark boundary & 0.9698, 0.9701 & 0.9698, 0.9701 & 1.260, 1.245 & 1.260, 1.245 \\
-random partition, random flavor boundary & 0.9698, 0.9698 & 0.9698, 0.9698 & 1.259, 1.254 & 1.260, 1.254 \\
-randomly initialized network & 0.8058\,$\pm$\,0.0018 & 0.8525\,$\pm$\,0.0019 & -- & -- \\
+\Kfull{} classes & 0.9760\,$\pm$\,$<$0.0001 & 0.9760\,$\pm$\,$<$0.0001 \\
+\Kres{} classes & 0.9748\,$\pm$\,0.0003 & 0.9748\,$\pm$\,0.0003 \\
+\Kmid{} classes & 0.9719\,$\pm$\,0.0006 & 0.9719\,$\pm$\,0.0006 \\
+\Kcoarse{} classes & 0.9631\,$\pm$\,0.0006 & 0.9631\,$\pm$\,0.0006 \\
+\Kres{} classes, mass regression & 0.9735, 0.9740 & 0.9735, 0.9740 \\
+\Kcoarse{} classes, mass regression & 0.9623, 0.9632 & 0.9623, 0.9632 \\
+random partition 1, seed 1 & 0.9719 & 0.9719 \\
+random partition 2, seed 2 & 0.9719 & 0.9719 \\
+random partition 3, seed 1 & 0.9724 & 0.9724 \\
+random partition 4, seed 2 & 0.9723 & 0.9723 \\
+random partition 5, seed 2 & 0.9720 & 0.9720 \\
+random partition, no flavor boundary & 0.9657, 0.9645 & 0.9657, 0.9645 \\
+random partition, $b$-quark boundary & 0.9698, 0.9701 & 0.9698, 0.9701 \\
+random partition, random flavor boundary & 0.9698, 0.9698 & 0.9698, 0.9698 \\
+randomly initialized network & 0.8058\,$\pm$\,0.0018 & 0.8525\,$\pm$\,0.0019 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
+\toprule
+ & \multicolumn{2}{c}{$\rho$} \\
+\cmidrule(lr){2-3}
+pretraining & as trained & recomputed \\
+\midrule
+\Kfull{} classes & 1.00 & 1.00 \\
+\Kres{} classes & 1.049\,$\pm$\,0.014 & 1.050\,$\pm$\,0.014 \\
+\Kmid{} classes & 1.171\,$\pm$\,0.024 & 1.172\,$\pm$\,0.025 \\
+\Kcoarse{} classes & 1.538\,$\pm$\,0.025 & 1.537\,$\pm$\,0.026 \\
+\Kres{} classes, mass regression & 1.106, 1.082 & 1.105, 1.083 \\
+\Kcoarse{} classes, mass regression & 1.571, 1.530 & 1.572, 1.530 \\
+random partition 1, seed 1 & 1.17 & 1.17 \\
+random partition 2, seed 2 & 1.17 & 1.17 \\
+random partition 3, seed 1 & 1.15 & 1.15 \\
+random partition 4, seed 2 & 1.15 & 1.15 \\
+random partition 5, seed 2 & 1.16 & 1.16 \\
+random partition, no flavor boundary & 1.432, 1.477 & 1.432, 1.477 \\
+random partition, $b$-quark boundary & 1.260, 1.245 & 1.260, 1.245 \\
+random partition, random flavor boundary & 1.259, 1.254 & 1.260, 1.254 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{center}

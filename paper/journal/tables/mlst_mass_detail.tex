@@ -1,104 +1,295 @@
-\begin{table*}[t]
-\centering
+\begin{center}
 \small
-\caption{Jet-mass regression in detail, over all test jets and over resonant and QCD jets. Upper part: resolution and median response of the regression output of the models pretrained with the mass regression, and of ridge and multilayer perceptron regressions on frozen features. Lower parts: resolution and median response of the groomed mass and of the regression output against jet $p_{\mathrm{T}}$ and against the generator soft-drop mass; bins with fewer than \MlstMassMinJets{} jets are blank. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given.}
+\begin{minipage}{\linewidth}
+\captionof{table}{Jet-mass regression in detail, over all test jets and over resonant and QCD jets. Upper part: resolution and median response of the regression output of the models pretrained with the mass regression, and of ridge and multilayer perceptron regressions on frozen features. Lower parts: resolution and median response of the soft-drop mass and of the regression output against jet $p_{\mathrm{T}}$ and against the generator soft-drop mass; every bin holds at least \MlstMassMinJets{} jets. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given.}
 \label{tab:massdetail}
+\end{minipage}
+\par\nopagebreak
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llcccccc}
+\begin{tabular}{llc}
 \toprule
- & & \multicolumn{3}{c}{resolution} & \multicolumn{3}{c}{median response} \\
-\cmidrule(lr){3-5}\cmidrule(lr){6-8}
-estimator & pretraining & all & resonant & QCD & all & resonant & QCD \\
+ &  & \multicolumn{1}{c}{resolution} \\
+\cmidrule(lr){3-3}
+estimator & pretraining & all \\
 \midrule
-regression output & \Kres{} classes, mass regression & 0.1471, 0.1463 & 0.1332, 0.1320 & 0.2263, 0.2256 & 0.995, 1.003 & 0.996, 1.004 & 0.9897, 0.9996 \\
-regression output & \Kcoarse{} classes, mass regression & 0.1450, 0.1461 & 0.1312, 0.1320 & 0.2239, 0.2240 & 1.005, 1.005 & 1.006, 1.006 & 1.001, 1.000 \\
-ridge, frozen features & randomly initialized network & 0.312\,$\pm$\,0.007 & 0.286\,$\pm$\,0.006 & 0.913\,$\pm$\,0.031 & 0.9406\,$\pm$\,0.0035 & 0.936\,$\pm$\,0.004 & 0.9649\,$\pm$\,0.0035 \\
-ridge, frozen features & \Kfull{} classes & 0.3211\,$\pm$\,0.0034 & 0.2921\,$\pm$\,0.0026 & 0.559\,$\pm$\,0.013 & 0.9641\,$\pm$\,0.0012 & 0.9754\,$\pm$\,0.0006 & 0.905\,$\pm$\,0.006 \\
-ridge, frozen features & \Kres{} classes & 0.316\,$\pm$\,0.009 & 0.288\,$\pm$\,0.008 & 0.548\,$\pm$\,0.021 & 0.9655\,$\pm$\,0.0005 & 0.9768\,$\pm$\,0.0008 & 0.909\,$\pm$\,0.007 \\
-ridge, frozen features & \Kmid{} classes & 0.304\,$\pm$\,0.016 & 0.280\,$\pm$\,0.013 & 0.49\,$\pm$\,0.06 & 0.968\,$\pm$\,0.005 & 0.977\,$\pm$\,0.004 & 0.922\,$\pm$\,0.012 \\
-ridge, frozen features & \Kcoarse{} classes & 0.293\,$\pm$\,0.012 & 0.271\,$\pm$\,0.012 & 0.448\,$\pm$\,0.030 & 0.973\,$\pm$\,0.005 & 0.980\,$\pm$\,0.004 & 0.937\,$\pm$\,0.010 \\
-ridge, frozen features & \Kres{} classes, mass regression & 0.1885, 0.1922 & 0.1751, 0.1785 & 0.2674, 0.2701 & 0.9998, 0.9998 & 1.003, 1.003 & 0.9826, 0.9830 \\
-ridge, frozen features & \Kcoarse{} classes, mass regression & 0.1842, 0.1824 & 0.1696, 0.1687 & 0.2630, 0.2601 & 1.002, 1.002 & 1.005, 1.003 & 0.9888, 0.9935 \\
-MLP, frozen features & randomly initialized network & 0.2421\,$\pm$\,0.0018 & 0.2214\,$\pm$\,0.0017 & 0.502\,$\pm$\,0.014 & 0.983\,$\pm$\,0.005 & 0.984\,$\pm$\,0.005 & 0.980\,$\pm$\,0.007 \\
-MLP, frozen features & \Kfull{} classes & 0.2200\,$\pm$\,0.0014 & 0.1990\,$\pm$\,0.0016 & 0.3487\,$\pm$\,0.0029 & 0.991\,$\pm$\,0.005 & 0.994\,$\pm$\,0.004 & 0.975\,$\pm$\,0.007 \\
-MLP, frozen features & \Kres{} classes & 0.2195\,$\pm$\,0.0017 & 0.1989\,$\pm$\,0.0020 & 0.3425\,$\pm$\,0.0031 & 0.9876\,$\pm$\,0.0014 & 0.9900\,$\pm$\,0.0024 & 0.974\,$\pm$\,0.006 \\
-MLP, frozen features & \Kmid{} classes & 0.2158\,$\pm$\,0.0029 & 0.1949\,$\pm$\,0.0023 & 0.338\,$\pm$\,0.007 & 0.991\,$\pm$\,0.005 & 0.993\,$\pm$\,0.004 & 0.976\,$\pm$\,0.010 \\
-MLP, frozen features & \Kcoarse{} classes & 0.2098\,$\pm$\,0.0031 & 0.1894\,$\pm$\,0.0035 & 0.327\,$\pm$\,0.006 & 0.991\,$\pm$\,0.004 & 0.993\,$\pm$\,0.004 & 0.977\,$\pm$\,0.008 \\
-MLP, frozen features & \Kres{} classes, mass regression & 0.1591, 0.1586 & 0.1436, 0.1430 & 0.2473, 0.2452 & 1.004, 1.006 & 1.006, 1.008 & 0.9883, 0.9930 \\
-MLP, frozen features & \Kcoarse{} classes, mass regression & 0.1583, 0.1588 & 0.1420, 0.1431 & 0.2465, 0.2463 & 1.009, 1.006 & 1.012, 1.008 & 0.9942, 0.9932 \\
+regression output & \Kres{} classes, mass regression & 0.1471, 0.1463 \\
+regression output & \Kcoarse{} classes, mass regression & 0.1450, 0.1461 \\
+ridge, frozen features & randomly initialized network & 0.312\,$\pm$\,0.007 \\
+ridge, frozen features & \Kfull{} classes & 0.3211\,$\pm$\,0.0034 \\
+ridge, frozen features & \Kres{} classes & 0.316\,$\pm$\,0.009 \\
+ridge, frozen features & \Kmid{} classes & 0.304\,$\pm$\,0.016 \\
+ridge, frozen features & \Kcoarse{} classes & 0.293\,$\pm$\,0.012 \\
+ridge, frozen features & \Kres{} classes, mass regression & 0.1885, 0.1922 \\
+ridge, frozen features & \Kcoarse{} classes, mass regression & 0.1842, 0.1824 \\
+MLP, frozen features & randomly initialized network & 0.2421\,$\pm$\,0.0018 \\
+MLP, frozen features & \Kfull{} classes & 0.2200\,$\pm$\,0.0014 \\
+MLP, frozen features & \Kres{} classes & 0.2195\,$\pm$\,0.0017 \\
+MLP, frozen features & \Kmid{} classes & 0.2158\,$\pm$\,0.0029 \\
+MLP, frozen features & \Kcoarse{} classes & 0.2098\,$\pm$\,0.0031 \\
+MLP, frozen features & \Kres{} classes, mass regression & 0.1591, 0.1586 \\
+MLP, frozen features & \Kcoarse{} classes, mass regression & 0.1583, 0.1588 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
 \par\medskip
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llcccc}
+\begin{tabular}{llcc}
 \toprule
-resolution & jet $p_{\mathrm{T}}$ [GeV] & 200--400 & 400--700 & 700--1000 & 1000--2500 \\
+ &  & \multicolumn{2}{c}{resolution} \\
+\cmidrule(lr){3-4}
+estimator & pretraining & resonant & QCD \\
 \midrule
-groomed mass & all & 0.242 & 0.225 & 0.231 & 0.327 \\
-\Kres{} classes, mass regression & all & 0.1720, 0.1703 & 0.1483, 0.1468 & 0.1426, 0.1411 & 0.1396, 0.1395 \\
-\Kcoarse{} classes, mass regression & all & 0.1691, 0.1702 & 0.1455, 0.1470 & 0.1403, 0.1414 & 0.1383, 0.1391 \\
-groomed mass & resonant & 0.229 & 0.215 & 0.216 & 0.211 \\
-\Kres{} classes, mass regression & resonant & 0.1642, 0.1621 & 0.1412, 0.1393 & 0.1337, 0.1315 & 0.1201, 0.1201 \\
-\Kcoarse{} classes, mass regression & resonant & 0.1610, 0.1620 & 0.1382, 0.1396 & 0.1313, 0.1320 & 0.1188, 0.1200 \\
-groomed mass & QCD & 0.279 & 0.333 & 1.10 & 3.61 \\
-\Kres{} classes, mass regression & QCD & 0.1945, 0.1928 & 0.1854, 0.1846 & 0.2146, 0.2110 & 0.2801, 0.2831 \\
-\Kcoarse{} classes, mass regression & QCD & 0.1918, 0.1947 & 0.1816, 0.1830 & 0.2089, 0.2090 & 0.2800, 0.2775 \\
+regression output & \Kres{} classes, mass regression & 0.1332, 0.1320 & 0.2263, 0.2256 \\
+regression output & \Kcoarse{} classes, mass regression & 0.1312, 0.1320 & 0.2239, 0.2240 \\
+ridge, frozen features & randomly initialized network & 0.286\,$\pm$\,0.006 & 0.913\,$\pm$\,0.031 \\
+ridge, frozen features & \Kfull{} classes & 0.2921\,$\pm$\,0.0026 & 0.559\,$\pm$\,0.013 \\
+ridge, frozen features & \Kres{} classes & 0.288\,$\pm$\,0.008 & 0.548\,$\pm$\,0.021 \\
+ridge, frozen features & \Kmid{} classes & 0.280\,$\pm$\,0.013 & 0.49\,$\pm$\,0.06 \\
+ridge, frozen features & \Kcoarse{} classes & 0.271\,$\pm$\,0.012 & 0.448\,$\pm$\,0.030 \\
+ridge, frozen features & \Kres{} classes, mass regression & 0.1751, 0.1785 & 0.2674, 0.2701 \\
+ridge, frozen features & \Kcoarse{} classes, mass regression & 0.1696, 0.1687 & 0.2630, 0.2601 \\
+MLP, frozen features & randomly initialized network & 0.2214\,$\pm$\,0.0017 & 0.502\,$\pm$\,0.014 \\
+MLP, frozen features & \Kfull{} classes & 0.1990\,$\pm$\,0.0016 & 0.3487\,$\pm$\,0.0029 \\
+MLP, frozen features & \Kres{} classes & 0.1989\,$\pm$\,0.0020 & 0.3425\,$\pm$\,0.0031 \\
+MLP, frozen features & \Kmid{} classes & 0.1949\,$\pm$\,0.0023 & 0.338\,$\pm$\,0.007 \\
+MLP, frozen features & \Kcoarse{} classes & 0.1894\,$\pm$\,0.0035 & 0.327\,$\pm$\,0.006 \\
+MLP, frozen features & \Kres{} classes, mass regression & 0.1436, 0.1430 & 0.2473, 0.2452 \\
+MLP, frozen features & \Kcoarse{} classes, mass regression & 0.1420, 0.1431 & 0.2465, 0.2463 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
 \par\medskip
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llcccc}
+\begin{tabular}{llc}
 \toprule
-median response & jet $p_{\mathrm{T}}$ [GeV] & 200--400 & 400--700 & 700--1000 & 1000--2500 \\
+ &  & \multicolumn{1}{c}{median response} \\
+\cmidrule(lr){3-3}
+estimator & pretraining & all \\
 \midrule
-groomed mass & all & 0.893 & 0.914 & 0.917 & 0.953 \\
-\Kres{} classes, mass regression & all & 0.986, 0.997 & 0.994, 1.003 & 0.997, 1.005 & 0.997, 1.004 \\
-\Kcoarse{} classes, mass regression & all & 0.9930, 0.9974 & 1.001, 1.003 & 1.006, 1.007 & 1.010, 1.007 \\
-groomed mass & resonant & 0.904 & 0.917 & 0.915 & 0.947 \\
-\Kres{} classes, mass regression & resonant & 0.987, 0.998 & 0.995, 1.004 & 0.998, 1.005 & 0.998, 1.004 \\
-\Kcoarse{} classes, mass regression & resonant & 0.9933, 0.9980 & 1.002, 1.004 & 1.006, 1.007 & 1.010, 1.008 \\
-groomed mass & QCD & 0.863 & 0.895 & 0.931 & 1.02 \\
-\Kres{} classes, mass regression & QCD & 0.984, 0.995 & 0.986, 0.998 & 0.994, 1.003 & 0.993, 1.001 \\
-\Kcoarse{} classes, mass regression & QCD & 0.9921, 0.9955 & 0.9965, 0.9973 & 1.004, 1.004 & 1.008, 1.002 \\
+regression output & \Kres{} classes, mass regression & 0.995, 1.003 \\
+regression output & \Kcoarse{} classes, mass regression & 1.005, 1.005 \\
+ridge, frozen features & randomly initialized network & 0.9406\,$\pm$\,0.0035 \\
+ridge, frozen features & \Kfull{} classes & 0.9641\,$\pm$\,0.0012 \\
+ridge, frozen features & \Kres{} classes & 0.9655\,$\pm$\,0.0005 \\
+ridge, frozen features & \Kmid{} classes & 0.968\,$\pm$\,0.005 \\
+ridge, frozen features & \Kcoarse{} classes & 0.973\,$\pm$\,0.005 \\
+ridge, frozen features & \Kres{} classes, mass regression & 0.9998, 0.9998 \\
+ridge, frozen features & \Kcoarse{} classes, mass regression & 1.002, 1.002 \\
+MLP, frozen features & randomly initialized network & 0.983\,$\pm$\,0.005 \\
+MLP, frozen features & \Kfull{} classes & 0.991\,$\pm$\,0.005 \\
+MLP, frozen features & \Kres{} classes & 0.9876\,$\pm$\,0.0014 \\
+MLP, frozen features & \Kmid{} classes & 0.991\,$\pm$\,0.005 \\
+MLP, frozen features & \Kcoarse{} classes & 0.991\,$\pm$\,0.004 \\
+MLP, frozen features & \Kres{} classes, mass regression & 1.004, 1.006 \\
+MLP, frozen features & \Kcoarse{} classes, mass regression & 1.009, 1.006 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
 \par\medskip
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llccccc}
+\begin{tabular}{llcc}
 \toprule
-resolution & generator soft-drop mass [GeV] & 20--50 & 50--100 & 100--150 & 150--250 & 250--500 \\
+ &  & \multicolumn{2}{c}{median response} \\
+\cmidrule(lr){3-4}
+estimator & pretraining & resonant & QCD \\
 \midrule
-groomed mass & all & 0.281 & 0.206 & 0.204 & 0.210 & 0.225 \\
-\Kres{} classes, mass regression & all & 0.1751, 0.1756 & 0.1425, 0.1416 & 0.1302, 0.1291 & 0.1233, 0.1213 & 0.1163, 0.1135 \\
-\Kcoarse{} classes, mass regression & all & 0.1755, 0.1740 & 0.1418, 0.1411 & 0.1284, 0.1288 & 0.1210, 0.1220 & 0.1134, 0.1145 \\
-groomed mass & resonant & 0.275 & 0.194 & 0.192 & 0.201 & 0.216 \\
-\Kres{} classes, mass regression & resonant & 0.1632, 0.1634 & 0.1366, 0.1359 & 0.1261, 0.1252 & 0.1198, 0.1175 & 0.1133, 0.1107 \\
-\Kcoarse{} classes, mass regression & resonant & 0.1631, 0.1621 & 0.1357, 0.1351 & 0.1246, 0.1250 & 0.1174, 0.1183 & 0.1107, 0.1118 \\
-groomed mass & QCD & 0.292 & 0.239 & 0.246 & 0.265 & 0.278 \\
-\Kres{} classes, mass regression & QCD & 0.2033, 0.2030 & 0.1653, 0.1639 & 0.1508, 0.1515 & 0.1515, 0.1509 & 0.1511, 0.1470 \\
-\Kcoarse{} classes, mass regression & QCD & 0.2032, 0.2006 & 0.1630, 0.1631 & 0.1505, 0.1514 & 0.1483, 0.1515 & 0.1434, 0.1482 \\
+regression output & \Kres{} classes, mass regression & 0.996, 1.004 & 0.9897, 0.9996 \\
+regression output & \Kcoarse{} classes, mass regression & 1.006, 1.006 & 1.001, 1.000 \\
+ridge, frozen features & randomly initialized network & 0.936\,$\pm$\,0.004 & 0.9649\,$\pm$\,0.0035 \\
+ridge, frozen features & \Kfull{} classes & 0.9754\,$\pm$\,0.0006 & 0.905\,$\pm$\,0.006 \\
+ridge, frozen features & \Kres{} classes & 0.9768\,$\pm$\,0.0008 & 0.909\,$\pm$\,0.007 \\
+ridge, frozen features & \Kmid{} classes & 0.977\,$\pm$\,0.004 & 0.922\,$\pm$\,0.012 \\
+ridge, frozen features & \Kcoarse{} classes & 0.980\,$\pm$\,0.004 & 0.937\,$\pm$\,0.010 \\
+ridge, frozen features & \Kres{} classes, mass regression & 1.003, 1.003 & 0.9826, 0.9830 \\
+ridge, frozen features & \Kcoarse{} classes, mass regression & 1.005, 1.003 & 0.9888, 0.9935 \\
+MLP, frozen features & randomly initialized network & 0.984\,$\pm$\,0.005 & 0.980\,$\pm$\,0.007 \\
+MLP, frozen features & \Kfull{} classes & 0.994\,$\pm$\,0.004 & 0.975\,$\pm$\,0.007 \\
+MLP, frozen features & \Kres{} classes & 0.9900\,$\pm$\,0.0024 & 0.974\,$\pm$\,0.006 \\
+MLP, frozen features & \Kmid{} classes & 0.993\,$\pm$\,0.004 & 0.976\,$\pm$\,0.010 \\
+MLP, frozen features & \Kcoarse{} classes & 0.993\,$\pm$\,0.004 & 0.977\,$\pm$\,0.008 \\
+MLP, frozen features & \Kres{} classes, mass regression & 1.006, 1.008 & 0.9883, 0.9930 \\
+MLP, frozen features & \Kcoarse{} classes, mass regression & 1.012, 1.008 & 0.9942, 0.9932 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
 \par\medskip
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llccccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
 \toprule
-median response & generator soft-drop mass [GeV] & 20--50 & 50--100 & 100--150 & 150--250 & 250--500 \\
+\multicolumn{2}{l}{\textit{resolution}} & \multicolumn{2}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){3-4}
+estimator & jets & 200--400 & 400--700 \\
 \midrule
-groomed mass & all & 1.00 & 0.936 & 0.908 & 0.890 & 0.852 \\
-\Kres{} classes, mass regression & all & 1.025, 1.037 & 1.006, 1.014 & 0.993, 1.001 & 0.9881, 0.9954 & 0.9710, 0.9772 \\
-\Kcoarse{} classes, mass regression & all & 1.032, 1.041 & 1.014, 1.016 & 1.002, 1.002 & 0.9986, 0.9970 & 0.9837, 0.9792 \\
-groomed mass & resonant & 1.01 & 0.953 & 0.922 & 0.902 & 0.862 \\
-\Kres{} classes, mass regression & resonant & 1.032, 1.043 & 1.012, 1.019 & 0.997, 1.004 & 0.9905, 0.9977 & 0.9722, 0.9783 \\
-\Kcoarse{} classes, mass regression & resonant & 1.038, 1.047 & 1.019, 1.021 & 1.006, 1.006 & 1.001, 0.999 & 0.9847, 0.9804 \\
-groomed mass & QCD & 0.971 & 0.864 & 0.816 & 0.781 & 0.738 \\
-\Kres{} classes, mass regression & QCD & 1.006, 1.019 & 0.9802, 0.9899 & 0.9670, 0.9766 & 0.9647, 0.9720 & 0.9565, 0.9631 \\
-\Kcoarse{} classes, mass regression & QCD & 1.015, 1.021 & 0.9906, 0.9901 & 0.9791, 0.9759 & 0.9787, 0.9743 & 0.9704, 0.9641 \\
+soft-drop mass & all & 0.242 & 0.225 \\
+\Kres{} classes, mass regression & all & 0.1720, 0.1703 & 0.1483, 0.1468 \\
+\Kcoarse{} classes, mass regression & all & 0.1691, 0.1702 & 0.1455, 0.1470 \\
+soft-drop mass & resonant & 0.229 & 0.215 \\
+\Kres{} classes, mass regression & resonant & 0.1642, 0.1621 & 0.1412, 0.1393 \\
+\Kcoarse{} classes, mass regression & resonant & 0.1610, 0.1620 & 0.1382, 0.1396 \\
+soft-drop mass & QCD & 0.279 & 0.333 \\
+\Kres{} classes, mass regression & QCD & 0.1945, 0.1928 & 0.1854, 0.1846 \\
+\Kcoarse{} classes, mass regression & QCD & 0.1918, 0.1947 & 0.1816, 0.1830 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table*}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
+\toprule
+\multicolumn{2}{l}{\textit{resolution}} & \multicolumn{2}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){3-4}
+estimator & jets & 700--1000 & 1000--2500 \\
+\midrule
+soft-drop mass & all & 0.231 & 0.327 \\
+\Kres{} classes, mass regression & all & 0.1426, 0.1411 & 0.1396, 0.1395 \\
+\Kcoarse{} classes, mass regression & all & 0.1403, 0.1414 & 0.1383, 0.1391 \\
+soft-drop mass & resonant & 0.216 & 0.211 \\
+\Kres{} classes, mass regression & resonant & 0.1337, 0.1315 & 0.1201, 0.1201 \\
+\Kcoarse{} classes, mass regression & resonant & 0.1313, 0.1320 & 0.1188, 0.1200 \\
+soft-drop mass & QCD & 1.10 & 3.61 \\
+\Kres{} classes, mass regression & QCD & 0.2146, 0.2110 & 0.2801, 0.2831 \\
+\Kcoarse{} classes, mass regression & QCD & 0.2089, 0.2090 & 0.2800, 0.2775 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
+\toprule
+\multicolumn{2}{l}{\textit{median response}} & \multicolumn{2}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){3-4}
+estimator & jets & 200--400 & 400--700 \\
+\midrule
+soft-drop mass & all & 0.893 & 0.914 \\
+\Kres{} classes, mass regression & all & 0.986, 0.997 & 0.994, 1.003 \\
+\Kcoarse{} classes, mass regression & all & 0.9930, 0.9974 & 1.001, 1.003 \\
+soft-drop mass & resonant & 0.904 & 0.917 \\
+\Kres{} classes, mass regression & resonant & 0.987, 0.998 & 0.995, 1.004 \\
+\Kcoarse{} classes, mass regression & resonant & 0.9933, 0.9980 & 1.002, 1.004 \\
+soft-drop mass & QCD & 0.863 & 0.895 \\
+\Kres{} classes, mass regression & QCD & 0.984, 0.995 & 0.986, 0.998 \\
+\Kcoarse{} classes, mass regression & QCD & 0.9921, 0.9955 & 0.9965, 0.9973 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
+\toprule
+\multicolumn{2}{l}{\textit{median response}} & \multicolumn{2}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){3-4}
+estimator & jets & 700--1000 & 1000--2500 \\
+\midrule
+soft-drop mass & all & 0.917 & 0.953 \\
+\Kres{} classes, mass regression & all & 0.997, 1.005 & 0.997, 1.004 \\
+\Kcoarse{} classes, mass regression & all & 1.006, 1.007 & 1.010, 1.007 \\
+soft-drop mass & resonant & 0.915 & 0.947 \\
+\Kres{} classes, mass regression & resonant & 0.998, 1.005 & 0.998, 1.004 \\
+\Kcoarse{} classes, mass regression & resonant & 1.006, 1.007 & 1.010, 1.008 \\
+soft-drop mass & QCD & 0.931 & 1.02 \\
+\Kres{} classes, mass regression & QCD & 0.994, 1.003 & 0.993, 1.001 \\
+\Kcoarse{} classes, mass regression & QCD & 1.004, 1.004 & 1.008, 1.002 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lc}
+\toprule
+\multicolumn{2}{l}{\textit{resolution}} & \multicolumn{1}{c}{generator soft-drop mass [GeV]} \\
+\cmidrule(lr){3-3}
+estimator & jets & 20--50 \\
+\midrule
+soft-drop mass & all & 0.281 \\
+\Kres{} classes, mass regression & all & 0.1751, 0.1756 \\
+\Kcoarse{} classes, mass regression & all & 0.1755, 0.1740 \\
+soft-drop mass & resonant & 0.275 \\
+\Kres{} classes, mass regression & resonant & 0.1632, 0.1634 \\
+\Kcoarse{} classes, mass regression & resonant & 0.1631, 0.1621 \\
+soft-drop mass & QCD & 0.292 \\
+\Kres{} classes, mass regression & QCD & 0.2033, 0.2030 \\
+\Kcoarse{} classes, mass regression & QCD & 0.2032, 0.2006 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
+\toprule
+\multicolumn{2}{l}{\textit{resolution}} & \multicolumn{2}{c}{generator soft-drop mass [GeV]} \\
+\cmidrule(lr){3-4}
+estimator & jets & 50--100 & 100--150 \\
+\midrule
+soft-drop mass & all & 0.206 & 0.204 \\
+\Kres{} classes, mass regression & all & 0.1425, 0.1416 & 0.1302, 0.1291 \\
+\Kcoarse{} classes, mass regression & all & 0.1418, 0.1411 & 0.1284, 0.1288 \\
+soft-drop mass & resonant & 0.194 & 0.192 \\
+\Kres{} classes, mass regression & resonant & 0.1366, 0.1359 & 0.1261, 0.1252 \\
+\Kcoarse{} classes, mass regression & resonant & 0.1357, 0.1351 & 0.1246, 0.1250 \\
+soft-drop mass & QCD & 0.239 & 0.246 \\
+\Kres{} classes, mass regression & QCD & 0.1653, 0.1639 & 0.1508, 0.1515 \\
+\Kcoarse{} classes, mass regression & QCD & 0.1630, 0.1631 & 0.1505, 0.1514 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
+\toprule
+\multicolumn{2}{l}{\textit{resolution}} & \multicolumn{2}{c}{generator soft-drop mass [GeV]} \\
+\cmidrule(lr){3-4}
+estimator & jets & 150--250 & 250--500 \\
+\midrule
+soft-drop mass & all & 0.210 & 0.225 \\
+\Kres{} classes, mass regression & all & 0.1233, 0.1213 & 0.1163, 0.1135 \\
+\Kcoarse{} classes, mass regression & all & 0.1210, 0.1220 & 0.1134, 0.1145 \\
+soft-drop mass & resonant & 0.201 & 0.216 \\
+\Kres{} classes, mass regression & resonant & 0.1198, 0.1175 & 0.1133, 0.1107 \\
+\Kcoarse{} classes, mass regression & resonant & 0.1174, 0.1183 & 0.1107, 0.1118 \\
+soft-drop mass & QCD & 0.265 & 0.278 \\
+\Kres{} classes, mass regression & QCD & 0.1515, 0.1509 & 0.1511, 0.1470 \\
+\Kcoarse{} classes, mass regression & QCD & 0.1483, 0.1515 & 0.1434, 0.1482 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lccc}
+\toprule
+\multicolumn{2}{l}{\textit{median response}} & \multicolumn{3}{c}{generator soft-drop mass [GeV]} \\
+\cmidrule(lr){3-5}
+estimator & jets & 20--50 & 50--100 & 100--150 \\
+\midrule
+soft-drop mass & all & 1.00 & 0.936 & 0.908 \\
+\Kres{} classes, mass regression & all & 1.025, 1.037 & 1.006, 1.014 & 0.993, 1.001 \\
+\Kcoarse{} classes, mass regression & all & 1.032, 1.041 & 1.014, 1.016 & 1.002, 1.002 \\
+soft-drop mass & resonant & 1.01 & 0.953 & 0.922 \\
+\Kres{} classes, mass regression & resonant & 1.032, 1.043 & 1.012, 1.019 & 0.997, 1.004 \\
+\Kcoarse{} classes, mass regression & resonant & 1.038, 1.047 & 1.019, 1.021 & 1.006, 1.006 \\
+soft-drop mass & QCD & 0.971 & 0.864 & 0.816 \\
+\Kres{} classes, mass regression & QCD & 1.006, 1.019 & 0.9802, 0.9899 & 0.9670, 0.9766 \\
+\Kcoarse{} classes, mass regression & QCD & 1.015, 1.021 & 0.9906, 0.9901 & 0.9791, 0.9759 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
+\toprule
+\multicolumn{2}{l}{\textit{median response}} & \multicolumn{2}{c}{generator soft-drop mass [GeV]} \\
+\cmidrule(lr){3-4}
+estimator & jets & 150--250 & 250--500 \\
+\midrule
+soft-drop mass & all & 0.890 & 0.852 \\
+\Kres{} classes, mass regression & all & 0.9881, 0.9954 & 0.9710, 0.9772 \\
+\Kcoarse{} classes, mass regression & all & 0.9986, 0.9970 & 0.9837, 0.9792 \\
+soft-drop mass & resonant & 0.902 & 0.862 \\
+\Kres{} classes, mass regression & resonant & 0.9905, 0.9977 & 0.9722, 0.9783 \\
+\Kcoarse{} classes, mass regression & resonant & 1.001, 0.999 & 0.9847, 0.9804 \\
+soft-drop mass & QCD & 0.781 & 0.738 \\
+\Kres{} classes, mass regression & QCD & 0.9647, 0.9720 & 0.9565, 0.9631 \\
+\Kcoarse{} classes, mass regression & QCD & 0.9787, 0.9743 & 0.9704, 0.9641 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{center}

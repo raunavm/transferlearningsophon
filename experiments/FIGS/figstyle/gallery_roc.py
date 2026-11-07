@@ -386,7 +386,7 @@ PAGES = [
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (one panel per model)",
          caption="Background rejection against signal efficiency on JetClass after fine-tuning on one million jets. "
                  "Each curve takes one of the ten JetClass classes as signal and the other nine as background, and is "
-                 "the mean over three pretraining runs. Curves begin where 20 background jets remain. One panel per "
+                 "the mean over three pretraining runs. Curves end where fewer than 20 background jets remain. One panel per "
                  "pretraining label set; its title gives the mean area under the curve over the ten classes, and the heading "
                  "that of the network trained from scratch.",
          differs="Against landscape: ten classes of one network, not fifteen networks; solid tab10. Against the poster: "
@@ -398,7 +398,7 @@ PAGES = [
          caption="Background rejection against signal efficiency on JetClass after fine-tuning on one million jets, "
                  "for networks pretrained on 17-class random partitions: with no flavor boundary, a b-quark boundary "
                  "or a random flavor boundary (two runs each), and five plain random partitions (averaged). Each curve "
-                 "takes one class as signal against the other nine and begins where 20 background jets remain. Titles "
+                 "takes one class as signal against the other nine and ends where fewer than 20 background jets remain. Titles "
                  "give the mean area under the curve; the heading, from scratch.",
          differs="As FJ. The five plain random partitions share one panel, to stay at four: their macro AUCs lie within "
                  "3e-4 of each other. Eight panels, one per partition, is the alternative.",
@@ -408,7 +408,7 @@ PAGES = [
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (AUC in legend)",
          caption="Background rejection against signal efficiency on JetClass for the network trained from scratch on "
                  "one million jets, with no pretraining. Each curve takes one of the ten JetClass classes as signal "
-                 "and the other nine as background, and is the mean over three trainings. Curves begin where 20 "
+                 "and the other nine as background, and is the mean over three trainings. Curves end where fewer than 20 "
                  "background jets remain. The legend gives each class's area under the curve; the heading gives their "
                  "mean.",
          differs="As FJ, one panel; the class AUCs in a legend beside it on the right (PI), full width.",
@@ -418,7 +418,7 @@ PAGES = [
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (one panel per model)",
          caption="Background rejection against signal efficiency on JetClass from linear probes, trained on one million "
                  "jets, on frozen pretrained networks. Each curve takes one of the ten classes as signal and the other "
-                 "nine as background, and is the mean over three pretraining runs. Curves begin where 20 background jets "
+                 "nine as background, and is the mean over three pretraining runs. Curves end where fewer than 20 background jets "
                  "remain. Titles give the mean area under the curve; the heading gives the fully trained network from "
                  "scratch for reference.",
          differs="As FJ, with no legend: probe curves lie lower, so it would cover Z to qq; the colors are FJ's. The "
@@ -430,7 +430,7 @@ PAGES = [
          caption="Background rejection against signal efficiency on JetClass from linear probes trained on one million "
                  "jets, on frozen networks pretrained on 17-class random partitions: with no flavor boundary, a "
                  "b-quark boundary or a random flavor boundary (two runs each), and five plain ones (averaged). Each "
-                 "curve takes one class as signal against the other nine and begins where 20 background jets remain. "
+                 "curve takes one class as signal against the other nine and ends where fewer than 20 background jets remain. "
                  "Titles give the mean area under the curve; the heading, from scratch.",
          differs="As FJ-ctrl, with no legend, as FJ-app. The five plain partitions' macro AUCs lie within 5e-4 of each other.",
          draw=draw_fj_ctrl_app),

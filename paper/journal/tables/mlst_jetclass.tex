@@ -1,26 +1,70 @@
-\begin{table*}[t]
-\centering
+\begin{center}
 \small
-\caption{JetClass, in the form of ParT's Table~1: accuracy, AUC averaged over all pairs of classes (one against one, ParT's convention; on JetClass's equal class sizes it equals the one-against-rest average, checked), and for each signal class the rejection of QCD jets at 50\% signal efficiency (99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$) on $D_S = g_S/(g_S+g_{\mathrm{QCD}})$ of equation~(\ref{eq:discr}). Published rows: trained from scratch on 2 million jets and scored on ParT's \LitPartJcTestMillion-million-jet test set (ParT on 100 million jets reaches an accuracy of 0.861 and an AUC of 0.9877); ours fine-tuned on one million jets and scored on two million (the AUC on 500{,}000 of them). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs. From scratch: three seeds. Bold: the best value of each column, and every value within one standard deviation of it. $^\dagger$: fewer than $\nmin$ QCD jets pass in at least one run (equation~(\ref{eq:cut})), so that run's rejection has a counting uncertainty above 22\%; these columns carry no claim.}
+\begin{minipage}{\linewidth}
+\captionof{table}{JetClass, in the form of ParT's Table~1: accuracy, AUC averaged over all pairs of classes (one against one, ParT's convention; on JetClass's equal class sizes it equals the one-against-rest average, checked), and for each signal class the rejection of QCD jets at 50\% signal efficiency (99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$) on $D_S = g_S/(g_S+g_{\mathrm{QCD}})$ of equation~(\ref{eq:discr}). Published rows: trained from scratch on 2 million jets and scored on ParT's \LitPartJcTestMillion-million-jet test set (ParT on 100 million jets reaches an accuracy of 0.861 and an AUC of 0.9877); ours fine-tuned on one million jets and scored on two million (the AUC on 500{,}000 of them). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs. From scratch: three seeds. Bold: the best value of each column, and every value within one standard deviation of it (the larger of the two; two runs count with their mean). $^\dagger$: fewer than $\nmin$ QCD jets pass in at least one run (equation~(\ref{eq:cut})), so that run's rejection has a counting uncertainty above 22\%; these columns carry no claim.}
 \label{tab:jetclass}
+\end{minipage}
+\par\nopagebreak
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llccccccccccc}
+\begin{tabular}{llccc}
 \toprule
- & & & & \multicolumn{9}{c}{rejection of QCD} \\
-\cmidrule(lr){5-13}
- & jets & accuracy & AUC & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
- & & & & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{99}$ & $R_{50}$ & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
+ &  &  &  & \multicolumn{1}{c}{rejection of QCD} \\
+\cmidrule(lr){5-5}
+ & jets & accuracy & AUC & $H\to b\bar b$ \\
+ &  &  &  & $R_{50}$ \\
 \midrule
-ParticleNet~\cite{part} & 2 M & 0.828 & 0.9820 & 5{,}540 & 1{,}681 & 90 & 662 & 1{,}654 & 4{,}049 & 4{,}673 & 260 & 215 \\
-ParT~\cite{part} & 2 M & 0.836 & 0.9834 & 5{,}587 & 1{,}982 & 93 & 761 & 1{,}609 & 6{,}061 & 4{,}474 & 307 & 236 \\
+ParticleNet~\cite{part} & 2 M & 0.828 & 0.9820 & 5{,}540 \\
+ParT~\cite{part} & 2 M & 0.836 & 0.9834 & 5{,}587 \\
 \midrule
-\multicolumn{13}{l}{\textit{this work (Sophon's network, fine-tuned)}} \\
-from scratch & 1 M & 0.8271\,$\pm$\,0.0012 & 0.9819\,$\pm$\,0.0002 & 4{,}920\,$\pm$\,190 & 1{,}580\,$\pm$\,60 & 88.3\,$\pm$\,3.2 & 670\,$\pm$\,40 & 1{,}270\,$\pm$\,100 & 6{,}100\,$\pm$\,600 & 3{,}940\,$\pm$\,320 & 272\,$\pm$\,6 & 215\,$\pm$\,8 \\
-\Kfull{} classes & 1 M & 0.8468\,$\pm$\,0.0006 & 0.9854\,$\pm$\,0.0001 & \textbf{6{,}600\,$\pm$\,330} & \textbf{2{,}650\,$\pm$\,260} & \textbf{104\,$\pm$\,4} & 1{,}091\,$\pm$\,15 & \textbf{3{,}100\,$\pm$\,400} & \textbf{12{,}900\,$\pm$\,1{,}600}$^\dagger$ & \textbf{9{,}400\,$\pm$\,1{,}500}$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
-\Kres{} classes & 1 M & \textbf{0.8475\,$\pm$\,0.0009} & \textbf{0.9856\,$\pm$\,$<$0.0001} & 6{,}060 & \textbf{2{,}820\,$\pm$\,40} & 101.8\,$\pm$\,1.5 & \textbf{1{,}150\,$\pm$\,70} & \textbf{3{,}070\,$\pm$\,330} & \textbf{14{,}100\,$\pm$\,3{,}500}$^\dagger$ & 7{,}800\,$\pm$\,340 & \textbf{389\,$\pm$\,9} & 307.7\,$\pm$\,1.2 \\
-\Kmid{} classes & 1 M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 & \textbf{6{,}500\,$\pm$\,500} & 2{,}610\,$\pm$\,160 & \textbf{103.5\,$\pm$\,1.3} & 1{,}030\,$\pm$\,40 & \textbf{3{,}160\,$\pm$\,280} & \textbf{14{,}200\,$\pm$\,2{,}100}$^\dagger$ & 8{,}450\,$\pm$\,210 & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
-\Kcoarse{} classes & 1 M & 0.8422\,$\pm$\,0.0005 & 0.9847\,$\pm$\,0.0001 & \textbf{6{,}670\,$\pm$\,220} & 2{,}390\,$\pm$\,40 & \textbf{101\,$\pm$\,6} & 1{,}049\,$\pm$\,17 & 2{,}800\,$\pm$\,200 & 10{,}600\,$\pm$\,2{,}700$^\dagger$ & \textbf{8{,}600\,$\pm$\,1{,}300} & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
+\multicolumn{5}{l}{\textit{this work (Sophon's network, fine-tuned)}} \\
+from scratch & 1 M & 0.8271\,$\pm$\,0.0012 & 0.9819\,$\pm$\,0.0002 & 4{,}920\,$\pm$\,190 \\
+\Kfull{} classes & 1 M & \textbf{0.8468\,$\pm$\,0.0006} & 0.9854\,$\pm$\,0.0001 & \textbf{6{,}600\,$\pm$\,330} \\
+\Kres{} classes & 1 M & \textbf{0.8475\,$\pm$\,0.0009} & \textbf{0.9856\,$\pm$\,$<$0.0001} & 6{,}060\,$\pm$\,0 \\
+\Kmid{} classes & 1 M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 & \textbf{6{,}500\,$\pm$\,500} \\
+\Kcoarse{} classes & 1 M & 0.8422\,$\pm$\,0.0005 & 0.9847\,$\pm$\,0.0001 & \textbf{6{,}670\,$\pm$\,220} \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table*}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llcccc}
+\toprule
+ &  & \multicolumn{4}{c}{rejection of QCD} \\
+\cmidrule(lr){3-6}
+ & jets & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ \\
+ &  & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{99}$ \\
+\midrule
+ParticleNet~\cite{part} & 2 M & 1{,}681 & 90 & 662 & 1{,}654 \\
+ParT~\cite{part} & 2 M & 1{,}982 & 93 & 761 & 1{,}609 \\
+\midrule
+\multicolumn{6}{l}{\textit{this work (Sophon's network, fine-tuned)}} \\
+from scratch & 1 M & 1{,}580\,$\pm$\,60 & 88.3\,$\pm$\,3.2 & 670\,$\pm$\,40 & 1{,}270\,$\pm$\,100 \\
+\Kfull{} classes & 1 M & \textbf{2{,}650\,$\pm$\,260} & \textbf{104\,$\pm$\,4} & \textbf{1{,}091\,$\pm$\,15} & \textbf{3{,}100\,$\pm$\,400} \\
+\Kres{} classes & 1 M & \textbf{2{,}820\,$\pm$\,40} & \textbf{101.8\,$\pm$\,1.5} & \textbf{1{,}150\,$\pm$\,70} & \textbf{3{,}070\,$\pm$\,330} \\
+\Kmid{} classes & 1 M & 2{,}610\,$\pm$\,160 & \textbf{103.5\,$\pm$\,1.3} & 1{,}030\,$\pm$\,40 & \textbf{3{,}160\,$\pm$\,280} \\
+\Kcoarse{} classes & 1 M & 2{,}390\,$\pm$\,40 & \textbf{101\,$\pm$\,6} & 1{,}049\,$\pm$\,17 & 2{,}800\,$\pm$\,200 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llcccc}
+\toprule
+ &  & \multicolumn{4}{c}{rejection of QCD} \\
+\cmidrule(lr){3-6}
+ & jets & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+ &  & $R_{50}$ & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
+\midrule
+ParticleNet~\cite{part} & 2 M & 4{,}049 & 4{,}673 & 260 & 215 \\
+ParT~\cite{part} & 2 M & 6{,}061 & 4{,}474 & 307 & 236 \\
+\midrule
+\multicolumn{6}{l}{\textit{this work (Sophon's network, fine-tuned)}} \\
+from scratch & 1 M & 6{,}100\,$\pm$\,600 & 3{,}940\,$\pm$\,320 & 272\,$\pm$\,6 & 215\,$\pm$\,8 \\
+\Kfull{} classes & 1 M & 12{,}900\,$\pm$\,1{,}600$^\dagger$ & 9{,}400\,$\pm$\,1{,}500$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
+\Kres{} classes & 1 M & 14{,}100\,$\pm$\,3{,}500$^\dagger$ & 7{,}800\,$\pm$\,340 & \textbf{389\,$\pm$\,9} & \textbf{307.7\,$\pm$\,1.2} \\
+\Kmid{} classes & 1 M & 14{,}200\,$\pm$\,2{,}100$^\dagger$ & 8{,}450\,$\pm$\,210 & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
+\Kcoarse{} classes & 1 M & 10{,}600\,$\pm$\,2{,}700$^\dagger$ & 8{,}600\,$\pm$\,1{,}300 & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{center}

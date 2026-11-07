@@ -1,29 +1,72 @@
-\begin{table*}[t]
-\centering
+\begin{center}
 \small
-\caption{Quark/gluon discrimination with the particle type as five flags and the charge (ParT's exp inputs), fine-tuned on the full training set (\LitQgTrainMillion{} million Pythia jets) and scored on Pythia and on Herwig jets: accuracy, AUC and $1/\epsB$ at 50\% and 30\% quark efficiency. Our models see the \FillQgNZero{} displacement inputs set to zero. Published rows (exp inputs) from the tables cited; PFN-Ex's uncertainty is half the interquartile range of ten trainings, the others as in table~\ref{tab:benchtop}, with nine trainings for OmniLearned. Bold as in table~\ref{tab:benchtop}.}
+\begin{minipage}{\linewidth}
+\captionof{table}{Quark/gluon discrimination with the particle type as five flags and the charge (ParT's exp inputs), fine-tuned on the full training set (\LitQgTrainMillion{} million Pythia jets) and scored on Pythia and on Herwig jets: accuracy, AUC and $1/\epsB$ at 50\% and 30\% quark efficiency. Our models see the \FillQgNZero{} displacement inputs set to zero. Published rows (exp inputs) from the tables cited; PFN-Ex's uncertainty is half the interquartile range of ten trainings, the others as in table~\ref{tab:benchtop}, with nine trainings for OmniLearned. Bold as in table~\ref{tab:benchtop}.}
 \label{tab:benchqg}
+\end{minipage}
+\par\nopagebreak
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llcccccccc}
+\begin{tabular}{lcc}
 \toprule
- & & \multicolumn{4}{c}{Pythia} & \multicolumn{4}{c}{Herwig} \\
-\cmidrule(lr){3-6}\cmidrule(lr){7-10}
- & inputs set to zero & accuracy & AUC & $R_{50}$ & $R_{30}$ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+ & \multicolumn{2}{c}{Pythia} \\
+\cmidrule(lr){2-3}
+ & accuracy & AUC \\
 \midrule
-PFN-Ex~\cite{efn} & -- & -- & 0.9005 & 34.7\,$\pm$\,0.4 & -- & -- & -- & -- & -- \\
-ParticleNet~\cite{particlenet} & -- & 0.840 & 0.9116 & 39.8\,$\pm$\,0.2 & 98.6\,$\pm$\,1.3 & -- & -- & -- & -- \\
-ParT~\cite{part} & -- & 0.840 & 0.9121 & 41.3\,$\pm$\,0.3 & 101.2\,$\pm$\,1.1 & -- & -- & -- & -- \\
-ParticleNet-f.t.~\cite{part} & -- & 0.839 & 0.9115 & 40.1\,$\pm$\,0.2 & 100.3\,$\pm$\,1.0 & -- & -- & -- & -- \\
-ParT-f.t.~\cite{part} & -- & 0.843 & 0.9151 & 42.4\,$\pm$\,0.2 & 107.9\,$\pm$\,0.5 & -- & -- & -- & -- \\
-OmniLearned-m~\cite{omnilearned} & -- & \textbf{0.845} & \textbf{0.9162} & \textbf{43.2\,$\pm$\,0.1} & \textbf{111.2\,$\pm$\,1.5} & -- & -- & -- & -- \\
+PFN-Ex~\cite{efn} & -- & 0.9005 \\
+ParticleNet~\cite{particlenet} & 0.840 & 0.9116 \\
+ParT~\cite{part} & 0.840 & 0.9121 \\
+ParticleNet-f.t.~\cite{part} & 0.839 & 0.9115 \\
+ParT-f.t.~\cite{part} & 0.843 & 0.9151 \\
+OmniLearned-m~\cite{omnilearned} & \textbf{0.845} & \textbf{0.9162} \\
 \midrule
-\multicolumn{10}{l}{\textit{this work (Sophon's network)}} \\
-from scratch & \FillQgNZero{} & 0.8397\,$\pm$\,0.0007 & 0.9121\,$\pm$\,0.0002 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 & \textbf{0.7153\,$\pm$\,0.0024} & 0.8061\,$\pm$\,0.0007 & 12.18\,$\pm$\,0.11 & 35.5\,$\pm$\,1.2 \\
-\Kfull{} classes & \FillQgNZero{} & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 & 0.712\,$\pm$\,0.005 & 0.8078\,$\pm$\,0.0023 & 12.3\,$\pm$\,0.4 & \textbf{35.2\,$\pm$\,2.1} \\
-\Kres{} classes & \FillQgNZero{} & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 & 0.7100\,$\pm$\,0.0017 & 0.8074\,$\pm$\,0.0010 & 12.33\,$\pm$\,0.28 & 34.6\,$\pm$\,2.0 \\
-\Kmid{} classes & \FillQgNZero{} & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 & 42.2\,$\pm$\,0.8 & 108.3\,$\pm$\,1.0 & \textbf{0.713\,$\pm$\,0.006} & \textbf{0.809\,$\pm$\,0.005} & \textbf{12.5\,$\pm$\,0.6} & \textbf{36.1\,$\pm$\,2.7} \\
-\Kcoarse{} classes & \FillQgNZero{} & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 & \textbf{0.7175\,$\pm$\,0.0033} & \textbf{0.8103\,$\pm$\,0.0018} & \textbf{12.79\,$\pm$\,0.20} & \textbf{36.9\,$\pm$\,0.9} \\
+\multicolumn{3}{l}{\textit{this work (Sophon's network)}} \\
+from scratch & 0.8397\,$\pm$\,0.0007 & 0.9121\,$\pm$\,0.0002 \\
+\Kfull{} classes & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 \\
+\Kres{} classes & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 \\
+\Kmid{} classes & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 \\
+\Kcoarse{} classes & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table*}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccc}
+\toprule
+ & \multicolumn{2}{c}{Pythia} & \multicolumn{1}{c}{Herwig} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-4}
+ & $R_{50}$ & $R_{30}$ & accuracy \\
+\midrule
+PFN-Ex~\cite{efn} & 34.7\,$\pm$\,0.4 & -- & -- \\
+ParticleNet~\cite{particlenet} & 39.8\,$\pm$\,0.2 & 98.6\,$\pm$\,1.3 & -- \\
+ParT~\cite{part} & 41.3\,$\pm$\,0.3 & 101.2\,$\pm$\,1.1 & -- \\
+ParticleNet-f.t.~\cite{part} & 40.1\,$\pm$\,0.2 & 100.3\,$\pm$\,1.0 & -- \\
+ParT-f.t.~\cite{part} & 42.4\,$\pm$\,0.2 & 107.9\,$\pm$\,0.5 & -- \\
+OmniLearned-m~\cite{omnilearned} & \textbf{43.2\,$\pm$\,0.1} & \textbf{111.2\,$\pm$\,1.5} & -- \\
+\midrule
+\multicolumn{4}{l}{\textit{this work (Sophon's network)}} \\
+from scratch & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 & \textbf{0.7153\,$\pm$\,0.0024} \\
+\Kfull{} classes & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 & 0.712\,$\pm$\,0.005 \\
+\Kres{} classes & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 & 0.7100\,$\pm$\,0.0017 \\
+\Kmid{} classes & 42.2\,$\pm$\,0.8 & 108.3\,$\pm$\,1.0 & \textbf{0.713\,$\pm$\,0.006} \\
+\Kcoarse{} classes & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 & \textbf{0.7175\,$\pm$\,0.0033} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccc}
+\toprule
+ & \multicolumn{3}{c}{Herwig} \\
+\cmidrule(lr){2-4}
+ & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\multicolumn{4}{l}{\textit{this work (Sophon's network)}} \\
+from scratch & 0.8061\,$\pm$\,0.0007 & 12.18\,$\pm$\,0.11 & 35.5\,$\pm$\,1.2 \\
+\Kfull{} classes & 0.8078\,$\pm$\,0.0023 & 12.3\,$\pm$\,0.4 & \textbf{35.2\,$\pm$\,2.1} \\
+\Kres{} classes & 0.8074\,$\pm$\,0.0010 & 12.33\,$\pm$\,0.28 & 34.6\,$\pm$\,2.0 \\
+\Kmid{} classes & \textbf{0.809\,$\pm$\,0.005} & \textbf{12.5\,$\pm$\,0.6} & \textbf{36.1\,$\pm$\,2.7} \\
+\Kcoarse{} classes & \textbf{0.8103\,$\pm$\,0.0018} & \textbf{12.79\,$\pm$\,0.20} & \textbf{36.9\,$\pm$\,0.9} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{center}

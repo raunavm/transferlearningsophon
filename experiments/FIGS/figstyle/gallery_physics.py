@@ -701,7 +701,7 @@ F9A_CAPTION = (
     "models pretrained on 162 and 17 classes, each the mean of two runs, which nearly coincide. Both panels share "
     "their axes.")
 F9B_CAPTION = (
-    "Median mass response r = m/m_gen (a, b) and resolution sigma_r, half the 16-84% quantile range of r over its "
+    "Median mass response r = m/m_gen (a, b) and resolution sigma_r, half the 15.9-84.1% quantile range of r over its "
     "median (c, d), of JetClass-II test jets against transverse momentum (a, c; all jets) and generator mass (b, d; "
     "20-500 GeV): mass regression of the models pretrained on 162 and 17 classes (two runs). Lower panels: ratio to the "
     "soft-drop mass (black where in range) and signed root square difference (RSD), negative where better. Unlabelled "
@@ -720,7 +720,7 @@ F10A_MASS_CAPTION = (
     "The mass sculpting figure for the models pretrained on 162 and 17 classes with an auxiliary regression of the jet "
     "mass: soft-drop mass distribution of QCD test jets of JetClass-II before any selection and after selections on "
     "1 - g_QCD at QCD efficiencies eps_B of 10% and 1% (mean of two runs), with the ratio to the inclusive distribution "
-    "below.")
+    "below. The axis stops at 260 GeV.")
 F10B_CAPTION = (
     "Jensen-Shannon distance (base 2) between the soft-drop mass distributions of QCD test jets of JetClass-II before "
     "and after a selection on 1 - g_QCD, one minus the summed QCD score, against the QCD efficiency eps_B of the "

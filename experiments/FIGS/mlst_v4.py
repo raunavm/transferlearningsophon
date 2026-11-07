@@ -306,7 +306,7 @@ def _value_cell(vals: list, col: str, task: str, fmt_pm, two) -> str:
 
 
 def _num_sd(s):
-    """(value, SD) of a printed cell: 'm \\pm sd' -> (m, sd); 'a, b' (two runs) -> (larger, None)."""
+    """(value, SD) of a printed cell: 'm \\pm sd' -> (m, sd); 'a, b' (two runs) -> (their mean, None)."""
     import re
     t = str(s).replace("{,}", "").replace(r"\textbf{", "")
     m = re.match(r"\s*(?:\$\\geq\$)?(-?[\d.]+)\\,\$\\pm\$\\,(?:\$<\$)?([\d.]+)", t)
@@ -314,23 +314,25 @@ def _num_sd(s):
         return float(m.group(1)), float(m.group(2))
     two = re.match(r"\s*(-?[\d.]+), (-?[\d.]+)", t)
     if two:
-        return max(float(two.group(1)), float(two.group(2))), None
+        return (float(two.group(1)) + float(two.group(2))) / 2, None
     return _num(t), None
 
 
 def _bold_best(rows: list, ncol: int) -> list:
     """Bold the best value of each column (higher is better for every benchmark metric) and every value
-    within one standard deviation of it (C1.14)."""
+    within one standard deviation of it, the larger of its own and the best one's (C1.14); a
+    configuration with two runs competes with their mean (PI review of the results book, 2026-11-07)."""
     best = []
     for j in range(ncol):
-        vals = [_num_sd(r[1][j])[0] for r in rows]
-        best.append(max((x for x in vals if x is not None), default=None))
+        vals = [_num_sd(r[1][j]) for r in rows]
+        best.append(max((x for x in vals if x[0] is not None), default=(None, None), key=lambda x: x[0]))
     out = []
     for name, cells in rows:
         new = []
         for j, c in enumerate(cells):
             v, sd = _num_sd(c)
-            hit = best[j] is not None and v is not None and (v == best[j] or (sd is not None and v + sd >= best[j]))
+            b, bsd = best[j]
+            hit = b is not None and v is not None and (v == b or v + max(sd or 0.0, bsd or 0.0) >= b)
             new.append(rf"\textbf{{{c}}}" if hit and c != "--" else c)
         out.append((name, new))
     return out
@@ -351,11 +353,11 @@ def _lit_cell(x) -> str:
 
 
 def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scratch: str, fmt_pm, two,
-                kin: tuple | None = None, herwig: bool = False, zero: str | None = None) -> str:
+                kin: tuple | None = None, herwig: bool = False) -> str:
     """T3 (task 'top') and T4 ('qg', ParT's exp inputs; herwig=True adds the Herwig columns): the
     published rows of LIT_ROWS, then ours on the full training set: from scratch, the label sets of
-    rows fine-tuned, and (kin = (row label, init)) the kinematic-only model. Columns: inputs set to
-    zero, accuracy, AUC, R50, R30; bold as _bold_best."""
+    rows fine-tuned, and (kin = (row label, init)) the kinematic-only model. Columns: accuracy, AUC,
+    R50, R30 (the caption says which inputs are set to zero); bold as _bold_best."""
     lit_all = {r["method"]: r for r in json.loads(LIT.read_text())["top" if task == "top" else "qg_exp"]}
     tasks = [task] + (["qg_herwig"] if herwig else [])
     nc = len(BENCH_COLS) * len(tasks)
@@ -388,19 +390,15 @@ def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scra
         kin_row = (kin[0], [_value_cell([recs[0][c]], c, task, fmt_pm, two) if recs else r"\pending{run}"
                             for _, c, _ in BENCH_COLS] + ["--"] * len(BENCH_COLS) * (len(tasks) - 1))
     allrows = _bold_best(lit_rows + ours + ([kin_row] if kin_row else []), nc)
-    zcol = {len(lit_rows) + i: (zero or "--") for i in range(len(ours))}
-    if kin_row:
-        zcol[len(lit_rows) + len(ours)] = "none"
-    head = [r"\begin{tabular}{ll" + "c" * nc + "}", r"\toprule"]
+    head = [r"\begin{tabular}{l" + "c" * nc + "}", r"\toprule"]
     if herwig:
-        head += [r" & & \multicolumn{4}{c}{Pythia} & \multicolumn{4}{c}{Herwig} \\",
-                 r"\cmidrule(lr){3-6}\cmidrule(lr){7-10}"]
-    head += [r" & inputs set to zero & " + " & ".join(["accuracy & AUC & $R_{50}$ & $R_{30}$"] * len(tasks)) + r" \\",
+        head += [r" & \multicolumn{4}{c}{Pythia} & \multicolumn{4}{c}{Herwig} \\",
+                 r"\cmidrule(lr){2-5}\cmidrule(lr){6-9}"]
+    head += [r" & " + " & ".join(["accuracy & AUC & $R_{50}$ & $R_{30}$"] * len(tasks)) + r" \\",
              r"\midrule"]
-    lines = head + [f"{n} & -- & " + " & ".join(c) + r" \\" for n, c in allrows[:len(lit_rows)]]
-    lines += [r"\midrule", r"\multicolumn{" + str(2 + nc) + r"}{l}{\textit{this work (Sophon's network)}} \\"]
-    lines += [f"{n} & {zcol[len(lit_rows) + i]} & " + " & ".join(c) + r" \\"
-              for i, (n, c) in enumerate(allrows[len(lit_rows):])]
+    lines = head + [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[:len(lit_rows)]]
+    lines += [r"\midrule", r"\multicolumn{" + str(1 + nc) + r"}{l}{\textit{this work (Sophon's network)}} \\"]
+    lines += [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[len(lit_rows):]]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -481,7 +479,9 @@ def _jc1_cells(cells: dict, init: str, n: str, seeds) -> list:
 def _jc_cell(vals, place, fmt_pm, two):
     v = [x for x in vals if x is not None]
     if len(v) >= 3:
-        return fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
+        sd = float(np.std(v, ddof=1))
+        body = fmt_pm(float(np.mean(v)), sd)
+        return body + (r"\,$\pm$\,0" if sd == 0 and "pm" not in body else "")   # runs that agree exactly say so
     if len(v) == 2:
         return two(v[0], v[1], ", ")
     return f"{v[0]:,.{place}f}".replace(",", "{,}") if v else "--"
@@ -539,6 +539,10 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
     # C1.14: the best value of each column and every value within one SD of it in bold, the dagger
     # outside the bold
     bold = _bold_best([(p, c) for p, c, _ in lit + ours], ncol)
+    # a column with a dagger carries no claim (the caption), so nothing in it is bold
+    dag = {j for _, _, mk in lit + ours for j, m in enumerate(mk) if m}
+    bold = [(p, [c0 if j in dag else c for j, (c, c0) in enumerate(zip(cells, orig))])
+            for (p, cells), (_, orig, _) in zip(bold, lit + ours)]
     for i, ((prefix, cells), (_, _, marks)) in enumerate(zip(bold, lit + ours)):
         if literature and i == len(lit):
             lines += [r"\midrule", r"\multicolumn{" + str(2 + ncol)
@@ -556,7 +560,7 @@ def table_jetclass_nbkg(pre: dict, ref: dict, runs: dict, rows: tuple, label: di
              r"fine-tuned from & " + " & ".join(h for _, h in JC1_COLS) + r" \\", r"\midrule"]
 
     def row(name, blocks):
-        return name + " & " + " & ".join(str(min(b["per_class"][c]["rejection"]["n_bkg_pass"] for b in blocks))
+        return name + " & " + " & ".join(_sep_int(min(b["per_class"][c]["rejection"]["n_bkg_pass"] for b in blocks))
                                          for c, _ in JC1_COLS) + r" \\"
     seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
     blocks = _jc1_cells(ref, scratch, n, seeds)

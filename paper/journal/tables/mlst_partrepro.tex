@@ -4,15 +4,31 @@
 \caption{ParT's top-tagging training script on our cluster, then with Sophon's output head, then also with Sophon's rescaling of every jet's four-momenta to $p_{\mathrm{T}}=500$~GeV (cumulative, one run each), beside ParT's published row and our network trained from scratch, which uses the rescaling.}
 \label{tab:partrepro}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lccccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
 \toprule
- & accuracy & AUC & $R_{50}$ & $R_{30}$ & background jets passing at $R_{30}$ \\
+ & accuracy & AUC & $R_{50}$ \\
 \midrule
-ParT's script, unchanged & 0.9398 & 0.9858 & 424 & 1{,}711 & 118 \\
-\quad + Sophon's output head & 0.9403 & 0.9859 & 416 & 1{,}577 & 128 \\
-\quad + Sophon's jet-$p_{\mathrm{T}}$ rescaling & 0.9385 & 0.9850 & 357 & 1{,}224 & 165 \\
-ParT, published~\cite{part} & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1602\,$\pm$\,81 & -- \\
-\midrule our network from scratch & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}412\,$\pm$\,20 & -- \\
+ParT's script, unchanged & 0.9398 & 0.9858 & 424 \\
+\quad + Sophon's output head & 0.9403 & 0.9859 & 416 \\
+\quad + Sophon's jet-$p_{\mathrm{T}}$ rescaling & 0.9385 & 0.9850 & 357 \\
+ParT, published~\cite{part} & 0.940 & 0.9858 & 413\,$\pm$\,16 \\
+\midrule
+our network from scratch & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cc}
+\toprule
+ & $R_{30}$ & background jets passing at $R_{30}$ \\
+\midrule
+ParT's script, unchanged & 1{,}711 & 118 \\
+\quad + Sophon's output head & 1{,}577 & 128 \\
+\quad + Sophon's jet-$p_{\mathrm{T}}$ rescaling & 1{,}224 & 165 \\
+ParT, published~\cite{part} & 1{,}602\,$\pm$\,81 & -- \\
+\midrule
+our network from scratch & 1{,}412\,$\pm$\,20 & -- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

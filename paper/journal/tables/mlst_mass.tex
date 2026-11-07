@@ -1,14 +1,14 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Jet mass from frozen features: a multilayer perceptron regresses the mass from the frozen features of each configuration; the groomed (soft-drop) mass is the reference. Resolution: $\sigma_r$ of equation~(\ref{eq:resolution}), half the 15.9--84.1\% inter-quantile range of the response $r = m_{\mathrm{est}}/\mgen$ divided by its median; and the median response, over all JetClass-II test jets with a generator match (resonant and QCD jets separately in table~\ref{tab:massdetail}); lower resolution is better. The regression target is centred on the training median of each of the \Kfull{} classes, a truth-label input the groomed-mass row does not have. A multilayer perceptron is used because the mass is not linear in the features (ridge regression in table~\ref{tab:massdetail}). The randomly initialized network shows what a network that never trained exposes. The mass regression in pretraining has the weight $\lambda = \MlstMassLambda{}$ at both label sets, a share of the training loss of \MlstMassLossShareResMass\% (\Kres{} classes) and \MlstMassLossShareCoarseMass\% (\Kcoarse{} classes). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given.}
+\caption{Jet mass from frozen features: a multilayer perceptron regresses the mass from the frozen features of each configuration; the soft-drop mass is the reference. Resolution: $\sigma_r$ of equation~(\ref{eq:resolution}), half the 15.9--84.1\% inter-quantile range of the response $r = m/m_{\mathrm{gen}}$, a jet's mass over its generator-level mass, divided by its median; and the median response, over all JetClass-II test jets with a generator match (resonant and QCD jets separately in table~\ref{tab:massdetail}); lower resolution is better. The regression target is centred on the training median of each of the \Kfull{} classes, a truth-label input the soft-drop-mass row does not have. A multilayer perceptron is used because the mass is not linear in the features (ridge regression in table~\ref{tab:massdetail}). The randomly initialized network shows what a network that never trained exposes. The mass regression in pretraining has the weight $\lambda = \MlstMassLambda{}$ at both label sets, a share of the training loss of \MlstMassLossShareResMass\% (\Kres{} classes) and \MlstMassLossShareCoarseMass\% (\Kcoarse{} classes). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given.}
 \label{tab:mass}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcc}
 \toprule
  & resolution & median response \\
 \midrule
-groomed mass & 0.245 & 0.929 \\
+soft-drop mass & 0.245 & 0.929 \\
 \midrule \multicolumn{3}{l}{MLP regression on frozen features} \\
 randomly initialized network & 0.2421\,$\pm$\,0.0018 & 0.983\,$\pm$\,0.005 \\
 \Kfull{} classes & 0.2200\,$\pm$\,0.0014 & 0.991\,$\pm$\,0.005 \\

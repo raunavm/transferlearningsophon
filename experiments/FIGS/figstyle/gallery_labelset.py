@@ -565,10 +565,10 @@ PAGES = [
         precedent_label="Hong Fig. 2",
         caption="Linear probes on the frozen features against the number of pretraining classes: accuracy on "
                 "class-balanced JetClass-II and on JetClass, and background rejection R30 at 30% signal efficiency on top "
-                "and quark/gluon (Pythia) tagging, log axis. Markers are means over runs and the grey line (hierarchy) joins the "
-                "four label sets. "
-                "The 17-class random partitions, three with controlled flavor boundaries and five plain, are drawn just "
-                "left of 17. The dashed line is the network trained from scratch.",
+                "and quark/gluon (Pythia) tagging; log x axes, log y in (c, d). Markers are means over runs; the grey "
+                "line (hierarchy) joins the four label sets. The 17-class random partitions, three with controlled "
+                "flavor boundaries and five plain, are drawn left of 17. The dashed line is training from "
+                "scratch.",
         differs="Four panels against Hong's one, for the four tasks; Hong has no controls. Round 4: 6.5 cm panels in a "
                 "2x2, a figure legend above them that names every colour, filled markers (probes only in the figure) and a grey line "
                 "for the hierarchy, controls offset left of 17 with their own shapes, and each y range holding the "
@@ -581,10 +581,10 @@ PAGES = [
         precedent=HONG,
         precedent_label="Hong Fig. 2",
         caption="Fine-tuned models against the number of pretraining classes: accuracy on class-balanced JetClass-II "
-                "and on JetClass, and background rejection R30 at 30% signal efficiency on top and quark/gluon tagging. "
-                "Log axes on (c, d). Markers are means over runs and the grey line (hierarchy) joins the four label sets. The three 17-class "
-                "partitions with controlled flavor boundaries are drawn just left of 17. The dashed line is the network "
-                "trained from scratch.",
+                "and on JetClass, and background rejection R30 at 30% signal efficiency on top and quark/gluon (Pythia) "
+                "tagging; log x axes, log y in (c, d). Markers are means over runs; the grey line (hierarchy) joins the "
+                "four label sets. The three 17-class partitions with controlled flavor boundaries are drawn left of 17. "
+                "The dashed line is the network trained from scratch.",
         differs="As F2a. Hong's own figure is fine-tuned too, so this page is the closer "
                 "copy.",
         draw=draw_f2b,

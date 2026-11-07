@@ -7,6 +7,7 @@ import importlib.util
 import json
 import pathlib
 import math
+import re
 import shutil
 import statistics
 
@@ -534,7 +535,7 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
              "mtx-l162mass-s1": _atlas(mlp=0.15, reg=0.116), "mtx-l162mass-s2": _atlas(mlp=0.15, reg=0.118)}
     t = M.table_mass(atlas, runs, MT.fmt_pm)
     # T5: the overall resolution and median response (FIGURE_PLAN T5), not the groups
-    assert "groomed mass & 0.200 & 1.05 \\\\" in t and "sigma" not in t and "0.300" not in t
+    assert "soft-drop mass & 0.200 & 1.05 \\\\" in t and "sigma" not in t and "0.300" not in t
     assert M.LABEL["L162_MASS"] + " & 0.150, 0.150 & 1.00, 1.00" in t
     em = _PEm()
     M.mass_macros(em, atlas, runs, None, MT.fmt_pm)
@@ -546,7 +547,7 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
     assert em.m["MlstMassUncorrectedQcd"] == "0.300" and em.m["MlstMassHeadResMassResponse"] == "0.995 and 0.995"
     assert em.m["MlstMassHeadResMassOverUncorrResonant"] == "0.3867 and 0.3933"      # 0.116 / 0.3, 0.118 / 0.3
     d = M.table_mass_detail(atlas, runs, MT.fmt_pm)
-    assert "200--400 & 400--2500" in d and "groomed mass & all & " in d and "groomed mass & QCD & " in d
+    assert "200--400 & 400--2500" in d and "soft-drop mass & all & " in d and "soft-drop mass & QCD & " in d
     assert "estimator & pretraining & all & resonant & QCD & all & resonant & QCD" in d
     atlas["mtx-l162-s1"] = _atlas(groomed=0.3, mlp=0.2)
     with pytest.raises(SystemExit, match="groomed"):
@@ -687,11 +688,11 @@ def test_the_benchmark_tables_show_the_planned_rows_and_bold_within_one_sd():
     runs = M._paper(ROOT)
     per = {"top": _bench_per(runs), "qg": _bench_per(runs), "qg_herwig": _bench_per(runs)}
     t = M.V4.table_bench("top", per, runs, M.MAIN, M.LABEL, M.SCRATCH, MT.fmt_pm, M._two,
-                         kin=("kin (diagnostic)", M.KIN_INIT), zero=r"\FillTopNZero{}")
+                         kin=("kin (diagnostic)", M.KIN_INIT))
     assert "LorentzNet" not in t and "OmniLearned-s" not in t and r"ParT-f.t.~\cite{part}" in t
     assert r"\textbf{3{,}486\,$\pm$\,157}" in t and r"1{,}615\,$\pm$\,93" in t
-    assert r"kin (diagnostic) & none & " in t and r"from scratch & \FillTopNZero{} & " in t
-    assert M.LABEL["R16_Q1"] + r" & \FillTopNZero{} & --" in t        # no run read out: dashes
+    assert r"kin (diagnostic) & " in t and "inputs set to zero" not in t and r"from scratch & 0." in t
+    assert M.LABEL["R16_Q1"] + r" & --" in t        # no run read out: dashes
     q = M.V4.table_bench("qg", per, runs, M.MAIN, M.LABEL, M.SCRATCH, MT.fmt_pm, M._two, herwig=True)
     assert r"\multicolumn{4}{c}{Herwig}" in q and "PFN-Ex" in q and q.count(r"\cite{") == 6
 
@@ -1340,3 +1341,25 @@ def test_the_task_longtables_keep_each_heading_with_its_first_row(tmp_path):
         assert lines[i + 2] == M._head_rule(ncol) and r"\multispan{" + str(ncol) + "}" in lines[i + 2]
     assert r"\noalign{\nobreak\vskip\belowrulesep\nobreak}" in M._head_rule(3) and r"\midrule" not in M._head_rule(3)
     assert M._longtable("ft", t).count(r"\caption{") == 1 and "__CAPTION__" not in M._longtable("ft", t)
+
+
+def test_a_table_wider_than_the_text_is_split_into_stacked_blocks_that_keep_the_row_labels():
+    cols = 12
+    tab = "\n".join([r"\begin{tabular}{l" + "c" * cols + "}", r"\toprule",
+                     r" & \multicolumn{" + str(cols) + r"}{c}{rejection of QCD} \\", r"\cmidrule(lr){2-" + str(cols + 1) + "}",
+                     "model & " + " & ".join(f"class {i}" for i in range(cols)) + r" \\", r"\midrule",
+                     "ParT & " + " & ".join(["--"] * 6 + ["1{,}234"] * 6) + r" \\",
+                     r"\multicolumn{" + str(cols + 1) + r"}{l}{\textit{this work}} \\",
+                     "188 classes & " + " & ".join([r"6{,}600\,$\pm$\,330"] * cols) + r" \\", r"\bottomrule", r"\end{tabular}"])
+    blocks = M.split_wide(tab)
+    assert len(blocks) > 1
+    seen = []
+    for b in blocks:
+        assert "188 classes & " in b and r"\textit{this work}" in b and "rejection of QCD" in b
+        n = len(re.search(r"\\begin\{tabular\}\{l(c+)\}", b).group(1))
+        assert rf"\multicolumn{{{n + 1}}}{{l}}{{\textit{{this work}}}}" in b and rf"\cmidrule(lr){{2-{n + 1}}}" in b
+        seen += re.findall(r"class (\d+)", b)
+    assert seen == [str(i) for i in range(cols)]                  # every column once, in order
+    assert "ParT" not in blocks[0] and "ParT" in blocks[-1]       # only dashes there: the row is left out
+    small = r"\begin{tabular}{lc}" + "\n" + r"a & b \\" + "\n" + r"\end{tabular}"
+    assert M.split_wide(small) == [small]

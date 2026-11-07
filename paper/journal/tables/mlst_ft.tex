@@ -1,7 +1,7 @@
 {\scriptsize
 \setlength{\tabcolsep}{3pt}
 \begin{longtable}{>{\raggedright\arraybackslash}p{4cm}cccc}
-\caption{Fine-tuning against the number of training jets (column headers), in each task's metric: AUC averaged over the classes on class-balanced JetClass-II (all classes and the QCD classes), accuracy on JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. Each pretrained run is fine-tuned once; from scratch: \MlstFtRefSeedsWord{} training seeds, on the same jets for top and quark/gluon and for JetClass below $10^{6}$ jets, and on $10^{6}$ JetClass jets each on its own training subset. The last column of the JetClass-II block is $\rho$ of equation~(\ref{eq:ratio}) at $10^{6}$ training jets, $1-\mathrm{AUC}$ over that of the \Kfull-class run of the same seed. The \Kfull-class model with kinematic inputs only, a diagnostic of the missing inputs, has one run and no input missing, and is evaluated on top tagging only.}\label{tab:ft}\\
+\caption{Fine-tuning against the number of training jets (column headers), in each task's metric: AUC averaged over the classes on class-balanced JetClass-II (all classes and the QCD classes), accuracy on JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values, and a random partition has a single run. Each pretrained run is fine-tuned once; from scratch: \MlstFtRefSeedsWord{} training seeds, on the same jets for top and quark/gluon and for JetClass below $10^{6}$ jets, and on $10^{6}$ JetClass jets each on its own training subset. The last column of the JetClass-II block is $\rho$ of equation~(\ref{eq:ratio}) at $10^{6}$ training jets, $1-\mathrm{AUC}$ over that of the \Kfull-class run of the same seed. A dash: not run at that size (the random partitions are fine-tuned on JetClass-II at $10^{6}$ jets only). The \Kfull-class model with kinematic inputs only, a diagnostic of the missing inputs, has one run and no input missing, and is evaluated on top tagging only.}\label{tab:ft}\\
 \toprule
 \endfirsthead
 \multicolumn{5}{l}{\textit{continued}} \\
@@ -12,20 +12,20 @@
 \multicolumn{5}{l}{JetClass-II, AUC} \\*
 training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 & $\rho$, $10^{6}$ jets \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
-\Kfull{} classes & 0.9722\,$\pm$\,0.0002 & 0.9778\,$\pm$\,0.0002 & 0.9797\,$\pm$\,0.0001 & 1 \\
+\Kfull{} classes & 0.9722\,$\pm$\,0.0002 & 0.9778\,$\pm$\,0.0002 & 0.9797\,$\pm$\,0.0001 & 1.00 \\
 \Kres{} classes & 0.9725\,$\pm$\,0.0001 & 0.9775\,$\pm$\,0.0001 & 0.9794\,$\pm$\,0.0002 & 1.014\,$\pm$\,0.011 \\
 \Kmid{} classes & 0.9669\,$\pm$\,0.0006 & 0.9763\,$\pm$\,0.0001 & 0.9788\,$\pm$\,0.0001 & 1.043\,$\pm$\,0.002 \\
 \Kcoarse{} classes & 0.9623\,$\pm$\,0.0003 & 0.9743\,$\pm$\,0.0002 & 0.9772\,$\pm$\,0.0001 & 1.123\,$\pm$\,0.003 \\
 \Kres{} classes, mass regression & 0.9721, 0.9724 & 0.9769, 0.9771 & 0.9790, 0.9792 & 1.036, 1.024 \\
 \Kcoarse{} classes, mass regression & 0.9625, 0.9627 & 0.9737, 0.9737 & 0.9766, 0.9769 & 1.152, 1.139 \\
-random partition 1, seed 1 & \pending{no run yet} & \pending{no run yet} & 0.978 & 1.07 \\
-random partition 2, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.978 & 1.07 \\
-random partition 3, seed 1 & \pending{no run yet} & \pending{no run yet} & 0.979 & 1.06 \\
-random partition 4, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.979 & 1.05 \\
-random partition 5, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.978 & 1.07 \\
-random partition, no flavor boundary & \pending{no run yet} & \pending{no run yet} & 0.9776, 0.9775 & 1.105, 1.108 \\
-random partition, $b$-quark boundary & \pending{no run yet} & \pending{no run yet} & 0.9778, 0.9782 & 1.094, 1.072 \\
-random partition, random flavor boundary & \pending{no run yet} & \pending{no run yet} & 0.9779, 0.9781 & 1.089, 1.076 \\
+random partition 1, seed 1 & -- & -- & 0.9783 & 1.07 \\
+random partition 2, seed 2 & -- & -- & 0.9783 & 1.07 \\
+random partition 3, seed 1 & -- & -- & 0.9786 & 1.06 \\
+random partition 4, seed 2 & -- & -- & 0.9786 & 1.05 \\
+random partition 5, seed 2 & -- & -- & 0.9783 & 1.07 \\
+random partition, no flavor boundary & -- & -- & 0.9776, 0.9775 & 1.105, 1.108 \\
+random partition, $b$-quark boundary & -- & -- & 0.9778, 0.9782 & 1.094, 1.072 \\
+random partition, random flavor boundary & -- & -- & 0.9779, 0.9781 & 1.089, 1.076 \\
 from scratch & 0.9196\,$\pm$\,0.0005 & 0.9611\,$\pm$\,0.0011 & 0.9732\,$\pm$\,0.0004 & -- \\
 \midrule[\heavyrulewidth]
 \multicolumn{5}{l}{JetClass-II, QCD classes, AUC over the QCD classes} \\*
@@ -37,14 +37,14 @@ training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\*
 \Kcoarse{} classes & 0.9368\,$\pm$\,0.0014 & 0.9543\,$\pm$\,0.0003 & 0.9586\,$\pm$\,0.0001 \\
 \Kres{} classes, mass regression & 0.9463, 0.9481 & 0.9566, 0.9571 & 0.9610, 0.9612 \\
 \Kcoarse{} classes, mass regression & 0.9335, 0.9349 & 0.9533, 0.9531 & 0.9580, 0.9581 \\
-random partition 1, seed 1 & \pending{no run yet} & \pending{no run yet} & 0.960 \\
-random partition 2, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.960 \\
-random partition 3, seed 1 & \pending{no run yet} & \pending{no run yet} & 0.961 \\
-random partition 4, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.961 \\
-random partition 5, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.960 \\
-random partition, no flavor boundary & \pending{no run yet} & \pending{no run yet} & 0.9592, 0.9589 \\
-random partition, $b$-quark boundary & \pending{no run yet} & \pending{no run yet} & 0.9593, 0.9607 \\
-random partition, random flavor boundary & \pending{no run yet} & \pending{no run yet} & 0.9595, 0.9603 \\
+random partition 1, seed 1 & -- & -- & 0.9598 \\
+random partition 2, seed 2 & -- & -- & 0.9598 \\
+random partition 3, seed 1 & -- & -- & 0.9609 \\
+random partition 4, seed 2 & -- & -- & 0.9608 \\
+random partition 5, seed 2 & -- & -- & 0.9602 \\
+random partition, no flavor boundary & -- & -- & 0.9592, 0.9589 \\
+random partition, $b$-quark boundary & -- & -- & 0.9593, 0.9607 \\
+random partition, random flavor boundary & -- & -- & 0.9595, 0.9603 \\
 from scratch & 0.8873\,$\pm$\,0.0010 & 0.9354\,$\pm$\,0.0019 & 0.9530\,$\pm$\,0.0006 \\
 \midrule[\heavyrulewidth]
 \multicolumn{5}{l}{JetClass, accuracy} \\*
@@ -56,11 +56,11 @@ training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\*
 \Kcoarse{} classes & 0.7982\,$\pm$\,0.0023 & 0.8288\,$\pm$\,0.0005 & 0.8422\,$\pm$\,0.0005 \\
 \Kres{} classes, mass regression & 0.8107, 0.8098 & 0.8326, 0.8348 & 0.8459, 0.8471 \\
 \Kcoarse{} classes, mass regression & 0.7944, 0.7990 & 0.8253, 0.8262 & 0.8400, 0.8398 \\
-random partition 1, seed 1 & 0.801 & 0.830 & 0.843 \\
-random partition 2, seed 2 & 0.806 & 0.831 & 0.844 \\
-random partition 3, seed 1 & 0.799 & 0.831 & 0.845 \\
-random partition 4, seed 2 & 0.802 & 0.829 & 0.845 \\
-random partition 5, seed 2 & 0.800 & 0.831 & 0.845 \\
+random partition 1, seed 1 & 0.8015 & 0.8304 & 0.8435 \\
+random partition 2, seed 2 & 0.8055 & 0.8311 & 0.8436 \\
+random partition 3, seed 1 & 0.7991 & 0.8309 & 0.8448 \\
+random partition 4, seed 2 & 0.8016 & 0.8291 & 0.8449 \\
+random partition 5, seed 2 & 0.8004 & 0.8313 & 0.8448 \\
 random partition, no flavor boundary & 0.8000, 0.7993 & 0.8283, 0.8294 & 0.8434, 0.8431 \\
 random partition, $b$-quark boundary & 0.8058, 0.8032 & 0.8317, 0.8301 & 0.8434, 0.8443 \\
 random partition, random flavor boundary & 0.8021, 0.8015 & 0.8300, 0.8319 & 0.8432, 0.8436 \\
@@ -84,9 +84,9 @@ random partition, no flavor boundary & 107, 167 & 401, 380 & 841, 777 & 1{,}726,
 random partition, $b$-quark boundary & 116, 100 & 454, 316 & 878, 926 & 1{,}590, 2{,}060 \\
 random partition, random flavor boundary & 56, 85 & 388, 347 & 783, 756 & 1{,}565, 1{,}655 \\
 from scratch & 51\,$\pm$\,5 & 320\,$\pm$\,50 & 610\,$\pm$\,80 & 1{,}412\,$\pm$\,20 \\
-\Kfull{} classes, kinematic inputs only (diagnostic) & 92.4 & 397 & 1{,}070 & 1{,}800 \\
+\Kfull{} classes, kinematic inputs only & 92.4 & 397 & 1{,}070 & 1{,}800 \\
 \midrule[\heavyrulewidth]
-\multicolumn{5}{l}{q/g, $R_{30}$} \\*
+\multicolumn{5}{l}{quark/gluon, $R_{30}$} \\*
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \Kfull{} classes & 47\,$\pm$\,10 & 75\,$\pm$\,7 & 99.3\,$\pm$\,1.4 & 107.3\,$\pm$\,2.2 \\
@@ -105,7 +105,7 @@ random partition, $b$-quark boundary & 56.4, 55.3 & 84.2, 81.8 & 100.0, 96.8 & 1
 random partition, random flavor boundary & 46.4, 51.9 & 68, 79 & 97.3, 98.7 & 108.2, 104.4 \\
 from scratch & 50.3\,$\pm$\,2.1 & 70.7\,$\pm$\,2.8 & 88.2\,$\pm$\,1.1 & 104.0\,$\pm$\,1.0 \\
 \midrule[\heavyrulewidth]
-\multicolumn{5}{l}{q/g, Herwig, $R_{30}$} \\*
+\multicolumn{5}{l}{quark/gluon, Herwig, $R_{30}$} \\*
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \Kfull{} classes & 21\,$\pm$\,6 & 27.9\,$\pm$\,2.8 & 34.3\,$\pm$\,1.0 & 35.2\,$\pm$\,2.1 \\

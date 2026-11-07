@@ -1,20 +1,36 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{The random partitions on JetClass: which prong-count boundaries each keeps ($\bullet$: no group holds classes of both prong counts), the groups that mix prong counts, and its fine-tuned rejection of QCD per signal class over that of the \Kfull-class run of its seed. $^\dagger$: fewer than $\nmin$ QCD jets pass in one of the two runs (equation~(\ref{eq:cut})).}
+\caption{The random partitions on JetClass: none keeps a boundary between two, three and four prongs (every one has a group holding classes of each two of these prong counts); the groups that mix prong counts, and its fine-tuned rejection of QCD per signal class over that of the \Kfull-class run of its seed. $^\dagger$: fewer than $\nmin$ QCD jets pass in one of the two runs (equation~(\ref{eq:cut})).}
 \label{tab:randprong}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lccccccccccccc}
+\begin{tabular}{lccccc}
 \toprule
- & \multicolumn{3}{c}{prong-count boundary kept} & & \multicolumn{9}{c}{fine-tuned rejection over the \Kfull-class model} \\
-\cmidrule(lr){2-4}\cmidrule(lr){6-14}
-partition & 2/3 & 2/4 & 3/4 & mixed groups & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+ &  & \multicolumn{4}{c}{rejection over \Kfull{} classes} \\
+\cmidrule(lr){3-6}
+partition & mixed groups & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
 \midrule
-random partition 1, seed 1 & --- & --- & --- & 12 & 0.842 & 1.04 & 0.984 & 0.862 & 1.12 & 0.652$^\dagger$ & 1.13 & 0.991 & 0.929 \\
-random partition 2, seed 2 & --- & --- & --- & 12 & 0.853 & 1.10 & 0.944 & 0.935 & 0.958 & 0.875$^\dagger$ & 0.606 & 1.03 & 0.929 \\
-random partition 3, seed 1 & --- & --- & --- & 13 & 0.889 & 1.09 & 0.966 & 0.928 & 0.935 & 1.00$^\dagger$ & 1.18 & 0.934 & 0.939 \\
-random partition 4, seed 2 & --- & --- & --- & 12 & 0.906 & 0.940 & 0.966 & 0.959 & 0.908 & 0.636$^\dagger$ & 0.667 & 1.11 & 0.971 \\
-random partition 5, seed 2 & --- & --- & --- & 11 & 1.12 & 0.963 & 0.981 & 0.944 & 0.793 & 0.778$^\dagger$ & 0.800 & 1.03 & 0.991 \\
+random partition 1, seed 1 & 12 & 0.842 & 1.04 & 0.984 & 0.862 \\
+random partition 2, seed 2 & 12 & 0.853 & 1.10 & 0.944 & 0.935 \\
+random partition 3, seed 1 & 13 & 0.889 & 1.09 & 0.966 & 0.928 \\
+random partition 4, seed 2 & 12 & 0.906 & 0.940 & 0.966 & 0.959 \\
+random partition 5, seed 2 & 11 & 1.12 & 0.963 & 0.981 & 0.944 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{5}{c}{rejection over \Kfull{} classes} \\
+\cmidrule(lr){2-6}
+partition & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+\midrule
+random partition 1, seed 1 & 1.12 & 0.652$^\dagger$ & 1.13 & 0.991 & 0.929 \\
+random partition 2, seed 2 & 0.958 & 0.875$^\dagger$ & 0.606 & 1.03 & 0.929 \\
+random partition 3, seed 1 & 0.935 & 1.00$^\dagger$ & 1.18 & 0.934 & 0.939 \\
+random partition 4, seed 2 & 0.908 & 0.636$^\dagger$ & 0.667 & 1.11 & 0.971 \\
+random partition 5, seed 2 & 0.793 & 0.778$^\dagger$ & 0.800 & 1.03 & 0.991 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

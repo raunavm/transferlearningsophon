@@ -1,15 +1,19 @@
 {\scriptsize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{lccccccccc}
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.4cm}ccccccccc}
 \caption{Every pretraining run's values at the largest training set: linear probe and fine-tuning. Linear probes on top and quark/gluon with the missing inputs substituted as chosen on validation (\LpSubstitutionTop{} for top, \LpSubstitutionQg{} for quark/gluon); fine-tuning with them set to zero.}\label{tab:perrun}\\
 \toprule
 run & \multicolumn{4}{c}{linear probe} & \multicolumn{5}{c}{fine-tuning} \\
- & JetClass-II AUC & JetClass AUC & top $R_{30}$ & q/g $R_{30}$ & JetClass-II AUC & JetClass accuracy & top $R_{30}$ & q/g $R_{30}$ & Herwig $R_{30}$ \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-10}
+ & JetClass-II & JetClass & top & q/g & JetClass-II & JetClass & top & q/g & Herwig \\
+ & AUC & AUC & $R_{30}$ & $R_{30}$ & AUC & accuracy & $R_{30}$ & $R_{30}$ & $R_{30}$ \\
 \midrule
 \endfirsthead
 \toprule
 run & \multicolumn{4}{c}{linear probe} & \multicolumn{5}{c}{fine-tuning} \\
- & JetClass-II AUC & JetClass AUC & top $R_{30}$ & q/g $R_{30}$ & JetClass-II AUC & JetClass accuracy & top $R_{30}$ & q/g $R_{30}$ & Herwig $R_{30}$ \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-10}
+ & JetClass-II & JetClass & top & q/g & JetClass-II & JetClass & top & q/g & Herwig \\
+ & AUC & AUC & $R_{30}$ & $R_{30}$ & AUC & accuracy & $R_{30}$ & $R_{30}$ & $R_{30}$ \\
 \midrule
 \endhead
 \bottomrule

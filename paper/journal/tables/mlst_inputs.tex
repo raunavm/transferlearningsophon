@@ -1,31 +1,71 @@
-\begin{table*}[t]
-\centering
+\begin{center}
 \small
-\caption{The per-particle inputs: which the top and the quark/gluon data provide ($\bullet$), where a zero lies after the network's input normalization (in standard deviations of the training particles), and what the mean and random-draw substitutions put in a missing slot. A random draw is averaged over four draws.}
+\begin{minipage}{\linewidth}
+\captionof{table}{The per-particle inputs: which the top and the quark/gluon data provide ($\bullet$), where a zero lies after the network's input normalization (in standard deviations of the training particles), and what the mean and random-draw substitutions put in a missing slot. A random draw is averaged over four draws.}
 \label{tab:inputs}
+\end{minipage}
+\par\nopagebreak
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lccccc}
+\begin{tabular}{lccc}
 \toprule
-input & top & quark/gluon & zero after normalization & mean & random draws \\
+input & top & quark/gluon & zero after normalization \\
 \midrule
-$\log p_{\mathrm{T}}$, rescaled & $\bullet$ & $\bullet$ & -- & -- & -- \\
-$\log E$, rescaled & $\bullet$ & $\bullet$ & -- & -- & -- \\
-$\log(p_{\mathrm{T}}/p_{\mathrm{T}}^{\mathrm{jet}})$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
-$\log(E/E^{\mathrm{jet}})$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
-$\Delta R$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
-electric charge & --- & $\bullet$ & $0.00$ & running mean of the input normalization & drawn given the species (top) \\
-charged hadron & --- & $\bullet$ & $-0.96$ & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
-neutral hadron & --- & $\bullet$ & $-0.35$ & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
-photon & --- & $\bullet$ & $-0.81$ & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
-electron & --- & $\bullet$ & $-0.10$ & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
-muon & --- & $\bullet$ & $-0.08$ & running mean of the input normalization & a species drawn from JetClass-II's frequencies (top) \\
-$d_0$ & --- & --- & $0.00$ & running mean of the input normalization & a JetClass-II particle of the same species \\
-$\sigma_{d_0}$ & --- & --- & $-0.50$ & running mean of the input normalization & a JetClass-II particle of the same species \\
-$d_z$ & --- & --- & $0.00$ & running mean of the input normalization & a JetClass-II particle of the same species \\
-$\sigma_{d_z}$ & --- & --- & $-0.44$ & running mean of the input normalization & a JetClass-II particle of the same species \\
-$\Delta\eta$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
-$\Delta\phi$ & $\bullet$ & $\bullet$ & -- & -- & -- \\
+$\log p_{\mathrm{T}}$, rescaled & $\bullet$ & $\bullet$ & -- \\
+$\log E$, rescaled & $\bullet$ & $\bullet$ & -- \\
+$\log(p_{\mathrm{T}}/p_{\mathrm{T}}^{\mathrm{jet}})$ & $\bullet$ & $\bullet$ & -- \\
+$\log(E/E^{\mathrm{jet}})$ & $\bullet$ & $\bullet$ & -- \\
+$\Delta R$ & $\bullet$ & $\bullet$ & -- \\
+electric charge & --- & $\bullet$ & $0.00$ \\
+charged hadron & --- & $\bullet$ & $-0.96$ \\
+neutral hadron & --- & $\bullet$ & $-0.35$ \\
+photon & --- & $\bullet$ & $-0.81$ \\
+electron & --- & $\bullet$ & $-0.10$ \\
+muon & --- & $\bullet$ & $-0.08$ \\
+$d_0$ & --- & --- & $0.00$ \\
+$\sigma_{d_0}$ & --- & --- & $-0.50$ \\
+$d_z$ & --- & --- & $0.00$ \\
+$\sigma_{d_z}$ & --- & --- & $-0.44$ \\
+$\Delta\eta$ & $\bullet$ & $\bullet$ & -- \\
+$\Delta\phi$ & $\bullet$ & $\bullet$ & -- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table*}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lc}
+\toprule
+input & mean \\
+\midrule
+electric charge & running mean of the input normalization \\
+charged hadron & running mean of the input normalization \\
+neutral hadron & running mean of the input normalization \\
+photon & running mean of the input normalization \\
+electron & running mean of the input normalization \\
+muon & running mean of the input normalization \\
+$d_0$ & running mean of the input normalization \\
+$\sigma_{d_0}$ & running mean of the input normalization \\
+$d_z$ & running mean of the input normalization \\
+$\sigma_{d_z}$ & running mean of the input normalization \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lc}
+\toprule
+input & random draws \\
+\midrule
+electric charge & drawn given the species (top) \\
+charged hadron & a species drawn from JetClass-II's frequencies (top) \\
+neutral hadron & a species drawn from JetClass-II's frequencies (top) \\
+photon & a species drawn from JetClass-II's frequencies (top) \\
+electron & a species drawn from JetClass-II's frequencies (top) \\
+muon & a species drawn from JetClass-II's frequencies (top) \\
+$d_0$ & a JetClass-II particle of the same species \\
+$\sigma_{d_0}$ & a JetClass-II particle of the same species \\
+$d_z$ & a JetClass-II particle of the same species \\
+$\sigma_{d_z}$ & a JetClass-II particle of the same species \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{center}

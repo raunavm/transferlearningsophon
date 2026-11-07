@@ -1,27 +1,27 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Top tagging, fine-tuned on the full training set (\LitPartTopNTrainMillion{} million jets): accuracy, AUC and background rejection $1/\epsB$ at 50\% and 30\% signal efficiency. Published rows from the tables cited; f.t.\ marks a model pretrained on JetClass and fine-tuned. Our pretrained models see the \FillTopNZero{} inputs the top data lack set to zero; the model with kinematic inputs only, a diagnostic of that mismatch, has none missing (one run). Uncertainties: ours, the standard deviation over the pretraining runs, one fine-tuning each, and over three seeds from scratch; ParT, the spread over \LitPartFtHeadReinits{} fine-tunings of one pretrained model with different output-layer initializations, quoted for the run of median accuracy; L-GATr and OmniLearned, the standard deviation of five trainings. Bold: the best value of each column, and every value within one standard deviation of it.}
+\caption{Top tagging, fine-tuned on the full training set (\LitPartTopNTrainMillion{} million jets): accuracy, AUC and background rejection $1/\epsB$ at 50\% and 30\% signal efficiency. Published rows from the tables cited; f.t.\ marks a model pretrained on JetClass and fine-tuned. Our pretrained models see the \FillTopNZero{} inputs the top data lack set to zero; the model with kinematic inputs only, a diagnostic of that mismatch, has none missing (one run). Uncertainties: ours, the standard deviation over the pretraining runs, one fine-tuning each, and over three seeds from scratch; ParT, the spread over \LitPartFtHeadReinits{} fine-tunings of one pretrained model with different output-layer initializations, quoted for the run of median accuracy; L-GATr and OmniLearned, the standard deviation of five trainings; the other published uncertainties as given there. Bold: the best value of each column, and every value within one standard deviation of it (the larger of the two; two runs count with their mean).}
 \label{tab:benchtop}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{llcccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}cccc}
 \toprule
- & inputs set to zero & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-ParticleNet~\cite{particlenet} & -- & 0.940 & 0.9858 & 397\,$\pm$\,7 & 1{,}615\,$\pm$\,93 \\
-ParT~\cite{part} & -- & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1{,}602\,$\pm$\,81 \\
-ParT-f.t.~\cite{part} & -- & 0.944 & 0.9877 & \textbf{691\,$\pm$\,15} & 2{,}766\,$\pm$\,130 \\
-MIParT-L-f.t.~\cite{mipart} & -- & 0.944 & 0.9878 & 640\,$\pm$\,10 & 2{,}789\,$\pm$\,133 \\
-L-GATr-f.t.~\cite{lgatr} & -- & \textbf{0.9446} & 0.9879 & 651\,$\pm$\,11 & 2{,}894\,$\pm$\,84 \\
-OmniLearned-l~\cite{omnilearned} & -- & 0.944 & \textbf{0.9880} & \textbf{688\,$\pm$\,9} & \textbf{3{,}486\,$\pm$\,157} \\
+ParticleNet~\cite{particlenet} & 0.940 & 0.9858 & 397\,$\pm$\,7 & 1{,}615\,$\pm$\,93 \\
+ParT~\cite{part} & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1{,}602\,$\pm$\,81 \\
+ParT-f.t.~\cite{part} & 0.944 & 0.9877 & \textbf{691\,$\pm$\,15} & 2{,}766\,$\pm$\,130 \\
+MIParT-L-f.t.~\cite{mipart} & 0.944 & 0.9878 & 640\,$\pm$\,10 & 2{,}789\,$\pm$\,133 \\
+L-GATr-f.t.~\cite{lgatr} & \textbf{0.9446} & 0.9879 & 651\,$\pm$\,11 & 2{,}894\,$\pm$\,84 \\
+OmniLearned-l~\cite{omnilearned} & 0.944 & \textbf{0.9880} & \textbf{688\,$\pm$\,9} & \textbf{3{,}486\,$\pm$\,157} \\
 \midrule
-\multicolumn{6}{l}{\textit{this work (Sophon's network)}} \\
-from scratch & \FillTopNZero{} & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}412\,$\pm$\,20 \\
-\Kfull{} classes & \FillTopNZero{} & 0.9400\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
-\Kres{} classes & \FillTopNZero{} & 0.9401\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
-\Kmid{} classes & \FillTopNZero{} & 0.9402\,$\pm$\,0.0004 & 0.9861\,$\pm$\,0.0001 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
-\Kcoarse{} classes & \FillTopNZero{} & 0.9398\,$\pm$\,0.0001 & 0.9859\,$\pm$\,0.0001 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
-\Kfull{} classes, kinematic inputs only (diagnostic) & none & 0.941 & 0.9862 & 443 & 1{,}803 \\
+\multicolumn{5}{l}{\textit{this work (Sophon's network)}} \\
+from scratch & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}412\,$\pm$\,20 \\
+\Kfull{} classes & 0.9400\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
+\Kres{} classes & 0.9401\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
+\Kmid{} classes & 0.9402\,$\pm$\,0.0004 & 0.9861\,$\pm$\,0.0001 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
+\Kcoarse{} classes & 0.9398\,$\pm$\,0.0001 & 0.9859\,$\pm$\,0.0001 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
+\Kfull{} classes, kinematic inputs only & 0.941 & 0.9862 & 443 & 1{,}803 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
