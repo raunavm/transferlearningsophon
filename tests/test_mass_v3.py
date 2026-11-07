@@ -188,8 +188,9 @@ def test_the_divergence_is_zero_for_one_shape_and_one_for_disjoint_ones():
 def test_a_score_that_follows_the_mass_sculpts_and_one_that_does_not_does_not():
     rng = np.random.default_rng(6)
     msd = rng.uniform(20, 500, 200_000)
-    flat = ms.sculpting(rng.uniform(size=msd.size), msd)
-    tied = ms.sculpting(msd / 500, msd)
+    sig = rng.uniform(size=1000)
+    flat = ms.sculpting(rng.uniform(size=msd.size), msd, sig)
+    tied = ms.sculpting(msd / 500, msd, sig)
     for eff in ms.WORKING_POINTS:
         f, t = flat["working_points"][str(eff)], tied["working_points"][str(eff)]
         assert f["n_pass"] == round(eff * msd.size) and f["eff_realised"] == pytest.approx(eff)
@@ -232,3 +233,92 @@ def test_a_label_set_outside_the_tree_is_refused(tmp_path):
     _sculpt_dir(tmp_path / "h", "none", 17)
     with pytest.raises(SystemExit, match="no QCD node"):
         ms.main(["--head", str(tmp_path / "h"), "--out", str(tmp_path / "s.json")])
+
+
+# audit 2026-11-07 M2: signal efficiency and rejection at each cut, R50 and JSD50 (DisCo Fig. 3)
+
+def test_signal_efficiency_and_rejection_are_read_at_the_qcd_cut():
+    rng = np.random.default_rng(8)
+    s = rng.uniform(size=100_000)                        # QCD: the cut at eff keeps the top eff
+    msd = rng.uniform(20, 500, s.size)
+    sig = rng.uniform(size=40_000) ** 0.25               # resonant jets score higher
+    doc = ms.sculpting(s, msd, sig)
+    for eff in ms.WORKING_POINTS:
+        w = doc["working_points"][str(eff)]
+        assert w["n_sig_pass"] == int((sig >= w["threshold"]).sum())
+        assert w["eff_sig"] == pytest.approx(w["n_sig_pass"] / sig.size)
+        assert w["eff_sig"] == pytest.approx(1 - (1 - eff) ** 4, abs=0.01)   # P(u^0.25 >= 1 - eff)
+        assert w["rejection"] == pytest.approx(1 / w["eff_realised"]) and w["rejection"] == pytest.approx(1 / eff)
+    w = doc["sig_eff_50"]
+    assert w["eff_sig_target"] == ms.SIG_EFF == 0.5
+    assert w["n_sig_pass"] == sig.size // 2 and w["eff_sig"] == pytest.approx(0.5)
+    assert w["threshold"] == pytest.approx(0.5 ** 0.25, abs=0.01)
+    assert w["n_pass"] == int((s >= w["threshold"]).sum()) and w["eff_realised"] == pytest.approx(w["n_pass"] / s.size)
+    assert w["rejection"] == pytest.approx(1 / w["eff_realised"])
+    assert w["jsd"] == pytest.approx(ms.jsd(ms.hist(msd), ms.hist(msd[s >= w["threshold"]])))
+    assert w["js_distance"] == pytest.approx(np.sqrt(w["jsd"])) and sum(w["hist_after"]) == pytest.approx(1.0)
+
+
+def test_jsd50_follows_a_score_that_follows_the_mass():
+    rng = np.random.default_rng(9)
+    msd = rng.uniform(20, 500, 100_000)
+    sig = rng.uniform(0.5, 1.0, 20_000)
+    assert ms.sculpting(rng.uniform(size=msd.size), msd, sig)["sig_eff_50"]["jsd"] < 0.01
+    assert ms.sculpting(msd / 500, msd, sig)["sig_eff_50"]["jsd"] > 0.1
+
+
+def test_the_json_carries_the_resonant_jets_of_the_same_file(tmp_path):
+    lab = _sculpt_dir(tmp_path / "h", "R16_Q1", 17)
+    out = tmp_path / "s.json"
+    assert ms.main(["--head", str(tmp_path / "h"), "--out", str(out)]) == 0
+    doc = json.loads(out.read_text())
+    assert doc["n_sig"] == int((lab < 161).sum()) and doc["n_sig"] + doc["n_qcd"] == doc["n_jets"]
+    assert doc["label_set"] == doc["rung"] == "R16_Q1"
+    z = np.load(tmp_path / "h" / ms.HEAD_FILE)
+    s_sig = ms.score(z["logits"][lab < 161], [16])
+    for w in doc["working_points"].values():
+        assert w["n_sig_pass"] == int((s_sig >= w["threshold"]).sum())
+    assert doc["sig_eff_50"]["n_sig_pass"] == int((s_sig >= doc["sig_eff_50"]["threshold"]).sum())
+
+
+# audit 2026-11-07 M4: the three flavour-boundary partitions (rung 'none' in their manifests)
+
+FLAV = ("FLAV_F0", "FLAV_F1", "FLAV_F1R")
+
+
+@pytest.mark.parametrize("label_set", FLAV)
+def test_a_flavour_partition_has_one_qcd_node_holding_every_qcd_class_and_nothing_else(label_set):
+    import csv
+    rows = list(csv.DictReader((ROOT / ms.FLAV_MAP).open()))
+    assert len(rows) == 188 and [int(r["jet_label"]) for r in rows] == list(range(188))
+    node = {int(r["jet_label"]): int(r[label_set]) for r in rows}
+    assert len(set(node.values())) == 17
+    qcd = {node[lab] for lab in range(161, 188)}
+    assert ms.qcd_nodes(label_set) == sorted(qcd) == [16]
+    assert all(node[lab] != 16 for lab in range(161))
+
+
+@pytest.mark.parametrize("label_set", FLAV)
+def test_sculpting_of_a_flavour_partition_names_its_label_set(tmp_path, label_set):
+    lab = _sculpt_dir(tmp_path / "h", "none", 17)
+    out = tmp_path / "s.json"
+    assert ms.main(["--head", str(tmp_path / "h"), "--out", str(out), "--label-set", label_set]) == 0
+    doc = json.loads(out.read_text())
+    assert doc["rung"] == "none" and doc["label_set"] == label_set and doc["qcd_nodes"] == [16]
+    assert doc["n_qcd"] == int((lab >= 161).sum()) and set(doc["sig_eff_50"]) >= {"rejection", "jsd", "eff_sig"}
+    # the same logits read as the 17-class tree label set give the same numbers: both have QCD at node 16
+    ref = tmp_path / "r"
+    _sculpt_dir(ref, "R16_Q1", 17)
+    assert ms.main(["--head", str(ref), "--out", str(tmp_path / "r.json")]) == 0
+    r = json.loads((tmp_path / "r.json").read_text())
+    assert r["working_points"] == doc["working_points"] and r["sig_eff_50"] == doc["sig_eff_50"]
+
+
+def test_a_label_set_that_contradicts_the_manifest_or_the_map_is_refused(tmp_path):
+    _sculpt_dir(tmp_path / "h", "R16_Q1", 17)
+    with pytest.raises(SystemExit, match="for a R16_Q1 run"):
+        ms.main(["--head", str(tmp_path / "h"), "--out", str(tmp_path / "s.json"), "--label-set", "FLAV_F0"])
+    _sculpt_dir(tmp_path / "n", "none", 17)
+    with pytest.raises(SystemExit, match="not a column"):
+        ms.main(["--head", str(tmp_path / "n"), "--out", str(tmp_path / "t.json"), "--label-set", "FLAV_F9"])
+    assert not (tmp_path / "s.json").exists() and not (tmp_path / "t.json").exists()

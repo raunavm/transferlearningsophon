@@ -19,6 +19,17 @@ scripts/build_linprobe_jobs.py's):
      HEAD_ROOT/<model>/mass_v3.json.
 Each step leaves an existing output as it is, so a retried pod resumes.
 
+Audit 2026-11-07, M4 (PI: "sculpting for the three flavor-boundary controls, same evaluation
+and same figure and table as the label sets"): per flavour-boundary run of
+configs/arms/v2_paper_runs.txt (FLAV_RUNS), one GPU job head-x-<stem>-raunav at FLAV_PIN,
+steps 1 and 2 only, the extraction at rung 'none' (outside the contraction tree) and the
+sculpting with --label-set <arm> (its QCD node from flavour_pair_map.v2.csv).
+M2 (signal efficiency and R at each cut, R50 and JSD50): one CPU job head-sculpt-v3-raunav,
+mass_sculpting.py at FLAV_PIN on the head outputs of all SCULPT_V3 runs, to
+HEAD_ROOT/sculpting_v3/<model>_sculpting.json (the old sculpting.json / curves_v2 stay as they
+are). Apply it after the flavour-boundary head jobs have finished; before that it stops with
+exit 42.
+
 Per untrained trunk init-s1..s3 (plan job J4: "16 runs + 3 init"), one CPU job
 head-mass-init-s<N>-raunav: step 3 alone on its linear-probe features
 (LP_ROOT/init-s<N>/jc2/test/init), with the observers of OBS_MODEL's head outputs (the
@@ -49,11 +60,20 @@ X_MEM = "48Gi"
 # the 16 runs the paper fine-tunes: four label sets x 3, the two mass-output sets x 2
 RUNS = tuple(f"mtx-{a}-s{s}" for a in ("l188", "l162", "r42q1", "r16q1") for s in (1, 2, 3)) + tuple(
     f"mtx-{a}-s{s}" for a in ("l162mass", "r16q1mass") for s in (1, 2))
+# audit 2026-11-07 M2/M4: the flavour-boundary controls (2 runs each, v2_paper_runs.txt) and the
+# sculpting re-run; mass_sculpting.py's --label-set and signal efficiency need a new tag
+FLAV_PIN = "mtx-s2.80"
+FLAV_RUNS = tuple(f"mtx-{a}-s{s}" for a in ("flavf0", "flavf1", "flavf1r") for s in (1, 2))
+SCULPT_V3 = RUNS + FLAV_RUNS
+SCULPT_V3_DIR = f"{HEAD_ROOT}/sculpting_v3"
 # What the tag must carry for what the job runs.
 NEEDED = {"experiments/EVAL/extract_v2.py": "--keep-head-outputs",
           "experiments/EVAL/mass_resolution.py": "OUT_JSON, OUT_RESIDUALS = \"mass_v3.json\"",
           "experiments/EVAL/mass_sculpting.py": "WORKING_POINTS = (0.1, 0.01)",
           CONFIG: "   - genjet_pt\n"}
+FLAV_NEEDED = {"experiments/EVAL/extract_v2.py": "--keep-head-outputs",
+               "experiments/EVAL/mass_sculpting.py": '"--label-set"',
+               "configs/labelmaps/flavour_pair_map.v2.csv": "FLAV_F1R", CONFIG: "   - genjet_pt\n"}
 
 
 def _load(name: str, rel: str):
@@ -66,9 +86,7 @@ def _load(name: str, rel: str):
 LP = _load("build_linprobe_jobs", "scripts/build_linprobe_jobs.py")
 BX, BF = LP.BX, LP.BF
 
-BODY = """          FEAT={lp_root}/{model}/jc2/test/best70
-          [ -f ${{FEAT}}/manifest.json ] || {{ echo "FATAL: no linear-probe features at ${{FEAT}}"; exit 42; }}
-          OUT={root}/{model}/test
+HEAD = """          OUT={root}/{model}/test
           python3 experiments/EVAL/extract_v2.py \\
               --run-dir {run_dir} --rung {rung} --num-classes {k} --num-reg {reg} \\
               --checkpoints best70 --data-config {config} --max-jets {n} \\
@@ -77,10 +95,16 @@ BODY = """          FEAT={lp_root}/{model}/jc2/test/best70
               --data-test {files} \\
               --out ${{OUT}} || halt
           python3 experiments/EVAL/mass_sculpting.py --head ${{OUT}}/best70 \\
-            --out {root}/{model}/sculpting.json || halt
-          python3 experiments/EVAL/mass_resolution.py --observers ${{OUT}}/best70 \\
+            --out {root}/{model}/sculpting.json{label_set} || halt
+"""
+FEAT = """          FEAT={lp_root}/{model}/jc2/test/best70
+          [ -f ${{FEAT}}/manifest.json ] || {{ echo "FATAL: no linear-probe features at ${{FEAT}}"; exit 42; }}
+"""
+BODY = FEAT + HEAD + """          python3 experiments/EVAL/mass_resolution.py --observers ${{OUT}}/best70 \\
             --features best70=${{FEAT}}{head} --out {root}/{model} || halt
           echo "head outputs, mass and sculpting of {model} done"
+"""
+FLAV_BODY = HEAD + """          echo "head outputs and sculpting of {model} done"
 """
 # the untrained trunks have no output layer: the frozen-feature probes alone
 INIT_BODY = """          FEAT={lp_root}/{model}/jc2/test/init
@@ -102,21 +126,53 @@ def models() -> list[tuple[str, str, str, int, int]]:
     return out
 
 
-def planned_bytes() -> int:
+def flav_models() -> list[tuple[str, str, str, int, int]]:
+    """(model, run directory, arm, classes, regression outputs) of the flavour-boundary runs."""
+    arm = {run: a for run, a, *_ in BX.v2_runs()}
+    out = [(m, run, rung, k, reg) for m, run, rung, k, reg, _c in LP.models() if m in FLAV_RUNS]
+    # outside the contraction tree, so extract_v2.py runs them at rung 'none'
+    assert [m for m, *_ in out] == list(FLAV_RUNS) and {r for _m, _u, r, _k, _g in out} == {"none"}, out
+    return [(m, run, arm[m], k, reg) for m, run, _r, k, reg in out]
+
+
+def planned_bytes(ms=None) -> int:
     """What every job writes to /data: head_outputs.npz of N_TEST jets -- K float16
     logits, the float32 mass output, an int64 row, an int16 label and five float32
     observers per jet (the JSON files are kilobytes)."""
-    return sum(N_TEST * (2 * k + 4 * reg + 8 + 2 + 5 * 4) for _m, _r, _g, k, reg in models())
+    return sum(N_TEST * (2 * k + 4 * reg + 8 + 2 + 5 * 4) for _m, _r, _g, k, reg in (ms or models()))
 
 
 def spec(model, run, rung, k, reg) -> str:
     body = BODY.format(lp_root=LP.LP_ROOT, model=model, root=HEAD_ROOT, run_dir=f"{BX.V2_ROOT}/{run}",
                        rung=rung, k=k, reg=reg, config=CONFIG, n=N_TEST, files=BF.test2m_list(),
-                       head=" --head best70=${OUT}/best70" if reg else "")
+                       head=" --head best70=${OUT}/best70" if reg else "", label_set="")
     return LP.off_grid_gpu(BX.V1ERR_TEMPLATE.format(
         name=f"head-x-{model.removeprefix('mtx-')}-raunav", image=BX.IMAGE, pin=PIN, body=body,
         mem=X_MEM, cpu="4", gpu_req=', nvidia.com/gpu: "1"', gpu_check=BX.GPU_CHECK.format(),
         node_exclude=BX.NODE_EXCLUDE))
+
+
+def flav_spec(model, run, arm, k, reg) -> str:
+    body = FLAV_BODY.format(model=model, root=HEAD_ROOT, run_dir=f"{BX.V2_ROOT}/{run}", rung="none", k=k,
+                            reg=reg, config=CONFIG, n=N_TEST, files=BF.test2m_list(),
+                            label_set=f" --label-set {arm}")
+    return LP.off_grid_gpu(BX.V1ERR_TEMPLATE.format(
+        name=f"head-x-{model.removeprefix('mtx-')}-raunav", image=BX.IMAGE, pin=FLAV_PIN, body=body,
+        mem=X_MEM, cpu="4", gpu_req=', nvidia.com/gpu: "1"', gpu_check=BX.GPU_CHECK.format(),
+        node_exclude=BX.NODE_EXCLUDE))
+
+
+def sculpt_v3_spec() -> str:
+    """mass_sculpting.py on every SCULPT_V3 run's head outputs, into SCULPT_V3_DIR."""
+    arm = {m: a for m, _r, a, _k, _g in flav_models()}
+    body = "".join(f'          [ -f {HEAD_ROOT}/{m}/test/best70/head_outputs.npz ] || {{ echo "FATAL: no head '
+                   f'outputs for {m}: apply after its head job"; exit 42; }}\n' for m in SCULPT_V3)
+    body += "".join(f"          python3 experiments/EVAL/mass_sculpting.py --head {HEAD_ROOT}/{m}/test/best70 \\\n"
+                    f"            --out {SCULPT_V3_DIR}/{m}_sculpting.json"
+                    + (f" --label-set {arm[m]}" if m in arm else "") + " || halt\n" for m in SCULPT_V3)
+    body += f'          echo "sculpting of the {len(SCULPT_V3)} runs done"\n'
+    return BX.V1ERR_TEMPLATE.format(name="head-sculpt-v3-raunav", image=BX.IMAGE, pin=FLAV_PIN, body=body,
+                                    mem=INIT_MEM, cpu="4", gpu_req="", gpu_check="", node_exclude="")
 
 
 def init_models() -> list[str]:
@@ -137,6 +193,13 @@ def build(only=None) -> dict[str, str]:
                   for m in init_models() if not only or m in only}
 
 
+def build_v3(only=None) -> dict[str, str]:
+    """The audit 2026-11-07 M2/M4 jobs: the flavour-boundary head outputs and the sculpting re-run."""
+    out = {f"job-head-x-{m.removeprefix('mtx-')}-raunav.yaml": flav_spec(m, run, arm, k, reg)
+           for m, run, arm, k, reg in flav_models() if not only or m in only}
+    return out | ({"job-head-sculpt-v3-raunav.yaml": sculpt_v3_spec()} if not only else {})
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--pin-not-yet-tagged", action="store_true")
@@ -144,13 +207,15 @@ def main(argv=None) -> int:
     ap.add_argument("--check-only", action="store_true")
     a = ap.parse_args(argv)
     BX.verify_pin(PIN, list(NEEDED), a.pin_not_yet_tagged, NEEDED)
-    specs = build(a.only)
+    BX.verify_pin(FLAV_PIN, list(FLAV_NEEDED), a.pin_not_yet_tagged, FLAV_NEEDED)
+    specs = build(a.only) | build_v3(a.only)
     if not a.check_only:
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         for name, text in specs.items():
             (OUT_DIR / name).write_text(text)
     print(f"{len(specs)} specs {'checked' if a.check_only else 'written to ' + str(OUT_DIR.relative_to(ROOT))}; "
-          f"they write {planned_bytes() / 1e9:.1f} GB to /data")
+          f"they write {planned_bytes() / 1e9:.1f} GB (+ {planned_bytes(flav_models()) / 1e9:.1f} GB "
+          f"flavour-boundary) to /data")
     return 0
 
 

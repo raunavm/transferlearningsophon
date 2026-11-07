@@ -224,3 +224,69 @@ def test_the_storage_plan_counts_every_kept_column():
 def test_the_tag_needs_what_the_working_tree_has():
     for path, text in HB.NEEDED.items():
         assert text in (ROOT / path).read_text(), path
+
+
+# ------------------------------------------- audit 2026-11-07 M2/M4: flavour controls, sculpting v3
+
+V3 = HB.build_v3()
+
+
+def test_the_flavour_boundary_controls_are_the_paper_runs_of_the_three_partitions():
+    paper = [l.strip() for l in (ROOT / "configs/arms/v2_paper_runs.txt").read_text().splitlines()
+             if l.strip().startswith("mtx-flav")]
+    assert list(HB.FLAV_RUNS) == paper and len(paper) == 6
+    assert {arm for _m, _r, arm, _k, _g in HB.flav_models()} == {"FLAV_F0", "FLAV_F1", "FLAV_F1R"}
+    assert all(k == 17 and reg == 0 for *_, k, reg in HB.flav_models())
+    assert HB.SCULPT_V3 == HB.RUNS + HB.FLAV_RUNS and not set(HB.FLAV_RUNS) & set(HB.RUNS)
+    assert sorted(V3) == sorted([f"job-head-x-{m.removeprefix('mtx-')}-raunav.yaml" for m in HB.FLAV_RUNS]
+                                + ["job-head-sculpt-v3-raunav.yaml"])
+    assert not set(V3) & set(SPECS)                    # the 16 launched specs are untouched
+    for name, spec in V3.items():
+        d, a = yaml.safe_load(spec), _args(spec)
+        assert d["metadata"]["name"].endswith("-raunav") and name == f"job-{d['metadata']['name']}.yaml"
+        assert subprocess.run(["bash", "-n"], input=a, text=True).returncode == 0, name
+        assert f'--branch "{HB.FLAV_PIN}"' in a and '[ "${USED}" -lt 85 ]' in a
+        assert d["spec"]["podFailurePolicy"]["rules"][0]["onExitCodes"]["values"] == [42]
+        assert "configmap" not in spec.lower()
+        assert (HB.OUT_DIR / name).read_text() == spec, f"{name} not written as built"
+
+
+def test_a_flavour_control_job_extracts_like_the_label_sets_and_sculpts_on_its_own_qcd_node():
+    lp_test = HB.LP.DATASETS["jc2"][2]["test"]
+    for model, run, arm, k, reg in HB.flav_models():
+        spec = V3[f"job-head-x-{model.removeprefix('mtx-')}-raunav.yaml"]
+        a = _args(spec)
+        assert f"--run-dir {HB.BX.V2_ROOT}/{run} --rung none --num-classes {k} --num-reg {reg}" in a
+        assert (f"--checkpoints best70 --data-config {HB.CONFIG} --max-jets {lp_test[0]}" in a
+                and "--keep-head-outputs" in a and "--prefix-features 0" in a)
+        assert re.search(r"--data-test (.*?) \\\n", a).group(1) == lp_test[2] == HB.BF.test2m_list()
+        assert f"OUT={HB.HEAD_ROOT}/{model}/test\n" in a and a.count("--out ${OUT} 2>&1 | tee") == 1
+        assert (f"mass_sculpting.py --head ${{OUT}}/best70 \\\n  --out {HB.HEAD_ROOT}/{model}/sculpting.json "
+                f"--label-set {arm} || halt") in a
+        assert "mass_resolution.py" not in a and "FEAT=" not in a
+        ex = {e["key"]: e for e in yaml.safe_load(spec)["spec"]["template"]["spec"]["affinity"]["nodeAffinity"][
+            "requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"]}
+        assert ex["nvidia.com/gpu.product"]["values"] == list(HB.LP.NOT_ON)
+        assert set(HB.BX.V2_GPU_FAULT_NODES) <= set(ex["kubernetes.io/hostname"]["values"])
+
+
+def test_the_sculpting_rerun_reads_every_run_on_the_cpu_into_a_new_directory():
+    spec = V3["job-head-sculpt-v3-raunav.yaml"]
+    a = _args(spec)
+    assert "nvidia.com/gpu" not in spec and "extract_v2.py" not in a and "mass_resolution" not in a
+    arm = {m: g for m, _r, g, _k, _x in HB.flav_models()}
+    assert HB.SCULPT_V3_DIR == f"{HB.HEAD_ROOT}/sculpting_v3" and HB.SCULPT_V3_DIR not in "".join(SPECS.values())
+    calls = re.findall(r"mass_sculpting\.py --head (\S+) \\\n\s+--out (\S+)(?: --label-set (\S+))? \|\| halt", a)
+    assert [c[0] for c in calls] == [f"{HB.HEAD_ROOT}/{m}/test/best70" for m in HB.SCULPT_V3]
+    assert [c[1] for c in calls] == [f"{HB.SCULPT_V3_DIR}/{m}_sculpting.json" for m in HB.SCULPT_V3]
+    assert [c[2] for c in calls] == [arm.get(m, "") for m in HB.SCULPT_V3]
+    # every head output is checked before the first call, so a missing one stops with 42
+    first = a.index("mass_sculpting.py")
+    for m in HB.SCULPT_V3:
+        chk = a.index(f"[ -f {HB.HEAD_ROOT}/{m}/test/best70/head_outputs.npz ] ||")
+        assert chk < first and "exit 42; }" in a[chk:first]
+
+
+def test_the_flavour_tag_needs_what_the_working_tree_has():
+    for path, text in HB.FLAV_NEEDED.items():
+        assert text in (ROOT / path).read_text(), path
