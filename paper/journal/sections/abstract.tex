@@ -1,22 +1,20 @@
 % Title (docs/PAPER_OUTLINE.md): Label granularity in supervised pretraining of jet foundation models
-% Abstract text only; main.tex supplies the environment. No numbers (PI decision P9): the class counts
-% \Kfull and \Kcoarse describe the design. No abbreviations, references or figure numbers (MLST).
-Jet foundation models are pretrained to separate many fine classes of simulated jets, and analyses
-build discriminants by summing the scores of those classes. Whether the label granularity, the
-fineness of the pretraining classes, changes what the network learns has not been tested with the
-training jets held fixed. We pretrain the transformer of Signature-Oriented Pre-training for Heavy-resonance ObservatioN (Sophon)
-several times on the same jets, in the
-same order and from the same initial weights, and change only the label set. The label sets form a
-hierarchy from \Kfull{} to \Kcoarse{} classes in which each merge removes a named set of physics
-distinctions.
-Random partitions of the classes, some of which differ only in a boundary between quark flavors,
-compare label sets at a fixed number of classes. Linear classifiers on the fixed pretrained features
-recover what the labels separate: merging decays that differ only in lepton or quark flavor costs the % CHECK: MlstPerClassCoarseTopClass is a lepton-flavor class; MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes
-most, and at a fixed number of classes the cost depends on which classes are merged. After % CHECK: MlstCmpJcTwoRandOverCoarse < 1 by more than its SD
-fine-tuning, the \Kcoarse-class labels still lower the background rejection for several signal % CHECK: MlstFtJcOneCoarseNRejDrop >= two
-classes of JetClass, a separate simulation with every input present. On the public top-tagging and
-quark/gluon benchmarks, which lack some inputs, the label sets differ far less. % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull within a few per cent of one
-An auxiliary jet-mass regression makes the pretrained features carry the mass and reduces the % CHECK: MlstCmpMlpResMassOverRes < 1 (ATLAS resolution); MlstSculptCoarseMassOverCoarseOne < 1
-sculpting of the background mass distribution, at a small cost to the classification. A pretraining % CHECK: MlstCmpJcTwoResMassOverRes within a few per cent of one
-label set should keep every distinction that downstream discriminants sum over, and the boundaries
-between flavors.
+% Abstract text only; main.tex supplies the environment. PI brief for draft 94: about 200 words, Sophon's
+% shape (context, gap, what we did, three findings, recommendation), no definitions, no numbers, Sophon
+% expanded at first use.
+% CHECK: the findings sentences carry the same CHECKs as the last paragraph of the Introduction
+Jet foundation models are often pretrained to classify simulated jets into many fine classes, and analyses
+build discriminants by summing the scores of those classes. Whether the granularity of these labels
+changes what the network learns has not been tested with the training jets held fixed. We pretrain the
+network of Signature-Oriented Pre-training for Heavy-resonance ObservatioN (Sophon) repeatedly on the same
+jets, in the same order and from the same initial weights, and change only the label set, along a
+hierarchy from Sophon's full set of classes to one that describes only the number and type of the prongs.
+Random partitions of the classes, some differing only in a flavor boundary, compare label sets at a fixed
+number of classes. Linear probes on the frozen features lose performance on the classes that the labels
+merge, most when quark flavors are merged, and at a fixed number of classes the loss depends on which
+classes are merged. After fine-tuning, the coarsest labels still lower the background rejection for
+several signal classes of JetClass, while on the public top-tagging and quark/gluon benchmarks the label
+sets agree within the spread between runs. An auxiliary jet-mass regression makes the mass predictable
+from the frozen features and reduces the sculpting of the background mass distribution. A pretraining
+label set should contain every distinction that downstream discriminants sum over, and the flavor
+boundaries.

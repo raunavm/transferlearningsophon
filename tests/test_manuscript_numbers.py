@@ -134,6 +134,8 @@ ALLOWED_WORDS = [
     (r"\bmax SIC of one\b",
      "an identity: with no discrimination eps_S = eps_B, so eps_S/sqrt(eps_B) <= 1"),
     (r"\bhalf the smallest interval\b", "the definition of sigma_eff"),
+    (r"\btens to hundreds of millions of simulated jets\b",
+     "the order of magnitude of the cited models' pretraining sets (JetClass, JetClass-II), a fixed fact of the literature"),
 ]
 
 

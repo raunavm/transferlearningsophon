@@ -187,7 +187,10 @@ sample~\cite{herwigsevenone,qgherwig} as a change of generator. They lack some i
 label set changes where analyses compare taggers. The jet mass and the tagging of $X\to b\bar b$ and $X\to bs$
 complete the evaluation. Dataset sizes, selections and splits are given with each result.
 
-The network reads \FillNFeatures{} features per particle, and the public benchmarks lack some of them: the
+The network reads \FillNFeatures{} features per particle: \FillTopNPresent{} kinematic variables computed
+from its four-momentum, its electric charge, five flags for its type (electron, muon, photon, charged
+hadron or neutral hadron) and four variables for the displacement of its track from the interaction
+point. The public benchmarks lack some of them: the
 top-tagging data provide only the four-momenta, from which \FillTopNPresent{} of the features follow, and the
 quark/gluon data lack the track-displacement variables, ParT's ``exp'' scenario~\cite[Table~2]{part}
 (sections~\ref{sec:top} and~\ref{sec:qg} list them). Features a benchmark does not provide are set to zero
