@@ -98,13 +98,17 @@ def test_the_umap_job_reads_both_models_frozen_and_fine_tuned_on_every_task():
     a = c["args"][0]
     assert d["metadata"]["name"] == "umap-v2-raunav" and d["spec"]["backoffLimit"] == 1
     # CPU only: no GPU request, no GPU toleration, torch threads pinned to the quota
-    assert "nvidia.com/gpu" not in c["resources"]["limits"] and c["resources"]["limits"]["cpu"] == "16"
-    assert "tolerations" not in d["spec"]["template"]["spec"] and "export OMP_NUM_THREADS=14 " in a
+    assert "nvidia.com/gpu" not in c["resources"]["limits"] and c["resources"]["limits"]["cpu"] == "8"
+    assert "tolerations" not in d["spec"]["template"]["spec"] and "export OMP_NUM_THREADS=7 " in a
+    # one extraction per pod; the pod that finds all 16 in place takes the lock and fits
+    assert d["spec"]["completionMode"] == "Indexed" and d["spec"]["completions"] == 16 and d["spec"]["parallelism"] <= 12
+    assert "-name extract_manifest.json | wc -l)" in a and '[ "${N}" -eq 16 ]' in a
+    assert a.index("mkdir /data/results/eval/umap_v2/fit.lock") < a.index("umap_class_token.py") < a.index("touch /data/results/eval/umap_v2/DONE")
     assert "gpu_probe" not in a and "pip install --no-cache-dir -q umap-learn==0.5.7 pyarrow==25.0.1" in a
     assert 'python3 -c "import pyarrow" || ' in a        # weaver reads the parquet test sets through it
     assert '[ ! -f /data/results/eval/umap_v2/DONE ]' in a and '[ "${USED}" -le 85 ]' in a and "retry clone" in a
     assert "ry-gpu-04.sdsc.optiputer.net" in yaml.safe_dump(d["spec"]["template"]["spec"]["affinity"])
-    jc2b = "configs/data/JetClassII_base.yaml 1 /data/finetune/jc2_bal/test.parquet"
+    jc2b = "configs/data/JetClassII_base.yaml 2 /data/finetune/jc2_bal/test.parquet"
     qg = "configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet"
     for i, (m, k) in enumerate((("l188-s1", 188), ("r16q1-s1", 17))):
         assert f"C_jc1_{i}=/data/results/ft_v2/budget_long/leg2/{m}/N1000000/s1; done_cell" in a
@@ -115,14 +119,14 @@ def test_the_umap_job_reads_both_models_frozen_and_fine_tuned_on_every_task():
                                ("top", 2, "configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet"),
                                ("qg", 2, qg)):
             # the frozen and the fine-tuned model read the same jets through the same config
-            assert f"x {task} frozen mtx-{m} ${{CK{i}}} {k} {tail}" in a.splitlines()
-            assert f"x {task} ft mtx-{m} ${{C_{task}_{i}}}/net_best_epoch_state.pt {kt} {tail}" in a.splitlines()
+            assert f"x {task} frozen mtx-{m} ${{CK{i}}} {k} {tail} ;;" in a
+            assert f"x {task} ft mtx-{m} ${{C_{task}_{i}}}/net_best_epoch_state.pt {kt} {tail} ;;" in a
         for man in (f"v2_linprobe/mtx-{m}/jc1/", f"v2_linprobe_bal/mtx-{m}/jc2bal/", f"v2_linprobe/mtx-{m}/top/",
                     f"v2_linprobe/mtx-{m}/qg/"):
             assert f"/data/results/eval/{man}test/best70/manifest.json" in a
     # the long budget first, else the standard one; every cell checked before the first extraction
     assert "for R in /data/results/ft_v2/budget_long /data/results/ft_v2/budget; do" in a
-    assert a.rindex("done_cell ${C_") < a.index("\nx jc1 frozen")
+    assert a.rindex("done_cell ${C_") < a.index("0) x jc1 frozen")
     assert "[ -f ${D}/extract_manifest.json ] && return 0" in a and "--num-workers 1" in a
     assert "umap_class_token.py --feat-dir /data/results/eval/umap_v2/features --out-dir /data/results/eval/umap_v2" in a
     assert "configmap" not in a.lower()

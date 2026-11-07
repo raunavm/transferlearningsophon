@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""The GPU job of the UMAP figures (PI 2026-11-05; one layout for all four tasks, figure round 3): the
+"""The job of the UMAP figures (PI 2026-11-05; one layout for all four tasks, figure round 3): the
 class token of the 188- and 17-class models on each task's test jets, frozen and after fine-tuning on
 that task, with experiments/EVAL/extract_features.py (one loader worker; the frozen model reads the
 jets with the fine-tuned model's data config, so the rows align), then
 experiments/EVAL/umap_class_token.py, into /data/results/eval/<out-name>/. umap-learn and pyarrow are pinned
 here (the image has neither). CPU only (2026-11-07): the job is inference, its GPU run held 3 GB and 1.7 cores,
 and the us-west GPU queue kept it pending for hours; extract_features.py falls back to the CPU and records the
-device in each manifest (the first JetClass extractions of l188-s1 ran on a V100 and are kept).
+device in each manifest (the first JetClass extractions of l188-s1 ran on a V100 and are kept). On the CPU one
+pod read 68 jets/s, so the job is Indexed: one extraction per pod, in parallel; the pod that finds every
+extraction in place (an atomic mkdir decides between two) fits the UMAPs and writes DONE.
 
   jc1  one JetClass test file per class, every 10th jet; fine-tuned: budget_long/leg2/<m>/N1000000/s1 (K = 10)
-  jc2  the class-balanced JetClass-II test set, every jet (5,000 per class); fine-tuned: the JetClass-II cell
+  jc2  the class-balanced JetClass-II test set, every 2nd jet (2,458-2,519 of each single-class group, so 2,000
+       per group still holds; every jet would be 3.8M forward passes on the CPU); fine-tuned: the JetClass-II cell
        at 1e6 the paper reports, budget_long/leg_jc2b/<m>/N1000000/s1 where it is DONE, else
        budget/leg_jc2b/<m>/N1000000/s1, chosen in the pod (K = 188); its test config
   top  the top-tagging test set, every 20th jet; fine-tuned: best70/leg_top/<m>/N1200000/s1 (K = 2)
@@ -28,7 +31,8 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "umap"
 UMAP_PIN = "umap-learn==0.5.7"
-CPUS, THREADS = 16, 14      # two cores left for the loader worker and the shell
+CPUS, THREADS = 8, 7        # one core left for the loader worker and the shell
+PARALLEL = 12                # with our GPU pods, under the pod cap of 25
 PYARROW_PIN = "pyarrow==25.0.1"   # weaver reads the parquet test sets (JetClass-II, top, q/g) through it and the image
 # has none: umap-v2 died on it at the first JetClass-II read, 2026-11-06
 MODELS = (("l188-s1", 188), ("r16q1-s1", 17))
@@ -39,7 +43,7 @@ LP_OLD, LP_BAL = "/data/results/eval/v2_linprobe", "/data/results/eval/v2_linpro
 TASKS = {
     "jc1": ("configs/finetune/JetClassI_sophon_noweight.yaml", 10, "${JC1}", 10,
             FT + "/budget_long/leg2/{m}/N1000000/s1", LP_OLD + "/mtx-{m}/jc1/test/best70/manifest.json"),
-    "jc2": ("configs/data/JetClassII_base.yaml", 1, "/data/finetune/jc2_bal/test.parquet", 188,
+    "jc2": ("configs/data/JetClassII_base.yaml", 2, "/data/finetune/jc2_bal/test.parquet", 188,
             None, LP_BAL + "/mtx-{m}/jc2bal/test/best70/manifest.json"),
     "top": ("configs/finetune/TopReference.yaml", 20, "/data/finetune/top/top_test.parquet", 2,
             FT + "/best70/leg_top/{m}/N1200000/s1", LP_OLD + "/mtx-{m}/top/test/best70/manifest.json"),
@@ -76,7 +80,6 @@ def spec(tag: str, out_name: str) -> str:
                           + f"; done_cell ${{{c}}}")
             runs += [f"x {task} frozen mtx-{m} ${{CK{i}}} {k} {cfg} {stride} {files}",
                      f"x {task} ft mtx-{m} ${{{c}}}/net_best_epoch_state.pt {kt} {cfg} {stride} {files}"]
-    blocks += runs
     script = f"""set -euo pipefail
 retry () {{ for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }}
 clone () {{ mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git tls; }}
@@ -103,7 +106,14 @@ x () {{
     --data-config ${{CFG}} --data-test "$@" --observers jet_pt --stride ${{STRIDE}} --num-workers 1 --out ${{D}}
 }}
 {chr(10).join(blocks)}
-python3 experiments/EVAL/umap_class_token.py --feat-dir {out}/features --out-dir {out}
+case ${{JOB_COMPLETION_INDEX}} in
+{chr(10).join(f"  {j}) {r} ;;" for j, r in enumerate(runs))}
+  *) echo "FATAL: no extraction for index ${{JOB_COMPLETION_INDEX}}"; exit 42 ;;
+esac
+N=$(find {out}/features -mindepth 4 -maxdepth 4 -name extract_manifest.json | wc -l)
+[ "${{N}}" -eq {len(runs)} ] || {{ echo "extraction ${{JOB_COMPLETION_INDEX}} in; ${{N}} of {len(runs)}"; exit 0; }}
+mkdir {out}/fit.lock 2>/dev/null || {{ echo "another pod fits the UMAPs"; exit 0; }}
+python3 experiments/EVAL/umap_class_token.py --feat-dir {out}/features --out-dir {out} || {{ rmdir {out}/fit.lock; exit 1; }}
 touch {out}/DONE
 echo "UMAP COMPLETE"
 """
@@ -116,6 +126,9 @@ metadata:
   name: {out_name.replace("_", "-")}-raunav
   namespace: cms-ml
 spec:
+  completionMode: Indexed
+  completions: {len(runs)}
+  parallelism: {PARALLEL}
   backoffLimit: 1
   activeDeadlineSeconds: 43200
   template:
