@@ -455,12 +455,12 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
 
 
 def draw_f10a(path: pathlib.Path) -> None:
-    _sculpt_panels(path, tuple(S.LEVELS), "QCD jet mass before and after a selection on the tagger")
+    _sculpt_panels(path, tuple(S.LEVELS), "QCD jet mass before and after a cut on the pretraining head")
 
 
 def draw_f10a_mass(path: pathlib.Path) -> None:
     _sculpt_panels(path, ("L162_MASS", "R16_Q1_MASS"),
-                   "QCD jet mass before and after a selection, models with mass regression")
+                   "QCD jet mass before and after a cut on the pretraining head, with mass regression")
 
 
 def draw_f10b(path: pathlib.Path) -> None:
@@ -498,7 +498,7 @@ def draw_f10b(path: pathlib.Path) -> None:
         axis.set_major_locator(FixedLocator([v for v in at if lim[0] <= v <= lim[1]]))
         axis.set_major_formatter(FuncFormatter((lambda v, _: f"{100 * v:g}%") if axis is ax.xaxis else (lambda v, _: f"{v:g}")))
         axis.set_minor_formatter(NullFormatter())       # efficiency in percent, as F10a's working points
-    S.heading(fig, "Mass sculpting of QCD jets")
+    S.heading(fig, "Mass sculpting of QCD jets by cuts on the pretraining head")
     S.labels(ax, r"QCD efficiency ($\varepsilon_B$)", "Jensen-Shannon distance")
     S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=3)
     S.save(fig, path)
@@ -531,7 +531,7 @@ def draw_f10c(path: pathlib.Path) -> None:
         raise Absent(f"no {F10C_KEY} in the sculpting files (head/curves_v2/*_sculpting_v2.json)")
     _log_y(ax, "x")
     _log_y(ax)
-    S.heading(fig, "Mass sculpting against background rejection at 50% signal efficiency")
+    S.heading(fig, "Cuts on the pretraining head: mass sculpting against rejection at 50% signal efficiency")
     S.labels(ax, r"QCD rejection at 50% resonant efficiency ($R_{50}$)", r"$1/\mathrm{JSD}_{50}$")
     S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=2)
     S.save(fig, path)

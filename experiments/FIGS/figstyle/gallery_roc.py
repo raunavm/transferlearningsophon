@@ -245,7 +245,7 @@ def _pairs(path: pathlib.Path, series: list, keys: tuple, ymax: float | None = N
         if ymax and separated:
             if legend_order:
                 separated.sort(key=legend_order.index)
-            pre = "pretrained, "
+            pre = "pretrained on "
             words = (pre + " and ".join(w.removeprefix(pre).removesuffix(" classes") for w in separated) + " classes"
                      if all(w.startswith(pre) and w.endswith(" classes") for w in separated) else ", ".join(separated))
             ax.text(0.97, 0.95, "Complete separation:\n" + words, transform=ax.transAxes, ha="right",

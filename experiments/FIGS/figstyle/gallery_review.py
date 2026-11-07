@@ -60,7 +60,7 @@ REVIEW = {
 
 # Round 5 (PI, 2026-11-07): what changed on each page since the approved round 4, shown on the gallery page for page-by-page
 # approval. Keyed by page id; a table page joins with its own id. "NEW: ..." for a page the PI has not seen.
-NAMES = "legend names say what each network was pretrained on"
+NAMES = "legend entries name the starting network (pretrained on what, or none) and the mode where the figure mixes modes"
 CAPTION = "caption opens with what was trained on what"
 TICKS = "rejection ticks in plain numbers (no small exponents)"
 CHANGES = {
