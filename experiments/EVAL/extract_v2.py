@@ -227,10 +227,14 @@ def resolve_checkpoints(run_dir: pathlib.Path, spec: list[str]) -> list[tuple[st
                  best70 and bestval with BatchNorm statistics recomputed on the weight
                  average's sample (PRESPEC A14's BatchNorm rule), bn_twin()
       N, 'A-B'   single epochs, for diagnostics (v1 has no fixed validation sample
-                 and no weight average of its own)."""
+                 and no weight average of its own)
+      <path>.pt  a checkpoint file outside the run's rule (the released Sophon model),
+                 tag = the file's stem."""
     out = []
     for s in spec:
-        if s == "best70":
+        if s.endswith(".pt"):
+            out.append((pathlib.Path(s).stem, pathlib.Path(s)))
+        elif s == "best70":
             out.append(("best70", run_dir / f"net_epoch-{best_window_epoch(run_dir)}_state.pt"))
         elif s in ("bestval", "best"):
             out.append(("bestval", run_dir / f"net_epoch-{best_epoch(run_dir)}_state.pt"))

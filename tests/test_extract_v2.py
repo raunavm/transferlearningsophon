@@ -83,6 +83,14 @@ def test_best70_is_the_primary_and_the_global_best_its_sensitivity_check(tmp_pat
         xv.resolve_checkpoints(tmp_path, ["best70"])
 
 
+def test_a_checkpoint_file_outside_the_run_rule_is_tagged_by_its_stem(tmp_path):
+    # the released Sophon model (scripts/build_jc2bal_jobs.py sophon): no run directory of ours
+    (tmp_path / "released.pt").write_text("x")
+    assert xv.resolve_checkpoints(tmp_path, [str(tmp_path / "released.pt")]) == [("released", tmp_path / "released.pt")]
+    with pytest.raises(SystemExit, match="checkpoints missing"):
+        xv.resolve_checkpoints(tmp_path, [str(tmp_path / "absent.pt")])
+
+
 def test_a_checkpoint_two_rules_select_is_extracted_once_and_both_tags_point_at_it(tmp_path):
     _write_80(tmp_path / "run", {74: 0.9})
     ckpts = xv.resolve_checkpoints(tmp_path / "run", ["best70", "bestval"])

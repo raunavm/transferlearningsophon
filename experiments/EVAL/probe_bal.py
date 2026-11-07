@@ -25,7 +25,11 @@ What changes from linear_probe_v2.py's fits_v3, whose fitting and metrics this r
     5,000 + 5,000 jets of the balanced test set, the pairs' protocol otherwise; with --sibling-test
     (2026-11-05, PI: the curve must reach 1e4) the same training jets and EVERY test jet of the pair
     (experiments/FT/stage_jc2_siblings.py, extracted as dataset jc2sib), so the 188- and 162-class
-    curves exist where 5,000 background jets gave none.
+    curves exist where 5,000 background jets gave none;
+  * --coarse TARGET... (2026-11-07, PI: "does 188 match 17 on 17's own task?") fits only the balanced
+    JetClass-II task with the native labels mapped onto a coarser label set (COARSE_MAPS: the 43- and
+    17-class levels of the hierarchy, and the partition with no flavor boundary), at the largest
+    training set; macro AUC over that label set's classes.
 Top and quark/gluon (and Herwig) read the features linear_probe_v2.py read (--old-root). Every cell's
 fitted probe and test probabilities are saved (--probs-out), so per-class metrics and the bootstrap
 need no refit.
@@ -66,6 +70,10 @@ N_NATIVE = 188
 SIBLING_PAIRS = {"ee_vs_mm": (("label_X_ee",), ("label_X_mm",))}
 SIBLING_TRAIN, SIBLING_TEST = "train_N1000000", "test"
 SIBLING_ALL = "jc2sib"      # every test jet of the pair (stage_jc2_siblings.py), --sibling-test
+# --coarse: label set -> the committed map holding it as a column (native jet_label -> group)
+COARSE_MAPS = {"R42_Q1": "configs/labelmaps/rung_label_maps.v1.csv",
+               "R16_Q1": "configs/labelmaps/rung_label_maps.v1.csv",
+               "FLAV_F0": "configs/labelmaps/flavour_pair_map.v2.csv"}
 
 
 def _load(name, rel):
@@ -191,9 +199,50 @@ def sibling_pair_cells(model: str, ckpt: str, probe, save, names: dict, test=("j
     return cells
 
 
-def old_cells(model: str, ckpt: str, helpers, save, datasets=("jc1", "top", "qg")) -> dict:
+def coarse_lut(target: str) -> np.ndarray:
+    """native label -> group of a COARSE_MAPS label set, as an array over the N_NATIVE classes."""
+    with (REPO / COARSE_MAPS[target]).open() as f:
+        m = {int(r["jet_label"]): int(r[target]) for r in csv.DictReader(f)}
+    if sorted(m) != list(range(N_NATIVE)) or sorted(set(m.values())) != list(range(max(m.values()) + 1)):
+        raise SystemExit(f"FATAL: {COARSE_MAPS[target]}: {target} is not a map of the {N_NATIVE} classes onto 0..K-1")
+    return np.array([m[i] for i in range(N_NATIVE)], dtype=np.int64)
+
+
+def coarse_metrics(p: np.ndarray, g: np.ndarray) -> dict:
+    """Accuracy and the one-vs-rest AUC of every group, macro-averaged, on every test jet."""
+    from sklearn.metrics import roc_auc_score
+    auc = {int(c): float(roc_auc_score((g == c).astype(int), p[:, c])) for c in np.unique(g)}
+    return {"accuracy": float((p.argmax(1) == g).mean()), "macro_auc_ovr": float(np.mean(list(auc.values()))),
+            "per_class_auc": auc, "n_classes_present": len(auc), "n_jets": int(g.size)}
+
+
+def coarse_cells(model: str, ckpt: str, targets, save, root: pathlib.Path = NEW_ROOT) -> dict:
+    """The linear probe on each coarse label set's groups, at the largest balanced training set."""
+    n = max(lp.train_sizes(root / model, "jc2bal"))
+    xtr, ytr, _ = load(model, "jc2bal", f"train_N{n}", ckpt, root)
+    xva, yva, _ = load(model, "jc2bal", "val", ckpt, root)
+    xte, yte, _ = load(model, "jc2bal", "test", ckpt, root)
+    cells = {}
+    for t in targets:
+        lut = coarse_lut(t)
+        k = int(lut.max()) + 1
+        gtr, gte = lut[ytr], lut[yte]
+        t0 = time.time()
+        sc, clf, rec = lp.fit(xtr, gtr, xva, lut[yva], k)
+        p = lp.full_proba(clf, sc.transform(xte), k)
+        cells[t] = {str(n): {**coarse_metrics(p, gte), **rec, "n_classes": k, "n_train": int(ytr.size),
+                             "n_val": int(yva.size), "train_label_counts": np.bincount(gtr, minlength=k).tolist(),
+                             "seconds": round(time.time() - t0, 1)}}
+        if save:
+            save(f"jc2bal_{t}_N{n}", sc, clf, rec, np.arange(yte.size), gte, p=p)
+        print(f"  {model} {ckpt} {t} N{n}: macro_auc={cells[t][str(n)]['macro_auc_ovr']:.5f} C={rec['C']}", flush=True)
+    return cells
+
+
+def old_cells(model: str, ckpt: str, helpers, save, datasets=("jc1", "top", "qg"),
+              root: pathlib.Path = OLD_ROOT) -> dict:
     """JetClass, top and quark/gluon (with Herwig) on fits_v3's features, the v4 grid and stride."""
-    cells = lp.probe_cells(OLD_ROOT / model, ckpt, list(datasets), helpers, save,
+    cells = lp.probe_cells(root / model, ckpt, list(datasets), helpers, save,
                            pathlib.Path(lp.JC2_PARQUET))
     # probe_cells saves JetClass's probabilities at the largest training set only, so the one-vs-one
     # macro AUC is computed there (the JetClass table's size)
@@ -316,6 +365,8 @@ def main(argv=None) -> int:
     ap.add_argument("--sibling-pairs", action="store_true", help="SIBLING_PAIRS only (sibling_pair_cells)")
     ap.add_argument("--sibling-test", action="store_true",
                     help="with --sibling-pairs: score every test jet of the pair (dataset jc2sib)")
+    ap.add_argument("--coarse", nargs="+", choices=sorted(COARSE_MAPS), default=None,
+                    help="only the balanced JetClass-II task on these coarser label sets (coarse_cells)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--probs-out", type=pathlib.Path, default=None)
     a = ap.parse_args(argv)
@@ -342,6 +393,11 @@ def main(argv=None) -> int:
             doc["probe"] = "linear, fills of the absent inputs"
             doc["fills"] = {k: list(v) for k, v in FILLS.items()}
             doc["cells"][ckpt] = fill_cells(a.model, ckpt, helpers, a.probs_out)
+            continue
+        if a.coarse:
+            doc["probe"] = "linear, balanced JetClass-II on coarser label sets"
+            doc["coarse_maps"] = {t: COARSE_MAPS[t] for t in a.coarse}
+            doc["cells"][ckpt] = {"jc2bal_coarse": coarse_cells(a.model, ckpt, a.coarse, save)}
             continue
         if a.sibling_pairs:
             test = (SIBLING_ALL, "test") if a.sibling_test else ("jc2bal", SIBLING_TEST)

@@ -36,6 +36,15 @@
            X->mumu, PI 2026-11-05: the balanced test set's 5,000 each stop the ROC at 250)
   sibx     GPU, one model per index (all 30): their features (dataset jc2sib) and probe_bal.py
            --sibling-pairs --sibling-test -> .../fits_v4_sib2, .../fits_v4_sib2_probs (new folders)
+  coarse   GPU, one model per index (all 30): probe_bal.py --coarse, the balanced JetClass-II probe on the
+           43- and 17-class levels and the partition with no flavor boundary (PI 2026-11-07)
+           -> .../fits_v4_coarse, .../fits_v4_coarse_probs (new folders)
+  qcdhf    CPU, one pod: experiments/EVAL/qcd_hf_rejection.py, the X->bb discriminant's rejection of each
+           QCD heavy-flavor subclass from the stored probes -> .../fits_v4_qcdhf (new folder)
+  ckptid   CPU, one pod: experiments/EVAL/checkpoint_identity.py, whether each paper run's bestval is its
+           best70 file -> /data/results/eval/v2_ckpt_identity/identity.json
+  sophon   GPU, one pod: the released Sophon model's features on the frozen probes' splits, probe_released.py
+           and qcd_hf_rejection.py -> /data/results/eval/v2_linprobe_sophon (new folder)
 
     python3 scripts/build_jc2bal_jobs.py --tag mtx-s2.24 stage
 """
@@ -638,6 +647,122 @@ echo "JC2BAL KIN ${{MODEL}} COMPLETE"
                           "top-tagging probes of the kinematic-only models (plan 3.7)")
 
 
+COARSE = ("R42_Q1", "R16_Q1", "FLAV_F0")       # experiments/EVAL/probe_bal.py COARSE_MAPS
+
+
+def coarse_spec(tag: str, parallelism: int) -> tuple:
+    """GPU, one model per index (all 30): probe_bal.py --coarse, the balanced JetClass-II probe on the
+    43- and 17-class levels and the partition with no flavor boundary (PI 2026-11-07) -> new folders
+    fits_v4_coarse, fits_v4_coarse_probs."""
+    ms = models()
+    cases = "".join(f'  {i}) MODEL={m}; CKPTS="{" ".join(c)}";;\n' for i, (m, _r, _g, _k, _e, c, _v) in enumerate(ms))
+    name = "jc2bal-coarse-raunav"
+    script = f"""set -euo pipefail
+{_start(tag)}
+IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
+case ${{IDX}} in
+{cases}  *) echo "FATAL: no model for index ${{IDX}}"; exit 42;;
+esac
+[ -f {LP_BAL}/${{MODEL}}/DONE ] || {{ echo "FATAL: ${{MODEL}} is not extracted"; exit 42; }}
+python3 experiments/EVAL/probe_bal.py --model ${{MODEL}} --checkpoints ${{CKPTS}} --coarse {" ".join(COARSE)} \\
+  --out {LP_BAL}/fits_v4_coarse --probs-out {LP_BAL}/fits_v4_coarse_probs
+echo "JC2BAL COARSE ${{MODEL}} COMPLETE"
+"""
+    return name, _indexed(name, script, len(ms), parallelism, True, "48Gi", "4",
+                          "linear probes on the coarse label sets, balanced JetClass-II (PI 2026-11-07). GPU")
+
+
+def qcdhf_spec(tag: str) -> tuple:
+    """CPU, one pod: experiments/EVAL/qcd_hf_rejection.py for every model from the stored probes
+    (fits_v4_probs) and test features -> new folder fits_v4_qcdhf."""
+    launch = _launch()
+    loop = "".join(f"[ -f {LP_BAL}/fits_v4_qcdhf/{m}.json ] || python3 experiments/EVAL/qcd_hf_rejection.py "
+                   f"--model {m} --checkpoints {' '.join(c)} --probs-root {LP_BAL}/fits_v4_probs "
+                   f"--features-root {LP_BAL} --out {LP_BAL}/fits_v4_qcdhf\n"
+                   for m, _r, _g, _k, _e, c, _v in models())
+    name = "jc2bal-qcdhf-raunav"
+    script = f"""set -euo pipefail
+git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+cd /workspace/tls
+{loop}echo "JC2BAL QCDHF COMPLETE"
+"""
+    return name, _cpu_job(name, script, launch, "24Gi", "4", "QCD heavy-flavor rejection by the X->bb discriminant")
+
+
+CKPT_ID = "/data/results/eval/v2_ckpt_identity/identity.json"
+
+
+def ckptid_spec(tag: str) -> tuple:
+    """CPU, one pod: experiments/EVAL/checkpoint_identity.py, which paper runs' bestval is best70's file."""
+    launch = _launch()
+    name = "ckpt-identity-raunav"
+    script = f"""set -euo pipefail
+git clone -q --depth 1 --branch {tag} https://github.com/raunavm/transferlearningsophon.git /workspace/tls
+cd /workspace/tls
+python3 experiments/EVAL/checkpoint_identity.py --runs {PAPER_RUNS.relative_to(ROOT)} --root {launch.V2_ROOT} --out {CKPT_ID}
+echo "CKPT IDENTITY COMPLETE"
+"""
+    return name, _cpu_job(name, script, launch, "4Gi", "1", "bestval against best70 for every paper run")
+
+
+# The released Sophon model (arXiv:2405.12972; massreg-e0b-extract, RUNS.csv), pinned by its sha256
+SOPHON_URL = "https://huggingface.co/jet-universe/sophon/resolve/main/models/JetClassII_Sophon/model.pt"
+SOPHON_SHA256 = "cc7c33b522e796b5bbf0aa9bb5b01361c964f4ef3acebdd9682d7519c095b824"
+SOPHON_ROOT = "/data/results/eval/v2_linprobe_sophon"
+SOPHON_MODEL, SOPHON_TAG = "sophon-released", "released"
+
+
+def sophon_spec(tag: str) -> tuple:
+    """GPU, one pod: the released Sophon model's class-token features on every split our models' frozen
+    probes read (balanced JetClass-II with its config; JetClass, top and quark/gluon with Herwig with the
+    downstream configs and files of build_linprobe_jobs.DATASETS, so the same inputs are zero-filled),
+    then probe_released.py (the fits_v4 probes and the coarse label sets) and qcd_hf_rejection.py."""
+    pb = _probe_builder()
+    ck = f"/workspace/sophon/{SOPHON_TAG}.pt"
+    calls = "".join(f"extract jc2bal train_N{n} {CFG} 0 {BAL}/train_N{n}_s1.parquet\n" for n in (1000, 10000, 100000, 1000000))
+    calls += f"extract jc2bal val {CFG} 0 {BAL}/val.parquet\nextract jc2bal test {CFG} 0 {BAL}/test.parquet\n"
+    for ds in ("jc1", "top", "qg"):
+        sizes, cfg, extra = pb.DATASETS[ds]
+        calls += "".join(f"extract {ds} train_N{n} {cfg} 0 {pb.TRAIN_DIR[ds]}/train_N{n}_s1.parquet\n" for n in sizes)
+        for split, (maxj, files) in extra.items():
+            calls += f"extract {ds} {split} {cfg} {maxj} {files}\n"
+    out = f"{SOPHON_ROOT}/{SOPHON_MODEL}"
+    name = "sophon-probe-raunav"
+    script = f"""set -euo pipefail
+{_start(tag)}
+[ -f {SOPHON_ROOT}/fits_v4_qcdhf/{SOPHON_MODEL}.json ] && {{ echo "{SOPHON_MODEL} done"; exit 0; }}
+[ -f {BAL}/DONE ] || {{ echo "FATAL: {BAL} not staged"; exit 42; }}
+USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+[ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
+{GPU_CHECK}
+mkdir -p /workspace/sophon
+retry python3 -c "import urllib.request; urllib.request.urlretrieve('{SOPHON_URL}', '{ck}')" || exit 1
+GOT=$(sha256sum {ck} | cut -d' ' -f1)
+[ "${{GOT}}" = "{SOPHON_SHA256}" ] || {{ echo "FATAL: {ck} sha256 ${{GOT}}"; exit 42; }}
+TEST1=""
+for C in {pb.BF.JC1_CLASSES}; do
+  for f in $(ls /data/JetClass/Pythia/test_20M/${{C}}_*.root | sort | head -2); do TEST1="${{TEST1}} ${{f}}"; done
+done
+[ "$(echo ${{TEST1}} | wc -w)" -eq 20 ] || {{ echo "FATAL: expected 20 JetClass test files"; exit 42; }}
+# extract DATASET SPLIT CONFIG MAX_JETS FILES...: the split's features; a split with its manifest is done
+extract () {{
+  OUT={out}/$1/$2; CFGX=$3; MAXJ=$4; shift 4
+  [ -f ${{OUT}}/{SOPHON_TAG}/manifest.json ] && return 0
+  python3 experiments/EVAL/extract_v2.py --run-dir /workspace/sophon --rung L188 --num-classes 188 \\
+    --num-reg 0 --checkpoints {ck} --data-config ${{CFGX}} --max-jets ${{MAXJ}} \\
+    --observers --feature-classes --prefix-features 2000000000 --head-prefix 0 --no-anomaly-rows \\
+    --diag-stride 0 --no-pooled --data-test "$@" --out ${{OUT}} || exit 1
+}}
+{calls}python3 experiments/EVAL/probe_released.py --model {SOPHON_MODEL} --checkpoints {SOPHON_TAG} --root {SOPHON_ROOT} \\
+  --coarse {" ".join(COARSE)} --out {SOPHON_ROOT}/fits_v4 --probs-out {SOPHON_ROOT}/fits_v4_probs
+python3 experiments/EVAL/qcd_hf_rejection.py --model {SOPHON_MODEL} --checkpoints {SOPHON_TAG} \\
+  --probs-root {SOPHON_ROOT}/fits_v4_probs --features-root {SOPHON_ROOT} --out {SOPHON_ROOT}/fits_v4_qcdhf
+echo "SOPHON PROBE COMPLETE"
+"""
+    return name, _indexed(name, script, 1, 1, True, pb.X_MEM, "4",
+                          "the released Sophon model as a reference row of the frozen probes (PI 2026-11-07). GPU")
+
+
 def _indices(spec: str) -> tuple:
     out = []
     for part in filter(None, spec.split(",")):
@@ -653,7 +778,8 @@ def main(argv=None) -> int:
     ap.add_argument("--only", default="", help="extract, fit: model indices, e.g. 1-13, for a job of that subset")
     ap.add_argument("--name", default="jc2bal-x-raunav", help="extract, fit: the job name (with --only)")
     ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "ref2", "split", "extract", "fit", "mlp",
-                                                 "masscurves", "kin", "xfill", "fitfill", "sib", "sibstage", "sibx"))
+                                                 "masscurves", "kin", "xfill", "fitfill", "sib", "sibstage", "sibx",
+                                                 "coarse", "qcdhf", "ckptid", "sophon"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
@@ -667,7 +793,9 @@ def main(argv=None) -> int:
                       "fit": lambda: fit_spec(a.tag, a.parallelism, False, _indices(a.only),
                                               a.name if a.only else ""),
                       "mlp": lambda: fit_spec(a.tag, a.parallelism, True),
-                      "masscurves": lambda: masscurves_spec(a.tag), "kin": lambda: kin_spec(a.tag)}[kind]()
+                      "masscurves": lambda: masscurves_spec(a.tag), "kin": lambda: kin_spec(a.tag),
+                      "coarse": lambda: coarse_spec(a.tag, a.parallelism), "qcdhf": lambda: qcdhf_spec(a.tag),
+                      "ckptid": lambda: ckptid_spec(a.tag), "sophon": lambda: sophon_spec(a.tag)}[kind]()
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(p)
