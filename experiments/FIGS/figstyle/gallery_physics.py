@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Gallery mock-ups of the design schematic, the mass regression, the mass sculpting and the resonance
-tagging figures, in style_v3 only, with Sophon's Fig. 2 redrawn first as the check of that style. Layouts:
+tagging figures, in style_v4 only, with Sophon's Fig. 2 redrawn first as the check of that style. Layouts:
 docs/figstyle/PLAN.md. Data come through paper_figures' selection code (gallery_common); nothing is drawn at
 import."""
 from __future__ import annotations
@@ -16,18 +16,18 @@ from matplotlib.patches import Circle, FancyBboxPatch, Polygon, Rectangle
 from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
 
 GROOMED = "Soft-drop mass"
-MASS_ROWS = (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))     # a mass model and its label set's colour, name
+MASS_ROWS = (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))     # a mass model and its label set's name
 NAMES = {**S.NAME, **{row: f"{S.NAME[base]}, mass regression" for row, base in MASS_ROWS}}
 RATIO_ATLAS, RATIO_CMS = 0.44, 0.33     # lower axes over main axes: ATLAS 2024-015 Figs. 7-8, CMS Fig. 8 (catalogue)
 STACK_GAP, COLUMN_GAP = 0.08, 0.32      # a main and its lower axes; two columns with their own y axes
 SHOWN_FROM = 0.05       # a response axis covers the bins with this share of the largest bin of any series
 HIST_ROOM = 1.45        # top of a histogram's y axis over its peak: room for the legend above the curves
-SELECTION_COLOUR = {1: S.TAB10[7], 2: S.TAB10[9]}     # F10a, as CMS Fig. 8's: black inclusive; not the label sets' colours
+SELECTION_COLOUR = {1: S.TAB10[0], 2: S.TAB10[6]}     # F10a, as CMS Fig. 8's: black inclusive; then CMS's blue, and pink:
+# no colour of the palette (style_v4.SERIES), so no working point reads as a model
 SCULPT_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS")
-SCULPT_COLOUR = {**{a: S.SERIES[a] for a in S.LEVELS}, "L162_MASS": S.TAB10[8], "R16_Q1_MASS": S.TAB10[9]}     # F10b: all six on one axes
 F10A_TOP = 260.0        # GeV, F10a: the bin edge that covers CMS Fig. 8's 30 to 250 GeV
 F10B_FROM = 5e-3        # F10b: the first point is the 5.2e-3 grid point; CMS Fig. 9 left stops at 0.5%
-DIRECT_COLOUR = S.TAB10[7]      # F11: Sophon's grey for a discriminant built from the output scores
+DIRECT_LOOK = S.look("L188", linestyle="-.")     # F11: the 188-class model read out another way, as F8's linear probe
 FITS = pathlib.Path("/data/results/eval/xbx/fits")      # the dry-run fits on the stand-in jets: cluster only
 STANDIN = "xbb_jc2"
 
@@ -43,23 +43,33 @@ def _fit_y(ax, values: list, room: float = 0.0, pad: float = 0.08) -> None:
 
 
 # ------------------------------------------------------------------ the check of the style
+# Sophon's eight curves in our palette (round 3): Sophon, trained on 188 classes, takes the 188 colour in both panels
+# (its X->bq discriminant too, dotted as Sophon draws it); Sophon* (42 classes) the 43 colour; ParT and ParticleNet,
+# taggers trained from scratch, the from-scratch dark grey and the mid grey. Line styles stay Sophon's.
+SOPHON_COLOUR = {"Sophon": S.SERIES["L188"], "Sophon* (42 class)": S.SERIES["R42_Q1"],
+                 "Sophon (transfer learning)": S.SERIES["L188"], "Sophon_{discr. = X->bq vs. QCD}": S.SERIES["L188"],
+                 "ParT_{X->bb vs. QCD}": S.GREY_DARK, "ParT_{X->bs vs. QCD}": S.GREY_DARK,
+                 "ParticleNet_{X->bb vs. QCD}": S.GREY_MID, "ParticleNet_{X->bs vs. QCD}": S.GREY_MID}
+
+
 def draw_sophon_fig2(path: pathlib.Path) -> None:
-    """Sophon Fig. 2 from the points read off its native PDF, every setting from style_v3."""
+    """Sophon Fig. 2 from the points read off its native PDF, through style_v4 and our palette; Sophon's figure size,
+    panel gap (hspace 0.2, where style_v4 sets 0.25), limits, ticks, line widths and line styles."""
     d = json.loads((HERE / "sophon_fig2_points.json").read_text())
-    fig, axes = plt.subplots(2, 1, figsize=(S.WIDTH, S.HEIGHT[2]), sharex=True)
-    for ax, p in zip(axes, d["panels"]):
+    fig, axes = plt.subplots(2, 1, figsize=(S.WIDTH, S.HEIGHT[2]), sharex=True, gridspec_kw={"hspace": 0.2})
+    for k, (ax, p) in enumerate(zip(axes, d["panels"])):
         S.grid(ax)
         for c in p["curves"]:
             xy = np.array(c["points_xy"])
-            ax.plot(xy[:, 0], xy[:, 1], color=c["colour"], linewidth=S.LW, linestyle=":" if c["dash_pdf"] else "-",
-                    label=c["name_mathtext"])
+            ax.plot(xy[:, 0], xy[:, 1], color=SOPHON_COLOUR[c["name_printed"]], linewidth=S.LW,
+                    linestyle=":" if c["dash_pdf"] else "-", label=c["name_mathtext"])
         ax.set_xscale("log")
         ax.set_xlim(1e-5, 1)
         ax.set_ylim(0, 5.4)
         ax.set_yticks(range(6))
         S.title(ax, p["title_mathtext"])
         S.labels(ax, ylabel=p["y"]["label"])
-        S.legend(ax)
+        S.legend(ax, ncol=2 if k == 0 else 1)   # upper panel: two columns keep the frameless legend above the curves
     S.labels(axes[1], xlabel=d["panels"][1]["x"]["label"])
     S.save(fig, path)
 
@@ -142,9 +152,9 @@ def draw_f1(path: pathlib.Path) -> None:
     # the label sets: one column each, a merged class spans the rows it merges
     # the head's hidden layer, between the features and every label set's outputs (fc_params [(512, 0.1)])
     hid = _hidden(ax, 2.2, 3.06, 3.94, TRAINED)
-    ax.text(2.2, 4.13, "512 hidden", ha="center", va="center", fontsize=S.LEGEND_PT)
+    ax.text(2.2, 4.13, "512", ha="center", va="center", fontsize=S.LEGEND_PT)     # as in (b); "512 hidden" ran into "features"
     _fan(ax, nodes, hid, FAN, 0.3)
-    top, bottom, cw, pitch, x0 = 4.35, 2.75, 0.58, 0.84, 2.62
+    top, bottom, cw, pitch, x0 = 4.35, 2.75, 0.58, 0.80, 2.60     # the 17-class column ends at 5.58 in, inside the 5.71 in canvas
     rows = (top - bottom) / sum(BOXES["L188"])
     for k, (row, spans) in enumerate(BOXES.items()):
         x = x0 + k * pitch
@@ -161,7 +171,7 @@ def draw_f1(path: pathlib.Path) -> None:
         for r in range(sum(BOXES["L188"])):
             ax.plot(*zip(a, (x0, top - (r + 0.5) * rows)), color=FAN, linewidth=0.3, zorder=1)
     # what each merge removes
-    ax.text(1.55, 2.45, "Each merge\nremoves:", ha="left", va="center", fontsize=S.LEGEND_PT)
+    ax.text(x0 + cw / 2 - 0.06, 2.62, "Each merge\nremoves:", ha="right", va="center", fontsize=S.LEGEND_PT)   # left of the first arrow, clear of the callout
     for k, words in enumerate(MERGES):
         x = x0 + k * pitch + cw / 2
         ax.annotate("", xy=(x + pitch, 2.69), xytext=(x, 2.69),
@@ -198,15 +208,15 @@ def _response(ax, rx, atlas: dict, group: str, title: str) -> None:
     ax.stairs(gr, e, baseline=None, label=GROOMED, **S.REFERENCE)
     rx.axhline(1.0, **S.REFERENCE)
     shown, ratios = [gr], []
-    for row, base in MASS_ROWS:
+    for row, _ in MASS_ROWS:
         hs = [P._frac(b["hist"]) for m in RUNS[row] if (b := P._block(atlas, m, "regressed", group))]
         if not hs:
             continue
         mean = np.mean(hs, axis=0)
         with np.errstate(divide="ignore", invalid="ignore"):
             r = np.where(enough, mean / gr, np.nan)
-        ax.stairs(mean, e, baseline=None, color=S.SERIES[base], linewidth=S.LW_CURVE, label=NAMES[row])
-        rx.stairs(r, e, baseline=None, color=S.SERIES[base], linewidth=S.LW_CURVE)
+        ax.stairs(mean, e, baseline=None, color=S.SERIES[row], linewidth=S.LW_CURVE, label=NAMES[row])
+        rx.stairs(r, e, baseline=None, color=S.SERIES[row], linewidth=S.LW_CURVE)
         shown.append(mean)
         ratios.append(r)
     on = np.flatnonzero(np.any([s >= SHOWN_FROM * s.max() for s in shown], axis=0))
@@ -234,7 +244,7 @@ def draw_f9a(path: pathlib.Path) -> None:
 
 def _mass_series() -> list:
     """(runs, estimator, colour, label, marker) of the two mass-regression models' outputs."""
-    return [(RUNS[row], "regressed", S.SERIES[base], NAMES[row], None) for row, base in MASS_ROWS]
+    return [(RUNS[row], "regressed", S.SERIES[row], NAMES[row], S.MARKERS[row]) for row, _ in MASS_ROWS]
 
 
 def _binned(axes, atlas: dict, group: str, axis: str, xlabel: str, legends: tuple, room: float = 0.0,
@@ -260,12 +270,14 @@ def _binned(axes, atlas: dict, group: str, axis: str, xlabel: str, legends: tupl
         ratio = med / med0
         rsd = np.sign(res - res0) * np.sqrt(np.abs(res ** 2 - res0 ** 2))   # ATLAS 2024-015's root square difference
         kw = dict(baseline=None, color=colour, linewidth=S.LW_CURVE)
-        a0.stairs(med, e, label=label, **kw)
-        a1.stairs(res, e, label=label, **kw)
-        if marker:      # one marker per bin centre: six series, greyscale print (PI)
+        a0.stairs(med, e, label=None if marker else label, **kw)
+        a1.stairs(res, e, label=None if marker else label, **kw)
+        if marker:      # one marker per bin centre: greyscale print (PI), the model's marker (style_v4.MARKERS)
             c = 0.5 * (e[1:] + e[:-1])
             for ax, v in ((a0, med), (a1, res), (r0, ratio), (r1, rsd)):
                 ax.plot(c, v, color=colour, marker=marker, markersize=3, linestyle="none")
+            for ax in (a0, a1):     # the legend key: line and marker, as two series may share a colour
+                ax.plot([], [], color=colour, linewidth=S.LW_CURVE, marker=marker, markersize=3, label=label)
         r0.stairs(ratio, e, **kw)
         r1.stairs(rsd, e, **kw)
         meds.append(med)
@@ -321,7 +333,7 @@ def draw_a17_probe(path: pathlib.Path) -> None:
     """F9b's form, six series: the MLP on the frozen features of the four label sets and the two mass outputs."""
     atlas = _atlas()
     series = [(RUNS[a], "mlp", S.SERIES[a], f"{S.NAME[a]}, MLP on frozen features", S.MARKERS[a]) for a in S.LEVELS]
-    series += [(RUNS[row], "regressed", SCULPT_COLOUR[row], NAMES[row], S.MARKERS[row]) for row, _ in MASS_ROWS]
+    series += _mass_series()
     fig, axes = plt.subplots(2, 2, figsize=(S.FULL, S.ONE_PANEL[1] + 2 * S.CM), sharex="col",
                              gridspec_kw=dict(height_ratios=(1, RATIO_ATLAS), hspace=STACK_GAP, wspace=COLUMN_GAP))
     _binned(axes, atlas, "all", "vs_pt", X_PT, legends=(1,), room=0.9, series=series)
@@ -405,7 +417,7 @@ def draw_f10b(path: pathlib.Path) -> None:
         eff = np.array([c["eff"] for c in have[0]], float)
         mean = np.mean([[c["js_distance"] for c in h] for h in have], axis=0)
         keep = eff >= F10B_FROM
-        ax.plot(eff[keep], mean[keep], color=SCULPT_COLOUR[row], linewidth=S.LW_CURVE, marker=S.MARKERS[row], markersize=3.5, label=NAMES[row])
+        ax.plot(eff[keep], mean[keep], color=S.SERIES[row], linewidth=S.LW_CURVE, marker=S.MARKERS[row], markersize=3.5, label=NAMES[row])
         drawn += 1
     if not drawn:
         raise Absent("no mass sculpting curve of the models shown")
@@ -419,17 +431,17 @@ def draw_f10b(path: pathlib.Path) -> None:
 
 # ------------------------------------------------------------------ F11
 def _standin_series(XR, fits: dict) -> list:
-    """(label, colour, readouts per run) on the stand-in jets: the 188-class output scores (Sophon's direct
+    """(label, look, readouts per run) on the stand-in jets: the 188-class output scores (Sophon's direct
     discriminant, Eq. 4), then each label set's classifier on the frozen features (the fits' "head"; the linear
     probe where a fit has none)."""
     of = lambda row, key: [r for m in RUNS[row] if (r := XR.readout(fits.get(m, {}).get(STANDIN, {}), key))]
     out = []
     if direct := of("L188", "zero_shot_xbb"):
-        out.append((f"{S.NAME['L188']}, direct discriminant", DIRECT_COLOUR, direct))
+        out.append((f"{S.NAME['L188']}, direct discriminant", DIRECT_LOOK, direct))
     for row in S.LEVELS:
         for key, word in (("head", "transfer"), ("linear", "linear probe")):
             if rs := of(row, key):
-                out.append((f"{S.NAME[row]}, {word}", S.SERIES[row], rs))
+                out.append((f"{S.NAME[row]}, {word}", S.look(row), rs))
                 break
     return out
 
@@ -443,10 +455,10 @@ def draw_f11(path: pathlib.Path) -> None:
         raise Absent(f"no {STANDIN} readout of the label sets under {FITS}")
     fig, axes = plt.subplots(2, 1, figsize=S.ONE_PANEL, sharex=True)
     top = 0.0
-    for label, colour, rs in series:
+    for label, style, rs in series:
         x, y, _ = P.xbx_curves(M, rs)
         mean = y.mean(axis=0)
-        axes[0].plot(x, mean, color=colour, linewidth=S.LW_CURVE, label=label)
+        axes[0].plot(x, mean, **style, linewidth=S.LW_CURVE, label=label)
         top = max(top, float(np.nanmax(mean)))
     S.legend(axes[0])
     for ax, what in zip(axes, (r"$X\rightarrow bb$ tagging performance, stand-in jets",
@@ -508,8 +520,8 @@ F11_CAPTION = (
     "discriminant of the 188-class model and a classifier on the frozen features of each label set, each the mean "
     "over runs; a curve ends where fewer than 20 background jets remain.")
 
-ATLAS_LOOK = ("Sophon's font, sizes, ticks and framed legend in place of ATLAS's; no experiment label, and ATLAS's text "
-              "block (sqrt(s), jet definition, pT and mass selection) is dropped, so our selection appears on no figure")
+ATLAS_LOOK = ("Sophon's font and sizes in place of ATLAS's; inward ticks on four sides and no legend frame "
+              "(2603.04084, round 3); no experiment label, and ATLAS's text block (sqrt(s), jet definition, pT and mass selection) is dropped, so our selection appears on no figure")
 A17_DIFFERS = (
     "As F9b, on one jet group and with a second row against generator mass, which ATLAS does not draw (its Fig. 9 has "
     "pT response instead); the legend appears once, in the first panel, to keep four panels light. Eight axes in all, a lower axes under each "
@@ -521,11 +533,21 @@ MASS_RUNS_NOTE = ("Mean of two runs for each mass regression model (the third ru
                   "the soft-drop mass is the same in every file. Nothing else is absent.")
 
 PAGES = [
-    Page("SOPHON-FIG2", "Sophon Fig. 2 redrawn through style_v3 (validation)", ["2405.12972/fig2.png"], "Sophon Fig. 2",
+    Page("SOPHON-FIG2", "Sophon Fig. 2 redrawn through style_v4 (validation)", ["2405.12972/fig2.png"], "Sophon Fig. 2",
          SOPHON_FIG2_CAPTION,
-         "Nothing but the file encoding (pdf.fonttype 42, embedded TrueType) and the data, which are the points read "
-         "off Sophon's native PDF rather than its original arrays. It breaks our own rules on purpose (dotted series, "
-         "long caption), because this page checks the style against Sophon, not the figure.",
+         "Round 3 (style_v4) on purpose, against Sophon's native settings (sophon_native.json): grid a faint dashed "
+         "#b0b0b0 line at major y ticks only (0.35 pt, alpha 0.25), where Sophon's is 0.5 pt at full strength at major "
+         "and minor x ticks and major y ticks; spines 0.9 pt, not 0.8; ticks pointing in, 5.3 and 2.7 pt, mirrored on all "
+         "four sides with minor ticks on y too, where Sophon's point out (3.5 and 2 pt) on the left and bottom only, with "
+         "no y minor ticks; no legend frame, where Sophon's is framed (#cccccc, alpha 0.8, rounded); palette ours: Sophon "
+         "(and its X→bq discriminant, dotted) in the 188 colour, Sophon* (42 classes) in the 43 colour, ParT dark grey and "
+         "ParticleNet mid grey, where Sophon has tab10 blue, orange and green, pure blue and grey. Unchanged and checked "
+         "against the native PDF by compare_fig2.py: the data points, axes box (279 x 98.84 pt each), scales, limits, "
+         "y ticks, eight curves at 1.5 pt with Sophon's solid and dotted dashes, every vertex inside the axes at the "
+         "native position (0.0000 pt off); also STIX text, its sizes, the figure size and the panel gap (hspace 0.2, kept "
+         "against style_v4's 0.25). The file encoding differs (pdf.fonttype 42). Without its frame the upper legend's "
+         "ParticleNet key lies on the curves near 3e-3, where Sophon's alpha-0.8 frame covered them. It breaks our own "
+         "rules on purpose (dotted series, long caption), because this page checks the style against Sophon.",
          draw_sophon_fig2,
          "The points are those of the native PDF after its path simplification; a curve starts where the PDF's does."),
     Page("F1", "Design of the study", ["2405.12972/fig1.png"], "Sophon Fig. 1", F1_CAPTION,
@@ -542,7 +564,7 @@ PAGES = [
          draw_f1),
     Page("F9a", "Mass regression: response", ["ATL-PHYS-PUB-2024-015/fig7.png"], "ATLAS 2024-015 Fig. 7", F9A_CAPTION,
          "Two jet groups instead of mass and pT responses, as we regress mass only, with panel titles ATLAS lacks. Three "
-         "series instead of two: black dashed reference and two solid colours, instead of purple dashed and green. "
+         "series instead of two: a dark grey dashed reference and the 162- and 17-class colours, solid, instead of purple dashed and green. "
          "Fraction of jets on the y axis instead of a.u., Response (m/m_gen) on x instead of m_Reco/m_Truth. x range from "
          "the data, per panel, instead of a fixed 0.7 to 1.3, because the soft-drop mass here is far wider. No vertical "
          "dotted line at 1, a second reference the PI limit forbids. No bands: ATLAS's are thinner than its lines. Same "
@@ -552,8 +574,8 @@ PAGES = [
     Page("F9b", "Mass regression: across jet pT", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8", F9B_CAPTION,
          "All jets in ten pT bins to 2500 GeV in reconstructed pT (PI: at least eight, ATLAS's density), instead of "
          "ATLAS's bins to 1500 GeV in truth pT. Connected steps instead of one disconnected segment per bin, and no bands (PI limit), though "
-         "ATLAS draws them. Three series instead of two, colours as F9a. No dotted line at 1 in the median panel. Dashed "
-         "grid at major and minor ticks, the theme for every figure, where ATLAS has none. Median response (r) and Resolution "
+         "ATLAS draws them. Three series instead of two, colours as F9a, each model's marker (v, P) at the bin centres. No "
+         "dotted line at 1 in the median panel. Faint dashed grid at major y ticks (round 3), where ATLAS has none. Median response (r) and Resolution "
          "(sigma_r) instead of ATLAS's longer axis words. The lower panels keep ATLAS's ratio "
          "and its RSD, sgn(s'-s) sqrt|s'^2-s^2|, at its height (0.44). " + ATLAS_LOOK + ".",
          draw_f9b, MASS_RUNS_NOTE),
@@ -571,7 +593,8 @@ PAGES = [
          "the mean over runs. Below are the ratio of each median and the root square difference (RSD) of each resolution "
          "to the soft-drop mass.",
          "As F9b, with six series and the soft-drop mass (PI): the four probes in the label sets' colours, the two mass "
-         "outputs in C8 and C9 as F10b, one marker shape per series at the bin centres. The legend is in the resolution "
+         "outputs in the 162- and 17-class colours as F10b, one marker shape per series at the bin centres and in the legend, "
+         "since each mass output shares its label set's colour. The legend is in the resolution "
          "panel, with room above the curves. " + ATLAS_LOOK + ".",
          draw_a17_probe, MASS_RUNS_NOTE),
     Page("F10a", "Mass sculpting: QCD mass", ["2604.09809/fig8.png"], "CMS JME-25-001 Fig. 8", F10A_CAPTION,
@@ -579,13 +602,13 @@ PAGES = [
          "one y axis across them. Two working points instead of three, because the files hold 10% and "
          "1%. Mass from 20 to 260 GeV in 20 GeV bins, the bins that cover CMS's 30 to 250 GeV; the files run to 500 GeV, "
          "and the twelve bins cut hold 5.9% of the inclusive jets and 6.4 to 7.6% of the selected ones (fractions stay "
-         "those of all jets to 500 GeV). Colours are black, grey and cyan instead of black, blue, red, orange: no label "
-         "set's colour, though cyan is the 17-class mass regression model on F10b and grey the direct discriminant on F11. "
+         "those of all jets to 500 GeV). Colours are black, blue and pink instead of black, blue, red, orange: no colour "
+         "of our palette, where red and orange are random partitions with controlled flavor boundaries. "
          "Markers as CMS's first three, at 2.5 pt against 1.59 to 2.12 pt so that the bars show, inclusive on top. No "
          "vertical error bars: the PI's limit, where CMS's are statistical. Bars at 1.0 pt instead of 0.4. Dashed reference "
          "at 1 instead of solid, and \"Ratio\" instead of a stacked fraction. Same ratio height (0.33). Jet mass (m_SD) "
-         "instead of m_SD, fraction of jets instead of A.U., titles instead of a label block, framed legend where CMS has "
-         "none, STIX at 10 and 8 pt with outward ticks instead of Helvetica at 6.9 and 5.8 pt with inward ones.",
+         "instead of m_SD, fraction of jets instead of A.U., titles instead of a label block, no legend frame, as CMS; "
+         "STIX at 10 and 8 pt instead of Helvetica at 6.9 and 5.8 pt; inward ticks, as CMS.",
          draw_f10a,
          "Mean of two runs for the two mass regression models, three for the others. Nothing else is absent."),
     Page("F10b", "Mass sculpting: how much", ["2604.09809/fig9.png"], "CMS JME-25-001 Fig. 9 left", F10B_CAPTION,
@@ -595,23 +618,23 @@ PAGES = [
          "panel stops; the four tighter points are cut, because the distance there is mostly finite statistics (at 0.1%, "
          "a random selection of as many jets gives 0.108 against the curves' 0.119 to 0.125). Distance over 20 to 500 GeV "
          "and all pT instead of CMS's 30 to 250 GeV and 600 to 1000 GeV. Six series (PI) instead of two, one marker shape each. "
-         "Label sets in their colours; the mass regression models in C8 and C9, as their label sets take C1 and C3 here. "
+         "Label sets in their colours; the mass regression models in their label sets' colours with their own markers (v, P). "
          "Markers joined by a 1.1 pt line, not step markers: each point is a cumulative selection, so a segment would span "
-         "a bin that does not exist (for the PI to decide). Dashed grid at major and minor ticks (the theme for every figure), where "
-         "CMS has none. Jensen-Shannon distance (d_JS) and QCD efficiency instead of JSD and eps_B [%]; y limits from the "
-         "data instead of 0.007 to 1. No random-selection band or floor: CMS has none (plan). Framed legend and no label "
-         "block; STIX at 10 and 8 pt with outward ticks.",
+         "a bin that does not exist (for the PI to decide). Faint dashed grid at major y ticks (round 3), where "
+         "CMS has none; no major y tick falls in this log range, so no grid line shows. Jensen-Shannon distance (d_JS) and QCD efficiency instead of JSD and eps_B [%]; y limits from the "
+         "data instead of 0.007 to 1. No random-selection band or floor: CMS has none (plan). No legend frame and no label "
+         "block; STIX at 10 and 8 pt with inward ticks.",
          draw_f10b,
          "Mean of two runs for the two mass regression models, three for the others. Nothing else is absent."),
     Page("F11", "Resonance tagging", ["2405.12972/fig2.png"], "Sophon Fig. 2", F11_CAPTION,
-         "Same layout, limits on x, fonts and legend place; landscape's finer grid and thinner lines (the theme). y axis eps_S/sqrt(eps_B), in words figure of merit, instead of the "
+         "Same layout, limits on x, fonts and legend place; round 3's faint grid and thinner lines. y axis eps_S/sqrt(eps_B), in words figure of merit, instead of the "
          "significance Z, and x axis QCD efficiency instead of SM background efficiency, because Z needs the SM backgrounds, which "
          "we do not have. Upper panel on stand-in jets from JetClass-II, not Sophon's samples. Lower panel empty, "
-         "not invented curves. Roles: the 188-class direct discriminant is Sophon's direct curve, in Sophon's grey for a "
-         "discriminant from the output scores; the four classifiers on frozen features take Sophon's transfer role, moved "
+         "not invented curves. Roles: the 188-class direct discriminant is Sophon's direct curve, in the 188 colour dash-dot, "
+         "a second read-out of the 188-class model as F8's linear probe (Sophon: grey, dotted); the four classifiers on frozen features take Sophon's transfer role, moved "
          "to X→bb on the stand-in because X→bs has no samples; Sophon* (42 classes, separately trained) has no counterpart; "
          "from-scratch curves take the ParT and ParticleNet role and are not drawn yet. Five series against Sophon's four. "
-         "Solid lines only (PI limit), where Sophon's are dotted for two series. y limits from the data, with the top at "
+         "Solid lines but the dash-dot discriminant, where Sophon's are dotted for two series. y limits from the data, with the top at "
          "1.5 times the highest curve to clear the legend, not 0 to 5.4. Curves have 26 points or fewer (the fits' "
          "efficiency grid) and end at 20 background jets, so they are coarser and shorter than Sophon's.",
          draw_f11,

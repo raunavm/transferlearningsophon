@@ -15,7 +15,7 @@ import numpy as np
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE.parent)]
 import paper_figures as P  # noqa: E402
-import style_v3 as S  # noqa: E402
+import style_v4 as S  # noqa: E402
 
 M = P.F._mlst()
 RUNS = M._paper(P.REPO)
@@ -40,7 +40,7 @@ class Page:
     precedent_label: str    # e.g. "Landscape Fig. 5"
     caption: str            # final caption: 40 to 80 words, what is plotted only
     differs: str            # every attribute on which ours differs from the precedent, and why
-    draw: Callable          # draw(path: pathlib.Path) -> None, saving through style_v3.save
+    draw: Callable          # draw(path: pathlib.Path) -> None, saving through style_v4.save
     data_note: str = ""     # what is incomplete in today's data, if anything
 
 

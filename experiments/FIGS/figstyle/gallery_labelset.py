@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The gallery's label-set mock-ups: F2a, F2b, F3, F3-scatter, F3-app, F3-ft, F8, A8, A10, UMAP-jc1, UMAP-jc2-had, UMAP-jc2-lep, UMAP-top, UMAP-qg, VAL (docs/figstyle/PLAN.md), in
-style_v3 only. The numbers come through the selection code of paper_figures and mlst_results; the drawing
+style_v4 only. The numbers come through the selection code of paper_figures and mlst_results; the drawing
 is written here. All work happens inside the draw functions."""
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from matplotlib.colors import Normalize
 
 import gallery_common as C
 from gallery_roc import FAMILIES, family_of
-import style_v3 as S
+import style_v4 as S
 
 P, M, RUNS, I = C.P, C.M, C.RUNS, C.I
 
@@ -26,10 +26,8 @@ Y_ACC, Y_R30 = "Accuracy", r"Rejection ($R_{30}$)"
 X_CLASSES, X_JETS = "Number of pretraining classes", "Number of training jets"
 LEGEND_PANEL = 1        # JetClass: its curves stay high on the right, so its lower right is empty in F2, F8 and A10
 TITLES = {key: title for key, _, _, _, title, _ in P.F2_PANELS}
-RANDOM_COLOUR = S.TAB10[7]
 HEAT_F3 = ("L162", "R42_Q1", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R")
 PUBLISHED = {"jc1": (2_000_000, 0.836), "top": (1_200_000, 1602.0), "qg": (1_600_000, 101.2)}     # ParT's published values, as in the paper's benchmark tables
-PROBE_COLOUR = S.TAB10[8]   # F8: C1 means 162 classes in every other figure
 
 
 def _chosen() -> dict:
@@ -91,8 +89,10 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: in
             _empty_panel(ax)
         else:
             S.fine_grid(ax)
-            line = [(x, y) for row, x in P.X_OF.items() if (y := _mean(row, value)) is not None]
-            ax.plot(*zip(*line), color=S.TAB10[0], linewidth=S.LW_CURVE, marker="o", markersize=MARKER, label="Hierarchy")
+            line = [(row, x, y) for row, x in P.X_OF.items() if (y := _mean(row, value)) is not None]
+            ax.plot([x for _, x, _ in line], [y for *_, y in line], color=S.SERIES["L188"], linewidth=S.LW_CURVE, label="Hierarchy")
+            for row, x, y in line:      # each label set's point in its own colour and marker
+                ax.plot(x, y, color=S.SERIES[row], marker=S.MARKERS[row], markersize=MARKER, linestyle="none")
             for label, colour, marker, rows in groups:
                 ys = [y for row in rows if (y := _mean(row, value)) is not None]
                 if ys:
@@ -100,7 +100,8 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, legend_panel: in
                             markersize=MARKER, label=label)
             scratch = P.scratch_series(M, I["per"], key, met)
             if scratch:
-                ax.axhline(float(np.mean(scratch[max(scratch)])), **S.REFERENCE, label="From scratch, no pretraining")
+                ax.axhline(float(np.mean(scratch[max(scratch)])), **S.look("SCRATCH", linewidth=S.LW_CURVE),
+                           label="From scratch, no pretraining")
             if met == "r30":
                 _log_y(ax)
         _classes_axis(ax)
@@ -123,7 +124,7 @@ def _controlled():
 
 
 def draw_f2a(path) -> None:
-    _draw_f2(path, _probe_value, _controlled() + [("Random partitions", RANDOM_COLOUR, S.MARKERS["RAND"], M.RAND)],
+    _draw_f2(path, _probe_value, _controlled() + [(S.NAME["RAND"], S.SERIES["RAND"], S.MARKERS["RAND"], M.RAND)],
              "no linear probes (linprobe/fits_v4)", "Linear probes")
 
 
@@ -262,21 +263,22 @@ def draw_f3_ft(path) -> None:
 
 
 # ------------------------------------------------------------------ F8, A10: metric against the number of jets
-def _curve(ax, series: dict, colour: str, label: str, band: bool, marker: str) -> None:
-    """Mean over runs with filled circles; with band, Golling's: the SD (range for two runs), same colour, no edge."""
+def _curve(ax, series: dict, style: dict, label: str, band: bool, marker: str) -> None:
+    """Mean over runs with filled markers, style the colour and line style (style_v4.look); with band, Golling's: the
+    SD (range for two runs), same colour, no edge."""
     xs = sorted(series)
     if not xs:
         return
     st = [P.F._spread(series[n]) for n in xs]
     mean = np.array([s[0] for s in st])
-    ax.plot(xs, mean, color=colour, linewidth=S.LW_CURVE, marker=marker, markersize=MARKER, label=label)
+    ax.plot(xs, mean, **style, linewidth=S.LW_CURVE, marker=marker, markersize=MARKER, label=label)
     if band:
         ax.fill_between(xs, mean - np.array([s[1] or 0 for s in st]), mean + np.array([s[2] or 0 for s in st]),
-                        color=colour, alpha=0.2, linewidth=0)
+                        color=style["color"], alpha=0.2, linewidth=0)
 
 
 def _draw_size(path, series_of, band: bool, absent: str, heading: str) -> None:
-    """series_of(key, ds, met): [(series, colour, label)] of a panel."""
+    """series_of(key, ds, met): [(series, look, label, marker)] of a panel."""
     panels = [series_of(key, ds, met) for key, ds, met, *_ in P.SIZE_PANELS]
     if not any(s for p in panels for s, *_ in p):
         raise C.Absent(absent)
@@ -289,8 +291,8 @@ def _draw_size(path, series_of, band: bool, absent: str, heading: str) -> None:
             _empty_panel(ax)
             continue
         S.fine_grid(ax)
-        for series, colour, label, marker in panel:
-            _curve(ax, series, colour, label, band, marker)
+        for series, style, label, marker in panel:
+            _curve(ax, series, style, label, band, marker)
         if key in PUBLISHED:
             ax.plot(*PUBLISHED[key], color="#000000", marker="*", markersize=8, linestyle="none", label="ParT, published")
         if met == "r30":
@@ -303,24 +305,25 @@ def _draw_size(path, series_of, band: bool, absent: str, heading: str) -> None:
 
 def draw_f8(path) -> None:
     chosen = _chosen()
-    series = lambda key, ds, met: [(P.ft_series(M, I["per"], RUNS, key, met, "L188"), S.TAB10[0], "Fine-tuned", "o"),
-                                   (P.probe_series(M, I, RUNS, ds, met, "L188", chosen), PROBE_COLOUR, "Linear probe", "s"),
-                                   (P.scratch_series(M, I["per"], key, met), S.SERIES["SCRATCH"], S.NAME["SCRATCH"], S.MARKERS["SCRATCH"])]
+    series = lambda key, ds, met: [(P.ft_series(M, I["per"], RUNS, key, met, "L188"), S.look("L188"), "Fine-tuned", "o"),
+                                   (P.probe_series(M, I, RUNS, ds, met, "L188", chosen), S.look("L188", linestyle="-."),
+                                    "Linear probe", "s"),
+                                   (P.scratch_series(M, I["per"], key, met), S.look("SCRATCH"), S.NAME["SCRATCH"], S.MARKERS["SCRATCH"])]
     _draw_size(path, series, True, "no fine-tuning read-outs or linear probes", "Pretrained on 188 classes, against training from scratch")
 
 
 def draw_a10(path) -> None:
     chosen = _chosen()
-    series = lambda key, ds, met: [(P.probe_series(M, I, RUNS, ds, met, row, chosen), S.SERIES[row], S.NAME[row], S.MARKERS[row])
-                                   for row in S.LEVELS] + [(P.scratch_series(M, I["per"], key, met), S.SERIES["SCRATCH"],
+    series = lambda key, ds, met: [(P.probe_series(M, I, RUNS, ds, met, row, chosen), S.look(row), S.NAME[row], S.MARKERS[row])
+                                   for row in S.LEVELS] + [(P.scratch_series(M, I["per"], key, met), S.look("SCRATCH"),
                                                             S.NAME["SCRATCH"], S.MARKERS["SCRATCH"])]
     _draw_size(path, series, False, "no linear probes (linprobe/fits_v4)", "Linear probes, per pretraining label set")
 
 
 def draw_a8(path) -> None:
     """A10's form after fine-tuning: the four label sets and from scratch."""
-    series = lambda key, ds, met: [(P.ft_series(M, I["per"], RUNS, key, met, row), S.SERIES[row], S.NAME[row], S.MARKERS[row])
-                                   for row in S.LEVELS] + [(P.scratch_series(M, I["per"], key, met), S.SERIES["SCRATCH"],
+    series = lambda key, ds, met: [(P.ft_series(M, I["per"], RUNS, key, met, row), S.look(row), S.NAME[row], S.MARKERS[row])
+                                   for row in S.LEVELS] + [(P.scratch_series(M, I["per"], key, met), S.look("SCRATCH"),
                                                             S.NAME["SCRATCH"], S.MARKERS["SCRATCH"])]
     _draw_size(path, series, False, "no fine-tuning read-outs", "Fine-tuned, per pretraining label set")
 
@@ -456,8 +459,10 @@ PAGES = [
                 "no pretraining. Values are means over runs.",
         differs="Four panels against Hong's one, for the four tasks. Random partitions as markers at 17 classes: Hong "
                 "has no controls. From scratch dashed, as Hong's baseline and Elsharkawy Fig. 7's, named in the legend. "
-                "Marker shapes for greyscale (MLST). x ticks at the four class counts. Log y on R30, with y minor ticks "
-                "Hong lacks. Panel letters and titles, where Hong has none. Sophon's font, landscape's grid.",
+                "Marker shapes for greyscale (MLST). The line in the 188 colour, each label set's point in its own colour and "
+                "marker (round 3 palette). x ticks at the four class counts. Log y on R30, with y minor ticks "
+                "Hong lacks. Panel letters and titles, where Hong has none. Sophon's font; round 3's faint y grid and "
+                "frameless legend.",
         draw=draw_f2a,
         data_note=f"{TWO_RUNS} Each plain random partition has one run. {SUBST_NOTE}"),
     C.Page(
@@ -548,10 +553,10 @@ PAGES = [
                 "with a linear probe, and a network trained from scratch. Points are means; bands the standard deviation "
                 "over runs. Stars are published ParT: same inputs on JetClass, kinematic only on top, kinematic and "
                 "particle type on quark/gluon.",
-        differs="Four panels, one per task, against Golling's one. Fine-tuned in the 188-class colour, the linear probe "
-                "in tab10 C8 (C1 means 162 classes across our figures) and from scratch black, against Golling's green, "
-                "red and blue. Sophon's font, landscape's grid and framed legend, "
-                "where Golling has no grid and no frame. Lines 1.1 pt against about 0.75. Log y on R30. Band as Golling: "
+        differs="Four panels, one per task, against Golling's one. Fine-tuned solid and the linear probe dash-dot, both in the "
+                "188-class colour (one model, two uses), and from scratch dark grey dashed, against Golling's green, "
+                "red and blue. Sophon's font; round 3's faint grid at major y ticks, where Golling has none; no legend "
+                "frame, as Golling. Lines 1.1 pt against about 0.75. Log y on R30. Band as Golling: "
                 "same colour, alpha 0.2, no edge. Against Vigl Fig. 1: no ratio panel, no data-efficiency side panel, no dashed variant, no "
                 "second legend.",
         draw=draw_f8,
@@ -568,7 +573,7 @@ PAGES = [
         precedent_label="Golling Fig. 3",
         caption="Fine-tuned models of the four label sets against the number of training jets: accuracy on class-balanced "
                 "JetClass-II and on JetClass, and rejection R30 at 30% signal efficiency on top and quark/gluon tagging, "
-                "with a network trained from scratch in black. Points are means over runs. Stars are published ParT: same "
+                "with a network trained from scratch dashed. Points are means over runs. Stars are published ParT: same "
                 "inputs on JetClass, kinematic only on top, kinematic and particle type on quark/gluon.",
         differs="A10's form, fine-tuned (PI: the task x model x mode grid).",
         draw=draw_a8,
@@ -581,11 +586,12 @@ PAGES = [
         precedent_label="Golling Fig. 3",
         caption="Linear probes of the four label sets against the number of training jets: accuracy on class-balanced "
                 "JetClass-II and on JetClass, and rejection R30 at 30% signal efficiency on top and quark/gluon tagging, "
-                "with a network trained from scratch in black. Points are means over runs. Stars are published ParT: same "
+                "with a network trained from scratch dashed. Points are means over runs. Stars are published ParT: same "
                 "inputs on JetClass, kinematic only on top, kinematic and particle type on quark/gluon.",
         differs="Four panels against Golling's one; four label sets against three training modes. No bands, where "
-                "Golling has them: four would overlap (plan). tab10 in the order of the label sets. Sophon's font, "
-                "dashed grid and framed legend, where Golling has no grid and no frame. Log y on R30.",
+                "Golling has them: four would overlap (plan). Label sets in viridis, darkest for 188, from scratch dark grey "
+                "dashed (round 3 palette). Sophon's font; faint grid at major y ticks, where Golling has none; no legend "
+                "frame, as Golling. Log y on R30.",
         draw=draw_a10,
         data_note=SUBST_NOTE),
     *[_umap_page(page) for page in UMAP_PAGES],

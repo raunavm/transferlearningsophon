@@ -41,7 +41,8 @@ NAME = {**_NAME, "RAND": "Random partitions", "L162_MASS": "162 classes, mass re
 LINESTYLE = {"SCRATCH": "--", "KIN": ":"}                      # every other series solid
 MARKERS = {"L188": "o", "L162": "s", "R42_Q1": "^", "R16_Q1": "D", "L162_MASS": "v", "R16_Q1_MASS": "P", "SCRATCH": "X",
            "FLAV_F0": "s", "FLAV_F1": "^", "FLAV_F1R": "D", "RAND": "v", "INIT_BN": "x", "KIN": "o"}
-REFERENCE = {"color": GREY_DARK, "linestyle": "--", "linewidth": LW_THIN}
+REFERENCE = {"color": "#000000", "linestyle": "--", "linewidth": LW_THIN}   # black: the soft-drop mass and guide lines;
+# from scratch is dark grey, and the two never share a figure
 
 
 def look(key: str, **kw) -> dict:

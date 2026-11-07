@@ -13,7 +13,7 @@ import gallery_common as C
 import gallery_labelset
 import gallery_physics
 import gallery_roc
-import style_v3 as S
+import style_v4 as S
 
 MODULES = (gallery_physics, gallery_labelset, gallery_roc)
 ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F3", "F3-scatter", "F3-app", "F3-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F4",
