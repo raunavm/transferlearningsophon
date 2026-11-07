@@ -35,7 +35,7 @@ spec:
           mkdir -p ${{OUT}}/figures
           for T in 1 2 3 4 5; do git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
           cd /workspace/repo && git checkout -q {commit} || exit 1
-          pip install --no-cache-dir -q matplotlib==3.10.7 mplhep==0.4.1 pyarrow || exit 1
+          pip install --no-cache-dir -q matplotlib==3.10.7 mplhep==0.4.1 pyarrow pymupdf==1.26.7 || exit 1
           python3 experiments/FIGS/figstyle/gallery_figures.py --outdir ${{OUT}}/figures 2>&1 | tee ${{OUT}}/figures.txt
           (cd ${{OUT}} && tar czf out.tgz figures figures.txt)
           ls -la ${{OUT}}/figures | head -60
