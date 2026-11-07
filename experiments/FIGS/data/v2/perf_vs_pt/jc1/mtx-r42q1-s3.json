@@ -1,0 +1,776 @@
+{
+ "task": "jc1",
+ "model": "mtx-r42q1-s3",
+ "cell": "/data/results/ft_v2/budget_long/leg2/r42q1-s3/N1000000/s1",
+ "n_train": 1000000,
+ "n_jets": 2000000,
+ "classes": [
+  "label_QCD",
+  "label_Hbb",
+  "label_Hcc",
+  "label_Hgg",
+  "label_H4q",
+  "label_Hqql",
+  "label_Zqq",
+  "label_Wqq",
+  "label_Tbqq",
+  "label_Tbl"
+ ],
+ "jets_sha256": "ffdf27f3aec94bb9e992eb028e5f773334553383e8fb1b5687771ee9a1a18d63",
+ "sources": {
+  "/data/results/ft_v2/budget_long/leg2/r42q1-s3/N1000000/s1/pred.root": "dfd53f15d864c67d3fd495a1309c08f9d0b09eba6c3123b30cf8af7b548128b0",
+  "/data/results/ft_v2/budget_long/leg2/r42q1-s3/N1000000/s1/predict.log": "92d052ab9a50c46b67e6552197c311961c725d5121ce57c65d003fbb8d53e053",
+  "/data/JetClass/Pythia/test_20M/HToBB_100.root": "24b75b06b4658ab6648b2c3d587fd2367a43559d85cfe79f3f4ea00f98076e36",
+  "/data/JetClass/Pythia/test_20M/HToCC_100.root": "0acb587edc45b12663a351a93ffb0ecff6e3ac9a2ec0366e3069b6ef4df84706",
+  "/data/JetClass/Pythia/test_20M/HToGG_100.root": "f6822c1405cf91733e5c068e19dbe4e7c45fca31d5d8a0a4e151bbca5d959494",
+  "/data/JetClass/Pythia/test_20M/HToWW2Q1L_100.root": "95bb1b80ac518ff5fbb54cc4089bab4703f223ffb0f223736686bc0355cad544",
+  "/data/JetClass/Pythia/test_20M/HToWW4Q_100.root": "03ee589cd28ec456be67d9934746ecd6f56408a937cb1a2e53ce216435c2c33a",
+  "/data/JetClass/Pythia/test_20M/TTBarLep_100.root": "a95ff8ff687f885b84c078f970f3ef7d7053a51f9b8634e66cc86bf9005d9cd8",
+  "/data/JetClass/Pythia/test_20M/TTBar_100.root": "cb5c9141359a969b9e260c092c44ce6a29e8b336669377ee63bebf5f4fd4ae0b",
+  "/data/JetClass/Pythia/test_20M/WToQQ_100.root": "0e22bca6c8606a15f4174cba9058e91224f6f10544855ff9f82fe48acfe65ed2",
+  "/data/JetClass/Pythia/test_20M/ZJetsToNuNu_100.root": "2b331675ec714d231a46ac41a82952bad58757afaa5da6fe7b0eac711448cfbd",
+  "/data/JetClass/Pythia/test_20M/ZToQQ_100.root": "c8abbf2b698a0eabf2dd398372a70ed297203a86805fbba9578388aeda470d0c",
+  "/data/JetClass/Pythia/test_20M/HToBB_101.root": "fc4553f04c6f03f3e3703e5824fe1b5e06b9d5fe67d9381d69c15fa64e304799",
+  "/data/JetClass/Pythia/test_20M/HToCC_101.root": "6a6a27000acfc8acdf741c983779ae241c26d4c4afa498ae6448cf2bf987314d",
+  "/data/JetClass/Pythia/test_20M/HToGG_101.root": "75875fa5729beb05b429e7685337a51a73a3b57495b41873aed1ea40667c239e",
+  "/data/JetClass/Pythia/test_20M/HToWW2Q1L_101.root": "1f2071bfd05158e66865282a2d1a6a25bcf26ae2d80222a57f73c217094697df",
+  "/data/JetClass/Pythia/test_20M/HToWW4Q_101.root": "50c30ad58ada2cc4291e07c1a450283e6a15886af8456c8d1537d9b1e6c9461d",
+  "/data/JetClass/Pythia/test_20M/TTBarLep_101.root": "f8a5ad50eb943e22817e7255bd386c2513d1ca1f760f4a4176b30be691a3a46c",
+  "/data/JetClass/Pythia/test_20M/TTBar_101.root": "d2f3843550967bdc0c25f5525ffc55a9b48f93584b048fdd20d62ec9610b642d",
+  "/data/JetClass/Pythia/test_20M/WToQQ_101.root": "92f039785eab7d59b481f7e3cddd35591d4b9ffd4377dff07c1f9d9190054bd2",
+  "/data/JetClass/Pythia/test_20M/ZJetsToNuNu_101.root": "fe57935d587a59aff7a536146da441e38b2d29ecb02b7b3d6b643fbd6d7e69d0",
+  "/data/JetClass/Pythia/test_20M/ZToQQ_101.root": "95e47dbbd323816cbcf7d96cf9c89d4dae0116c264dbc52ef95d8e71d6fc6d91"
+ },
+ "script": "experiments/EVAL/perf_vs_pt.py",
+ "script_sha256": "d070d9bdb27d33269057626870dbbd78e6f3d0391aad8f28b32d35fb30822535",
+ "pt": "reconstructed jet pT, GeV",
+ "discriminant": "p_S / (p_S + p_QCD), p normalised over the ten classes",
+ "pt_edges": [
+  500,
+  600,
+  700,
+  800,
+  900,
+  1000
+ ],
+ "n_outside": 0,
+ "inclusive": {
+  "macro_auc_ovr": 0.985391970491111,
+  "n_classes_present": 10,
+  "class_counts": [
+   200000,
+   200000,
+   200000,
+   200000,
+   200000,
+   200000,
+   200000,
+   200000,
+   200000,
+   200000
+  ],
+  "vs_qcd": {
+   "label_Hbb": {
+    "auc": 0.9987076561250001,
+    "eps_s": 0.5,
+    "eps_b": 0.000145,
+    "rejection": 6896.551724137931,
+    "n_bkg_pass": 29,
+    "is_bound": false,
+    "n_signal": 200000,
+    "n_background": 200000,
+    "rel_stat": 0.18569533817705186
+   },
+   "label_Hcc": {
+    "auc": 0.9932808834249999,
+    "eps_s": 0.5,
+    "eps_b": 0.000385,
+    "rejection": 2597.4025974025976,
+    "n_bkg_pass": 77,
+    "is_bound": false,
+    "n_signal": 200000,
+    "n_background": 200000,
+    "rel_stat": 0.11396057645963795
+   },
+   "label_Hgg": {
+    "auc": 0.967886552475,
+    "eps_s": 0.5,
+    "eps_b": 0.0098,
+    "rejection": 102.04081632653062,
+    "n_bkg_pass": 1960,
+    "is_bound": false,
+    "n_signal": 200000,
+    "n_background": 200000,
+    "rel_stat": 0.022587697572631283
+   },
+   "label_H4q": {
+    "auc": 0.9922348903250001,
+    "eps_s": 0.5,
+    "eps_b": 0.00101,
+    "rejection": 990.09900990099,
+    "n_bkg_pass": 202,
+    "is_bound": false,
+    "n_signal": 200000,
+    "n_background": 200000,
+    "rel_stat": 0.07035975447302918
+   },
+   "label_Hqql": {
+    "auc": 0.9998601836,
+    "eps_s": 0.99,
+    "eps_b": 0.00032,
+    "rejection": 3124.9999999999995,
+    "n_bkg_pass": 64,
+    "is_bound": false,
+    "n_signal": 200000,
+    "n_background": 200000,
+    "rel_stat": 0.125
+   },
+   "label_Zqq": {
+    "auc": 0.9722065410499999,
+    "eps_s": 0.5,
+    "eps_b": 0.00329,
+    "rejection": 303.951367781155,
+    "n_bkg_pass": 658,
+    "is_bound": false,
+    "n_signal": 200000,
+    "n_background": 200000,
+    "rel_stat": 0.038984058779272523
+   },
+   "label_Wqq": {
+    "auc": 0.97540324225,
+    "eps_s": 0.5,
+    "eps_b": 0.002705,
+    "rejection": 369.68576709796673,
+    "n_bkg_pass": 541,
+    "is_bound": false,
+    "n_signal": 200000,
+    "n_background": 200000,
+    "rel_stat": 0.04299335803923478
+   },
+   "label_Tbqq": {
+    "auc": 0.9979152891500002,
+    "eps_s": 0.5,
+    "eps_b": 8.5e-05,
+    "rejection": 11764.70588235294,
+    "n_bkg_pass": 17,
+    "is_bound": false,
+    "n_signal": 200000,
+    "n_background": 200000,
+    "rel_stat": 0.24253562503633297
+   },
+   "label_Tbl": {
+    "auc": 0.99996744985,
+    "eps_s": 0.995,
+    "eps_b": 0.00012,
+    "rejection": 8333.333333333334,
+    "n_bkg_pass": 24,
+    "is_bound": false,
+    "n_signal": 200000,
+    "n_background": 200000,
+    "rel_stat": 0.20412414523193154
+   }
+  }
+ },
+ "bins": [
+  {
+   "lo": 500,
+   "hi": 600,
+   "n": 1113846,
+   "macro_auc_ovr": 0.9852930528750402,
+   "n_classes_present": 10,
+   "class_counts": [
+    103453,
+    111099,
+    109876,
+    111100,
+    105546,
+    113181,
+    111139,
+    112115,
+    110107,
+    126230
+   ],
+   "vs_qcd": {
+    "label_Hbb": {
+     "auc": 0.9986432087451335,
+     "eps_s": 0.5,
+     "eps_b": 0.00019332450484761197,
+     "rejection": 5172.65,
+     "n_bkg_pass": 20,
+     "is_bound": false,
+     "n_signal": 111099,
+     "n_background": 103453,
+     "rel_stat": 0.22360679774997896
+    },
+    "label_Hcc": {
+     "auc": 0.9929644874514753,
+     "eps_s": 0.5,
+     "eps_b": 0.00038664900969522393,
+     "rejection": 2586.325,
+     "n_bkg_pass": 40,
+     "is_bound": false,
+     "n_signal": 109876,
+     "n_background": 103453,
+     "rel_stat": 0.15811388300841897
+    },
+    "label_Hgg": {
+     "auc": 0.9674164741346301,
+     "eps_s": 0.5,
+     "eps_b": 0.010748842469527224,
+     "rejection": 93.03327338129498,
+     "n_bkg_pass": 1112,
+     "is_bound": false,
+     "n_signal": 111100,
+     "n_background": 103453,
+     "rel_stat": 0.02998800719520336
+    },
+    "label_H4q": {
+     "auc": 0.9924442855883828,
+     "eps_s": 0.5,
+     "eps_b": 0.001034286100934724,
+     "rejection": 966.8504672897195,
+     "n_bkg_pass": 107,
+     "is_bound": false,
+     "n_signal": 105546,
+     "n_background": 103453,
+     "rel_stat": 0.09667364890456635
+    },
+    "label_Hqql": {
+     "auc": 0.9998461923965728,
+     "eps_s": 0.99,
+     "eps_b": 0.00030931920775617913,
+     "rejection": 3232.90625,
+     "n_bkg_pass": 32,
+     "is_bound": false,
+     "n_signal": 113181,
+     "n_background": 103453,
+     "rel_stat": 0.17677669529663687
+    },
+    "label_Zqq": {
+     "auc": 0.9717605776989724,
+     "eps_s": 0.5,
+     "eps_b": 0.003769827844528433,
+     "rejection": 265.2641025641026,
+     "n_bkg_pass": 390,
+     "is_bound": false,
+     "n_signal": 111139,
+     "n_background": 103453,
+     "rel_stat": 0.05063696835418333
+    },
+    "label_Wqq": {
+     "auc": 0.9743746285820416,
+     "eps_s": 0.5,
+     "eps_b": 0.0030641934018346495,
+     "rejection": 326.3501577287066,
+     "n_bkg_pass": 317,
+     "is_bound": false,
+     "n_signal": 112115,
+     "n_background": 103453,
+     "rel_stat": 0.05616559563017304
+    },
+    "label_Tbqq": {
+     "auc": 0.9979845981383255,
+     "eps_s": 0.5,
+     "eps_b": 9.666225242380598e-05,
+     "rejection": 10345.3,
+     "n_bkg_pass": 10,
+     "is_bound": false,
+     "n_signal": 110107,
+     "n_background": 103453,
+     "rel_stat": 0.31622776601683794
+    },
+    "label_Tbl": {
+     "auc": 0.999964182052386,
+     "eps_s": 0.995,
+     "eps_b": 0.00012566092815094777,
+     "rejection": 7957.923076923077,
+     "n_bkg_pass": 13,
+     "is_bound": false,
+     "n_signal": 126230,
+     "n_background": 103453,
+     "rel_stat": 0.2773500981126146
+    }
+   }
+  },
+  {
+   "lo": 600,
+   "hi": 700,
+   "n": 498126,
+   "macro_auc_ovr": 0.985442811416729,
+   "n_classes_present": 10,
+   "class_counts": [
+    50946,
+    49937,
+    50003,
+    49632,
+    51309,
+    49393,
+    49853,
+    49505,
+    51357,
+    46191
+   ],
+   "vs_qcd": {
+    "label_Hbb": {
+     "auc": 0.9987789962190189,
+     "eps_s": 0.5,
+     "eps_b": 0.0001177717583323519,
+     "rejection": 8491.0,
+     "n_bkg_pass": 6,
+     "is_bound": false,
+     "n_signal": 49937,
+     "n_background": 50946,
+     "rel_stat": 0.4082482904638631
+    },
+    "label_Hcc": {
+     "auc": 0.9934280388825003,
+     "eps_s": 0.5,
+     "eps_b": 0.00039257252777450633,
+     "rejection": 2547.3,
+     "n_bkg_pass": 20,
+     "is_bound": false,
+     "n_signal": 50003,
+     "n_background": 50946,
+     "rel_stat": 0.22360679774997896
+    },
+    "label_Hgg": {
+     "auc": 0.9678442950289612,
+     "eps_s": 0.5,
+     "eps_b": 0.009539512424920503,
+     "rejection": 104.82716049382717,
+     "n_bkg_pass": 486,
+     "is_bound": false,
+     "n_signal": 49632,
+     "n_background": 50946,
+     "rel_stat": 0.045360921162651446
+    },
+    "label_H4q": {
+     "auc": 0.9922239005847371,
+     "eps_s": 0.5,
+     "eps_b": 0.000981431319436266,
+     "rejection": 1018.92,
+     "n_bkg_pass": 50,
+     "is_bound": false,
+     "n_signal": 51309,
+     "n_background": 50946,
+     "rel_stat": 0.1414213562373095
+    },
+    "label_Hqql": {
+     "auc": 0.9998575634040298,
+     "eps_s": 0.99,
+     "eps_b": 0.00037294390138578105,
+     "rejection": 2681.368421052631,
+     "n_bkg_pass": 19,
+     "is_bound": false,
+     "n_signal": 49393,
+     "n_background": 50946,
+     "rel_stat": 0.22941573387056174
+    },
+    "label_Zqq": {
+     "auc": 0.9717606307119542,
+     "eps_s": 0.5,
+     "eps_b": 0.0030424370902524243,
+     "rejection": 328.68387096774194,
+     "n_bkg_pass": 155,
+     "is_bound": false,
+     "n_signal": 49853,
+     "n_background": 50946,
+     "rel_stat": 0.08032193289024989
+    },
+    "label_Wqq": {
+     "auc": 0.9755507213479557,
+     "eps_s": 0.5,
+     "eps_b": 0.0027480076944215444,
+     "rejection": 363.9,
+     "n_bkg_pass": 140,
+     "is_bound": false,
+     "n_signal": 49505,
+     "n_background": 50946,
+     "rel_stat": 0.08451542547285165
+    },
+    "label_Tbqq": {
+     "auc": 0.9979251291732127,
+     "eps_s": 0.5,
+     "eps_b": 7.851450555490127e-05,
+     "rejection": 12736.499999999998,
+     "n_bkg_pass": 4,
+     "is_bound": false,
+     "n_signal": 51357,
+     "n_background": 50946,
+     "rel_stat": 0.5
+    },
+    "label_Tbl": {
+     "auc": 0.9999738395467138,
+     "eps_s": 0.995,
+     "eps_b": 9.814313194362658e-05,
+     "rejection": 10189.2,
+     "n_bkg_pass": 5,
+     "is_bound": false,
+     "n_signal": 46191,
+     "n_background": 50946,
+     "rel_stat": 0.4472135954999579
+    }
+   }
+  },
+  {
+   "lo": 700,
+   "hi": 800,
+   "n": 226629,
+   "macro_auc_ovr": 0.985507211512475,
+   "n_classes_present": 10,
+   "class_counts": [
+    25576,
+    22902,
+    23083,
+    22974,
+    24617,
+    21920,
+    22776,
+    22477,
+    22944,
+    17360
+   ],
+   "vs_qcd": {
+    "label_Hbb": {
+     "auc": 0.9985765069984313,
+     "eps_s": 0.5,
+     "eps_b": 7.819831091648421e-05,
+     "rejection": 12788.0,
+     "n_bkg_pass": 2,
+     "is_bound": false,
+     "n_signal": 22902,
+     "n_background": 25576,
+     "rel_stat": 0.7071067811865475
+    },
+    "label_Hcc": {
+     "auc": 0.9937340126749628,
+     "eps_s": 0.5,
+     "eps_b": 0.00023459493274945262,
+     "rejection": 4262.666666666666,
+     "n_bkg_pass": 6,
+     "is_bound": false,
+     "n_signal": 23083,
+     "n_background": 25576,
+     "rel_stat": 0.4082482904638631
+    },
+    "label_Hgg": {
+     "auc": 0.9674840606014512,
+     "eps_s": 0.5,
+     "eps_b": 0.0089146074444792,
+     "rejection": 112.17543859649122,
+     "n_bkg_pass": 228,
+     "is_bound": false,
+     "n_signal": 22974,
+     "n_background": 25576,
+     "rel_stat": 0.06622661785325219
+    },
+    "label_H4q": {
+     "auc": 0.9919178105098096,
+     "eps_s": 0.5,
+     "eps_b": 0.0008992805755395684,
+     "rejection": 1112.0,
+     "n_bkg_pass": 23,
+     "is_bound": false,
+     "n_signal": 24617,
+     "n_background": 25576,
+     "rel_stat": 0.20851441405707477
+    },
+    "label_Hqql": {
+     "auc": 0.9999135430627253,
+     "eps_s": 0.99,
+     "eps_b": 0.00031279324366593683,
+     "rejection": 3197.0,
+     "n_bkg_pass": 8,
+     "is_bound": false,
+     "n_signal": 21920,
+     "n_background": 25576,
+     "rel_stat": 0.35355339059327373
+    },
+    "label_Zqq": {
+     "auc": 0.9730786916030011,
+     "eps_s": 0.5,
+     "eps_b": 0.002619643415702221,
+     "rejection": 381.7313432835821,
+     "n_bkg_pass": 67,
+     "is_bound": false,
+     "n_signal": 22776,
+     "n_background": 25576,
+     "rel_stat": 0.12216944435630522
+    },
+    "label_Wqq": {
+     "auc": 0.9776945223775755,
+     "eps_s": 0.5,
+     "eps_b": 0.001876759461995621,
+     "rejection": 532.8333333333333,
+     "n_bkg_pass": 48,
+     "is_bound": false,
+     "n_signal": 22477,
+     "n_background": 25576,
+     "rel_stat": 0.14433756729740646
+    },
+    "label_Tbqq": {
+     "auc": 0.9976779747068271,
+     "eps_s": 0.5,
+     "eps_b": 7.819831091648421e-05,
+     "rejection": 12788.0,
+     "n_bkg_pass": 2,
+     "is_bound": false,
+     "n_signal": 22944,
+     "n_background": 25576,
+     "rel_stat": 0.7071067811865475
+    },
+    "label_Tbl": {
+     "auc": 0.9999661891404528,
+     "eps_s": 0.995,
+     "eps_b": 0.00015639662183296842,
+     "rejection": 6394.0,
+     "n_bkg_pass": 4,
+     "is_bound": false,
+     "n_signal": 17360,
+     "n_background": 25576,
+     "rel_stat": 0.5
+    }
+   }
+  },
+  {
+   "lo": 800,
+   "hi": 900,
+   "n": 107647,
+   "macro_auc_ovr": 0.9856013175793692,
+   "n_classes_present": 10,
+   "class_counts": [
+    13031,
+    10685,
+    11292,
+    10972,
+    12145,
+    10395,
+    10897,
+    10603,
+    10563,
+    7064
+   ],
+   "vs_qcd": {
+    "label_Hbb": {
+     "auc": 0.9989724729342186,
+     "eps_s": 0.5,
+     "eps_b": 7.674008134448623e-05,
+     "rejection": 13031.0,
+     "n_bkg_pass": 1,
+     "is_bound": true,
+     "n_signal": 10685,
+     "n_background": 13031,
+     "rel_stat": 1.0
+    },
+    "label_Hcc": {
+     "auc": 0.9940252491449788,
+     "eps_s": 0.5,
+     "eps_b": 0.00023022024403345867,
+     "rejection": 4343.666666666667,
+     "n_bkg_pass": 3,
+     "is_bound": false,
+     "n_signal": 11292,
+     "n_background": 13031,
+     "rel_stat": 0.5773502691896258
+    },
+    "label_Hgg": {
+     "auc": 0.9687144145150045,
+     "eps_s": 0.5,
+     "eps_b": 0.008441408947893485,
+     "rejection": 118.46363636363635,
+     "n_bkg_pass": 110,
+     "is_bound": false,
+     "n_signal": 10972,
+     "n_background": 13031,
+     "rel_stat": 0.09534625892455924
+    },
+    "label_H4q": {
+     "auc": 0.991501268201719,
+     "eps_s": 0.5,
+     "eps_b": 0.0009208809761338347,
+     "rejection": 1085.9166666666667,
+     "n_bkg_pass": 12,
+     "is_bound": false,
+     "n_signal": 12145,
+     "n_background": 13031,
+     "rel_stat": 0.2886751345948129
+    },
+    "label_Hqql": {
+     "auc": 0.9998742481437592,
+     "eps_s": 0.99,
+     "eps_b": 0.00015348016268897246,
+     "rejection": 6515.5,
+     "n_bkg_pass": 2,
+     "is_bound": false,
+     "n_signal": 10395,
+     "n_background": 13031,
+     "rel_stat": 0.7071067811865475
+    },
+    "label_Zqq": {
+     "auc": 0.9734381712094243,
+     "eps_s": 0.5,
+     "eps_b": 0.0023022024403345867,
+     "rejection": 434.3666666666667,
+     "n_bkg_pass": 30,
+     "is_bound": false,
+     "n_signal": 10897,
+     "n_background": 13031,
+     "rel_stat": 0.18257418583505536
+    },
+    "label_Wqq": {
+     "auc": 0.9763033678213038,
+     "eps_s": 0.5,
+     "eps_b": 0.0018417619522676694,
+     "rejection": 542.9583333333334,
+     "n_bkg_pass": 24,
+     "is_bound": false,
+     "n_signal": 10603,
+     "n_background": 13031,
+     "rel_stat": 0.20412414523193154
+    },
+    "label_Tbqq": {
+     "auc": 0.9977707743765833,
+     "eps_s": 0.5,
+     "eps_b": 7.674008134448623e-05,
+     "rejection": 13031.0,
+     "n_bkg_pass": 1,
+     "is_bound": true,
+     "n_signal": 10563,
+     "n_background": 13031,
+     "rel_stat": 1.0
+    },
+    "label_Tbl": {
+     "auc": 0.9999852364424481,
+     "eps_s": 0.995,
+     "eps_b": 0.0,
+     "rejection": 13031.0,
+     "n_bkg_pass": 0,
+     "is_bound": true,
+     "n_signal": 7064,
+     "n_background": 13031,
+     "rel_stat": null
+    }
+   }
+  },
+  {
+   "lo": 900,
+   "hi": 1000,
+   "n": 53752,
+   "macro_auc_ovr": 0.9854414928903742,
+   "n_classes_present": 10,
+   "class_counts": [
+    6994,
+    5377,
+    5746,
+    5322,
+    6383,
+    5111,
+    5335,
+    5300,
+    5029,
+    3155
+   ],
+   "vs_qcd": {
+    "label_Hbb": {
+     "auc": 0.9991028469419495,
+     "eps_s": 0.5,
+     "eps_b": 0.0,
+     "rejection": 6994.0,
+     "n_bkg_pass": 0,
+     "is_bound": true,
+     "n_signal": 5377,
+     "n_background": 6994,
+     "rel_stat": null
+    },
+    "label_Hcc": {
+     "auc": 0.993644146875035,
+     "eps_s": 0.5,
+     "eps_b": 0.0005719187875321705,
+     "rejection": 1748.4999999999998,
+     "n_bkg_pass": 4,
+     "is_bound": false,
+     "n_signal": 5746,
+     "n_background": 6994,
+     "rel_stat": 0.5
+    },
+    "label_Hgg": {
+     "auc": 0.97224466410625,
+     "eps_s": 0.5,
+     "eps_b": 0.004575350300257364,
+     "rejection": 218.56249999999997,
+     "n_bkg_pass": 32,
+     "is_bound": false,
+     "n_signal": 5322,
+     "n_background": 6994,
+     "rel_stat": 0.17677669529663687
+    },
+    "label_H4q": {
+     "auc": 0.9911782669427132,
+     "eps_s": 0.5,
+     "eps_b": 0.0010008578781812983,
+     "rejection": 999.1428571428571,
+     "n_bkg_pass": 7,
+     "is_bound": false,
+     "n_signal": 6383,
+     "n_background": 6994,
+     "rel_stat": 0.3779644730092272
+    },
+    "label_Hqql": {
+     "auc": 0.9998688257095119,
+     "eps_s": 0.99,
+     "eps_b": 0.00028595939376608524,
+     "rejection": 3496.9999999999995,
+     "n_bkg_pass": 2,
+     "is_bound": false,
+     "n_signal": 5111,
+     "n_background": 6994,
+     "rel_stat": 0.7071067811865475
+    },
+    "label_Zqq": {
+     "auc": 0.973091033444385,
+     "eps_s": 0.5,
+     "eps_b": 0.0027166142407778096,
+     "rejection": 368.10526315789474,
+     "n_bkg_pass": 19,
+     "is_bound": false,
+     "n_signal": 5335,
+     "n_background": 6994,
+     "rel_stat": 0.22941573387056174
+    },
+    "label_Wqq": {
+     "auc": 0.9771547040320274,
+     "eps_s": 0.5,
+     "eps_b": 0.0015727766657134686,
+     "rejection": 635.8181818181819,
+     "n_bkg_pass": 11,
+     "is_bound": false,
+     "n_signal": 5300,
+     "n_background": 6994,
+     "rel_stat": 0.30151134457776363
+    },
+    "label_Tbqq": {
+     "auc": 0.9976258944902523,
+     "eps_s": 0.5,
+     "eps_b": 0.0,
+     "rejection": 6994.0,
+     "n_bkg_pass": 0,
+     "is_bound": true,
+     "n_signal": 5029,
+     "n_background": 6994,
+     "rel_stat": null
+    },
+    "label_Tbl": {
+     "auc": 0.9999325661524685,
+     "eps_s": 0.995,
+     "eps_b": 0.00014297969688304262,
+     "rejection": 6993.999999999999,
+     "n_bkg_pass": 1,
+     "is_bound": false,
+     "n_signal": 3155,
+     "n_background": 6994,
+     "rel_stat": 1.0
+    }
+   }
+  }
+ ]
+}
