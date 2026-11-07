@@ -554,7 +554,7 @@ def draw_pt(path: pathlib.Path) -> None:
     axes = fig.subplots(2, 2, gridspec_kw={"left": 0.1, "right": 0.96, "top": 0.92, "bottom": 0.07, "wspace": 0.3,
                                            "hspace": 0.25})
     (a, b), (cx, d) = axes
-    # the legend corner: (d)'s curves fill the lower right and its 1.0 line the bottom
+    # the legend corner: (d)'s 1.0 line fills the bottom, so its legend goes above the curves
     panels = ((a, jc2, lambda ax: _ratio_panel(ax, jc2, S.LEVELS[1:]), "JetClass-II, linear probe", "best"),
               (b, jc2, lambda ax: _bb_cc_panel(ax, jc2), r"JetClass-II: $X\to b\bar{b}$ vs $X\to c\bar{c}$", "best"),
               (cx, jc1, lambda ax: _ratio_panel(ax, jc1, S.LEVELS[1:]), "JetClass, fine-tuned on $10^6$ jets", "best"),
@@ -567,6 +567,9 @@ def draw_pt(path: pathlib.Path) -> None:
             continue
         S.fine_grid(ax)
         draw(ax)
+        if corner == "upper left":      # room above the curves for the four legend rows
+            lo, hi = ax.get_ylim()
+            ax.set_ylim(lo, hi + 0.4 * (hi - lo))
         S.legend(ax, loc=corner)
     S.letter_panels(axes.flat)
     S.heading(fig, "Performance against jet $p_{\\mathrm{T}}$")
