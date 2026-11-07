@@ -11,37 +11,40 @@ events at particle colliders~\cite{evenet}. Such networks are called foundation
 models~\cite{bommasani}. What a foundation model carries to a new task is decided during pretraining,
 by the data it sees and by what it is trained to predict.
 
-% P0b. Jets: self-supervised and supervised jet foundation models; simulated labels make the label set
-% a free choice on fixed jets.
-In particle physics, foundation models were built first for jets, the collimated sprays of particles
-that quarks and gluons produce at colliders. Some are pretrained without labels, by reconstructing
-masked particles or generating jets~\cite{mpm,omnijet,hepjepa}. Others are trained to classify
-simulated jets~\cite{part,omnilearn,sophon}, and this supervised classification is the reference
-against which the self-supervised objectives are measured~\cite{objectives}. Simulated labels leave a
-choice that labels in most other fields do not. The generator records the exact decay behind every
-jet, so the classes can be made as fine or as coarse as the designer wants, and the same jets can
-carry any of these label sets.
+% P0b. Collider physics (as EveNet's second paragraph): the LHC, boosted heavy particles in single jets,
+% jet tagging by prongs, flavor and mass, deep-network taggers trained on simulation.
+Collider physics is a natural setting for this approach. At the Large Hadron Collider
+(LHC)~\cite{lhc}, the experiments reconstruct each proton--proton collision as a set of particles,
+and simulation provides labeled collisions in large numbers. Many LHC analyses search for or measure
+heavy particles: the top quark, the $W$, $Z$ and Higgs bosons, and possible new resonances. When such
+a particle is produced with momentum much larger than its mass, its decay products fly out close
+together, and the showers of its quarks merge into a single jet, a collimated spray of particles.
+Analyses then identify the particle from the structure of that jet, a task called jet
+tagging~\cite{larkoski,kogler,cmshbb,cmszprime}. Three properties of the jet carry the
+identification. The first is the number of prongs: two-prong jets, for example, contain two separate
+energy clusters from the two quarks of a heavy-particle decay. The second is the quark flavor, which a
+$b$ or $c$ hadron reveals through a displaced vertex, where tracks meet away from the collision point
+after the hadron travels a few millimeters~\cite[Sec.~4.1]{cmsbtag}. The third is the jet mass. The
+taggers that do this are deep networks that read every measured particle of the jet, trained on
+simulated jets to separate the signal decays from jets from light quarks and gluons, the quantum
+chromodynamics (QCD) background~\cite{particlenet,part,gntwo,cmspart}.
 
-% P1. Physics: boosted heavy particles are identified from their jets; taggers are pretrained on many
-% fine simulated classes that analyses sum into discriminants, and the label sets grow fast.
-The classes name the particle a jet comes from. A top quark, a $W$, $Z$ or Higgs boson, or a new resonance produced with large momentum at the Large
-Hadron Collider~\cite{lhc} decays into quarks or leptons whose showers merge into a single jet.
-Analyses identify the particle from the structure of that
-jet~\cite{larkoski,kogler,cmshbb,cmszprime}. Three properties of the jet carry the identification.
-The first is the number of prongs: two-prong jets, for example, contain two separate energy clusters
-from the two quarks of a heavy-particle decay. The second is the quark flavor, which a $b$ or $c$
-hadron reveals through a displaced vertex, where tracks meet away from the collision point after the
-hadron travels a few millimeters~\cite[Sec.~4.1]{cmsbtag}. The third is the jet mass. The taggers
-that do this are deep networks that read every measured particle of the jet, trained on simulated
-jets to separate the signal decays from jets from light quarks and gluons, the quantum
-chromodynamics (QCD) background~\cite{particlenet,part,gntwo,cmspart}. Increasingly, a single
-network is pretrained to separate many fine classes of simulated jets and then serves many analyses,
-each of which sums the fine classes into the signal and background it needs~\cite{sophon,glopartdp}.
-The Sophon model is pretrained on the \Kfull{} classes of the JetClass-II
+% P1. Jet foundation models: self-supervised and supervised; supervised models serve many analyses
+% through summed classes; simulation makes the label set a free choice, and production label sets grow.
+In particle physics, foundation models were built first for jets. Some are pretrained without labels,
+by reconstructing masked particles or generating jets~\cite{mpm,omnijet,hepjepa}. Others are trained
+to classify simulated jets~\cite{part,omnilearn,sophon}, and this supervised classification is the
+reference against which the self-supervised objectives are measured~\cite{objectives}. A supervised
+model of this kind is pretrained to separate many fine classes of simulated jets and then serves many
+analyses, each of which sums the fine classes into the signal and background it
+needs~\cite{sophon,glopartdp}. Simulated labels leave a choice that labels in most other fields do
+not. The generator records the exact decay behind every jet, so the classes the network is trained to
+separate, its label set, can be made as fine or as coarse as the designer wants, and the same jets can
+carry any label set. Every such model makes this choice, and production models make ever finer ones:
+the Sophon model is pretrained on the \Kfull{} classes of the JetClass-II
 dataset~\cite{sophon,jetclasstwo}, and the CMS tagger GloParT grew from
 \LitGlopartVoneNClasses{} classes in its first version to \LitGlopartVthreeNClasses{} in its
-third~\cite{glopartdp}. How fine to make the label set, the classes the network is trained to
-separate, is a choice every such model makes.
+third~\cite{glopartdp}.
 
 % P2. The question and why it is open: Sophon's two properties hold at the output of an ideal
 % classifier; what the backbone carries is untested because every published label change also
