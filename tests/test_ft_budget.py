@@ -190,3 +190,15 @@ def test_a_job_can_request_three_cpus_under_its_own_name(tmp_path, monkeypatch):
     t = (tmp_path / "job-ft-budget-long-jc1-retry-cpu3-raunav.yaml").read_text()
     assert "name: ft-budget-long-jc1-retry-cpu3-raunav" in t and t.count('cpu: "3"') == 2 and 'cpu: "4"' not in t
     assert "completions: 2" in t
+
+
+def test_memory_can_be_overridden_and_defaults_to_the_rule(tmp_path, monkeypatch):
+    """2026-11-07: the long JetClass cells peaked at 53 GiB, so the waiting ones move to 64Gi; without
+    --mem the 1e6 rule (FULL_MEM) still applies."""
+    monkeypatch.setattr(bfb, "OUT_DIR", tmp_path)
+    common = ["--tag", "mtx-s2.99", "--lr-pre", "1e-3", "--lr-scratch", "1e-3", "--indices", "0,5"]
+    bfb.main(common + ["--mem", "64Gi", "--name-suffix", "mem64", "long-jc1"])
+    t = (tmp_path / "job-ft-budget-long-jc1-retry-mem64-raunav.yaml").read_text()
+    assert t.count('memory: "64Gi"') == 2 and bfb.FULL_MEM not in t
+    bfb.main(common + ["long-jc1"])
+    assert (tmp_path / "job-ft-budget-long-jc1-retry-raunav.yaml").read_text().count(f'memory: "{bfb.FULL_MEM}"') == 2

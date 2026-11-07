@@ -385,6 +385,8 @@ def main(argv=None) -> int:
     ap.add_argument("--parallelism", type=int, default=4)
     ap.add_argument("--cpu", type=int, default=4, help="CPUs per pod (3: fits CPU-starved nodes with a free GPU, PI 2026-11-06)")
     ap.add_argument("--name-suffix", default="", help="a second job of the same cells, e.g. cpu3")
+    ap.add_argument("--mem", default="", help="memory per pod, overriding the rule below (64Gi: the long JetClass "
+                    "cells peaked at 53 GiB over 22 pods, and 88Gi kept them off nodes with a free GPU, 2026-11-07)")
     ap.add_argument("--indices", default=None,
                     help="comma-separated indices of the full kind's job: a -retry job of those cells only")
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl"))
@@ -413,6 +415,7 @@ def main(argv=None) -> int:
             # weaver holds a whole training file in memory: 48Gi OOM-killed the top fill check at
             # 1.2M jets four times (2026-11-02); the old full-size top fine-tunings ran at 88Gi
             mem = FULL_MEM
+        mem = a.mem or mem
         name = f"ft-budget-{kind}-raunav"
         if a.indices:
             cells = [cells[int(i)] for i in a.indices.split(",")]
