@@ -18,7 +18,7 @@
   "/data/finetune/jc2_bal/test.parquet": "aa0c0d9b36bf4a1dec07d7139a7317b1b5017b7c1eb663cd96bb40be9697c8f5"
  },
  "script": "experiments/EVAL/perf_vs_pt.py",
- "script_sha256": "d070d9bdb27d33269057626870dbbd78e6f3d0391aad8f28b32d35fb30822535",
+ "script_sha256": "211e0cee268dbea958f17a9018e8c34a1ad04fda1fdd9f25b2b6a2003b52f3a5",
  "pt_edges": [
   200,
   300,
@@ -34,6 +34,8 @@
  ],
  "n_outside": 0,
  "inclusive": {
+  "accuracy": 0.3404508353596881,
+  "accuracy_stat": 0.0004984083517350205,
   "macro_auc_ovr": 0.969505167036838,
   "n_classes_present": 188,
   "class_counts": [
@@ -245,6 +247,8 @@
    "lo": 200,
    "hi": 300,
    "n": 86358,
+   "accuracy": 0.27639593320827255,
+   "accuracy_stat": 0.0015218261273017863,
    "macro_auc_ovr": 0.9543145180793448,
    "n_classes_present": 188,
    "class_counts": [
@@ -455,6 +459,8 @@
    "lo": 300,
    "hi": 400,
    "n": 87099,
+   "accuracy": 0.30830434333344814,
+   "accuracy_stat": 0.0015647348719216188,
    "macro_auc_ovr": 0.9620626425560039,
    "n_classes_present": 188,
    "class_counts": [
@@ -665,6 +671,8 @@
    "lo": 400,
    "hi": 550,
    "n": 122095,
+   "accuracy": 0.32974323272861294,
+   "accuracy_stat": 0.0013454253611778267,
    "macro_auc_ovr": 0.9659959083911397,
    "n_classes_present": 188,
    "class_counts": [
@@ -875,6 +883,8 @@
    "lo": 550,
    "hi": 700,
    "n": 107197,
+   "accuracy": 0.344319337294887,
+   "accuracy_stat": 0.0014512277658631488,
    "macro_auc_ovr": 0.9691114659739302,
    "n_classes_present": 188,
    "class_counts": [
@@ -1085,6 +1095,8 @@
    "lo": 700,
    "hi": 850,
    "n": 92053,
+   "accuracy": 0.34833193920893396,
+   "accuracy_stat": 0.001570329876491147,
    "macro_auc_ovr": 0.9706309629050166,
    "n_classes_present": 188,
    "class_counts": [
@@ -1295,6 +1307,8 @@
    "lo": 850,
    "hi": 1000,
    "n": 78635,
+   "accuracy": 0.35688942582819355,
+   "accuracy_stat": 0.0017084478237736963,
    "macro_auc_ovr": 0.9709300659466664,
    "n_classes_present": 188,
    "class_counts": [
@@ -1505,6 +1519,8 @@
    "lo": 1000,
    "hi": 1250,
    "n": 104690,
+   "accuracy": 0.35998662718502245,
+   "accuracy_stat": 0.0014834916571160638,
    "macro_auc_ovr": 0.9717650773271133,
    "n_classes_present": 188,
    "class_counts": [
@@ -1715,6 +1731,8 @@
    "lo": 1250,
    "hi": 1500,
    "n": 78003,
+   "accuracy": 0.3645629014268682,
+   "accuracy_stat": 0.001723323722123194,
    "macro_auc_ovr": 0.9719579919481329,
    "n_classes_present": 188,
    "class_counts": [
@@ -1925,6 +1943,8 @@
    "lo": 1500,
    "hi": 2000,
    "n": 98646,
+   "accuracy": 0.3663199724266569,
+   "accuracy_stat": 0.0015340007383279131,
    "macro_auc_ovr": 0.9726428324354746,
    "n_classes_present": 188,
    "class_counts": [
@@ -2135,6 +2155,8 @@
    "lo": 2000,
    "hi": 2500,
    "n": 49146,
+   "accuracy": 0.35526797704797947,
+   "accuracy_stat": 0.0021588554489905295,
    "macro_auc_ovr": 0.9729667804338292,
    "n_classes_present": 188,
    "class_counts": [

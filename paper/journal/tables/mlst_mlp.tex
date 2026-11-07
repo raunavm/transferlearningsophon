@@ -34,7 +34,7 @@ randomly initialized network, BatchNorm recomputed & 0.8974\,$\pm$\,0.0018 & 0.9
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccccc}
 \toprule
-pretraining & \multicolumn{2}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{2}{c}{$X\to b\bar b$ vs $c\bar c$} & \multicolumn{2}{c}{$X\to YY\to bbqq$ vs $ccqq$} \\
+pretraining & \multicolumn{2}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{2}{c}{$X\to b\bar b$ vs $c\bar c$} & \multicolumn{2}{c}{$X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$} \\
  & AUC & $\rho$ & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
 \Kfull{} classes & 0.9434\,$\pm$\,0.0001 & 1.00 & 0.9978\,$\pm$\,$<$0.0001 & 1.00 & 0.9941\,$\pm$\,0.0001 & 1.00 \\
@@ -53,7 +53,7 @@ randomly initialized network, BatchNorm recomputed & 0.6865\,$\pm$\,0.0030 & -- 
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lcccccc}
 \toprule
-pretraining & \multicolumn{2}{c}{QCD $bb$ vs $cc$} & \multicolumn{2}{c}{QCD with $b$ vs light} & \multicolumn{2}{c}{QCD with $c$, no $b$, vs light} \\
+pretraining & \multicolumn{2}{c}{QCD $b\bar{b}$ vs $c\bar{c}$} & \multicolumn{2}{c}{QCD with $b$ vs light} & \multicolumn{2}{c}{QCD with $c$, no $b$, vs light} \\
  & AUC & $\rho$ & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
 \Kfull{} classes & 0.9871\,$\pm$\,0.0001 & 1.00 & 0.9882\,$\pm$\,$<$0.0001 & 1.00 & 0.9329\,$\pm$\,0.0001 & 1.00 \\
@@ -74,7 +74,7 @@ randomly initialized network, BatchNorm recomputed & 0.822\,$\pm$\,0.005 & -- & 
 \toprule
 natural-composition & \multicolumn{2}{c}{JetClass-II} & \multicolumn{6}{c}{$\rho$ on the class pairs} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-9}
-test set & AUC & $\rho$ & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to bbqq$ vs $ccqq$ & QCD $bb$ vs $cc$ & QCD with $b$ vs light & QCD with $c$, no $b$, vs light \\
+test set & AUC & $\rho$ & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$ & QCD $b\bar{b}$ vs $c\bar{c}$ & QCD with $b$ vs light & QCD with $c$, no $b$, vs light \\
 \midrule
 \Kfull{} classes & 0.9767\,$\pm$\,0.0002 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
 \Kres{} classes & 0.9759\,$\pm$\,0.0003 & 1.033\,$\pm$\,0.016 & 1.003\,$\pm$\,0.004 & 1.00\,$\pm$\,0.09 & 0.97\,$\pm$\,0.08 & 1.08\,$\pm$\,0.09 & 1.06\,$\pm$\,0.06 & 1.041\,$\pm$\,0.021 \\

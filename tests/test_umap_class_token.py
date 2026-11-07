@@ -146,5 +146,6 @@ def test_the_gallery_has_five_umap_pages_none_in_the_paper():
     pages = _assigned(fig / "gallery_labelset.py", "UMAP_PAGES")
     assert list(pages) == new
     assert [v[0] for v in pages.values()] == ["jc1", "two_prong", "leptons", "top", "qg"] == list(uc.SETS)
-    assert _assigned(fig / "gallery_labelset.py", "UMAP_LOOK") == "LOOK: to be written after the embeddings are seen"
+    read = _assigned(fig / "gallery_labelset.py", "UMAP_READ")      # written after the embeddings were seen (round 4)
+    assert list(read) == new and all(v.endswith(".") and "LOOK" not in v for v in read.values())
     assert _assigned(fig / "gallery_labelset.py", "UMAP_SETTINGS") == uc.UMAP

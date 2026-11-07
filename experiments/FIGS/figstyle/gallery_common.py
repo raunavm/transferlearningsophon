@@ -15,7 +15,7 @@ import numpy as np
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE.parent)]
 import paper_figures as P  # noqa: E402
-import style_v4 as S  # noqa: E402
+import style_v5 as S  # noqa: E402
 
 M = P.F._mlst()
 RUNS = M._paper(P.REPO)
@@ -42,6 +42,8 @@ class Page:
     differs: str            # every attribute on which ours differs from the precedent, and why
     draw: Callable          # draw(path: pathlib.Path) -> None, saving through style_v4.save
     data_note: str = ""     # what is incomplete in today's data, if anything
+    passes: int = 0         # round 4: independent review rounds (gallery_review.py)
+    review: str = ""        # round 4: the independent reviewer's final report
 
 
 def mean_over_runs(docs: dict, models: list, key: str):

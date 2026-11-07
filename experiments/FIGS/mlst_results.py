@@ -108,9 +108,9 @@ TASKS_N = (TASKS[0], ("jc2_188", "macro_auc_trained", "JetClass-II, classes pres
 JC2_TASKS = (TASKS[0], TASKS_N[1], TASKS[1], TASKS[2])
 PAIRS = (("bc_vs_bq_cs", r"$X\to bc$ vs $bq$, $cs$", ("label_X_bc",), ("label_X_bq", "label_X_cs")),
          ("bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$", ("label_X_bb",), ("label_X_cc",)),
-         ("bbqq_vs_ccqq", r"$X\to YY\to bbqq$ vs $ccqq$", ("label_X_YY_bbqq",), ("label_X_YY_ccqq",)),
+         ("bbqq_vs_ccqq", r"$X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$", ("label_X_YY_bbqq",), ("label_X_YY_ccqq",)),
          ("ee_vs_mm", r"$X\to ee$ vs $\mu\mu$", ("label_X_ee",), ("label_X_mm",)),
-         ("qcd_bb_vs_cc", r"QCD $bb$ vs $cc$", ("label_QCD_bb",), ("label_QCD_cc",)),
+         ("qcd_bb_vs_cc", r"QCD $b\bar{b}$ vs $c\bar{c}$", ("label_QCD_bb",), ("label_QCD_cc",)),
          ("qcd_b_vs_light", r"QCD with $b$ vs light", "qcd_with_b", ("label_QCD_light",)),
          ("qcd_c_vs_light", r"QCD with $c$, no $b$, vs light", "qcd_with_c_no_b", ("label_QCD_light",)))
 PAIR_DS, PAIR_N = "jc2_188_pairs", "1000000"
@@ -118,7 +118,7 @@ MLP_TASKS = (("jc2_188", "JetClass-II", "macro_auc_ovr"), ("jc2_188_res", "reson
              ("jc2_188_qcd", "QCD", "macro_auc_qcd"), ("jc1", "JetClass", "macro_auc_ovr"),
              ("top", "top", "auc"), ("qg", "q/g", "auc"), ("qg_herwig", "q/g, Herwig", "auc"),
              ("bc_vs_bq_cs", r"$X\to bc$ vs $bq$, $cs$", "auc"), ("bb_vs_cc", r"$X\to b\bar b$ vs $c\bar c$", "auc"),
-             ("bbqq_vs_ccqq", r"$X\to YY\to bbqq$ vs $ccqq$", "auc"), ("qcd_bb_vs_cc", r"QCD $bb$ vs $cc$", "auc"),
+             ("bbqq_vs_ccqq", r"$X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$", "auc"), ("qcd_bb_vs_cc", r"QCD $b\bar{b}$ vs $c\bar{c}$", "auc"),
              ("qcd_b_vs_light", r"QCD with $b$ vs light", "auc"),
              ("qcd_c_vs_light", r"QCD with $c$, no $b$, vs light", "auc"))
 # the pairs with a nonlinear probe (no multilayer perceptron on X->ee vs X->mumu)

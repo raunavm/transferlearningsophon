@@ -11,13 +11,19 @@ import traceback
 
 import gallery_common as C
 import gallery_labelset
+import gallery_palette
 import gallery_physics
+import gallery_review
 import gallery_roc
-import style_v4 as S
+import gallery_inventory
+import style_v5 as S
 
-MODULES = (gallery_physics, gallery_labelset, gallery_roc)
-ORDER = ("SOPHON-FIG2", "F1", "F2a", "F2b", "F3", "F3-scatter", "F3-app", "F3-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F4",
-         "F4-app", "F6", "F6-app", "F8", "A8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "F11", "PT", "CONF", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "VAL")     # the paper's order
+MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_roc, gallery_inventory)
+ORDER = ("SOPHON-FIG2", "PALETTE",       # gallery only; then the paper's order: main text, appendix
+         "F1", "F2a", "F2b", "F3", "F4", "FJ", "FJ-ctrl", "PT", "F6", "F8", "F9a", "F9b", "F10a", "F10b", "F11",
+         "VAL", "A10", "A8", "F6-app", "FJ-app", "FJ-ctrl-app", "FJ-s", "CONF", "F4-app", "F3-scatter", "F3-app",
+         "F3-app2", "F3-ft", "F3-ft2", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had", "UMAP-jc2-lep", "UMAP-top",
+         "UMAP-qg", "A17-res", "A17-qcd", "A17-probe", "F10a-mass", "INVENTORY")
 
 
 # the figures the PI approved page by page (2026-11-05), drawn into the paper by the render job (--paper);
@@ -40,8 +46,9 @@ def main() -> int:
     for page in sorted((p for m in MODULES for p in m.PAGES), key=lambda p: ORDER.index(p.id)):
         if a.only and page.id not in a.only:
             continue
-        S.use_style(simplify=page.id != "SOPHON-FIG2")
+        S.use_style5(simplify=page.id != "SOPHON-FIG2")
         rec = {k: v for k, v in dataclasses.asdict(page).items() if k != "draw"}
+        rec["passes"], rec["review"] = gallery_review.REVIEW.get(page.id, (rec["passes"], rec["review"]))
         try:
             page.draw(a.outdir / page.id)
             rec["drawn"] = True

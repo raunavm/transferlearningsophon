@@ -42,7 +42,7 @@
   "/data/JetClass/Pythia/test_20M/ZToQQ_101.root": "95e47dbbd323816cbcf7d96cf9c89d4dae0116c264dbc52ef95d8e71d6fc6d91"
  },
  "script": "experiments/EVAL/perf_vs_pt.py",
- "script_sha256": "d070d9bdb27d33269057626870dbbd78e6f3d0391aad8f28b32d35fb30822535",
+ "script_sha256": "211e0cee268dbea958f17a9018e8c34a1ad04fda1fdd9f25b2b6a2003b52f3a5",
  "pt": "reconstructed jet pT, GeV",
  "discriminant": "p_S / (p_S + p_QCD), p normalised over the ten classes",
  "pt_edges": [
@@ -55,6 +55,8 @@
  ],
  "n_outside": 0,
  "inclusive": {
+  "accuracy": 0.8257765,
+  "accuracy_stat": 0.00026820670391299874,
   "macro_auc_ovr": 0.9817229243541666,
   "n_classes_present": 10,
   "class_counts": [
@@ -176,6 +178,8 @@
    "lo": 500,
    "hi": 600,
    "n": 1113846,
+   "accuracy": 0.8275443822575114,
+   "accuracy_stat": 0.0003579494880996264,
    "macro_auc_ovr": 0.9817497494905885,
    "n_classes_present": 10,
    "class_counts": [
@@ -296,6 +300,8 @@
    "lo": 600,
    "hi": 700,
    "n": 498126,
+   "accuracy": 0.8261905622272276,
+   "accuracy_stat": 0.0005369170395139338,
    "macro_auc_ovr": 0.9818579586294215,
    "n_classes_present": 10,
    "class_counts": [
@@ -416,6 +422,8 @@
    "lo": 700,
    "hi": 800,
    "n": 226629,
+   "accuracy": 0.8224013696393665,
+   "accuracy_stat": 0.0008027937400417447,
    "macro_auc_ovr": 0.9816821302665876,
    "n_classes_present": 10,
    "class_counts": [
@@ -536,6 +544,8 @@
    "lo": 800,
    "hi": 900,
    "n": 107647,
+   "accuracy": 0.8197348741720624,
+   "accuracy_stat": 0.001171633007959564,
    "macro_auc_ovr": 0.981419633517589,
    "n_classes_present": 10,
    "class_counts": [
@@ -656,6 +666,8 @@
    "lo": 900,
    "hi": 1000,
    "n": 53752,
+   "accuracy": 0.8116349159101057,
+   "accuracy_stat": 0.0016864879743078934,
    "macro_auc_ovr": 0.9803752521322042,
    "n_classes_present": 10,
    "class_counts": [

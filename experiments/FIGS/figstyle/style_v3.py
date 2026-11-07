@@ -133,7 +133,7 @@ def save(fig, path: pathlib.Path) -> list:
     path.parent.mkdir(parents=True, exist_ok=True)
     out = []
     for suffix, kw in ((".pdf", {}), (".png", {"dpi": 200})):
-        fig.savefig(path.with_suffix(suffix), bbox_inches="tight", **kw)
+        fig.savefig(path.with_suffix(suffix), bbox_inches=None if getattr(fig, "exact_size", False) else "tight", **kw)
         out.append(path.with_suffix(suffix))
     plt.close(fig)
     return out

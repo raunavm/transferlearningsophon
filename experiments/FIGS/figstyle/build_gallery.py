@@ -3,8 +3,9 @@
 
     python3 -I experiments/FIGS/figstyle/build_gallery.py <figures-dir> docs/figstyle/gallery.pdf
 
-One landscape A4 page per record of <figures-dir>/pages.json: the precedent on the left, our mock-up as
-vector on the right, the caption and notes under ours. Uses only fitz and the standard library, because
+One landscape A4 page per record of <figures-dir>/pages.json: the precedent on the left, ours as vector on the
+right with its greyscale render as a small inset under the precedent (round 4), the caption, notes, the number of
+render-check passes and the independent reviewer's report under both. Uses only fitz and the standard library, because
 -I drops this directory from sys.path.
 """
 import functools
@@ -84,6 +85,29 @@ def image_rects(sizes: list, x: float, y: float, width: float, height: float) ->
     return best
 
 
+INSET = 0.42           # the greyscale inset's width, as a share of the column
+
+
+def grey_inset(page, figdir: pathlib.Path, rec: dict, bottom: float) -> float:
+    """Our figure in greyscale, small, at the bottom right of the left column; returns where it begins."""
+    pdf = figdir / f"{rec['id']}.pdf"
+    if not (rec.get("drawn") and pdf.exists()):
+        return bottom
+    with fitz.open(pdf) as src:
+        r = src[0].rect
+        w = INSET * COL
+        top = max(TOP + text_height("Precedent: " + rec.get("precedent_label", ""), COL, SIZES[0]), FIG_TOP)
+        h = min(w * r.height / r.width, 0.45 * (bottom - top) - LABEL)     # the precedent keeps the rest
+        if h < 40:
+            return bottom
+        w = h * r.width / r.height
+        pix = src[0].get_pixmap(colorspace=fitz.csGRAY, dpi=150)
+    x0, y0 = MARGIN + COL - w, bottom - h
+    write(page, x0, y0 - LABEL, w, LABEL, "Greyscale", SIZES[-1])
+    page.insert_image(fitz.Rect(x0, y0, x0 + w, bottom), pixmap=pix, keep_proportion=True)
+    return y0 - LABEL
+
+
 def left_column(page, rec: dict, warn: list, bottom: float) -> None:
     paths = [PRECEDENTS / p for p in rec.get("precedent", [])]
     missing = [p for p in paths if not p.exists()]
@@ -98,6 +122,8 @@ def left_column(page, rec: dict, warn: list, bottom: float) -> None:
     if found:
         sizes = [(pm.width, pm.height) for pm in map(fitz.Pixmap, map(str, found))]
         y = max(TOP + height, FIG_TOP)
+        if bottom - y < 20:
+            return
         for path, rect in zip(found, image_rects(sizes, MARGIN, y, COL, bottom - y)):
             page.insert_image(rect, filename=str(path), keep_proportion=True)
 
@@ -107,7 +133,7 @@ def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> float:
     long note costs little figure. Returns where the figures end."""
     x = MARGIN + COL + GUTTER
     wide = 2 * COL + GUTTER
-    write(page, x, TOP, COL, LABEL, "Ours (mock-up)", SIZES[0])
+    write(page, x, TOP, COL, LABEL, "Ours", SIZES[0])
     pdf = figdir / f"{rec['id']}.pdf"
     src = fitz.open(pdf) if rec.get("drawn") and pdf.exists() else None
 
@@ -124,7 +150,11 @@ def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> float:
     paragraphs.append((f"Caption ({len(caption.split())} words): {caption}", (0, 0, 0)))
     paragraphs.append((f"Differs from the precedent: {rec.get('differs', '')}", (0, 0, 0)))
     if rec.get("data_note"):
-        paragraphs.append((f"Data today: {rec['data_note']}", (0, 0, 0)))
+        paragraphs.append((f"Data: {rec['data_note']}", (0, 0, 0)))
+    if rec.get("passes") or rec.get("review"):
+        paragraphs.append((f"Checks: {rec.get('passes', 0)} independent review rounds; the last two full renders "
+                           f"passed the measured checks (figcheck.py). Final review: {rec.get('review') or 'not run'}",
+                           (0, 0, 0)))
     check = figdir / "fig2_check.txt"
     if rec["id"] == "SOPHON-FIG2" and check.exists():
         paragraphs.append((check.read_text().strip(), (0, 0, 0)))
@@ -172,7 +202,7 @@ def main() -> int:
         size = next((s for s in HEADING_SIZES if text_height(heading, PW - 2 * MARGIN, s, BOLD) == text_height("x", PW - 2 * MARGIN, s, BOLD)), HEADING_SIZES[-1])
         if not write(page, MARGIN, MARGIN, PW - 2 * MARGIN, text_height("x", PW - 2 * MARGIN, size, BOLD), heading, size, BOLD):
             warn.append("heading overflows and was cut")
-        left_column(page, rec, warn, right_column(page, rec, figdir, warn))
+        left_column(page, rec, warn, grey_inset(page, figdir, rec, right_column(page, rec, figdir, warn)))
         if lost := missing_glyphs(rec, font):
             warn.append(f"characters the font does not have: {lost}")
         for w in warn:
