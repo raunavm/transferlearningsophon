@@ -790,7 +790,7 @@ PAGES = [
          draw_f1),
     Page("F9a", "Mass regression: response", ["ATL-PHYS-PUB-2024-015/fig7.png"], "ATLAS 2024-015 Fig. 7", F9A_CAPTION,
          "Two jet groups instead of mass and pT responses, as we regress mass only, with panel titles ATLAS lacks. Three "
-         "series instead of two: a dark grey dashed reference and the 162- and 17-class colours, solid, instead of purple dashed and green. "
+         "series instead of two: a thin solid black reference and the 162- and 17-class colours, solid, instead of purple dashed and green. "
          "Fraction of jets on the y axis instead of a.u., Response (m/m_gen) on x instead of m_Reco/m_Truth. x range from "
          "the data, per panel, instead of a fixed 0.7 to 1.3, because the soft-drop mass here is far wider. No vertical "
          "dotted line at 1, a second reference the PI limit forbids. No bands: ATLAS's are thinner than its lines. Same "
@@ -871,16 +871,12 @@ PAGES = [
          "backgrounds. From scratch is not drawn: only a two-epoch dry run exists."),
     Page("PT", "Performance against jet pT", ["2004.08262/fig17.png", "1808.07858/fig2.png"],
          "CMS DeepAK8 Fig. 17, ATLAS top/W Fig. 2", PT_CAPTION,
-         "Ratio panels have no counterpart: the precedents plot one tagger's mistag rate or rejection per series, "
-         "where every panel here divides each run's (1 - AUC) by the 188-class run of the same seed, so the label-set "
-         "gap is read directly; from scratch is not drawn. Panel (b) is that ratio for X→bb against X→cc on a log "
-         "axis, not the precedents' rejection at a working point, which is a bound in every bin (fewer than 20 X→cc "
-         "jets pass at 50% X→bb efficiency in all 30 bins of the 188-class runs). Markers at the bin centres joined "
-         "by lines, with SD bands (range for two runs), as F9b, A17 and F8, instead of the precedents' unjoined "
-         "horizontal bin bars with no uncertainty. Reconstructed jet pT in our ten (JetClass-II) or five (JetClass) bins, instead of generator "
-         "pT 300-2000 GeV (CMS) or true pT 200-2500 GeV (ATLAS). Panel titles and legends in place of the "
-         "precedents' text block (sqrt(s), jet definition, selection); no experiment label. Our palette, Sophon's font, "
-         "round 3's faint grid, frameless legends, inward ticks.",
+         "Absolute values per pT bin (round 4): accuracy in (a)-(c) and the X→bb̄ against X→cc̄ AUC in (d), not the "
+         "precedents' mistag rate or rejection at a working point, which would be a bound in every bin here (fewer "
+         "than 20 X→cc̄ jets pass at 50% X→bb̄ efficiency in all bins of the 188-class runs). Markers at the bin centres "
+         "joined by lines with SD bands (range for two runs), as F9b, A17 and F8, instead of unjoined bin bars without "
+         "uncertainty. Reconstructed jet pT in ten (JetClass-II) or five (JetClass) bins. Panel titles and a figure "
+         "legend instead of the precedents' text block; no experiment label; from scratch not drawn.",
          draw_pt,
          "Four label sets and from scratch have three runs, the controlled partitions two."),
     Page("CONF", "JetClass confusion matrices after fine-tuning (appendix)", ["2604.09809/fig7.png"],
