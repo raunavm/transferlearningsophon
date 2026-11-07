@@ -1,113 +1,84 @@
 \section{Introduction}\label{sec:intro}
 
-% P0a. Field (PI 2026-11-07: open broad, as EveNet and OmniJet do): pretrain once, adapt to many
-% tasks, across machine learning and the sciences; what transfers is set in pretraining.
-Pretraining a network once on a large dataset and adapting it to many tasks has become a standard way
-to build models in machine learning. Language models pretrained on large text
-corpora~\cite{bert,gptthree} and image networks pretrained on large image
-collections~\cite{mahajan,mae} adapt to new tasks from few labeled examples. The same approach now
-predicts the structure of proteins from their sequence~\cite{esmfold} and analyzes whole collision
-events at particle colliders~\cite{evenet}. Such networks are called foundation
-models~\cite{bommasani}. What a foundation model carries to a new task is decided during pretraining,
-by the data it sees and by what it is trained to predict.
+% Register (PI, revision of draft 91): the point and its evidence in one movement, definitions in
+% appositions, no announcing sentences, no "asks whether", one figure reference (the design), no
+% findings by figure or table number. P1 is the PI's model paragraph with the facts checked.
+Foundation models~\cite{bommasani}, networks pretrained once on a large dataset and then adapted to
+many tasks, have become standard in language~\cite{bert,gptthree} and vision~\cite{mahajan,mae}, where
+they adapt to new tasks from few labeled examples, and the same approach now predicts protein
+structure from sequence~\cite{esmfold} and analyzes whole collision events~\cite{evenet}. What such a
+model carries to a new task is fixed during pretraining, by the data it sees and by what it is trained
+to predict, and jet physics is an unusually clean place to study the second of these. The experiments
+at the Large Hadron Collider (LHC)~\cite{lhc} reconstruct every proton--proton collision as a set of
+particles; simulation supplies labeled collisions in essentially unlimited numbers; and each simulated
+jet carries the exact decay that produced it, so the same jets can be labeled as finely or as coarsely
+as one chooses.
 
-% P0b. Collider physics (as EveNet's second paragraph): the LHC, boosted heavy particles in single jets,
-% jet tagging by prongs, flavor and mass, deep-network taggers trained on simulation.
-Collider physics is a natural setting for this approach. At the Large Hadron Collider
-(LHC)~\cite{lhc}, the experiments reconstruct each proton--proton collision as a set of particles,
-and simulation provides labeled collisions in large numbers. Many LHC analyses search for or measure
-heavy particles: the top quark, the $W$, $Z$ and Higgs bosons, and possible new resonances. When such
-a particle is produced with momentum much larger than its mass, its decay products fly out close
-together, and the showers of its quarks merge into a single jet, a collimated spray of particles.
-Analyses then identify the particle from the structure of that jet, a task called jet
-tagging~\cite{larkoski,kogler,cmshbb,cmszprime}. Three properties of the jet carry the
-identification. The first is the number of prongs: two-prong jets, for example, contain two separate
-energy clusters from the two quarks of a heavy-particle decay. The second is the quark flavor, which a
-$b$ or $c$ hadron reveals through a displaced vertex, where tracks meet away from the collision point
-after the hadron travels a few millimeters~\cite[Sec.~4.1]{cmsbtag}. The third is the jet mass. The
-taggers that do this are deep networks that read every measured particle of the jet, trained on
-simulated jets to separate the signal decays from jets from light quarks and gluons, the quantum
-chromodynamics (QCD) background~\cite{particlenet,part,gntwo,cmspart}.
-
-% P1. Jet foundation models: self-supervised and supervised; supervised models serve many analyses
-% through summed classes; simulation makes the label set a free choice, and production label sets grow.
-In particle physics, foundation models were built first for jets. Some are pretrained without labels,
-by reconstructing masked particles or generating jets~\cite{mpm,omnijet,hepjepa}. Others are trained
-to classify simulated jets~\cite{part,omnilearn,sophon}, and this supervised classification is the
-reference against which the self-supervised objectives are measured~\cite{objectives}. A supervised
-model of this kind is pretrained to separate many fine classes of simulated jets and then serves many
+% P2. Jets, tagging, jet foundation models; supervised models serve many analyses through summed
+% classes, and their label sets grow.
+A top quark, a $W$, $Z$ or Higgs boson, or a new resonance produced with momentum well above its mass
+decays into quarks or leptons whose showers merge into a single jet, a collimated spray of particles,
+and analyses identify the particle from the structure of that jet~\cite{larkoski,kogler,cmshbb,cmszprime}:
+its number of prongs, the separate energy clusters left by the decay products; the flavor of its quarks,
+which a $b$ or $c$ hadron reveals through a displaced vertex a few millimeters from the collision
+point~\cite[Sec.~4.1]{cmsbtag}; and its mass. The taggers that do this are deep networks that read
+every particle in the jet, trained on simulated jets to separate the signal decays from jets of light
+quarks and gluons, the quantum chromodynamics (QCD) background~\cite{particlenet,part,gntwo,cmspart}.
+Jet foundation models are pretrained either without labels, by reconstructing masked particles or
+generating jets~\cite{mpm,omnijet,hepjepa}, or as classifiers of simulated
+jets~\cite{part,omnilearn,sophon}, the reference objective against which the self-supervised ones are
+measured~\cite{objectives}. A classifier of this kind separates many fine classes and serves many
 analyses, each of which sums the fine classes into the signal and background it
-needs~\cite{sophon,glopartdp}. Simulated labels leave a choice that labels in most other fields do
-not. The generator records the exact decay behind every jet, so the classes the network is trained to
-separate, its label set, can be made as fine or as coarse as the designer wants, and the same jets can
-carry any label set. Every such model makes this choice, and production models make ever finer ones:
+needs~\cite{sophon,glopartdp}, and its label set, the classes it is trained to separate, keeps growing:
 the Sophon model is pretrained on the \Kfull{} classes of the JetClass-II
-dataset~\cite{sophon,jetclasstwo}, and the CMS tagger GloParT grew from
-\LitGlopartVoneNClasses{} classes in its first version to \LitGlopartVthreeNClasses{} in its
-third~\cite{glopartdp}.
+dataset~\cite{sophon,jetclasstwo}, and the CMS tagger GloParT went from \LitGlopartVoneNClasses{}
+classes in its first version to \LitGlopartVthreeNClasses{} in its third~\cite{glopartdp}.
 
-% P2. The question and why it is open: Sophon's two properties hold at the output of an ideal
-% classifier; what the backbone carries is untested because every published label change also
-% changed the jets.
-At the output of the network, finer labels cost nothing in principle. For an ideal classifier, the
-score of a class split into exclusive subclasses equals the sum of the subclass scores, and adding
-classes leaves the ratios between the scores of the original classes unchanged~\cite[Sec.~III,
-Properties~1 and~2]{sophon}. A model trained on fine classes therefore serves every coarser
-definition of the signal. Both properties concern the output of an ideal classifier. They say nothing
-about what the backbone, the network below the classification head, learns to carry, and the
-backbone is the part that is reused when the model is adapted to a new task. Whether the label set
-shapes the backbone is untested, because the published comparisons changed the training jets together
-with the labels. Sophon's \LitSophonAblationNClasses-class model identifies $X\to b\bar b$ decays less
-well than the \Kfull-class model, but it was trained only on two-prong decays and QCD jets, with
-fewer jets per epoch~\cite[Sec.~III, App.~B.2]{sophon}; its classes are also not the \Kmid-class
-level studied here. In the thesis that introduced GloParT, adding two-prong and top-quark classes to
-a ParticleNet-based classifier of $H\to WW^*$ decays raised the area under the receiver operating
-characteristic curve (AUC) against QCD jets from \LitGlopartAddedAucBase{} to
-\LitGlopartAddedAucTop. The author reads this as a minor change, and the added classes came with
-their own training jets~\cite[Sec.~11.4.1]{glopart}.\footnote{Studies that vary the composition of
-the pretraining data change the labels together with the jets: Uslu et~al.~\cite{datacomp} change
-which JetClass-II classes enter pretraining at a fixed total number of jets, and
-SuperJEPA~\cite{superjepa} pretrains on a subset of the JetClass classes and on all of them with
-different numbers of jets.}
+% P3. The gap: Sophon's properties hold at the output of an ideal classifier; the backbone is
+% untested because every published comparison changed the jets with the labels.
+At the output of an ideal classifier finer labels cost nothing, since the score of a class split into
+exclusive subclasses equals the sum of the subclass scores and adding classes leaves the ratios between
+the scores of the original classes unchanged~\cite[Sec.~III, Properties~1 and~2]{sophon}; a model
+trained on fine classes therefore serves every coarser definition of the signal. These properties are
+silent about the backbone, the network below the classification head, which is the part reused when
+the model is adapted to a new task, and whether the label set shapes it has not been tested, because
+every published comparison changed the training jets together with the labels. Sophon's
+\LitSophonAblationNClasses-class model, which identifies $X\to b\bar b$ decays less well than the
+\Kfull-class model, was trained only on two-prong decays and QCD jets and on fewer jets per
+epoch~\cite[Sec.~III, App.~B.2]{sophon}. In the thesis that introduced GloParT, two-prong and
+top-quark classes added to a classifier of $H\to WW^*$ decays came with their own training jets and
+raised the area under the receiver operating characteristic curve (AUC) against QCD jets from
+\LitGlopartAddedAucBase{} to \LitGlopartAddedAucTop, a change the author reads as
+minor~\cite[Sec.~11.4.1]{glopart}.\footnote{Studies that vary the composition of the pretraining data
+also change the labels together with the jets: Uslu et~al.~\cite{datacomp} change which JetClass-II
+classes enter pretraining at a fixed total number of jets, and SuperJEPA~\cite{superjepa} pretrains on
+a subset of the JetClass classes and on all of them with different numbers of jets.}
 
-% P3. Vision: finer labels help up to a point and not for random per-image identities; frozen and
-% fine-tuned use can disagree. The question has not been asked for jets.
-Image classification has studied the same choice, and its answers depend on how the classes are
-grouped and on how the features are used. Pretraining on coarse groups of the ImageNet classes costs
-little in detection after fine-tuning~\cite{huh}. On a taxonomy of species, finer labels lower the
-error of a fine-tuned network on the coarse classes up to about \LitHongDeclineClasses{} classes.
-Class identities assigned at random to individual images do worse than the coarse labels at every
-granularity~\cite{hong}. The way the pretrained network is used matters as well. A linear probe, a
-logistic regression trained on frozen features (the backbone's output with its weights held fixed),
-measures what a linear classifier can read from them. A larger label set of web hashtags gives a
-linear probe a clear lead, yet under fine-tuning, which continues training all pretrained weights on
-the downstream task with a new output layer, the lead nearly disappears~\cite{mahajan}. Jets have not
-been studied this way, although simulation makes them the cleaner case: every jet carries its exact
-decay, so the same jets can be labeled at every level of a hierarchy.
+% P4. Vision: the answer depends on the grouping and on how the features are used; Mahajan's
+% probe-versus-fine-tuning result is the one that motivates our design.
+Image classification has studied the same choice, and its answer depends on how the classes are
+grouped and how the pretrained network is used. Coarse groups of the ImageNet classes cost little in
+detection after fine-tuning~\cite{huh}, and finer labels that follow a taxonomy of species help a
+fine-tuned network up to a point, whereas class identities assigned at random to individual images do
+worse than coarse labels at every granularity~\cite{hong}. A larger label set of web hashtags gives a
+clear lead to a linear probe, a logistic regression trained on the frozen features (the backbone's
+output with its weights held fixed), but the lead nearly disappears under fine-tuning, which continues
+training all weights on the new task~\cite{mahajan}; jets have not been studied this way.
 
-% P4. Design: everything but the label set is fixed; four levels of a class hierarchy, each merge
-% removing a named set of distinctions; random partitions and controlled flavor boundaries at a fixed
-% class count; linear and MLP probes and fine-tuning on the downstream tasks.
-We pretrain Sophon's network on the same JetClass-II jets, in the same order and from the same
-initial weights, and change only the label set and with it the width of the output layer
-(figure~\ref{fig:design}). The label sets are four levels of a class hierarchy, each pretrained
-\MlstNRunsWord{} times. Each level merges classes of the level above, so every coarse class is a
-union of finer ones, and each merge removes a named set of distinctions. The \Kres-class level merges
-the QCD classes, which Sophon divides by their numbers of $b$, $c$ and $s$ quarks. The \Kmid-class
-level also merges decays with different numbers of $b$ or $c$ quarks, gluons with light quarks, and
-electrons with muons. The \Kcoarse-class level merges $b$, $c$ and light quarks as well and keeps
-only the number and type of the prongs. Two controls fix the number of classes at \Kcoarse. Random
-partitions are label sets with the same number of classes, formed by assigning the resonant classes
-to groups at random and chosen to cut across the \Kcoarse-class groups; they test whether the cost of
-a coarse label set depends on which classes are merged. Random partitions with controlled flavor
-boundaries differ from one another only in their flavor boundary, a class boundary between decays
-that differ only in quark flavor, and test whether one such boundary changes what the frozen features
-carry. We evaluate the models with linear probes and with MLP probes, small multilayer perceptrons
-(MLP) trained on the same frozen features, first on the JetClass-II classes themselves. The
-downstream tasks, on which we also fine-tune, are the JetClass dataset~\cite{part}, top
-tagging~\cite{toptag} and quark/gluon discrimination in Pythia and Herwig
-samples~\cite{efn,qgpythia,qgherwig}; Sophon's $X\to b\bar b$ and $X\to bs$ benchmark completes % CHECK: pending Xbx* (drop this clause with section 4.7 if the samples are not staged by 12 Nov)
-them~\cite{sophon}.
+% P5. Design, with the one figure reference; the hierarchy in one sentence (Methods has the rest).
+We pretrain Sophon's network on the same JetClass-II jets, in the same order and from the same initial
+weights, and change only the label set and with it the width of the output layer, as
+figure~\ref{fig:design} shows. The label sets are four nested levels of a class hierarchy, each
+pretrained \MlstNRunsWord{} times, in which every merge removes a named set of distinctions, from the
+flavor content of QCD jets at the first step to quark flavor itself at the last, leaving \Kcoarse{}
+classes that keep only the number and type of the prongs. Two kinds of control hold the class count at
+\Kcoarse: random partitions, which assign the resonant classes to groups at random, and partitions that
+differ only in a flavor boundary, a class boundary between decays that differ only in quark flavor. We
+read the frozen features with linear probes and with MLP probes, small multilayer perceptrons, and
+fine-tune the pretrained models on JetClass-II, on the JetClass dataset~\cite{part}, on top
+tagging~\cite{toptag} and on quark/gluon discrimination with Pythia and Herwig
+samples~\cite{efn,qgpythia,qgherwig}, with Sophon's $X\to b\bar b$ and $X\to bs$ benchmark as the % CHECK: pending Xbx* (drop this clause with section 4.7 if the samples are not staged by 12 Nov)
+last~\cite{sophon}.
 
 \begin{figure}[tbp]
 \centering
@@ -122,33 +93,29 @@ the label sets are those of every later figure.}
 \label{fig:design}
 \end{figure}
 
-% P5. Findings on frozen features (figures F2-F4). No numbers.
-Frozen features keep what the labels ask the network to separate (figure~\ref{fig:f2a}). Merging the
-QCD classes leaves what a linear probe reads from the resonant classes unchanged and costs only on % CHECK: MlstCmpJcTwoResResOverFullPr reads "equal within" and MlstCmpJcTwoQcdResOverFull > 1 by more than its SD
-the QCD classes themselves. Counted in wrongly ordered pairs of jets, the merge that removes quark
-flavor is the costliest step of the % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull
-hierarchy. Class by class, the largest costs fall on decays that differ only in lepton flavor (an % CHECK: MlstPerClassCoarseTopClass is an e/mu or tau_e/tau_mu class
-electron or a muon, directly or through a $\tau$ lepton). Summed over classes, the largest cost falls % CHECK: MlstPerClassCoarseQuarkShare > MlstPerClassCoarseLeptonShare
-on decays that differ only in quark flavor (figure~\ref{fig:f3}). At the same number of classes, the
-random partitions lose less than the \Kcoarse-class level, so the cost depends on which classes are
-merged and not only on how many remain. Any flavor boundary keeps flavor readable, and a boundary placed % CHECK: MlstCmpJcTwoF{one,oner}OverFzero < 1 (both runs); MlstCmpBbqqFonerOverFzero < 1 and MlstCmpBbqqFonerOverFone > 1 (both runs)
-between the two decays of a pair separates that pair better still (figure~\ref{fig:f4}).
+% P6. Findings in one paragraph, no figure or table numbers, no numbers.
+% CHECK: MlstCmpJcTwoResResOverFullPr reads "equal within" and MlstCmpJcTwoQcdResOverFull > 1 by more than its SD
+% CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull; MlstPerClassCoarseTopClass is an e/mu or tau_e/tau_mu class; MlstPerClassCoarseQuarkShare > MlstPerClassCoarseLeptonShare
+% CHECK: MlstCmpJcTwoRandOverCoarse < 1; MlstCmpJcTwoF{one,oner}OverFzero < 1 (both runs)
+% CHECK: MlstFtJcOneCoarseNRejDrop >= two and MlstFtJcOne{Res,Mid}NRejDrop = none, on the long-budget cells once all 30 are in
+% CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull within a few per cent of one
+% CHECK: MlstLpTopRthirtyFullOverInitBnZeroPr reads "equal within" and MlstLpTopRthirtyDrawOverZeroFull well above one
+% CHECK: MlstCmpMlpResMassOverRes < 1 and MlstSculptCoarseMassOverCoarseOne < 1; MlstCmpJcTwoResMassOverRes within a few per cent of one
+The frozen features keep what the labels ask the network to separate: merging the QCD classes costs only
+on those classes; summed over classes, the merge of quark flavors is the costliest step of the
+hierarchy, while class by class the largest losses fall on decays that differ only in lepton flavor; and
+at a fixed number of classes the random partitions lose less than the hierarchy, so the cost depends on
+which classes are merged and not only on how many remain, with any flavor boundary keeping flavor
+readable. Fine-tuning narrows these differences without removing them: on JetClass, a separate
+simulation with every input present, the \Kcoarse-class labels still lower the background rejection for
+several signal classes. The public top-tagging and quark/gluon benchmarks lack some of the network's
+inputs, and on them the label sets differ far less; with the missing inputs set to zero, a linear probe
+on the pretrained features does no better than one on a randomly initialized network, and on top
+tagging replacing the zeros with values a real particle takes restores much of the difference. An auxiliary regression of the
+jet mass, trained alongside the classification, makes the frozen features carry the mass and reduces
+the sculpting of the background mass distribution, at a small cost to the classification.
 
-% P6. Findings downstream and on the jet mass, then the roadmap (the only "section N" list).
-After fine-tuning, the \Kcoarse-class labels still lower the background rejection for several % CHECK: MlstFtJcOneCoarseNRejDrop >= two; MlstFtJcOne{Res,Mid}NRejDrop = none
-signal classes of JetClass, where every input is present (table~\ref{tab:jetclass}). The public
-top-tagging and quark/gluon benchmarks lack some of the inputs the network reads, which we set to
-zero, and on them the label sets differ far less after fine-tuning (tables~\ref{tab:benchtop} % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull within a few per cent of one
-and~\ref{tab:benchqg}). Linear probes do poorly on these benchmarks. Setting the inputs they lack to % CHECK: MlstLpTopRthirtyFullOverInitBnZero and MlstLpQgRthirtyFullOverInitBnZero near or below one
-zero on JetClass-II removes more of the pretrained features' accuracy than it removes from a % CHECK: MlstLpJcTwoTopZeroAccDropFull > MlstLpJcTwoTopZeroAccDropInitBn; MlstLpJcTwoQgZeroAccDropFull > MlstLpJcTwoQgZeroAccDropInitBn
-randomly initialized network. We compare three substitutions for the missing inputs to find where % CHECK: pending MlstLpTopRthirtyFullOverInitBn (substitution chosen on validation)
-the loss arises (table~\ref{tab:fill_main}). Finally, the \Kres- and \Kcoarse-class models are also
-pretrained with an auxiliary regression of the jet mass, trained alongside the classification. The
-regression makes the frozen features carry the jet mass and reduces sculpting, the distortion of the % CHECK: MlstCmpMlpResMassOverRes < 1 and MlstCmpMlpCoarseMassOverCoarse < 1 (ATLAS resolution); MlstSculptCoarseMassOverCoarseOne < 1
-background mass distribution by a selection on the classifier score, at a small cost to the % CHECK: MlstCmpJcTwoResMassOverRes within a few per cent of one
-classification (figures~\ref{fig:f9a}, \ref{fig:f10a} and~\ref{fig:f10b}, table~\ref{tab:mass}).
-
-Section~\ref{sec:related} places the study among work on pretraining objectives, label granularity,
-auxiliary targets and transfer. Section~\ref{sec:methods} describes the data, the label sets and the
-evaluation, section~\ref{sec:results} gives the results task by task, and section~\ref{sec:discussion}
-discusses them and states the limitations.
+The rest of this paper is organized as follows. Section~\ref{sec:related} places the study among work
+on pretraining objectives, label granularity, auxiliary targets and transfer; section~\ref{sec:methods}
+describes the data, the label sets and the evaluation; section~\ref{sec:results} gives the results task
+by task; and section~\ref{sec:discussion} discusses them and states the limitations.
