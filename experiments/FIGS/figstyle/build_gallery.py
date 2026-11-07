@@ -137,7 +137,7 @@ def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> float:
     pdf = figdir / f"{rec['id']}.pdf"
     src = fitz.open(pdf) if rec.get("drawn") and pdf.exists() else None
 
-    paragraphs = []
+    paragraphs = [(rec["change"], RED)] if rec.get("change") else []      # round 5: what changed since approval
     if src is None:
         if rec.get("absent"):
             why = f"Absent from today's data: {rec['absent']}"
@@ -183,7 +183,8 @@ def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> float:
 
 
 def missing_glyphs(rec: dict, font: fitz.Font) -> str:
-    text = "".join(str(rec.get(k, "")) for k in ("id", "title", "precedent_label", "caption", "differs", "data_note", "absent", "failed"))
+    text = "".join(str(rec.get(k, "")) for k in ("id", "title", "precedent_label", "caption", "differs", "data_note", "absent", "failed",
+                                                  "change"))
     return "".join(sorted({c for c in text if not c.isspace() and not font.has_glyph(ord(c))}))
 
 
@@ -198,7 +199,7 @@ def main() -> int:
     for rec in records:
         warn = []
         page = doc.new_page(width=PW, height=PH)
-        heading = f"{rec['id']}: {rec.get('title', '')}"
+        heading = f"{rec['change'].split(':')[0] + ' ' if rec.get('change') else ''}{rec['id']}: {rec.get('title', '')}"
         size = next((s for s in HEADING_SIZES if text_height(heading, PW - 2 * MARGIN, s, BOLD) == text_height("x", PW - 2 * MARGIN, s, BOLD)), HEADING_SIZES[-1])
         if not write(page, MARGIN, MARGIN, PW - 2 * MARGIN, text_height("x", PW - 2 * MARGIN, size, BOLD), heading, size, BOLD):
             warn.append("heading overflows and was cut")

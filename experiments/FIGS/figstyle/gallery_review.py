@@ -56,3 +56,56 @@ REVIEW = {
     "F10a-mass": (3, FIXED + "its ratio range differs slightly from F10a's (each set by its own points)."),
     "INVENTORY": (1, FIXED.rstrip("; ") + "."),
 }
+
+# Round 5 (PI, 2026-11-07): what changed on each page since the approved round 4, shown on the gallery page for page-by-page
+# approval. Keyed by page id; a table page joins with its own id. "NEW: ..." for a page the PI has not seen.
+NAMES = "legend names say what each network was pretrained on"
+CAPTION = "caption opens with what was trained on what"
+TICKS = "rejection ticks in plain numbers (no small exponents)"
+CHANGES = {
+    "F1": f"CHANGED: {CAPTION}.",
+    "F2a": f"CHANGED: bars of the spread over pretraining runs (SD over three, range over two); {NAMES}; {CAPTION}.",
+    "F2b": f"CHANGED: bars of the spread over pretraining runs (SD over three, range over two); {NAMES}; {CAPTION}.",
+    "F3": f"CHANGED: drawn at 18.5 cm height, so the book prints every text at its 8-9 pt; {CAPTION}.",
+    "F4": f"CHANGED: {TICKS}; {NAMES}; {CAPTION}.",
+    "FJ": f"CHANGED: {TICKS}; {CAPTION}.",
+    "FJ-ctrl": f"CHANGED: {TICKS}; {CAPTION}.",
+    "PT": f"CHANGED: {NAMES}; {CAPTION}.",
+    "F6": f"CHANGED: uncertainty bands on the ratio panels only (SD over runs and 68% binomial, in quadrature); {TICKS}; "
+          f"drawn at 18.5 cm height (8 pt text in the book); {NAMES}; {CAPTION}; Herwig: consistent within uncertainty.",
+    "F8": f"CHANGED: {NAMES}; {CAPTION}, the bands said to be over pretraining runs.",
+    "F9a": f"CHANGED: one hollow marker per mass-regression model; {NAMES}; {CAPTION}.",
+    "F9b": f"CHANGED: soft-drop mass off the axis as arrows at the edge, values in the panel title; one hollow marker per "
+           f"mass-regression model; {NAMES}; {CAPTION}.",
+    "F10a": f"CHANGED: {CAPTION}.",
+    "F10b": f"CHANGED: random-selection floor drawn (black dashed), y axis extended to hold it; {NAMES}; {CAPTION}.",
+    "F10c": "NEW: 1/JSD50 against R50 per model, DisCo Fig. 3's plane, bars of the spread over pretraining runs on both "
+            "axes (absent until the at_eps_s50 read-out lands).",
+    "F11": f"CHANGED: {NAMES}; {CAPTION}.",
+    "VAL": f"CHANGED: {NAMES}; {CAPTION}.",
+    "A10": f"CHANGED: SD bands over pretraining runs, as F8; {NAMES}; {CAPTION}.",
+    "A8": f"CHANGED: SD bands over pretraining runs, as F8; {NAMES}; {CAPTION}.",
+    "F6-app": f"CHANGED: uncertainty bands on the ratio panels only; the kinematic-only curve in (a) once its probe curve "
+              f"is pulled; {TICKS}; drawn at 18.5 cm height (8 pt text in the book); {NAMES}; {CAPTION}.",
+    "FJ-app": f"CHANGED: {TICKS}; {CAPTION}.",
+    "FJ-ctrl-app": f"CHANGED: {TICKS}; {CAPTION}.",
+    "FJ-s": f"CHANGED: {TICKS}; {CAPTION}.",
+    "CONF": f"CHANGED: {CAPTION}.",
+    "F4-app": f"CHANGED: {TICKS}; {NAMES}; {CAPTION}.",
+    "F3-scatter": f"CHANGED: {CAPTION}.",
+    "F3-app": f"CHANGED: panels in F3-ft's order (162 classes, the two mass-regression models, random partitions); {CAPTION}.",
+    "F3-app2": f"CHANGED: the three flavor-boundary partitions, (e)-(g) as in F3-ft2; {CAPTION}.",
+    "F3-ft": f"CHANGED: {CAPTION}.",
+    "F3-ft2": f"CHANGED: {CAPTION}.",
+    "A3R": f"CHANGED: legend above the panels, off the curves; {TICKS}; caption run count checked (three) and {CAPTION}.",
+    "A3R-ft": f"CHANGED: legend above the panels, off the curves; {TICKS}; caption gives the run count (three); {CAPTION}.",
+    **{p: f"CHANGED: caption says the plots are qualitative; {CAPTION}." for p in
+       ("UMAP-jc1", "UMAP-jc2-had", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg")},
+    "A17-res": f"CHANGED: one hollow marker per mass-regression model in all three appendix mass figures; soft-drop arrows; "
+               f"{NAMES}; {CAPTION}.",
+    "A17-qcd": f"CHANGED: one hollow marker per mass-regression model in all three appendix mass figures; soft-drop arrows; "
+               f"{NAMES}; {CAPTION}.",
+    "A17-probe": f"CHANGED: one hollow marker per mass-regression model in all three appendix mass figures; soft-drop arrows; "
+                 f"{NAMES}; {CAPTION}.",
+    "F10a-mass": f"CHANGED: {CAPTION}.",
+}

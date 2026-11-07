@@ -146,7 +146,16 @@ def _long_inits() -> list:
     return sorted({c["init"] or "scratch" for c in cells if "mass" not in c["init"]})
 
 
+def calls_kin() -> str:
+    """The kinematic-only run's top probe curve: its inputs have no absent slots, so its probe is the plain best70
+    fit (fits_v4_probs), beside the label sets' imputed-fill probes in top_probe (PI 2026-11-07)."""
+    out = [f"python3 experiments/FT/roc_points.py probes --family top_probe --probs-root {PROBS.replace('_fill_probs', '_probs')} "
+           f"--ckpt best70 --files top_N1200000 --models mtx-l188kin-s1 --out-dir {ROC}/top_probe"]
+    return "\n".join("          " + c for c in out)
+
+
 MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
+         "kin": (calls_kin, "gallery-data-kin-raunav", "top_probe"),
          "sib2": (calls_sib2, "gallery-data-sib2-raunav", "pairs_sib2"),
          "long": (calls_long, "gallery-data-long-raunav", "jc2_ft_ovr_long"),
          "long-jc1": (calls_long_jc1, "gallery-data-long-jc1-raunav", "jc1_ft_long jc1_ft_ovr_long")}

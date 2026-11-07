@@ -13,9 +13,13 @@ import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.ticker import FuncFormatter, LogLocator, MaxNLocator, MultipleLocator, NullFormatter
 
+from gallery_bands import rejection_rel_error
 from gallery_common import Absent, M, P, Page, ROC, RUNS, mean_over_runs
 import style_v5 as S
 
+# rejection ticks in plain numbers (PI, 2026-11-07: every tick label at least 8 pt; a 10^n exponent prints at about 70%)
+PLAIN = FuncFormatter(lambda v, _: f"{v:g}")
+ROC_LEFT, ROC_WGAP = 1.5, 0.25     # cm: room for "100000" beside the y label; the right column's y labels are off
 GRID = {"left": 0.1, "right": 0.965, "top": 0.92, "bottom": 0.06, "hspace": 0.1}
 STACKED_GRID = {"top": 0.98, "bottom": 0.06, "hspace": 0.35}
 FAMILIES = ("QCD", "Two-prong quarks and gluons", "Two-prong leptons", "Three-prong", "Four-prong",
@@ -46,9 +50,9 @@ def _family(fam: str) -> dict:
     return docs
 
 
-def _axes_2x2(sharey: bool, wspace: float, heading: str):
+def _axes_2x2(sharey: bool, wspace: float, heading: str, top: float = 1.0):
     """Round 4: four 6.5 cm panels (style_v5.grid_cm), the y label once per row, the x label under the lower row."""
-    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=1.0)
+    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=top, left=ROC_LEFT, wgap=ROC_WGAP)
     if sharey:
         for ax in axes.flat[1:]:
             ax.sharey(axes.flat[0])
@@ -73,6 +77,18 @@ def _roc_axes(ax, x_step: float = 0.2) -> None:
     ax.yaxis.set_major_locator(LogLocator(base=10, numticks=12))
     ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=12))
     ax.yaxis.set_minor_formatter(NullFormatter())
+    ax.yaxis.set_major_formatter(PLAIN)
+
+
+def _right_labels_off(axes) -> None:
+    """A row whose two panels show one y range gives its tick labels once, on the left (the plain-number labels leave
+    no room between the columns); the left panel's "1.0" is left to the right panel's axis, which starts beside it."""
+    for left, right in axes:
+        left.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v) < 1e-9 or v > 1 - 1e-9 else f"{v:.1f}"))
+        if np.allclose(left.get_ylim(), right.get_ylim()):
+            right.tick_params(labelleft=False)
+        else:
+            raise SystemExit(f"FATAL: {right.get_title()!r}: its own y range needs its tick labels, with no room for them")
 
 
 def _y_range(axes) -> None:
@@ -130,7 +146,7 @@ def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
     h = 0.85 * w
     top = 0.9
     fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
-    ax = S.axes_cm(fig, 1.4, top, w, h)
+    ax = S.axes_cm(fig, 1.5, top, w, h)
     _roc_axes(ax, x_step=0.2)
     docs = _family("jc1_ft_ovr")
     aucs = {c: mean_over_runs(docs, models, c)[2] for c in S.JC1_CLASSES}
@@ -148,7 +164,7 @@ def _jc1_four(path: pathlib.Path, family: str, heading: str, panels: list, legen
     docs = _family(family)
     scratch = _family("jc1_ft_ovr")
     reference = np.mean([mean_over_runs(scratch, P._scratch_models(scratch), c)[2] for c in S.JC1_CLASSES])
-    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=2.35)
+    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=2.35, left=ROC_LEFT, wgap=ROC_WGAP)
     for ax in axes.flat[1:]:
         ax.sharey(axes.flat[0])
     for ax in axes.flat:
@@ -163,6 +179,7 @@ def _jc1_four(path: pathlib.Path, family: str, heading: str, panels: list, legen
         auc = _jc1_curves(ax, docs, models, auc_in_legend=False)
         S.title(ax, f"{name}, macro AUC {auc:.3f}")
     _y_range(list(axes.flat))
+    _right_labels_off(axes)
     S.fig_legend(fig, _class_handles(), top_cm=0.6, ncol=5)
     S.letter_panels(axes.flat)
     S.save(fig, path)
@@ -212,7 +229,7 @@ def _pairs(path: pathlib.Path, series: list, keys: tuple, ymax: float | None = N
     keep fewer than 20 background jets at every efficiency is named in the panel as complete separation."""
     docs = _family("pairs")
     heading = {k: h for k, h, *_ in M.PAIRS}
-    fig, axes = _axes_2x2(sharey=False, wspace=0.2, heading="Linear probes on JetClass-II class pairs")
+    fig, axes = _axes_2x2(sharey=False, wspace=0.2, heading="Linear probes on JetClass-II class pairs", top=2.35)
     for ax, key in zip(axes.flat, keys):
         d = ROC["pairs_sib2"] if key == "ee_vs_mm" and ROC.get("pairs_sib2") else docs
         separated = []
@@ -228,15 +245,16 @@ def _pairs(path: pathlib.Path, series: list, keys: tuple, ymax: float | None = N
         if ymax and separated:
             if legend_order:
                 separated.sort(key=legend_order.index)
-            words = (" and ".join(w.removesuffix(" classes") for w in separated) + " classes"
-                     if all(w.endswith(" classes") for w in separated) else ", ".join(separated))
+            pre = "pretrained, "
+            words = (pre + " and ".join(w.removeprefix(pre).removesuffix(" classes") for w in separated) + " classes"
+                     if all(w.startswith(pre) and w.endswith(" classes") for w in separated) else ", ".join(separated))
             ax.text(0.97, 0.95, "Complete separation:\n" + words, transform=ax.transAxes, ha="right",
                     va="top", fontsize=S.LEGEND_PT5)     # no frame, as the legends (style_v4)
         S.title(ax, heading[key])
+    _right_labels_off(axes)
     handles, labels = axes[0, 0].get_legend_handles_labels()
     order = sorted(range(len(labels)), key=lambda i: legend_order.index(labels[i])) if legend_order else range(len(labels))
-    _legend(axes[0, 0], handles=[handles[i] for i in order], labels=[labels[i] for i in order],
-            title="Pretrained on", title_fontsize=S.LEGEND_PT5)
+    S.fig_legend(fig, [handles[i] for i in order], top_cm=0.6, ncol=2)     # above the panels: the long names (PI, 2026-11-07)
     S.letter_panels(axes.flat)
     S.save(fig, path)
 
@@ -244,23 +262,39 @@ def _pairs(path: pathlib.Path, series: list, keys: tuple, ymax: float | None = N
 def draw_f4(path: pathlib.Path) -> None:
     """Linear probes, solid (a figure of probes only). The 188-class curve is drawn last, so it shows where the 162-class curve lies on it."""
     levels = list(S.LEVELS)
-    _pairs(path, [(RUNS[a], {**S.look(a), "linewidth": S.LW_CURVE, "label": S.NAME[a]}) for a in levels[::-1]],
-           M.ROC_PAIRS, ymax=F4_YMAX, legend_order=[S.NAME[a] for a in levels])
+    _pairs(path, [(RUNS[a], {**S.look(a), "linewidth": S.LW_CURVE, "label": S.LEGEND[a]}) for a in levels[::-1]],
+           M.ROC_PAIRS, ymax=F4_YMAX, legend_order=[S.LEGEND[a] for a in levels])
 
 
 def draw_f4_app(path: pathlib.Path) -> None:
-    _pairs(path, [(RUNS[a], {**S.look(a), "linewidth": S.LW_CURVE, "label": S.NAME[a]}) for a in M.FLAV]
-           + [(RUNS["L188"], {**S.look("L188"), "linewidth": S.LW_CURVE, "label": S.NAME["L188"]})],
+    _pairs(path, [(RUNS[a], {**S.look(a), "linewidth": S.LW_CURVE, "label": S.LEGEND[a]}) for a in M.FLAV]
+           + [(RUNS["L188"], {**S.look("L188"), "linewidth": S.LW_CURVE, "label": S.LEGEND["L188"]})],
            ("bb_vs_cc", "bbqq_vs_ccqq", "bc_vs_bq_cs", "qcd_bb_vs_cc"))     # X->ee vs mumu: no curve to draw here
 
 
 RATIO_HEIGHT = 0.35     # F6's ratio panels, one height for all three (OmniLearned Fig. 3's form)
 RATIO_RANGE_FROM = 0.1  # the ratio range is set by efficiencies from 0.1: below, a few background jets swing it
 STACKED_RATIO = (14 * S.CM, 22 * S.CM)
+BOOK_H = 18.5           # cm: the tallest figure the results book prints at full size (make_results_book.MAX_H_CM); F6 and
+                        # F6-app are drawn at it, so their text prints at its drawn size (PI 2026-11-07: at least 8 pt)
 
 
-def _ratio(rx, s, ref, **kw) -> list:
-    """A curve over the 188-class curve where both have points; the ratios drawn."""
+def _rel_error(docs: dict, models: list, key: str):
+    """Relative uncertainty of mean_over_runs' curve at its points (gallery_bands.rejection_rel_error): the runs'
+    rejection and passing background count where every run has at least 20 background jets, mean_over_runs' cut."""
+    have = [m for m in models if m in docs and key in docs[m]["curves"]]
+    if not have:
+        return None
+    rej = np.array([M.V4.roc_series(docs[m], key)[1] for m in have])
+    ok = np.isfinite(rej).all(axis=0)
+    k = np.array([np.asarray(docs[m]["curves"][key]["n_bkg_pass"], float) for m in have])
+    return rejection_rel_error(rej[:, ok], k[:, ok], docs[have[0]]["curves"][key]["n_background"])
+
+
+def _ratio(rx, s, ref, rel=None, band: bool = False, **kw) -> list:
+    """A curve over the 188-class curve where both have points; the ratios drawn, and with rel (the curve's relative
+    uncertainty at its points) a band of that curve's own uncertainty around its ratio. The ratios returned, with the
+    band's edges when band."""
     if s is None or ref is None or len(s[0]) < 2:
         return []
     common, i, j = np.intersect1d(np.round(s[0], 9), np.round(ref[0], 9), return_indices=True)
@@ -268,7 +302,12 @@ def _ratio(rx, s, ref, **kw) -> list:
         return []
     r = s[1][i] / ref[1][j]
     rx.plot(common, r, **kw)
-    return list(r[common >= RATIO_RANGE_FROM])
+    far = common >= RATIO_RANGE_FROM
+    if rel is None:
+        return list(r[far])
+    lo, hi = r * (1 - rel[i]), r * (1 + rel[i])
+    rx.fill_between(common, lo, hi, color=kw["color"], alpha=0.2, linewidth=0, zorder=kw.get("zorder", 2) - 0.1)
+    return list(r[far]) + (list(lo[far]) + list(hi[far]) if band else [])
 
 
 def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None:
@@ -277,11 +316,11 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
     sets (and the kinematic-inputs model); from scratch is drawn and may leave it. From scratch always from the
     fine-tuned families."""
     top_ft, qg_ft = _family("top_ft"), _family("qg_ft")
-    left, gap, top_cm, rgap, row_gap, bottom = 1.15, 0.35, 1.2, 0.1, 1.2, 0.95
-    w1 = S.PRINT_W - left - 0.3
-    h1, w2 = 0.7 * w1, S.PANEL_W
-    h2 = 0.7 * w2
-    H = top_cm + h1 * (1 + RATIO_HEIGHT) + rgap + row_gap + h2 * (1 + RATIO_HEIGHT) + rgap + bottom
+    left, gap, top_cm, rgap, row_gap, bottom = ROC_LEFT, ROC_WGAP, 1.2, 0.1, 1.2, 0.95
+    w1, w2 = S.PRINT_W - left - 0.3, S.PANEL_W
+    h2 = 0.7 * w2 + 0.01     # clear of the aspect rule's 0.7 at print
+    H = BOOK_H          # the first row's height takes what the second leaves (item 5, PI 2026-11-07)
+    h1 = (H - top_cm - 2 * rgap - row_gap - h2 * (1 + RATIO_HEIGHT) - bottom) / (1 + RATIO_HEIGHT)
     fig = S.figure_cm(S.PRINT_W, H)
     y2 = top_cm + h1 * (1 + RATIO_HEIGHT) + rgap + row_gap
     boxes = [(left, top_cm, w1, h1), (left, y2, w2, h2), (left + w2 + gap, y2, w2, h2)]
@@ -301,26 +340,31 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         _roc_axes(ax)
         S.fine_grid(rx)
         rx.xaxis.set_major_locator(MultipleLocator(0.2))
-        rx.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v) < 1e-9 else f"{v:.1f}"))
+        rx.xaxis.set_major_formatter(FuncFormatter(lambda v, _, k=k: "" if abs(v) < 1e-9 or (k == 1 and v > 1 - 1e-9)
+                                                   else f"{v:.1f}"))     # (b)'s "1.0" left to (c)'s axis beside it
         ref = mean_over_runs(docs, RUNS["L188"], key)
         shown = [1.0]
         for level in S.LEVELS[::-1]:            # the 188-class curve last, on top
             s = mean_over_runs(docs, RUNS[level], key)
-            _plot(ax, s, **S.look(level), linewidth=S.LW_CURVE, label=S.NAME[level])
-            shown += _ratio(rx, s, ref, **S.look(level), linewidth=S.LW_CURVE)
-        s = mean_over_runs(ft, P._scratch_models(ft), key)
-        _plot(ax, s, **S.look("SCRATCH"), linewidth=S.LW_CURVE, label=S.NAME["SCRATCH"], zorder=1.9)  # under the label sets
-        scratch = _ratio(rx, s, ref, **S.look("SCRATCH"), linewidth=S.LW_CURVE, zorder=1.9)
+            _plot(ax, s, **S.look(level), linewidth=S.LW_CURVE, label=S.LEGEND[level])
+            shown += _ratio(rx, s, ref, _rel_error(docs, RUNS[level], key), band=True, **S.look(level),
+                            linewidth=S.LW_CURVE)
+        models = P._scratch_models(ft)
+        s = mean_over_runs(ft, models, key)
+        _plot(ax, s, **S.look("SCRATCH"), linewidth=S.LW_CURVE, label=S.LEGEND["SCRATCH"], zorder=1.9)  # under the label sets
+        scratch = _ratio(rx, s, ref, _rel_error(ft, models, key), band=True, **S.look("SCRATCH"), linewidth=S.LW_CURVE,
+                         zorder=1.9)
         if word == "fine-tuned":            # after fine-tuning from scratch is near the label sets: its ratio in range
             shown += scratch
         if kinematic and key == "top" and M.KIN_MODEL in docs:
             s = mean_over_runs(docs, [M.KIN_MODEL], key)
-            _plot(ax, s, **S.look("KIN"), linewidth=S.LW_CURVE, label=S.NAME["KIN"])
-            shown += _ratio(rx, s, ref, **S.look("KIN"), linewidth=S.LW_CURVE)
+            _plot(ax, s, **S.look("KIN"), linewidth=S.LW_CURVE, label=S.LEGEND["KIN"])
+            shown += _ratio(rx, s, ref, _rel_error(docs, [M.KIN_MODEL], key), band=True, **S.look("KIN"),
+                            linewidth=S.LW_CURVE)
         _y_range([ax] if k == 0 else axes[1:])
         top_ax = ax if k == 0 else axes[1]
         top_ax.set_ylim(1, 10.0 ** np.ceil(np.log10(top_ax.get_ylim()[1])))     # from 10^0 to a labelled decade
-        ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v - 1) < 1e-9 else f"$10^{{{round(np.log10(v))}}}$"))
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v - 1) < 1e-9 else f"{v:g}"))
         rx.yaxis.set_major_locator(MaxNLocator(nbins=4, steps=[1, 2, 5, 10], prune="upper"))   # 1.0 a tick; none at the top edge
         rx.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.2f}"))        # one format in every ratio panel
         v = np.array(shown, float)
@@ -337,8 +381,8 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
             S.labels(rx, ylabel="Ratio to 188")      # "classes" does not fit the quark/gluon ratio panel; the caption says it
         S.labels(rx, xlabel=S.X_EPS)
     handles, labels = axes[0].get_legend_handles_labels()
-    order = [labels.index(S.NAME[a]) for a in S.LEVELS] + [i for i, lab in enumerate(labels)
-                                                           if lab not in [S.NAME[a] for a in S.LEVELS]]
+    order = [labels.index(S.LEGEND[a]) for a in S.LEVELS] + [i for i, lab in enumerate(labels)
+                                                             if lab not in [S.LEGEND[a] for a in S.LEVELS]]
     _legend(axes[0], handles=[handles[i] for i in order], labels=[labels[i] for i in order], ncol=2)
     S.heading(fig, f"{word.capitalize()} on the full benchmark training sets")
     S.save(fig, path)
@@ -349,14 +393,14 @@ def draw_f6(path: pathlib.Path) -> None:
 
 
 def draw_f6_app(path: pathlib.Path) -> None:
-    _benchmarks(path, _family("top_probe"), _family("qg_probe"), "linear probes", False)
+    _benchmarks(path, _family("top_probe"), _family("qg_probe"), "linear probes", True)
 
 
 def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
     docs = _family(family)
     names = {r["jet_label"]: r["class_name"] for r in M._class_rows(P.REPO)}
     colour = {label: S.TAB10[FAMILIES.index(family_of(name))] for label, name in names.items()}
-    fig, axes = _axes_2x2(sharey=True, wspace=0.1, heading=heading)
+    fig, axes = _axes_2x2(sharey=True, wspace=0.1, heading=heading, top=2.35)
     for ax, level in zip(axes.flat, S.LEVELS):
         aucs = []
         for label in names:
@@ -365,8 +409,9 @@ def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
             _plot(ax, s, color=colour[label], linewidth=0.4, alpha=0.7)
         S.title(ax, f"{S.NAME[level]}, macro AUC {np.mean(aucs):.3f}")
     _y_range(list(axes.flat))
-    _legend(axes[0, 0], handles=[Line2D([], [], color=S.TAB10[i], linewidth=S.LW_CURVE, label=f)
-                                 for i, f in enumerate(FAMILIES)], fontsize=8)
+    _right_labels_off(axes)
+    S.fig_legend(fig, [Line2D([], [], color=S.TAB10[i], linewidth=S.LW_CURVE, label=f) for i, f in enumerate(FAMILIES)],
+                 top_cm=0.6, ncol=3)        # above the panels, off the curves (PI, 2026-11-07)
     S.letter_panels(axes.flat)
     S.save(fig, path)
 
@@ -384,64 +429,64 @@ PAGES = [
     Page(id="FJ", title="JetClass after fine-tuning",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (one panel per model)",
-         caption="Background rejection against signal efficiency on JetClass after fine-tuning on one million jets. "
-                 "Each curve takes one of the ten JetClass classes as signal and the other nine as background, and is "
-                 "the mean over three pretraining runs. Curves end where fewer than 20 background jets remain. One panel per "
-                 "pretraining label set; its title gives the mean area under the curve over the ten classes, and the heading "
-                 "that of the network trained from scratch.",
+         caption="The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, one per panel, "
+                 "fine-tuned on one million JetClass jets: background rejection against signal efficiency with "
+                 "each JetClass class as signal against the other nine, the mean over three pretraining runs, "
+                 "ending where fewer than 20 background jets remain. Titles give the mean area under the curve "
+                 "over the ten classes; the heading, that of a network without pretraining trained from scratch.",
          differs="Against landscape: ten classes of one network, not fifteen networks; solid tab10. Against the poster: "
                  "rejection against efficiency (PI); four panels, not two; legend names only, as the AUCs do not fit.",
          draw=draw_fj),
     Page(id="FJ-ctrl", title="JetClass after fine-tuning, random partitions",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (one panel per model)",
-         caption="Background rejection against signal efficiency on JetClass after fine-tuning on one million jets, "
-                 "for networks pretrained on 17-class random partitions: with no flavor boundary, a b-quark boundary "
-                 "or a random flavor boundary (two runs each), and five plain random partitions (averaged). Each curve "
-                 "takes one class as signal against the other nine and ends where fewer than 20 background jets remain. Titles "
-                 "give the mean area under the curve; the heading, from scratch.",
+         caption="Networks pretrained on JetClass-II with 17-class partitions, with no flavor boundary, a b-quark "
+                 "boundary or a random flavor boundary (two runs each) and five random partitions (one run each, "
+                 "averaged), fine-tuned on one million JetClass jets: rejection against efficiency for each class "
+                 "against the other nine, ending where fewer than 20 background jets remain. Titles give the mean "
+                 "area under the curve; the heading, that of a network trained from scratch.",
          differs="As FJ. The five plain random partitions share one panel, to stay at four: their macro AUCs lie within "
                  "3e-4 of each other. Eight panels, one per partition, is the alternative.",
          draw=draw_fj_ctrl),
     Page(id="FJ-s", title="JetClass trained from scratch",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (AUC in legend)",
-         caption="Background rejection against signal efficiency on JetClass for the network trained from scratch on "
-                 "one million jets, with no pretraining. Each curve takes one of the ten JetClass classes as signal "
-                 "and the other nine as background, and is the mean over three trainings. Curves end where fewer than 20 "
-                 "background jets remain. The legend gives each class's area under the curve; the heading gives their "
-                 "mean.",
+         caption="A network without pretraining, trained from scratch on one million JetClass jets: background "
+                 "rejection against signal efficiency with each of the ten JetClass classes as signal and the "
+                 "other nine as background, the mean over three trainings, ending where fewer than 20 background "
+                 "jets remain. The legend gives each class's area under the curve; the heading gives their mean.",
          differs="As FJ, one panel; the class AUCs in a legend beside it on the right (PI), full width.",
          draw=draw_fj_s),
     Page(id="FJ-app", title="JetClass with linear probes (appendix)",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (one panel per model)",
-         caption="Background rejection against signal efficiency on JetClass from linear probes, trained on one million "
-                 "jets, on frozen pretrained networks. Each curve takes one of the ten classes as signal and the other "
-                 "nine as background, and is the mean over three pretraining runs. Curves end where fewer than 20 background jets "
-                 "remain. Titles give the mean area under the curve; the heading gives the fully trained network from "
-                 "scratch for reference.",
+         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
+                 "and 17 classes, trained on one million JetClass jets: background rejection against signal "
+                 "efficiency with each class as signal against the other nine, the mean over three pretraining "
+                 "runs, ending where fewer than 20 background jets remain. Titles give the mean area under the "
+                 "curve; the heading, that of a network trained from scratch, for reference.",
          differs="As FJ, with no legend: probe curves lie lower, so it would cover Z to qq; the colors are FJ's. The "
                  "poster's left panel is also a frozen network, with an MLP on it; here the probe is linear.",
          draw=draw_fj_app),
     Page(id="FJ-ctrl-app", title="JetClass with linear probes, random partitions (appendix)",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (one panel per model)",
-         caption="Background rejection against signal efficiency on JetClass from linear probes trained on one million "
-                 "jets, on frozen networks pretrained on 17-class random partitions: with no flavor boundary, a "
-                 "b-quark boundary or a random flavor boundary (two runs each), and five plain ones (averaged). Each "
-                 "curve takes one class as signal against the other nine and ends where fewer than 20 background jets remain. "
-                 "Titles give the mean area under the curve; the heading, from scratch.",
+         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 17-class "
+                 "partitions, with no flavor boundary, a b-quark boundary or a random flavor boundary (two runs "
+                 "each) and five random partitions (one run each, averaged), trained on one million JetClass "
+                 "jets: rejection against efficiency for each class against the other nine, ending where fewer "
+                 "than 20 background jets remain. Titles give the mean area under the curve; the heading, from "
+                 "scratch.",
          differs="As FJ-ctrl, with no legend, as FJ-app. The five plain partitions' macro AUCs lie within 5e-4 of each other.",
          draw=draw_fj_ctrl_app),
     Page(id="F4", title="Flavor separation for four class pairs",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
-         caption="Background rejection against signal efficiency for four pairs of JetClass-II classes differing only "
-                 "in flavor, (a) X→bb̄ vs cc̄, (b) X→YY→bb̄qq vs cc̄qq, (c) X→bc vs bq, cs, (d) X→ee vs μμ (signal "
-                 "first), from linear probes on networks pretrained with 188, 162, 43 and 17 classes. Means over "
-                 "three runs; curves end where fewer than 20 background jets remain; a model with no curve is named in "
-                 "its panel. In (a, b) the three finest label sets nearly coincide.",
+         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
+                 "and 17 classes, trained and scored on four pairs of JetClass-II classes differing only in "
+                 "flavor (signal first): (a) X→bb̄ vs cc̄, (b) X→YY→bb̄qq vs cc̄qq, (c) X→bc vs bq, cs, (d) X→ee "
+                 "vs μμ. Means over three pretraining runs; curves end where fewer than 20 background jets "
+                 "remain; a network with no curve is named in its panel.",
          differs="Four panels, not one, for four class pairs. Four solid curves, not fifteen in mixed line styles (PI "
                  "limit), at 1.1 pt, not 0.955 pt. The y axis starts at 1, not at the data, with its range set per "
                  "panel. x ticks every 0.2 over 0 to 1, not every 0.1 over about -0.01 to 1.02. Axis words at the axis "
@@ -457,11 +502,11 @@ PAGES = [
     Page(id="F4-app", title="Flavor separation for random partitions with controlled flavor boundaries",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
-         caption="Background rejection against signal efficiency for four pairs of JetClass-II classes that differ "
-                 "only in flavor, (d) QCD bb̄ vs cc̄ in place of X→ee vs X→μμ, from linear probes on networks pretrained on 17-class random "
-                 "partitions with no flavor boundary, a b-quark boundary or a random flavor boundary, and on 188 "
-                 "classes for reference. The first class named is the signal. Curves are means over two runs (188 "
-                 "classes: three) and end where fewer than 20 background jets remain.",
+         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 17-class "
+                 "partitions with no flavor boundary, a b-quark boundary or a random flavor boundary, and with "
+                 "188 classes for reference, trained and scored on four JetClass-II class pairs differing only in "
+                 "flavor (signal first), (d) QCD bb̄ vs cc̄ in place of X→ee vs X→μμ. Means over two pretraining "
+                 "runs (188 classes: three); curves end where fewer than 20 background jets remain.",
          differs="As F4, with the three random partitions with controlled flavor boundaries (rose, green, cyan) "
                  "and the 188-class model in its colour, all solid, in place of F4's four label sets. "
                  "One panel differs from F4's: QCD bb vs cc in place of X→ee vs X→μμ, which has no curve here.",
@@ -472,11 +517,12 @@ PAGES = [
     Page(id="F6", title="Benchmarks after fine-tuning",
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
-         caption="Background rejection against signal efficiency after fine-tuning on the full training sets: top "
-                 "tagging, and quark/gluon tagging tested on Pythia and Herwig jets. Curves are networks pretrained "
-                 "with 188, 162, 43 and 17 classes and the network trained from scratch, each the mean over three "
-                 "runs; in (a), dotted, one run of the 188-class model with kinematic inputs only. Curves end where "
-                 "fewer than 20 background jets remain. Lower panels: ratio to 188 classes.",
+         caption="The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and a network without "
+                 "pretraining, fine-tuned on the full top and quark/gluon training sets: rejection against "
+                 "efficiency, means over three runs; dotted, one run with 188 classes and kinematic inputs only. "
+                 "Lower panels: ratio to 188 classes; bands: each curve's SD over runs and 68% binomial "
+                 "uncertainty of the passing background count, in quadrature. On Herwig jets, 43 and 17 classes "
+                 "agree with 188 within uncertainty.",
          differs="Three stacked panels on one x axis (Sophon Fig. 3's arrangement), as landscape and ParticleNet draw "
                  "one per figure. Rejection on y as landscape, not ParticleNet's background efficiency; no AUC in the "
                  "legend, unlike ParticleNet (PI limit, numbers are in tables). The y axis starts at 1, not at the data; "
@@ -492,37 +538,40 @@ PAGES = [
     Page(id="F6-app", title="Benchmarks with linear probes (appendix)",
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
-         caption="Background rejection against signal efficiency from linear probes on the full training sets (missing "
-                 "inputs filled by random draws on top tagging, by the training mean on quark/gluon), on networks "
-                 "pretrained with 188, 162, 43 and 17 classes, and the network fully trained from "
-                 "scratch (three runs each). Curves end where fewer than 20 background jets remain. Lower panels: "
-                 "ratio to the 188-class probe, which from scratch exceeds in (a) top, (b) quark/gluon Pythia and partly (c) "
-                 "Herwig.",
+         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
+                 "and 17 classes, trained on the full top and quark/gluon training sets, and a network without "
+                 "pretraining trained from scratch: rejection against efficiency, means over three runs; dotted, "
+                 "one run with 188 classes and kinematic inputs only. Lower panels: ratio to 188 classes; bands: "
+                 "each curve's SD over runs and 68% binomial uncertainty of the passing background count, in "
+                 "quadrature.",
          differs="As F6, with linear probes; the ratio is to the 188-class probe.",
+         data_note="The kinematic-inputs probe curve, curves_v2/top_probe/mtx-l188kin-s1.json, is not in the pulled data "
+                   "yet; (a) draws it, dotted, once it is.",
          draw=draw_f6_app),
     Page(id="A3R", title="Every JetClass-II class, per label set",
          precedent=["map2026_poster/fig5.png"],
          precedent_label="MAP 2026 poster Fig. 5 (form)",
-         caption="Background rejection against signal efficiency for each of the 188 JetClass-II classes against the "
-                 "rest of the class-balanced test set, from linear probes on frozen networks pretrained with 188, 162, "
-                 "43 and 17 classes. Thin curves are means over three pretraining runs, colored by decay family, and "
-                 "end where fewer than 20 background jets remain. Each title gives the mean area under the curve over "
-                 "all classes.",
+         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
+                 "and 17 classes, trained on one million class-balanced JetClass-II jets: rejection against "
+                 "efficiency for each of the 188 classes against the rest of the test set, the mean over three "
+                 "pretraining runs, colored by decay family, ending where fewer than 20 background jets remain. "
+                 "Each title gives the mean area under the curve over all classes.",
          differs="Axes as FJ (PI). Linear probes on JetClass-II in all four panels (1M jets), where the poster has a "
                  "frozen MLP and full fine-tuning on JetClass (10M). 188 thin curves in six family colours, not ten "
                  "labelled classes; no AUC per curve, as there are too many. 0.4 pt lines at alpha 0.7: over the limit "
                  "of six series and off the line convention (one colour per series, 1.1 pt), not named in this brief, for "
                  "the PI to decide. No dashed diagonal. One-line titles, not two. Sophon's font and round 3's faint y grid, not the "
-                 "poster's serif font and faint grid. The family legend is in the first panel only, lower left, unframed, "
-                 "with no heading, and with lines of normal thickness. Four panels, not two.",
+                 "poster's serif font and faint grid. The family legend is above the panels, off the curves, unframed, "
+                 "with lines of normal thickness. Four panels, not two.",
          draw=draw_a3r),
     Page(id="A3R-ft", title="Every JetClass-II class after fine-tuning, per label set",
          precedent=["map2026_poster/fig5.png"],
          precedent_label="MAP 2026 poster Fig. 5 (form)",
-         caption="Background rejection against signal efficiency for each of the 188 JetClass-II classes against the "
-                 "rest of the class-balanced test set, after fine-tuning on one million jets, for networks pretrained with "
-                 "188, 162, 43 and 17 classes. Thin curves are means over runs, colored by decay family, and end where "
-                 "fewer than 20 background jets remain. Each title gives the mean area under the curve over all classes.",
+         caption="The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, fine-tuned on one "
+                 "million class-balanced JetClass-II jets: rejection against efficiency for each of the 188 "
+                 "classes against the rest of the test set, the mean over three pretraining runs, colored by "
+                 "decay family, ending where fewer than 20 background jets remain. Each title gives the mean area "
+                 "under the curve over all classes.",
          differs="As A3R, fine-tuned.",
          draw=draw_a3r_ft),
 ]

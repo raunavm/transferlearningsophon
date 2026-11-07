@@ -198,6 +198,14 @@ def main() -> int:
               (EVAL / "umap_v1", "umap", "*.json"),
               (EVAL / "umap_v2", "umap_v2", "*.json"),     # round 3: frozen and fine-tuned, four tasks
               (EVAL, "head", "input_bn_offsets.json"),
+              # PI 2026-11-07: eps_S, R and R50/JSD50 for every model incl. the flavor controls; coarse
+              # targets; QCD heavy-flavor subclasses; the released Sophon checkpoint; bestval = best70
+              (EVAL / "v2_head" / "sculpting_v3", "head/sculpting_v3", "*.json"),
+              (EVAL / "v2_linprobe_bal" / "fits_v4_coarse", "linprobe/fits_v4_coarse", "*.json"),
+              (EVAL / "v2_linprobe_bal" / "fits_v4_qcdhf", "linprobe/fits_v4_qcdhf", "*.json"),
+              (EVAL / "v2_linprobe_sophon" / "fits_v4", "linprobe/sophon", "*.json"),
+              (EVAL / "v2_linprobe_sophon" / "fits_v4_qcdhf", "linprobe/sophon_qcdhf", "*.json"),
+              (EVAL / "v2_ckpt_identity", "ckpt_identity", "identity.json"),
               (EVAL / "jc2_train", "jc2_train", "counts.json"),   # DesignNTrainSelected (experiments/FT/count_jc2_train.py)     # table tab:inputs (experiments/EVAL/input_bn_offsets.py)
               # round 3 (2026-11-06): performance against jet pT and the JetClass confusion matrices
               (EVAL / "perf_vs_pt_v2" / "jc2", "perf_vs_pt/jc2", "*.json"),   # v2: accuracy per bin (round 4)
