@@ -50,17 +50,31 @@ features, more than it improves fine-tuning~\cite{mahajan}. Simulated jets allow
 because the generator records the decay that produced every jet, so the same jets can be labeled at any
 granularity.
 
-% P5. What we do; figure 1 cited once.
-In this paper we pretrain Sophon's network, which is based on the Particle Transformer (ParT)~\cite{part},
-on the jets of JetClass-II and change only the label set. Models pretrained with the same seed see the
-same jets in the same order and start from the same initial weights, as figure~\ref{fig:design} shows. The
+% P5. Sophon, then what we do; figure 1 cited once.
+Sophon was built so that one tagger could cover the many boosted final states that dedicated taggers leave
+unexplored, and so bring searches for resonances with unknown decays closer to the sensitivity of dedicated
+searches~\cite[Sec.~I]{sophon}. Its network is the Particle Transformer (ParT)~\cite{part} in its original
+configuration, except that the output layer is replaced by a head with one hidden layer of
+\DesignHeadHidden{} units, whose \DesignEmbedDim{} inputs are the features reused for transfer learning. The
+fine distinctions come from the labels: a resonant jet is labeled by the quarks, gluons and leptons from the
+decay that it contains, with their flavors and the decay mode of each $\tau$ lepton, and a QCD jet by its
+number of $b$, $c$ and $s$ quarks (none, one, or two or more of each). Sophon departs from ParT's training in
+two ways. First, jets are sampled with probabilities that give the same distribution of jet $p_{\mathrm T}$
+and soft-drop mass in groups of classes, so that a selection on the tagger does not sculpt the background mass
+distribution. Classes that differ only in quark flavor share a group, and all QCD classes form one. Second,
+the four-momenta of the jet and its particles are scaled to one fixed jet $p_{\mathrm T}$, so that the tagging
+performance carries over to a wide range of masses~\cite[Sec.~II and App.~B]{sophon}.
+In this paper we pretrain this network on the jets of JetClass-II and change only the label set. The sampling
+groups do not depend on the label set, so models pretrained with the same seed see the same jets in the same
+order and start from the same initial weights, as figure~\ref{fig:design} shows. The
 label sets are four levels of a class hierarchy, with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, whose
 merges remove in turn the quark content of QCD jets, the number of $b$ or $c$ quarks together with the
 distinctions between gluons and light quarks and between electrons and muons, and quark flavor. Our first
 control is a set of random partitions, which assign the resonant classes to groups at random and have as
 many classes as the \Kcoarse-class level. Our second control is three random partitions that differ only
-in their flavor boundaries, the class boundaries between decays that differ only in quark flavor. We also
-pretrain two levels with an auxiliary regression of the jet mass. We evaluate every model with linear
+in their flavor boundaries, the class boundaries between decays that differ only in quark flavor. Following
+GloParT, which regresses the jet mass together with the classification~\cite{glopart,glopartdp}, we also
+pretrain the \Kres- and \Kcoarse-class models with an auxiliary regression of the jet mass. We evaluate every model with linear
 probes on the frozen features and by fine-tuning on JetClass-II, on JetClass~\cite{part}, on top
 tagging~\cite{toptag}, on quark/gluon discrimination~\cite{efn,qgpythia,qgherwig} and on Sophon's
 $X\to b\bar b$ and $X\to bs$ benchmark~\cite{sophon}. % CHECK: pending Xbx* (drop the benchmark clause with section 4.7 if the samples are not staged by 12 Nov)
