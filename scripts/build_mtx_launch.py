@@ -587,8 +587,10 @@ V2_L40 = "NVIDIA-L40"
 V2_GPU_BY_RUN = {1: V2_GPU, 2: V2_GPU, 3: V2_GPU, 4: V2_L40, 5: V2_L40}
 # Any GPU with at least 24 GB (PI, 2026-10-21, after the RTX 3090s ran out): a run may train
 # and resume on any of these (pretrain_v2.recipe_change); every epoch's metrics record the
-# product, and the paper reports each run's products and hours. A100/H100 are left out: the
-# namespace has no quota for them. Specs on this list go to V2_ANYGPU_DIR (v2_anygpu_specs).
+# product, and the paper reports each run's products and hours. A100/H100 are not on it: NRP
+# exposes them as their own resources (nvidia.com/a100, nvidia.com/h100), not nvidia.com/gpu; cms-ml's
+# quota allows 26 A100s and no H100 (kubectl get resourcequota, 2026-11-07). The same holds for some
+# A6000/A40 nodes (nvidia.com/rtxa6000, nvidia.com/a40). Specs on this list go to V2_ANYGPU_DIR.
 V2_ANY_GPU = ("NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-L40S", "NVIDIA-RTX-A6000", "NVIDIA-A40",
               "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-A5000", "Tesla-V100-SXM2-32GB",
               "NVIDIA-A10", "NVIDIA-RTX-5000-Ada-Generation")
