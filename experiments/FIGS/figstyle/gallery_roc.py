@@ -124,23 +124,22 @@ def _auc(v: float) -> str:
 
 
 def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
-    """One panel at its printed width (FJ-s: 9 cm), the class AUCs in a legend inside it (PI, 2026-11-07): ten curves
-    leave no empty corner, so the y axis runs three decades above them and the legend sits in that band."""
-    width, w = 9.0, 7.3
-    h = 1.15 * w
+    """One panel, the class AUCs in a legend beside it on the right (PI, 2026-11-07): not above, where it took a
+    tall band, and not inside, where ten curves leave no empty corner. Full width, as the other figures."""
+    w = 7.3
+    h = 0.85 * w
     top = 0.9
-    fig = S.figure_cm(width, top + h + 1.0)
+    fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
     ax = S.axes_cm(fig, 1.4, top, w, h)
     _roc_axes(ax, x_step=0.2)
     docs = _family("jc1_ft_ovr")
     aucs = {c: mean_over_runs(docs, models, c)[2] for c in S.JC1_CLASSES}
     _jc1_curves(ax, docs, models, auc_in_legend=False)
     _y_range([ax])
-    ax.set_ylim(1, 1000 * ax.get_ylim()[1])           # the legend's band, clear of every curve
     S.labels(ax, S.X_EPS, S.Y_REJ)
     S.heading(fig, f"{heading}, macro AUC {np.mean(list(aucs.values())):.3f}")
-    _legend(ax, handles=_class_handles(aucs), ncol=2, title="Signal class (AUC)", title_fontsize=S.LEGEND_PT5,
-            loc="upper center")
+    S.legend(ax, handles=_class_handles(aucs), loc="center left", bbox_to_anchor=(1.03, 0.5), handlelength=1.6,
+             title="Signal class (AUC)", title_fontsize=S.LEGEND_PT5)
     S.save(fig, path)
 
 
@@ -412,7 +411,7 @@ PAGES = [
                  "and the other nine as background, and is the mean over three trainings. Curves begin where 20 "
                  "background jets remain. The legend gives each class's area under the curve; the heading gives their "
                  "mean.",
-         differs="As FJ, one panel, with room for the class AUCs in the legend.",
+         differs="As FJ, one panel; the class AUCs in a legend beside it on the right (PI), full width.",
          draw=draw_fj_s),
     Page(id="FJ-app", title="JetClass with linear probes (appendix)",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
