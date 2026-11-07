@@ -17,8 +17,16 @@ training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 & $\rho$, $10^{6}$ jets \\*
 \Kmid{} classes & 0.9669\,$\pm$\,0.0006 & 0.9763\,$\pm$\,0.0001 & 0.9788\,$\pm$\,0.0001 & 1.043\,$\pm$\,0.002 \\
 \Kcoarse{} classes & 0.9623\,$\pm$\,0.0003 & 0.9743\,$\pm$\,0.0002 & 0.9772\,$\pm$\,0.0001 & 1.123\,$\pm$\,0.003 \\
 \Kres{} classes, mass regression & 0.9721, 0.9724 & 0.9769, 0.9771 & 0.9790, 0.9792 & 1.036, 1.024 \\
-\Kcoarse{} classes, mass regression & 0.9625, 0.9627 & 0.9737, 0.9737 & 0.9766, 0.9770 & 1.152, 1.133 \\
-from scratch & 0.9196\,$\pm$\,0.0005 & 0.9611\,$\pm$\,0.0011 & 0.9743\,$\pm$\,0.0002 & -- \\
+\Kcoarse{} classes, mass regression & 0.9625, 0.9627 & 0.9737, 0.9737 & 0.9766, 0.9769 & 1.152, 1.139 \\
+random partition 1, seed 1 & \pending{no run yet} & \pending{no run yet} & 0.978 & 1.07 \\
+random partition 2, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.978 & 1.07 \\
+random partition 3, seed 1 & \pending{no run yet} & \pending{no run yet} & 0.979 & 1.06 \\
+random partition 4, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.979 & 1.05 \\
+random partition 5, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.978 & 1.07 \\
+random partition, no flavor boundary & \pending{no run yet} & \pending{no run yet} & 0.9776, 0.9775 & 1.105, 1.108 \\
+random partition, $b$-quark boundary & \pending{no run yet} & \pending{no run yet} & 0.9778, 0.9782 & 1.094, 1.072 \\
+random partition, random flavor boundary & \pending{no run yet} & \pending{no run yet} & 0.9779, 0.9781 & 1.089, 1.076 \\
+from scratch & 0.9196\,$\pm$\,0.0005 & 0.9611\,$\pm$\,0.0011 & 0.9732\,$\pm$\,0.0004 & -- \\
 \midrule[\heavyrulewidth]
 \multicolumn{5}{l}{JetClass-II, QCD classes, AUC over the QCD classes} \\*
 training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\*
@@ -28,8 +36,16 @@ training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\*
 \Kmid{} classes & 0.9416\,$\pm$\,0.0011 & 0.9573\,$\pm$\,0.0001 & 0.9613\,$\pm$\,0.0002 \\
 \Kcoarse{} classes & 0.9368\,$\pm$\,0.0014 & 0.9543\,$\pm$\,0.0003 & 0.9586\,$\pm$\,0.0001 \\
 \Kres{} classes, mass regression & 0.9463, 0.9481 & 0.9566, 0.9571 & 0.9610, 0.9612 \\
-\Kcoarse{} classes, mass regression & 0.9335, 0.9349 & 0.9533, 0.9531 & 0.9580, 0.9586 \\
-from scratch & 0.8873\,$\pm$\,0.0010 & 0.9354\,$\pm$\,0.0019 & 0.9553\,$\pm$\,0.0003 \\
+\Kcoarse{} classes, mass regression & 0.9335, 0.9349 & 0.9533, 0.9531 & 0.9580, 0.9581 \\
+random partition 1, seed 1 & \pending{no run yet} & \pending{no run yet} & 0.960 \\
+random partition 2, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.960 \\
+random partition 3, seed 1 & \pending{no run yet} & \pending{no run yet} & 0.961 \\
+random partition 4, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.961 \\
+random partition 5, seed 2 & \pending{no run yet} & \pending{no run yet} & 0.960 \\
+random partition, no flavor boundary & \pending{no run yet} & \pending{no run yet} & 0.9592, 0.9589 \\
+random partition, $b$-quark boundary & \pending{no run yet} & \pending{no run yet} & 0.9593, 0.9607 \\
+random partition, random flavor boundary & \pending{no run yet} & \pending{no run yet} & 0.9595, 0.9603 \\
+from scratch & 0.8873\,$\pm$\,0.0010 & 0.9354\,$\pm$\,0.0019 & 0.9530\,$\pm$\,0.0006 \\
 \midrule[\heavyrulewidth]
 \multicolumn{5}{l}{JetClass, accuracy} \\*
 training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\*
@@ -74,38 +90,38 @@ from scratch & 51\,$\pm$\,5 & 320\,$\pm$\,50 & 610\,$\pm$\,80 & 1{,}412\,$\pm$\,
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \Kfull{} classes & 47\,$\pm$\,10 & 75\,$\pm$\,7 & 99.3\,$\pm$\,1.4 & 107.3\,$\pm$\,2.2 \\
-\Kres{} classes & 52.4\,$\pm$\,3.1 & 76.4\,$\pm$\,0.6 & 95.0, 97.1 \pending{2 of 3} & 108.0\,$\pm$\,1.4 \\
+\Kres{} classes & 52.4\,$\pm$\,3.1 & 76.4\,$\pm$\,0.6 & 97.9\,$\pm$\,3.3 & 108.0\,$\pm$\,1.4 \\
 \Kmid{} classes & 54\,$\pm$\,6 & 74\,$\pm$\,5 & 96.1\,$\pm$\,1.8 & 108.3\,$\pm$\,1.0 \\
 \Kcoarse{} classes & 55\,$\pm$\,5 & 80.3\,$\pm$\,1.1 & 96.4\,$\pm$\,1.0 & 106.5\,$\pm$\,0.8 \\
-\Kres{} classes, mass regression & 59.3, 57.1 & 80.1, 72.6 & 97.6 \pending{1 of 2} & 107.0, 106.6 \\
+\Kres{} classes, mass regression & 59.3, 57.1 & 80.1, 72.6 & 95.6, 97.6 & 107.0, 106.6 \\
 \Kcoarse{} classes, mass regression & 54.2, 57.7 & 79.5, 77.9 & 97.85, 97.94 & 104.9, 105.6 \\
 random partition 1, seed 1 & 45.1 & 80.4 & 98.9 & 107 \\
 random partition 2, seed 2 & 52.0 & 81.4 & 99.6 & 109 \\
-random partition 3, seed 1 & 43.8 & 76.6 & \pending{no run yet} & 106 \\
+random partition 3, seed 1 & 43.8 & 76.6 & 96.5 & 106 \\
 random partition 4, seed 2 & 52.5 & 79.5 & 99.1 & 107 \\
-random partition 5, seed 2 & 44.7 & 58.6 & \pending{no run yet} & 106 \\
-random partition, no flavor boundary & 50.9, 58.5 & 79.2, 86.1 & \pending{no run yet} & 108.9, 109.2 \\
-random partition, $b$-quark boundary & 56.4, 55.3 & 84.2, 81.8 & \pending{no run yet} & 106.5, 106.8 \\
-random partition, random flavor boundary & 46.4, 51.9 & 68, 79 & \pending{no run yet} & 108.2, 104.4 \\
-from scratch & -- & -- & -- & 104.0\,$\pm$\,1.0 \\
+random partition 5, seed 2 & 44.7 & 58.6 & 95.2 & 106 \\
+random partition, no flavor boundary & 50.9, 58.5 & 79.2, 86.1 & 98.91, 99.90 & 108.9, 109.2 \\
+random partition, $b$-quark boundary & 56.4, 55.3 & 84.2, 81.8 & 100.0, 96.8 & 106.5, 106.8 \\
+random partition, random flavor boundary & 46.4, 51.9 & 68, 79 & 98.7 \pending{1 of 2} & 108.2, 104.4 \\
+from scratch & 50.3\,$\pm$\,2.1 & 70.7\,$\pm$\,2.8 & 88.2\,$\pm$\,1.1 & 104.0\,$\pm$\,1.0 \\
 \midrule[\heavyrulewidth]
 \multicolumn{5}{l}{q/g, Herwig, $R_{30}$} \\*
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \Kfull{} classes & 21\,$\pm$\,6 & 27.9\,$\pm$\,2.8 & 34.3\,$\pm$\,1.0 & 35.2\,$\pm$\,2.1 \\
-\Kres{} classes & 26.2\,$\pm$\,0.9 & 27.4\,$\pm$\,0.5 & 35.49, 35.98 \pending{2 of 3} & 34.6\,$\pm$\,2.0 \\
+\Kres{} classes & 26.2\,$\pm$\,0.9 & 27.4\,$\pm$\,0.5 & 35.5\,$\pm$\,0.5 & 34.6\,$\pm$\,2.0 \\
 \Kmid{} classes & 26.9\,$\pm$\,2.7 & 28.4\,$\pm$\,2.1 & 35.5\,$\pm$\,2.1 & 36.1\,$\pm$\,2.7 \\
 \Kcoarse{} classes & 25.2\,$\pm$\,2.5 & 32.7\,$\pm$\,1.8 & 34.9\,$\pm$\,1.1 & 36.9\,$\pm$\,0.9 \\
-\Kres{} classes, mass regression & 28.0, 29.0 & 34.3, 28.5 & 36.5 \pending{1 of 2} & 37.8, 34.4 \\
+\Kres{} classes, mass regression & 28.0, 29.0 & 34.3, 28.5 & 34.0, 36.5 & 37.8, 34.4 \\
 \Kcoarse{} classes, mass regression & 25.8, 27.4 & 34.4, 31.2 & 35.9, 39.0 & 37.7, 32.9 \\
 random partition 1, seed 1 & 23.9 & 30.5 & 34.2 & 33.4 \\
 random partition 2, seed 2 & 25.2 & 34.1 & 35.2 & 35.2 \\
-random partition 3, seed 1 & 23.5 & 30.2 & \pending{no run yet} & 34.8 \\
+random partition 3, seed 1 & 23.5 & 30.2 & 34.0 & 34.8 \\
 random partition 4, seed 2 & 24.6 & 34.4 & 33.9 & 37.5 \\
-random partition 5, seed 2 & 19.7 & 23.2 & \pending{no run yet} & 35.3 \\
-random partition, no flavor boundary & 24.2, 27.7 & 31.6, 33.3 & \pending{no run yet} & 34.1, 39.3 \\
-random partition, $b$-quark boundary & 27.61, 26.89 & 35.2, 33.5 & \pending{no run yet} & 38.1, 34.7 \\
-random partition, random flavor boundary & 21.2, 25.3 & 24.7, 34.4 & \pending{no run yet} & 34.9, 37.4 \\
-from scratch & -- & -- & -- & 35.5\,$\pm$\,1.2 \\
+random partition 5, seed 2 & 19.7 & 23.2 & 36.3 & 35.3 \\
+random partition, no flavor boundary & 24.2, 27.7 & 31.6, 33.3 & 37.0, 35.1 & 34.1, 39.3 \\
+random partition, $b$-quark boundary & 27.61, 26.89 & 35.2, 33.5 & 34.9, 37.0 & 38.1, 34.7 \\
+random partition, random flavor boundary & 21.2, 25.3 & 24.7, 34.4 & 35.1 \pending{1 of 2} & 34.9, 37.4 \\
+from scratch & 27.3\,$\pm$\,1.2 & 32.6\,$\pm$\,2.9 & 37.3\,$\pm$\,1.7 & 35.5\,$\pm$\,1.2 \\
 \end{longtable}
 }
