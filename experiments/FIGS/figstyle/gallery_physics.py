@@ -543,7 +543,7 @@ def _bb_cc_panel(ax, docs: dict) -> None:
     ax.set_yscale("log")
     _log_y(ax)
     ax.set_xlim(e[0], e[-1])
-    S.labels(ax, ylabel=r"$X\to b\bar{b}$ vs $X\to c\bar{c}$: $(1-\mathrm{AUC})$ / 188 classes")
+    S.labels(ax, ylabel=r"$(1-\mathrm{AUC})$ / 188 classes")
 
 
 def draw_pt(path: pathlib.Path) -> None:
@@ -554,11 +554,12 @@ def draw_pt(path: pathlib.Path) -> None:
     axes = fig.subplots(2, 2, gridspec_kw={"left": 0.1, "right": 0.96, "top": 0.92, "bottom": 0.07, "wspace": 0.3,
                                            "hspace": 0.25})
     (a, b), (cx, d) = axes
-    panels = ((a, jc2, lambda ax: _ratio_panel(ax, jc2, S.LEVELS[1:]), "JetClass-II, linear probe"),
-              (b, jc2, lambda ax: _bb_cc_panel(ax, jc2), r"JetClass-II, linear probe: $X\to b\bar{b}$ vs $X\to c\bar{c}$"),
-              (cx, jc1, lambda ax: _ratio_panel(ax, jc1, S.LEVELS[1:]), "JetClass, fine-tuned on $10^6$ jets"),
-              (d, jc2, lambda ax: _ratio_panel(ax, jc2, S.CONTROLS), "JetClass-II, linear probe: controlled partitions"))
-    for ax, docs, draw, text in panels:
+    # the legend corner: (d)'s curves fill the lower right and its 1.0 line the bottom
+    panels = ((a, jc2, lambda ax: _ratio_panel(ax, jc2, S.LEVELS[1:]), "JetClass-II, linear probe", "best"),
+              (b, jc2, lambda ax: _bb_cc_panel(ax, jc2), r"JetClass-II: $X\to b\bar{b}$ vs $X\to c\bar{c}$", "best"),
+              (cx, jc1, lambda ax: _ratio_panel(ax, jc1, S.LEVELS[1:]), "JetClass, fine-tuned on $10^6$ jets", "best"),
+              (d, jc2, lambda ax: _ratio_panel(ax, jc2, S.CONTROLS), "JetClass-II: controlled partitions", "upper left"))
+    for ax, docs, draw, text, corner in panels:
         S.title(ax, text)
         S.labels(ax, xlabel=X_PT)
         if not docs:
@@ -566,7 +567,7 @@ def draw_pt(path: pathlib.Path) -> None:
             continue
         S.fine_grid(ax)
         draw(ax)
-        S.legend(ax, loc="best")
+        S.legend(ax, loc=corner)
     S.letter_panels(axes.flat)
     S.heading(fig, "Performance against jet $p_{\\mathrm{T}}$")
     S.save(fig, path)
