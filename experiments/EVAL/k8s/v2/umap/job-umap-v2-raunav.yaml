@@ -18,13 +18,13 @@ spec:
         - |
           set -euo pipefail
           retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
-          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s2.76 https://github.com/raunavm/transferlearningsophon.git tls; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s2.77 https://github.com/raunavm/transferlearningsophon.git tls; }
           retry clone || exit 1
           cd /workspace/tls
           git rev-parse HEAD
           retry pip install --no-cache-dir -q umap-learn==0.5.7 pyarrow==25.0.1 || exit 1
           python3 -c "import pyarrow" || { echo "FATAL: pyarrow does not import"; exit 1; }
-          python3 experiments/FT/gpu_probe.py || { sleep 120; exit 43; }
+          export OMP_NUM_THREADS=14 MKL_NUM_THREADS=14      # torch would otherwise size its pool to the host
           [ ! -f /data/results/eval/umap_v2/DONE ] || { echo "/data/results/eval/umap_v2 done"; exit 0; }
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           [ "${USED}" -le 85 ] || { echo "FATAL: /data at ${USED}%"; exit 42; }
@@ -73,13 +73,11 @@ spec:
           touch /data/results/eval/umap_v2/DONE
           echo "UMAP COMPLETE"
         resources:
-          requests: { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "48Gi", cpu: "16", ephemeral-storage: "20Gi" }
+          limits:   { memory: "48Gi", cpu: "16", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
-      tolerations:
-      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
