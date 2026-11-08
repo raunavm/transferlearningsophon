@@ -14,7 +14,7 @@ ParticleNet~\cite{part} & 2 M & 366\,k & 0.828 & 0.9820 \\
 ParT~\cite{part} & 2 M & 2.14\,M & 0.836 & 0.9834 \\
 \midrule
 \multicolumn{5}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 1 M & 2.21\,M & 0.8271\,$\pm$\,0.0012 & 0.9819\,$\pm$\,0.0002 \\
+\mbox{no pretraining (f.t.)} & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 & 0.9818\,$\pm$\,0.0003 \\
 \mbox{\Kfull{} classes (f.t.)} & 1 M & 2.21\,M & \textbf{0.8468\,$\pm$\,0.0006} & 0.9854\,$\pm$\,0.0001 \\
 \mbox{\Kres{} classes (f.t.)} & 1 M & 2.21\,M & \textbf{0.8475\,$\pm$\,0.0009} & \textbf{0.9856\,$\pm$\,$<$0.0001} \\
 \mbox{\Kmid{} classes (f.t.)} & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 \\
@@ -38,7 +38,7 @@ ParticleNet~\cite{part} & 2 M & 5{,}540 & 1{,}681 & 90 \\
 ParT~\cite{part} & 2 M & 5{,}587 & 1{,}982 & 93 \\
 \midrule
 \multicolumn{5}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 1 M & 4{,}920\,$\pm$\,190 & 1{,}580\,$\pm$\,60 & 88.3\,$\pm$\,3.2 \\
+\mbox{no pretraining (f.t.)} & 1 M & 4{,}800\,$\pm$\,70 & 1{,}570\,$\pm$\,50 & 86.4\,$\pm$\,3.2 \\
 \mbox{\Kfull{} classes (f.t.)} & 1 M & \textbf{6{,}600\,$\pm$\,330} & \textbf{2{,}650\,$\pm$\,260} & \textbf{103.6\,$\pm$\,3.8} \\
 \mbox{\Kres{} classes (f.t.)} & 1 M & 6{,}060\,$\pm$\,0 & \textbf{2{,}820\,$\pm$\,40} & \textbf{101.8\,$\pm$\,1.5} \\
 \mbox{\Kmid{} classes (f.t.)} & 1 M & \textbf{6{,}480\,$\pm$\,530} & 2{,}610\,$\pm$\,160 & \textbf{103.5\,$\pm$\,1.3} \\
@@ -59,10 +59,10 @@ ParT~\cite{part} & 2 M & 5{,}587 & 1{,}982 & 93 \\
  &  & $R_{50}$ & $R_{99}$ & $R_{50}$ \\
 \midrule
 ParticleNet~\cite{part} & 2 M & 662 & 1{,}654 & 4{,}049 \\
-ParT~\cite{part} & 2 M & 761 & 1{,}609 & \textbf{6{,}061} \\
+ParT~\cite{part} & 2 M & 761 & 1{,}609 & 6{,}061 \\
 \midrule
 \multicolumn{5}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 1 M & 670\,$\pm$\,40 & 1{,}270\,$\pm$\,100 & \textbf{6{,}100\,$\pm$\,600} \\
+\mbox{no pretraining (f.t.)} & 1 M & 640\,$\pm$\,40 & 1{,}290\,$\pm$\,100 & \textbf{6{,}400\,$\pm$\,200} \\
 \mbox{\Kfull{} classes (f.t.)} & 1 M & \textbf{1{,}090\,$\pm$\,10} & \textbf{3{,}060\,$\pm$\,390} & 12{,}900\,$\pm$\,1{,}600$^\dagger$ \\
 \mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{1{,}150\,$\pm$\,70} & \textbf{3{,}070\,$\pm$\,330} & 14{,}100\,$\pm$\,3{,}500$^\dagger$ \\
 \mbox{\Kmid{} classes (f.t.)} & 1 M & 1{,}030\,$\pm$\,40 & \textbf{3{,}160\,$\pm$\,280} & 14{,}200\,$\pm$\,2{,}100$^\dagger$ \\
@@ -86,11 +86,11 @@ ParticleNet~\cite{part} & 2 M & 4{,}673 & 260 & 215 \\
 ParT~\cite{part} & 2 M & 4{,}474 & 307 & 236 \\
 \midrule
 \multicolumn{5}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 1 M & 3{,}940\,$\pm$\,320 & 272\,$\pm$\,6 & 215\,$\pm$\,8 \\
-\mbox{\Kfull{} classes (f.t.)} & 1 M & 9{,}410\,$\pm$\,1{,}510$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
-\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{7{,}800\,$\pm$\,340} & \textbf{389\,$\pm$\,9} & \textbf{308\,$\pm$\,1} \\
-\mbox{\Kmid{} classes (f.t.)} & 1 M & \textbf{8{,}450\,$\pm$\,210} & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
-\mbox{\Kcoarse{} classes (f.t.)} & 1 M & \textbf{8{,}590\,$\pm$\,1{,}270} & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
+\mbox{no pretraining (f.t.)} & 1 M & 3{,}600\,$\pm$\,1{,}000 & 262\,$\pm$\,15 & 210\,$\pm$\,12 \\
+\mbox{\Kfull{} classes (f.t.)} & 1 M & 9{,}400\,$\pm$\,1{,}500$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
+\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{7{,}800\,$\pm$\,300} & \textbf{389\,$\pm$\,9} & \textbf{308\,$\pm$\,1} \\
+\mbox{\Kmid{} classes (f.t.)} & 1 M & \textbf{8{,}500\,$\pm$\,200} & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
+\mbox{\Kcoarse{} classes (f.t.)} & 1 M & \textbf{8{,}600\,$\pm$\,1{,}300} & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

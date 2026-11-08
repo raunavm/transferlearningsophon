@@ -588,6 +588,8 @@ def input_paths(root: pathlib.Path) -> dict:
             "design_spec": root / "experiments" / "MTX" / "k8s" / "job-mtx-l188-s1-raunav.yaml",
             "design_arch": root / "experiments" / "E1" / "ParT_sophon_arch_10c.py",
             "design_arm": root / "configs" / "arms" / "L188.yaml",
+            # the census of the selected pretraining jets (experiments/FT/count_jc2_train.py)
+            "design_counts": data / "v2" / "jc2_train" / "counts.json",
             "literature": data / "literature_facts.json",
             # collected 2026-09-29 (collect_recipes.py over w2b, bench_v2, bench_v3)
             "ft_recipes": data / "ft_recipes" / "recipes_w2b_bench_v2_v3.json",
@@ -1821,13 +1823,14 @@ def table_ft_recipe(rec: dict) -> str:
 
 
 def emit_training_design(em: Emitter, spec: pathlib.Path, arch: pathlib.Path,
-                         arm: pathlib.Path) -> None:
+                         arm: pathlib.Path, counts: pathlib.Path | None = None) -> None:
     """Design numbers the Setup section quotes, read from the files that set them.
 
     The 188-class seed-1 pretraining job stands for all of them: the arm jobs
     differ only in the label set, the seed streams and the names
     (tests/test_arm_configs.py). These are not results, but typed by hand they
-    would be the one set of numbers in the paper that nothing checks.
+    would be the one set of numbers in the paper that nothing checks. With the
+    census of the selected pretraining jets, also the passes over them.
     """
     s = spec.read_text()
 
@@ -1842,6 +1845,10 @@ def emit_training_design(em: Emitter, spec: pathlib.Path, arch: pathlib.Path,
     em.macro("DesignSamplesPerEpoch", fmt_int(per_epoch), spec, "--samples-per-epoch")
     em.macro("DesignExamplesSeen", fmt_sci(epochs * per_epoch), spec,
              "--num-epochs x --samples-per-epoch", "training examples drawn over the run")
+    if counts is not None:
+        em.macro("DesignPassesSelected", f"{epochs * per_epoch / json.loads(counts.read_text())['n_selected']:.2f}",
+                 counts, "n_selected", f"--num-epochs x --samples-per-epoch of {spec.name} / n_selected: "
+                 "passes over the selected training jets")
     em.macro("DesignBatchSize", arg("--batch-size"), spec, "--batch-size")
     em.macro("DesignStartLr", fmt_sci(float(arg("--start-lr"))), spec, "--start-lr")
     hidden = re.findall(r"fc_params '\[\((\d+),", s)
@@ -4856,7 +4863,8 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
         skipped.append("T3 use-case survival: configs/labelmaps/usecase_survival.v1.json missing")
 
     if all(k in have for k in ("design_spec", "design_arch", "design_arm")):
-        emit_training_design(em, paths["design_spec"], paths["design_arch"], paths["design_arm"])
+        emit_training_design(em, paths["design_spec"], paths["design_arch"], paths["design_arm"],
+                             paths["design_counts"] if "design_counts" in have else None)
     if "literature" in have:
         emit_literature(em, paths["literature"])
     if "mass_specs" in have and paths["mass_specs"]:

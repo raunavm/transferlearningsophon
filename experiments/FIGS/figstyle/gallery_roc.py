@@ -501,10 +501,11 @@ PAGES = [
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
          caption="Networks pretrained on JetClass-II, fine-tuned on one million class-balanced JetClass-II jets and "
-                 "scored on the natural-mix test jets of two class pairs differing only in flavor (signal first) by the "
-                 "signal side's share of the summed softmax of the pair's classes: upper row, 188, 162, 43 and 17 "
-                 "classes; lower row, 17-class partitions with no, a b-quark and a random flavor boundary, with 188 for "
-                 "reference. Means over three runs (partitions: two); curves end at 20 background jets.",
+                 "scored by the signal side's share of the pair's summed softmax on two class pairs differing only in "
+                 "flavor (signal first), among 2 million JetClass-II test jets in their natural class mix: upper "
+                 "row, 188, 162, 43 and 17 classes; lower row, 17-class partitions with no, a b-quark and a random "
+                 "flavor boundary, plus 188 classes. Means over three runs (partitions: two); curves end at 20 "
+                 "background jets.",
          differs="F4-mech's form after fine-tuning (PI, 2026-11-08), on F4-mech's axes (rejection 1 to 10^4); the main "
                  "text quotes these numbers from the pair table's fine-tuned columns.",
          data_note="Reads curves_v2/pairs_ft (the fine-tuned pairs job on the natural-mix test jets: the signal side's "

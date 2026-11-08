@@ -93,7 +93,7 @@ _TABLES = (
     ("tab:xbxrej", MAIN, XBX),
     ("tab:probes", APPENDIX, "Every probe behind [[F2a]], with the released Sophon checkpoint."),
     ("tab:mlp", APPENDIX, "Nonlinear probes repeat the linear-probe comparisons."),
-    ("tab:coarse", APPENDIX, "Scored on merged classes every label set was trained to separate; the numbers are pending."),
+    ("tab:coarse", APPENDIX, "Scored on the 43 groups, 17-class features fall behind; on the 17 groups the label sets agree."),
     ("tab:qcdhf", APPENDIX, "Merging the 27 QCD classes (162) does not lower the X→bb̄ discriminant's rejection of "
                             "b-flavored QCD."),
     ("tab:fill", APPENDIX, "Filling the missing inputs with zeros, the training mean or random draws changes the "

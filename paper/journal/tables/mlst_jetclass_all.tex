@@ -10,7 +10,7 @@
 \toprule
  & jets & \# params & accuracy \\
 \midrule
-\mbox{no pretraining (f.t.)} & 1 M & 2.21\,M & 0.8271\,$\pm$\,0.0012 \\
+\mbox{no pretraining (f.t.)} & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 \\
 \mbox{\Kfull{} classes (f.t.)} & 1 M & 2.21\,M & \textbf{0.8468\,$\pm$\,0.0006} \\
 \mbox{\Kres{} classes (f.t.)} & 1 M & 2.21\,M & \textbf{0.8475\,$\pm$\,0.0009} \\
 \mbox{\Kmid{} classes (f.t.)} & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 \\
@@ -36,7 +36,7 @@
  & jets & AUC & $H\to b\bar b$ \\
  &  &  & $R_{50}$ \\
 \midrule
-\mbox{no pretraining (f.t.)} & 1 M & 0.9819\,$\pm$\,0.0002 & 4{,}920\,$\pm$\,190 \\
+\mbox{no pretraining (f.t.)} & 1 M & 0.9818\,$\pm$\,0.0003 & 4{,}800\,$\pm$\,70 \\
 \mbox{\Kfull{} classes (f.t.)} & 1 M & 0.9854\,$\pm$\,0.0001 & \textbf{6{,}600\,$\pm$\,330} \\
 \mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{0.9856\,$\pm$\,$<$0.0001} & 6{,}060\,$\pm$\,0 \\
 \mbox{\Kmid{} classes (f.t.)} & 1 M & 0.9853\,$\pm$\,0.0001 & \textbf{6{,}480\,$\pm$\,530} \\
@@ -62,7 +62,7 @@
  & jets & $H\to c\bar c$ & $H\to gg$ \\
  &  & $R_{50}$ & $R_{50}$ \\
 \midrule
-\mbox{no pretraining (f.t.)} & 1 M & 1{,}580\,$\pm$\,60 & 88.3\,$\pm$\,3.2 \\
+\mbox{no pretraining (f.t.)} & 1 M & 1{,}570\,$\pm$\,50 & 86.4\,$\pm$\,3.2 \\
 \mbox{\Kfull{} classes (f.t.)} & 1 M & \textbf{2{,}650\,$\pm$\,260} & \textbf{103.6\,$\pm$\,3.8} \\
 \mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{2{,}820\,$\pm$\,40} & 101.8\,$\pm$\,1.5 \\
 \mbox{\Kmid{} classes (f.t.)} & 1 M & 2{,}610\,$\pm$\,160 & 103.5\,$\pm$\,1.3 \\
@@ -88,7 +88,7 @@
  & jets & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ \\
  &  & $R_{50}$ & $R_{99}$ & $R_{50}$ \\
 \midrule
-\mbox{no pretraining (f.t.)} & 1 M & 670\,$\pm$\,39 & 1{,}270\,$\pm$\,100 & \textbf{6{,}100\,$\pm$\,600} \\
+\mbox{no pretraining (f.t.)} & 1 M & 636\,$\pm$\,45 & 1{,}290\,$\pm$\,100 & \textbf{6{,}400\,$\pm$\,200} \\
 \mbox{\Kfull{} classes (f.t.)} & 1 M & \textbf{1{,}091\,$\pm$\,15} & \textbf{3{,}060\,$\pm$\,390} & 12{,}900\,$\pm$\,1{,}600$^\dagger$ \\
 \mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{1{,}150\,$\pm$\,67} & \textbf{3{,}070\,$\pm$\,330} & 14{,}100\,$\pm$\,3{,}500$^\dagger$ \\
 \mbox{\Kmid{} classes (f.t.)} & 1 M & 1{,}034\,$\pm$\,40 & \textbf{3{,}160\,$\pm$\,280} & 14{,}200\,$\pm$\,2{,}100$^\dagger$ \\
@@ -114,17 +114,17 @@
  & jets & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
  &  & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
 \midrule
-\mbox{no pretraining (f.t.)} & 1 M & 3{,}940\,$\pm$\,320 & 272\,$\pm$\,6 & 215\,$\pm$\,8 \\
-\mbox{\Kfull{} classes (f.t.)} & 1 M & 9{,}410\,$\pm$\,1{,}510$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
-\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{7{,}800\,$\pm$\,340} & \textbf{389\,$\pm$\,9} & \textbf{308\,$\pm$\,1} \\
-\mbox{\Kmid{} classes (f.t.)} & 1 M & \textbf{8{,}450\,$\pm$\,210} & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
-\mbox{\Kcoarse{} classes (f.t.)} & 1 M & \textbf{8{,}590\,$\pm$\,1{,}270} & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
-\mbox{\Kres{} classes + mass (f.t.)} & 1 M & \textbf{8{,}330, 6{,}900} & \textbf{392, 380} & 303, 301 \\
-\mbox{\Kcoarse{} classes + mass (f.t.)} & 1 M & 8{,}000, 11{,}110$^\dagger$ & 363, 353 & 289, 276 \\
+\mbox{no pretraining (f.t.)} & 1 M & 3{,}600\,$\pm$\,1{,}000 & 262\,$\pm$\,15 & 210\,$\pm$\,12 \\
+\mbox{\Kfull{} classes (f.t.)} & 1 M & 9{,}400\,$\pm$\,1{,}500$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
+\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{7{,}800\,$\pm$\,300} & \textbf{389\,$\pm$\,9} & \textbf{308\,$\pm$\,1} \\
+\mbox{\Kmid{} classes (f.t.)} & 1 M & \textbf{8{,}500\,$\pm$\,200} & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
+\mbox{\Kcoarse{} classes (f.t.)} & 1 M & \textbf{8{,}600\,$\pm$\,1{,}300} & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
+\mbox{\Kres{} classes + mass (f.t.)} & 1 M & \textbf{8{,}300, 6{,}900} & \textbf{392, 380} & 303, 301 \\
+\mbox{\Kcoarse{} classes + mass (f.t.)} & 1 M & 8{,}000, 11{,}100$^\dagger$ & 363, 353 & 289, 276 \\
 \mbox{random partitions (f.t.)} & 1 M & \textbf{7{,}700\,$\pm$\,1{,}300} & \textbf{379\,$\pm$\,18} & 299\,$\pm$\,7 \\
-\mbox{no flavor boundary (f.t.)} & 1 M & 6{,}670, 7{,}140 & 351, 351 & 292, 292 \\
-\mbox{$b$-quark boundary (f.t.)} & 1 M & 7{,}140, 7{,}140 & 366, 347 & 292, 298 \\
-\mbox{random flavor boundary (f.t.)} & 1 M & 7{,}140, 7{,}410 & 372, 371 & 296, 301 \\
+\mbox{no flavor boundary (f.t.)} & 1 M & 6{,}700, 7{,}100 & 351, 351 & 292, 292 \\
+\mbox{$b$-quark boundary (f.t.)} & 1 M & 7{,}100, 7{,}100 & 366, 347 & 292, 298 \\
+\mbox{random flavor boundary (f.t.)} & 1 M & 7{,}100, 7{,}400 & 372, 371 & 296, 301 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

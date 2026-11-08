@@ -492,6 +492,8 @@ def test_the_design_numbers_are_the_ones_the_pretraining_job_ran_with():
     assert f"--num-epochs {got['DesignEpochs']}" in spec
     assert f"--batch-size {got['DesignBatchSize']}" in spec
     assert got["DesignExamplesSeen"] == "\\ensuremath{8.192\\times10^{8}}"   # docs/GROUND_TRUTH.md
+    n = _load(prov["DesignPassesSelected"]["source_file"])["n_selected"]     # the census (PI, 2026-11-08)
+    assert n == 109_938_036 and got["DesignPassesSelected"] == f"{819_200_000 / n:.2f}" == "7.45"
     assert (got["DesignParticleBlocks"], got["DesignClassBlocks"], got["DesignEmbedDim"]) == \
         ("8", "2", "128")                                          # docs/GROUND_TRUTH.md
 

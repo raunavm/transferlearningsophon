@@ -3561,8 +3561,9 @@ CAPTIONS = {
                  "partitions are pooled into one row, mean $\\pm$ standard deviation over their runs. " + KIN_NOTE
                  + " $^{*}$: a probe that did not converge."),
     "pairs": ("tab:pairs", "Pairs of JetClass-II classes separated by networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and by the controls: "
-              "(LP), a binary linear probe on the frozen features, trained on up to \\JcBalPairTrainPerSide{} and scored on "
-              "up to \\JcBalPairTestPerSide{} jets of each side, drawn from the JetClass-II training and test sets; "
+              "(LP), a binary linear probe on the frozen features, trained on up to \\JcBalPairTrainPerSide{} jets of each "
+              "side from held-out JetClass-II files and scored on up to \\JcBalPairTestPerSide{} of each side from the "
+              "JetClass-II test files, each side in its natural class mix; "
               "(f.t.), the network fine-tuned on $10^{6}$ class-balanced JetClass-II jets with the \\Kfull{} classes, "
               "scored on the pair's jets among \\LpNTestJcii{} JetClass-II test jets at their natural composition by the "
               "summed output scores of the first side over those of both sides. The two modes are scored on different "
