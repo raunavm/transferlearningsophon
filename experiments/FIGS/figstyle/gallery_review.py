@@ -61,7 +61,7 @@ REVIEW = {
 
 # Round 5 (PI, 2026-11-07): what changed on each page since the approved round 4, shown on the gallery page for page-by-page
 # approval. Keyed by page id; a table page joins with its own id. "NEW: ..." for a page the PI has not seen.
-NAMES = "legend entries name the starting network (pretrained on what, or none) and the mode where the figure mixes modes"
+NAMES = "short legend names (188 classes, no pretraining, ...) with a mode tag (LP), (MLP), (f.t.) where the figure mixes modes"
 CAPTION = "caption opens with what was trained on what"
 TICKS = "rejection ticks in plain numbers (no small exponents)"
 CHANGES = {
@@ -87,8 +87,8 @@ CHANGES = {
     "VAL": f"CHANGED: {NAMES}; {CAPTION}.",
     "A10": f"CHANGED: SD bands over pretraining runs, as F8; {NAMES}; {CAPTION}.",
     "A8": f"CHANGED: SD bands over pretraining runs, as F8; {NAMES}; {CAPTION}.",
-    "F6-app": f"CHANGED: uncertainty bands on the ratio panels only; the kinematic-only curve in (a) once its probe curve "
-              f"is pulled; {TICKS}; drawn at 18.5 cm height (8 pt text in the book); {NAMES}; {CAPTION}.",
+    "F6-app": f"CHANGED: uncertainty bands on the ratio panels only; the kinematic-only probe curve in (a), dotted, in "
+              f"the 188-class color; {TICKS}; drawn at 18.5 cm height (8 pt text in the book); {NAMES}; {CAPTION}.",
     "FJ-app": f"CHANGED: {TICKS}; {CAPTION}.",
     "FJ-ctrl-app": f"CHANGED: {TICKS}; {CAPTION}.",
     "FJ-s": f"CHANGED: {TICKS}; {CAPTION}.",

@@ -254,7 +254,7 @@ def _mass_series(mode: str = "ft") -> list:
     where they share a panel with the same label set's other output (A17-probe); one hollow marker per model in every
     figure (PI, 2026-11-07)."""
     return [(RUNS[row], "regressed", S.look(row, mode), S.marker(row, "mass"),
-             S.LEGEND[row] + (", mass output" if mode == "mass" else "")) for row, _ in MASS_ROWS]
+             S.LEGEND[row] + (" (mass output)" if mode == "mass" else "")) for row, _ in MASS_ROWS]
 
 
 def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
@@ -373,7 +373,7 @@ def _a17(path: pathlib.Path, group: str) -> None:
 def draw_a17_probe(path: pathlib.Path) -> None:
     """Six series: the MLP on the frozen features of the four label sets (solid, filled) and the two mass outputs
     (dashed, hollow); the legend above the panels."""
-    series = [(RUNS[a], "mlp", S.look(a, "ft"), S.marker(a, "ft"), f"{S.LEGEND[a]}, {S.MLP_PROBE}") for a in S.LEVELS]
+    series = [(RUNS[a], "mlp", S.look(a, "ft"), S.marker(a, "ft"), f"{S.LEGEND[a]} {S.MLP_PROBE}") for a in S.LEVELS]
     series += _mass_series("mass")
     _binned_2x2(path, "all", series, "Mass from frozen features and from the mass output", 2)
 
@@ -550,11 +550,11 @@ def _standin_series(XR, fits: dict) -> list:
     of = lambda row, key: [r for m in RUNS[row] if (r := XR.readout(fits.get(m, {}).get(STANDIN, {}), key))]
     out = []
     if direct := of("L188", "zero_shot_xbb"):
-        out.append((f"{S.LEGEND['L188']}, direct discriminant", DIRECT_LOOK, direct))
+        out.append((f"{S.LEGEND['L188']} (direct discriminant)", DIRECT_LOOK, direct))
     for row in S.LEVELS:
-        for key, word in (("head", "transfer"), ("linear", "linear probe")):
+        for key, word in (("head", "(transfer)"), ("linear", S.PROBE)):
             if rs := of(row, key):
-                out.append((f"{S.LEGEND[row]}, {word}", S.look(row), rs))
+                out.append((f"{S.LEGEND[row]} {word}", S.look(row), rs))
                 break
     return out
 
@@ -650,7 +650,7 @@ def draw_pt(path: pathlib.Path) -> None:
     jc2, jc1 = M._load(PERF / "jc2"), M._load(PERF / "jc1")
     if not (jc2 and jc1):
         raise Absent("no performance against jet pT (perf_vs_pt/jc2, perf_vs_pt/jc1)")
-    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=2.8, left=1.25, wgap=0.75, hgap=1.6)
+    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=2.35, left=1.25, wgap=0.75, hgap=1.6)
     (a, b), (cx, d) = axes
     panels = ((a, jc2, S.LEVELS, _accuracy, "Accuracy", "JetClass-II, linear probes"),
               (b, jc2, ("L188", "R16_Q1") + tuple(S.CONTROLS), _accuracy, None, "JetClass-II, linear probes, controls"),
@@ -675,7 +675,7 @@ def draw_pt(path: pathlib.Path) -> None:
     for ax in axes.flat:
         for h_, l_ in zip(*ax.get_legend_handles_labels()):
             handles.setdefault(l_, h_)
-    S.fig_legend(fig, list(handles.values()), top_cm=0.6, ncol=2)     # two columns: the long legend names
+    S.fig_legend(fig, list(handles.values()), top_cm=0.6, ncol=4)
     S.letter_panels(axes.flat)
     S.heading(fig, "Performance against jet $p_{\\mathrm{T}}$")
     S.save(fig, path)
@@ -815,8 +815,8 @@ F11_CAPTION = (
     "Networks pretrained on JetClass-II: signal efficiency over the square root of the background efficiency "
     "against QCD efficiency for X→bb on stand-in JetClass-II jets (upper) and X→bs (lower, no samples yet), from "
     "the direct discriminant of the 188-class pretraining head and from a classifier trained on the frozen "
-    "features of each network. Curves are means over pretraining runs and end where fewer than 20 background jets "
-    "remain.")
+    "features of each network (LP: linear probe). Curves are means over pretraining runs and end where fewer than "
+    "20 background jets remain.")
 PT_CAPTION = (
     "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on the "
     "frozen features, trained and scored on class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining "
@@ -896,7 +896,7 @@ PAGES = [
          A17_CAPTION.format(group="QCD"), A17_DIFFERS, lambda path: _a17(path, "qcd"), MASS_RUNS_NOTE),
     Page("A17-probe", "Mass from frozen features and from the mass output (appendix)", ["ATL-PHYS-PUB-2024-015/fig8.png"],
          "ATLAS 2024-015 Fig. 8",
-         "The jet mass from networks pretrained on JetClass-II: an MLP probe regressing it from the frozen "
+         "The jet mass from networks pretrained on JetClass-II: an MLP probe (MLP) regressing it from the frozen "
          "features with 188, 162, 43 and 17 classes (solid, three runs), and the mass output with 162 and 17 "
          "classes and an auxiliary mass regression (dashed, two runs). Median response r (a, b) and resolution "
          "sigma_r (c, d) of test jets against pT (a, c) and generator mass (b, d; 20-500 GeV); sub-panels and "

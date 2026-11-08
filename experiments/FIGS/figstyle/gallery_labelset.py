@@ -100,23 +100,23 @@ def _range(ax, ys: list, log: bool, pad: float = 0.12) -> tuple:
     return lo - d, hi + d
 
 
-def _f2_handles(groups: list) -> list:
+def _f2_handles(groups: list, scratch: str) -> list:
     from matplotlib.lines import Line2D
     hs = [Line2D([], [], linestyle="none", **S.marker(r, size=MARKER + 0.5), label=S.LEGEND[r]) for r in S.LEVELS]
     hs += [Line2D([], [], linestyle="none", **S.marker(r, size=MARKER + 0.5), label=lab) for lab, r, _ in groups]
     hs += [Line2D([], [], **CONNECTOR, label="Hierarchy"),
-           Line2D([], [], **S.look("SCRATCH", linewidth=S.LW_CURVE), label=S.LEGEND["SCRATCH"])]
+           Line2D([], [], **S.look("SCRATCH", linewidth=S.LW_CURVE), label=scratch)]
     return hs
 
 
-def _draw_f2(path, value_of, groups, absent: str, heading: str) -> None:
+def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch_label: str = S.LEGEND["SCRATCH"]) -> None:
     """value_of(key, n, ds, met): a run's value or None for the task; groups: (legend label, style key, rows) of the
     markers at 17 classes, drawn left of 17 at CONTROL_X so they do not hide the 17-class point. Filled markers in both
     F2a and F2b: each holds one mode (PI, 2026-11-07)."""
     values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
     if not any(values):
         raise C.Absent(absent)
-    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=3.45, left=1.15, wgap=0.8)     # 0.05 cm spare: the right frame whole   # room for "0.850"-wide ticks
+    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=2.6, left=1.15, wgap=0.8)     # 0.05 cm spare: the right frame whole   # room for "0.850"-wide ticks
     for k, (ax, value, (key, _, _, met, *_)) in enumerate(zip(axes.flat, values, P.F2_PANELS)):
         S.title(ax, TITLES[key])
         S.labels(ax, X_CLASSES if k >= 2 else None, (Y_R30 if met == "r30" else Y_ACC) if k % 2 == 0 else None)
@@ -149,7 +149,7 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str) -> None:
         _classes_axis(ax)
     S.letter_panels(axes.flat)
     S.heading(fig, heading)
-    S.fig_legend(fig, _f2_handles(groups), top_cm=0.6, ncol=2)     # two columns: the long legend names
+    S.fig_legend(fig, _f2_handles(groups, scratch_label), top_cm=0.6, ncol=4)
     S.save(fig, path)
 
 
@@ -167,7 +167,8 @@ def _controlled():
 
 def draw_f2a(path) -> None:
     _draw_f2(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
-             "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
+             "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features",
+             scratch_label=f"{S.LEGEND['SCRATCH']} {S.FINE_TUNED}")     # a fine-tuned network among probes: tagged
 
 
 def draw_f2b(path) -> None:
@@ -420,19 +421,20 @@ def draw_f8(path) -> None:
     probe_line = {"color": S.TINT_188, "linestyle": S.MODE_LINE["probe"]}
     probe_mark = {"marker": "s", "markeredgecolor": S.TINT_188, "markerfacecolor": "white"}
     series = lambda key, ds, met: [_model(P.ft_series(M, I["per"], RUNS, key, met, "L188"), "L188", "ft",
-                                          f"{S.LEGEND['L188']}, {S.FINE_TUNED}"),
+                                          f"{S.LEGEND['L188']} {S.FINE_TUNED}"),
                                    (P.probe_series(M, I, RUNS, ds, met, "L188", chosen), probe_line, probe_mark,
-                                    f"{S.LEGEND['L188']}, {S.PROBE}"),
-                                   _model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft", S.LEGEND["SCRATCH"])]
+                                    f"{S.LEGEND['L188']} {S.PROBE}"),
+                                   _model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft",
+                                          f"{S.LEGEND['SCRATCH']} {S.FINE_TUNED}")]
     _draw_size(path, series, True, "no fine-tuning read-outs or linear probes", "188-class pretraining against training from scratch",
-               ncol=1)
+               ncol=2)
 
 
 def draw_a10(path) -> None:
     chosen = _chosen()
     series = lambda key, ds, met: [_model(P.probe_series(M, I, RUNS, ds, met, row, chosen), row, "ft", S.LEGEND[row])   # probes only: solid
                                    for row in S.LEVELS] + [_model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft",
-                                                                  S.LEGEND["SCRATCH"])]
+                                                                  f"{S.LEGEND['SCRATCH']} {S.FINE_TUNED}")]
     _draw_size(path, series, True, "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
 
 
@@ -585,11 +587,11 @@ PAGES = [
         precedent=HONG,
         precedent_label="Hong Fig. 2",
         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and "
-                "17 classes and with 17-class random partitions, trained and scored on class-balanced JetClass-II "
-                "and JetClass (accuracy) and on top and quark/gluon tagging (rejection R30 at 30% signal "
-                "efficiency), against the number of pretraining classes. Markers are means; bars the SD over "
-                "three pretraining runs, the range over two for the flavor-boundary partitions; each random "
-                "partition has one run. Dashed: no pretraining, trained from scratch.",
+                "17 classes and with 17-class random partitions, scored on class-balanced JetClass-II and "
+                "JetClass (accuracy) and on top and quark/gluon tagging (rejection R30 at 30% signal efficiency), "
+                "against the number of pretraining classes. Markers are means; bars the SD over three pretraining "
+                "runs, the range over two for the flavor-boundary partitions; each random partition has one run. "
+                "Dashed: no pretraining, fine-tuned from scratch (f.t.).",
         differs="Four panels against Hong's one, for the four tasks; Hong has no controls. Round 4: 6.5 cm panels in a "
                 "2x2, a figure legend above them that names every colour, filled markers (probes only in the figure) and a grey line "
                 "for the hierarchy, controls offset left of 17 with their own shapes, and each y range holding the "
@@ -714,12 +716,12 @@ PAGES = [
         title="Pretraining against the number of training jets",
         precedent=["2401.13537/fig3.png", "2401.13536/fig1.png"],
         precedent_label="Golling Fig. 3, Vigl Fig. 1 top",
-        caption="The network pretrained on JetClass-II with 188 classes, fine-tuned and as a linear probe on its "
-                "frozen features, and a network without pretraining trained from scratch, each trained and scored "
-                "on class-balanced JetClass-II and JetClass (accuracy) and on top and quark/gluon tagging (R30), "
-                "against the number of training jets. Points are means, bands the SD over three pretraining runs "
-                "(from scratch: three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; "
-                "quark/gluon: kinematic and particle type).",
+        caption="The network pretrained on JetClass-II with 188 classes, fine-tuned (f.t.) and as a linear probe "
+                "on its frozen features (LP), and a network without pretraining trained from scratch (f.t.), "
+                "scored on class-balanced JetClass-II and JetClass (accuracy) and on top and quark/gluon tagging "
+                "(R30), against the number of training jets. Points are means, bands the SD over three "
+                "pretraining runs (from scratch: three trainings). Stars: published ParT (JetClass: same inputs; "
+                "top: kinematic; quark/gluon: kinematic and particle type).",
         differs="Four panels, one per task, against Golling's one. Fine-tuned solid and the linear probe dash-dot, both in the "
                 "188-class colour (one model, two uses), and from scratch dark grey dashed, against Golling's green, "
                 "red and blue. Sophon's font; round 3's faint grid at major y ticks, where Golling has none; no legend "
@@ -756,9 +758,9 @@ PAGES = [
         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and "
                 "17 classes, trained and scored on class-balanced JetClass-II and JetClass (accuracy) and on top "
                 "and quark/gluon tagging (R30), against the number of training jets; dashed, no pretraining, "
-                "trained from scratch. Points are means, bands the SD over three pretraining runs (from scratch: "
-                "three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; quark/gluon: "
-                "kinematic and particle type).",
+                "fine-tuned from scratch (f.t.). Points are means, bands the SD over three pretraining runs (from "
+                "scratch: three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; "
+                "quark/gluon: kinematic and particle type).",
         differs="Four panels against Golling's one; four label sets against three training modes. SD bands as "
                 "Golling's (PI, 2026-11-07, M1). Label sets in Tol muted, darkest for 188, from scratch dark grey "
                 "dashed. Sophon's font; faint grid at major y ticks, where Golling has none; no legend "

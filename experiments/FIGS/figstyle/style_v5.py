@@ -56,17 +56,14 @@ MARKERS = {"L188": "o", "L162": "s", "R42_Q1": "^", "R16_Q1": "D", "L162_MASS": 
 STAR_SCALE = 1.4                                 # "*" draws smaller than the other shapes at one markersize
 MODE_LINE = {"ft": "-", "probe": "--", "mass": "--", "scratch": "--"}
 MASS = ("L162_MASS", "R16_Q1_MASS")
-# legend names (PI, 2026-11-07, revised): "<starting network>, <mode>"; the ", <mode>" is dropped where a panel title or
-# the heading states one mode for every curve, and kept in every entry of a figure that mixes modes (F8, A17-probe).
-# The same strings as mlst_results.LABEL (the tables).
-LEGEND = {"L188": "pretrained on 188 classes", "L162": "pretrained on 162 classes", "R42_Q1": "pretrained on 43 classes",
-          "R16_Q1": "pretrained on 17 classes", "RAND": "pretrained on 17 random classes (five partitions)",
-          "FLAV_F0": "pretrained on 17 classes (no flavor boundary)",
-          "FLAV_F1": "pretrained on 17 classes ($b$-quark boundary)",
-          "FLAV_F1R": "pretrained on 17 classes (random flavor boundary)", "L162_MASS": "pretrained on 162 classes + mass",
-          "R16_Q1_MASS": "pretrained on 17 classes + mass", "KIN": "pretrained on 188 classes (kinematic inputs only)",
-          "SCRATCH": "no pretraining, trained from scratch", "INIT_BN": "random network, linear probe"}
-PROBE, MLP_PROBE, FINE_TUNED = "linear probe", "MLP probe", "fine-tuned"
+# legend names (PI, 2026-11-07, final): short, in ParT's "-f.t." style, the paper's shortest names for the partitions; a
+# tag after the name gives the mode, (LP) linear probe, (MLP) MLP probe, (f.t.) fine-tuned, and is dropped where the panel
+# title or the heading gives one mode for every curve. A figure that mixes modes tags every entry (F8, A17-probe).
+LEGEND = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes",
+          "RAND": "random partitions", "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary",
+          "FLAV_F1R": "random flavor boundary", "L162_MASS": "162 classes + mass", "R16_Q1_MASS": "17 classes + mass",
+          "KIN": "188 classes, kinematic inputs only", "SCRATCH": "no pretraining", "INIT_BN": "random network"}
+PROBE, MLP_PROBE, FINE_TUNED = "(LP)", "(MLP)", "(f.t.)"
 TINT_188 = "#" + "".join(f"{round(int(SERIES['L188'][i:i + 2], 16) + 0.4 * (255 - int(SERIES['L188'][i:i + 2], 16))):02X}"
                          for i in (1, 3, 5))
 WORKING_POINT = {"inclusive": {"color": "#000000", "marker": "o", "fillstyle": "full"},

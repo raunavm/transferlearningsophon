@@ -229,7 +229,7 @@ def _pairs(path: pathlib.Path, series: list, keys: tuple, ymax: float | None = N
     keep fewer than 20 background jets at every efficiency is named in the panel as complete separation."""
     docs = _family("pairs")
     heading = {k: h for k, h, *_ in M.PAIRS}
-    fig, axes = _axes_2x2(sharey=False, wspace=0.2, heading="Linear probes on JetClass-II class pairs", top=2.35)
+    fig, axes = _axes_2x2(sharey=False, wspace=0.2, heading="Linear probes on JetClass-II class pairs", top=1.9)
     for ax, key in zip(axes.flat, keys):
         d = ROC["pairs_sib2"] if key == "ee_vs_mm" and ROC.get("pairs_sib2") else docs
         separated = []
@@ -245,16 +245,15 @@ def _pairs(path: pathlib.Path, series: list, keys: tuple, ymax: float | None = N
         if ymax and separated:
             if legend_order:
                 separated.sort(key=legend_order.index)
-            pre = "pretrained on "
-            words = (pre + " and ".join(w.removeprefix(pre).removesuffix(" classes") for w in separated) + " classes"
-                     if all(w.startswith(pre) and w.endswith(" classes") for w in separated) else ", ".join(separated))
+            words = (" and ".join(w.removesuffix(" classes") for w in separated) + " classes"
+                     if all(w.endswith(" classes") for w in separated) else ", ".join(separated))
             ax.text(0.97, 0.95, "Complete separation:\n" + words, transform=ax.transAxes, ha="right",
                     va="top", fontsize=S.LEGEND_PT5)     # no frame, as the legends (style_v4)
         S.title(ax, heading[key])
     _right_labels_off(axes)
     handles, labels = axes[0, 0].get_legend_handles_labels()
     order = sorted(range(len(labels)), key=lambda i: legend_order.index(labels[i])) if legend_order else range(len(labels))
-    S.fig_legend(fig, [handles[i] for i in order], top_cm=0.6, ncol=2)     # above the panels: the long names (PI, 2026-11-07)
+    S.fig_legend(fig, [handles[i] for i in order], top_cm=0.6, ncol=4)     # above the panels, off the curves
     S.letter_panels(axes.flat)
     S.save(fig, path)
 
@@ -351,7 +350,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
                             linewidth=S.LW_CURVE)
         models = P._scratch_models(ft)
         s = mean_over_runs(ft, models, key)
-        _plot(ax, s, **S.look("SCRATCH"), linewidth=S.LW_CURVE, label=S.LEGEND["SCRATCH"], zorder=1.9)  # under the label sets
+        _plot(ax, s, **S.look("SCRATCH"), linewidth=S.LW_CURVE, label=S.LEGEND["SCRATCH"] + ("" if word == "fine-tuned" else f" {S.FINE_TUNED}"), zorder=1.9)  # under the label sets
         scratch = _ratio(rx, s, ref, _rel_error(ft, models, key), band=True, **S.look("SCRATCH"), linewidth=S.LW_CURVE,
                          zorder=1.9)
         if word == "fine-tuned":            # after fine-tuning from scratch is near the label sets: its ratio in range
@@ -540,13 +539,13 @@ PAGES = [
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
                  "and 17 classes, trained on the full top and quark/gluon training sets, and a network without "
-                 "pretraining trained from scratch: rejection against efficiency, means over three runs; dotted, "
-                 "one run with 188 classes and kinematic inputs only. Lower panels: ratio to 188 classes; bands: "
-                 "each curve's SD over runs and 68% binomial uncertainty of the passing background count, in "
-                 "quadrature.",
+                 "pretraining, fine-tuned from scratch (f.t.): rejection against efficiency, means over three "
+                 "runs; dotted, one run with 188 classes and kinematic inputs only. Lower panels: ratio to 188 "
+                 "classes; bands: each curve's SD over runs and 68% binomial uncertainty of the passing "
+                 "background count, in quadrature.",
          differs="As F6, with linear probes; the ratio is to the 188-class probe.",
-         data_note="The kinematic-inputs probe curve, curves_v2/top_probe/mtx-l188kin-s1.json, is not in the pulled data "
-                   "yet; (a) draws it, dotted, once it is.",
+         data_note="The kinematic-inputs model's probe is one run (curves_v2/top_probe/mtx-l188kin-s1.json), so its "
+                   "dotted curve is that run, not a mean.",
          draw=draw_f6_app),
     Page(id="A3R", title="Every JetClass-II class, per label set",
          precedent=["map2026_poster/fig5.png"],
