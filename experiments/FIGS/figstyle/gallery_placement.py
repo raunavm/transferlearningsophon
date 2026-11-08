@@ -25,8 +25,7 @@ F10B_WP = "eps_b=0.01"
 # a placement that waits on a result; the two tables only while they hold pending cells (make_results_book sets a
 # PROVISIONAL table with its pending cells, and a box for a PROVISIONAL figure not drawn yet)
 PROVISIONAL = {"F11": SAMPLES, "F4-mech-ft": FT_READOUT, "F10-ft": FT_READOUT, "tab:xbx": SAMPLES, "tab:xbxrej": SAMPLES,
-               "tab:pairs": "its fine-tuned columns wait for the fine-tuned read-out",
-               "tab:coarse": "a cell waits for its run"}
+               "tab:pairs": "its fine-tuned columns wait for the fine-tuned read-out"}
 SCULPT_FLAV = ("No flavor-boundary partition sculpts the QCD mass differently from 188 classes by more than three times "
                "the uncertainty.")
 FJ_S = "Cited beside [[FJ]]: partitions, linear probes, from scratch."

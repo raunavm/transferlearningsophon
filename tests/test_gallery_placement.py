@@ -51,8 +51,7 @@ def test_the_main_text_is_the_pis_list_in_order():
     ft = "waits for the fine-tuned read-out"
     assert G.PROVISIONAL == {"F11": "waits for the samples", "F4-mech-ft": ft, "F10-ft": ft,
                              "tab:xbx": "waits for the samples", "tab:xbxrej": "waits for the samples",
-                             "tab:pairs": "its fine-tuned columns wait for the fine-tuned read-out",
-                             "tab:coarse": "a cell waits for its run"}
+                             "tab:pairs": "its fine-tuned columns wait for the fine-tuned read-out"}
     assert set(G.PROVISIONAL) <= set(G.TIER) and all(v.isascii() for v in G.PROVISIONAL.values())    # the book's boxes
     # F10b in the appendix between F10a and F10c, F10b-flav beside it: the bootstrap's 17 + mass - 17 at 1% is -2.0 sigma
     appendix = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]

@@ -1,9 +1,43 @@
-\begin{table}[t]
-\centering
+\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\begin{center}
 \small
-\caption{Mass sculpting by the pretraining heads, differences between label sets: $\Delta$, the Jensen--Shannon distance of table~\ref{tab:sculpt} ($\times10^{2}$) of the configuration minus that of the reference, paired by pretraining seed and averaged over the seeds both have; the standard deviation of the paired differences over the seeds (run SD); the standard deviation of $\Delta$ over \pending{n} bootstrap replicas of the test jets, the QCD and the resonant jets each resampled with replacement, the same jets for every network (bootstrap SD); and $\Delta/\sigma$, $\sigma^{2}$ the sum of the two squares. Bold: $|\Delta| > 3\sigma$, a difference that stands. At the QCD efficiencies $\epsB$ of table~\ref{tab:sculpt} and at the cut keeping half of the resonant jets ($\epsS = 50\%$).}
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{Mass sculpting by the pretraining heads, differences between label sets: $\Delta$, the Jensen--Shannon distance of table~\ref{tab:sculpt} ($\times10^{2}$) of the configuration minus that of the reference, paired by pretraining seed and averaged over the seeds both have; the standard deviation of the paired differences over the seeds (run SD); the standard deviation of $\Delta$ over 200 bootstrap replicas of the test jets, the QCD and the resonant jets each resampled with replacement, the same jets for every network (bootstrap SD); and $\Delta/\sigma$, $\sigma^{2}$ the sum of the two squares. Bold: $|\Delta| > 3\sigma$, a difference that stands. At the QCD efficiencies $\epsB$ of table~\ref{tab:sculpt} and at the cut keeping half of the resonant jets ($\epsS = 50\%$).}
 \label{tab:sculptboot}
-\begin{adjustbox}{max width=\linewidth}
-\pending{no result yet}
+\par\medskip
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.55\textheight}
+\begin{tabular}{lcccc}
+\toprule
+ & $\Delta$ & run SD & bootstrap SD & $\Delta/\sigma$ \\
+\midrule
+\multicolumn{5}{l}{\textit{$\epsB = 1\%$}} \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.13 & 0.38 & \textbf{3.07} \\
+\Kmid{} classes $-$ \Kfull{} classes & 0.67 & 0.52 & 0.35 & 1.06 \\
+\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.36 & 0.56 & 0.41 & $-$1.96 \\
+\Kres{} classes + mass $-$ \Kres{} classes & $-$0.12 & 0.06 & 0.43 & $-$0.28 \\
+no flavor boundary $-$ \Kfull{} classes & 0.59 & 0.22 & 0.46 & 1.17 \\
+$b$-quark boundary $-$ \Kfull{} classes & 0.70 & 0.27 & 0.44 & 1.35 \\
+random flavor boundary $-$ \Kfull{} classes & 0.36 & 0.14 & 0.41 & 0.83 \\
+\midrule
+\multicolumn{5}{l}{\textit{$\epsB = 10\%$}} \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 0.19 & 0.26 & 0.08 & 0.71 \\
+\Kmid{} classes $-$ \Kfull{} classes & 0.36 & 0.09 & 0.07 & \textbf{3.16} \\
+\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$0.73 & 0.57 & 0.08 & $-$1.27 \\
+\Kres{} classes + mass $-$ \Kres{} classes & $-$0.94 & 0.26 & 0.09 & \textbf{$-$3.38} \\
+no flavor boundary $-$ \Kfull{} classes & 0.09 & 0.31 & 0.09 & 0.29 \\
+$b$-quark boundary $-$ \Kfull{} classes & 0.02 & 0.12 & 0.08 & 0.12 \\
+random flavor boundary $-$ \Kfull{} classes & $-$0.06 & 0.25 & 0.09 & $-$0.23 \\
+\midrule
+\multicolumn{5}{l}{\textit{$\epsS = 50\%$}} \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.27 & 0.52 & 2.10 \\
+\Kmid{} classes $-$ \Kfull{} classes & 0.91 & 0.58 & 0.43 & 1.26 \\
+\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.58 & 0.11 & 0.60 & $-$2.59 \\
+\Kres{} classes + mass $-$ \Kres{} classes & $-$0.10 & 0.51 & 0.54 & $-$0.14 \\
+no flavor boundary $-$ \Kfull{} classes & 0.41 & 0.18 & 0.61 & 0.65 \\
+$b$-quark boundary $-$ \Kfull{} classes & 0.36 & 1.18 & 0.57 & 0.28 \\
+random flavor boundary $-$ \Kfull{} classes & 0.45 & 0.98 & 0.56 & 0.40 \\
+\bottomrule
+\end{tabular}
 \end{adjustbox}
-\end{table}
+\end{minipage}
+\end{center}
