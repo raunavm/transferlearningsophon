@@ -49,14 +49,12 @@ def test_the_main_text_is_the_pis_list_in_order():
     assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:jetclass", "tab:benchtop + tab:benchqg", "tab:mass",
                                                           "tab:xbx", "tab:xbxrej"]
     ft = "waits for the fine-tuned read-out"
-    assert G.PROVISIONAL == {"F10b": "main text if at 1% QCD efficiency 17 classes sculpt more than 188 and 17 + mass "
-                                     "less than 17, each by more than 3 sigma",
-                             "F11": "waits for the samples", "F4-mech-ft": ft, "F10-ft": ft,
+    assert G.PROVISIONAL == {"F11": "waits for the samples", "F4-mech-ft": ft, "F10-ft": ft,
                              "tab:xbx": "waits for the samples", "tab:xbxrej": "waits for the samples",
                              "tab:pairs": "its fine-tuned columns wait for the fine-tuned read-out",
                              "tab:coarse": "a cell waits for its run"}
     assert set(G.PROVISIONAL) <= set(G.TIER) and all(v.isascii() for v in G.PROVISIONAL.values())    # the book's boxes
-    # F10b in the appendix between F10a and F10c, F10b-flav beside it, until the bootstrap decides
+    # F10b in the appendix between F10a and F10c, F10b-flav beside it: the bootstrap's 17 + mass - 17 at 1% is -2.0 sigma
     appendix = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
     assert appendix[appendix.index("F10a"):appendix.index("F10c") + 1] == ["F10a", "F10b", "F10b-flav", "F10c"]
     assert G.TIER["tab:sculpt"] == G.TIER["tab:compute"] == G.APPENDIX and G.TIER["tab:massdetail"] == G.SUPPLEMENT
@@ -65,7 +63,7 @@ def test_the_main_text_is_the_pis_list_in_order():
     assert tables[tables.index("tab:sculpt") + 1] == "tab:sculptboot"
     assert G.BACKS["tab:sculptboot"] == (f"The sculpting differences and their combined uncertainties that decide "
                                          f"{G.number('F10b')}'s tier.")
-    for k in ("F10b", "F10b-flav", "F10a-flav"):
+    for k in ("F10b", "F10b-flav", "F10c", "F10a-flav"):
         assert G.evidence(k) == (k, "tab:sculpt", "tab:sculptboot")
 
 
@@ -87,7 +85,7 @@ def test_numbers_count_within_each_tier_and_kind():
     assert G.number("F1") == "Fig. 1" and G.number("F3-main") == "Fig. 4" and G.number("FJ") == "Fig. A1"
     assert G.number("tab:jetclass") == "Table 1" and G.number("tab:probes") == "Table A1"
     assert G.number("FJ-ctrl") == "Fig. S1" and G.number("tab:perrun") == "Table S1"
-    assert G.place("F10b") == f"Appendix, Fig. A10; {G.PROVISIONAL['F10b']}"
+    assert G.place("F10b") == "Appendix, Fig. A10" and G.place("F11") == "Main text, Fig. 9; waits for the samples"
     assert G.number("tab:sculptboot") == "Table A14" and G.number("tab:boot") == "Table A15"
 
 

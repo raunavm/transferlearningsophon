@@ -27,7 +27,7 @@ def test_rows_merge_consecutive_items_of_one_sentence_and_carry_their_evidence()
     rows = V._rows(flav)
     also = f" [also {G.number('tab:sculpt')}, {G.number('tab:sculptboot')}]"
     assert [r[0] for r in rows] == ["Fig. A11", "Fig. A12", "Fig. A13"] and rows[0][2] == rows[2][2] == G.SCULPT_FLAV + also
-    assert V._rows(tuple(i for i in G.FIGURES if i[0] == "F10b"))[0][1] == f"F10b; {G.PROVISIONAL['F10b']}"
+    assert V._rows(tuple(i for i in G.FIGURES if i[0] == "F10b"))[0][1] == "F10b"
 
 
 def test_the_map_places_every_table_once_and_lists_the_rest():

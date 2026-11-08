@@ -84,7 +84,7 @@ CHANGES = {
     "F10a": f"CHANGED: {CAPTION}.",
     "F10b": f"CHANGED: bands of the spread over pretraining runs (SD over three, range over two); the flavor-boundary "
             f"partitions moved to F10b-flav, leaving the label sets and the two mass models; random-selection floor "
-            f"kept; moved to the appendix, main text if at 1% 17 - 188 > 0 and 17 + mass - 17 < 0, each beyond 3 sigma; "
+            f"kept; in the appendix, as the sculpting test on the map page decides; "
             f"{NAMES}; {CAPTION}.",
     "F10b-flav": "NEW: F10b's form for the three flavor-boundary partitions with 188 classes for reference, moved out of "
                  "the main-text F10b (appendix).",

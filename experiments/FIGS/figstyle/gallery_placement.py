@@ -24,12 +24,11 @@ F10B_RULE = (("17-188", +1), ("17mass-17", -1))
 F10B_WP = "eps_b=0.01"
 # a placement that waits on a result; the two tables only while they hold pending cells (make_results_book sets a
 # PROVISIONAL table with its pending cells, and a box for a PROVISIONAL figure not drawn yet)
-PROVISIONAL = {"F10b": "main text if at 1% QCD efficiency 17 classes sculpt more than 188 and 17 + mass less than 17, "
-                       "each by more than 3 sigma",
-               "F11": SAMPLES, "F4-mech-ft": FT_READOUT, "F10-ft": FT_READOUT, "tab:xbx": SAMPLES, "tab:xbxrej": SAMPLES,
+PROVISIONAL = {"F11": SAMPLES, "F4-mech-ft": FT_READOUT, "F10-ft": FT_READOUT, "tab:xbx": SAMPLES, "tab:xbxrej": SAMPLES,
                "tab:pairs": "its fine-tuned columns wait for the fine-tuned read-out",
                "tab:coarse": "a cell waits for its run"}
-SCULPT_FLAV = "At 1% QCD efficiency the flavor-boundary partitions sculpt between the 188- and the 17-class heads."
+SCULPT_FLAV = ("No flavor-boundary partition sculpts the QCD mass differently from 188 classes by more than three times "
+               "the uncertainty.")
 FJ_S = "Cited beside [[FJ]]: partitions, linear probes, from scratch."
 SCATTER_S = "Cited from [[F3-main]]: the other scatter panels."
 XBX = "X→bb̄ and X→bs transfer: written when the samples arrive."
@@ -65,10 +64,11 @@ _FIGURES = (
                       "classes stay lowest."),
     ("F9a", APPENDIX, "The mass output's response is narrower than the soft-drop mass's."),
     ("F10a", APPENDIX, "Cuts on the pretraining head reshape the QCD mass at 10% and 1% efficiency."),
-    ("F10b", APPENDIX, "At 1% QCD efficiency the 17-class head sculpts the QCD mass more than the 188-class head and "
-                       "the mass regression brings it back; at 10% the label sets lie within the run spread."),
+    ("F10b", APPENDIX, "At 1% QCD efficiency the 17-class head sculpts the QCD mass more than the 188-class head; a "
+                       "reduction by the mass regression is not resolved."),
     ("F10b-flav", APPENDIX, SCULPT_FLAV),
-    ("F10c", APPENDIX, "At 50% resonant efficiency the 188-class head rejects slightly more QCD than the 17-class head."),
+    ("F10c", APPENDIX, "At 50% resonant efficiency no label-set difference in QCD mass sculpting exceeds three times "
+                       "its uncertainty."),
     ("F10a-flav", APPENDIX, SCULPT_FLAV),
     ("F10-ft", APPENDIX, "After fine-tuning on JetClass-II the same comparison on natural-mix test jets; the sentence "
                          "waits for the read-out."),
@@ -122,7 +122,7 @@ EVIDENCE = {
     "F4-mech": ("tab:pairs",), "F8": ("tab:ft",), "A8": ("tab:ft",), "F9b": ("tab:massdetail",),
     "F4-other": ("tab:pairs",), "F4-mech-ft": ("tab:pairs",), "F6": ("tab:benchtop + tab:benchqg", "tab:boot"),
     "F6-app": ("tab:ft",), "A10": ("tab:probes",), "F9a": ("tab:massdetail",),
-    **{k: ("tab:sculpt", "tab:sculptboot") for k in ("F10b", "F10b-flav", "F10a-flav")}, "tab:mass": ("tab:massdetail",),
+    **{k: ("tab:sculpt", "tab:sculptboot") for k in ("F10b", "F10b-flav", "F10c", "F10a-flav")}, "tab:mass": ("tab:massdetail",),
 }
 TIER = {k: t for k, t, _ in _FIGURES + _TABLES}
 # the PI's book numbers (2026-11-08 message) -> gallery ids
