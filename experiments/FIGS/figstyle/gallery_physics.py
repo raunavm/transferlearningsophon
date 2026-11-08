@@ -463,6 +463,11 @@ def draw_f10a_mass(path: pathlib.Path) -> None:
                    "QCD jet mass before and after a cut on the pretraining head, with mass regression")
 
 
+def draw_f10a_flav(path: pathlib.Path) -> None:
+    _sculpt_panels(path, tuple(S.CONTROLS),
+                   "QCD jet mass before and after a cut on the pretraining head, flavor-boundary partitions")
+
+
 def draw_f10b(path: pathlib.Path) -> None:
     """Round 4: exact size, one 10 cm panel, the legend above it; the label sets solid and filled, the mass models
     dashed and hollow (mode "mass"); both axes logarithmic, labelled in plain numbers."""
@@ -471,7 +476,7 @@ def draw_f10b(path: pathlib.Path) -> None:
     ax = S.axes_cm(fig, 3.2, 2.4, 9.6, 7.1)
     S.fine_grid(ax)
     drawn = 0
-    for row in SCULPT_ROWS:
+    for row in SCULPT_ROWS + tuple(S.CONTROLS):
         have = [sc[m]["curve"] for m in RUNS[row] if m in sc]
         if not have:
             continue
@@ -505,7 +510,7 @@ def draw_f10b(path: pathlib.Path) -> None:
 
 
 # ------------------------------------------------------------------ F10c (DisCo Fig. 3's plane)
-F10C_KEY = "at_eps_s50"     # per run, in its sculpting file: {"R": 1/eps_B, "jsd": Jensen-Shannon divergence} at 50% eps_S
+F10C_KEY = "sig_eff_50"     # per run (head/sculpting_v3): {"rejection": 1/eps_B, "jsd": Jensen-Shannon divergence} at 50% eps_S
 F10C_ROWS = tuple(S.LEVELS) + S.MASS + tuple(S.CONTROLS)
 
 
@@ -521,14 +526,14 @@ def draw_f10c(path: pathlib.Path) -> None:
         pts = [sc[m][F10C_KEY] for m in RUNS[row] if F10C_KEY in sc.get(m, {})]
         if not pts:
             continue
-        (x, xl, xh), (y, yl, yh) = (P.F._spread(v) for v in ([p["R"] for p in pts], [1 / p["jsd"] for p in pts]))
+        (x, xl, xh), (y, yl, yh) = (P.F._spread(v) for v in ([p["rejection"] for p in pts], [1 / p["jsd"] for p in pts]))
         mode = "mass" if row in S.MASS else "ft"
         ax.errorbar(x, y, xerr=None if xl is None else [[xl], [xh]], yerr=None if yl is None else [[yl], [yh]],
                     linestyle="none", color=S.SERIES[row], elinewidth=S.LW_THIN, capsize=0,
                     **S.marker(row, mode, 5), label=S.LEGEND[row])
         drawn += 1
     if not drawn:
-        raise Absent(f"no {F10C_KEY} in the sculpting files (head/curves_v2/*_sculpting_v2.json)")
+        raise Absent(f"no {F10C_KEY} in the sculpting files (head/sculpting_v3/*_sculpting.json)")
     _log_y(ax, "x")
     _log_y(ax)
     S.heading(fig, "Cuts on the pretraining head: mass sculpting against rejection at 50% signal efficiency")
@@ -790,12 +795,17 @@ F10A_MASS_CAPTION = (
     "mass regression, used without further training: soft-drop mass of QCD test jets before any selection and "
     "after cuts on 1 - g_QCD at QCD efficiencies eps_B of 10% and 1% (mean of two runs), with the ratio to the "
     "inclusive distribution below. The axis stops at 260 GeV.")
+F10A_FLAV_CAPTION = (
+    "Cuts on the pretraining head of networks pretrained on JetClass-II with 17 classes and no flavor boundary, a "
+    "b-quark boundary or a random flavor boundary, used without further training: soft-drop mass of QCD test jets "
+    "before any selection and after cuts on 1 - g_QCD at QCD efficiencies eps_B of 10% and 1% (mean of two runs), "
+    "with the ratio to the inclusive distribution below. The axis stops at 260 GeV.")
 F10B_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (solid, "
-    "three runs) and with 162 and 17 classes and mass regression (dashed, two runs): Jensen-Shannon distance "
+    "three runs), with 162 and 17 classes plus mass regression (dashed) and with three 17-class flavor-boundary "
+    "partitions (two runs each): Jensen-Shannon distance "
     "(base 2) between the soft-drop mass of all QCD test jets and of those passing a cut on 1 - g_QCD, against "
-    "the cut's QCD efficiency eps_B. Black dashed: the distance a random selection of as many QCD jets gives, the "
-    "statistical floor.")
+    "the cut's QCD efficiency eps_B. Black dashed: the statistical floor, a random selection of as many QCD jets.")
 F10C_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II, used without further training, in the "
     "plane of the DisCo paper's Fig. 3: the inverse Jensen-Shannon divergence between the soft-drop mass of all "
@@ -914,6 +924,10 @@ PAGES = [
     Page("F10a-mass", "Mass sculpting: the mass-regression models (appendix)", ["2604.09809/fig8.png"],
          "CMS JME-25-001 Fig. 8", F10A_MASS_CAPTION, "F10a's form for the two mass-regression models (PI, round 4).",
          draw_f10a_mass, "Mean of two runs."),
+    Page("F10a-flav", "Mass sculpting: the flavor-boundary partitions (appendix)", ["2604.09809/fig8.png"],
+         "CMS JME-25-001 Fig. 8", F10A_FLAV_CAPTION,
+         "F10a's form for the three 17-class flavor-boundary partitions (PI, 2026-11-07, M4).", draw_f10a_flav,
+         "Mean of two runs."),
     Page("F10b", "Mass sculpting: how much", ["2604.09809/fig9.png"], "CMS JME-25-001 Fig. 9 left", F10B_CAPTION,
          "One panel: CMS's right panel (against pT) is not drawn, since our curves hold all jet pT. Twelve efficiencies "
          "on a log axis rising to the right, the files' grid and the direction of the efficiency axis in Sophon Fig. 2 "

@@ -148,7 +148,9 @@ def inputs(M) -> dict:
     xbx = DATA / "xbx"
     return {"fits": fits, "raw": raw, "mlp": M.load_mlp(DATA), "fill": M._load(DATA / M.FITS_FILL),
             "per": M.load_ft(DATA)[1], "atlas": M._load(DATA / "head" / "atlas_res"),
-            "sculpt": F._curves("sculpting_v2"),
+            # mass_sculpting.py of 2026-11-07 (eps_S, R50, the flavor controls) replaces the older files run by run
+            "sculpt": {**F._curves("sculpting_v2"), **{p.stem.removesuffix("_sculpting"): json.loads(p.read_text())
+                                                       for p in sorted((DATA / "head/sculpting_v3").glob("*.json"))}},
             "census": json.loads(census.read_text()) if census.exists() else None,
             "xbx": _xr().load(xbx) if xbx.is_dir() else {}, "xbx_scratch": M.xbx_scratch(DATA),
             "roc": M.V4.load_roc(DATA)}

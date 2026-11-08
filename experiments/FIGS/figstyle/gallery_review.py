@@ -54,6 +54,7 @@ REVIEW = {
     "A17-res": (3, FIXED + BINNED_NOTE),
     "A17-qcd": (3, FIXED + BINNED_NOTE),
     "A17-probe": (3, FIXED + BINNED_NOTE),
+    "F10a-flav": (1, "new page, not yet reviewed."),
     "F10a-mass": (3, FIXED + "its ratio range differs slightly from F10a's (each set by its own points)."),
     "INVENTORY": (1, FIXED.rstrip("; ") + "."),
 }
@@ -79,7 +80,7 @@ CHANGES = {
     "F9b": f"CHANGED: soft-drop mass off the axis as arrows at the edge, values in the panel title; one hollow marker per "
            f"mass-regression model; {NAMES}; {CAPTION}.",
     "F10a": f"CHANGED: {CAPTION}.",
-    "F10b": f"CHANGED: random-selection floor drawn (black dashed), y axis extended to hold it; {NAMES}; {CAPTION}.",
+    "F10b": f"CHANGED: random-selection floor drawn (black dashed), y axis extended to hold it; the three flavor-boundary partitions added (M4); {NAMES}; {CAPTION}.",
     "F10c": "NEW: 1/JSD50 against R50 per model, DisCo Fig. 3's plane, bars of the spread over pretraining runs on both "
             "axes (absent until the at_eps_s50 read-out lands).",
     "F11": f"CHANGED: {NAMES}; {CAPTION}.",
@@ -110,4 +111,5 @@ CHANGES = {
     "A17-probe": f"CHANGED: one hollow marker per mass-regression model in all three appendix mass figures; soft-drop arrows; "
                  f"{NAMES}; {CAPTION}.",
     "F10a-mass": f"CHANGED: {CAPTION}.",
+    "F10a-flav": "NEW: F10a's form for the three flavor-boundary partitions (M4).",
 }

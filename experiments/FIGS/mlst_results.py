@@ -1609,18 +1609,34 @@ def _sculpt_floor_distance(sculpt: dict, eff: str) -> float:
 
 
 def table_sculpt(sculpt, runs, fmt_pm, rows) -> str:
-    """A14: Jensen-Shannon distance (x 10^2) between the soft-drop mass distributions of all QCD test
-    jets and of those passing a cut on 1 - p_QCD at the stated QCD efficiency, and below the runs the
-    distance a random selection of as many QCD jets shows."""
-    lines = [r"\begin{tabular}{lcc}", r"\toprule",
-             r" & " + " & ".join(rf"$\epsB = {100 * float(e):g}\%$" for e in SCULPT_EFFS)
-             + r" \\", r"\midrule"]
+    """A14 with M2 (PI 2026-11-07): at each QCD efficiency, the Jensen-Shannon distance (x 10^2) between the
+    soft-drop mass distributions of all QCD test jets and of those passing the cut on 1 - p_QCD, and the share of
+    resonant test jets passing the same cut; at the cut keeping half of the resonant jets (DisCo's working point),
+    the QCD rejection R50 and the distance there. Below the runs the distance a random selection of as many QCD
+    jets shows. The 50% columns need the files of mass_sculpting.py with sig_eff_50."""
+    v3 = all("sig_eff_50" in d for d in sculpt.values())
+    lines = [r"\begin{tabular}{l" + "cc" * len(SCULPT_EFFS) + ("cc" if v3 else "") + "}", r"\toprule",
+             " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{$\epsB = {100 * float(e):g}\%$}}" for e in SCULPT_EFFS)
+             + (r" & \multicolumn{2}{c}{$\varepsilon_S = 50\%$}" if v3 else "") + r" \\",
+             "".join(r"\cmidrule(lr){%d-%d}" % (2 + 2 * q, 3 + 2 * q) for q in range(len(SCULPT_EFFS) + v3)),
+             " & " + " & ".join([r"distance & $\varepsilon_S$"] * len(SCULPT_EFFS))
+             + (r" & $R_{50}$ & distance" if v3 else "") + r" \\", r"\midrule"]
+    eff_s = lambda m, e: None if (d := sculpt.get(m)) is None else d["working_points"][e]["eff_sig"]
+    at50 = lambda m, k: None if (d := sculpt.get(m)) is None else d["sig_eff_50"][k]
     for arm in rows:
-        lines.append(LABEL[arm] + " & " + " & ".join(
-            _cell([_sculpt(sculpt, m, e) for m in runs[arm]], len(runs[arm]), fmt_pm, 1e2) for e in SCULPT_EFFS) + r" \\")
+        ms, n = runs[arm], len(runs[arm])
+        cells = []
+        for e in SCULPT_EFFS:
+            cells += [_cell([_sculpt(sculpt, m, e) for m in ms], n, fmt_pm, 1e2),
+                      _cell([eff_s(m, e) if v3 else None for m in ms], n, fmt_pm, frac=True) if v3 else "--"]
+        if v3:
+            cells += [_cell([at50(m, "rejection") for m in ms], n, fmt_pm),
+                      _cell([None if (x := at50(m, "jsd")) is None else math.sqrt(x) for m in ms], n, fmt_pm, 1e2)]
+        lines.append(LABEL[arm] + " & " + " & ".join(cells) + r" \\")
     if sculpt:
         lines += [r"\midrule", "random selection of as many QCD jets & "
-                  + " & ".join(_cell([1e2 * _sculpt_floor_distance(sculpt, e)], 1, fmt_pm) for e in SCULPT_EFFS) + r" \\"]
+                  + " & ".join(_cell([1e2 * _sculpt_floor_distance(sculpt, e)], 1, fmt_pm) + " & --" for e in SCULPT_EFFS)
+                  + (" & -- & --" if v3 else "") + r" \\"]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -1653,12 +1669,47 @@ def table_qcdhf(hf, runs, fmt_pm, rows) -> str:
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
+COARSE_TARGETS = (("R42_Q1", r"43 groups"), ("R16_Q1", r"17 groups"), ("FLAV_F0", r"17 groups, no flavor boundary"))
+
+
+def table_coarse(co, runs, fmt_pm, rows) -> str:
+    """Should-add 5 (PI 2026-11-07): linear probes of every network on the coarse targets of class-balanced
+    JetClass-II at 1e6 (probe_bal.py --coarse): the 43- and 17-group levels of the hierarchy and the 17-class
+    partition with no flavor boundary; accuracy and the macro AUC over the target's groups."""
+    def val(m, ck, t, k):
+        c = co.get(m, {}).get("cells", {}).get(ck, {}).get("jc2bal_coarse", {}).get(t, {}).get("1000000")
+        return None if c is None else c[k]
+    n = len(COARSE_TARGETS)
+    out = [r"\begin{tabular}{l" + "cc" * n + "}", r"\toprule",
+           " & " + " & ".join(r"\multicolumn{2}{c}{target: %s}" % w for _, w in COARSE_TARGETS) + r" \\",
+           "".join(r"\cmidrule(lr){%d-%d}" % (2 + 2 * i, 3 + 2 * i) for i in range(n)),
+           " & " + " & ".join(["accuracy & macro AUC"] * n) + r" \\", r"\midrule"]
+    for arm in rows:
+        ms, ck = ((INIT_MODELS, "init") if arm == INIT else (INIT_MODELS, "init_bn") if arm == INIT_BN
+                  else (runs[arm], PRIMARY))
+        cells = [_cell([val(m, ck, t, k) for m in ms], len(ms), fmt_pm, frac=True)
+                 for t, _ in COARSE_TARGETS for k in ("accuracy", "macro_auc_ovr")]
+        out.append((LABEL[arm] if arm in (INIT, INIT_BN) else _row(arm, runs)) + " & " + " & ".join(cells) + r" \\")
+    return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
+
+
 def qcdhf_fill(hf) -> dict:
     """The most charm and light QCD jets passing the R50 cut in any run of a pretrained network, for the caption."""
     n = {b: max((c["n_bkg_pass"] for d in hf.values() for ck, cell in d.get("cells", {}).items() if ck == PRIMARY
                  if (c := cell.get("background", {}).get(b, {}).get("natural", {}).get(QCDHF_WP))), default=0)
          for b in ("c", "light")}
     return {"__QCDHF_C__": str(n["c"]), "__QCDHF_LIGHT__": str(n["light"])}
+
+
+def sculpt_fill(sculpt, runs) -> dict:
+    v3 = all("sig_eff_50" in d for d in sculpt.values())
+    flav = any(m in sculpt for a in FLAV for m in runs[a])
+    return {"__SCULPT_FLAV__": ", and with the three 17-class partitions with no, a $b$-quark and a random flavor "
+                               "boundary" if flav else "",
+            "__SCULPT_SIG__": (r" Beside each distance, $\varepsilon_S$ is the share of resonant test jets passing "
+                               r"the same cut. The last two columns use the cut that keeps half of the resonant test "
+                               r"jets: the QCD rejection there, $R_{50} = 1/\epsB$, and the distance at that cut."
+                               if v3 else "")}
 
 
 def _curve(sculpt_v2: dict, m: str) -> dict:
@@ -3420,6 +3471,12 @@ CAPTIONS = {
             "them on the natural-composition test set beside the levels of the hierarchy on that set, and no $\\rho$ "
             "crosses the two test sets. Last, the linear probe on the 512-unit hidden layer of the \\Kfull-class models' "
             "pretraining head beside the one on the class token, with the missing inputs also set to zero. " + SPREAD + " " + KIN_NOTE),
+    "coarse": ("tab:coarse", "Linear probes on the frozen features of networks pretrained on JetClass-II, trained on "
+               "one million class-balanced JetClass-II jets and scored on its class-balanced test set, with the "
+               "classes merged into coarser targets: the 43 and the 17 groups of the class hierarchy, and the 17 "
+               "groups of the partition with no flavor boundary. Accuracy and the area under the curve averaged over "
+               "the target's groups; the test set is balanced over the 188 native classes, not over the groups. "
+               + SPREAD),
     "qcdhf": ("tab:qcdhf", "Linear probes on the frozen features of networks pretrained on JetClass-II, trained on "
               "one million class-balanced JetClass-II jets and scored on its class-balanced test set: background "
               "rejection $R_{50}$ of Sophon's $X\\to b\\bar b$ discriminant, the $X\\to b\\bar b$ probability over "
@@ -3481,9 +3538,9 @@ CAPTIONS = {
                     "generator-level soft-drop mass; __BLANK__ The $p_{\\mathrm{T}}$ bins hold every jet, also those with a "
                     "generator-level mass below 20~GeV, whose response is very broad: hence a soft-drop resolution of QCD "
                     "jets above 1 at high $p_{\\mathrm{T}}$; the generator-mass bins span 20--500~GeV. " + SPREAD_MASS),
-    "sculpt": ("tab:sculpt", "Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, on the JetClass-II test jets: Jensen--Shannon distance (base 2) $\\times10^{2}$ between the "
+    "sculpt": ("tab:sculpt", "Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with 162 and 17 classes plus a mass regression__SCULPT_FLAV__, on the JetClass-II test jets: Jensen--Shannon distance (base 2) $\\times10^{2}$ between the "
                "$m_{\\mathrm{SD}}$ distributions (__SCULPT_BINS__) of all QCD test jets and of those passing a cut on "
-               "$1-g_{\\mathrm{QCD}}$ at the QCD efficiency $\\epsB$ given; lower is less sculpting. The last row is the "
+               "$1-g_{\\mathrm{QCD}}$ at the QCD efficiency $\\epsB$ given; lower is less sculpting.__SCULPT_SIG__ The last row is the "
                "distance expected for a random selection of as many of the QCD test jets (drawn without replacement). "
                + SPREAD_MASS),
     "ft": ("tab:ft", "Fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, and the network trained from scratch, on each "
@@ -3604,7 +3661,7 @@ PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes
                 ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None), ("fill_main", "mlst_fill_main", True, None),
                 ("jc1_class_auc", "mlst_jc1_class_auc", True, None),
                 ("mass", "mlst_mass", False, None), ("mass_detail", "mlst_mass_detail", True, {"__BLANK__": ""}),
-                ("sculpt", "mlst_sculpt", False, {"__SCULPT_BINS__": r"\pending{bins}"}), ("ft", "mlst_ft", True, None),
+                ("sculpt", "mlst_sculpt", True, {"__SCULPT_BINS__": r"\pending{bins}", "__SCULPT_FLAV__": "", "__SCULPT_SIG__": ""}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, {"__JC2COMP__": "class-balanced"}),
                 ("bench_top", "mlst_bench_top", True, None), ("bench_qg", "mlst_bench_qg", True, None),
                 ("xbx", "mlst_xbx", False, None), ("xbx_rej", "mlst_xbx_rej", True, None),
@@ -3613,6 +3670,7 @@ PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes
                 ("partrepro", "mlst_partrepro", False, None), ("compute", "compute", False, None),
                 ("jetclass_all", "mlst_jetclass_all", True, None), ("jetclass_probe", "mlst_jetclass_probe", True, None),
                 ("jetclass_nbkg", "mlst_jetclass_nbkg", True, None),
+                ("coarse", "mlst_coarse", True, None), ("qcdhf", "mlst_qcdhf", False, {"__QCDHF_C__": r"\pending{n}", "__QCDHF_LIGHT__": r"\pending{n}"}),
                 ("jetclass", "mlst_jetclass", True,
                  {k: r"\pending{n}" for k in ("__WPHQQL__", "__WPTBL__", "__MINBKG__", "__MINBKGPC__", "__PART100__",
                                               "__AUCJETS__")}))
@@ -3847,7 +3905,7 @@ MODES = {"probes": "lp", "pairs": "lp", "bn": "lp", "balance": "lp", "fill": "lp
          "jetclass_probe": "lp", "ft_rej": "ft", "jetclass_all": "ft", "jetclass_nbkg": "ft", "rand_prong": "ft",
          "lrsweep": "ft", "probes_n": "lp", "ft": "ft", "per_class": "lp", "mlp": "mlp", "mass": "mlp",
          "bench_top": "ft", "bench_qg": "ft", "jetclass": "ft", "jc1_class_auc": ["ft", "lp"],
-         "sculpt": "output scores", "qcdhf": "lp"}
+         "sculpt": "output scores", "qcdhf": "lp", "coarse": "lp"}
 
 
 TOKEN = re.compile(re.escape(V4.TOK_OPEN) + r"(\w) ([^" + V4.TOK_CLOSE + r"]*)" + re.escape(V4.TOK_CLOSE))
@@ -4168,6 +4226,11 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     if fits3:
         bn_macros(em, fits3, runs, index)
         out["tables/mlst_bn.tex"] = _float("bn", table_bn(fits3, runs, TAB, ALL_ROWS))
+    co = _load(data / "linprobe/fits_v4_coarse")
+    if co:
+        out["tables/mlst_coarse.tex"] = _float("coarse", table_coarse(co, runs, TAB, ALL_ROWS + (INIT, INIT_BN)), True)
+    else:
+        missing.append("probes on the coarse targets -- experiments/FIGS/data/v2/linprobe/fits_v4_coarse/")
     hf = _load(data / "linprobe/fits_v4_qcdhf")
     if hf:
         out["tables/mlst_qcdhf.tex"] = _float("qcdhf", table_qcdhf(hf, runs, TAB, ALL_ROWS + (INIT, INIT_BN)),
@@ -4231,6 +4294,15 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     head = _load(data / "head")
     sculpt_v2 = {k.removesuffix("_sculpting_v2"): v for k, v in _load(data / "head" / "curves_v2").items()
                  if k.endswith("_sculpting_v2")}
+    # mass_sculpting.py with eps_S, R50 and the flavor controls (2026-11-07), one script version for every model:
+    # replaces both the working points and the curves once it holds every run the old files hold
+    v3 = {k.removesuffix("_sculpting"): v for k, v in _load(data / "head" / "sculpting_v3").items()}
+    old = {k.removesuffix("_sculpting") for k in head if k.endswith("_sculpting")}
+    if v3 and old <= set(v3):
+        head = {k: v for k, v in head.items() if not k.endswith("_sculpting")} | {f"{m}_sculpting": d for m, d in v3.items()}
+        sculpt_v2 = dict(v3)
+    elif v3:
+        missing.append(f"sculpting_v3 lacks {sorted(old - set(v3))}")
     sculpt = {**{k.removesuffix("_sculpting"): v for k, v in head.items() if k.endswith("_sculpting")}, **sculpt_v2}
     if sculpt:
         edges = {tuple(d["bins_jet_sdmass"]) for d in sculpt.values()}
@@ -4240,8 +4312,9 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         width = {round(b - a, 9) for a, b in zip(e, e[1:])}
         bins = (f"{len(e) - 1} bins of {width.pop():g}~GeV from {e[0]:g} to {e[-1]:g}~GeV" if len(width) == 1
                 else f"{len(e) - 1} bins from {e[0]:g} to {e[-1]:g}~GeV")
-        out["tables/mlst_sculpt.tex"] = _float("sculpt", table_sculpt(sculpt, runs, TAB, MAIN + MASS),
-                                               fill={"__SCULPT_BINS__": bins})
+        out["tables/mlst_sculpt.tex"] = _float("sculpt", table_sculpt(sculpt, runs, TAB, MAIN + MASS + (FLAV if any(
+            m in sculpt for a in FLAV for m in runs[a]) else ())), True,
+                                               fill={"__SCULPT_BINS__": bins, **sculpt_fill(sculpt, runs)})
         sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm)
     else:
         missing.append("mass sculpting -- experiments/FIGS/data/v2/head/*_sculpting.json")

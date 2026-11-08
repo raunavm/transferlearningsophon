@@ -55,6 +55,7 @@ ROWS = [
     ("A17-qcd", "appendix", "2×2 + ratio/RSD", "soft-drop, 2 mass outputs", "as F9b"),
     ("A17-probe", "appendix", "2×2 + ratio/RSD", "4 MLP probes, 2 mass outputs", LS + "; mass outputs dashed hollow"),
     ("F10a-mass", "appendix", "2 + ratios", "inclusive, 10%, 1%", "as F10a"),
+    ("F10a-flav", "appendix", "3 + ratios", "inclusive, 10%, 1%", "as F10a"),
 ]
 COLS = (("Figure", 0.0), ("Place", 2.15), ("Panels", 3.5), ("Series", 6.45), ("Encoding", 10.1))
 ROW_H = 0.5

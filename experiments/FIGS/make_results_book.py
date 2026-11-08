@@ -26,14 +26,14 @@ FIGS = ROOT / "figures" / "round4"
 
 MAIN = ["F2a", "F2b", "F3", "F4", "T:mlst_jetclass", "FJ", "FJ-ctrl", "PT",
         "T:mlst_bench_top", "F6", "T:mlst_fill_main", "T:mlst_bench_qg", "F8",
-        "F9a", "F9b", "T:mlst_mass", "F10a", "F10b"]
+        "F9a", "F9b", "T:mlst_mass", "F10a", "F10b", "F10c"]
 APPENDIX = ["VAL", "T:mlst_lrsweep", "T:mlst_fill", "T:mlst_mlp", "T:mlst_bn", "T:mlst_boot", "T:mlst_balance",
             "T:mlst_partrepro", "T:mlst_probes", "T:mlst_probes_n", "A10", "A8", "F6-app", "T:mlst_ft", "T:mlst_ft_rej",
             "T:mlst_per_run", "T:mlst_jetclass_all", "T:mlst_jetclass_probe", "T:mlst_jc1_class_auc", "FJ-app",
-            "FJ-ctrl-app", "FJ-s", "CONF", "T:mlst_jetclass_nbkg", "T:mlst_rand_prong", "T:mlst_pairs", "F4-app",
+            "FJ-ctrl-app", "FJ-s", "CONF", "T:mlst_jetclass_nbkg", "T:mlst_rand_prong", "T:mlst_pairs", "T:mlst_qcdhf", "T:mlst_coarse", "F4-app",
             "F3-scatter", "F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had",
             "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "T:mlst_mass_detail", "A17-res", "A17-qcd", "A17-probe",
-            "F10a-mass", "T:mlst_sculpt"]
+            "F10a-mass", "F10a-flav", "T:mlst_sculpt"]
 
 # the gallery captions are plain text; typeset their physics notation
 TEX = [("X→YY→bb̄qq", r"$X\to YY\to b\bar bqq$"), ("cc̄qq", r"$c\bar cqq$"), ("X→bc", r"$X\to bc$"),

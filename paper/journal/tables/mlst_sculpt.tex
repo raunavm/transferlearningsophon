@@ -1,22 +1,24 @@
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
-\caption{Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, on the JetClass-II test jets: Jensen--Shannon distance (base 2) $\times10^{2}$ between the $m_{\mathrm{SD}}$ distributions (24 bins of 20~GeV from 20 to 500~GeV) of all QCD test jets and of those passing a cut on $1-g_{\mathrm{QCD}}$ at the QCD efficiency $\epsB$ given; lower is less sculpting. The last row is the distance expected for a random selection of as many of the QCD test jets (drawn without replacement). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given. The random network without pretraining: three initializations.}
+\caption{Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with 162 and 17 classes plus a mass regression, on the JetClass-II test jets: Jensen--Shannon distance (base 2) $\times10^{2}$ between the $m_{\mathrm{SD}}$ distributions (24 bins of 20~GeV from 20 to 500~GeV) of all QCD test jets and of those passing a cut on $1-g_{\mathrm{QCD}}$ at the QCD efficiency $\epsB$ given; lower is less sculpting. The last row is the distance expected for a random selection of as many of the QCD test jets (drawn without replacement). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given. The random network without pretraining: three initializations.}
 \label{tab:sculpt}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcc}
+\begin{tabular}{lcccc}
 \toprule
- & $\epsB = 10\%$ & $\epsB = 1\%$ \\
+ & \multicolumn{2}{c}{$\epsB = 10\%$} & \multicolumn{2}{c}{$\epsB = 1\%$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & distance & $\varepsilon_S$ & distance & $\varepsilon_S$ \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{output scores} & 5.24\,$\pm$\,0.34 & 4.39\,$\pm$\,0.24 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{output scores} & 5.32\,$\pm$\,0.09 & 4.29\,$\pm$\,0.29 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{output scores} & 5.60\,$\pm$\,0.27 & 5.05\,$\pm$\,0.74 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{output scores} & 5.43\,$\pm$\,0.10 & 5.61\,$\pm$\,0.17 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{output scores} & 4.22, 4.64 & 4.24, 4.42 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{output scores} & 5.22, 4.23 & 4.05, 4.52 \\
+\mbox{pretrained on \Kfull{} classes,} \mbox{output scores} & 5.24\,$\pm$\,0.34 & -- & 4.39\,$\pm$\,0.24 & -- \\
+\mbox{pretrained on \Kres{} classes,} \mbox{output scores} & 5.32\,$\pm$\,0.09 & -- & 4.29\,$\pm$\,0.29 & -- \\
+\mbox{pretrained on \Kmid{} classes,} \mbox{output scores} & 5.60\,$\pm$\,0.27 & -- & 5.05\,$\pm$\,0.74 & -- \\
+\mbox{pretrained on \Kcoarse{} classes,} \mbox{output scores} & 5.43\,$\pm$\,0.10 & -- & 5.61\,$\pm$\,0.17 & -- \\
+\mbox{pretrained on \Kres{} classes + mass,} \mbox{output scores} & 4.22, 4.64 & -- & 4.24, 4.42 & -- \\
+\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{output scores} & 5.22, 4.23 & -- & 4.05, 4.52 & -- \\
 \midrule
-random selection of as many QCD jets & 0.94 & 3.13 \\
+random selection of as many QCD jets & 0.94 & -- & 3.13 & -- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{table}
+\end{table*}
