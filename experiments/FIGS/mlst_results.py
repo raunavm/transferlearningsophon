@@ -1624,6 +1624,43 @@ def table_sculpt(sculpt, runs, fmt_pm, rows) -> str:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
+QCDHF_BKG = (("bb", r"$b\bar b$"), ("b", "$b$"), ("qcd_all", "all QCD"))
+QCDHF_WP = "r50"           # at 30% (the text's R30) too few single-b jets pass; charm and light QCD pass hardly at all
+
+
+def _qcdhf(hf, m, ck, b) -> dict | None:
+    return hf.get(m, {}).get("cells", {}).get(ck, {}).get("background", {}).get(b, {}).get("natural", {}).get(QCDHF_WP)
+
+
+def table_qcdhf(hf, runs, fmt_pm, rows) -> str:
+    """Should-add 11 (PI 2026-11-07): rejection R50 of the QCD heavy-flavor subclasses by Sophon's X->bb
+    discriminant from the class-balanced linear probe at 1e6 (experiments/EVAL/qcd_hf_rejection.py), each subclass
+    weighted to its natural test composition; a dagger where fewer than JC1_MIN_BKG jets pass in a run."""
+    out = [r"\begin{tabular}{l" + "c" * len(QCDHF_BKG) + "}", r"\toprule",
+           r" & \multicolumn{%d}{c}{QCD background, $R_{50}$} \\" % len(QCDHF_BKG),
+           r"\cmidrule(lr){2-%d}" % (len(QCDHF_BKG) + 1), " & " + " & ".join(t for _, t in QCDHF_BKG) + r" \\",
+           r"\midrule"]
+    for arm in rows:
+        ms, ck = ((INIT_MODELS, "init") if arm == INIT else (INIT_MODELS, "init_bn") if arm == INIT_BN
+                  else (runs[arm], PRIMARY))
+        cells = []
+        for b, _ in QCDHF_BKG:
+            cs = [_qcdhf(hf, m, ck, b) for m in ms]
+            few = any(c is not None and c["n_bkg_pass"] < V4.JC1_MIN_BKG for c in cs)
+            cells.append(_cell([None if c is None else c["rejection"] for c in cs], len(ms), fmt_pm)
+                         + (r"$^\dagger$" if few else ""))
+        out.append((LABEL[arm] if arm in (INIT, INIT_BN) else _row(arm, runs)) + " & " + " & ".join(cells) + r" \\")
+    return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+def qcdhf_fill(hf) -> dict:
+    """The most charm and light QCD jets passing the R50 cut in any run of a pretrained network, for the caption."""
+    n = {b: max((c["n_bkg_pass"] for d in hf.values() for ck, cell in d.get("cells", {}).items() if ck == PRIMARY
+                 if (c := cell.get("background", {}).get(b, {}).get("natural", {}).get(QCDHF_WP))), default=0)
+         for b in ("c", "light")}
+    return {"__QCDHF_C__": str(n["c"]), "__QCDHF_LIGHT__": str(n["light"])}
+
+
 def _curve(sculpt_v2: dict, m: str) -> dict:
     """{efficiency: (distance, floor distance)} of a run's sculpting curve (curves_v2)."""
     d = sculpt_v2.get(m)
@@ -3383,6 +3420,14 @@ CAPTIONS = {
             "them on the natural-composition test set beside the levels of the hierarchy on that set, and no $\\rho$ "
             "crosses the two test sets. Last, the linear probe on the 512-unit hidden layer of the \\Kfull-class models' "
             "pretraining head beside the one on the class token, with the missing inputs also set to zero. " + SPREAD + " " + KIN_NOTE),
+    "qcdhf": ("tab:qcdhf", "Linear probes on the frozen features of networks pretrained on JetClass-II, trained on "
+              "one million class-balanced JetClass-II jets and scored on its class-balanced test set: background "
+              "rejection $R_{50}$ of Sophon's $X\\to b\\bar b$ discriminant, the $X\\to b\\bar b$ probability over "
+              "itself plus the summed QCD probabilities, at 50\\% $X\\to b\\bar b$ efficiency, for QCD jets with "
+              "two or more $b$ quarks, with one $b$ quark, and for all QCD jets, each subclass weighted to its share of "
+              "the natural test set. QCD jets with charm and no $b$ quark, and light QCD jets, are not shown: at most "
+              "__QCDHF_C__ and __QCDHF_LIGHT__ of them pass in any run of a pretrained network. $^\\dagger$: fewer than \\MlstMinBkgPass{} "
+              "jets pass in a run. " + SPREAD),
     "bn": ("tab:bn", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained and scored on "
            "JetClass-II (natural composition, largest training set), with the BatchNorm "
            "statistics as accumulated in pretraining and recomputed on training jets: for each, the AUC averaged over the classes "
@@ -3802,7 +3847,7 @@ MODES = {"probes": "lp", "pairs": "lp", "bn": "lp", "balance": "lp", "fill": "lp
          "jetclass_probe": "lp", "ft_rej": "ft", "jetclass_all": "ft", "jetclass_nbkg": "ft", "rand_prong": "ft",
          "lrsweep": "ft", "probes_n": "lp", "ft": "ft", "per_class": "lp", "mlp": "mlp", "mass": "mlp",
          "bench_top": "ft", "bench_qg": "ft", "jetclass": "ft", "jc1_class_auc": ["ft", "lp"],
-         "sculpt": "output scores"}
+         "sculpt": "output scores", "qcdhf": "lp"}
 
 
 TOKEN = re.compile(re.escape(V4.TOK_OPEN) + r"(\w) ([^" + V4.TOK_CLOSE + r"]*)" + re.escape(V4.TOK_CLOSE))
@@ -3834,6 +3879,8 @@ def _column_place(items: list) -> int:
         return 4
     pl = [_pdg_place(v[1]) for k, v in items if k == "p" and v[1] > 0]
     place = sorted(pl)[len(pl) // 2] if pl else 4 if big < 1 else 2 if big < 10 else 1 if big < 100 else 0
+    if any(0 < x < 100 for x in xs):    # a small value beside large ones (a random network's 12 beside 1,100)
+        place = max(place, 0)           # keeps its own digits: never "10 +- <10"
     return min(place, 3 - math.floor(math.log10(big))) if big > 0 else place
 
 
@@ -4121,6 +4168,12 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     if fits3:
         bn_macros(em, fits3, runs, index)
         out["tables/mlst_bn.tex"] = _float("bn", table_bn(fits3, runs, TAB, ALL_ROWS))
+    hf = _load(data / "linprobe/fits_v4_qcdhf")
+    if hf:
+        out["tables/mlst_qcdhf.tex"] = _float("qcdhf", table_qcdhf(hf, runs, TAB, ALL_ROWS + (INIT, INIT_BN)),
+                                              fill=qcdhf_fill(hf))
+    else:
+        missing.append("QCD heavy-flavor subclasses -- experiments/FIGS/data/v2/linprobe/fits_v4_qcdhf/")
     V4.gpu_bound_macro(em, fits, runs, comp, index)
     mlp_nat = load_mlp_natural(data)
     per_class_macros(em, fits, runs, root, index, fmt_pm, native_tex, mlp_nat)
