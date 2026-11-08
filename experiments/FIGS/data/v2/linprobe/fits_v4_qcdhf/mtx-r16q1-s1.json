@@ -1,0 +1,304 @@
+{
+ "cells": {
+  "best70": {
+   "background": {
+    "b": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.0007377049180327869,
+       "is_bound": false,
+       "n_bkg_pass": 18,
+       "rejection": 1355.5555555555557,
+       "rel_stat": 0.23570226039551587
+      },
+      "r50": {
+       "eps_b": 0.002663934426229508,
+       "is_bound": false,
+       "n_bkg_pass": 65,
+       "rejection": 375.3846153846154,
+       "rel_stat": 0.12403473458920847
+      }
+     },
+     "classes": [
+      170,
+      171,
+      172,
+      173,
+      174,
+      175,
+      176,
+      177,
+      178
+     ],
+     "n_bkg": 24400,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.00034310541169473474,
+       "is_bound": false,
+       "n_bkg_pass": 18,
+       "rejection": 2914.5561856940712,
+       "rel_stat": 0.41432001220334047
+      },
+      "r50": {
+       "eps_b": 0.0010644699707875191,
+       "is_bound": false,
+       "n_bkg_pass": 65,
+       "rejection": 939.4346740098053,
+       "rel_stat": 0.20063143215405643
+      }
+     }
+    },
+    "bb": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.0020323826299031233,
+       "is_bound": false,
+       "n_bkg_pass": 60,
+       "rejection": 492.0333333333333,
+       "rel_stat": 0.12909944487358055
+      },
+      "r50": {
+       "eps_b": 0.008298895738771087,
+       "is_bound": false,
+       "n_bkg_pass": 245,
+       "rejection": 120.49795918367346,
+       "rel_stat": 0.06388765649999399
+      }
+     },
+     "classes": [
+      161,
+      162,
+      163,
+      164,
+      165,
+      166,
+      167,
+      168,
+      169
+     ],
+     "n_bkg": 29522,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.004047946299943688,
+       "is_bound": false,
+       "n_bkg_pass": 60,
+       "rejection": 247.0388502964852,
+       "rel_stat": 0.17114376746371837
+      },
+      "r50": {
+       "eps_b": 0.016461331051797666,
+       "is_bound": false,
+       "n_bkg_pass": 245,
+       "rejection": 60.74842896077924,
+       "rel_stat": 0.08524164921912343
+      }
+     }
+    },
+    "c": {
+     "balanced": {
+      "r30": {
+       "eps_b": 6.666666666666667e-05,
+       "is_bound": false,
+       "n_bkg_pass": 2,
+       "rejection": 15000.0,
+       "rel_stat": 0.7071067811865475
+      },
+      "r50": {
+       "eps_b": 0.00013333333333333334,
+       "is_bound": false,
+       "n_bkg_pass": 4,
+       "rejection": 7500.0,
+       "rel_stat": 0.5
+      }
+     },
+     "classes": [
+      179,
+      180,
+      181,
+      182,
+      183,
+      184
+     ],
+     "n_bkg": 30000,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.0001921869105806471,
+       "is_bound": false,
+       "n_bkg_pass": 2,
+       "rejection": 5203.267990409636,
+       "rel_stat": 0.7071067811865476
+      },
+      "r50": {
+       "eps_b": 0.00030108747236700566,
+       "is_bound": false,
+       "n_bkg_pass": 4,
+       "rejection": 3321.293948693642,
+       "rel_stat": 0.5544261209648809
+      }
+     }
+    },
+    "light": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.0,
+       "is_bound": true,
+       "n_bkg_pass": 0,
+       "rejection": 15000.0,
+       "rel_stat": null
+      },
+      "r50": {
+       "eps_b": 0.0,
+       "is_bound": true,
+       "n_bkg_pass": 0,
+       "rejection": 15000.0,
+       "rel_stat": null
+      }
+     },
+     "classes": [
+      185,
+      186,
+      187
+     ],
+     "n_bkg": 15000,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.0,
+       "is_bound": true,
+       "n_bkg_pass": 0,
+       "rejection": null,
+       "rel_stat": null
+      },
+      "r50": {
+       "eps_b": 0.0,
+       "is_bound": true,
+       "n_bkg_pass": 0,
+       "rejection": null,
+       "rel_stat": null
+      }
+     }
+    },
+    "qcd_all": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.0008087179798224864,
+       "is_bound": false,
+       "n_bkg_pass": 80,
+       "rejection": 1236.525,
+       "rel_stat": 0.11180339887498948
+      },
+      "r50": {
+       "eps_b": 0.003174218070803259,
+       "is_bound": false,
+       "n_bkg_pass": 314,
+       "rejection": 315.03821656050957,
+       "rel_stat": 0.05643326479831003
+      }
+     },
+     "classes": [
+      161,
+      162,
+      163,
+      164,
+      165,
+      166,
+      167,
+      168,
+      169,
+      170,
+      171,
+      172,
+      173,
+      174,
+      175,
+      176,
+      177,
+      178,
+      179,
+      180,
+      181,
+      182,
+      183,
+      184,
+      185,
+      186,
+      187
+     ],
+     "n_bkg": 98922,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.00021282212441513197,
+       "is_bound": false,
+       "n_bkg_pass": 80,
+       "rejection": 4698.759599116654,
+       "rel_stat": 0.16896691053036286
+      },
+      "r50": {
+       "eps_b": 0.0007922091627489338,
+       "is_bound": false,
+       "n_bkg_pass": 314,
+       "rejection": 1262.2928981659848,
+       "rel_stat": 0.08360795255761816
+      }
+     }
+    }
+   },
+   "features": "/data/results/eval/v2_linprobe_bal/mtx-r16q1-s1/jc2bal/test/best70",
+   "max_abs_p_diff": 0.00024463673540797704,
+   "n_test": 903922,
+   "probs": "/data/results/eval/v2_linprobe_bal/fits_v4_probs/mtx-r16q1-s1/best70/jc2bal_N1000000.npz",
+   "probs_sha256": "911f0fb65ca952bd4aed95e29be3b1de812d4c02ece514762e68dfe288e9c074"
+  }
+ },
+ "census": "/data/finetune/jc2_bal/census.json",
+ "census_sha256": "a4379ee0817254cf5917316b155ac132cdd25884293fec8bbb6c0c1deca4f8eb",
+ "discriminant": "p(X->bb) / (p(X->bb) + sum of the 27 QCD p)",
+ "model": "mtx-r16q1-s1",
+ "script_sha256": "0efe034231a1c1896c430de8dbe2edd66ae39d6b3dc5f5fb7c6e4b72b99da95c",
+ "signal": "label_X_bb",
+ "subclasses": {
+  "b": [
+   "label_QCD_bccss",
+   "label_QCD_bccs",
+   "label_QCD_bcc",
+   "label_QCD_bcss",
+   "label_QCD_bcs",
+   "label_QCD_bc",
+   "label_QCD_bss",
+   "label_QCD_bs",
+   "label_QCD_b"
+  ],
+  "bb": [
+   "label_QCD_bbccss",
+   "label_QCD_bbccs",
+   "label_QCD_bbcc",
+   "label_QCD_bbcss",
+   "label_QCD_bbcs",
+   "label_QCD_bbc",
+   "label_QCD_bbss",
+   "label_QCD_bbs",
+   "label_QCD_bb"
+  ],
+  "c": [
+   "label_QCD_ccss",
+   "label_QCD_ccs",
+   "label_QCD_cc",
+   "label_QCD_css",
+   "label_QCD_cs",
+   "label_QCD_c"
+  ],
+  "light": [
+   "label_QCD_ss",
+   "label_QCD_s",
+   "label_QCD_light"
+  ]
+ },
+ "working_points": {
+  "r30": 0.3,
+  "r50": 0.5
+ }
+}
