@@ -1830,7 +1830,8 @@ def load_ft(data: pathlib.Path) -> tuple:
                            for n, seeds in by_n.items() if re.fullmatch(r"N\d+", n)}
                     for init, by_n in cells.items()}
     return tag, merge_budget(per, data / "budget" / "budget_metrics.json",
-                             data / "budget" / "budget_long_metrics.json"), absent
+                             data / "budget" / "budget_long_metrics.json",
+                             [data / "budget" / f for f in SCRATCH_FULL]), absent
 
 
 # 2026-10-31 (plan 3.1, 3.4): below the full set every fine-tuning is the fixed-budget recipe
@@ -1839,6 +1840,11 @@ def load_ft(data: pathlib.Path) -> tuple:
 BUDGET_TREE = {"top": ("leg_top", None), "qg": ("leg_qg", None), "qg_herwig": ("leg_qg", "herwig"),
                "jc1": ("leg2", None), "jc2": ("leg_jc2b", None), "jc2_qcd": ("leg_jc2b", None)}
 BUDGET_SCRATCH = "scratch"          # build_ft_budget_jobs.cell's directory for a from-scratch cell
+# From scratch with its whole flat+decay schedule (PI 2026-11-07; build_ft_budget_jobs scratch_full_cells and
+# long_scratch_full_cells, read out by job-budget-readout-e): {read-out: its cells}. Each replaces every
+# from-scratch cell of its (task, size), the fixed-budget and the long-budget alike; once both are pulled no
+# from-scratch cell stopped by the patience rule is read.
+SCRATCH_FULL = {"budget_fulldecay_metrics.json": 30, "budget_long_fulldecay_metrics.json": 6}
 
 
 def _budget_cells(path: pathlib.Path) -> dict:
@@ -1855,12 +1861,15 @@ def _budget_cells(path: pathlib.Path) -> dict:
     return out
 
 
-def merge_budget(per: dict, budget: pathlib.Path, long: pathlib.Path | None = None) -> dict:
+def merge_budget(per: dict, budget: pathlib.Path, long: pathlib.Path | None = None, full=()) -> dict:
     """per with the superseded cells removed (below FULL_N; every natural-mix JetClass-II cell) and
     the fixed-budget cells added, the from-scratch ones under SCRATCH. The long-budget cells at 1e6
     (budget_long, PI 2026-11-05) then replace every cell of the same task, model and size, the
     earlier fine-tuning and the fixed-budget alike: one recipe per (task, model, size). A tree of the
-    long budget with any cell still missing is not used at all, so a figure never mixes the two recipes."""
+    long budget with any cell still missing is not used at all, so a figure never mixes the two recipes.
+    Last, each full-schedule from-scratch read-out present (SCRATCH_FULL) replaces the from-scratch cells
+    of its (task, size); one with a missing cell, a cell count other than SCRATCH_FULL's or a pretrained
+    cell is FATAL, and with all of them present an old from-scratch budget cell left over is FATAL."""
     out = {key: {init: {n: v for n, v in by_n.items() if key in FULL_N and n >= FULL_N[key]}
                  for init, by_n in cells.items()} for key, cells in per.items()}
     for src in (budget, long):
@@ -1873,6 +1882,22 @@ def merge_budget(per: dict, budget: pathlib.Path, long: pathlib.Path | None = No
             if BUDGET_TREE[key][0] in unfinished:
                 continue
             out.setdefault(key, {}).setdefault(init, {})[n] = recs
+    old = {(key, n) for src in (budget, long) if src is not None
+           for key, init, n in _budget_cells(src) if init == SCRATCH}
+    new = set()
+    for src in full:
+        if not src.exists():
+            continue
+        doc = json.loads(src.read_text())
+        pre = sorted(k for k in doc["cells"] if k.split("/")[1] != BUDGET_SCRATCH)
+        if doc.get("missing") or len(doc["cells"]) != SCRATCH_FULL[src.name] or pre:
+            raise SystemExit(f"FATAL: {src}: {len(doc['cells'])} cells (expected {SCRATCH_FULL[src.name]}), missing "
+                             f"{doc.get('missing')}, pretrained {pre}; a from-scratch read-out is used complete or not at all")
+        for (key, _, n), recs in _budget_cells(src).items():
+            out.setdefault(key, {}).setdefault(SCRATCH, {})[n] = recs
+            new.add((key, n))
+    if full and all(src.exists() for src in full) and old - new:
+        raise SystemExit(f"FATAL: old from-scratch budget cells still read at {sorted(old - new)}")
     return out
 
 
@@ -2397,9 +2422,13 @@ def ft_gpu_types(data: pathlib.Path) -> tuple[dict, dict]:
     if f.exists():
         for c in json.loads(f.read_text()).values():
             out[c["init"]].add(gpu_name(c["gpu_device_name"]))
-    b = data / "budget" / "budget_metrics.json"
-    if b.exists():
+    full = [p for f in SCRATCH_FULL if (p := data / "budget" / f).exists()]
+    for b in [data / "budget" / "budget_metrics.json"] + full:
+        if not b.exists():
+            continue
         for k, c in json.loads(b.read_text())["cells"].items():
+            if full and b not in full and k.split("/")[1] == BUDGET_SCRATCH:
+                continue        # replaced by the full-schedule from-scratch cells (merge_budget)
             g = c.get("gpu") or c.get("manifest", {}).get("gpu_device_name")
             if g:
                 out[k.split("/")[1]].add(gpu_name(g))
@@ -2422,13 +2451,20 @@ def jc1_full(data: pathlib.Path, runs: dict):
     """(pre, ref, source) of ft_curves.py's JetClass cells at 1e6: the long-budget tree's
     (curves/full_budget_long_leg2.json, its from-scratch cells under SCRATCH) once it holds every paper run
     and every from-scratch seed of V4.JC1_LONG_SCRATCH, else the old pretrained and from-scratch trees
-    (one recipe per table); None when neither is pulled."""
+    (one recipe per table); None when neither is pulled. With the long tree, the full-schedule from-scratch
+    cells (curves/full_budget_long_fulldecay_leg2.json) replace its from-scratch ones once pulled, FATAL when
+    one of those seeds is missing."""
     f = data / "curves" / "full_budget_long_leg2.json"
     if f.exists():
         cells = json.loads(f.read_text())["cells"]
         pre, ref = {i: v for i, v in cells.items() if i != "scratch"}, {SCRATCH: cells.get("scratch", {})}
         if all(_jc1_block(pre, m) for m in _pretrained(runs)) and \
                 all(ref[SCRATCH].get(JC1_N, {}).get(s, {}).get("jc1") for s in V4.JC1_LONG_SCRATCH):
+            sf = data / "curves" / "full_budget_long_fulldecay_leg2.json"
+            if sf.exists():
+                ref = {SCRATCH: json.loads(sf.read_text())["cells"].get("scratch", {})}
+                if not all(ref[SCRATCH].get(JC1_N, {}).get(s, {}).get("jc1") for s in V4.JC1_LONG_SCRATCH):
+                    raise SystemExit(f"FATAL: {sf} lacks a from-scratch seed of {V4.JC1_LONG_SCRATCH}")
             return pre, ref, f
     full = [data / "curves" / f"full_{t}.json" for t in ("best70_leg2", "ref_v100_jc1_leg2")]
     if not all(f.exists() for f in full):

@@ -26,6 +26,11 @@ ROC = {**I["roc"], **{fam: docs for fam in ("jc1_ft_ovr", "jc1_probe_ovr", "top_
 # the long-budget JetClass-II cells at 1e6 replace the fixed-budget ones of the same model (one recipe per model)
 if (_long := M._load(P.DATA / M.V4.ROC_DIR / "jc2_ft_ovr_long")):
     ROC["jc2_ft_ovr"] = {**ROC.get("jc2_ft_ovr", {}), **_long}
+# then the full-schedule from-scratch cells replace every from-scratch doc (mlst_v4.SCRATCH_FULL, PI 2026-11-07)
+if (_full := M._load(P.DATA / M.V4.ROC_DIR / f"jc2_ft_ovr{M.V4.SCRATCH_FULL}")):
+    if set(_full) != {f"scratch-{s}" for s in M.V4.JC1_LONG_SCRATCH}:
+        raise SystemExit(f"FATAL: jc2_ft_ovr{M.V4.SCRATCH_FULL} holds {sorted(_full)}, not the three from-scratch seeds")
+    ROC["jc2_ft_ovr"] = {**{m: d for m, d in ROC.get("jc2_ft_ovr", {}).items() if not m.startswith("scratch")}, **_full}
 
 
 class Absent(Exception):

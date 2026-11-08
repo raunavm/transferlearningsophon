@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Read-out (experiments/FT/budget_metrics.py) of the from-scratch cells with their whole flat+decay schedule
+  # (PI 2026-11-07; build_ft_budget_jobs scratch_full_cells, long_scratch_full_cells): refuses to start unless all
+  # 36 cells have DONE, refuses a read-out short of a cell, and never overwrites one already written. CPU only.
+  # mlst_results.merge_budget lets them replace every from-scratch cell of the same task and size.
+  name: budget-readout-e-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          for T in 1 2 3 4 5; do git clone --depth 1 --branch "mtx-s2.85" https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
+          cd /workspace/repo
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          [ "${USED}" -le 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+          for c in /data/results/ft_v2/budget_fulldecay/{leg_top,leg_qg}/scratch/N{1000,10000,100000}/s{1,2,3} /data/results/ft_v2/budget_fulldecay/{leg2,leg_jc2b}/scratch/N{10000,100000}/s{1,2,3} /data/results/ft_v2/budget_long_fulldecay/{leg2,leg_jc2b}/scratch/N1000000/s{1,2,3}; do
+            [ -f "${c}/DONE" ] || { echo "FATAL: ${c} not DONE"; exit 42; }
+          done
+          readout () {
+            local ROOT=$1 OUT=$2 N=$3; shift 3
+            if [ -e ${OUT} ]; then echo "skip ${OUT}: exists"; return 0; fi
+            python3 experiments/FT/budget_metrics.py --root ${ROOT} --trees "$@" --out ${OUT}.new
+            python3 -c "import json,sys;d=json.load(open(sys.argv[1]));n=len(d['cells']);sys.exit(0 if n==int(sys.argv[2]) and not d['missing'] else 'FATAL: %d cells, missing %s'%(n,d['missing']))" ${OUT}.new ${N}
+            mv ${OUT}.new ${OUT}
+            python3 -c "import json;d=json.load(open('${OUT}'));print({k:(len(v) if hasattr(v,'__len__') else v) for k,v in d.items()})"
+          }
+          readout /data/results/ft_v2/budget_fulldecay /data/results/ft_v2/budget_fulldecay/budget_fulldecay_metrics.json 30 leg_top leg_qg leg2 leg_jc2b
+          readout /data/results/ft_v2/budget_long_fulldecay /data/results/ft_v2/budget_long_fulldecay/budget_long_fulldecay_metrics.json 6 leg2 leg_jc2b
+          echo "READOUT COMPLETE"
+        resources:
+          requests: { memory: "24Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "24Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

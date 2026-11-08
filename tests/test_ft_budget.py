@@ -222,3 +222,35 @@ def test_memory_can_be_overridden_and_defaults_to_the_rule(tmp_path, monkeypatch
     assert t.count('memory: "64Gi"') == 2 and bfb.FULL_MEM not in t
     bfb.main(common + ["long-jc1"])
     assert (tmp_path / "job-ft-budget-long-jc1-retry-raunav.yaml").read_text().count(f'memory: "{bfb.FULL_MEM}"') == 2
+
+
+def test_the_full_schedule_scratch_readout_waits_for_all_36_cells_and_never_overwrites():
+    """job-budget-readout-e (2026-11-07): budget_metrics.py on the two new roots at the tag the cells trained with,
+    only once every cell of scratch_full_cells and long_scratch_full_cells has DONE; a read-out short of a cell is
+    refused, one already written is skipped, and both land where pull_mlst_data.py takes them."""
+    import re
+    k8s = ROOT / "experiments/FT/k8s/budget"
+    doc = yaml.safe_load((k8s / "job-budget-readout-e-raunav.yaml").read_text())
+    assert doc["metadata"]["name"] == "budget-readout-e-raunav" and doc["spec"]["backoffLimit"] == 1
+    script = doc["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    trained = {re.search(r'name: REPO_REF\n\s+value: "([^"]+)"', (k8s / f"job-ft-budget-{k}-raunav.yaml").read_text()).group(1)
+               for k in ("scratch-full", "long-scratch-full")}
+    assert re.findall(r'--branch "([^"]+)"', script) == [max(trained, key=lambda t: [int(x) for x in t[5:].split(".")])]
+    loop = re.search(r"for c in (.*?); do\n", script).group(1)
+    cells = subprocess.run(["bash", "-c", f"for c in {loop}; do echo $c; done"], capture_output=True, text=True,
+                           check=True).stdout.split()
+    want = bfb.scratch_full_cells("1e-3", "3e-3") + bfb.long_scratch_full_cells("jc2b", "1e-3") + \
+        bfb.long_scratch_full_cells("jc1", "1e-3")
+    assert len(cells) == 36 and sorted(cells) == sorted(c["out"] for c in want)
+    assert '[ -f "${c}/DONE" ] || { echo "FATAL: ${c} not DONE"; exit 42; }' in script
+    calls = [ln.split()[1:] for ln in script.splitlines() if ln.strip().startswith("readout /")]
+    assert calls == [[bfb.BUDGET_FULL_ROOT, f"{bfb.BUDGET_FULL_ROOT}/budget_fulldecay_metrics.json", "30",
+                      "leg_top", "leg_qg", "leg2", "leg_jc2b"],
+                     [bfb.LONG_FULL_ROOT, f"{bfb.LONG_FULL_ROOT}/budget_long_fulldecay_metrics.json", "6", "leg2", "leg_jc2b"]]
+    assert int(calls[0][2]) == len(bfb.scratch_full_cells("1e-3", "3e-3")) and int(calls[1][2]) == 6
+    assert 'if [ -e ${OUT} ]; then echo "skip ${OUT}: exists"; return 0; fi' in script
+    assert "--out ${OUT}.new" in script and "not d['missing']" in script and "mv ${OUT}.new ${OUT}" in script
+    pull = (ROOT / "experiments/FIGS/pull_mlst_data.py").read_text()
+    for root, f in (("budget_fulldecay", "budget_fulldecay_metrics.json"),
+                    ("budget_long_fulldecay", "budget_long_fulldecay_metrics.json")):
+        assert f'(FT / "{root}", "budget", "{f}")' in pull

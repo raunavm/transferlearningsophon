@@ -33,6 +33,9 @@ ROC_FAMILIES = ("jc1_ft", "jc1_probe", "pairs", "pairs_sib2", "top_ft", "qg_ft",
 # <family> whole once it holds every paper run and these from-scratch seeds (build_ft_budget_jobs.SCRATCH_SEEDS),
 # renamed to the old reference's scratch-v2-s<k>; one recipe per figure
 JC1_LONG, JC1_LONG_SCRATCH = ("jc1_ft", "jc1_ft_ovr"), ("s1", "s2", "s3")
+# from scratch with its whole flat+decay schedule (build_gallery_data_job.py --mode scratch-full): <family>_fulldecay
+# replaces the long docs' from-scratch seeds (PI 2026-11-07)
+SCRATCH_FULL = "_fulldecay"
 
 
 def _module(rel: str, name: str):
@@ -173,9 +176,10 @@ def design_macros(em, root: pathlib.Path, data: pathlib.Path, missing: list, fmt
             raise SystemExit(f"FATAL: the launched from-scratch rates {launched} are not the sweep's {want}")
         em.macro("FtLrPre", _sci(pre), sweep, "argmax of the summed validation metric, pretrained")
         em.macro("FtLrScratchTop", _sci(scr["leg_top"]), sweep, "argmax of the validation metric on top, from scratch",
-                 "agrees with LR of the launched job-ft-budget-bench, -jc1 and -jc2b from-scratch cells")
+                 "agrees with LR of the launched job-ft-budget-bench, -jc1, -jc2b, -scratch-full and -long-scratch-full "
+                 "from-scratch cells")
         em.macro("FtLrScratchQg", _sci(scr["leg_qg"]), sweep, "argmax of the validation metric on quark/gluon, from scratch",
-                 "agrees with LR of the launched job-ft-budget-bench from-scratch cells")
+                 "agrees with LR of the launched job-ft-budget-bench and -scratch-full from-scratch cells")
     else:
         missing.append("learning-rate sweep -- experiments/FIGS/data/v2/budget/lrsweep_metrics.json")
         for k in ("FtLrPre", "FtLrScratchTop", "FtLrScratchQg"):
@@ -211,7 +215,7 @@ def launched_scratch_rates(root: pathlib.Path) -> dict:
     jobs; FATAL when one task ran at two rates."""
     import re
     out: dict = {}
-    for kind in ("bench", "jc1", "jc2b"):
+    for kind in ("bench", "jc1", "jc2b", "scratch-full", "long-scratch-full"):
         text = (root / f"experiments/FT/k8s/budget/job-ft-budget-{kind}-raunav.yaml").read_text()
         for task, lr in re.findall(r"TASK=(\w+); INIT=; [^\n]*?LR=([^;]+);", text):
             if out.setdefault(task, lr) != lr:
@@ -470,14 +474,22 @@ def paper_models() -> list:
 
 def load_family(data: pathlib.Path, fam: str) -> dict:
     """{model: doc} of curves_v2/<fam>; for a JC1_LONG family the long-budget docs (scratch-s<k> as
-    scratch-v2-s<k>) when they hold every paper run and every JC1_LONG_SCRATCH seed, else the old ones."""
+    scratch-v2-s<k>) when they hold every paper run and every JC1_LONG_SCRATCH seed, else the old ones.
+    With the long docs, <fam>_fulldecay's from-scratch seeds replace theirs once pulled (FATAL short of a seed)."""
     docs = _load(data / ROC_DIR / fam)
     if fam not in JC1_LONG:
         return docs
-    long = {f"scratch-v2-{m.removeprefix('scratch-')}" if m.startswith("scratch-") else m: d
-            for m, d in _load(data / ROC_DIR / f"{fam}_long").items()}
+    v2 = lambda d: {f"scratch-v2-{m.removeprefix('scratch-')}" if m.startswith("scratch-") else m: x for m, x in d.items()}
+    long = v2(_load(data / ROC_DIR / f"{fam}_long"))
     need = set(paper_models()) | {f"scratch-v2-{s}" for s in JC1_LONG_SCRATCH}
-    return long if need <= set(long) else docs
+    if not need <= set(long):
+        return docs
+    full = v2(_load(data / ROC_DIR / f"{fam}{SCRATCH_FULL}"))
+    if full:
+        if set(full) != {f"scratch-v2-{s}" for s in JC1_LONG_SCRATCH}:
+            raise SystemExit(f"FATAL: {fam}{SCRATCH_FULL} holds {sorted(full)}, not the from-scratch seeds {JC1_LONG_SCRATCH}")
+        long = {**{m: d for m, d in long.items() if not m.startswith("scratch-v2-")}, **full}
+    return long
 
 
 def load_roc(data: pathlib.Path) -> dict:

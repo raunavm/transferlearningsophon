@@ -212,6 +212,63 @@ def test_the_long_budget_cells_replace_every_cell_of_their_task_model_and_size(t
     assert [r["accuracy"] for r in per["jc2"]["l188-s1"][1000000]] == [0.97]
 
 
+def test_the_full_schedule_scratch_cells_replace_every_old_scratch_cell_of_their_task_and_size(tmp_path, monkeypatch):
+    """PI 2026-11-07: the from-scratch read-outs with the whole flat+decay schedule replace the fixed-budget and the
+    long-budget from-scratch cells of the same task and size, each only complete (FATAL otherwise); the pretrained
+    cells keep theirs, and with both read-outs pulled no old from-scratch budget cell is left."""
+    bfb = _load("build_ft_budget_jobs_t", "scripts/build_ft_budget_jobs.py")
+    assert M.SCRATCH_FULL == {"budget_fulldecay_metrics.json": len(bfb.scratch_full_cells("1e-3", "3e-3")),
+                              "budget_long_fulldecay_metrics.json": 2 * len(bfb.long_scratch_full_cells("jc1", "1e-3"))}
+    _ft_tree(tmp_path, ["l188-s1"])
+    rec = lambda v: {"macro_auc_ovr": v, "macro_auc_qcd": v, "auc": v, "accuracy": v}
+    S, b = M.BUDGET_SCRATCH, tmp_path / "budget"
+    (b / "budget_long_metrics.json").write_text(json.dumps({"cells": {
+        "leg_jc2b/l188-s1/N1000000/s1": rec(0.97), **{f"leg_jc2b/{S}/N1000000/s{k}": rec(0.85) for k in (1, 2, 3)}}}))
+    below = {f"{t}/{S}/N1000/s{k}": {**rec(0.7), **({"herwig": rec(0.7)} if t == "leg_qg" else {})}
+             for t in ("leg_jc2b", "leg2", "leg_top", "leg_qg") for k in (1, 2, 3)}
+    at = {f"leg_jc2b/{S}/N1000000/s{k}": rec(0.75) for k in (1, 2, 3)}
+    monkeypatch.setattr(M, "SCRATCH_FULL", {"budget_fulldecay_metrics.json": 12, "budget_long_fulldecay_metrics.json": 3})
+    w = lambda name, cells, missing=(): (b / name).write_text(json.dumps({"cells": cells, "missing": list(missing)}))
+    acc = lambda per, key, n: [r["accuracy"] for r in per[key][M.SCRATCH][n]]
+    # neither pulled: the old cells, as before
+    _, per, _ = M.load_ft(tmp_path)
+    assert acc(per, "top", 1000) == [0.8] * 3 and acc(per, "jc2", 1000000) == [0.85] * 3
+    # below 1e6 only: those sizes replaced, every task (the Herwig sub-record too); 1e6 keeps the long cells
+    w("budget_fulldecay_metrics.json", below)
+    _, per, _ = M.load_ft(tmp_path)
+    for key in ("top", "qg", "qg_herwig", "jc1", "jc2", "jc2_qcd"):
+        assert acc(per, key, 1000) == [0.7] * 3, key
+    assert acc(per, "jc2", 1000000) == [0.85] * 3
+    assert per["jc2"]["l188-s1"][1000000][0]["accuracy"] == 0.97 and per["top"]["l188-s1"][1000][0]["accuracy"] == 0.9
+    # both: 1e6 too, and the pretrained cells untouched
+    w("budget_long_fulldecay_metrics.json", at)
+    _, per, _ = M.load_ft(tmp_path)
+    assert acc(per, "jc2", 1000000) == [0.75] * 3 and acc(per, "jc2_qcd", 1000000) == [0.75] * 3
+    assert per["jc2"]["l188-s1"][1000000][0]["accuracy"] == 0.97
+    # refused loudly once present: a missing cell, one cell short, a pretrained cell
+    for cells, missing in ((at, ["leg_jc2b/scratch/N1000000/s3"]), (dict(list(at.items())[:2]), ()),
+                           ({**dict(list(at.items())[:2]), "leg_jc2b/l188-s1/N1000000/s1": rec(0.9)}, ())):
+        w("budget_long_fulldecay_metrics.json", cells, missing)
+        with pytest.raises(SystemExit, match="FATAL: .*budget_long_fulldecay_metrics.json"):
+            M.load_ft(tmp_path)
+    # both pulled but an old from-scratch cell would still be read (JetClass-II at 1e6 not covered): FATAL
+    w("budget_long_fulldecay_metrics.json", {k.replace("leg_jc2b", "leg2"): v for k, v in at.items()})
+    with pytest.raises(SystemExit, match="old from-scratch budget cells still read"):
+        M.load_ft(tmp_path)
+
+
+def test_the_compute_table_takes_the_from_scratch_gpus_from_the_full_schedule_cells(tmp_path):
+    (tmp_path / "budget").mkdir()
+    w = lambda name, cells: (tmp_path / "budget" / name).write_text(json.dumps({"cells": cells}))
+    w("budget_metrics.json", {"leg_top/scratch/N1000/s1": {"gpu": "Tesla V100-SXM2-32GB"},
+                              "leg_top/l188-s1/N1000/s1": {"gpu": "Tesla V100-SXM2-32GB"}})
+    old = M.ft_gpu_types(tmp_path)[0]
+    assert old["scratch"] == old["l188-s1"]
+    w("budget_fulldecay_metrics.json", {"leg_top/scratch/N1000/s1": {"gpu": "NVIDIA L40"}})
+    new = M.ft_gpu_types(tmp_path)[0]
+    assert new["scratch"] == [M.gpu_name("NVIDIA L40")] and new["l188-s1"] == old["l188-s1"]
+
+
 def test_a_rejection_that_is_only_a_bound_stops_the_table(tmp_path):
     _ft_tree(tmp_path, ["l188-s1"], bound=True)
     _, per, _ = M.load_ft(tmp_path)
@@ -1225,6 +1282,18 @@ def test_the_long_budget_jetclass_curves_replace_the_old_ones_only_when_they_hol
         assert set(docs) == set(old) and all(d["curves"]["label_Tbqq"]["label_sha256"] == "n" for d in docs.values())
     roc = M.V4.load_roc(tmp_path)
     assert "jc1_ft_long" not in roc and roc["jc1_ft"]["scratch-v2-s3"]["curves"]["label_Tbqq"]["cut"]["eps_s"] == 0.2
+    # the full-schedule from-scratch curves (<family>_fulldecay, 2026-11-07) replace the long docs' seeds only
+    for fam in M.V4.JC1_LONG:
+        _roc_tree(tmp_path, {f"scratch-s{k}": {"label_Tbqq": _curve(0.3, sha="n")} for k in (1, 2)},
+                  family=f"{fam}{M.V4.SCRATCH_FULL}")
+        with pytest.raises(SystemExit, match="not the from-scratch seeds"):
+            M.V4.load_family(tmp_path, fam)
+        _roc_tree(tmp_path, {"scratch-s3": {"label_Tbqq": _curve(0.3, sha="n")}}, family=f"{fam}{M.V4.SCRATCH_FULL}")
+        docs = M.V4.load_family(tmp_path, fam)
+        assert set(docs) == set(old)
+        assert {m for m, d in docs.items() if d["curves"]["label_Tbqq"]["cut"]["eps_s"] == 0.3} == \
+            {f"scratch-v2-s{k}" for k in (1, 2, 3)}
+    assert M.V4.load_roc(tmp_path)["jc1_ft"]["mtx-l188-s1"]["curves"]["label_Tbqq"]["cut"]["eps_s"] == 0.2
     # a family without a long counterpart is read as it is
     _roc_tree(tmp_path, {"mtx-l188-s1": {"top": _curve(0.1)}}, family="top_ft")
     _roc_tree(tmp_path, {"mtx-l188-s2": {"top": _curve(0.1)}}, family="top_ft_long")
@@ -1257,6 +1326,15 @@ def test_the_long_budget_jetclass_table_replaces_both_old_trees_only_when_it_hol
     assert src == f and set(p) == set(pre) and p["l188-s1"]["N1000000"]["s1"]["jc1"]["accuracy"] == 0.3
     assert set(r) == {M.SCRATCH} and set(r[M.SCRATCH]["N1000000"]) == {"s1", "s2", "s3"}
     assert r[M.SCRATCH]["N1000000"]["s1"]["jc1"]["accuracy"] == 0.4
+    # the full-schedule from-scratch cells (2026-11-07) replace the long tree's, its pretrained cells kept
+    sf = tmp_path / "curves" / "full_budget_long_fulldecay_leg2.json"
+    sf.write_text(json.dumps({"cells": {"scratch": {"N1000000": {f"s{k}": blk(0.6) for k in (1, 2, 3)}}}}))
+    p, r, src = M.jc1_full(tmp_path, runs)
+    assert src == f and p["l188-s1"]["N1000000"]["s1"]["jc1"]["accuracy"] == 0.3
+    assert set(r) == {M.SCRATCH} and [r[M.SCRATCH]["N1000000"][f"s{k}"]["jc1"]["accuracy"] for k in (1, 2, 3)] == [0.6] * 3
+    sf.write_text(json.dumps({"cells": {"scratch": {"N1000000": {f"s{k}": blk(0.6) for k in (1, 2)}}}}))
+    with pytest.raises(SystemExit, match="lacks a from-scratch seed"):
+        M.jc1_full(tmp_path, runs)
 
 
 def test_the_probes_against_size_pool_the_random_partitions_and_add_the_controls_and_the_kinematic_model():

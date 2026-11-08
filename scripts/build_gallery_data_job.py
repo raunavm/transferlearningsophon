@@ -7,6 +7,7 @@
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode sib2   # every X->ee / X->mumu test jet
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode long   # the long-budget JetClass-II cells
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode long-jc1   # the long-budget JetClass cells
+    python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode scratch-full   # from scratch, full schedule, 1e6
 """
 import argparse
 import pathlib
@@ -132,6 +133,29 @@ def calls_long_jc1() -> str:
     return "\n".join("          " + c for c in out)
 
 
+FULL_JC1_TREE, FULL_JC2_TREE = "/data/results/ft_v2/budget_long_fulldecay/leg2", "/data/results/ft_v2/budget_long_fulldecay/leg_jc2b"
+FULL_JC1 = "/data/results/ft_v2/curves/full_budget_long_fulldecay_leg2.json"
+
+
+def calls_scratch_full() -> str:
+    """The from-scratch cells at 1e6 with their whole flat+decay schedule (build_ft_budget_jobs.long_scratch_full_cells,
+    PI 2026-11-07), every one DONE first: the families the old from-scratch cells fed (jc2_ft_ovr, jc1_ft, jc1_ft_ovr)
+    into <family>_fulldecay and ParT's per-class table into a new file; the readers (mlst_v4.load_family,
+    figstyle/gallery_common, mlst_results.jc1_full) let them replace the old from-scratch seeds."""
+    bfb = _bfb()
+    cells, n = bfb.long_scratch_full_cells("jc2b", "1e-3") + bfb.long_scratch_full_cells("jc1", "1e-3"), bfb.LONG_N
+    out = ["for c in " + " ".join(c["out"] for c in cells)
+           + '; do [ -e "${c}/DONE" ] || { echo "FATAL: ${c} not DONE"; exit 42; }; done']
+    for fam, tree, task in (("jc2_ft_ovr", FULL_JC2_TREE, "jc2b"), ("jc1_ft", FULL_JC1_TREE, "jc1"),
+                            ("jc1_ft_ovr", FULL_JC1_TREE, "jc1")):
+        out += [f"python3 experiments/FT/roc_points.py ft --family {fam} --tree {tree} --task {task} --n {n} "
+                f"--inits scratch --out-dir {ROC}/{fam}_fulldecay",
+                f"echo done > {ROC}/{fam}_fulldecay/DONE"]
+    out.append(f"[ -e {FULL_JC1} ] || python3 experiments/FT/ft_curves.py cells --tree {FULL_JC1_TREE} --task jc1 "
+               f"--n {n} --out {FULL_JC1}")
+    return "\n".join("          " + c for c in out)
+
+
 def _bfb():
     import importlib.util
     spec = importlib.util.spec_from_file_location("build_ft_budget_jobs", ROOT / "scripts/build_ft_budget_jobs.py")
@@ -158,7 +182,9 @@ MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
          "kin": (calls_kin, "gallery-data-kin-raunav", "top_probe"),
          "sib2": (calls_sib2, "gallery-data-sib2-raunav", "pairs_sib2"),
          "long": (calls_long, "gallery-data-long-raunav", "jc2_ft_ovr_long"),
-         "long-jc1": (calls_long_jc1, "gallery-data-long-jc1-raunav", "jc1_ft_long jc1_ft_ovr_long")}
+         "long-jc1": (calls_long_jc1, "gallery-data-long-jc1-raunav", "jc1_ft_long jc1_ft_ovr_long"),
+         "scratch-full": (calls_scratch_full, "gallery-data-scratch-full-raunav",
+                          "jc2_ft_ovr_fulldecay jc1_ft_fulldecay jc1_ft_ovr_fulldecay")}
 
 
 def main() -> int:

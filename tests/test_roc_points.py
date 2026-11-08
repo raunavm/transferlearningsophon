@@ -424,3 +424,36 @@ def test_the_long_jetclass_job_writes_what_the_readers_prefer_once_every_cell_is
     assert lines[-1] == (f"[ -e {GD.LONG_JC1_FULL} ] || python3 experiments/FT/ft_curves.py cells --tree "
                          f"{GD.LONG_JC1_TREE} --task jc1 --n 1000000 --out {GD.LONG_JC1_FULL}")
     assert len(lines) == 6
+
+
+def test_the_full_schedule_scratch_job_writes_new_families_the_readers_prefer_once_every_cell_is_done():
+    """scripts/build_gallery_data_job.py --mode scratch-full (2026-11-07): the six from-scratch cells at 1e6 DONE
+    first, then the families the old from-scratch cells fed, each into a new <family>_fulldecay, and ParT's
+    per-class table into a new file; no output any other mode writes."""
+    GD = _load("build_gallery_data_job", "scripts/build_gallery_data_job.py")
+    bfb = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
+    fn, name, dirs = GD.MODES["scratch-full"]
+    fams = ("jc2_ft_ovr",) + V4.JC1_LONG
+    assert name == "gallery-data-scratch-full-raunav" and dirs.split() == [f"{f}{V4.SCRATCH_FULL}" for f in fams]
+    others = {d for m, (_, _, ds) in GD.MODES.items() if m != "scratch-full" for d in ds.split()}
+    assert not others & set(dirs.split())
+    lines = [ln.strip() for ln in fn().splitlines()]
+    cells = lines[0].removeprefix("for c in ").split(";")[0].split()
+    assert sorted(cells) == sorted(c["out"] for c in bfb.long_scratch_full_cells("jc2b", "1e-3")
+                                   + bfb.long_scratch_full_cells("jc1", "1e-3"))
+    assert len(cells) == 6 and "exit 42" in lines[0]
+    trees = {"jc2_ft_ovr": (GD.FULL_JC2_TREE, "jc2b"), "jc1_ft": (GD.FULL_JC1_TREE, "jc1"), "jc1_ft_ovr": (GD.FULL_JC1_TREE, "jc1")}
+    for i, fam in enumerate(fams):
+        tree, task = trees[fam]
+        assert tree.startswith(bfb.LONG_FULL_ROOT + "/") and RP.FT_TASK[fam] == task
+        assert lines[1 + 2 * i] == (f"python3 experiments/FT/roc_points.py ft --family {fam} --tree {tree} --task {task} "
+                                    f"--n 1000000 --inits scratch --out-dir {GD.ROC}/{fam}{V4.SCRATCH_FULL}")
+        assert lines[2 + 2 * i] == f"echo done > {GD.ROC}/{fam}{V4.SCRATCH_FULL}/DONE"
+        assert RP.out_dir(pathlib.Path(f"{GD.ROC}/{fam}{V4.SCRATCH_FULL}"), fam, None).name == f"{fam}{V4.SCRATCH_FULL}"
+    assert GD.FULL_JC1 == "/data/results/ft_v2/curves/full_budget_long_fulldecay_leg2.json" != GD.LONG_JC1_FULL
+    assert lines[-1] == (f"[ -e {GD.FULL_JC1} ] || python3 experiments/FT/ft_curves.py cells --tree "
+                         f"{GD.FULL_JC1_TREE} --task jc1 --n 1000000 --out {GD.FULL_JC1}")
+    assert len(lines) == 8
+    spec = (ROOT / "experiments/FT/k8s/curves/job-gallery-data-scratch-full-raunav.yaml").read_text()
+    assert "name: gallery-data-scratch-full-raunav" in spec and '--branch "mtx-s2.85"' in spec
+    assert all(ln in spec for ln in lines)
