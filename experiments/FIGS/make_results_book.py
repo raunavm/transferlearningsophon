@@ -90,7 +90,7 @@ def figure(pid: str, rec: dict, src: pathlib.Path) -> str:
 # references into the paper's text, which the book does not have: the definition stays in words
 NO_TEXT = [(", equation~(\\ref{eq:ratio}), to", " to"), (" of equation~(\\ref{eq:ratio}),", ","),
            (" of equation~(\\ref{eq:ratio}) at", " at"), (" of equation~(\\ref{eq:resolution}),", ","),
-           (" of equation~(\\ref{eq:discr}).", "."), (" (equation~(\\ref{eq:cut}))", ""),
+           (" of equation~(\\ref{eq:discr}).", "."), (" of equation~(\\ref{eq:discr});", ";"), (" (equation~(\\ref{eq:cut}))", ""),
            ("$\\nmin$", "\\MlstMinBkgPass{}"), ("Published rows from the tables cited", "Published rows from the original papers"),
            ("Published rows (exp inputs) from the tables cited", "Published rows (exp inputs) from the original papers")]
 CITE = re.compile(r"~?\\cite(\[[^\]]*\])?\{[^}]*\}")

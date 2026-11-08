@@ -1,24 +1,10 @@
 \begin{table}[t]
 \centering
 \small
-\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}\newlength{\tablabnat}\newlength{\tablabatom}\fi
-\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.9387\,$\pm$\,0.0002}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{accuracy}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9385}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.9852\,$\pm$\,0.0001}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9850}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9858}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{358\,$\pm$\,11}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{413\,$\pm$\,16}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{357}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{1{,}412\,$\pm$\,20}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1{,}602\,$\pm$\,81}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1{,}224}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{background jets passing at $R_{30}$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{118}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{128}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{Sophon's network, trained from scratch}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\quad + Sophon's jet-$p_{\mathrm{T}}$ rescaling}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{ParT's script, unchanged}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi
-\settowidth{\tablabtmp}{Sophon's network, trained from scratch}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{\quad + Sophon's jet-$p_{\mathrm{T}}$ rescaling}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{ParT's script, unchanged}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi
-\ifdim\tablabw>7cm\setlength{\tablabw}{7cm}\fi\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi
 \caption{Networks trained from scratch on the top-tagging data: ParT's training script on our cluster, then with Sophon's output head, then also with Sophon's rescaling of every jet's four-momenta to $p_{\mathrm{T}}=500$~GeV (cumulative, one run each), beside ParT's published row and Sophon's network trained from scratch, which uses the rescaling.}
 \label{tab:partrepro}
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}ccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{6.8cm}ccc}
 \toprule
  & accuracy & AUC & $R_{50}$ \\
 \midrule
@@ -33,7 +19,7 @@ Sophon's network, trained from scratch & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,
 \end{adjustbox}
 \par\bigskip
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}cc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{6.8cm}cc}
 \toprule
  & $R_{30}$ & background jets passing at $R_{30}$ \\
 \midrule

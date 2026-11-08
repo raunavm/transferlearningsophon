@@ -1,76 +1,26 @@
 \providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
 \small
-\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}\newlength{\tablabnat}\newlength{\tablabatom}\fi
-\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\# params}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{2.21\,M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\textbf{0.8468\,$\pm$\,0.0006}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{0.8475\,$\pm$\,0.0009}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8271\,$\pm$\,0.0012}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\textbf{0.9856\,$\pm$\,$<$0.0001}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9819\,$\pm$\,0.0002}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9844, 0.9843}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\textbf{5{,}710, 7{,}410}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{6{,}450, 6{,}670}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{6{,}130\,$\pm$\,950}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\textbf{2{,}860, 2{,}630}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{2{,}650\,$\pm$\,260}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{2{,}150, 2{,}170}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\textbf{104.7, 106.3}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{104.9, 108.0}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{106.0, 96.8}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\textbf{1{,}099, 1{,}130}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{1{,}176, 1{,}036}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1{,}000, 1{,}047}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\textbf{2{,}940, 2{,}900}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{3{,}060\,$\pm$\,390}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{3{,}070\,$\pm$\,330}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{10{,}500, 14{,}300$^\dagger$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{11{,}100, 14{,}300$^\dagger$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{11{,}800, 13{,}300$^\dagger$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\textbf{7{,}700\,$\pm$\,1{,}300}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{8{,}330, 6{,}900}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{8{,}590\,$\pm$\,1{,}270}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{jets}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1 M}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\textbf{392, 380}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{378\,$\pm$\,22}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\textbf{379\,$\pm$\,18}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{289, 276}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{292, 292}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{292, 298}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi
-\settowidth{\tablabtmp}{pretrained on 17 classes (random flavor boundary),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on 17 random classes (partitions 1--5),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on 17 classes (no flavor boundary),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi
-\ifdim\tablabw>7cm\setlength{\tablabw}{7cm}\fi\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{JetClass fine-tuning as table~\ref{tab:jetclass} of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations. The row of all five random partitions gives the mean $\pm$ standard deviation over them. Bold and $^\dagger$ as there; a mark after two values: in at least one of the two runs.}
+\captionof{table}{JetClass fine-tuning as table~\ref{tab:jetclass} of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls; (f.t.): fine-tuned. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations. The row of all five random partitions gives the mean $\pm$ standard deviation over them. Bold and $^\dagger$ as there; a mark after two values: in at least one of the two runs.}
 \label{tab:jetclassall}
 \par\medskip
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.55\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
 \toprule
- & jets & \# params \\
+ & jets & \# params & accuracy \\
 \midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 2.21\,M \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & 2.21\,M \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & 2.21\,M \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & 2.21\,M \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & 2.21\,M \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & 2.21\,M \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 2.21\,M \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & 2.21\,M \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & 2.21\,M \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & 2.21\,M \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & 2.21\,M \\
+\mbox{no pretraining (f.t.)} & 1 M & 2.21\,M & 0.8271\,$\pm$\,0.0012 \\
+\mbox{\Kfull{} classes (f.t.)} & 1 M & 2.21\,M & \textbf{0.8468\,$\pm$\,0.0006} \\
+\mbox{\Kres{} classes (f.t.)} & 1 M & 2.21\,M & \textbf{0.8475\,$\pm$\,0.0009} \\
+\mbox{\Kmid{} classes (f.t.)} & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 \\
+\mbox{\Kcoarse{} classes (f.t.)} & 1 M & 2.21\,M & 0.8422\,$\pm$\,0.0005 \\
+\mbox{\Kres{} classes + mass (f.t.)} & 1 M & 2.21\,M & 0.8459, 0.8471 \\
+\mbox{\Kcoarse{} classes + mass (f.t.)} & 1 M & 2.21\,M & 0.8400, 0.8398 \\
+\mbox{random partitions (f.t.)} & 1 M & 2.21\,M & 0.8443\,$\pm$\,0.0007 \\
+\mbox{no flavor boundary (f.t.)} & 1 M & 2.21\,M & 0.8434, 0.8431 \\
+\mbox{$b$-quark boundary (f.t.)} & 1 M & 2.21\,M & 0.8434, 0.8443 \\
+\mbox{random flavor boundary (f.t.)} & 1 M & 2.21\,M & 0.8432, 0.8436 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -79,21 +29,24 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:jetclassall}{tab:jetclassall:2}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
 \toprule
- & jets & accuracy \\
+ &  &  & \multicolumn{1}{c}{rejection of QCD} \\
+\cmidrule(lr){4-4}
+ & jets & AUC & $H\to b\bar b$ \\
+ &  &  & $R_{50}$ \\
 \midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 0.8271\,$\pm$\,0.0012 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & \textbf{0.8468\,$\pm$\,0.0006} \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & \textbf{0.8475\,$\pm$\,0.0009} \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & 0.8459\,$\pm$\,0.0002 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & 0.8422\,$\pm$\,0.0005 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & 0.8459, 0.8471 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 0.8400, 0.8398 \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & 0.8443\,$\pm$\,0.0007 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & 0.8434, 0.8431 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & 0.8434, 0.8443 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & 0.8432, 0.8436 \\
+\mbox{no pretraining (f.t.)} & 1 M & 0.9819\,$\pm$\,0.0002 & 4{,}920\,$\pm$\,190 \\
+\mbox{\Kfull{} classes (f.t.)} & 1 M & 0.9854\,$\pm$\,0.0001 & \textbf{6{,}600\,$\pm$\,330} \\
+\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{0.9856\,$\pm$\,$<$0.0001} & 6{,}060\,$\pm$\,0 \\
+\mbox{\Kmid{} classes (f.t.)} & 1 M & 0.9853\,$\pm$\,0.0001 & \textbf{6{,}480\,$\pm$\,530} \\
+\mbox{\Kcoarse{} classes (f.t.)} & 1 M & 0.9847\,$\pm$\,0.0001 & \textbf{6{,}670\,$\pm$\,220} \\
+\mbox{\Kres{} classes + mass (f.t.)} & 1 M & 0.9852, 0.9854 & \textbf{6{,}450, 6{,}670} \\
+\mbox{\Kcoarse{} classes + mass (f.t.)} & 1 M & 0.9844, 0.9843 & 6{,}450, 5{,}560 \\
+\mbox{random partitions (f.t.)} & 1 M & 0.9851\,$\pm$\,0.0001 & \textbf{6{,}130\,$\pm$\,950} \\
+\mbox{no flavor boundary (f.t.)} & 1 M & 0.9849, 0.9848 & 6{,}060, 6{,}060 \\
+\mbox{$b$-quark boundary (f.t.)} & 1 M & 0.9849, 0.9850 & \textbf{5{,}710, 7{,}410} \\
+\mbox{random flavor boundary (f.t.)} & 1 M & 0.9849, 0.9849 & 6{,}450, 5{,}880 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -102,21 +55,24 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:jetclassall}{tab:jetclassall:3}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lcc}
 \toprule
- & jets & AUC \\
+ &  & \multicolumn{2}{c}{rejection of QCD} \\
+\cmidrule(lr){3-4}
+ & jets & $H\to c\bar c$ & $H\to gg$ \\
+ &  & $R_{50}$ & $R_{50}$ \\
 \midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 0.9819\,$\pm$\,0.0002 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & 0.9854\,$\pm$\,0.0001 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & \textbf{0.9856\,$\pm$\,$<$0.0001} \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & 0.9853\,$\pm$\,0.0001 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & 0.9847\,$\pm$\,0.0001 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & 0.9852, 0.9854 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 0.9844, 0.9843 \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & 0.9851\,$\pm$\,0.0001 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & 0.9849, 0.9848 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & 0.9849, 0.9850 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & 0.9849, 0.9849 \\
+\mbox{no pretraining (f.t.)} & 1 M & 1{,}580\,$\pm$\,60 & 88.3\,$\pm$\,3.2 \\
+\mbox{\Kfull{} classes (f.t.)} & 1 M & \textbf{2{,}650\,$\pm$\,260} & \textbf{103.6\,$\pm$\,3.8} \\
+\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{2{,}820\,$\pm$\,40} & 101.8\,$\pm$\,1.5 \\
+\mbox{\Kmid{} classes (f.t.)} & 1 M & 2{,}610\,$\pm$\,160 & 103.5\,$\pm$\,1.3 \\
+\mbox{\Kcoarse{} classes (f.t.)} & 1 M & 2{,}390\,$\pm$\,40 & \textbf{100.8\,$\pm$\,6.2} \\
+\mbox{\Kres{} classes + mass (f.t.)} & 1 M & 2{,}530, 2{,}300 & 105.3, 101.9 \\
+\mbox{\Kcoarse{} classes + mass (f.t.)} & 1 M & 2{,}300, 2{,}020 & 105.5, 102.7 \\
+\mbox{random partitions (f.t.)} & 1 M & 2{,}580\,$\pm$\,160 & 102.6\,$\pm$\,1.6 \\
+\mbox{no flavor boundary (f.t.)} & 1 M & 2{,}150, 2{,}170 & \textbf{104.7, 106.3} \\
+\mbox{$b$-quark boundary (f.t.)} & 1 M & 2{,}350, 2{,}410 & \textbf{104.9, 108.0} \\
+\mbox{random flavor boundary (f.t.)} & 1 M & \textbf{2{,}860, 2{,}630} & \textbf{106.0, 96.8} \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -125,24 +81,24 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:jetclassall}{tab:jetclassall:4}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lccc}
 \toprule
- &  & \multicolumn{1}{c}{rejection of QCD} \\
-\cmidrule(lr){3-3}
- & jets & $H\to b\bar b$ \\
- &  & $R_{50}$ \\
+ &  & \multicolumn{3}{c}{rejection of QCD} \\
+\cmidrule(lr){3-5}
+ & jets & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ \\
+ &  & $R_{50}$ & $R_{99}$ & $R_{50}$ \\
 \midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 4{,}920\,$\pm$\,190 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & \textbf{6{,}600\,$\pm$\,330} \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & 6{,}060\,$\pm$\,0 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & \textbf{6{,}480\,$\pm$\,530} \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & \textbf{6{,}670\,$\pm$\,220} \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & \textbf{6{,}450, 6{,}670} \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 6{,}450, 5{,}560 \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & \textbf{6{,}130\,$\pm$\,950} \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & 6{,}060, 6{,}060 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & \textbf{5{,}710, 7{,}410} \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & 6{,}450, 5{,}880 \\
+\mbox{no pretraining (f.t.)} & 1 M & 670\,$\pm$\,39 & 1{,}270\,$\pm$\,100 & \textbf{6{,}100\,$\pm$\,600} \\
+\mbox{\Kfull{} classes (f.t.)} & 1 M & \textbf{1{,}091\,$\pm$\,15} & \textbf{3{,}060\,$\pm$\,390} & 12{,}900\,$\pm$\,1{,}600$^\dagger$ \\
+\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{1{,}150\,$\pm$\,67} & \textbf{3{,}070\,$\pm$\,330} & 14{,}100\,$\pm$\,3{,}500$^\dagger$ \\
+\mbox{\Kmid{} classes (f.t.)} & 1 M & 1{,}034\,$\pm$\,40 & \textbf{3{,}160\,$\pm$\,280} & 14{,}200\,$\pm$\,2{,}100$^\dagger$ \\
+\mbox{\Kcoarse{} classes (f.t.)} & 1 M & 1{,}049\,$\pm$\,17 & 2{,}800\,$\pm$\,200 & 10{,}600\,$\pm$\,2{,}700$^\dagger$ \\
+\mbox{\Kres{} classes + mass (f.t.)} & 1 M & \textbf{1{,}099, 1{,}130} & 2{,}780, 2{,}940 & 11{,}100, 14{,}300$^\dagger$ \\
+\mbox{\Kcoarse{} classes + mass (f.t.)} & 1 M & 966, 935 & \textbf{2{,}940, 2{,}900} & 10{,}500, 14{,}300$^\dagger$ \\
+\mbox{random partitions (f.t.)} & 1 M & 1{,}006\,$\pm$\,31 & 2{,}690\,$\pm$\,300 & 10{,}900\,$\pm$\,2{,}000$^\dagger$ \\
+\mbox{no flavor boundary (f.t.)} & 1 M & \textbf{1{,}176, 1{,}036} & 2{,}820, 2{,}820 & 13{,}300, 16{,}700$^\dagger$ \\
+\mbox{$b$-quark boundary (f.t.)} & 1 M & 1{,}042, 1{,}031 & 2{,}560, 2{,}600 & 12{,}500, 14{,}300$^\dagger$ \\
+\mbox{random flavor boundary (f.t.)} & 1 M & 1{,}000, 1{,}047 & 2{,}820, 2{,}670 & 11{,}800, 13{,}300$^\dagger$ \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -151,180 +107,24 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:jetclassall}{tab:jetclassall:5}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}lccc}
 \toprule
- &  & \multicolumn{1}{c}{rejection of QCD} \\
-\cmidrule(lr){3-3}
- & jets & $H\to c\bar c$ \\
- &  & $R_{50}$ \\
+ &  & \multicolumn{3}{c}{rejection of QCD} \\
+\cmidrule(lr){3-5}
+ & jets & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+ &  & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
 \midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 1{,}580\,$\pm$\,60 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & \textbf{2{,}650\,$\pm$\,260} \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & \textbf{2{,}820\,$\pm$\,40} \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & 2{,}610\,$\pm$\,160 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & 2{,}390\,$\pm$\,40 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & 2{,}530, 2{,}300 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 2{,}300, 2{,}020 \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & 2{,}580\,$\pm$\,160 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & 2{,}150, 2{,}170 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & 2{,}350, 2{,}410 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & \textbf{2{,}860, 2{,}630} \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:6}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
-\toprule
- &  & \multicolumn{1}{c}{rejection of QCD} \\
-\cmidrule(lr){3-3}
- & jets & $H\to gg$ \\
- &  & $R_{50}$ \\
-\midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 88.3\,$\pm$\,3.2 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & \textbf{103.6\,$\pm$\,3.8} \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & 101.8\,$\pm$\,1.5 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & 103.5\,$\pm$\,1.3 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & \textbf{100.8\,$\pm$\,6.2} \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & 105.3, 101.9 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 105.5, 102.7 \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & 102.6\,$\pm$\,1.6 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & \textbf{104.7, 106.3} \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & \textbf{104.9, 108.0} \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & \textbf{106.0, 96.8} \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:7}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
-\toprule
- &  & \multicolumn{1}{c}{rejection of QCD} \\
-\cmidrule(lr){3-3}
- & jets & $H\to 4q$ \\
- &  & $R_{50}$ \\
-\midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 670\,$\pm$\,39 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & \textbf{1{,}091\,$\pm$\,15} \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & \textbf{1{,}150\,$\pm$\,67} \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & 1{,}034\,$\pm$\,40 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & 1{,}049\,$\pm$\,17 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & \textbf{1{,}099, 1{,}130} \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 966, 935 \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & 1{,}006\,$\pm$\,31 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & \textbf{1{,}176, 1{,}036} \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & 1{,}042, 1{,}031 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & 1{,}000, 1{,}047 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:8}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
-\toprule
- &  & \multicolumn{1}{c}{rejection of QCD} \\
-\cmidrule(lr){3-3}
- & jets & $H\to \ell\nu qq'$ \\
- &  & $R_{99}$ \\
-\midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 1{,}270\,$\pm$\,100 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & \textbf{3{,}060\,$\pm$\,390} \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & \textbf{3{,}070\,$\pm$\,330} \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & \textbf{3{,}160\,$\pm$\,280} \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & 2{,}800\,$\pm$\,200 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & 2{,}780, 2{,}940 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & \textbf{2{,}940, 2{,}900} \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & 2{,}690\,$\pm$\,300 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & 2{,}820, 2{,}820 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & 2{,}560, 2{,}600 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & 2{,}820, 2{,}670 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:9}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
-\toprule
- &  & \multicolumn{1}{c}{rejection of QCD} \\
-\cmidrule(lr){3-3}
- & jets & $t\to bqq'$ \\
- &  & $R_{50}$ \\
-\midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & \textbf{6{,}100\,$\pm$\,600} \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & 12{,}900\,$\pm$\,1{,}600$^\dagger$ \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & 14{,}100\,$\pm$\,3{,}500$^\dagger$ \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & 14{,}200\,$\pm$\,2{,}100$^\dagger$ \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & 10{,}600\,$\pm$\,2{,}700$^\dagger$ \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & 11{,}100, 14{,}300$^\dagger$ \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 10{,}500, 14{,}300$^\dagger$ \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & 10{,}900\,$\pm$\,2{,}000$^\dagger$ \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & 13{,}300, 16{,}700$^\dagger$ \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & 12{,}500, 14{,}300$^\dagger$ \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & 11{,}800, 13{,}300$^\dagger$ \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:10}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
-\toprule
- &  & \multicolumn{1}{c}{rejection of QCD} \\
-\cmidrule(lr){3-3}
- & jets & $t\to b\ell\nu$ \\
- &  & $R_{99.5}$ \\
-\midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 3{,}940\,$\pm$\,320 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & 9{,}410\,$\pm$\,1{,}510$^\dagger$ \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & \textbf{7{,}800\,$\pm$\,340} \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & \textbf{8{,}450\,$\pm$\,210} \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & \textbf{8{,}590\,$\pm$\,1{,}270} \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & \textbf{8{,}330, 6{,}900} \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 8{,}000, 11{,}110$^\dagger$ \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & \textbf{7{,}700\,$\pm$\,1{,}300} \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & 6{,}670, 7{,}140 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & 7{,}140, 7{,}140 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & 7{,}140, 7{,}410 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:11}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lcc}
-\toprule
- &  & \multicolumn{2}{c}{rejection of QCD} \\
-\cmidrule(lr){3-4}
- & jets & $W\to qq'$ & $Z\to q\bar q$ \\
- &  & $R_{50}$ & $R_{50}$ \\
-\midrule
-\mbox{no pretraining,} \mbox{trained from scratch} & 1 M & 272\,$\pm$\,6 & 215\,$\pm$\,8 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned} & 1 M & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
-\mbox{pretrained on \Kres{} classes,} \mbox{fine-tuned} & 1 M & \textbf{389\,$\pm$\,9} & \textbf{308\,$\pm$\,1} \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{fine-tuned} & 1 M & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{fine-tuned} & 1 M & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{fine-tuned} & 1 M & \textbf{392, 380} & 303, 301 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{fine-tuned} & 1 M & 363, 353 & 289, 276 \\
-\mbox{pretrained on 17 random classes (partitions 1--5),} \mbox{fine-tuned} & 1 M & \textbf{379\,$\pm$\,18} & 299\,$\pm$\,7 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{fine-tuned} & 1 M & 351, 351 & 292, 292 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{fine-tuned} & 1 M & 366, 347 & 292, 298 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{fine-tuned} & 1 M & 372, 371 & 296, 301 \\
+\mbox{no pretraining (f.t.)} & 1 M & 3{,}940\,$\pm$\,320 & 272\,$\pm$\,6 & 215\,$\pm$\,8 \\
+\mbox{\Kfull{} classes (f.t.)} & 1 M & 9{,}410\,$\pm$\,1{,}510$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
+\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{7{,}800\,$\pm$\,340} & \textbf{389\,$\pm$\,9} & \textbf{308\,$\pm$\,1} \\
+\mbox{\Kmid{} classes (f.t.)} & 1 M & \textbf{8{,}450\,$\pm$\,210} & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
+\mbox{\Kcoarse{} classes (f.t.)} & 1 M & \textbf{8{,}590\,$\pm$\,1{,}270} & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
+\mbox{\Kres{} classes + mass (f.t.)} & 1 M & \textbf{8{,}330, 6{,}900} & \textbf{392, 380} & 303, 301 \\
+\mbox{\Kcoarse{} classes + mass (f.t.)} & 1 M & 8{,}000, 11{,}110$^\dagger$ & 363, 353 & 289, 276 \\
+\mbox{random partitions (f.t.)} & 1 M & \textbf{7{,}700\,$\pm$\,1{,}300} & \textbf{379\,$\pm$\,18} & 299\,$\pm$\,7 \\
+\mbox{no flavor boundary (f.t.)} & 1 M & 6{,}670, 7{,}140 & 351, 351 & 292, 292 \\
+\mbox{$b$-quark boundary (f.t.)} & 1 M & 7{,}140, 7{,}140 & 366, 347 & 292, 298 \\
+\mbox{random flavor boundary (f.t.)} & 1 M & 7{,}140, 7{,}410 & 372, 371 & 296, 301 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

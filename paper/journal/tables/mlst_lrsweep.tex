@@ -1,55 +1,20 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{table}[t]
+\centering
 \small
-\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}\newlength{\tablabnat}\newlength{\tablabatom}\fi
-\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{learning rate}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\ensuremath{3\times10^{-3}}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\ensuremath{3\times10^{-4}}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.9188$^{\ast}$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9152}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9177}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{learning rate}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\ensuremath{3\times10^{-3}}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\ensuremath{3\times10^{-4}}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{quark/gluon}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8059$^{\ast}$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8029}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{1.7423$^{\ast}$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1.7204}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1.7217}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned,} \mbox{run 1}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{no pretraining,} \mbox{trained from scratch}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi
-\settowidth{\tablabtmp}{pretrained on \Kfull{} classes,}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{trained from scratch}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{no pretraining,}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi
-\ifdim\tablabw>7cm\setlength{\tablabw}{7cm}\fi\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Learning-rate choice for fine-tuning Sophon's network, pretrained on JetClass-II with \Kfull{} classes (run 1) or not pretrained, on $10^{4}$ top and quark/gluon jets: the best validation accuracy of each rate on top and quark/gluon and their sum. Pretrained: the rate of the pretrained layers, with the new output head at 50 times that rate, at most $5\times10^{-3}$. $^{\ast}$: the rate chosen, on the sum for the pretrained weights and on each task's accuracy for the networks trained from scratch; the test jets play no part.}
+\caption{Learning-rate choice for fine-tuning Sophon's network, pretrained on JetClass-II with \Kfull{} classes (run 1) or not pretrained, on $10^{4}$ top and quark/gluon jets: the best validation accuracy of each rate on top and quark/gluon and their sum; (f.t.): fine-tuned. Pretrained: the rate of the pretrained layers, with the new output head at 50 times that rate, at most $5\times10^{-3}$. $^{\ast}$: the rate chosen, on the sum for the pretrained weights and on each task's accuracy for the networks trained from scratch; the test jets play no part.}
 \label{tab:lrsweep}
-\par\medskip
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lc}
+\begin{tabular}{llccc}
 \toprule
- & learning rate & top \\
+ & learning rate & top & quark/gluon & sum \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned,} \mbox{run 1} & \ensuremath{10^{-4}} & 0.9204 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned,} \mbox{run 1} & \ensuremath{3\times10^{-4}} & 0.9192 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned,} \mbox{run 1} & \ensuremath{10^{-3}} & 0.9212 \\
-\mbox{no pretraining,} \mbox{trained from scratch} & \ensuremath{3\times10^{-4}} & 0.9152 \\
-\mbox{no pretraining,} \mbox{trained from scratch} & \ensuremath{10^{-3}} & 0.9188$^{\ast}$ \\
-\mbox{no pretraining,} \mbox{trained from scratch} & \ensuremath{3\times10^{-3}} & 0.9177 \\
+\mbox{\Kfull{} classes (f.t.),} \mbox{run 1} & \ensuremath{10^{-4}} & 0.9204 & 0.8204 & 1.7408 \\
+\mbox{\Kfull{} classes (f.t.),} \mbox{run 1} & \ensuremath{3\times10^{-4}} & 0.9192 & 0.8202 & 1.7394 \\
+\mbox{\Kfull{} classes (f.t.),} \mbox{run 1} & \ensuremath{10^{-3}} & 0.9212 & 0.8211 & 1.7423$^{\ast}$ \\
+\mbox{no pretraining (f.t.)} & \ensuremath{3\times10^{-4}} & 0.9152 & 0.8052 & 1.7204 \\
+\mbox{no pretraining (f.t.)} & \ensuremath{10^{-3}} & 0.9188$^{\ast}$ & 0.8029 & 1.7217 \\
+\mbox{no pretraining (f.t.)} & \ensuremath{3\times10^{-3}} & 0.9177 & 0.8059$^{\ast}$ & 1.7236 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:lrsweep}{tab:lrsweep:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}lcc}
-\toprule
- & learning rate & quark/gluon & sum \\
-\midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned,} \mbox{run 1} & \ensuremath{10^{-4}} & 0.8204 & 1.7408 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned,} \mbox{run 1} & \ensuremath{3\times10^{-4}} & 0.8202 & 1.7394 \\
-\mbox{pretrained on \Kfull{} classes,} \mbox{fine-tuned,} \mbox{run 1} & \ensuremath{10^{-3}} & 0.8211 & 1.7423$^{\ast}$ \\
-\mbox{no pretraining,} \mbox{trained from scratch} & \ensuremath{3\times10^{-4}} & 0.8052 & 1.7204 \\
-\mbox{no pretraining,} \mbox{trained from scratch} & \ensuremath{10^{-3}} & 0.8029 & 1.7217 \\
-\mbox{no pretraining,} \mbox{trained from scratch} & \ensuremath{3\times10^{-3}} & 0.8059$^{\ast}$ & 1.7236 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\end{center}
+\end{table}

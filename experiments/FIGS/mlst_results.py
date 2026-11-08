@@ -84,21 +84,19 @@ def _ck(model: str) -> str:
     return "init" if model.startswith("init-") else "init_bn" if model.startswith("initbn-") else PRIMARY
 
 
-# Row labels name the starting network (PI, 2026-11-07); a table of one downstream mode adds it to each label
-# (MODE, MODES: "pretrained on 188 classes, linear probe"); where the mode changes across columns the column
-# headings name it and the rows only the network
-LABEL = {"L188": r"pretrained on \Kfull{} classes", "L162": r"pretrained on \Kres{} classes",
-         "R42_Q1": r"pretrained on \Kmid{} classes", "R16_Q1": r"pretrained on \Kcoarse{} classes",
-         "L162_MASS": r"pretrained on \Kres{} classes + mass", "R16_Q1_MASS": r"pretrained on \Kcoarse{} classes + mass",
-         "FLAV_F0": "pretrained on 17 classes (no flavor boundary)",
-         "FLAV_F1": r"pretrained on 17 classes ($b$-quark boundary)",
-         "FLAV_F1R": "pretrained on 17 classes (random flavor boundary)", INIT: "random network",
-         INIT_BN: "random network, BatchNorm recomputed",
-         "KIN": r"pretrained on \Kfull{} classes (kinematic inputs only)",
-         RAND_POOLED: "pretrained on 17 random classes (partitions 1--5)",
-         **{f"RAND2_p{k}": f"pretrained on 17 random classes (partition {k})" for k in range(1, 6)}}
-SCRATCH_LABEL = V4.SCRATCH_LABEL      # "no pretraining, trained from scratch": a fine-tuning table's reference
-MODE = {"ft": "fine-tuned", "lp": "linear probe", "mlp": "MLP probe"}
+# Row labels (PI, 2026-11-07, in the style of ParT's "-f.t."): the network pretrained on JetClass-II by its classes, or
+# the control by the shortest name the paper uses, and in a table of one downstream mode its tag (MODE, MODES):
+# "188 classes (LP)", "no pretraining (f.t.)". Where the mode changes across columns the column headings name it.
+LABEL = {"L188": r"\Kfull{} classes", "L162": r"\Kres{} classes", "R42_Q1": r"\Kmid{} classes",
+         "R16_Q1": r"\Kcoarse{} classes", "L162_MASS": r"\Kres{} classes + mass", "R16_Q1_MASS": r"\Kcoarse{} classes + mass",
+         "FLAV_F0": "no flavor boundary", "FLAV_F1": r"$b$-quark boundary", "FLAV_F1R": "random flavor boundary",
+         INIT: "random network", INIT_BN: "random network, BatchNorm recomputed",
+         "KIN": r"\Kfull{} classes, kinematic inputs only", RAND_POOLED: "random partitions",
+         **{f"RAND2_p{k}": f"random partition {k}" for k in range(1, 6)}}
+SCRATCH_LABEL = V4.SCRATCH_LABEL      # "no pretraining": a fine-tuning table's reference
+MODE = {"ft": "(f.t.)", "lp": "(LP)", "mlp": "(MLP)"}
+MODE_DEF = {"ft": "(f.t.): fine-tuned", "lp": "(LP): linear probe on the frozen features",
+            "mlp": "(MLP): multilayer-perceptron probe on the frozen features"}
 FITS, MLP_FITS = "linprobe/fits_v3", "linprobe/fits_v3_mlp"
 MLP_FITS_V4, FITS_INITBN, MLP_FITS_INITBN = ("linprobe/fits_v3_mlp2", "linprobe/fits_v3_initbn",
                                              "linprobe/fits_v3_mlp2_initbn")
@@ -721,10 +719,13 @@ def _head_rule(ncols: int) -> str:
             + r"}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}")
 
 
+LONG_LABEL_CM = "4.6cm"     # holds the widest part of a tagged row label at \footnotesize
+
+
 def _task_longtable(blocks: list, label: str) -> str:
     """One longtable of task blocks [(title, [heading cells, row cells, ...])]: each block opens with
     its title across the table and its own heading row; a row may have fewer cells than the widest
-    block (the rest stay empty). Script-size type and a first column of fixed width, whose long row labels
+    block (the rest stay empty). Footnote-size type and a first column of fixed width, whose long row labels
     wrap, so that the table fits the text width; continuation pages say so. The caption is the
     placeholder __CAPTION__ (_longtable)."""
     ncol = max((len(c) - 1 for _, rows in blocks for c in rows), default=1)
@@ -737,8 +738,8 @@ def _task_longtable(blocks: list, label: str) -> str:
             rows[-2] += "*"         # a block's last row never sits alone on a page
         body += ([BLOCK_SEP] if k else []) + [r"\multicolumn{" + str(ncol + 1) + "}{l}{" + title + r"} \\*",
                                               row(head) + "*", _head_rule(ncol + 1)] + rows
-    return "\n".join(["{\\scriptsize", "\\setlength{\\tabcolsep}{3pt}",
-                      r"\begin{longtable}{>{\raggedright\arraybackslash}p{3.9cm}" + "c" * ncol + "}",
+    return "\n".join(["{\\footnotesize", "\\setlength{\\tabcolsep}{1.2pt}",
+                      r"\begin{longtable}{>{\raggedright\arraybackslash}p{" + LONG_LABEL_CM + "}" + "c" * ncol + "}",
                       rf"\caption{{__CAPTION__}}\label{{{label}}}\\", r"\toprule", r"\endfirsthead",
                       r"\multicolumn{" + str(ncol + 1) + r"}{l}{\textit{continued}} \\", r"\toprule", r"\endhead",
                       r"\bottomrule", r"\endlastfoot", *body, r"\end{longtable}", "}", ""])
@@ -1097,8 +1098,8 @@ def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None, kin=False) -> str:
             c = raw_v4[m]["cells"][PRIMARY].get(key, {})
             c = c[max(c, key=int)] if c else None
             return None if c is None else (_rej(c, met) if met.startswith("r") else c[met])
-        rows_h = ((LABEL["L188"] + ", linear probe on the class token", (("jc2bal", "macro_auc_ovr"), ("qg", "auc"), ("qg", "r30"))),
-                  (LABEL["L188"] + ", linear probe on the 512-unit hidden layer",
+        rows_h = ((LABEL["L188"] + " (LP), class token", (("jc2bal", "macro_auc_ovr"), ("qg", "auc"), ("qg", "r30"))),
+                  (LABEL["L188"] + " (LP), 512-unit hidden layer",
                    (("jc2bal.hidden", "macro_auc_ovr"), ("qg.hidden", "auc"), ("qg.hidden", "r30"))))
         out += ["%SPLIT%", r"\begin{tabular}{lccc}", r"\toprule",
                 r" & JetClass-II AUC & quark/gluon AUC & quark/gluon $R_{30}$ \\", r"\midrule"]
@@ -1396,7 +1397,7 @@ def table_mass(atlas, runs, fmt_pm) -> str:
     out = [r"\begin{tabular}{lcc}", r"\toprule", r" & resolution & median response \\", r"\midrule"]
     out.append("soft-drop mass & " + " & ".join(
         _cell([v], 1, fmt_pm) if (v := _groomed(atlas, g, k)) is not None else "--" for k in ("resolution", "median")) + r" \\")
-    out.append(r"\midrule \multicolumn{3}{l}{\textit{this work}} \\")
+    out.append(r"\midrule")
     for arm in MASS_ROWS:
         ms = runs[arm]
         out.append(LABEL[arm] + " & " + " & ".join(_cell([_ares(atlas, m, "mlp", g, k) for m in ms], len(ms), fmt_pm)
@@ -1426,12 +1427,13 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
            "jets & " + " & ".join(h for _ in range(2) for _, _, h in MASS_GROUPS) + r" \\", r"\midrule",
            "soft-drop mass & " + " & ".join(_cell([v], 1, fmt_pm) if (v := _groomed(atlas, g, k)) is not None else "--"
                                              for k in ("resolution", "median") for g, _, _ in MASS_GROUPS) + r" \\"]
-    for est, name, arms in (("regressed", "mass output", MASS), ("ridge", "ridge regression", MASS_ROWS),
-                            ("mlp", MODE["mlp"], MASS_ROWS)):
-        out.append(sec("this work, " + name, 1 + 2 * ng))
+    for est, name, arms in (("regressed", "regression output of the pretrained network", MASS),
+                            ("ridge", "ridge regression on the frozen features", MASS_ROWS),
+                            ("mlp", "multilayer perceptron on the frozen features", MASS_ROWS)):
+        out.append(sec(name, 1 + 2 * ng))
         for arm in arms:
             ms = runs[arm]
-            out.append(f"{LABEL[arm]}, {name} & " + " & ".join(
+            out.append(f"{LABEL[arm]} & " + " & ".join(
                 _cell([_ares(atlas, m, est, g, k) for m in ms], len(ms), fmt_pm)
                 for k in ("resolution", "median") for g, _, _ in MASS_GROUPS) + r" \\")
     out += [r"\bottomrule", r"\end{tabular}"]
@@ -1452,7 +1454,7 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
                 for arm in MASS:
                     ms = runs[arm]
                     per = [_ares(atlas, m, "regressed", g, key, axis) for m in ms]
-                    out.append(f"{LABEL[arm]}, mass output & " + " & ".join(
+                    out.append(f"{LABEL[arm]} & " + " & ".join(
                         _cell([None if p is None else p[i] for p in per], len(ms), fmt_pm) for i in range(len(bins))) + r" \\")
             out += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(out + [""])
@@ -2168,7 +2170,7 @@ def table_ft(per, runs, fmt_pm, rows) -> str:
             continue
         ratio = key == "jc2" and met == "macro_auc_ovr"   # the only fine-tuned ratio of 1 - AUC (ROC_INTERFACE 3.3)
         lines = [["training jets"] + [f"{n:,}".replace(",", "{,}") for n in sizes]
-                 + ([r"$\rho$, $10^{6}$ jets"] if ratio else [])]
+                 + ([r"$\rho$"] if ratio else [])]
         for arm in _ft_rows(per, key, runs, rows):
             # the design fine-tunes the random partitions on JetClass-II at FT_RATIO_N jets only: a dash there;
             # any other cell without a run keeps its red marker
@@ -3378,13 +3380,9 @@ def table_per_run(fits, per, runs, fmt_pm, fill=None, chosen=None) -> str:
         if not per or not _sizes(per, key):
             return None
         return _ftv(per, key, m, _sizes(per, key)[-1], met)
-    # the network as a section row over its runs: nine columns leave no room for its name beside them
-    sec = lambda t: r"\multicolumn{10}{l}{" + t + r"} \\*"      # noqa: E731
     rows = []
-    items = [(a, f"run {_idx(m)}", m) for a in ALL_ROWS for m in runs[a]] + [("KIN", "run 1", KIN_MODEL)]
-    for k, (arm, name, m) in enumerate(items):
-        if not k or items[k - 1][0] != arm:
-            rows.append(sec(LABEL[arm]))
+    items = [(f"{LABEL[a]}, run {_idx(m)}", m) for a in ALL_ROWS for m in runs[a]] + [(LABEL["KIN"], KIN_MODEL)]
+    for name, m in items:
         p2, p1 = _probe_rec(fits, m, "jc2_188", PAIR_N), _probe_rec(fits, m, "jc1")
         pt, pq = _bench_rec(fits, fill, chosen, m, "top"), _bench_rec(fits, fill, chosen, m, "qg")
         cells = [one(None if p2 is None else p2["macro_auc_ovr"]), one(None if p1 is None else p1["accuracy"]),
@@ -3400,9 +3398,9 @@ def table_per_run(fits, per, runs, fmt_pm, fill=None, chosen=None) -> str:
             for key, met in (("jc2", "macro_auc_ovr"), ("jc1", "accuracy"), ("top", "r30"), ("qg", "r30"), ("qg_herwig", "r30")):
                 v = _scratch(per, key, _sizes(per, key)[-1], met) if _sizes(per, key) else []
                 vals.append(one(v[s] if s < len(v) else None))
-            rows += ([sec(SCRATCH_LABEL)] if not s else []) + [f"run {s + 1} & -- & -- & -- & -- & " + " & ".join(vals) + r" \\"]
+            rows.append(f"{SCRATCH_LABEL}, run {s + 1} & -- & -- & -- & -- & " + " & ".join(vals) + r" \\")
     return "\n".join(["{\\scriptsize", "\\setlength{\\tabcolsep}{2pt}",
-                      r"\begin{longtable}{>{\raggedright\arraybackslash}p{1.0cm}" + "c" * 9 + "}",
+                      r"\begin{longtable}{>{\raggedright\arraybackslash}p{3.7cm}" + "c" * 9 + "}",
                       r"\caption{__CAPTION__}\label{tab:perrun}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
                       r"\toprule", head, r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot", *rows,
                       r"\end{longtable}", "}", ""])
@@ -3471,13 +3469,15 @@ CAPTIONS = {
             "them on the natural-composition test set beside the levels of the hierarchy on that set, and no $\\rho$ "
             "crosses the two test sets. Last, the linear probe on the 512-unit hidden layer of the \\Kfull-class models' "
             "pretraining head beside the one on the class token, with the missing inputs also set to zero. " + SPREAD + " " + KIN_NOTE),
-    "coarse": ("tab:coarse", "Linear probes on the frozen features of networks pretrained on JetClass-II, trained on "
+    "coarse": ("tab:coarse", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
+               "and 17 classes and of the controls, trained on "
                "one million class-balanced JetClass-II jets and scored on its class-balanced test set, with the "
                "classes merged into coarser targets: the 43 and the 17 groups of the class hierarchy, and the 17 "
                "groups of the partition with no flavor boundary. Accuracy and the area under the curve averaged over "
                "the target's groups; the test set is balanced over the 188 native classes, not over the groups. "
                + SPREAD),
-    "qcdhf": ("tab:qcdhf", "Linear probes on the frozen features of networks pretrained on JetClass-II, trained on "
+    "qcdhf": ("tab:qcdhf", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
+              "and 17 classes and of the controls, trained on "
               "one million class-balanced JetClass-II jets and scored on its class-balanced test set: background "
               "rejection $R_{50}$ of Sophon's $X\\to b\\bar b$ discriminant, the $X\\to b\\bar b$ probability over "
               "itself plus the summed QCD probabilities, at 50\\% $X\\to b\\bar b$ efficiency, for QCD jets with "
@@ -3754,7 +3754,8 @@ REQUIRED = (
 
 
 TEXT_CM = 15.5      # widest tabular kept whole (estimated): the 15 cm text block, shrunk by a few per cent at most
-LABEL_CM = 7.4      # estimated (about 7 cm printed): a wider row label wraps, between its parts, in a split table
+LABEL_CM = 6.3      # a wider row label wraps, at its commas, in a table that has to be split
+SHRINK_OK = 1.08    # a table at most this much wider than TEXT_CM stays whole, shrunk by adjustbox
 
 
 def _depth0_split(s: str, sep: str) -> list[str]:
@@ -3785,7 +3786,7 @@ def _cell_cm(t: str) -> float:
     t = re.sub(r"_\{([^}]*)\}", lambda m: "x" * max(1, round(0.7 * len(m.group(1)))), t)
     t = re.sub(r"\\[a-zA-Z]+", "x", t)
     t = re.sub(r"[{}$^_~]", "", t).strip()
-    return 0.177 * len(t) * bold + 0.42
+    return (0.177 * len(t) + 0.1 * sum(c.isupper() for c in t)) * bold + 0.42      # capitals are wider
 
 
 def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) -> list[str]:
@@ -3856,6 +3857,10 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
     # the label column at the width of the longest label, at most label_cm, never below the widest part a label
     # cannot break (its network); the blocks are cut for that width
     label_w = max(atom, min(width[0], label_cm))
+    if label_w + wide(nlab, n) - lab <= budget * SHRINK_OK:     # a few per cent over: one block, shrunk by adjustbox
+        return [tab if label_w >= width[0] else re.sub(
+            r"^(\s*\\begin\{tabular\}\{)l", lambda m: m.group(1) + r">{\raggedright\arraybackslash}p{"
+            + f"{label_w - 0.42:.1f}" + "cm}", tab, count=1)]
     starts = blocks(label_w)
     wrap = label_w < width[0]
     label_cm = label_w - 0.42
@@ -3905,7 +3910,7 @@ MODES = {"probes": "lp", "pairs": "lp", "bn": "lp", "balance": "lp", "fill": "lp
          "jetclass_probe": "lp", "ft_rej": "ft", "jetclass_all": "ft", "jetclass_nbkg": "ft", "rand_prong": "ft",
          "lrsweep": "ft", "probes_n": "lp", "ft": "ft", "per_class": "lp", "mlp": "mlp", "mass": "mlp",
          "bench_top": "ft", "bench_qg": "ft", "jetclass": "ft", "jc1_class_auc": ["ft", "lp"],
-         "sculpt": "output scores", "qcdhf": "lp", "coarse": "lp"}
+         "qcdhf": "lp", "coarse": "lp"}
 
 
 TOKEN = re.compile(re.escape(V4.TOK_OPEN) + r"(\w) ([^" + V4.TOK_CLOSE + r"]*)" + re.escape(V4.TOK_CLOSE))
@@ -3977,109 +3982,61 @@ def uniform_columns(tab: str) -> str:
     return "\n".join(lines)
 
 
-def _label_parts(t: str, network: str | None = None, paren: bool = False) -> str:
-    """A row label that wraps only at the ', ' after its network (before the mode, before a run number), never
-    inside the network's name: 'pretrained on 162 classes + mass, | linear probe, | run 1'. paren: in a narrow
-    longtable the network may also break before its parenthesis ('pretrained on 17 classes | (no flavor boundary)')."""
-    network = network if network is not None else t
-    rest = [r for r in t[len(network):].split(", ") if r]
-    head = network.split(", ", 1) if network == SCRATCH_LABEL else [network]       # its comma comes before its mode
-    if paren:
-        head = [q for h in head for q in (h.replace(" (", "\x00(", 1).split("\x00"))]
-    parts = head + rest
-    return " ".join(rf"\mbox{{{p}{',' if i < len(parts) - 1 and not (paren and parts[i + 1].startswith('(')) else ''}}}"
-                    for i, p in enumerate(parts))
+def _label_parts(t: str) -> str:
+    """A row label that wraps only at its ', ' ('random network, | BatchNorm recomputed (LP)')."""
+    parts = t.split(", ")
+    return " ".join(rf"\mbox{{{q}{',' if k < len(parts) - 1 else ''}}}" for k, q in enumerate(parts))
+
+
+def _modes(key: str) -> list:
+    m = MODES.get(key)
+    return m if isinstance(m, list) else [m] if m else []
 
 
 def _mode_word(key: str, part: int = 0) -> str | None:
-    m = MODES.get(key)
-    m = m[min(part, len(m) - 1)] if isinstance(m, list) else m
-    return MODE.get(m, m)
+    m = _modes(key)
+    return MODE[m[min(part, len(m) - 1)]] if m else None
 
 
-def _labels(tab: str, mode: str | None = None, paren: bool = False) -> str:
-    """Every row label that starts with a LABEL (or from scratch): the mode added after the network (not to from
-    scratch, which says how it was trained), before a run number, and the label kept whole between its parts."""
+def _labels(tab: str, tag: str | None = None) -> str:
+    """Every row label that is a LABEL (or no pretraining), with a run number or not: the table's tag after the
+    name, before the run ('random partition 1 (LP), run 1'), and the label kept whole between its commas."""
     known = sorted(set(LABEL.values()) | {SCRATCH_LABEL}, key=len, reverse=True)
     out = []
     for ln in tab.split("\n"):
-        k = next((k for k in known if ln.startswith(k + " &") or ln.startswith(k + ",")), None)
+        first = _depth0_split(ln, "&")[0] if "&" in ln else ""
+        k = next((k for k in known if re.fullmatch(re.escape(k) + r"(, run \d+)?\s*", first)), None)
         if k:
-            first = _depth0_split(ln, "&")[0]
-            m = re.fullmatch(re.escape(k) + r"(, run \d+)?\s*", first)
-            if m and mode and k != SCRATCH_LABEL:
-                first = k + ", " + mode + (m.group(1) or "") + " "
-            ln = _label_parts(first.strip(), k, paren) + " " + ln[len(_depth0_split(ln, "&")[0]):]
+            run = first.strip()[len(k):]
+            ln = _label_parts(k + (f" {tag}" if tag else "") + run) + " " + ln[len(first):]
         out.append(ln)
     return "\n".join(out)
 
 
-def _columns(tab: str) -> dict:
-    """{column: [cell texts]} of a tabular or longtable's rows (spanning cells and rows without '&' left out)."""
-    body = re.sub(r"^.*?\\begin\{(?:tabular|longtable)\}\{.*?\}\n", "", tab, count=1, flags=re.S)
-    body = body.split(r"\endlastfoot")[-1]
-    cols = collections.defaultdict(list)
-    for seg in _depth0_split(body, r"\\"):
-        seg = re.sub(r"^\*?\s*((\\(?:toprule|midrule|bottomrule)(\[[^]]*\])?|\\cmidrule\(\w*\)\{\d+-\d+\}|\\noalign\{.*?\}"
-                     r"\\multispan.*?\\cr\\noalign\{.*?\})\s*)*", "", seg.strip(), flags=re.S)
-        cells = _depth0_split(seg, "&") if "&" in seg else []
-        col = 0
-        for c in cells:
-            mc = re.match(r"\s*\\multicolumn\{(\d+)\}", c)
-            if mc:
-                col += int(mc.group(1))
-                continue
-            if c.strip() and r"\end{" not in c:
-                cols[col].append(c.strip())
-            col += 1
-    return cols
-
-
-def _label_width(tabs: list, shrink: float = 1.0) -> str:
-    """LaTeX setting \tablabw, the one first-column width of the given tabulars: what the widest of them leaves of
-    shrink text widths beside its other columns (above 1 where adjustbox may shrink the table) (each measured at its widest cells), at most the widest label and at least
-    the widest part of a label that _label_parts keeps whole."""
-    big = lambda xs, k=3: sorted(set(xs), key=lambda c: (-_cell_cm(c), c))[:k]     # noqa: E731  (deterministic)
-    out = [r"\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}"
-           r"\newlength{\tablabnat}\newlength{\tablabatom}\fi",
-           r"\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}"]
-    mx = lambda dst, c: rf"\settowidth{{\tablabtmp}}{{{c}}}\ifdim\tablabtmp>{dst}\setlength{{{dst}}}{{\tablabtmp}}\fi"  # noqa: E731
-    labels = []
-    for t in tabs:
-        cols = _columns(t)
-        labels += cols.get(0, [])
-        out.append(r"\setlength{\tablabcol}{" + f"{shrink:g}" + r"\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}")
-        for k, cells in sorted(cols.items()):
-            if k == 0:
-                continue
-            out.append(r"\setlength{\tablabnat}{0pt}" + "".join(mx(r"\tablabnat", c) for c in big(cells))
-                       + r"\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}")
-        out.append(r"\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi")
-    atoms = [a for c in labels for a in (re.findall(r"\\mbox\{((?:[^{}]|\{[^{}]*\})*)\}", c) or [c])]
-    out.append(r"\setlength{\tablabnat}{0pt}" + "".join(mx(r"\tablabnat", c) for c in big(labels)))
-    out.append("".join(mx(r"\tablabatom", a) for a in big(atoms)))
-    out.append(r"\ifdim\tablabw>" + STUB_MAX + r"\setlength{\tablabw}{" + STUB_MAX + r"}\fi"
-               r"\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi"
-               r"\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi")
-    return "\n".join(out)
-
-
-LABW_SPEC = r">{\raggedright\arraybackslash}p{\tablabw}"
-LABW_SHRINK = 1.0     # the label column may take what the widest block leaves of this many text widths
-STUB_MAX = "7cm"      # and at most this: a longer label wraps before its mode (_label_parts)
-
-
-def _common_label(boxes: list) -> tuple[list, str]:
-    """Blocks of one table with one first-column width (_label_width): the blocks with that column and the
-    lines that set it. A block whose first column neither wraps nor is one of several is left as it is."""
-    tabs = [re.search(r"\\begin\{tabular\}.*?\\end\{tabular\}", b, re.S).group(0) for b in boxes]
-    out = [re.sub(r"\\begin\{tabular\}\{(>\{\\raggedright\\arraybackslash\}p\{[\d.]+cm\}|l)",
-                  lambda m: r"\begin{tabular}{" + LABW_SPEC, b, count=1) for b in boxes]
-    return out, _label_width(tabs, LABW_SHRINK)
+def _common_label(boxes: list) -> list:
+    """Blocks of one table with one first-column width: that of the widest label, at most LABEL_CM (estimated)."""
+    labs = [c for b in boxes for ln in b.split("\n") if "&" in ln and not ln.lstrip().startswith(("\\multicolumn", "\\begin"))
+            for c in [_depth0_split(ln, "&")[0]] if c.strip()]
+    atom = max((_cell_cm(a) for c in labs for a in re.findall(r"\\mbox\{((?:[^{}]|\{[^{}]*\})*)\}", c) or [c]),
+               default=0.0)
+    w = max(min(max(map(_cell_cm, labs), default=0.0), LABEL_CM), atom) - 0.42
+    spec = r">{\raggedright\arraybackslash}p{" + f"{w:.1f}" + "cm}"
+    return [re.sub(r"\\begin\{tabular\}\{(>\{\\raggedright\\arraybackslash\}p\{[\d.]+cm\}|l)",
+                   lambda m: r"\begin{tabular}{" + spec, b, count=1) for b in boxes]
 
 
 CONTINUED = (r"\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax"
              r"{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}")
+
+
+def _define_tags(cap: str, key: str) -> str:
+    """The tags a table's rows carry, defined at the end of its caption's first sentence."""
+    defs = [MODE_DEF[m] for m in dict.fromkeys(_modes(key))]
+    if not defs:
+        return cap
+    m = re.search(r"\.(?= [A-Z$\\])", cap)
+    i = m.start() if m else len(cap.rstrip(".")) 
+    return cap[:i] + "; " + "; ".join(defs) + cap[i:]
 
 
 def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, notes: list | None = None) -> str:
@@ -4095,12 +4052,12 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     boxes = [r"\begin{adjustbox}{max width=\linewidth}" + "\n" + t.strip() + "\n" + r"\end{adjustbox}"
              for k, b in enumerate(body.split("%SPLIT%"))
              for t in split_wide(_labels(uniform_columns(b.strip()), _mode_word(key, k)))]
-    setw = ""
-    if "begin{tabular}" in body and (len(boxes) > 1 or "arraybackslash}p{" in boxes[0]):
-        boxes, setw = _common_label(boxes)
+    cap = _define_tags(cap, key)
+    if "begin{tabular}" in body and len(boxes) > 1:
+        boxes = _common_label(boxes)
     tail = [rf"\par\smallskip{{\footnotesize {n}}}" for n in notes or []]
     if _height_cm(boxes, cap) <= PAGE_CM:
-        return "\n".join([rf"\begin{{{env}}}[t]", r"\centering", r"\small", *([setw] if setw else []),
+        return "\n".join([rf"\begin{{{env}}}[t]", r"\centering", r"\small",
                           rf"\caption{{{cap}}}", rf"\label{{{label}}}", "\n\\par\\bigskip\n".join(boxes), *tail,
                           rf"\end{{{env}}}", ""])
     # taller than a page: not a float, so that it breaks between its blocks. The caption and the first block are one
@@ -4110,7 +4067,7 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     if _height_cm(boxes[:1], cap) > UNIT_CM:
         first = first.replace(r"\begin{adjustbox}{max width=\linewidth}",
                               r"\begin{adjustbox}{max width=\linewidth, max totalheight=" + FIRST_MAX_H + "}", 1)
-    out = [CONTINUED, r"\begin{center}", r"\small", *([setw] if setw else []), r"\begin{minipage}{\linewidth}\centering",
+    out = [CONTINUED, r"\begin{center}", r"\small", r"\begin{minipage}{\linewidth}\centering",
            rf"\captionof{{table}}{{{cap}}}", rf"\label{{{label}}}", r"\par\medskip", first, r"\end{minipage}"]
     for k, b in enumerate(boxes[1:], 2):           # a later block never taller than a page
         b = b.replace(r"\begin{adjustbox}{max width=\linewidth}",
@@ -4121,7 +4078,6 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
 
 
 PAGE_CM = 17.0      # a table estimated taller than this (of the 24.7 cm text height) is set to break across pages
-WRAP_EST_CM = 4.5   # the label column a height estimate assumes where LaTeX sets its width (_label_width)
 UNIT_CM = 17.0      # a caption and first block estimated taller than this: the block is scaled to FIRST_MAX_H
 FIRST_MAX_H = r"0.55\textheight"
 BLOCK_MAX_H = r"0.92\textheight"
@@ -4132,8 +4088,8 @@ def _height_cm(boxes: list, cap: str) -> float:
     blocks, and the caption."""
     h = 0.45 * (len(cap) / 90 + 1)
     for b in boxes:
-        wrap = re.search(r"\\arraybackslash\}p\{([\d.]+)?", b)
-        lab = float(wrap.group(1)) if wrap and wrap.group(1) else WRAP_EST_CM    # \tablabw: set by LaTeX
+        wrap = re.search(r"\\arraybackslash\}p\{([\d.]+)", b)
+        lab = float(wrap.group(1)) + 0.42 if wrap else LABEL_CM
         for row in b.split(r"\\")[:-1]:
             first = _depth0_split(row.split("rule")[-1] if "rule" in row.split("&")[0] else row, "&")[0]
             h += 0.5 * (math.ceil(_cell_cm(first) / lab) if wrap else 1)
@@ -4144,12 +4100,8 @@ def _height_cm(boxes: list, cap: str) -> float:
 def _longtable(key: str, body: str) -> str:
     """A longtable with its caption, each task block at one precision per column, the mode heading first."""
     body = BLOCK_SEP.join(uniform_columns(b) for b in body.split(BLOCK_SEP))
-    body = _labels(body, _mode_word(key), paren=True)
-    spec = re.search(r"\\begin\{longtable\}\{(>\{\\raggedright\\arraybackslash\}p\{[\d.]+cm\})", body)
-    if spec and key != "per_run":     # the stub as wide as its labels need and the columns leave (per_run: section rows)
-        body = body.replace(r"\begin{longtable}{" + spec.group(1), _label_width([body]) + "\n" + r"\begin{longtable}{"
-                            + LABW_SPEC, 1)
-    cap = CAPTIONS[key][1]
+    body = _labels(body, _mode_word(key))
+    cap = _define_tags(CAPTIONS[key][1], key)
     if "^{*}" not in body.replace(r"\caption{__CAPTION__}", ""):      # a mark the caption explains but no cell carries
         cap = cap.replace(" $^{*}$: a probe that did not converge.", "")
     return body.replace("__CAPTION__", cap)

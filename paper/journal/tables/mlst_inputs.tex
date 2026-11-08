@@ -1,28 +1,12 @@
 \providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
 \small
-\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}\newlength{\tablabnat}\newlength{\tablabatom}\fi
-\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{---}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{top}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{$\bullet$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{quark/gluon}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{---}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{$\bullet$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{zero after normalization}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{$-0.08$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{$-0.10$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{running mean of the input normalization}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{mean}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{a species drawn from JetClass-II's frequencies (top)}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{a JetClass-II particle of the same species}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{drawn given the species (top)}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{$\log(p_{\mathrm{T}}/p_{\mathrm{T}}^{\mathrm{jet}})$}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{$\log p_{\mathrm{T}}$, rescaled}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{electric charge}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi
-\settowidth{\tablabtmp}{$\log(p_{\mathrm{T}}/p_{\mathrm{T}}^{\mathrm{jet}})$}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{$\log p_{\mathrm{T}}$, rescaled}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{electric charge}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi
-\ifdim\tablabw>7cm\setlength{\tablabw}{7cm}\fi\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi
 \begin{minipage}{\linewidth}\centering
 \captionof{table}{The per-particle inputs: which the top and the quark/gluon data provide ($\bullet$), where a zero lies after the network's input normalization (in standard deviations of the training particles), and what the mean and random-draw substitutions put in a missing slot. A random draw is averaged over four draws.}
 \label{tab:inputs}
 \par\medskip
 \begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}ccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.9cm}ccc}
 \toprule
 input & top & quark/gluon & zero after normalization \\
 \midrule
@@ -51,7 +35,7 @@ $\Delta\phi$ & $\bullet$ & $\bullet$ & -- \\
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:inputs}{tab:inputs:2}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.9cm}c}
 \toprule
 input & mean \\
 \midrule
@@ -73,7 +57,7 @@ $\sigma_{d_z}$ & running mean of the input normalization \\
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:inputs}{tab:inputs:3}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.9cm}c}
 \toprule
 input & random draws \\
 \midrule

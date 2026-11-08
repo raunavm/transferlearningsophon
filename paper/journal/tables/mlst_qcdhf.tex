@@ -1,45 +1,32 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{table}[t]
+\centering
 \small
-\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}\newlength{\tablabnat}\newlength{\tablabatom}\fi
-\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{60, 62}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{61, 66}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{66, 68}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{1{,}101\,$\pm$\,151}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1{,}134\,$\pm$\,117}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{649, 523}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{1{,}257, 1{,}250}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1{,}271, 1{,}287}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1{,}419, 1{,}480}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi
-\settowidth{\tablabtmp}{pretrained on 17 classes (random flavor boundary),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on 17 classes (no flavor boundary),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on 17 random classes (partition 1),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi
-\ifdim\tablabw>7cm\setlength{\tablabw}{7cm}\fi\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II, trained on one million class-balanced JetClass-II jets and scored on its class-balanced test set: background rejection $R_{50}$ of Sophon's $X\to b\bar b$ discriminant, the $X\to b\bar b$ probability over itself plus the summed QCD probabilities, at 50\% $X\to b\bar b$ efficiency, for QCD jets with two or more $b$ quarks, with one $b$ quark, and for all QCD jets, each subclass weighted to its share of the natural test set. QCD jets with charm and no $b$ quark, and light QCD jets, are not shown: at most 13 and 0 of them pass in any run of a pretrained network. $^\dagger$: fewer than \MlstMinBkgPass{} jets pass in a run. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations.}
+\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained on one million class-balanced JetClass-II jets and scored on its class-balanced test set: background rejection $R_{50}$ of Sophon's $X\to b\bar b$ discriminant, the $X\to b\bar b$ probability over itself plus the summed QCD probabilities, at 50\% $X\to b\bar b$ efficiency, for QCD jets with two or more $b$ quarks, with one $b$ quark, and for all QCD jets, each subclass weighted to its share of the natural test set; (LP): linear probe on the frozen features. QCD jets with charm and no $b$ quark, and light QCD jets, are not shown: at most 13 and 0 of them pass in any run of a pretrained network. $^\dagger$: fewer than \MlstMinBkgPass{} jets pass in a run. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations.}
 \label{tab:qcdhf}
-\par\medskip
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.55\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}ccc}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccc}
 \toprule
  & \multicolumn{3}{c}{QCD background, $R_{50}$} \\
 \cmidrule(lr){2-4}
  & $b\bar b$ & $b$ & all QCD \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 66\,$\pm$\,5 & 1{,}101\,$\pm$\,151 & 1{,}450\,$\pm$\,110 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 74\,$\pm$\,5 & 1{,}134\,$\pm$\,117 & 1{,}616\,$\pm$\,107 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 72\,$\pm$\,4 & 879\,$\pm$\,122 & 1{,}551\,$\pm$\,104 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 65\,$\pm$\,4 & 714\,$\pm$\,201 & 1{,}337\,$\pm$\,72 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 68, 67 & 914, 868 & 1{,}478, 1{,}431 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 60, 62 & 649, 523 & 1{,}271, 1{,}287 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 74 & 756 & 1{,}563 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 69 & 761 & 1{,}484 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 70 & 1{,}230 & 1{,}532 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 65 & 932 & 1{,}416 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 66 & 921 & 1{,}438 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 61, 66 & 846, 638 & 1{,}257, 1{,}250 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 66, 68 & 706, 915 & 1{,}419, 1{,}480 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 67, 65 & 855, 689 & 1{,}433, 1{,}394 \\
-\mbox{random network,} \mbox{linear probe} & 6\,$\pm$\,$<$1 & 7\,$\pm$\,1 & 14\,$\pm$\,2 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 7\,$\pm$\,$<$1 & 10\,$\pm$\,1 & 34\,$\pm$\,4 \\
+\mbox{\Kfull{} classes (LP)} & 66\,$\pm$\,5 & 1{,}101\,$\pm$\,151 & 1{,}450\,$\pm$\,110 \\
+\mbox{\Kres{} classes (LP)} & 74\,$\pm$\,5 & 1{,}134\,$\pm$\,117 & 1{,}616\,$\pm$\,107 \\
+\mbox{\Kmid{} classes (LP)} & 72\,$\pm$\,4 & 879\,$\pm$\,122 & 1{,}551\,$\pm$\,104 \\
+\mbox{\Kcoarse{} classes (LP)} & 65\,$\pm$\,4 & 714\,$\pm$\,201 & 1{,}337\,$\pm$\,72 \\
+\mbox{\Kres{} classes + mass (LP)} & 68, 67 & 914, 868 & 1{,}478, 1{,}431 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 60, 62 & 649, 523 & 1{,}271, 1{,}287 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 74 & 756 & 1{,}563 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 69 & 761 & 1{,}484 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 70 & 1{,}230 & 1{,}532 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 65 & 932 & 1{,}416 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 66 & 921 & 1{,}438 \\
+\mbox{no flavor boundary (LP)} & 61, 66 & 846, 638 & 1{,}257, 1{,}250 \\
+\mbox{$b$-quark boundary (LP)} & 66, 68 & 706, 915 & 1{,}419, 1{,}480 \\
+\mbox{random flavor boundary (LP)} & 67, 65 & 855, 689 & 1{,}433, 1{,}394 \\
+\mbox{random network (LP)} & 6\,$\pm$\,$<$1 & 7\,$\pm$\,1 & 14\,$\pm$\,2 \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 7\,$\pm$\,$<$1 & 10\,$\pm$\,1 & 34\,$\pm$\,4 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\end{minipage}
-\end{center}
+\end{table}

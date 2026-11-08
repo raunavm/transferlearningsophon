@@ -1,86 +1,33 @@
 \providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
 \small
-\ifdefined\tablabw\else\newlength{\tablabw}\newlength{\tablabtmp}\newlength{\tablabcol}\newlength{\tablabnat}\newlength{\tablabatom}\fi
-\setlength{\tablabw}{\linewidth}\setlength{\tablabnat}{0pt}\setlength{\tablabatom}{0pt}
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.0724\,$\pm$\,0.0015}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.1017\,$\pm$\,0.0017}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.3124, 0.3497}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.9801\,$\pm$\,$<$0.0001}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8121\,$\pm$\,0.0019}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8664\,$\pm$\,0.0036}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{1.026\,$\pm$\,0.005}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1.053, 1.037}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{1.206, 1.208}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.9813\,$\pm$\,$<$0.0001}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{AUC, full count}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8123\,$\pm$\,0.0021}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.9830\,$\pm$\,$<$0.0001}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8152\,$\pm$\,0.0024}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8737\,$\pm$\,0.0044}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.9632\,$\pm$\,$<$0.0001}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.7936\,$\pm$\,0.0054}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8232\,$\pm$\,0.0012}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.4077\,$\pm$\,0.0013}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.4751\,$\pm$\,0.0054}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.7535, 0.7486}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.8280\,$\pm$\,0.0011}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8655\,$\pm$\,0.0040}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9633, 0.9622}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.8783\,$\pm$\,0.0021}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8867\,$\pm$\,0.0013}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9088, 0.9063}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.9354\,$\pm$\,0.0017}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9408\,$\pm$\,0.0012}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.9671, 0.9674}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{112.0, 124.2}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{96.8, 103.2}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{83.1, 84.9}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{203, 212}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{214, 233}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{260, 306}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.7845\,$\pm$\,0.0013}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.7851\,$\pm$\,0.0018}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8043, 0.8025}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.8600\,$\pm$\,0.0009}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8612\,$\pm$\,0.0016}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8805, 0.8798}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{24.97, 24.58}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{25.19, 25.50}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{25.55, 24.64}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{68.4, 72.2}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{71.2, 72.8}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{72.5, 72.2}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.7194\,$\pm$\,0.0034}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.7200, 0.7213}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.7201, 0.7232}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{0.7965\,$\pm$\,0.0009}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.7972\,$\pm$\,0.0019}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{0.8053\,$\pm$\,0.0020}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{11.36, 11.59}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{11.60, 11.72}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{11.66, 11.47}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabcol}{1\linewidth}\addtolength{\tablabcol}{-2\tabcolsep}
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{34.3, 34.9}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{34.7, 36.3}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{34.9, 35.6}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\addtolength{\tablabcol}{-\tablabnat}\addtolength{\tablabcol}{-2\tabcolsep}
-\ifdim\tablabcol<\tablabw\setlength{\tablabw}{\tablabcol}\fi
-\setlength{\tablabnat}{0pt}\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi\settowidth{\tablabtmp}{\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1}}\ifdim\tablabtmp>\tablabnat\setlength{\tablabnat}{\tablabtmp}\fi
-\settowidth{\tablabtmp}{pretrained on 17 classes (random flavor boundary),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on \Kfull{} classes (kinematic inputs only),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi\settowidth{\tablabtmp}{pretrained on 17 classes (no flavor boundary),}\ifdim\tablabtmp>\tablabatom\setlength{\tablabatom}{\tablabtmp}\fi
-\ifdim\tablabw>7cm\setlength{\tablabw}{7cm}\fi\ifdim\tablabnat<\tablabw\setlength{\tablabw}{\tablabnat}\fi\ifdim\tablabatom>\tablabw\setlength{\tablabw}{\tablabatom}\fi
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls (rows), trained and scored on each task at its largest training set. Upper part: JetClass-II (class-balanced test set) accuracy and AUC averaged over its \Kfull{} classes each against the rest, over the classes with the full \JcBalTestPerClass{} test jets, over the resonant and over the QCD classes; JetClass accuracy and AUC. Lower part: top and quark/gluon tagging (also on Herwig jets) with the missing inputs substituted as chosen on validation for every model (\LpSubstitutionTop{} for top, \LpSubstitutionQg{} for quark/gluon; column headings): accuracy, AUC and the background rejections $R_{50}$ and $R_{30}$, $1/\epsB$ at 50\% and 30\% signal efficiency. The ratio column is $\rho$ of equation~(\ref{eq:ratio}), $(1-\mathrm{AUC})$ over that of the \Kfull-class run of the same seed (a random partition: of its seed). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations. The \Kfull-class model with kinematic inputs only, a diagnostic of the missing inputs, has one run and no input missing, and is evaluated on top tagging only. AUC: area under the curve of signal efficiency against background efficiency.}
+\captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls (rows), trained and scored on each task at its largest training set; (LP): linear probe on the frozen features. Upper part: JetClass-II (class-balanced test set) accuracy and AUC averaged over its \Kfull{} classes each against the rest, over the classes with the full \JcBalTestPerClass{} test jets, over the resonant and over the QCD classes; JetClass accuracy and AUC. Lower part: top and quark/gluon tagging (also on Herwig jets) with the missing inputs substituted as chosen on validation for every model (\LpSubstitutionTop{} for top, \LpSubstitutionQg{} for quark/gluon; column headings): accuracy, AUC and the background rejections $R_{50}$ and $R_{30}$, $1/\epsB$ at 50\% and 30\% signal efficiency. The ratio column is $\rho$ of equation~(\ref{eq:ratio}), $(1-\mathrm{AUC})$ over that of the \Kfull-class run of the same seed (a random partition: of its seed). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations. The \Kfull-class model with kinematic inputs only, a diagnostic of the missing inputs, has one run and no input missing, and is evaluated on top tagging only. AUC: area under the curve of signal efficiency against background efficiency.}
 \label{tab:probes}
 \par\medskip
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.55\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}cc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
 \toprule
- & \multicolumn{2}{c}{JetClass-II} \\
-\cmidrule(lr){2-3}
- & accuracy & AUC \\
+ & \multicolumn{3}{c}{JetClass-II} \\
+\cmidrule(lr){2-4}
+ & accuracy & AUC & $\rho$ \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 0.4348\,$\pm$\,0.0003 & 0.9801\,$\pm$\,$<$0.0001 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 0.4328\,$\pm$\,0.0008 & 0.9796\,$\pm$\,0.0001 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 0.3609\,$\pm$\,0.0046 & 0.9756\,$\pm$\,0.0002 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 0.3341\,$\pm$\,0.0067 & 0.9691\,$\pm$\,0.0004 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 0.4271, 0.4305 & 0.9791, 0.9794 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 0.3124, 0.3497 & 0.9679, 0.9696 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 0.4201 & 0.9776 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 0.4213 & 0.9776 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 0.4231 & 0.9779 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 0.4228 & 0.9778 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 0.4204 & 0.9775 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 0.3769, 0.3723 & 0.9717, 0.9710 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 0.3945, 0.3963 & 0.9758, 0.9759 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 0.4071, 0.4089 & 0.9760, 0.9760 \\
-\mbox{random network,} \mbox{linear probe} & 0.0724\,$\pm$\,0.0015 & 0.8121\,$\pm$\,0.0019 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 0.1017\,$\pm$\,0.0017 & 0.8664\,$\pm$\,0.0036 \\
+\mbox{\Kfull{} classes (LP)} & 0.4348\,$\pm$\,0.0003 & 0.9801\,$\pm$\,$<$0.0001 & 1.000 \\
+\mbox{\Kres{} classes (LP)} & 0.4328\,$\pm$\,0.0008 & 0.9796\,$\pm$\,0.0001 & 1.026\,$\pm$\,0.005 \\
+\mbox{\Kmid{} classes (LP)} & 0.3609\,$\pm$\,0.0046 & 0.9756\,$\pm$\,0.0002 & 1.227\,$\pm$\,0.009 \\
+\mbox{\Kcoarse{} classes (LP)} & 0.3341\,$\pm$\,0.0067 & 0.9691\,$\pm$\,0.0004 & 1.557\,$\pm$\,0.019 \\
+\mbox{\Kres{} classes + mass (LP)} & 0.4271, 0.4305 & 0.9791, 0.9794 & 1.053, 1.037 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 0.3124, 0.3497 & 0.9679, 0.9696 & 1.617, 1.528 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 0.4201 & 0.9776 & 1.129 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 0.4213 & 0.9776 & 1.130 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 0.4231 & 0.9779 & 1.115 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 0.4228 & 0.9778 & 1.117 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 0.4204 & 0.9775 & 1.134 \\
+\mbox{no flavor boundary (LP)} & 0.3769, 0.3723 & 0.9717, 0.9710 & 1.424, 1.462 \\
+\mbox{$b$-quark boundary (LP)} & 0.3945, 0.3963 & 0.9758, 0.9759 & 1.218, 1.212 \\
+\mbox{random flavor boundary (LP)} & 0.4071, 0.4089 & 0.9760, 0.9760 & 1.206, 1.208 \\
+\mbox{random network (LP)} & 0.0724\,$\pm$\,0.0015 & 0.8121\,$\pm$\,0.0019 & -- \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 0.1017\,$\pm$\,0.0017 & 0.8664\,$\pm$\,0.0036 & -- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -89,28 +36,28 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:probes}{tab:probes:2}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}cc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}cc}
 \toprule
  & \multicolumn{2}{c}{JetClass-II} \\
 \cmidrule(lr){2-3}
- & $\rho$ & AUC, full count \\
+ & AUC, full count & AUC, resonant \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 1.000 & 0.9813\,$\pm$\,$<$0.0001 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 1.026\,$\pm$\,0.005 & 0.9810\,$\pm$\,0.0001 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 1.227\,$\pm$\,0.009 & 0.9769\,$\pm$\,0.0002 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 1.557\,$\pm$\,0.019 & 0.9708\,$\pm$\,0.0005 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 1.053, 1.037 & 0.9805, 0.9808 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 1.617, 1.528 & 0.9695, 0.9714 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 1.129 & 0.9792 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 1.130 & 0.9791 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 1.115 & 0.9795 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 1.117 & 0.9794 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 1.134 & 0.9791 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 1.424, 1.462 & 0.9736, 0.9729 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 1.218, 1.212 & 0.9774, 0.9775 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 1.206, 1.208 & 0.9777, 0.9777 \\
-\mbox{random network,} \mbox{linear probe} & -- & 0.8123\,$\pm$\,0.0021 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & -- & 0.8688\,$\pm$\,0.0039 \\
+\mbox{\Kfull{} classes (LP)} & 0.9813\,$\pm$\,$<$0.0001 & 0.9830\,$\pm$\,$<$0.0001 \\
+\mbox{\Kres{} classes (LP)} & 0.9810\,$\pm$\,0.0001 & 0.9829\,$\pm$\,0.0001 \\
+\mbox{\Kmid{} classes (LP)} & 0.9769\,$\pm$\,0.0002 & 0.9785\,$\pm$\,0.0002 \\
+\mbox{\Kcoarse{} classes (LP)} & 0.9708\,$\pm$\,0.0005 & 0.9729\,$\pm$\,0.0005 \\
+\mbox{\Kres{} classes + mass (LP)} & 0.9805, 0.9808 & 0.9824, 0.9827 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 0.9695, 0.9714 & 0.9716, 0.9737 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 0.9792 & 0.9813 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 0.9791 & 0.9812 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 0.9795 & 0.9815 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 0.9794 & 0.9814 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 0.9791 & 0.9812 \\
+\mbox{no flavor boundary (LP)} & 0.9736, 0.9729 & 0.9760, 0.9753 \\
+\mbox{$b$-quark boundary (LP)} & 0.9774, 0.9775 & 0.9794, 0.9795 \\
+\mbox{random flavor boundary (LP)} & 0.9777, 0.9777 & 0.9798, 0.9798 \\
+\mbox{random network (LP)} & 0.8123\,$\pm$\,0.0021 & 0.8152\,$\pm$\,0.0024 \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 0.8688\,$\pm$\,0.0039 & 0.8737\,$\pm$\,0.0044 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -119,28 +66,28 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:probes}{tab:probes:3}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}cc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
 \toprule
- & \multicolumn{2}{c}{JetClass-II} \\
-\cmidrule(lr){2-3}
- & AUC, resonant & AUC, QCD \\
+ & \multicolumn{1}{c}{JetClass-II} & \multicolumn{2}{c}{JetClass} \\
+\cmidrule(lr){2-2}\cmidrule(lr){3-4}
+ & AUC, QCD & accuracy & AUC \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 0.9830\,$\pm$\,$<$0.0001 & 0.9632\,$\pm$\,$<$0.0001 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 0.9829\,$\pm$\,0.0001 & 0.9600\,$\pm$\,0.0002 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 0.9785\,$\pm$\,0.0002 & 0.9583\,$\pm$\,0.0003 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 0.9729\,$\pm$\,0.0005 & 0.9460\,$\pm$\,0.0006 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 0.9824, 0.9827 & 0.9592, 0.9598 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 0.9716, 0.9737 & 0.9458, 0.9457 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 0.9813 & 0.9556 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 0.9812 & 0.9558 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 0.9815 & 0.9561 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 0.9814 & 0.9564 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 0.9812 & 0.9554 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 0.9760, 0.9753 & 0.9460, 0.9449 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 0.9794, 0.9795 & 0.9543, 0.9545 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 0.9798, 0.9798 & 0.9536, 0.9535 \\
-\mbox{random network,} \mbox{linear probe} & 0.8152\,$\pm$\,0.0024 & 0.7936\,$\pm$\,0.0054 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 0.8737\,$\pm$\,0.0044 & 0.8232\,$\pm$\,0.0012 \\
+\mbox{\Kfull{} classes (LP)} & 0.9632\,$\pm$\,$<$0.0001 & 0.7709\,$\pm$\,0.0023 & 0.9682\,$\pm$\,0.0006 \\
+\mbox{\Kres{} classes (LP)} & 0.9600\,$\pm$\,0.0002 & 0.7709\,$\pm$\,0.0005 & 0.9683\,$\pm$\,0.0002 \\
+\mbox{\Kmid{} classes (LP)} & 0.9583\,$\pm$\,0.0003 & 0.7695\,$\pm$\,0.0014 & 0.9680\,$\pm$\,0.0004 \\
+\mbox{\Kcoarse{} classes (LP)} & 0.9460\,$\pm$\,0.0006 & 0.7605\,$\pm$\,0.0027 & 0.9650\,$\pm$\,0.0008 \\
+\mbox{\Kres{} classes + mass (LP)} & 0.9592, 0.9598 & 0.7718, 0.7760 & 0.9684, 0.9697 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 0.9458, 0.9457 & 0.7624, 0.7612 & 0.9655, 0.9651 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 0.9556 & 0.7528 & 0.9636 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 0.9558 & 0.7553 & 0.9641 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 0.9561 & 0.7546 & 0.9638 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 0.9564 & 0.7537 & 0.9636 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 0.9554 & 0.7538 & 0.9639 \\
+\mbox{no flavor boundary (LP)} & 0.9460, 0.9449 & 0.7535, 0.7486 & 0.9633, 0.9622 \\
+\mbox{$b$-quark boundary (LP)} & 0.9543, 0.9545 & 0.7615, 0.7644 & 0.9661, 0.9665 \\
+\mbox{random flavor boundary (LP)} & 0.9536, 0.9535 & 0.7593, 0.7564 & 0.9654, 0.9645 \\
+\mbox{random network (LP)} & 0.7936\,$\pm$\,0.0054 & 0.4077\,$\pm$\,0.0013 & 0.8280\,$\pm$\,0.0011 \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 0.8232\,$\pm$\,0.0012 & 0.4751\,$\pm$\,0.0054 & 0.8655\,$\pm$\,0.0040 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -149,28 +96,30 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:probes}{tab:probes:4}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}cc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}cc}
 \toprule
- & \multicolumn{2}{c}{JetClass} \\
+ & \multicolumn{2}{c}{top} \\
+ & \multicolumn{2}{c}{missing inputs: random draws} \\
 \cmidrule(lr){2-3}
  & accuracy & AUC \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 0.7709\,$\pm$\,0.0023 & 0.9682\,$\pm$\,0.0006 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 0.7709\,$\pm$\,0.0005 & 0.9683\,$\pm$\,0.0002 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 0.7695\,$\pm$\,0.0014 & 0.9680\,$\pm$\,0.0004 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 0.7605\,$\pm$\,0.0027 & 0.9650\,$\pm$\,0.0008 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 0.7718, 0.7760 & 0.9684, 0.9697 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 0.7624, 0.7612 & 0.9655, 0.9651 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 0.7528 & 0.9636 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 0.7553 & 0.9641 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 0.7546 & 0.9638 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 0.7537 & 0.9636 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 0.7538 & 0.9639 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 0.7535, 0.7486 & 0.9633, 0.9622 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 0.7615, 0.7644 & 0.9661, 0.9665 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 0.7593, 0.7564 & 0.9654, 0.9645 \\
-\mbox{random network,} \mbox{linear probe} & 0.4077\,$\pm$\,0.0013 & 0.8280\,$\pm$\,0.0011 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 0.4751\,$\pm$\,0.0054 & 0.8655\,$\pm$\,0.0040 \\
+\mbox{\Kfull{} classes (LP)} & 0.9112\,$\pm$\,0.0015 & 0.9686\,$\pm$\,0.0007 \\
+\mbox{\Kres{} classes (LP)} & 0.9098\,$\pm$\,0.0031 & 0.9671\,$\pm$\,0.0020 \\
+\mbox{\Kmid{} classes (LP)} & 0.9101\,$\pm$\,0.0019 & 0.9681\,$\pm$\,0.0013 \\
+\mbox{\Kcoarse{} classes (LP)} & 0.9152\,$\pm$\,0.0010 & 0.9710\,$\pm$\,0.0006 \\
+\mbox{\Kres{} classes + mass (LP)} & 0.9166, 0.9123 & 0.9715, 0.9702 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 0.9186, 0.9206 & 0.9734, 0.9748 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 0.9065 & 0.9645 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 0.9015 & 0.9615 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 0.9051 & 0.9635 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 0.8976 & 0.9598 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 0.9040 & 0.9634 \\
+\mbox{no flavor boundary (LP)} & 0.9145, 0.9103 & 0.9708, 0.9683 \\
+\mbox{$b$-quark boundary (LP)} & 0.9088, 0.9063 & 0.9673, 0.9657 \\
+\mbox{random flavor boundary (LP)} & 0.9091, 0.9086 & 0.9671, 0.9674 \\
+\mbox{random network (LP)} & 0.8867\,$\pm$\,0.0013 & 0.9408\,$\pm$\,0.0012 \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 0.8783\,$\pm$\,0.0021 & 0.9354\,$\pm$\,0.0017 \\
+\mbox{\Kfull{} classes,} \mbox{kinematic inputs only (LP)} & 0.9163 & 0.9713 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -179,30 +128,30 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:probes}{tab:probes:5}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}cc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}cc}
 \toprule
  & \multicolumn{2}{c}{top} \\
  & \multicolumn{2}{c}{missing inputs: random draws} \\
 \cmidrule(lr){2-3}
- & accuracy & AUC \\
+ & $R_{50}$ & $R_{30}$ \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 0.9112\,$\pm$\,0.0015 & 0.9686\,$\pm$\,0.0007 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 0.9098\,$\pm$\,0.0031 & 0.9671\,$\pm$\,0.0020 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 0.9101\,$\pm$\,0.0019 & 0.9681\,$\pm$\,0.0013 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 0.9152\,$\pm$\,0.0010 & 0.9710\,$\pm$\,0.0006 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 0.9166, 0.9123 & 0.9715, 0.9702 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 0.9186, 0.9206 & 0.9734, 0.9748 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 0.9065 & 0.9645 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 0.9015 & 0.9615 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 0.9051 & 0.9635 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 0.8976 & 0.9598 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 0.9040 & 0.9634 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 0.9145, 0.9103 & 0.9708, 0.9683 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 0.9088, 0.9063 & 0.9673, 0.9657 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 0.9091, 0.9086 & 0.9671, 0.9674 \\
-\mbox{random network,} \mbox{linear probe} & 0.8867\,$\pm$\,0.0013 & 0.9408\,$\pm$\,0.0012 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 0.8783\,$\pm$\,0.0021 & 0.9354\,$\pm$\,0.0017 \\
-\mbox{pretrained on \Kfull{} classes (kinematic inputs only),} \mbox{linear probe} & 0.9163 & 0.9713 \\
+\mbox{\Kfull{} classes (LP)} & 86.6\,$\pm$\,3.9 & 228\,$\pm$\,25 \\
+\mbox{\Kres{} classes (LP)} & 79.4\,$\pm$\,9.3 & 199\,$\pm$\,25 \\
+\mbox{\Kmid{} classes (LP)} & 87.7\,$\pm$\,3.5 & 231\,$\pm$\,8 \\
+\mbox{\Kcoarse{} classes (LP)} & 96.6\,$\pm$\,4.2 & 255\,$\pm$\,17 \\
+\mbox{\Kres{} classes + mass (LP)} & 96.8, 103.2 & 260, 306 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 112.0, 124.2 & 306, 378 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 69.4 & 174 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 62.3 & 151 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 66.0 & 164 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 58.7 & 152 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 65.6 & 173 \\
+\mbox{no flavor boundary (LP)} & 98.1, 87.1 & 262, 243 \\
+\mbox{$b$-quark boundary (LP)} & 84.0, 75.1 & 203, 212 \\
+\mbox{random flavor boundary (LP)} & 83.1, 84.9 & 214, 233 \\
+\mbox{random network (LP)} & 25.0\,$\pm$\,0.8 & 57\,$\pm$\,3 \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 22.6\,$\pm$\,1.0 & 49\,$\pm$\,3 \\
+\mbox{\Kfull{} classes,} \mbox{kinematic inputs only (LP)} & 94.2 & 231 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -211,30 +160,29 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:probes}{tab:probes:6}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}cc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}cc}
 \toprule
- & \multicolumn{2}{c}{top} \\
- & \multicolumn{2}{c}{missing inputs: random draws} \\
+ & \multicolumn{2}{c}{quark/gluon} \\
+ & \multicolumn{2}{c}{missing inputs: the training mean} \\
 \cmidrule(lr){2-3}
- & $R_{50}$ & $R_{30}$ \\
+ & accuracy & AUC \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 86.6\,$\pm$\,3.9 & 228\,$\pm$\,25 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 79.4\,$\pm$\,9.3 & 199\,$\pm$\,25 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 87.7\,$\pm$\,3.5 & 231\,$\pm$\,8 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 96.6\,$\pm$\,4.2 & 255\,$\pm$\,17 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 96.8, 103.2 & 260, 306 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 112.0, 124.2 & 306, 378 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 69.4 & 174 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 62.3 & 151 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 66.0 & 164 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 58.7 & 152 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 65.6 & 173 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 98.1, 87.1 & 262, 243 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 84.0, 75.1 & 203, 212 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 83.1, 84.9 & 214, 233 \\
-\mbox{random network,} \mbox{linear probe} & 25.0\,$\pm$\,0.8 & 57\,$\pm$\,3 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 22.6\,$\pm$\,1.0 & 49\,$\pm$\,3 \\
-\mbox{pretrained on \Kfull{} classes (kinematic inputs only),} \mbox{linear probe} & 94.2 & 231 \\
+\mbox{\Kfull{} classes (LP)} & 0.8076\,$\pm$\,0.0004 & 0.8835\,$\pm$\,0.0002 \\
+\mbox{\Kres{} classes (LP)} & 0.8051\,$\pm$\,0.0015 & 0.8818\,$\pm$\,0.0018 \\
+\mbox{\Kmid{} classes (LP)} & 0.8055\,$\pm$\,0.0009 & 0.8821\,$\pm$\,0.0011 \\
+\mbox{\Kcoarse{} classes (LP)} & 0.8064\,$\pm$\,0.0014 & 0.8821\,$\pm$\,0.0015 \\
+\mbox{\Kres{} classes + mass (LP)} & 0.8075, 0.8073 & 0.8837, 0.8831 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 0.8062, 0.8040 & 0.8805, 0.8798 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 0.8054 & 0.8810 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 0.8029 & 0.8791 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 0.8049 & 0.8803 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 0.7977 & 0.8747 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 0.8026 & 0.8790 \\
+\mbox{no flavor boundary (LP)} & 0.8056, 0.8006 & 0.8823, 0.8774 \\
+\mbox{$b$-quark boundary (LP)} & 0.8043, 0.8025 & 0.8813, 0.8797 \\
+\mbox{random flavor boundary (LP)} & 0.8058, 0.8043 & 0.8829, 0.8807 \\
+\mbox{random network (LP)} & 0.7851\,$\pm$\,0.0018 & 0.8612\,$\pm$\,0.0016 \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 0.7845\,$\pm$\,0.0013 & 0.8600\,$\pm$\,0.0009 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -243,29 +191,29 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:probes}{tab:probes:7}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}cc}
 \toprule
- & \multicolumn{1}{c}{quark/gluon} \\
- & \multicolumn{1}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-2}
- & accuracy \\
+ & \multicolumn{2}{c}{quark/gluon} \\
+ & \multicolumn{2}{c}{missing inputs: the training mean} \\
+\cmidrule(lr){2-3}
+ & $R_{50}$ & $R_{30}$ \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 0.8076\,$\pm$\,0.0004 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 0.8051\,$\pm$\,0.0015 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 0.8055\,$\pm$\,0.0009 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 0.8064\,$\pm$\,0.0014 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 0.8075, 0.8073 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 0.8062, 0.8040 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 0.8054 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 0.8029 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 0.8049 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 0.7977 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 0.8026 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 0.8056, 0.8006 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 0.8043, 0.8025 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 0.8058, 0.8043 \\
-\mbox{random network,} \mbox{linear probe} & 0.7851\,$\pm$\,0.0018 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 0.7845\,$\pm$\,0.0013 \\
+\mbox{\Kfull{} classes (LP)} & 26.17\,$\pm$\,0.35 & 72.7\,$\pm$\,2.4 \\
+\mbox{\Kres{} classes (LP)} & 25.59\,$\pm$\,0.41 & 71.0\,$\pm$\,0.3 \\
+\mbox{\Kmid{} classes (LP)} & 25.68\,$\pm$\,0.64 & 70.8\,$\pm$\,1.8 \\
+\mbox{\Kcoarse{} classes (LP)} & 25.79\,$\pm$\,0.73 & 74.3\,$\pm$\,1.9 \\
+\mbox{\Kres{} classes + mass (LP)} & 25.69, 25.53 & 73.9, 70.7 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 25.82, 25.85 & 68.4, 72.2 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 24.98 & 69.6 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 24.53 & 69.3 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 24.00 & 68.4 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 22.84 & 64.7 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 24.05 & 69.6 \\
+\mbox{no flavor boundary (LP)} & 25.55, 24.64 & 73.9, 71.7 \\
+\mbox{$b$-quark boundary (LP)} & 24.97, 24.58 & 72.5, 72.2 \\
+\mbox{random flavor boundary (LP)} & 25.19, 25.50 & 71.2, 72.8 \\
+\mbox{random network (LP)} & 19.40\,$\pm$\,0.28 & 56.4\,$\pm$\,1.0 \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 18.70\,$\pm$\,0.18 & 52.2\,$\pm$\,0.8 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -274,29 +222,29 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:probes}{tab:probes:8}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}cc}
 \toprule
- & \multicolumn{1}{c}{quark/gluon} \\
- & \multicolumn{1}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-2}
- & AUC \\
+ & \multicolumn{2}{c}{quark/gluon, Herwig} \\
+ & \multicolumn{2}{c}{missing inputs: the training mean} \\
+\cmidrule(lr){2-3}
+ & accuracy & AUC \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 0.8835\,$\pm$\,0.0002 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 0.8818\,$\pm$\,0.0018 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 0.8821\,$\pm$\,0.0011 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 0.8821\,$\pm$\,0.0015 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 0.8837, 0.8831 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 0.8805, 0.8798 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 0.8810 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 0.8791 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 0.8803 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 0.8747 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 0.8790 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 0.8823, 0.8774 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 0.8813, 0.8797 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 0.8829, 0.8807 \\
-\mbox{random network,} \mbox{linear probe} & 0.8612\,$\pm$\,0.0016 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 0.8600\,$\pm$\,0.0009 \\
+\mbox{\Kfull{} classes (LP)} & 0.7229\,$\pm$\,0.0033 & 0.8075\,$\pm$\,0.0006 \\
+\mbox{\Kres{} classes (LP)} & 0.7234\,$\pm$\,0.0022 & 0.8068\,$\pm$\,0.0022 \\
+\mbox{\Kmid{} classes (LP)} & 0.7206\,$\pm$\,0.0005 & 0.8058\,$\pm$\,0.0011 \\
+\mbox{\Kcoarse{} classes (LP)} & 0.7201\,$\pm$\,0.0028 & 0.8053\,$\pm$\,0.0020 \\
+\mbox{\Kres{} classes + mass (LP)} & 0.7227, 0.7218 & 0.8064, 0.8078 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 0.7256, 0.7240 & 0.8079, 0.8078 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 0.7262 & 0.8086 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 0.7171 & 0.8029 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 0.7194 & 0.8039 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 0.7224 & 0.8052 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 0.7208 & 0.8023 \\
+\mbox{no flavor boundary (LP)} & 0.7200, 0.7213 & 0.8058, 0.8055 \\
+\mbox{$b$-quark boundary (LP)} & 0.7218, 0.7209 & 0.8057, 0.8060 \\
+\mbox{random flavor boundary (LP)} & 0.7201, 0.7232 & 0.8065, 0.8060 \\
+\mbox{random network (LP)} & 0.7205\,$\pm$\,0.0021 & 0.7965\,$\pm$\,0.0009 \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 0.7194\,$\pm$\,0.0034 & 0.7972\,$\pm$\,0.0019 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -305,184 +253,29 @@
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:probes}{tab:probes:9}
 \begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}cc}
 \toprule
- & \multicolumn{1}{c}{quark/gluon} \\
- & \multicolumn{1}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-2}
- & $R_{50}$ \\
+ & \multicolumn{2}{c}{quark/gluon, Herwig} \\
+ & \multicolumn{2}{c}{missing inputs: the training mean} \\
+\cmidrule(lr){2-3}
+ & $R_{50}$ & $R_{30}$ \\
 \midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 26.17\,$\pm$\,0.35 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 25.59\,$\pm$\,0.41 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 25.68\,$\pm$\,0.64 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 25.79\,$\pm$\,0.73 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 25.69, 25.53 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 25.82, 25.85 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 24.98 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 24.53 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 24.00 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 22.84 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 24.05 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 25.55, 24.64 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 24.97, 24.58 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 25.19, 25.50 \\
-\mbox{random network,} \mbox{linear probe} & 19.40\,$\pm$\,0.28 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 18.70\,$\pm$\,0.18 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:probes}{tab:probes:10}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
-\toprule
- & \multicolumn{1}{c}{quark/gluon} \\
- & \multicolumn{1}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-2}
- & $R_{30}$ \\
-\midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 72.7\,$\pm$\,2.4 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 71.0\,$\pm$\,0.3 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 70.8\,$\pm$\,1.8 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 74.3\,$\pm$\,1.9 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 73.9, 70.7 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 68.4, 72.2 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 69.6 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 69.3 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 68.4 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 64.7 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 69.6 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 73.9, 71.7 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 72.5, 72.2 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 71.2, 72.8 \\
-\mbox{random network,} \mbox{linear probe} & 56.4\,$\pm$\,1.0 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 52.2\,$\pm$\,0.8 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:probes}{tab:probes:11}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
-\toprule
- & \multicolumn{1}{c}{quark/gluon, Herwig} \\
- & \multicolumn{1}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-2}
- & accuracy \\
-\midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 0.7229\,$\pm$\,0.0033 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 0.7234\,$\pm$\,0.0022 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 0.7206\,$\pm$\,0.0005 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 0.7201\,$\pm$\,0.0028 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 0.7227, 0.7218 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 0.7256, 0.7240 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 0.7262 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 0.7171 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 0.7194 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 0.7224 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 0.7208 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 0.7200, 0.7213 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 0.7218, 0.7209 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 0.7201, 0.7232 \\
-\mbox{random network,} \mbox{linear probe} & 0.7205\,$\pm$\,0.0021 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 0.7194\,$\pm$\,0.0034 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:probes}{tab:probes:12}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
-\toprule
- & \multicolumn{1}{c}{quark/gluon, Herwig} \\
- & \multicolumn{1}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-2}
- & AUC \\
-\midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 0.8075\,$\pm$\,0.0006 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 0.8068\,$\pm$\,0.0022 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 0.8058\,$\pm$\,0.0011 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 0.8053\,$\pm$\,0.0020 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 0.8064, 0.8078 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 0.8079, 0.8078 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 0.8086 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 0.8029 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 0.8039 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 0.8052 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 0.8023 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 0.8058, 0.8055 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 0.8057, 0.8060 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 0.8065, 0.8060 \\
-\mbox{random network,} \mbox{linear probe} & 0.7965\,$\pm$\,0.0009 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 0.7972\,$\pm$\,0.0019 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:probes}{tab:probes:13}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
-\toprule
- & \multicolumn{1}{c}{quark/gluon, Herwig} \\
- & \multicolumn{1}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-2}
- & $R_{50}$ \\
-\midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 11.81\,$\pm$\,0.10 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 11.63\,$\pm$\,0.43 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 11.52\,$\pm$\,0.23 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 11.50\,$\pm$\,0.16 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 11.71, 11.94 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 11.93, 11.91 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 11.85 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 11.19 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 10.92 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 11.51 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 11.23 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 11.36, 11.59 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 11.66, 11.47 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 11.60, 11.72 \\
-\mbox{random network,} \mbox{linear probe} & 10.58\,$\pm$\,0.11 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 10.48\,$\pm$\,0.21 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:probes}{tab:probes:14}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{\tablabw}c}
-\toprule
- & \multicolumn{1}{c}{quark/gluon, Herwig} \\
- & \multicolumn{1}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-2}
- & $R_{30}$ \\
-\midrule
-\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 35.0\,$\pm$\,2.6 \\
-\mbox{pretrained on \Kres{} classes,} \mbox{linear probe} & 35.9\,$\pm$\,1.7 \\
-\mbox{pretrained on \Kmid{} classes,} \mbox{linear probe} & 34.4\,$\pm$\,1.7 \\
-\mbox{pretrained on \Kcoarse{} classes,} \mbox{linear probe} & 35.5\,$\pm$\,1.0 \\
-\mbox{pretrained on \Kres{} classes + mass,} \mbox{linear probe} & 34.9, 35.6 \\
-\mbox{pretrained on \Kcoarse{} classes + mass,} \mbox{linear probe} & 34.7, 36.3 \\
-\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 36.2 \\
-\mbox{pretrained on 17 random classes (partition 2),} \mbox{linear probe,} \mbox{run 2} & 34.0 \\
-\mbox{pretrained on 17 random classes (partition 3),} \mbox{linear probe,} \mbox{run 1} & 32.1 \\
-\mbox{pretrained on 17 random classes (partition 4),} \mbox{linear probe,} \mbox{run 2} & 33.8 \\
-\mbox{pretrained on 17 random classes (partition 5),} \mbox{linear probe,} \mbox{run 2} & 34.1 \\
-\mbox{pretrained on 17 classes (no flavor boundary),} \mbox{linear probe} & 34.3, 34.9 \\
-\mbox{pretrained on 17 classes ($b$-quark boundary),} \mbox{linear probe} & 35.3, 34.6 \\
-\mbox{pretrained on 17 classes (random flavor boundary),} \mbox{linear probe} & 35.0, 35.5 \\
-\mbox{random network,} \mbox{linear probe} & 31.6\,$\pm$\,0.8 \\
-\mbox{random network, BatchNorm recomputed,} \mbox{linear probe} & 30.7\,$\pm$\,0.5 \\
+\mbox{\Kfull{} classes (LP)} & 11.81\,$\pm$\,0.10 & 35.0\,$\pm$\,2.6 \\
+\mbox{\Kres{} classes (LP)} & 11.63\,$\pm$\,0.43 & 35.9\,$\pm$\,1.7 \\
+\mbox{\Kmid{} classes (LP)} & 11.52\,$\pm$\,0.23 & 34.4\,$\pm$\,1.7 \\
+\mbox{\Kcoarse{} classes (LP)} & 11.50\,$\pm$\,0.16 & 35.5\,$\pm$\,1.0 \\
+\mbox{\Kres{} classes + mass (LP)} & 11.71, 11.94 & 34.9, 35.6 \\
+\mbox{\Kcoarse{} classes + mass (LP)} & 11.93, 11.91 & 34.7, 36.3 \\
+\mbox{random partition 1 (LP),} \mbox{run 1} & 11.85 & 36.2 \\
+\mbox{random partition 2 (LP),} \mbox{run 2} & 11.19 & 34.0 \\
+\mbox{random partition 3 (LP),} \mbox{run 1} & 10.92 & 32.1 \\
+\mbox{random partition 4 (LP),} \mbox{run 2} & 11.51 & 33.8 \\
+\mbox{random partition 5 (LP),} \mbox{run 2} & 11.23 & 34.1 \\
+\mbox{no flavor boundary (LP)} & 11.36, 11.59 & 34.3, 34.9 \\
+\mbox{$b$-quark boundary (LP)} & 11.66, 11.47 & 35.3, 34.6 \\
+\mbox{random flavor boundary (LP)} & 11.60, 11.72 & 35.0, 35.5 \\
+\mbox{random network (LP)} & 10.58\,$\pm$\,0.11 & 31.6\,$\pm$\,0.8 \\
+\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 10.48\,$\pm$\,0.21 & 30.7\,$\pm$\,0.5 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

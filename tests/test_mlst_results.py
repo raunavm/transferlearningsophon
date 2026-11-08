@@ -550,7 +550,7 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
     assert em.m["MlstMassHeadResMassOverUncorrResonant"] == "0.3867 and 0.3933"      # 0.116 / 0.3, 0.118 / 0.3
     d = M.table_mass_detail(atlas, runs, MT.fmt_pm)
     assert "200--400 & 400--2500" in d and r"\textit{QCD jets}" in d and "\nsoft-drop mass & " in d
-    assert "jets & all & resonant & QCD & all & resonant & QCD" in d and r"\textit{this work, mass output}" in d
+    assert "jets & all & resonant & QCD & all & resonant & QCD" in d and r"\textit{regression output of the pretrained network}" in d
     atlas["mtx-l162-s1"] = _atlas(groomed=0.3, mlp=0.2)
     with pytest.raises(SystemExit, match="groomed"):
         M.table_mass(atlas, runs, MT.fmt_pm)
@@ -1164,7 +1164,7 @@ def test_the_jetclass2_fine_tuning_block_has_the_ratio_column_at_one_million_jet
     _, per, _ = M.load_ft(tmp_path)
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"]}, MT.fmt_pm, ("L188", "R16_Q1"))
     jc2, jc1 = t.split(M.BLOCK_SEP)[0], t.split(M.BLOCK_SEP)[3]
-    assert r"$\rho$, $10^{6}$ jets" in jc2 and r"\rho" not in jc1
+    assert r"& $\rho$ \\" in jc2 and r"\rho" not in jc1
     # (1 - 0.91) / (1 - 0.90) run by run; the 188-class row 1; from scratch has none
     assert r"\Kcoarse{} classes & 0.910 & 0.910 & 0.900 \\" in jc2 and r"\Kfull{} classes & 0.900 & 0.900 & 1.00 \\" in jc2
     assert jc2.splitlines()[-1].startswith(M.SCRATCH_LABEL) and jc2.splitlines()[-1].endswith(r"& -- \\")
@@ -1345,7 +1345,7 @@ def test_the_task_longtables_keep_each_heading_with_its_first_row(tmp_path):
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
     lines = t.splitlines()
     ncol = int(next(ln for ln in lines if ln.startswith(r"\multicolumn")).split("}")[0].split("{")[1])
-    assert r"\begin{longtable}{>{\raggedright\arraybackslash}p{3.9cm}" + "c" * (ncol - 1) + "}" in lines
+    assert r"\begin{longtable}{>{\raggedright\arraybackslash}p{" + M.LONG_LABEL_CM + "}" + "c" * (ncol - 1) + "}" in lines
     titles = [i for i, ln in enumerate(lines) if ln.startswith(r"\multicolumn") and "continued" not in ln]
     assert len(titles) == len(M.FT_TASKS) + 1                  # JetClass-II: AUC and accuracy
     for i in titles:
@@ -1445,18 +1445,19 @@ def test_the_published_rows_carry_their_papers_parameters_and_the_physics_baseli
     assert all(r.get("params_quote") for s in ("top", "qg_exp") for r in lit[s] if r.get("params"))
 
 
-def test_a_row_label_names_its_network_and_the_tables_mode_and_wraps_only_between_its_parts():
+def test_a_row_label_names_its_network_and_the_tables_tag_and_wraps_only_at_its_commas():
+    """PI 2026-11-07: the network by its classes (or the control's shortest name), then the table's tag in ParT's
+    style, then a run number; published rows keep their names; the caption's first sentence defines the tag."""
     t = "\n".join([M.LABEL["RAND2_p1"] + r", run 1 & 1 \\", M.SCRATCH_LABEL + r" & 2 \\", M.LABEL["L188"] + r" & 3 \\",
-                   r"ParT~\cite{part} & 4 \\"])
-    out = M._labels(t, "linear probe").splitlines()
-    # it may wrap only at the ', ' after its network, never inside the network's name (2026-11-07)
-    assert out[0] == r"\mbox{pretrained on 17 random classes (partition 1),} \mbox{linear probe,} \mbox{run 1} & 1 \\"
-    assert out[1] == r"\mbox{no pretraining,} \mbox{trained from scratch} & 2 \\"      # says how it was trained
-    assert out[2] == r"\mbox{pretrained on \Kfull{} classes,} \mbox{linear probe} & 3 \\"
-    # a narrow longtable may break the network before its parenthesis, nowhere else
-    assert M._labels(t, "fine-tuned", paren=True).splitlines()[0].startswith(
-        r"\mbox{pretrained on 17 random classes} \mbox{(partition 1),} \mbox{fine-tuned,}")
-    assert out[3] == r"ParT~\cite{part} & 4 \\"                                         # published rows as named
+                   M.LABEL[M.INIT_BN] + r" & 4 \\", r"ParT~\cite{part} & 5 \\"])
+    out = M._labels(t, M.MODE["lp"]).splitlines()
+    assert out[0] == r"\mbox{random partition 1 (LP),} \mbox{run 1} & 1 \\"
+    assert out[1] == r"\mbox{no pretraining (LP)} & 2 \\" and out[2] == r"\mbox{\Kfull{} classes (LP)} & 3 \\"
+    assert out[3] == r"\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 4 \\"
+    assert out[4] == r"ParT~\cite{part} & 5 \\"
+    assert M._labels(t).splitlines()[2] == r"\mbox{\Kfull{} classes} & 3 \\"          # a table of several modes
+    cap = M._define_tags("Linear probes on networks pretrained on JetClass-II with 188 classes. More.", "probes")
+    assert cap == "Linear probes on networks pretrained on JetClass-II with 188 classes; " + M.MODE_DEF["lp"] + ". More."
 
 
 def test_a_breakable_table_keeps_its_caption_with_the_first_block_and_marks_the_others_continued():
@@ -1469,4 +1470,4 @@ def test_a_breakable_table_keeps_its_caption_with_the_first_block_and_marks_the_
     assert r"\captionof{table}" in first and r"\begin{tabular}" in first        # one unbreakable unit
     n = t.count(r"\begin{tabular}")
     assert n > 1 and t.count(r"\TableContinued{tab:probes}{tab:probes:") == n - 1
-    assert t.count(r"\begin{tabular}{" + M.LABW_SPEC) == n and r"\settowidth{\tablabtmp}" in t   # one label width
+    assert len(set(re.findall(r"\\begin\{tabular\}\{(.*?p\{[\d.]+cm\})", t))) == 1      # one label width
