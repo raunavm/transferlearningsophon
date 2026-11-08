@@ -182,6 +182,16 @@ def test_from_scratch_full_schedule_cells_run_all_160_epochs_into_their_own_tree
         assert c["out"].startswith("/data/results/ft_v2/budget_long_fulldecay/")
 
 
+def test_from_scratch_full_schedule_cells_below_1e6_cover_every_task_and_size():
+    cells = bfb.scratch_full_cells("1e-3", "3e-3")
+    assert sorted({(c["task"], c["n"]) for c in cells}) == sorted(
+        [(t, n) for t in ("top", "qg") for n in (1_000, 10_000, 100_000)] + [(t, n) for t in ("jc1", "jc2b") for n in (10_000, 100_000)])
+    assert len(cells) == 30 and all(c["init"] == "" and c["patience_from"] == c["epochs"] for c in cells)
+    assert {c["lr"] for c in cells if c["task"] == "qg"} == {"3e-3"} and {c["lr"] for c in cells if c["task"] != "qg"} == {"1e-3"}
+    assert all(c["epochs"] * c["spe"] // 512 == 20_000 for c in cells)        # the same budget as the cells they replace
+    assert all(c["out"].startswith("/data/results/ft_v2/budget_fulldecay/") for c in cells)
+
+
 def test_long_control_cells_are_the_eleven_partition_runs_on_jetclass2_with_the_long_budget():
     ctrl = bfb.long_ctrl_cells("1e-3")
     assert sorted(c["init"] for c in ctrl) == sorted(r for r in bfb.paper_runs() if r.startswith(("rand", "flav")))
