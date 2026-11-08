@@ -39,7 +39,8 @@ def test_the_launched_curves_and_bootstrap_jobs_keep_mtx_s2_20_and_the_status_jo
         if p.parent == BC.OUT_DIR:
             name = p.name.removeprefix("job-").removesuffix("-raunav.yaml")
             pin = (BC.PIN_ROC_JC1OVR if name in ("curves-roc-jc1ovr", "curves-roc-kin")
-                   else BC.PIN_ROC if name.startswith("curves-roc") or name in BC.UNLAUNCHED_AT_PIN
+                   else BC.PIN_UNLAUNCHED if name in BC.UNLAUNCHED_AT_PIN
+                   else BC.PIN_ROC if name.startswith("curves-roc")
                    else BC.PIN_FULL if name == "curves-full" else BC.PIN_V4 if name.endswith("-v4") else "mtx-s2.20")
             assert f'--branch "{pin}"' in c["template"]["spec"]["containers"][0]["args"][0]
         else:
@@ -243,7 +244,7 @@ def test_the_roc_script_is_checked_at_the_roc_tag_only(monkeypatch):
     monkeypatch.setattr("sys.argv", ["build_curve_jobs.py", "--pin-not-yet-tagged", "--check-only"])
     assert BC.main() == 0
     assert seen == [(BC.PIN, BC.NEEDED), (BC.PIN_ROC, {**BC.NEEDED, **BC.NEEDED_ROC}),
-                    (BC.PIN_ROC_JC1OVR, {**BC.NEEDED, **BC.NEEDED_ROC_JC1OVR})]
+                    (BC.PIN_ROC_JC1OVR, {**BC.NEEDED, **BC.NEEDED_ROC_JC1OVR}), (BC.PIN_UNLAUNCHED, BC.NEEDED)]
     assert "experiments/FT/roc_points.py" not in BC.NEEDED
     monkeypatch.setattr("sys.argv", ["build_curve_jobs.py", "--tag", "mtx-s9.99"])
     with pytest.raises(SystemExit, match="is not PIN_ROC"):

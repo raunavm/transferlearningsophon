@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The gallery's ROC mock-ups (docs/figstyle/PLAN.md): FJ, FJ-ctrl, FJ-s, FJ-app, FJ-ctrl-app, F4, F4-app, F6, F6-app, A3R, A3R-ft. Every ROC is
+"""The gallery's ROC mock-ups (docs/figstyle/PLAN.md): FJ, FJ-ctrl, FJ-s, FJ-app, FJ-ctrl-app, F4-mech, F4-mech-ft, F4-other, F6, F6-app, A3R, A3R-ft. Every ROC is
 rejection (log, from 1) against signal efficiency (linear, 0 to 1), the mean over runs from
 gallery_common.mean_over_runs, on style_v4's grid, with the y axis stopping where the curves stop so
 they come in from the top of the frame, and the legend in the free lower left."""
@@ -109,14 +109,6 @@ def _plot(ax, s, **kw) -> None:
         ax.plot(s[0], s[1], **kw)
 
 
-def _floor(ax, docs: dict, models: list, key: str) -> None:
-    """The y axis starts at 1; a panel with no curve gets the range its test set allows."""
-    if ax.has_data():
-        _y_range([ax])
-    else:
-        ax.set_ylim(1, M.V4.roc_limit(docs[models[0]], key))
-
-
 def _jc1_curves(ax, docs: dict, models: list, auc_in_legend: bool) -> float:
     """Ten class-against-the-rest curves, solid (every ROC figure, PI 2026-11-07); returns the macro AUC."""
     aucs = []
@@ -220,55 +212,70 @@ def draw_fj_ctrl_app(path: pathlib.Path) -> None:
 
 
 F4_YMAX = 1e4          # one y range on all four panels (PI 2026-11-05)
+PAIR_LABEL_SETS = tuple(S.LEVELS[::-1])              # the 188-class curve last, so it shows where the 162-class one lies
+PAIR_BOUNDARIES = tuple(S.CONTROLS) + ("L188",)       # the three flavor boundaries, 188 classes for reference
 
 
-def _pairs(path: pathlib.Path, series: list, keys: tuple, ymax: float | None = None, legend_order: list | None = None) -> None:
-    """Four class pairs; series [(models, plot keywords)]. The series are the same in every panel, so the
-    legend is in the first (the fourth may hold none of them). X->ee vs X->mumu is read from every test jet of
-    the pair (pairs_sib2) where that exists. With ymax, every panel runs from 1 to ymax, and a model whose runs
-    keep fewer than 20 background jets at every efficiency is named in the panel as complete separation."""
-    docs = _family("pairs")
-    heading = {k: h for k, h, *_ in M.PAIRS}
-    fig, axes = _axes_2x2(sharey=False, wspace=0.2, heading="Linear probes on JetClass-II class pairs", top=1.9)
-    for ax, key in zip(axes.flat, keys):
-        d = ROC["pairs_sib2"] if key == "ee_vs_mm" and ROC.get("pairs_sib2") else docs
+def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
+    """panels: (models, pair key, title), up to four in a 2x2, each model a solid curve in its colour. X->ee vs X->mumu
+    of the linear probes is read from every test jet of the pair (pairs_sib2) where that exists. Every panel runs from
+    1 to F4_YMAX, and a model whose runs keep fewer than 20 background jets at every efficiency is named in the panel
+    as complete separation. One legend above the panels, off the curves, for every model drawn as a curve."""
+    docs = _family(family)
+    order = [S.LEGEND[a] for a in S.LEVELS + tuple(S.CONTROLS)]
+    shown = {a for rows, *_ in panels for a in rows}
+    fig, axes = _axes_2x2(sharey=False, wspace=0.2, heading=heading, top=1.9 if len(shown) <= 4 else 2.35)
+    handles = {}
+    for ax, (rows, key, name) in zip(axes.flat, panels):
+        d = ROC["pairs_sib2"] if family == "pairs" and key == "ee_vs_mm" and ROC.get("pairs_sib2") else docs
         separated = []
-        for models, kw in series:
-            s = mean_over_runs(d, models, key)
-            _plot(ax, s, **kw)
+        for a in rows:
+            s = mean_over_runs(d, RUNS[a], key)
+            _plot(ax, s, **S.look(a), linewidth=S.LW_CURVE, label=S.LEGEND[a])
             if s is not None and len(s[0]) < 2:
-                separated.append(kw["label"])
-        if ymax:
-            ax.set_ylim(1, ymax)
-        else:
-            _floor(ax, d, series[0][0], key)
-        if ymax and separated:
-            if legend_order:
-                separated.sort(key=legend_order.index)
+                separated.append(S.LEGEND[a])
+            elif s is not None:          # a legend entry only for a curve drawn in some panel
+                handles.setdefault(S.LEGEND[a], Line2D([], [], **S.look(a), linewidth=S.LW_CURVE, label=S.LEGEND[a]))
+        if separated:
+            separated.sort(key=order.index)
             words = (" and ".join(w.removesuffix(" classes") for w in separated) + " classes"
                      if all(w.endswith(" classes") for w in separated) else ", ".join(separated))
             ax.text(0.97, 0.95, "Complete separation:\n" + words, transform=ax.transAxes, ha="right",
                     va="top", fontsize=S.LEGEND_PT5)     # no frame, as the legends (style_v4)
-        S.title(ax, heading[key])
+        S.title(ax, name)
+    for ax in axes.flat:
+        ax.set_ylim(1, F4_YMAX)
     _right_labels_off(axes)
-    handles, labels = axes[0, 0].get_legend_handles_labels()
-    order = sorted(range(len(labels)), key=lambda i: legend_order.index(labels[i])) if legend_order else range(len(labels))
-    S.fig_legend(fig, [handles[i] for i in order], top_cm=0.6, ncol=4)     # above the panels, off the curves
-    S.letter_panels(axes.flat)
+    for ax in list(axes.flat)[len(panels):]:
+        ax.axis("off")
+    if len(panels) == 3:        # the lower-right cell is empty: (b) takes the x label, and (c) its "1.0" back
+        S.labels(axes[0, 1], xlabel=S.X_EPS)
+        axes[1, 0].xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v) < 1e-9 else f"{v:.1f}"))
+    S.fig_legend(fig, [handles[w] for w in order if w in handles], top_cm=0.6, ncol=4)
+    S.letter_panels(list(axes.flat)[:len(panels)])
     S.save(fig, path)
 
 
-def draw_f4(path: pathlib.Path) -> None:
-    """Linear probes, solid (a figure of probes only). The 188-class curve is drawn last, so it shows where the 162-class curve lies on it."""
-    levels = list(S.LEVELS)
-    _pairs(path, [(RUNS[a], {**S.look(a), "linewidth": S.LW_CURVE, "label": S.LEGEND[a]}) for a in levels[::-1]],
-           M.ROC_PAIRS, ymax=F4_YMAX, legend_order=[S.LEGEND[a] for a in levels])
+def _mechanism(path: pathlib.Path, family: str, heading: str) -> None:
+    """Columns X->bb vs cc and X->bc vs bq, cs; upper row the four label sets, lower row the flavor boundaries."""
+    title = {k: h for k, h, *_ in M.PAIRS}
+    _pairs(path, family, [(rows, key, f"{title[key]}: {word}") for rows, word in
+                          ((PAIR_LABEL_SETS, "label sets"), (PAIR_BOUNDARIES, "boundaries"))
+                          for key in ("bb_vs_cc", "bc_vs_bq_cs")], heading)
 
 
-def draw_f4_app(path: pathlib.Path) -> None:
-    _pairs(path, [(RUNS[a], {**S.look(a), "linewidth": S.LW_CURVE, "label": S.LEGEND[a]}) for a in M.FLAV]
-           + [(RUNS["L188"], {**S.look("L188"), "linewidth": S.LW_CURVE, "label": S.LEGEND["L188"]})],
-           ("bb_vs_cc", "bbqq_vs_ccqq", "bc_vs_bq_cs", "qcd_bb_vs_cc"))     # X->ee vs mumu: no curve to draw here
+def draw_f4_mech(path: pathlib.Path) -> None:
+    _mechanism(path, "pairs", "Linear probes on JetClass-II class pairs")
+
+
+def draw_f4_mech_ft(path: pathlib.Path) -> None:
+    _mechanism(path, "pairs_ft", "Fine-tuned on JetClass-II, class pairs")
+
+
+def draw_f4_other(path: pathlib.Path) -> None:
+    title = {k: h for k, h, *_ in M.PAIRS}
+    _pairs(path, "pairs", [(PAIR_LABEL_SETS, key, title[key]) for key in ("bbqq_vs_ccqq", "ee_vs_mm", "qcd_bb_vs_cc")],
+           "Linear probes on JetClass-II class pairs")
 
 
 RATIO_HEIGHT = 0.35     # F6's ratio panels, one height for all three (OmniLearned Fig. 3's form)
@@ -478,41 +485,45 @@ PAGES = [
                  "scratch.",
          differs="As FJ-ctrl, with no legend, as FJ-app. The five plain partitions' macro AUCs lie within 5e-4 of each other.",
          draw=draw_fj_ctrl_app),
-    Page(id="F4", title="Flavor separation for four class pairs",
+    Page(id="F4-mech", title="Flavor separation: what the labels merge",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
-         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
-                 "and 17 classes, trained and scored on four pairs of JetClass-II classes differing only in "
-                 "flavor (signal first): (a) X→bb̄ vs cc̄, (b) X→YY→bb̄qq vs cc̄qq, (c) X→bc vs bq, cs, (d) X→ee "
-                 "vs μμ. Means over three pretraining runs; curves end where fewer than 20 background jets "
-                 "remain; a network with no curve is named in its panel.",
-         differs="Four panels, not one, for four class pairs. Four solid curves, not fifteen in mixed line styles (PI "
-                 "limit), at 1.1 pt, not 0.955 pt. The y axis starts at 1, not at the data, with its range set per "
-                 "panel. x ticks every 0.2 over 0 to 1, not every 0.1 over about -0.01 to 1.02. Axis words at the axis "
-                 "end, with the rejection written inline, not as a fraction. The legend is in the first panel only, "
-                 "lower left, as the curves fill the upper right; it holds for every panel. Sophon's fonts; round 3's "
-                 "faint y grid, frameless legend and palette (label sets in viridis, darkest for 188). The complete-"
-                 "separation note is plain text, without the box it had.",
-         data_note="X→ee vs X→μμ is read from every test jet of the pair (pairs_sib2: 135,245 X→ee and 128,833 X→μμ "
-                   "jets), so a curve can reach a rejection of 6,442 (128,833 / 20). The 188- and 162-class models keep "
-                   "fewer than 20 X→μμ jets at every efficiency in some run even so, and are named as complete "
-                   "separation; the 43- and 17-class models draw full curves. All four panels run from 1 to 10^4 (PI).",
-         draw=draw_f4),
-    Page(id="F4-app", title="Flavor separation for random partitions with controlled flavor boundaries",
+         caption="Linear probes on the frozen features of networks pretrained on JetClass-II, trained and scored on "
+                 "two JetClass-II class pairs differing only in flavor (signal first): upper row, 188, 162, 43 and 17 "
+                 "classes; lower row, 17-class partitions with no, a b-quark and a random flavor boundary, with 188 "
+                 "classes for reference. Means over three pretraining runs (partitions: two); curves end where fewer "
+                 "than 20 background jets remain.",
+         differs="F4's (a) and (c) and F4-app's (a) and (c) in one 2x2 (PI, 2026-11-08): columns the pairs, rows the label "
+                 "sets and the flavor boundaries; every panel from 1 to 10^4, the legend above the panels, off the curves. "
+                 "Otherwise as F4: solid curves, plain-number ticks, landscape's axes.",
+         draw=draw_f4_mech),
+    Page(id="F4-mech-ft", title="Flavor separation after fine-tuning (appendix)",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
-         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 17-class "
-                 "partitions with no flavor boundary, a b-quark boundary or a random flavor boundary, and with "
-                 "188 classes for reference, trained and scored on four JetClass-II class pairs differing only in "
-                 "flavor (signal first), (d) QCD bb̄ vs cc̄ in place of X→ee vs X→μμ. Means over two pretraining "
-                 "runs (188 classes: three); curves end where fewer than 20 background jets remain.",
-         differs="As F4, with the three random partitions with controlled flavor boundaries (rose, green, cyan) "
-                 "and the 188-class model in its colour, all solid, in place of F4's four label sets. "
-                 "One panel differs from F4's: QCD bb vs cc in place of X→ee vs X→μμ, which has no curve here.",
-         data_note="QCD bb vs cc replaces F4's X→ee vs X→μμ here: neither run of any controlled partition, and no run "
-                   "of the 188-class model, keeps 20 background jets at any efficiency on that pair's grid, so its panel "
-                   "would be empty.",
-         draw=draw_f4_app),
+         caption="Networks pretrained on JetClass-II, fine-tuned on one million class-balanced JetClass-II jets and "
+                 "scored on the natural-mix test jets of two class pairs differing only in flavor (signal first) by the "
+                 "signal side's share of the summed softmax of the pair's classes: upper row, 188, 162, 43 and 17 "
+                 "classes; lower row, 17-class partitions with no, a b-quark and a random flavor boundary, with 188 for "
+                 "reference. Means over three runs (partitions: two); curves end at 20 background jets.",
+         differs="F4-mech's form after fine-tuning (PI, 2026-11-08), on F4-mech's axes (rejection 1 to 10^4); the main "
+                 "text quotes these numbers from the pair table's fine-tuned columns.",
+         data_note="Reads curves_v2/pairs_ft (the fine-tuned pairs job on the natural-mix test jets: the signal side's "
+                   "summed softmax over the pair's classes' summed softmax), in curves_v2/pairs's per-model schema; absent "
+                   "until pulled.",
+         draw=draw_f4_mech_ft),
+    Page(id="F4-other", title="Flavor separation, the other pairs (appendix)",
+         precedent=["1902.09914/fig5.png"],
+         precedent_label="Landscape Fig. 5",
+         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and "
+                 "17 classes, trained and scored on three pairs of JetClass-II classes differing only in flavor "
+                 "(signal first): (a) X→YY→bb̄qq̄ vs cc̄qq̄, (b) X→ee vs μμ and (c) QCD bb̄ vs cc̄. Means over three "
+                 "pretraining runs; curves end where fewer than 20 background jets remain; a network with no curve "
+                 "is named in its panel.",
+         differs="F4's (b) and (d) with QCD bb̄ vs cc̄ (PI, 2026-11-08); as F4-mech otherwise, the fourth cell empty.",
+         data_note="X→ee vs X→μμ is read from every test jet of the pair (pairs_sib2), so a curve can reach a rejection "
+                   "of 6,442; the 188- and 162-class models keep fewer than 20 X→μμ jets at every efficiency and are "
+                   "named as complete separation.",
+         draw=draw_f4_other),
     Page(id="F6", title="Benchmarks after fine-tuning",
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",

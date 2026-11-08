@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The gallery's palette page (figure round 4): the PI's Tol muted palette (2026-11-07) in four views, its pairwise
-CIEDE2000 (palette_check.pi_palette), the mode encoding of style_v5, and F2a and F4 in colour and under deuteranopia
+CIEDE2000 (palette_check.pi_palette), the mode encoding of style_v5, and F2a and F4-mech in colour and under deuteranopia
 and protanopia."""
 from __future__ import annotations
 
@@ -89,7 +89,7 @@ def draw_palette(path: pathlib.Path) -> None:
     modes_top = m_top + m_h + 1.4
     render_top = modes_top + 1.6
     fig = S.figure_cm(S.PRINT_W, render_top + 2 * 7.2 + 0.3)
-    S.heading(fig, "Palette (Tol muted): the models' colors, their separation, and F2a and F4 in it")
+    S.heading(fig, "Palette (Tol muted): the models' colors, their separation, and F2a and F4-mech in it")
     _swatches(fig, 0.9)
     _matrix(fig, 0.9, m_top, ("normal",), "(a) CIEDE2000, normal vision")
     _matrix(fig, 8.4, m_top, ("deuteranopia", "protanopia"), "(b) smaller of deuteranopia and protanopia")
@@ -115,14 +115,14 @@ def draw_palette(path: pathlib.Path) -> None:
         ax2.text(x + 1.05, y, word, va="center", fontsize=S.LEGEND_PT5)
     with tempfile.TemporaryDirectory() as d:
         tmp = pathlib.Path(d)
-        imgs = [_render(gallery_labelset.draw_f2a, tmp, "F2a"), _render(gallery_roc.draw_f4, tmp, "F4")]
+        imgs = [_render(gallery_labelset.draw_f2a, tmp, "F2a"), _render(gallery_roc.draw_f4_mech, tmp, "F4-mech")]
     for i, img in enumerate(imgs):
         for j, kind in enumerate(("normal", "deuteranopia", "protanopia")):
             a = S.axes_cm(fig, 0.2 + 4.9 * j, render_top + 7.2 * i, 4.7, 6.8)
             a.imshow(img if kind == "normal" else np.clip(PC.simulate(img, kind), 0, 1), interpolation="lanczos")
             a.set_aspect("equal")
             a.axis("off")
-            a.set_title(f"{('F2a', 'F4')[i]}, {kind}", fontsize=S.LEGEND_PT5)
+            a.set_title(f"{('F2a', 'F4-mech')[i]}, {kind}", fontsize=S.LEGEND_PT5)
     S.save(fig, path)
 
 
@@ -134,7 +134,7 @@ PAGES = [
         precedent_label="None: the palette check of round 4",
         caption="The palette. Upper: each model's colour in normal vision, greyscale and simulated deuteranopia and "
                 "protanopia, with its lightness. Middle: pairwise CIEDE2000 among the seven hues, and the line and marker "
-                "of each mode. Lower: F2a and F4 in this palette, in colour and under the two simulations.",
+                "of each mode. Lower: F2a and F4-mech in this palette, in colour and under the two simulations.",
         differs="Not a paper figure. Palette (PI, 2026-11-07): Tol muted indigo, purple, olive and teal for 188, 162, 43 "
                 "and 17 classes; controls rose, green and sand, a colliding control swapped for Tol cyan or wine. Rule for "
                 "a collision: the label sets' own (CIEDE2000 at least 25; at least 10 under either simulation, Machado "

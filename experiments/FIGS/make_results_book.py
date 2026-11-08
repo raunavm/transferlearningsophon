@@ -1,39 +1,53 @@
 #!/usr/bin/env python3
-"""A plain LaTeX document of every result of the paper and nothing else: each figure with its caption and each results
-table, in the paper's order (main text, then appendix), with the round-4 figures and captions of the gallery.
+"""Plain LaTeX documents of every result of the paper and nothing else: each figure with its caption and each results
+table, in the paper's placement (plan 2026-11-08: main text, appendix, supplement), with the gallery's figures and
+captions.
 
-    python3 experiments/FIGS/make_results_book.py <figures-dir with pages.json>     # writes paper/journal/results_book.tex
-    cd paper/journal && tectonic -X compile results_book.tex
+    python3 experiments/FIGS/make_results_book.py <figures-dir with pages.json> [--tier paper|supplement|all]
+        paper       main text and appendix   -> paper/journal/results_book.tex (the default)
+        supplement  the supplement           -> paper/journal/results_supplement.tex
+        all         all three, for review    -> paper/journal/results_book_all.tex
+    cd paper/journal && tectonic -X compile --keep-intermediates results_book.tex && tectonic -X compile results_supplement.tex
 
-The figures are copied to figures/round4/; the paper's own figures (figures/mlst/gallery) stay as approved. Tables are
-the paper's generated files (tables/*.tex) with its macros (results_generated.tex), copied in with their citations
-and equation references taken out, since the book has no bibliography and no text (PI, 2026-11-07). Left out: the
-design figure and the tables that describe the setup, not results (the discriminants each label set can build, the
-class hierarchy and vocabulary, the input features, the compute), and X->bb/X->bs, which waits for its samples.
-Everything is upright: the wide tables are split into stacked blocks by the generator (mlst_results.split_wide).
+The supplement's references into the paper resolve through results_book.aux (xr-hyper), so the paper book is compiled
+first, keeping its intermediates; the supplement is not written without it. The figures are copied to figures/round4/; the paper's own figures
+(figures/mlst/gallery) stay as approved. Tables are the paper's generated files (tables/*.tex) with its macros
+(results_generated.tex), copied in with their citations and equation references taken out, since the book has no
+bibliography and no text (PI, 2026-11-07). Each tier starts a page with its figures, then its tables; appendix items
+are numbered A1, A2, ..., the supplement's S1, S2, ..., as on the gallery's map. Everything is upright: the wide tables are split into stacked blocks by the generator
+(mlst_results.split_wide).
 """
 from __future__ import annotations
 
+import argparse
+import importlib.util
 import json
 import pathlib
 import re
 import shutil
-import sys
 
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
 PAPER = ROOT / "paper" / "journal"
 FIGS = ROOT / "figures" / "round4"
 
-MAIN = ["F2a", "F2b", "F3", "F4", "T:mlst_jetclass", "FJ", "FJ-ctrl", "PT",
-        "T:mlst_bench_top", "F6", "T:mlst_fill_main", "T:mlst_bench_qg", "F8",
-        "F9a", "F9b", "T:mlst_mass", "F10a", "F10b", "F10c"]
-APPENDIX = ["VAL", "T:mlst_lrsweep", "T:mlst_fill", "T:mlst_mlp", "T:mlst_bn", "T:mlst_boot", "T:mlst_balance",
-            "T:mlst_partrepro", "T:mlst_probes", "T:mlst_probes_n", "A10", "A8", "F6-app", "T:mlst_ft", "T:mlst_ft_rej",
-            "T:mlst_per_run", "T:mlst_jetclass_all", "T:mlst_jetclass_probe", "T:mlst_jc1_class_auc", "FJ-app",
-            "FJ-ctrl-app", "FJ-s", "CONF", "T:mlst_jetclass_nbkg", "T:mlst_rand_prong", "T:mlst_pairs", "T:mlst_qcdhf", "T:mlst_coarse", "F4-app",
-            "F3-scatter", "F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had",
-            "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "T:mlst_mass_detail", "A17-res", "A17-qcd", "A17-probe",
-            "F10a-mass", "F10a-flav", "T:mlst_sculpt"]
+# The placement is the gallery's (figstyle/gallery_placement.py, PI 2026-11-08), the one source: per tier its figures
+# (gallery ids) in its order, then its tables (labels; "tab:a + tab:b" one number, its tables a and b), so that every
+# item has here the number the gallery's map gives it. A table label is its generated file through the CAPTIONS key
+# (mlst_results). A table with \pending cells is fatal unless the placement marks it PROVISIONAL: then it is set with
+# its pending cells shown. A figure the render lacks is fatal unless PROVISIONAL: then a box keeps its number. A
+# PROVISIONAL item that is complete is set as placed.
+_spec = importlib.util.spec_from_file_location("gallery_placement", HERE / "figstyle" / "gallery_placement.py")
+G = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(G)
+_spec = importlib.util.spec_from_file_location("mlst_results", HERE / "mlst_results.py")
+M = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(M)
+TABLE_FILE = {M.CAPTIONS[k][0]: n for k, n, *_ in M.PLACEHOLDERS + M.LONGTABLES}
+TIERS = {t: [k for k, tier, _ in G.FIGURES if tier == t] + [k for k, tier, _ in G.TABLES if tier == t] for t in G.TIERS}
+OUTPUTS = {"paper": ("results_book", (G.MAIN, G.APPENDIX)), "supplement": ("results_supplement", (G.SUPPLEMENT,)),
+           "all": ("results_book_all", G.TIERS)}
+PREFIX = {G.MAIN: "", G.APPENDIX: "A", G.SUPPLEMENT: "S"}
 
 # the gallery captions are plain text; typeset their physics notation
 TEX = [("X→YY→bb̄qq", r"$X\to YY\to b\bar bqq$"), ("cc̄qq", r"$c\bar cqq$"), ("X→bc", r"$X\to bc$"),
@@ -96,7 +110,8 @@ NO_TEXT = [(", equation~(\\ref{eq:ratio}), to", " to"), (" of equation~(\\ref{eq
 CITE = re.compile(r"~?\\cite(\[[^\]]*\])?\{[^}]*\}")
 
 
-def table(name: str) -> str:
+def table(name: str, provisional: bool = False) -> str:
+    """A generated table set for the book; \\pending cells only in a PROVISIONAL one."""
     body = (PAPER / "tables" / f"{name}.tex").read_text()
     for a, b in NO_TEXT:
         body = body.replace(a, b)
@@ -109,38 +124,117 @@ def table(name: str) -> str:
         # a table short enough to be a float stays whole on one page
         i, j = body.index("\\begin{center}") + len("\\begin{center}"), body.rindex("\\end{center}")
         body = body[:i] + "\n\\begin{minipage}{\\linewidth}\\centering" + body[i:j] + "\\end{minipage}\n" + body[j:]
-    left = re.findall(r"\\(?:cite|eqref)\b|\\ref\{(?:eq|sec|app|fig):[^}]*\}|\\pending\{", body)
+    left = re.findall(r"\\(?:cite|eqref)\b|\\ref\{(?:eq|sec|app|fig):[^}]*\}" + ("" if provisional else r"|\\pending\{"),
+                      body)
     if left:
         raise SystemExit(f"FATAL: {name} still has {left}")
     return f"% tables/{name}.tex\n{body}\\FloatBarrier\n"
 
 
-def preamble() -> str:
-    """The paper's preamble up to \\begin{document}, without its title block, plus float (capt-of is in it)."""
+def table_item(key: str, tier: str) -> str:
+    """A placed table by its label; labels joined by " + " share one number, their tables lettered a, b, ... A
+    PROVISIONAL table is set with the pending cells its generator leaves."""
+    labels = key.split(" + ")
+    unknown = [lab for lab in labels if lab not in TABLE_FILE]
+    if unknown:
+        raise SystemExit(f"FATAL: no generated table has the label(s) {unknown}")
+    if len(labels) == 1:
+        if key in G.PROVISIONAL and "\\pending{" in (PAPER / "tables" / f"{TABLE_FILE[key]}.tex").read_text():
+            print(f"note: {key} is provisional ({G.PROVISIONAL[key]}); set with its pending cells")
+        return table(TABLE_FILE[key], key in G.PROVISIONAL)
+    return "".join(("\\addtocounter{table}{-1}" if k else "") + "\\begingroup"
+                   f"\\renewcommand{{\\thetable}}{{{PREFIX[tier]}\\arabic{{table}}{chr(97 + k)}}}"
+                   f"\\renewcommand{{\\theHtable}}{{{tier}.\\arabic{{table}}{chr(97 + k)}}}\n"
+                   + table(TABLE_FILE[lab]) + "\\endgroup\n" for k, lab in enumerate(labels))
+
+
+def pending(key: str) -> str:
+    """A box in place of a PROVISIONAL figure not drawn yet, so that the figures after it keep their numbers."""
+    box = "\\fbox{\\parbox[c][3cm]{0.6\\linewidth}{\\centering pending}}\n"
+    cap = f"Pending ({tex_caption(G.PROVISIONAL[key])}). {tex_caption(G.BACKS[key])}"
+    return f"\\begin{{figure}}[H]\n\\centering\n{box}\\caption{{{cap}}}\\label{{fig:{key}}}\n\\end{{figure}}\n\\FloatBarrier\n"
+
+
+def preamble(external: str | None = None) -> str:
+    """The paper's preamble up to \\begin{document}, without its title block, plus float (capt-of is in it); with
+    external, xr-hyper reading that document's labels. Both packages are loaded before hyperref, as they must be;
+    the labels are read at the end of the preamble, where the macros of their captions exist."""
     main = (PAPER / "main.tex").read_text()
     head = main[:main.index("\\title{")]
-    return head + "\\usepackage{float}\n\\pagestyle{plain}\n"
+    m = re.search(r"\\usepackage(\[[^]]*\])?\{hyperref\}", head)
+    if not m:
+        raise SystemExit("FATAL: the paper's preamble loads no hyperref, which float and xr-hyper must precede")
+    add = "\\usepackage{float}\n" + ("\\usepackage{xr-hyper}\n" if external else "")
+    return (head[:m.start()] + add + head[m.start():] + "\\pagestyle{plain}\n"
+            + (f"\\externaldocument{{{external}}}\n" if external else ""))
+
+
+def tier_start(tier: str) -> str:
+    """Each tier starts a page and numbers its figures and tables with its prefix (none in the main text)."""
+    p = PREFIX[tier]
+    return ("\\clearpage\n\\setcounter{figure}{0}\\setcounter{table}{0}\n" + "".join(
+        f"\\renewcommand{{\\the{c}}}{{{p}\\arabic{{{c}}}}}\\renewcommand{{\\theH{c}}}{{{tier}.\\arabic{{{c}}}}}\n"
+        for c in ("figure", "table")))
+
+
+def check_spec() -> None:
+    seen = [i for items in TIERS.values() for i in items]
+    twice = sorted({i for i in seen if seen.count(i) > 1})
+    if twice:
+        raise SystemExit(f"FATAL: placed twice: {twice}")
+
+
+def labels_of(tiers) -> set:
+    """The figure and table labels the placement puts in these tiers."""
+    return {lab for t in tiers for k in TIERS[t] for lab in (k.split(" + ") if k.startswith("tab:") else [f"fig:{k}"])}
+
+
+def build(src: pathlib.Path, which: str) -> str:
+    """Writes the document of one output (OUTPUTS) from the gallery render in src; returns its name."""
+    check_spec()
+    recs = {r["id"]: r for r in json.loads((src / "pages.json").read_text())}
+    name, tiers = OUTPUTS[which]
+    external = None
+    if which == "supplement":        # its references into the paper resolve through the paper book's labels
+        external = OUTPUTS["paper"][0]
+        if not (PAPER / f"{external}.aux").exists():
+            raise SystemExit(f"FATAL: no {PAPER / external}.aux for the supplement's references into the paper: compile "
+                             f"{external}.tex first (tectonic -X compile --keep-intermediates {external}.tex)")
+    out = [preamble(external), "\\begin{document}\n"]    # no title or headings: the first page starts with Figure 1 (PI)
+    n_fig = n_tab = n_box = 0
+    for tier in tiers:
+        out.append(tier_start(tier))
+        for item in TIERS[tier]:
+            if item.startswith("tab:"):
+                out.append(table_item(item, tier))
+                n_tab += 1
+            elif recs.get(item, {}).get("drawn"):
+                if item in G.PROVISIONAL:
+                    print(f"note: {item} is provisional ({G.PROVISIONAL[item]}); set as placed")
+                out.append(figure(item, recs[item], src))
+                n_fig += 1
+            elif item in G.PROVISIONAL:
+                print(f"note: {item} is provisional ({G.PROVISIONAL[item]}) and not drawn in {src}; a box keeps its number")
+                out.append(pending(item))
+                n_box += 1
+            else:
+                raise SystemExit(f"FATAL: {item} was not drawn in {src}")
+    out.append("\\end{document}\n")
+    doc = "".join(out)
+    known = labels_of(tiers) | (labels_of(OUTPUTS["paper"][1]) if external else set())
+    for lab in sorted({r for r in re.findall(r"\\ref\{((?:fig|tab):[^}]+)\}", doc) if r not in known}):
+        print(f"note: {lab} is referred to but placed in no tier of this book: it prints as ??")
+    (PAPER / f"{name}.tex").write_text(doc)
+    print(f"wrote {PAPER / name}.tex ({', '.join(tiers)}): {n_fig} figures, {n_box} pending boxes, {n_tab} tables")
+    return name
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        sys.exit(__doc__)
-    src = pathlib.Path(sys.argv[1])
-    recs = {r["id"]: r for r in json.loads((src / "pages.json").read_text())}
-    out = [preamble(), "\\begin{document}\n"]       # no title or headings: the first page starts with Figure 1 (PI)
-    for items in (MAIN, APPENDIX):
-        for item in items:
-            kind, _, name = item.rpartition(":")
-            if kind:
-                out.append(table(name))
-            else:
-                if not recs.get(item, {}).get("drawn"):
-                    raise SystemExit(f"FATAL: {item} was not drawn in {src}")
-                out.append(figure(item, recs[item], src))
-    out.append("\\end{document}\n")
-    (PAPER / "results_book.tex").write_text("".join(out))
-    n_fig = sum(":" not in i for i in MAIN + APPENDIX)
-    print(f"wrote {PAPER / 'results_book.tex'}: {n_fig} figures, {len(MAIN) + len(APPENDIX) - n_fig} tables")
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("figures", type=pathlib.Path, help="the gallery render: a directory with pages.json")
+    ap.add_argument("--tier", choices=tuple(OUTPUTS), default="paper")
+    a = ap.parse_args()
+    build(a.figures, a.tier)
     return 0
 
 

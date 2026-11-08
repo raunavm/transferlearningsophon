@@ -24,6 +24,7 @@ LINE = 1.15
 SIZES = (9, 8.5, 8, 7.5)
 HEADING_SIZES = (12, 11, 10, 9)
 RED = (0.7, 0, 0)
+BLUE = (0, 0.2, 0.6)
 
 PW, PH = fitz.paper_size("a4-l")
 MARGIN, GUTTER, GAP = 28, 16, 4
@@ -130,14 +131,17 @@ def left_column(page, rec: dict, warn: list, bottom: float) -> None:
 
 def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> float:
     """Ours at the top of the right column; the caption and notes below both figures, across the page, so that a
-    long note costs little figure. Returns where the figures end."""
-    x = MARGIN + COL + GUTTER
+    long note costs little figure. Returns where the figures end. A wide record (the map) takes the whole width."""
     wide = 2 * COL + GUTTER
-    write(page, x, TOP, COL, LABEL, "Ours", SIZES[0])
+    x, col, top = (MARGIN, wide, TOP) if rec.get("wide") else (MARGIN + COL + GUTTER, COL, FIG_TOP)
+    if not rec.get("wide"):
+        write(page, x, TOP, COL, LABEL, "Ours", SIZES[0])
     pdf = figdir / f"{rec['id']}.pdf"
     src = fitz.open(pdf) if rec.get("drawn") and pdf.exists() else None
 
     paragraphs = [(rec["change"], RED)] if rec.get("change") else []      # round 5: what changed since approval
+    if rec.get("backs"):                                                   # the sentence the placement makes it back
+        paragraphs.append((f"{rec['place']}. Backs (DRAFT sentence): {rec['backs']} Evidence: {rec['evidence']}.", BLUE))
     if src is None:
         if rec.get("absent"):
             why = f"Absent from today's data: {rec['absent']}"
@@ -160,31 +164,33 @@ def right_column(page, rec: dict, figdir: pathlib.Path, warn: list) -> float:
         paragraphs.append((check.read_text().strip(), (0, 0, 0)))
 
     # The largest text that leaves our figure its width, or at least FIG_FLOOR of height.
-    full_h = COL * src[0].rect.height / src[0].rect.width if src else 0
+    full_h = col * src[0].rect.height / src[0].rect.width if src else 0
     for size in SIZES:
         heights = [text_height(t, wide, size) for t, _ in paragraphs]
-        avail = BOTTOM - FIG_TOP - sum(h + GAP for h in heights)
+        avail = BOTTOM - top - sum(h + GAP for h in heights)
         if avail >= min(full_h, FIG_FLOOR):
             break
     fig_h = min(full_h, max(avail, FIG_MIN))
+    if rec.get("wide") and fig_h < full_h - 0.5:      # the map is drawn at the page's width, to print at 100%
+        warn.append(f"printed at {100 * fig_h / full_h:.0f}% of its drawn size")
     if src:
         fig_w = fig_h * src[0].rect.width / src[0].rect.height
-        page.show_pdf_page(fitz.Rect(x, FIG_TOP, x + fig_w, FIG_TOP + fig_h), src, 0)
+        page.show_pdf_page(fitz.Rect(x, top, x + fig_w, top + fig_h), src, 0)
         src.close()
 
-    y = FIG_TOP + fig_h
+    y = top + fig_h
     for (text, color), height in zip(paragraphs, heights):
         y += GAP
         if not write(page, MARGIN, y, wide, min(height, BOTTOM - y + 1e-6), text, size, color=color):     # y is a sum of floats
             warn.append(f"text overflows at {size} pt and was cut")
             break
         y += height
-    return FIG_TOP + fig_h
+    return top + fig_h
 
 
 def missing_glyphs(rec: dict, font: fitz.Font) -> str:
     text = "".join(str(rec.get(k, "")) for k in ("id", "title", "precedent_label", "caption", "differs", "data_note", "absent", "failed",
-                                                  "change"))
+                                                  "change", "place", "backs", "evidence"))
     return "".join(sorted({c for c in text if not c.isspace() and not font.has_glyph(ord(c))}))
 
 
@@ -199,11 +205,14 @@ def main() -> int:
     for rec in records:
         warn = []
         page = doc.new_page(width=PW, height=PH)
-        heading = f"{rec['change'].split(':')[0] + ' ' if rec.get('change') else ''}{rec['id']}: {rec.get('title', '')}"
+        heading = (f"{rec['change'].split(':')[0] + ' ' if rec.get('change') else ''}{rec['id']}"
+                   f"{' (' + rec['place'] + ')' if rec.get('place') else ''}: {rec.get('title', '')}")
         size = next((s for s in HEADING_SIZES if text_height(heading, PW - 2 * MARGIN, s, BOLD) == text_height("x", PW - 2 * MARGIN, s, BOLD)), HEADING_SIZES[-1])
         if not write(page, MARGIN, MARGIN, PW - 2 * MARGIN, text_height("x", PW - 2 * MARGIN, size, BOLD), heading, size, BOLD):
             warn.append("heading overflows and was cut")
-        left_column(page, rec, warn, grey_inset(page, figdir, rec, right_column(page, rec, figdir, warn)))
+        bottom = right_column(page, rec, figdir, warn)
+        if not rec.get("wide"):
+            left_column(page, rec, warn, grey_inset(page, figdir, rec, bottom))
         if lost := missing_glyphs(rec, font):
             warn.append(f"characters the font does not have: {lost}")
         for w in warn:

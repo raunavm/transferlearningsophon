@@ -175,6 +175,6 @@ def test_the_new_jobs_write_new_folders_and_pin_the_released_checkpoint():
     assert "--model init-s2 --checkpoints init init_bn " in a
     a = yaml.safe_load(BJ.sophon_spec("t")[1])["spec"]["template"]["spec"]["containers"][0]["args"][0]
     assert BJ.SOPHON_SHA256 in a and "--checkpoints /workspace/sophon/released.pt" in a and "-le 85 ]" in a
-    assert a.count("\nextract ") == 6 + 6 + 6 + 7 and "extract jc1 test configs/finetune/JetClassI_sophon_noweight.yaml 0 ${TEST1}" in a
+    assert a.count("\nextract ") - a.count("\nextract () {") == 6 + 6 + 6 + 7 and "extract jc1 test configs/finetune/JetClassI_sophon_noweight.yaml 0 ${TEST1}" in a
     assert "extract qg herwig configs/finetune/EnergyFlowQG.yaml 0 /data/finetune/qg_herwig/" in a
     assert "OUT=/data/results/eval/v2_linprobe_sophon/sophon-released/$1/$2" in a and "v2_linprobe_bal/" not in a.split("extract ()")[1]

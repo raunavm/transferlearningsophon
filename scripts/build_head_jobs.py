@@ -36,7 +36,23 @@ head-mass-init-s<N>-raunav: step 3 alone on its linear-probe features
 same jets; mass_resolution checks the label digest). Apply them after head-x-l188-s1
 has finished; before that they stop with exit 42.
 
+Plan 2026-11-08 step 2 (decision of 2026-11-08, flagged to the PI: on the class-balanced test set weighted to
+the natural QCD mix the fine-tuned sculpting was noise, Kish n_eff ~14,400): the fine-tuned JetClass-II networks
+at 1e6 on the same TEST2M jets, for their sculpting (experiments/EVAL/sculpting_ft.py) and class pairs
+(experiments/FT/roc_points.py pairs_ft). Two Indexed GPU jobs at FT_HEAD_PIN, one cell of ft_head_cells() per
+index: ft-head-x-raunav the 27 pretrained cells (launchable now), ft-head-x-scratch-raunav the three from-scratch
+seeds (each index refuses, exit 42, until its cell is DONE; apply it after the reruns); on any 24 GB+ GPU
+(build_mtx_launch.V2_FT_GPU, as the fine-tuning jobs):
+extract_v2.py --keep-head-outputs of the cell's net_best_epoch_state.pt, in the fine-tuning network
+(extract_features.build_model: ParT_sophon_arch_mtx.py, fc_params [(512, 0.1)], 188 outputs) at rung L188,
+through CONFIG, whose inputs, preprocessing and selection are those of the fine-tuning configs
+(JetClassII_L188_noweight.yaml; JetClassII_base.yaml for its test jets), on the first N_TEST jets, onto the
+pod's disk; the labels checked against OBS_MODEL's head outputs (the same jets, or exit 42); head_outputs.npz,
+then manifest.json (with the checkpoint's sha256), into FT_HEAD_ROOT/<model>/. A model with its manifest is
+skipped, never overwritten; an index whose cell is not DONE refuses (exit 42).
+
     python3 scripts/build_head_jobs.py [--pin-not-yet-tagged] [--only mtx-l188-s1 ...] [--check-only]
+    python3 scripts/build_head_jobs.py --pin-not-yet-tagged --ft-head   # the fine-tuned networks' two jobs alone
 """
 from __future__ import annotations
 
@@ -71,6 +87,14 @@ NEEDED = {"experiments/EVAL/extract_v2.py": "--keep-head-outputs",
           "experiments/EVAL/mass_resolution.py": "OUT_JSON, OUT_RESIDUALS = \"mass_v3.json\"",
           "experiments/EVAL/mass_sculpting.py": "WORKING_POINTS = (0.1, 0.01)",
           CONFIG: "   - genjet_pt\n"}
+# plan 2026-11-08 step 2: the fine-tuned JetClass-II networks on the same jets
+FT_HEAD_PIN = "mtx-s2.86"
+FT_HEAD_ROOT = "/data/results/eval/v2_ft_head"
+FT_HEAD_NAME = "ft-head-x-raunav"                       # the 27 pretrained cells
+FT_HEAD_SCRATCH_NAME = "ft-head-x-scratch-raunav"       # the three from-scratch seeds, after the reruns
+FT_HEAD_PARALLELISM = 5
+# the head outputs refused unless the whole output layer loads (extract_v2.head_loaded)
+FT_HEAD_NEEDED = {"experiments/EVAL/extract_v2.py": "def head_loaded(", CONFIG: "   - genjet_pt\n"}
 FLAV_NEEDED = {"experiments/EVAL/extract_v2.py": "--keep-head-outputs",
                "experiments/EVAL/mass_sculpting.py": '"--label-set"',
                "configs/labelmaps/flavour_pair_map.v2.csv": "FLAV_F1R", CONFIG: "   - genjet_pt\n"}
@@ -85,6 +109,8 @@ def _load(name: str, rel: str):
 
 LP = _load("build_linprobe_jobs", "scripts/build_linprobe_jobs.py")
 BX, BF = LP.BX, LP.BF
+BJ = _load("build_jc2bal_jobs", "scripts/build_jc2bal_jobs.py")       # the Indexed GPU template
+BFB = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
 
 HEAD = """          OUT={root}/{model}/test
           python3 experiments/EVAL/extract_v2.py \\
@@ -142,6 +168,11 @@ def planned_bytes(ms=None) -> int:
     return sum(N_TEST * (2 * k + 4 * reg + 8 + 2 + 5 * 4) for _m, _r, _g, k, reg in (ms or models()))
 
 
+def ft_planned_bytes() -> int:
+    """head_outputs.npz of every fine-tuned cell (188 float16 logits, no mass output)."""
+    return len(ft_head_cells()) * N_TEST * (2 * 188 + 8 + 2 + 5 * 4)
+
+
 def spec(model, run, rung, k, reg) -> str:
     body = BODY.format(lp_root=LP.LP_ROOT, model=model, root=HEAD_ROOT, run_dir=f"{BX.V2_ROOT}/{run}",
                        rung=rung, k=k, reg=reg, config=CONFIG, n=N_TEST, files=BF.test2m_list(),
@@ -186,6 +217,82 @@ def init_spec(model) -> str:
                                     node_exclude="")
 
 
+def ft_head_cells() -> list[tuple[str, str]]:
+    """(model, cell) of the JetClass-II fine-tuning at 1e6: each paper run (v2_paper_runs.txt order) from the long
+    budget where it has a cell (build_ft_budget_jobs.long_cells, long_ctrl_cells; mlst_results.merge_budget's
+    rule), else the fixed budget (jc2b_cells); then the three from-scratch seeds of the full schedule
+    (long_scratch_full_cells, budget_long_fulldecay)."""
+    pick = lambda cells: {c["init"]: c["out"] for c in cells if c["init"] and c["n"] == BFB.LONG_N}  # noqa: E731
+    cell = pick(BFB.jc2b_cells("1e-3", "1e-3")) | pick(BFB.long_cells("jc2b", "1e-3", "1e-3")
+                                                        + BFB.long_ctrl_cells("1e-3"))
+    runs = BFB.paper_runs()
+    assert set(runs) <= set(cell) and len(runs) == 27, sorted(set(runs) - set(cell))
+    return [(f"mtx-{r}", cell[r]) for r in runs] + [
+        (f"scratch-s{c['s']}", c["out"]) for c in BFB.long_scratch_full_cells("jc2b", "1e-3")]
+
+
+FT_HEAD_BODY = """set -euo pipefail
+{start}
+IDX=${{JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}}
+case ${{IDX}} in
+{cases}  *) echo "FATAL: no cell for index ${{IDX}}"; exit 42;;
+esac
+OUT={root}/${{MODEL}}
+REF={ref}/manifest.json
+[ -f ${{OUT}}/manifest.json ] && {{ echo "${{MODEL}} done"; exit 0; }}
+[ -f ${{CELL}}/DONE ] && [ -f ${{CELL}}/net_best_epoch_state.pt ] || {{ echo "FATAL: ${{CELL}} not DONE"; exit 42; }}
+[ -f ${{REF}} ] || {{ echo "FATAL: no ${{REF}}"; exit 42; }}
+USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+[ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
+{gpu_check}
+export PYTHONUNBUFFERED=1 OMP_NUM_THREADS={cpu} OPENBLAS_NUM_THREADS={cpu} MKL_NUM_THREADS={cpu}
+X=/workspace/x; rm -rf ${{X}}
+python3 experiments/EVAL/extract_v2.py --run-dir ${{CELL}} --rung L188 --num-classes 188 --num-reg 0 \\
+  --checkpoints ${{CELL}}/net_best_epoch_state.pt --data-config {config} --max-jets {n} \\
+  --observers --feature-classes --prefix-features 0 --head-prefix 0 --no-anomaly-rows --diag-stride 0 --no-pooled \\
+  --keep-head-outputs --data-test {files} --out ${{X}} || exit 1
+H=${{X}}/net_best_epoch_state
+python3 -c "import json, sys; a, b = (json.load(open(f))['head_outputs'] for f in sys.argv[1:]); sys.exit(a['n'] != {n} or a['label188_sha256'] != b['label188_sha256'])" ${{H}}/manifest.json ${{REF}} \\
+  || {{ echo "FATAL: ${{MODEL}}: not the jets of ${{REF}}"; exit 42; }}
+mkdir -p ${{OUT}}
+cp ${{H}}/head_outputs.npz ${{OUT}}/head_outputs.npz.tmp && mv ${{OUT}}/head_outputs.npz.tmp ${{OUT}}/head_outputs.npz
+cp ${{H}}/manifest.json ${{OUT}}/manifest.json.tmp && mv ${{OUT}}/manifest.json.tmp ${{OUT}}/manifest.json
+echo "FT HEAD ${{MODEL}} DONE"
+"""
+
+
+def ft_head_jobs() -> dict[str, list[tuple[str, str]]]:
+    """{job name: its (model, cell)}: the pretrained cells, and the from-scratch ones apart, which wait for the reruns."""
+    cells = ft_head_cells()
+    return {FT_HEAD_NAME: [c for c in cells if c[0].startswith("mtx-")],
+            FT_HEAD_SCRATCH_NAME: [c for c in cells if c[0].startswith("scratch-")]}
+
+
+def ft_head_spec(name: str = FT_HEAD_NAME, tag: str = FT_HEAD_PIN, parallelism: int = FT_HEAD_PARALLELISM) -> str:
+    """One Indexed GPU job of the module docstring (plan 2026-11-08 step 2), on the cells ft_head_jobs gives it."""
+    cells = ft_head_jobs()[name]
+    cases = "".join(f"  {i}) MODEL={m}; CELL={c};;\n" for i, (m, c) in enumerate(cells))
+    body = FT_HEAD_BODY.format(start=BJ._start(tag), cases=cases, root=FT_HEAD_ROOT,
+                               ref=f"{HEAD_ROOT}/{OBS_MODEL}/test/best70", gpu_check=BJ.GPU_CHECK, cpu=4,
+                               config=CONFIG, n=N_TEST, files=BF.test2m_list())
+    which = "from scratch" if name == FT_HEAD_SCRATCH_NAME else "pretrained"
+    text = BJ._indexed(name, body, len(cells), min(parallelism, len(cells)), True, X_MEM, "4",
+                       f"the fine-tuned JetClass-II networks at 1e6 ({which}) on the TEST2M jets of the head "
+                       "sculpting (plan 2026-11-08 step 2). GPU")
+    launch = BJ._launch()
+    for old, new in (("# GENERATED by scripts/build_jc2bal_jobs.py", "# GENERATED by scripts/build_head_jobs.py"),
+                     ("        - { name: data, mountPath: /data }\n",
+                      "        - { name: jc2,  mountPath: /jc2, readOnly: true }\n        - { name: data, mountPath: /data }\n"),
+                     ("\n      volumes:\n",
+                      "\n              - key: nvidia.com/gpu.product\n                operator: In\n"
+                      "                values: [" + ", ".join(f'"{g}"' for g in launch.V2_FT_GPU) + "]"
+                      "\n      volumes:\n      - name: jc2\n        persistentVolumeClaim:\n"
+                      "          claimName: tn-pvc-base-jetclass2\n          readOnly: true\n")):
+        assert text.count(old) == 1, old
+        text = text.replace(old, new)
+    return text
+
+
 def build(only=None) -> dict[str, str]:
     out = {f"job-head-x-{m.removeprefix('mtx-')}-raunav.yaml": spec(m, run, rung, k, reg)
            for m, run, rung, k, reg in models() if not only or m in only}
@@ -205,7 +312,18 @@ def main(argv=None) -> int:
     ap.add_argument("--pin-not-yet-tagged", action="store_true")
     ap.add_argument("--only", nargs="*", default=None)
     ap.add_argument("--check-only", action="store_true")
+    ap.add_argument("--ft-head", action="store_true", help="only the fine-tuned networks' job (FT_HEAD_PIN)")
     a = ap.parse_args(argv)
+    if a.ft_head:
+        BX.verify_pin(FT_HEAD_PIN, list(FT_HEAD_NEEDED), a.pin_not_yet_tagged, FT_HEAD_NEEDED)
+        for name, cells in ft_head_jobs().items():
+            out = OUT_DIR / f"job-{name}.yaml"
+            if not a.check_only:
+                OUT_DIR.mkdir(parents=True, exist_ok=True)
+                out.write_text(ft_head_spec(name))
+            print(f"{out.relative_to(ROOT)}: {len(cells)} cells")
+        print(f"together they write {ft_planned_bytes() / 1e9:.1f} GB to /data")
+        return 0
     BX.verify_pin(PIN, list(NEEDED), a.pin_not_yet_tagged, NEEDED)
     BX.verify_pin(FLAV_PIN, list(FLAV_NEEDED), a.pin_not_yet_tagged, FLAV_NEEDED)
     specs = build(a.only) | build_v3(a.only)

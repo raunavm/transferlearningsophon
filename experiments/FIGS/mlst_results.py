@@ -77,11 +77,16 @@ KIN_INIT = KIN_MODEL[len("mtx-"):]
 # the five random partitions as one row, mean +- SD over their runs (one each), as tab:jetclassall pools them
 RAND_POOLED = "RAND"
 PRIMARY = "best70"
+# the released Sophon checkpoint (scripts/build_jc2bal_jobs.py sophon), probed as our runs are: a reference row of the
+# frozen-probe tables below a rule, outside the controlled comparison (PI 2026-11-08)
+SOPHON, SOPHON_MODEL, SOPHON_CK = "SOPHON", "sophon-released", "released"
+FITS_SOPHON = "linprobe/sophon"
 
 
 def _ck(model: str) -> str:
     """The checkpoint a model is reported at."""
-    return "init" if model.startswith("init-") else "init_bn" if model.startswith("initbn-") else PRIMARY
+    return ("init" if model.startswith("init-") else "init_bn" if model.startswith("initbn-")
+            else SOPHON_CK if model == SOPHON_MODEL else PRIMARY)
 
 
 # Row labels (PI, 2026-11-07, in the style of ParT's "-f.t."): the network pretrained on JetClass-II by its classes, or
@@ -92,6 +97,7 @@ LABEL = {"L188": r"\Kfull{} classes", "L162": r"\Kres{} classes", "R42_Q1": r"\K
          "FLAV_F0": "no flavor boundary", "FLAV_F1": r"$b$-quark boundary", "FLAV_F1R": "random flavor boundary",
          INIT: "random network", INIT_BN: "random network, BatchNorm recomputed",
          "KIN": r"\Kfull{} classes, kinematic inputs only", RAND_POOLED: "random partitions",
+         SOPHON: "released Sophon checkpoint",
          **{f"RAND2_p{k}": f"random partition {k}" for k in range(1, 6)}}
 SCRATCH_LABEL = V4.SCRATCH_LABEL      # "no pretraining": a fine-tuning table's reference
 MODE = {"ft": "(f.t.)", "lp": "(LP)", "mlp": "(MLP)"}
@@ -598,8 +604,9 @@ def _side(names: list, side) -> tuple:
 
 def _ratio_to_full(fits, runs, arm, value) -> tuple[list, int]:
     """A configuration's value over the 188-class run of the same index (a random partition: its one
-    run over the 188-class run of its seed); the randomly initialized networks have no such ratio."""
-    if arm in (INIT, INIT_BN):
+    run over the 188-class run of its seed); the randomly initialized networks, the released Sophon checkpoint
+    and the network fine-tuned from scratch have no such ratio."""
+    if arm in (INIT, INIT_BN, SOPHON, SCRATCH):
         return [], 0
     if arm == "L188":
         return [1.0 if value(m) is not None else None for m in runs[arm]], len(runs[arm])
@@ -627,7 +634,8 @@ def table_probes(fits, runs, fmt_pm, rows, full_count=None, fill=None, chosen=No
     1 - AUC to the 188-class run as a labelled column; JetClass accuracy and AUC; top, quark/gluon
     and Herwig: accuracy, AUC, R50 and R30 under the substitution chosen on validation (chosen, from
     chosen_substitutions; zero, marked in the heading, while it is pending). kin=True adds the
-    kinematic-only model to the lower part, top only (nothing missing, one run)."""
+    kinematic-only model to the lower part, top only (nothing missing, one run). SOPHON in rows: the released
+    checkpoint last in both parts, below a rule (its missing inputs zero, _bench_rec)."""
     fill, chosen = fill or {}, chosen or {}
     n2 = _largest(fits, "jc2_188")
     out = [r"\begin{tabular}{l" + "c" * 8 + "}", r"\toprule",
@@ -648,7 +656,7 @@ def table_probes(fits, runs, fmt_pm, rows, full_count=None, fill=None, chosen=No
                  _cell([_probe(fits, m, "jc2_188", n2, "macro_auc_qcd") for m in ms], n, fmt_pm, frac=True),
                  _cell([None if r is None else r["accuracy"] for r in r1], n, fmt_pm, frac=True),
                  _cell([None if r is None else r["macro_auc_ovr"] for r in r1], n, fmt_pm, frac=True)]
-        out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
+        out += [r"\midrule"] * (arm == SOPHON) + [_row(arm, runs) + " & " + " & ".join(cells) + r" \\"]
     out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%", r"\begin{tabular}{l" + "c" * 12 + "}", r"\toprule",
             " & " + " & ".join(rf"\multicolumn{{4}}{{c}}{{{h}}}" for h in ("top", "quark/gluon", "quark/gluon, Herwig"))
             + r" \\",
@@ -656,7 +664,7 @@ def table_probes(fits, runs, fmt_pm, rows, full_count=None, fill=None, chosen=No
             + r" \\",
             r"\cmidrule(lr){2-5}\cmidrule(lr){6-9}\cmidrule(lr){10-13}",
             " & " + " & ".join(h for _, h in BENCH4 * 3) + r" \\", r"\midrule"]
-    for arm in rows:
+    def lower(arm):
         ms, n = runs[arm], len(runs[arm])
         cells = []
         for ds in ("top", "qg", "qg_herwig"):
@@ -664,11 +672,14 @@ def table_probes(fits, runs, fmt_pm, rows, full_count=None, fill=None, chosen=No
             for k, _ in BENCH4:
                 cells.append(_cell([_rej(r, k) if k.startswith("r") else (None if r is None else r[k]) for r in recs],
                                    n, fmt_pm, frac=not k.startswith("r")))
-        out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
+        return _row(arm, runs) + " & " + " & ".join(cells) + r" \\"
+    out += [lower(arm) for arm in rows if arm != SOPHON]
     rec = _probe_rec(fits, KIN_MODEL, "top") if kin else None
     if rec is not None:
         out.append(LABEL["KIN"] + " & " + " & ".join([_cell([_rej(rec, k) if k.startswith("r") else rec[k]], 1, fmt_pm, frac=not k.startswith("r"))
                                                   for k, _ in BENCH4] + ["--"] * 2 * len(BENCH4)) + r" \\")
+    if SOPHON in rows:
+        out += [r"\midrule", lower(SOPHON)]
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -750,45 +761,69 @@ def _pair(fits, m, key):
     return None if c is None else c["auc"]
 
 
-def separated(fits, runs, key) -> set:
-    """Run indices whose 188-class probe separates the pair's test jets (almost) completely, 1 - AUC
-    below SEP_FLOOR: a ratio of 1 - AUC to that run would divide by a handful of misordered pairs
+def separated(fits, runs, key, get=None) -> set:
+    """Run indices whose 188-class probe (or get(model, pair)'s AUC) separates the pair's test jets (almost)
+    completely, 1 - AUC below SEP_FLOOR: a ratio of 1 - AUC to that run would divide by a handful of misordered pairs
     (X->ee vs mumu gave ratios of 10^6 +- 10^7), so none is printed."""
-    return {_idx(m) for m in runs["L188"] if (a := _pair(fits, m, key)) is not None and a > 1 - SEP_FLOOR}
+    get = get or (lambda m, k: _pair(fits, m, k))
+    return {_idx(m) for m in runs["L188"] if (a := get(m, key)) is not None and a > 1 - SEP_FLOOR}
 
 
 SEP_FLOOR = 1e-4    # below this 1 - AUC (AUC 1.0000 at four decimals) no ratio to the run is printed
+# the fine-tuned networks on the class pairs (PI 2026-11-08): experiments/FT/roc_points.py ft --family pairs_ft, one doc
+# per model (scratch-s<k> from scratch) with "curves": {pair: {auc, ...}}; the JetClass-II fine-tuning at 1e6 scored
+# with g_a / (g_a + g_b) on the pair's jets among the first 2,000,000 TEST2M jets, natural composition (the jets of the
+# head sculpting, scripts/build_head_jobs.py --ft-head)
+PAIRS_FT = "curves_v2/pairs_ft"
+PAIRS_LABEL_CM = 4.6        # the pair table's row labels wrap at this width and its blocks may be shrunk by
+                            # SHRINK_OK, so that two pairs fit a block
+FT_SCRATCH_MODELS = ("scratch-s1", "scratch-s2", "scratch-s3")
 
 
-def table_pairs(fits, runs, fmt_pm, status, rows) -> str:
+def load_pairs_ft(data: pathlib.Path) -> dict:
+    """{model: {pair: record}} of the fine-tuned pair read-outs, {} until pulled."""
+    return {m: d.get("curves", d) for m, d in _load(data / PAIRS_FT).items()}
+
+
+def table_pairs(fits, runs, fmt_pm, status, rows, ft=None) -> str:
     """A11, binary probes between JetClass-II classes: the AUC, and the ratio of 1 - AUC to the
     188-class run as a labelled column ('--' where that run separates the test jets completely);
-    a dagger marks a pair the label set merges."""
+    a dagger marks a pair the label set merges. ft (load_pairs_ft; {} prints the group pending) adds the fine-tuned
+    networks as a second row group: the mode in each group's heading and not in the row labels, a row fine-tuned
+    from scratch (no probe) and none for the random networks (no fine-tuning). One tabular, the pairs as column
+    groups (split_wide deals them into blocks)."""
     mark = {"merged": r"$^{\dagger}$", "partly": r"$^{\ddagger}$", "apart": ""}
-    out = []
-    for part in (PAIRS[:4], PAIRS[4:]):
-        body = {arm: [] for arm in rows}            # arm -> [(AUC cell, rho cell)] per pair
-        for arm in rows:
-            for key, _, _, _ in part:
-                auc = (_cell([_pair(fits, m, key) for m in runs[arm]], len(runs[arm]), fmt_pm, frac=True)
-                       + mark[status.get(arm, {}).get(key, "apart")])
-                r, n = _ratio_to_full(fits, runs, arm, lambda m: _oma(_pair(fits, m, key)))
-                sep = separated(fits, runs, key) & {_idx(m) for m in runs[arm]}
-                body[arm].append((auc, _cell(r, n, fmt_pm) if n and not sep else "--"))
-        # a pair whose rho is a dash in every row (the 188-class runs separate it) shows its AUC only
-        has_rho = [any(body[arm][i][1] != "--" for arm in rows) for i in range(len(part))]
-        w = [2 if h else 1 for h in has_rho]
-        starts = [2 + sum(w[:i]) for i in range(len(part))]
-        out += [r"\begin{tabular}{l" + "c" * sum(w) + "}", r"\toprule",
-                " & " + " & ".join(rf"\multicolumn{{{k}}}{{c}}{{{h}}}" for k, (_, h, _, _) in zip(w, part)) + r" \\",
-                "".join(rf"\cmidrule(lr){{{a}-{a + k - 1}}}" for a, k in zip(starts, w)),
-                " & " + " & ".join(r"AUC & $\rho$" if h else "AUC" for h in has_rho) + r" \\",
-                r"\midrule"]
-        for arm in rows:
-            out.append(_row(arm, runs) + " & " + " & ".join(a + (" & " + r if h else "") for (a, r), h
-                                                            in zip(body[arm], has_rho)) + r" \\")
-        out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%"]
-    return "\n".join(out[:-1])
+    modes = [("lp", tuple(rows), lambda m, key: _pair(fits, m, key))]
+    if ft is not None:          # until pulled ({}), one pending row in place of the group's rows
+        modes.append(("ft", tuple(r for r in rows if r not in (INIT, INIT_BN)) + (SCRATCH,) if ft else (),
+                      lambda m, key: (ft.get(m, {}).get(key) or {}).get("auc")))
+        runs = {**runs, SCRATCH: list(FT_SCRATCH_MODELS)}
+    body = {}                                       # (mode, arm) -> [(AUC cell, rho cell)] per pair
+    for mode, arms, get in modes:
+        for arm in arms:
+            body[mode, arm] = []
+            for key, *_ in PAIRS:
+                auc = (_cell([get(m, key) for m in runs[arm]], len(runs[arm]), fmt_pm, frac=True)
+                       + (mark[status.get(arm, {}).get(key, "apart")] if mode == "lp" else ""))
+                r, n = _ratio_to_full(fits, runs, arm, lambda m: _oma(get(m, key)))
+                sep = separated(fits, runs, key, get) & {_idx(m) for m in runs[arm]}
+                body[mode, arm].append((auc, _cell(r, n, fmt_pm) if n and not sep else "--"))
+    # a pair whose rho is a dash in every row (the 188-class runs separate it) shows its AUC only
+    has_rho = [any(c[i][1] != "--" for c in body.values()) for i in range(len(PAIRS))]
+    w = [2 if h else 1 for h in has_rho]
+    out = [r"\begin{tabular}{l" + "c" * sum(w) + "}", r"\toprule",
+           " & " + " & ".join(rf"\multicolumn{{{k}}}{{c}}{{{h}}}" for k, (_, h, *_) in zip(w, PAIRS)) + r" \\",
+           "".join(rf"\cmidrule(lr){{{2 + sum(w[:i])}-{1 + sum(w[:i + 1])}}}" for i in range(len(w))),
+           " & " + " & ".join(r"AUC & $\rho$" if h else "AUC" for h in has_rho) + r" \\", r"\midrule"]
+    for k, (mode, arms, _) in enumerate(modes):
+        if len(modes) > 1:
+            out += ([r"\midrule"] if k else []) + [rf"\multicolumn{{{1 + sum(w)}}}{{l}}{{\textit{{{MODE_DEF[mode]}}}}} \\"]
+        if not arms:
+            out.append(rf"\multicolumn{{{1 + sum(w)}}}{{l}}{{\pending{{no run yet}}}} \\")
+        for arm in arms:
+            out.append((SCRATCH_LABEL if arm == SCRATCH else _row(arm, runs)) + " & " + " & ".join(
+                a + (" & " + r if h else "") for (a, r), h in zip(body[mode, arm], has_rho)) + r" \\")
+    return "\n".join(out + [r"\bottomrule", r"\end{tabular}"])
 
 
 # What the text compares on JetClass-II, as (configuration, reference): the ratio of their 1 - AUC,
@@ -1215,9 +1250,10 @@ def chosen_substitutions(fill: dict, runs: dict) -> tuple[dict, dict]:
 def _bench_rec(fits: dict, fill: dict, chosen: dict, m: str, ds: str, n: str | None = None):
     """A top or quark/gluon probe cell at size n (default the largest) under the substitution chosen
     on validation (fits_v4_fill), or with the missing inputs zero (fits) while the choice is pending.
-    The kinematic-only model has nothing missing and is read from fits."""
+    The kinematic-only model has nothing missing and is read from fits; the released Sophon checkpoint has no
+    substitution probes, so its missing inputs stay zero (the captions say so)."""
     s = chosen.get(ds)
-    if s is None or m == KIN_MODEL:
+    if s is None or m in (KIN_MODEL, SOPHON_MODEL):
         return _probe_rec(fits, m, ds, n)
     c = _raw_cells(fill, m).get(SUBST_KEY[ds][s]) or {}
     return c.get(n or max(c, key=int)) if c else None
@@ -1642,6 +1678,32 @@ def table_sculpt(sculpt, runs, fmt_pm, rows) -> str:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
+SCULPT_BOOT_WPS = (("eps_b=0.01", r"$\epsB = 1\%$"), ("eps_b=0.1", r"$\epsB = 10\%$"),
+                   ("eps_s=0.5", r"$\epsS = 50\%$"))
+
+
+def table_sculpt_boot(doc, runs) -> str:
+    """The sculpting differences of experiments/EVAL/sculpting_boot.py (head/sculpting_boot.json; plan 2026-11-08: a
+    difference stands when |delta| > 3 sigma, sigma^2 = run SD^2 + bootstrap SD^2), one row group per working point:
+    delta, run SD, bootstrap SD (distance x 10^2) and delta / sigma at two decimals, bold where it passes."""
+    num = lambda v: f"{v:.2f}".replace("-", "$-$")      # noqa: E731
+    arm = {m.removeprefix("mtx-").rsplit("-s", 1)[0]: a for a, ms in runs.items() for m in ms}
+    out = [r"\begin{tabular}{lcccc}", r"\toprule", r" & $\Delta$ & run SD & bootstrap SD & $\Delta/\sigma$ \\", r"\midrule"]
+    for k, (wp, head) in enumerate(SCULPT_BOOT_WPS):
+        out += ([r"\midrule"] if k else []) + [r"\multicolumn{5}{l}{\textit{" + head + r"}} \\"]
+        for name, d in doc["differences"].items():
+            x = d[wp]["distance"]
+            if x["sigma"] is None or not math.isclose(x["sigma"], math.hypot(x["run_sd"], x["boot_sd"]), rel_tol=1e-9) \
+                    or x["pass"] != (abs(x["delta"]) > 3 * x["sigma"]):
+                raise SystemExit(f"FATAL: sculpting_boot.json {name} {wp}: sigma is not hypot(run SD, bootstrap SD) "
+                                 "or pass is not |delta| > 3 sigma")
+            z = num(x["z"])
+            out.append(f"{LABEL[arm[d['configuration']]]} $-$ {LABEL[arm[d['reference']]]} & "
+                       + " & ".join(num(1e2 * x[q]) for q in ("delta", "run_sd", "boot_sd"))
+                       + " & " + (rf"\textbf{{{z}}}" if x["pass"] else z) + r" \\")
+    return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
+
+
 QCDHF_BKG = (("bb", r"$b\bar b$"), ("b", "$b$"), ("qcd_all", "all QCD"))
 QCDHF_WP = "r50"           # at 30% (the text's R30) too few single-b jets pass; charm and light QCD pass hardly at all
 
@@ -1688,10 +1750,11 @@ def table_coarse(co, runs, fmt_pm, rows) -> str:
            " & " + " & ".join(["accuracy & macro AUC"] * n) + r" \\", r"\midrule"]
     for arm in rows:
         ms, ck = ((INIT_MODELS, "init") if arm == INIT else (INIT_MODELS, "init_bn") if arm == INIT_BN
-                  else (runs[arm], PRIMARY))
+                  else (runs[arm], SOPHON_CK) if arm == SOPHON else (runs[arm], PRIMARY))
         cells = [_cell([val(m, ck, t, k) for m in ms], len(ms), fmt_pm, frac=True)
                  for t, _ in COARSE_TARGETS for k in ("accuracy", "macro_auc_ovr")]
-        out.append((LABEL[arm] if arm in (INIT, INIT_BN) else _row(arm, runs)) + " & " + " & ".join(cells) + r" \\")
+        out += [r"\midrule"] * (arm == SOPHON) + [
+            (LABEL[arm] if arm in (INIT, INIT_BN) else _row(arm, runs)) + " & " + " & ".join(cells) + r" \\"]
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -2575,7 +2638,7 @@ def table_jetclass_probe(fits, runs, fmt_pm, rows) -> str:
             mark = r"$^\dagger$" if any(x is not None and x["n_bkg_pass"] < V4.JC1_MIN_BKG for x in w) else ""
             cells.append(_cell([None if x is None else (Bound(x["rejection"]) if x.get("is_bound") else x["rejection"])
                                 for x in w], len(recs), fmt_pm) + mark)
-        out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
+        out += [r"\midrule"] * (arm == SOPHON) + [_row(arm, runs) + " & " + " & ".join(cells) + r" \\"]
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -3460,9 +3523,22 @@ ZERO_NOTE = (" A dash in a ratio column: the \\Kfull-class run of that seed sepa
              "completely ($1-\\mathrm{AUC} < 10^{-4}$), so a ratio to it would mean nothing.")
 
 
-def zero_note(fits, runs) -> str:
-    """The tab:pairs caption's ZERO_NOTE when a 188-class run separates some pair's test jets completely."""
-    return ZERO_NOTE if any(separated(fits, runs, k) for k, *_ in PAIRS) else ""
+# the reference row of the frozen-probe tables; the differences are the verified ones (PI 2026-11-08): the stream and its
+# loader (pretrain_v2.py: a fresh seeded stream every epoch), the initialization, the checkpoint rule (best_window_epoch)
+SOPHON_NOTE = ("Below the rule, the released Sophon checkpoint~\\cite{sophon}, probed in the same way, lies outside the "
+               "controlled comparison: it was pretrained on another stream of training jets, read by weaver's loader (our "
+               "runs draw a fresh seeded stream every epoch), from its own initialization, and selected by its own "
+               "checkpoint rule (ours: the best validation epoch of the last ten).")
+SOPHON_SHORT = "Below the rule, the released Sophon checkpoint, outside the controlled comparison (table~\\ref{tab:probes})."
+SOPHON_ZERO = (" Its top and quark/gluon probes set the missing inputs to zero, where our rows use the substitution "
+               "chosen on validation.")
+
+
+def zero_note(fits, runs, ft=None) -> str:
+    """The tab:pairs caption's ZERO_NOTE when a 188-class run, probed or fine-tuned (ft, load_pairs_ft), separates
+    some pair's test jets completely."""
+    get = lambda m, k: ((ft or {}).get(m, {}).get(k) or {}).get("auc")      # noqa: E731
+    return ZERO_NOTE if any(separated(fits, runs, k) or separated(fits, runs, k, get) for k, *_ in PAIRS) else ""
 
 
 CAPTIONS = {
@@ -3476,7 +3552,7 @@ CAPTIONS = {
                "accuracy, AUC and the background rejections $R_{50}$ and $R_{30}$, $1/\\epsB$ at 50\\% and 30\\% signal "
                "efficiency. "
                + RATIO_COL + " " + SPREAD
-               + " " + KIN_NOTE + " " + AUC_DEF + " $^{*}$: a probe that did not converge."),
+               + " " + KIN_NOTE + " " + SOPHON_NOTE + SOPHON_ZERO + " " + AUC_DEF + " $^{*}$: a probe that did not converge."),
     "probes_n": ("tab:probesn", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained on "
                  "each task with the number of jets in the column headers: class-balanced "
                  "JetClass-II AUC averaged over the classes, JetClass accuracy, and $R_{30}$ on top, quark/gluon and Herwig jets with "
@@ -3484,13 +3560,20 @@ CAPTIONS = {
                  "\\LpSubstitutionQg{} for quark/gluon). " + SPREAD + " Here the \\RandVtwoNPartitions{} random "
                  "partitions are pooled into one row, mean $\\pm$ standard deviation over their runs. " + KIN_NOTE
                  + " $^{*}$: a probe that did not converge."),
-    "pairs": ("tab:pairs", "Binary linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained "
-              "and scored on pairs of JetClass-II classes: the AUC and the ratio $\\rho$ "
-              "of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to the \\Kfull-class run of the same seed. $^{\\dagger}$: the label set merges the two "
+    "pairs": ("tab:pairs", "Pairs of JetClass-II classes separated by networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and by the controls: "
+              "(LP), a binary linear probe on the frozen features, trained on up to \\JcBalPairTrainPerSide{} and scored on "
+              "up to \\JcBalPairTestPerSide{} jets of each side, drawn from the JetClass-II training and test sets; "
+              "(f.t.), the network fine-tuned on $10^{6}$ class-balanced JetClass-II jets with the \\Kfull{} classes, "
+              "scored on the pair's jets among \\LpNTestJcii{} JetClass-II test jets at their natural composition by the "
+              "summed output scores of the first side over those of both sides. The two modes are scored on different "
+              "test jets, so they are compared within a mode only. "
+              "The AUC and the ratio $\\rho$ "
+              "of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to the \\Kfull-class run of the same seed in the same mode. "
+              "No pretraining: fine-tuned from scratch, three seeds, no probe. $^{\\dagger}$: the label set merges the two "
               "sides into one class; $^{\\ddagger}$: it merges the first side with part of the second. " + SPREAD
               + " The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label "
               "set but the \\Kfull-class one merges all QCD classes. The random network without pretraining, as initialized and "
-              "with its BatchNorm statistics recomputed, has no label set and no $\\rho$. The $X\\to ee$ vs $\\mu\\mu$ probe is trained on the "
+              "with its BatchNorm statistics recomputed, has no label set, no $\\rho$ and no fine-tuning. The $X\\to ee$ vs $\\mu\\mu$ probe is trained on the "
               "jets of the two classes in the class-balanced training set (\\MlstPairEemmNTrain{} jets) and scored on every "
               "JetClass-II test jet of the two classes (\\MlstPairEemmNTestPerSide{} per side). A mark after two values "
               "applies to the configuration.__ZERO__"),
@@ -3511,7 +3594,7 @@ CAPTIONS = {
                "classes merged into coarser targets: the 43 and the 17 groups of the class hierarchy, and the 17 "
                "groups of the partition with no flavor boundary. Accuracy and the area under the curve averaged over "
                "the target's groups; the test set is balanced over the 188 native classes, not over the groups. "
-               + SPREAD),
+               + SPREAD + " " + SOPHON_SHORT),
     "qcdhf": ("tab:qcdhf", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
               "and 17 classes and of the controls, trained on "
               "one million class-balanced JetClass-II jets and scored on its class-balanced test set: background "
@@ -3579,6 +3662,15 @@ CAPTIONS = {
                "$1-g_{\\mathrm{QCD}}$ at the QCD efficiency $\\epsB$ given; lower is less sculpting.__SCULPT_SIG__ The last row is the "
                "distance expected for a random selection of as many of the QCD test jets (drawn without replacement). "
                + SPREAD_MASS),
+    "sculpt_boot": ("tab:sculptboot", "Mass sculpting by the pretraining heads, differences between label sets: "
+                    "$\\Delta$, the Jensen--Shannon distance of table~\\ref{tab:sculpt} ($\\times10^{2}$) of the "
+                    "configuration minus that of the reference, paired by pretraining seed and averaged over the seeds "
+                    "both have; the standard deviation of the paired differences over the seeds (run SD); the standard "
+                    "deviation of $\\Delta$ over __REPLICAS__ bootstrap replicas of the test jets, the QCD and the "
+                    "resonant jets each resampled with replacement, the same jets for every network (bootstrap SD); "
+                    "and $\\Delta/\\sigma$, $\\sigma^{2}$ the sum of the two squares. Bold: $|\\Delta| > 3\\sigma$, a "
+                    "difference that stands. At the QCD efficiencies $\\epsB$ of table~\\ref{tab:sculpt} and at the "
+                    "cut keeping half of the resonant jets ($\\epsS = 50\\%$)."),
     "ft": ("tab:ft", "Fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, and the network trained from scratch, on each "
            "task with the number of training jets in the column headers, in each task's metric: on class-balanced "
            "JetClass-II the AUC averaged over the classes (all classes and the QCD classes) and the accuracy over its "
@@ -3645,7 +3737,7 @@ CAPTIONS = {
     "jetclass_probe": ("tab:jetclassprobe", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, "
                        "trained and scored on JetClass, largest training set, in "
                        "the columns of table~\\ref{tab:jetclass} (AUC as there: on JetClass's equal class sizes the one-against-one and one-against-rest averages coincide). "
-                       + SPREAD + " $^\\dagger$ as there."),
+                       + SPREAD + " " + SOPHON_SHORT + " $^\\dagger$ as there."),
     "jetclass_nbkg": ("tab:jetclassnbkg", "QCD jets passing each signal class's working point after fine-tuning networks pretrained on JetClass-II with 188, 162, 43 and 17 classes "
                       "and the controls on JetClass (50\\% signal efficiency; 99\\% for "
                       "$H\\to\\ell\\nu qq'$, 99.5\\% for $t\\to b\\ell\\nu$), the "
@@ -3697,7 +3789,7 @@ PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes
                 ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None), ("fill_main", "mlst_fill_main", True, None),
                 ("jc1_class_auc", "mlst_jc1_class_auc", True, None),
                 ("mass", "mlst_mass", False, None), ("mass_detail", "mlst_mass_detail", True, {"__BLANK__": ""}),
-                ("sculpt", "mlst_sculpt", True, {"__SCULPT_BINS__": r"\pending{bins}", "__SCULPT_FLAV__": "", "__SCULPT_SIG__": ""}), ("ft", "mlst_ft", True, None),
+                ("sculpt", "mlst_sculpt", True, {"__SCULPT_BINS__": r"\pending{bins}", "__SCULPT_FLAV__": "", "__SCULPT_SIG__": ""}), ("sculpt_boot", "mlst_sculpt_boot", False, {"__REPLICAS__": r"\pending{n}"}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, {"__JC2COMP__": "class-balanced"}),
                 ("bench_top", "mlst_bench_top", True, None), ("bench_qg", "mlst_bench_qg", True, None),
                 ("xbx", "mlst_xbx", False, None), ("xbx_rej", "mlst_xbx_rej", True, None),
@@ -3940,9 +4032,9 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
 
 
 # how our rows were used downstream, added to each row label (PI, 2026-11-07): one mode per table, or one per
-# %SPLIT% part (a list); a table whose columns change mode (boot, per_run) or whose rows name it (mass_detail) is not
-# listed. A key of MODE, or the words themselves.
-MODES = {"probes": "lp", "pairs": "lp", "bn": "lp", "balance": "lp", "fill": "lp", "fill_main": "lp",
+# %SPLIT% part (a list); a table whose columns change mode (boot, per_run, pairs) or whose rows name it (mass_detail) is
+# not listed. A key of MODE, or the words themselves.
+MODES = {"probes": "lp", "bn": "lp", "balance": "lp", "fill": "lp", "fill_main": "lp",
          "jetclass_probe": "lp", "ft_rej": "ft", "jetclass_all": "ft", "jetclass_nbkg": "ft", "rand_prong": "ft",
          "lrsweep": "ft", "probes_n": "lp", "ft": "ft", "per_class": "lp", "mlp": "mlp", "mass": "mlp",
          "bench_top": "ft", "bench_qg": "ft", "jetclass": "ft", "jc1_class_auc": ["ft", "lp"],
@@ -3976,16 +4068,22 @@ def _column_place(items: list) -> int:
     big = max(xs, default=0.0)
     if 0.1 <= big <= 1:
         return 4
-    pl = [_pdg_place(v[1]) for k, v in items if k == "p" and v[1] > 0]
+    pl = [_pdg_place(v[1]) for k, v in items if k == "p" and not _zero_sd(*v)]
     place = sorted(pl)[len(pl) // 2] if pl else 4 if big < 1 else 2 if big < 10 else 1 if big < 100 else 0
     if any(0 < x < 100 for x in xs):    # a small value beside large ones (a random network's 12 beside 1,100)
         place = max(place, 0)           # keeps its own digits: never "10 +- <10"
     return min(place, 3 - math.floor(math.log10(big))) if big > 0 else place
 
 
+def _zero_sd(mean: float, sd: float) -> bool:
+    """An SD within float noise of zero is zero: identical runs whose mean is not exactly representable give an SD
+    of ~1e-17 rather than 0."""
+    return sd <= 1e-12 * max(1.0, abs(mean))
+
+
 def _render(kind: str, v: list, place: int) -> str:
     if kind == "p":
-        if v[1] == 0:           # runs that agree exactly
+        if _zero_sd(*v):        # runs that agree exactly
             return _at(v[0], place) + PM + "0"
         sd = _at(v[1], place) if round(v[1], place) else "$<$" + _at(10.0 ** -place, place)
         return _at(v[0], place) + PM + sd
@@ -4049,13 +4147,13 @@ def _labels(tab: str, tag: str | None = None) -> str:
     return "\n".join(out)
 
 
-def _common_label(boxes: list) -> list:
-    """Blocks of one table with one first-column width: that of the widest label, at most LABEL_CM (estimated)."""
+def _common_label(boxes: list, label_cm: float = LABEL_CM) -> list:
+    """Blocks of one table with one first-column width: that of the widest label, at most label_cm (estimated)."""
     labs = [c for b in boxes for ln in b.split("\n") if "&" in ln and not ln.lstrip().startswith(("\\multicolumn", "\\begin"))
             for c in [_depth0_split(ln, "&")[0]] if c.strip()]
     atom = max((_cell_cm(a) for c in labs for a in re.findall(r"\\mbox\{((?:[^{}]|\{[^{}]*\})*)\}", c) or [c]),
                default=0.0)
-    w = max(min(max(map(_cell_cm, labs), default=0.0), LABEL_CM), atom) - 0.42
+    w = max(min(max(map(_cell_cm, labs), default=0.0), label_cm), atom) - 0.42
     spec = r">{\raggedright\arraybackslash}p{" + f"{w:.1f}" + "cm}"
     return [re.sub(r"\\begin\{tabular\}\{(>\{\\raggedright\\arraybackslash\}p\{[\d.]+cm\}|l)",
                    lambda m: r"\begin{tabular}{" + spec, b, count=1) for b in boxes]
@@ -4075,7 +4173,8 @@ def _define_tags(cap: str, key: str) -> str:
     return cap[:i] + "; " + "; ".join(defs) + cap[i:]
 
 
-def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, notes: list | None = None) -> str:
+def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, notes: list | None = None,
+           label_cm: float = LABEL_CM, budget: float = TEXT_CM) -> str:
     env = "table*" if wide else "table"
     label, cap = CAPTIONS[key]
     for k, v in (fill or {}).items():
@@ -4087,10 +4186,10 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
         cap = cap.replace(" $^{*}$: a probe that did not converge.", "")
     boxes = [r"\begin{adjustbox}{max width=\linewidth}" + "\n" + t.strip() + "\n" + r"\end{adjustbox}"
              for k, b in enumerate(body.split("%SPLIT%"))
-             for t in split_wide(_labels(uniform_columns(b.strip()), _mode_word(key, k)))]
+             for t in split_wide(_labels(uniform_columns(b.strip()), _mode_word(key, k)), budget, label_cm)]
     cap = _define_tags(cap, key)
     if "begin{tabular}" in body and len(boxes) > 1:
-        boxes = _common_label(boxes)
+        boxes = _common_label(boxes, label_cm)
     tail = [rf"\par\smallskip{{\footnotesize {n}}}" for n in notes or []]
     if _height_cm(boxes, cap) <= PAGE_CM:
         return "\n".join([rf"\begin{{{env}}}[t]", r"\centering", r"\small",
@@ -4200,13 +4299,23 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     if not fill:
         missing.append(f"substitution probes -- experiments/FIGS/data/v2/{FITS_FILL}/")
     chosen, _ = chosen_substitutions(fill, runs)
-    out = {"tables/mlst_probes.tex": _float("probes", table_probes(fits, runs, TAB, rows_init, full_count, fill,
-                                                                   chosen, kin=True), True),
+    # the released Sophon checkpoint: a row of the frozen-probe tables only, never one of the runs; pending until pulled
+    sophon = _load(data / FITS_SOPHON).get(SOPHON_MODEL)
+    if not sophon:
+        missing.append(f"the released Sophon checkpoint's probes -- experiments/FIGS/data/v2/{FITS_SOPHON}/")
+    fits_s = {**fits, SOPHON_MODEL: V4.remap(sophon)} if sophon else fits
+    runs_s = {**runs, SOPHON: [SOPHON_MODEL]}
+    pairs_ft = load_pairs_ft(data)
+    if not pairs_ft:
+        missing.append(f"fine-tuned class pairs -- experiments/FIGS/data/v2/{PAIRS_FT}/")
+    out = {"tables/mlst_probes.tex": _float("probes", table_probes(fits_s, runs_s, TAB, rows_init + (SOPHON,),
+                                                                   full_count, fill, chosen, kin=True), True),
            "tables/mlst_probes_n.tex": _longtable("probes_n", table_probes_n(
                fits, _pooled(runs), TAB, MAIN + MASS + FLAV + (RAND_POOLED, INIT, INIT_BN), fill, chosen, kin=True)),
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, runs, TAB, status,
-                                                                MAIN + MASS + RAND + FLAV + (INIT, INIT_BN)), True,
-                                           fill={"__ZERO__": zero_note(fits, runs)}),
+                                                                MAIN + MASS + RAND + FLAV + (INIT, INIT_BN), pairs_ft), True,
+                                           fill={"__ZERO__": zero_note(fits, runs, pairs_ft)}, label_cm=PAIRS_LABEL_CM,
+                                           budget=TEXT_CM * SHRINK_OK),
            "tables/mlst_balance.tex": _float("balance", table_balance(fits3, fits_v4, runs, TAB, ALL_ROWS + (INIT_BN,)))}
     comparisons(em, fits, runs, status, index, fmt_pm)
     eemm_macros(em, fits, runs, index, fmt_pm, fmt_int, status)
@@ -4216,7 +4325,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         out["tables/mlst_bn.tex"] = _float("bn", table_bn(fits3, runs, TAB, ALL_ROWS))
     co = _load(data / "linprobe/fits_v4_coarse")
     if co:
-        out["tables/mlst_coarse.tex"] = _float("coarse", table_coarse(co, runs, TAB, ALL_ROWS + (INIT, INIT_BN)), True)
+        out["tables/mlst_coarse.tex"] = _float("coarse", table_coarse({**co, SOPHON_MODEL: sophon} if sophon else co, runs_s,
+                                                                      TAB, ALL_ROWS + (INIT, INIT_BN, SOPHON)), True)
     else:
         missing.append("probes on the coarse targets -- experiments/FIGS/data/v2/linprobe/fits_v4_coarse/")
     hf = _load(data / "linprobe/fits_v4_qcdhf")
@@ -4251,9 +4361,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     missing += [f"ROC curves -- experiments/FIGS/data/v2/{V4.ROC_DIR}/{f}/" for f in V4.ROC_FAMILIES if f not in roc]
     roc_macros(em, roc, runs, index, missing, fmt_int)
     top_r50_macro(em, roc, runs, index, fmt_pm)
-    trained = {(m, ds, n) for (m, ds, n) in UNCONVERGED_SEEN if not m.startswith(("init-", "initbn-"))}
+    ours = {x for x in UNCONVERGED_SEEN if x[0] != SOPHON_MODEL}
+    trained = {(m, ds, n) for (m, ds, n) in ours if not m.startswith(("init-", "initbn-"))}
     em.macro("MlstProbeUnconverged", str(len(trained)), index, "linear probes of pretrained models that did not converge (count)")
-    em.macro("MlstProbeUnconvergedInit", str(len(UNCONVERGED_SEEN) - len(trained)), index,
+    em.macro("MlstProbeUnconvergedInit", str(len(ours) - len(trained)), index,
              "linear probes of the randomly initialized networks that did not converge (count)")
     cells = [c for m, d in fits.items() for c in _fit_cells(d["cells"].get(_ck(m), {}))]
     edge = [c for m, d in fits.items() for c in _fit_cells(d["cells"].get(_ck(m), {})) if c["C"] == max(d["c_grid"])]
@@ -4306,6 +4417,13 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm)
     else:
         missing.append("mass sculpting -- experiments/FIGS/data/v2/head/*_sculpting.json")
+    boot_file = data / "head" / "sculpting_boot.json"
+    if boot_file.exists():
+        sb = json.loads(boot_file.read_text())
+        out["tables/mlst_sculpt_boot.tex"] = _float("sculpt_boot", table_sculpt_boot(sb, runs),
+                                                    fill={"__REPLICAS__": fmt_int(sb["replicas"])})
+    else:
+        missing.append("sculpting bootstrap -- experiments/FIGS/data/v2/head/sculpting_boot.json")
     composition_macros(em, data, root, missing)
     size_macros(em, fits, fmt_int, index)
     method_macros(em, root, words)
@@ -4375,7 +4493,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             "prong counts, every partition has a group holding classes of both);")})
     else:
         missing.append("JetClass per-class curves -- experiments/FIGS/data/v2/curves/full_*.json")
-    out["tables/mlst_jetclass_probe.tex"] = _float("jetclass_probe", table_jetclass_probe(fits, runs, TAB, rows_init), True)
+    out["tables/mlst_jetclass_probe.tex"] = _float("jetclass_probe", table_jetclass_probe(fits_s, runs_s, TAB,
+                                                                                          rows_init + (SOPHON,)), True)
     if comp:
         ftg, nodev = ft_gpu_types(data)
         if nodev:

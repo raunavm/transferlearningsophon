@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The gallery's label-set mock-ups: F2a, F2b, F3, F3-scatter, F3-app, F3-ft, F8, A8, A10, UMAP-jc1, UMAP-jc2-had, UMAP-jc2-lep, UMAP-top, UMAP-qg, VAL (docs/figstyle/PLAN.md), in
+"""The gallery's label-set mock-ups: F2a, F2b, F3-main, F3-app, F3-ft, F8, A8, A10, UMAP-jc1, UMAP-jc2-had, UMAP-jc2-lep, UMAP-top, UMAP-qg, VAL (docs/figstyle/PLAN.md), in
 style_v4 only. The numbers come through the selection code of paper_figures and mlst_results; the drawing
 is written here. All work happens inside the draw functions."""
 from __future__ import annotations
@@ -9,8 +9,7 @@ import math
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colormaps, ticker
-from matplotlib.colors import Normalize
+from matplotlib import ticker
 
 import gallery_common as C
 from gallery_roc import FAMILIES, family_of
@@ -26,7 +25,6 @@ Y_ACC, Y_R30 = "Accuracy", r"Rejection ($R_{30}$)"
 X_CLASSES, X_JETS = "Number of pretraining classes", "Number of training jets"
 LEGEND_PANEL = 1        # JetClass: its curves stay high on the right, so its lower right is empty in F2, F8 and A10
 TITLES = {key: title for key, _, _, _, title, _ in P.F2_PANELS}
-HEAT_F3 = ("L162", "R42_Q1", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R")
 PUBLISHED = {"jc1": (2_000_000, 0.836), "top": (1_200_000, 1602.0), "qg": (1_600_000, 101.2)}     # ParT's published values, as in the paper's benchmark tables
 
 
@@ -175,74 +173,7 @@ def draw_f2b(path) -> None:
     _draw_f2(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning")
 
 
-# ------------------------------------------------------------------ F3: per-class heatmap
-def _draw_heat(path, arms) -> None:
-    fits = I["fits"]
-    if not P._has(fits, "jc2_188"):
-        raise C.Absent("no class-balanced JetClass-II linear probes (linprobe/fits_v4)")
-    rows, R = P.heat(M, fits, RUNS, P.REPO)
-    keys = [a for a, _ in P.MK.HEAT]
-    D = R[:, [keys.index(a) for a in arms]]
-    if np.isnan(D).all():
-        raise C.Absent("no per-class linear probes for these columns (linprobe/fits_v4)")
-    limit = float(np.nanmax(np.abs(R)))      # nothing clips
-    n_res = sum(not r["class_name"].startswith("label_QCD") for r in rows)
-    row = lambda i: i + (i >= n_res)         # a blank row between the resonant and the QCD classes
-
-    # round 4: exact size; a thin gap between the hierarchy's columns and the controls'; colour bar the panel's height
-    gap = 0.3                                   # in columns
-    n_hier = sum(a in S.LEVELS for a in arms)
-    data = np.ma.masked_invalid(np.insert(D, n_res, np.nan, axis=0))
-    ye = np.arange(data.shape[0] + 1)
-    left, top, w, h = 4.3, 1.0, 8.4, 15.6         # 18.5 cm in all: the results book prints it at full size, every text
-                                                  # at its drawn size, at least 8 pt (PI, 2026-11-07)
-    fig = S.figure_cm(S.PRINT_W, top + h + 1.9)
-    ax = S.axes_cm(fig, left, top, w, h)
-    cmap = colormaps["RdBu"].copy()
-    cmap.set_bad("white")
-    norm = Normalize(-limit, limit)
-    im = ax.pcolormesh(np.arange(n_hier + 1), ye, data[:, :n_hier], cmap=cmap, norm=norm)
-    ax.pcolormesh(np.arange(n_hier, len(arms) + 1) + gap, ye, data[:, n_hier:], cmap=cmap, norm=norm)
-    xe = np.array([0.0, len(arms) + gap])
-    ax.set_xlim(xe[0], xe[-1])
-    ax.set_ylim(ye[-1], 0)
-    centres = [i + 0.5 + (gap if i >= n_hier else 0.0) for i in range(len(arms))]
-    ax.set_xticks(centres)
-    short = {"FLAV_F0": "No\nflavor\nboundary", "FLAV_F1": "$b$-quark\nboundary", "FLAV_F1R": "Random\nflavor\nboundary"}
-    ax.set_xticklabels([short.get(a, _column(a).replace(" ", "\n")) for a in arms], fontsize=S.TICK_PT5, va="top")
-    ax.tick_params(axis="both", which="both", length=0, top=False, right=False)
-    ax.minorticks_off()
-
-    labs = [P.MK.GROUP_TEX.get(r["R16_Q1_name"], r["R16_Q1_name"].replace("_", " ")) for r in rows]
-    starts = [i for i in range(len(labs)) if i == 0 or labs[i] != labs[i - 1]]
-    ends = starts[1:] + [len(labs)]
-    for a in starts[1:]:
-        if a != n_res:
-            ax.axhline(row(a), color="black", linewidth=0.4)
-    ax.set_yticks([(row(a) + row(b - 1)) / 2 + 0.5 for a, b in zip(starts, ends)])
-    ax.set_yticklabels([labs[a] for a in starts])
-    S.labels(ax, "Pretraining labels", "JetClass-II class")
-    ax.xaxis.labelpad = 6
-
-    cax = S.axes_cm(fig, left + w + 0.3, top, 0.35, h)
-    from matplotlib.cm import ScalarMappable
-    cb = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), cax=cax)    # the full range, no hairline at its end
-    cax.set_facecolor(cmap(0.0))       # the renderer leaves a hairline under the lowest cell: fill it with that colour
-    cb.ax.minorticks_off()
-    S.labels(cb.ax, ylabel="AUC difference to 188 classes (percentage points)")
-    S.heading(fig, "Linear probes on JetClass-II, class by class")
-    S.save(fig, path)
-
-
-def _column(arm: str) -> str:
-    return S.NAME.get(arm) or dict(P.MK.HEAT)[arm]
-
-
-def draw_f3(path) -> None:
-    _draw_heat(path, HEAT_F3)
-
-
-# ------------------------------------------------------------------ F3-scatter, F3-app: every class against the 188-class model
+# ------------------------------------------------------------------ F3-main, F3-app: every class against the 188-class model
 def _class_auc(models: list) -> dict:
     """{class: AUC, the mean over the models that hold it}."""
     per = [p for m in models if (p := M._per_class(I["fits"], m))]
@@ -259,12 +190,13 @@ def _ft_class_auc(models: list) -> dict:
 
 def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear probes", letters: str = "abcd", scope=None,
                   absent: str = "no class-balanced JetClass-II linear probes (linprobe/fits_v4)") -> None:
-    """panels: (runs, title), two to four. One point per class; below the dashed line the class does worse than with
-    188 classes. Round 4: square 6.5 cm panels, two per row; the legend above the panels, or in the empty fourth cell
-    of a three-panel figure; letters names the panels (a second figure continues the first's letters)."""
+    """panels: (runs, title) or (runs, title, auc_of), two to four; a panel's own auc_of (F3-main: probe | fine-tuned)
+    reads both its model and the 188-class one. One point per class; below the dashed line the class does worse than
+    with 188 classes. Round 4: square 6.5 cm panels, two per row; the legend above the panels, or in the empty fourth
+    cell of a three-panel figure; letters names the panels (a second figure continues the first's letters)."""
     from matplotlib.lines import Line2D
-    full = auc_of(RUNS["L188"])
-    if not full:
+    of = lambda panel: panel[2] if len(panel) > 2 else auc_of
+    if not all(of(p)(RUNS["L188"]) for p in panels):
         raise C.Absent(absent)
     family = {int(r["jet_label"]): family_of(r["class_name"]) for r in M._class_rows(P.REPO)}
     nrows = math.ceil(len(panels) / 2)
@@ -276,12 +208,15 @@ def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear pro
         ax.sharey(cells[0])
     for ax in axes[:, 1]:
         ax.tick_params(labelleft=False)      # one y range: its tick labels once, on the left
-    pairs = [[(full[c], other[c], c) for c in full if c in other] for other in (auc_of(models) for models, _ in panels)]
+    def scored(panel) -> list:
+        full, other = of(panel)(RUNS["L188"]), of(panel)(panel[0])
+        return [(full[c], other[c], c) for c in full if c in other]
+    pairs = [scored(p) for p in panels]
     # one range for the two figures of a split (scope: every panel of both), so their axes match
-    ranged = pairs if scope is None else [[(full[c], o[c]) for c in full if c in o] for o in (auc_of(m) for m, _ in scope)]
+    ranged = pairs if scope is None else [scored(p) for p in scope]
     lo = min(v for pts in ranged for x, y, *_ in pts for v in (x, y))
     lim = (lo - 0.04 * (1 - lo), 1.0 + 0.01 * (1 - lo))     # the lowest point and the points at AUC 1 clear of the frame
-    for k, (ax, pts, (_, title)) in enumerate(zip(cells, pairs, panels)):
+    for k, (ax, pts, (_, title, *_)) in enumerate(zip(cells, pairs, panels)):
         S.fine_grid(ax)
         if not pts:
             ax.text(0.5, 0.5, "not yet fine-tuned", transform=ax.transAxes, ha="center", va="center", fontsize=S.LEGEND_PT5)
@@ -330,8 +265,12 @@ def _ft_panels() -> list:
 FT_ABSENT = "no per-class curves after fine-tuning (curves_v2/jc2_ft_ovr)"
 
 
-def draw_f3_scatter(path) -> None:
-    _draw_scatter(path, [(RUNS[a], S.NAME[a]) for a in ("R42_Q1", "R16_Q1")])
+def draw_f3_main(path) -> None:
+    """17 against 188 classes, linear probe | fine-tuned (PI, 2026-11-08), on one axis range, so the shrink after
+    fine-tuning shows."""
+    _draw_scatter(path, [(RUNS["R16_Q1"], f"{S.LEGEND['R16_Q1']} {S.PROBE}", _class_auc),
+                         (RUNS["R16_Q1"], f"{S.LEGEND['R16_Q1']} {S.FINE_TUNED}", _ft_class_auc)],
+                  word="Linear probes (LP) and fine-tuned (f.t.)")
 
 
 def draw_f3_app(path) -> None:
@@ -347,7 +286,7 @@ def draw_f3_app3(path) -> None:
 
 
 def draw_f3_ft(path) -> None:
-    """F3-scatter's form after fine-tuning (curves_v2/jc2_ft_ovr): every model fine-tuned on JetClass-II."""
+    """F3-main's form after fine-tuning (curves_v2/jc2_ft_ovr): every model fine-tuned on JetClass-II."""
     _draw_scatter(path, _ft_panels()[:4], auc_of=_ft_class_auc, word="Fine-tuned", absent=FT_ABSENT, scope=_ft_panels())
 
 
@@ -619,38 +558,18 @@ PAGES = [
                   "no-flavor-boundary marker lies 2.4 and 2.7 above the b-quark and random-boundary markers, more than "
                   "any label-set SD."),
     C.Page(
-        id="F3",
-        title="Cost class by class",
+        id="F3-main",
+        title="Cost class by class, frozen and fine-tuned",
         precedent=HEATMAPS,
-        precedent_label="CMS Fig. 7, JetParticle-JEPA Fig. 12",
-        caption="Linear probes on the frozen features of networks pretrained on JetClass-II, trained and scored "
-                "on class-balanced JetClass-II: the difference in per-class AUC to the network pretrained with "
-                "188 classes, in percentage points, for 162, 43 and 17 classes and three 17-class partitions with "
-                "controlled flavor boundaries. Rows are the 188 classes grouped by decay topology, QCD at the "
-                "bottom. Means over pretraining runs; red marks a lower AUC than with 188 classes.",
-        differs="Signed values on a diverging RdBu scale symmetric about 0: Blues would hide the sign. Not a confusion "
-                "matrix: rows are classes, columns are models. No numbers in cells: 188 rows cannot hold them. Rows "
-                "named by 15 group labels, since a single class name cannot reach 8 pt at 188 rows; thin lines between "
-                "groups and a blank row before QCD in place of per-row labels; no row tick marks. One panel as CMS, against "
-                "JetParticle-JEPA's three, and no titles where it has three and a heading. Taller than either "
-                "precedent, with wide cells, not square. Colour bar about 62% of the axes height, against the full "
-                "height in both. Column labels at 45 degrees as JetParticle-JEPA, not CMS's 90. Axis words at the "
-                "axis end as CMS, not JetParticle-JEPA. Sophon's font. No experiment label.",
-        draw=draw_f3,
-        data_note="The three controlled partitions are means over two runs, the label sets over three."),
-    C.Page(
-        id="F3-scatter",
-        title="Cost class by class, per-class AUC (appendix)",
-        precedent=HEATMAPS,
-        precedent_label="None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the heatmap's",
-        caption="Linear probes on the frozen features of networks pretrained on JetClass-II, trained on one "
-                "million class-balanced JetClass-II jets: each class's area under the curve with 43 and with 17 "
-                "pretraining classes, against the same with 188. On the dashed line the two agree; below it the "
-                "class does worse than with 188 classes. Colors are decay families; values are means over three "
-                "pretraining runs.",
-        differs="One point per class on linear axes, the same range on both, from the data minimum to 1 (PI). No 1 - AUC. "
-                "Round 4: two 6.5 cm squares, the legend above them.",
-        draw=draw_f3_scatter),
+        precedent_label="None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the dropped heatmap's",
+        caption="Networks pretrained on JetClass-II with 17 and with 188 classes, then (a) a linear probe (LP) on "
+                "their frozen features or (b) the whole network fine-tuned (f.t.), on one million class-balanced "
+                "JetClass-II jets: each class's area under the curve with 17 classes against the same with 188. "
+                "Both panels share one range. Below the dashed line the class does worse with 17 classes. Colors "
+                "are decay families; means over three pretraining runs.",
+        differs="F3-scatter's (b) and F3-ft's (c) side by side (PI, 2026-11-08), on one axis range set by both panels, "
+                "so the shrink after fine-tuning shows; replaces the heatmap F3 and F3-scatter in the main text.",
+        draw=draw_f3_main),
     C.Page(
         id="F3-app",
         title="Cost class by class, other models, first part (appendix)",
@@ -661,7 +580,7 @@ PAGES = [
                 "(c) 17 pretraining classes and (d) the five 17-class random partitions averaged, against the same "
                 "with 188 classes. Below the dashed line the class does worse than with 188. Colors are decay "
                 "families; means over three pretraining runs, in (d) over the five partitions, one run each.",
-        differs="As F3-scatter. Round 4: seven panels split 4+3 over two figures, so every panel is a 6.5 cm square.",
+        differs="As F3-main. Round 4: seven panels split 4+3 over two figures, so every panel is a 6.5 cm square.",
         draw=draw_f3_app),
     C.Page(
         id="F3-app2",
@@ -685,7 +604,7 @@ PAGES = [
                 "jets: each class's area under the curve against the same with 188 classes and no mass "
                 "regression. Below the dashed line the class does worse than with 188. Colors are decay families; "
                 "values are means over two pretraining runs.",
-        differs="F3-scatter's form for the two mass-regression models, moved out of F3-app so that the probe and "
+        differs="F3-main's form for the two mass-regression models, moved out of F3-app so that the probe and "
                 "fine-tuning pages share one panel order (PI, 2026-11-07).",
         draw=draw_f3_app3),
     C.Page(
@@ -698,7 +617,7 @@ PAGES = [
                 "the five 17-class random partitions averaged, against the same with 188 classes. Below the "
                 "dashed line the class does worse than with 188. Colors are decay families; means over three "
                 "pretraining runs, in (d) over the five partitions, one run each.",
-        differs="F3-scatter's form after fine-tuning (PI). Round 4: seven panels split 4+3 over two figures.",
+        differs="F3-main's form after fine-tuning (PI). Round 4: seven panels split 4+3 over two figures.",
         draw=draw_f3_ft),
     C.Page(
         id="F3-ft2",

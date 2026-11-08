@@ -18,6 +18,16 @@ discriminants are reused here.
     jc2_ovr    the linear probes on the balanced JetClass-II test set at 10^6, one-vs-rest:
                p_c against every other class, all 188 native classes (keys "0" ... "187")
     jc2_ft_ovr the same for fine-tuning at 10^6, softmax(logits) (2026-11-05)
+    pairs_ft   fine-tuning on the balanced JetClass-II set at 10^6, the seven class pairs of the pair table
+               (FT_PAIRS = mlst_results.PAIRS' keys, 2026-11-08), scored on the natural-composition test jets the
+               pretraining heads' sculpting uses (the first 2,000,000 TEST2M jets: --head-root/<model>/
+               head_outputs.npz, build_head_jobs.py ft_head_spec), on the jets of the pair's two sides:
+               D = g_a/(g_a+g_b), g the summed softmax of a side's native classes (pair_sides: the linear probes'
+               linear_probe_v2.native_pair_groups, and probe_bal.SIBLING_PAIRS); ranked by log(g_a/g_b) =
+               logsumexp(z_a) - logsumexp(z_b), monotone in D and free of the float ties of D near 1. The head
+               outputs must come from the cell's net_best_epoch_state.pt (sha256). Each doc records its
+               source_tree (budget, budget_long or budget_long_fulldecay); the pretrained runs and the
+               from-scratch seeds (scratch-s<k>, budget_long_fulldecay) go into the one pairs_ft directory.
     top_probe, qg_probe  the linear probes at the full sets, the "s" each file stores, with --ckpt naming
                the substitution of the missing inputs (2026-11-05); keys as top_ft and qg_ft
 
@@ -41,6 +51,8 @@ in tests).
     python3 experiments/FT/roc_points.py probes --family pairs \\
         --probs-root .../fits_v4_probs .../fits_v4_sib_probs --fits-root .../fits_v4 .../fits_v4_sib \\
         --files 'jc2bal_pairs_*' --models mtx-l188-s1 ... --out-dir /data/results/ft_v2/curves_v2/pairs
+    python3 experiments/FT/roc_points.py ft --family pairs_ft --tree /data/results/ft_v2/budget/leg_jc2b \
+        --task jc2b --n 1000000 --inits l188-s1 ... --out-dir /data/results/ft_v2/curves_v2/pairs_ft
 """
 from __future__ import annotations
 
@@ -74,7 +86,8 @@ PB = _load("probe_bal", "experiments/EVAL/probe_bal.py")     # SIBLING_PAIRS
 OUT_ROOT = pathlib.Path("/data/results/ft_v2/curves_v2")
 EPS_GRID = tuple(round(0.001 * i, 3) for i in range(1, 11)) + tuple(round(0.015 + 0.005 * i, 3) for i in range(197))
 MIN_BKG_PASS = 20               # the fewest background jets behind a drawn point (mlst_v4.JC1_MIN_BKG)
-FT_TASK = {"jc1_ft": "jc1", "jc1_ft_ovr": "jc1", "top_ft": "top", "qg_ft": "qg", "jc2_ft_ovr": "jc2b"}     # the fine-tuning families and their task
+FT_TASK = {"jc1_ft": "jc1", "jc1_ft_ovr": "jc1", "top_ft": "top", "qg_ft": "qg", "jc2_ft_ovr": "jc2b",
+           "pairs_ft": "jc2b"}     # the fine-tuning families and their task
 # the nine JetClass signal classes in the paper table's order (mlst_v4.JC1_COLS)
 JC1_SIGNALS = ("label_Hbb", "label_Hcc", "label_Hgg", "label_H4q", "label_Hqql", "label_Tbqq", "label_Tbl",
                "label_Wqq", "label_Zqq")
@@ -83,9 +96,14 @@ DISCR = {"jc1": "p_S/(p_S+p_QCD), p renormalised over the 10 classes (ParT Eq. 2
          "binary": "softmax(logits)[1]",
          "pairs": "binary linear probe P(signal)",
          "jc2_ovr": "p_c, one-vs-rest: background = every other class of the balanced test set",
-         "jc1_ovr": "p_c, p renormalised over the 10 classes, one-vs-rest: background = every other class"}
+         "jc1_ovr": "p_c, p renormalised over the 10 classes, one-vs-rest: background = every other class",
+         "pairs_ft": "g_a/(g_a+g_b), g = summed softmax of a side's classes; ranked by logsumexp(z_a) - logsumexp(z_b)"}
 FT_MANIFEST_KEYS = ("subset", "ft_seed", "lr", "head_lr_mult", "recipe", "gpu_device_name")
 PAIR_SIDES = {**LP.PAIRS, **LP.QCD_PAIRS, **PB.SIBLING_PAIRS}
+# the pairs of the pair table (mlst_results.PAIRS, in its order; signal first)
+FT_PAIRS = ("bc_vs_bq_cs", "bb_vs_cc", "bbqq_vs_ccqq", "ee_vs_mm", "qcd_bb_vs_cc", "qcd_b_vs_light", "qcd_c_vs_light")
+FT_HEAD_ROOT = pathlib.Path("/data/results/eval/v2_ft_head")     # build_head_jobs.FT_HEAD_ROOT
+FT_CKPT = "net_best_epoch_state.pt"
 CKPTS = {"init": "init", "init_bn": "initbn"}   # an untrained trunk's checkpoint -> its model name prefix
 SIZE = re.compile(r"_N(\d+)$")
 
@@ -178,6 +196,52 @@ def ovr_curves(p: np.ndarray, y: np.ndarray, n_train, source: pathlib.Path) -> d
                           DISCR["jc2_ovr"], n_train, source) for c in np.unique(y)}
 
 
+def _lse(z: np.ndarray) -> np.ndarray:
+    m = z.max(1)
+    return m + np.log(np.exp(z - m[:, None]).sum(1))
+
+
+def pair_sides() -> dict:
+    """{pair: (signal native classes, background native classes)} of FT_PAIRS, as the linear probes define them."""
+    nat = {v: k for k, v in native_names().items()}
+    sides = {**LP.native_pair_groups(native_names()),
+             **{k: tuple(tuple(nat[c] for c in s) for s in v) for k, v in PB.SIBLING_PAIRS.items()}}
+    return {k: sides[k] for k in FT_PAIRS}
+
+
+def pair_ft_curves(z: np.ndarray, y: np.ndarray, n_train, source: pathlib.Path) -> dict:
+    """Each pair of FT_PAIRS on its two sides' jets, ranked by logsumexp(z_a) - logsumexp(z_b) of the
+    188 class logits (monotone in D = g_a/(g_a+g_b), g the summed softmax of a side)."""
+    if z.ndim != 2 or z.shape != (y.size, LP.DATASETS["jc2_188"][0]):
+        raise SystemExit(f"FATAL: {source}: logits {z.shape} for {y.size} jets, not the 188-class task")
+    names = native_names()
+    out = {}
+    for key, (a, b) in pair_sides().items():
+        a, b = list(a), list(b)
+        m = np.isin(y, a) | np.isin(y, b)
+        zm = z[m].astype(np.float64)
+        out[key] = curve(np.isin(y[m], a).astype(np.int64), _lse(zm[:, a]) - _lse(zm[:, b]), [names[c] for c in a],
+                         [names[c] for c in b], DISCR["pairs_ft"], n_train, source)
+    return out
+
+
+def ft_head(head_root: pathlib.Path, model: str, cell: pathlib.Path) -> tuple:
+    """(directory, manifest) of a fine-tuned cell's outputs on the natural-composition test jets
+    (head_outputs.npz): 188 class outputs and no regression, from this cell's FT_CKPT (sha256), or FATAL."""
+    d = head_root / model
+    man = json.loads((d / "manifest.json").read_text())
+    if man.get("checkpoint_sha256") != sha256(cell / FT_CKPT):
+        raise SystemExit(f"FATAL: {d} is not the head output of {cell / FT_CKPT}")
+    if man.get("num_classes") != 188 or man.get("num_reg"):
+        raise SystemExit(f"FATAL: {d}: {man.get('num_classes')} classes + {man.get('num_reg')} regression, not 188 + 0")
+    return d, man
+
+
+def source_tree(cell: pathlib.Path) -> str:
+    """The fine-tuning tree of a cell <root>/<leg>/<init>/N<N>/s<S>: budget, budget_long or budget_long_fulldecay."""
+    return cell.parents[3].name
+
+
 def ft_cells(tree: pathlib.Path, n: int, inits) -> list:
     """[(init, seed, cell)] of every DONE cell at N=n (of these inits; ft_curves.discover's rules,
     on these cells only): a requested init with none is fatal, a cell trained to NaN is fatal."""
@@ -248,8 +312,15 @@ def run_ft(a, odir: pathlib.Path) -> None:
         if path.exists():
             print(f"skip {path}: exists", flush=True)
             continue
-        FC.write_json(path, curve_doc(a.family, model, "fine-tuning", None if init.startswith("scratch") else "best70",
-                                      ft_manifest(cell), ft_cell_curves(task, cell, a.n, a.family == "jc1_ft_ovr")))
+        if a.family == "pairs_ft":
+            src = ft_head(a.head_root, model, cell)[0] / "head_outputs.npz"
+            z = np.load(src)
+            curves = pair_ft_curves(z["logits"], z["label188"].astype(np.int64), a.n, src)
+        else:
+            curves = ft_cell_curves(task, cell, a.n, a.family == "jc1_ft_ovr")
+        doc = curve_doc(a.family, model, "fine-tuning", None if init.startswith("scratch") else "best70",
+                        ft_manifest(cell), curves)
+        FC.write_json(path, {**doc, "source_tree": source_tree(cell)} if a.family == "pairs_ft" else doc)
 
 
 def pair_n_train(fits_roots, model_dir: str, ckpt: str, pair: str, cache: dict) -> int:
@@ -330,6 +401,8 @@ def main(argv=None) -> int:
     f.add_argument("--task", required=True, choices=("jc1", "top", "qg", "jc2b"))
     f.add_argument("--n", required=True, type=int)
     f.add_argument("--inits", nargs="+", help="only these init directories (default: every one)")
+    f.add_argument("--head-root", type=pathlib.Path, default=FT_HEAD_ROOT,
+                   help="pairs_ft: <head-root>/<model>/head_outputs.npz, the cells on the natural test jets")
     p = sub.add_parser("probes")
     p.add_argument("--family", required=True, choices=("jc1_probe", "jc1_probe_ovr", "pairs", "jc2_ovr", "top_probe", "qg_probe"))
     p.add_argument("--ckpt", default="best70", help="the checkpoint directory; best70.<fill> for a substitution")

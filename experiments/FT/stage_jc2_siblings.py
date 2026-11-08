@@ -33,6 +33,8 @@ SEED = 20261105
 def _load(name, rel):
     """Registered in sys.modules, so the census workers can unpickle its functions by name."""
     spec = importlib.util.spec_from_file_location(name, REPO / rel)
+    if getattr(sys.modules.get(name), "__file__", None) == spec.origin:
+        return sys.modules[name]    # one module object per process, whichever file loaded it first
     m = importlib.util.module_from_spec(spec)
     sys.modules[name] = m
     spec.loader.exec_module(m)

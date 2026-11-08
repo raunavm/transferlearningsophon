@@ -124,6 +124,47 @@ def sculpting(s: np.ndarray, msd: np.ndarray, s_sig: np.ndarray) -> dict:
     return {"hist_before": before.tolist(), "working_points": out, "sig_eff_50": at50, "curve": curve}
 
 
+def head_doc(head: pathlib.Path, label_set: str | None = None) -> dict:
+    """The sculpting document of one extract_v2.py --keep-head-outputs checkpoint directory."""
+    man = json.loads((head / "manifest.json").read_text())
+    rung = man["rung"]
+    if rung == "none" and not label_set:
+        raise SystemExit(f"FATAL: {head}: a label set outside the contraction tree has no QCD node; "
+                         "name it with --label-set")
+    if rung != "none" and label_set not in (None, rung):
+        raise SystemExit(f"FATAL: --label-set {label_set} for a {rung} run")
+    label_set = label_set or rung
+    nodes = qcd_nodes(label_set)
+    if not nodes:
+        raise SystemExit(f"FATAL: {label_set} has no output node that is QCD alone")
+    z = np.load(head / HEAD_FILE)
+    lab = z["label188"].astype(np.int64)
+    qcd = (lab >= QCD_LABELS[0]) & (lab < QCD_LABELS[1])
+    res = (lab >= 0) & (lab < QCD_LABELS[0])
+    logits = z["logits"]
+    if logits.shape[1] != man["num_classes"] or max(nodes) >= logits.shape[1]:
+        raise SystemExit(f"FATAL: {logits.shape[1]} logits for {label_set}'s {man['num_classes']} classes")
+    s_all = score(logits, nodes)
+    s, msd = s_all[qcd], z["jet_sdmass"][qcd].astype(np.float64)
+    return {"head": str(head), "run_dir": man["run_dir"], "rung": rung, "label_set": label_set,
+            "tag": man["tag"],
+            "checkpoint_sha256": man.get("checkpoint_sha256"),
+            "head_outputs_sha256": (man.get("head_outputs") or {}).get("sha256"),
+            "qcd_nodes": nodes, "n_qcd": int(qcd.sum()), "n_sig": int(res.sum()), "n_jets": int(lab.size),
+            "score": "1 - p_QCD, p_QCD = summed softmax probability of the QCD nodes",
+            "signal": "resonant test jets, native labels 0..160; eff_sig at the same cut",
+            "bins_jet_sdmass": BINS.tolist(), "divergence": "Jensen-Shannon, base 2; js_distance = its square root",
+            **sculpting(s, msd, s_all[res]),
+            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
+
+
+def write(out: pathlib.Path, doc: dict) -> None:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_name(out.name + ".tmp")
+    tmp.write_text(json.dumps(doc, indent=1) + "\n")
+    tmp.replace(out)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--head", required=True, type=pathlib.Path,
@@ -136,40 +177,8 @@ def main(argv=None) -> int:
     if a.out.exists():
         print(f"{a.out} exists; not overwritten")
         return 0
-    man = json.loads((a.head / "manifest.json").read_text())
-    rung = man["rung"]
-    if rung == "none" and not a.label_set:
-        raise SystemExit(f"FATAL: {a.head}: a label set outside the contraction tree has no QCD node; "
-                         "name it with --label-set")
-    if rung != "none" and a.label_set not in (None, rung):
-        raise SystemExit(f"FATAL: --label-set {a.label_set} for a {rung} run")
-    label_set = a.label_set or rung
-    nodes = qcd_nodes(label_set)
-    if not nodes:
-        raise SystemExit(f"FATAL: {label_set} has no output node that is QCD alone")
-    z = np.load(a.head / HEAD_FILE)
-    lab = z["label188"].astype(np.int64)
-    qcd = (lab >= QCD_LABELS[0]) & (lab < QCD_LABELS[1])
-    res = (lab >= 0) & (lab < QCD_LABELS[0])
-    logits = z["logits"]
-    if logits.shape[1] != man["num_classes"] or max(nodes) >= logits.shape[1]:
-        raise SystemExit(f"FATAL: {logits.shape[1]} logits for {label_set}'s {man['num_classes']} classes")
-    s_all = score(logits, nodes)
-    s, msd = s_all[qcd], z["jet_sdmass"][qcd].astype(np.float64)
-    doc = {"head": str(a.head), "run_dir": man["run_dir"], "rung": rung, "label_set": label_set,
-           "tag": man["tag"],
-           "checkpoint_sha256": man.get("checkpoint_sha256"),
-           "head_outputs_sha256": (man.get("head_outputs") or {}).get("sha256"),
-           "qcd_nodes": nodes, "n_qcd": int(qcd.sum()), "n_sig": int(res.sum()), "n_jets": int(lab.size),
-           "score": "1 - p_QCD, p_QCD = summed softmax probability of the QCD nodes",
-           "signal": "resonant test jets, native labels 0..160; eff_sig at the same cut",
-           "bins_jet_sdmass": BINS.tolist(), "divergence": "Jensen-Shannon, base 2; js_distance = its square root",
-           **sculpting(s, msd, s_all[res]),
-           "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
-    a.out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = a.out.with_name(a.out.name + ".tmp")
-    tmp.write_text(json.dumps(doc, indent=1) + "\n")
-    tmp.replace(a.out)
+    doc = head_doc(a.head, a.label_set)
+    write(a.out, doc)
     for eff, w in doc["working_points"].items():
         print(f"QCD efficiency {eff}: {w['n_pass']:,} of {doc['n_qcd']:,} pass, JSD {w['jsd']:.4f}, "
               f"signal efficiency {w['eff_sig']:.4f}")

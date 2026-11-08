@@ -42,7 +42,7 @@ from matplotlib.transforms import Bbox  # noqa: E402
 
 import palette_check as PC  # noqa: E402
 
-PRINT_CM = {"VAL": 10.5}                        # \paperfig widths other than \linewidth (15 cm)
+PRINT_CM = {"VAL": 10.5, "INVENTORY": 27.7}     # \paperfig widths other than \linewidth (15 cm); the map: the gallery page
 MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.5, {"F3-app": 5.0, "F3-ft": 5.0}
 MIN_PT, ASPECT, PAD_IN, DPI = 8.0, (0.7, 1.3), 0.1, 300
 BANNED = [(re.compile(p), why) for p, why in (

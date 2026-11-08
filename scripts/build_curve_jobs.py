@@ -68,7 +68,10 @@ STATUS_PIN = "mtx-s2.19"       # the status CronJob, launched at it (RUNS.csv st
 PIN_ROC = "mtx-s2.53"   # mtx-s2.49 ran first and halted: its PROBS_SIB named a folder no job writes
 # curves-ft, curves-jc2, boot-ft, boot-jc2 never launched at PIN; ft_curves.py and linear_probe_v2.py
 # changed after it (8a1ff68, 806ed97), so they are repinned with the ROC jobs (2026-11-02)
-UNLAUNCHED_AT_PIN = ("curves-ft", "curves-jc2", "boot-ft", "boot-jc2")
+# None of them ran at PIN_ROC either, nor curves-probe-v4 at PIN_V4; ft_curves.py and paired_bootstrap.py
+# changed after both (d52b3dd), so the five are repinned to PIN_UNLAUNCHED (2026-11-07)
+UNLAUNCHED_AT_PIN = ("curves-ft", "curves-jc2", "boot-ft", "boot-jc2", "curves-probe-v4")
+PIN_UNLAUNCHED = "mtx-s2.86"
 NEEDED = {"experiments/FT/ft_curves.py": "def roc_points",
           "experiments/STATS/paired_bootstrap.py": "P.AucScorer",
           "experiments/MTX/status_v2.py": "def status"}
@@ -442,13 +445,13 @@ def build(pin: str) -> dict[pathlib.Path, str]:
         "boot-probe": (boot_probe_body(), "Paired bootstrap over test jets, the linear probes (fits_v3)"),
     }
     out = {OUT_DIR / f"job-{j}-raunav.yaml": cpu_job(f"{j}-raunav", body, what,
-                                                     PIN_ROC if j in UNLAUNCHED_AT_PIN else pin)
+                                                     PIN_UNLAUNCHED if j in UNLAUNCHED_AT_PIN else pin)
            for j, (body, what) in jobs.items()}
     out[OUT_DIR / "job-boot-probe-v4-raunav.yaml"] = cpu_job(
         "boot-probe-v4-raunav", boot_probe_v4_body(), "Paired bootstrap over test jets, the v4 linear probes", PIN_V4)
     out[OUT_DIR / "job-curves-probe-v4-raunav.yaml"] = cpu_job(
         "curves-probe-v4-raunav", curves_probe_v4_body(), "ROC points and per-class tables, the v4 linear probes",
-        PIN_V4)
+        PIN_UNLAUNCHED)
     out[OUT_DIR / "job-curves-full-raunav.yaml"] = cpu_job(
         "curves-full-raunav", curves_full_body(),
         "ROC points and per-class tables, JetClass, top and q/g fine-tunes on the full training sets", PIN_FULL)
@@ -487,6 +490,7 @@ def main() -> int:
     BF.verify_pin(a.pin, a.pin_not_yet_tagged, NEEDED)
     BF.verify_pin(PIN_ROC, a.pin_not_yet_tagged, {**NEEDED, **NEEDED_ROC})
     BF.verify_pin(PIN_ROC_JC1OVR, a.pin_not_yet_tagged, {**NEEDED, **NEEDED_ROC_JC1OVR})
+    BF.verify_pin(PIN_UNLAUNCHED, a.pin_not_yet_tagged, NEEDED)
     specs = build(a.pin)
     moved = [f"  {p.relative_to(ROOT)}: {_pin_of(p.read_text())} -> {_pin_of(t)}" for p, t in specs.items()
              if p.exists() and _pin_of(p.read_text()) != _pin_of(t)]

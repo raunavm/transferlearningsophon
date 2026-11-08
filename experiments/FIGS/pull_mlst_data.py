@@ -54,6 +54,12 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   dup_check/<file>.json            per-jet comparisons of near-identical results (experiments/EVAL/dup_check.py)
   perf_vs_pt/<task>/<model>.json   performance against jet pT, jc2 (linear probe) and jc1 (fine-tuning)
   confusion_jc1/<model>.json       the JetClass confusion matrices (experiments/EVAL/perf_vs_pt.py)
+  curves_v2/pairs_ft/<model>.json  the fine-tuned networks on the class pairs (roc_points.py ft --family pairs_ft,
+                                   from scratch included), with the other DONE families of curves_v2
+  head/sculpting_ft/<model>.json   QCD mass sculpting of the fine-tuned JetClass-II networks (experiments/EVAL/sculpting_ft.py),
+                                   only once its job wrote DONE (after every model)
+  head/sculpting_boot.json         the paired bootstrap of the heads' sculpting differences (experiments/EVAL/sculpting_boot.py)
+                                   (not /data/results/eval/v2_ft_head: per-jet outputs, too large to pull)
   index.json                       {path: sha256} of every file above: the single source the
                                    macros counted over many files cite (mlst_results.py checks it)
 
@@ -214,13 +220,22 @@ def main() -> int:
               # round 3 (2026-11-06): performance against jet pT and the JetClass confusion matrices
               (EVAL / "perf_vs_pt_v2" / "jc2", "perf_vs_pt/jc2", "*.json"),   # v2: accuracy per bin (round 4)
               (EVAL / "perf_vs_pt_v2" / "jc1", "perf_vs_pt/jc1", "*.json"),
-              (EVAL / "confusion_jc1", "confusion_jc1", "*.json"))
+              (EVAL / "confusion_jc1", "confusion_jc1", "*.json"),
+              # plan 2026-11-08 step 2: the sculpting bootstrap (the fine-tuned sculpting below, once DONE)
+              (EVAL / "v2_head", "head", "sculpting_boot.json"))
         for d, name, pattern in v4:
             for f in sorted(d.glob(pattern)):
                 b = f.read_bytes()
                 json.loads(b)
                 rel = f"{f.parent.name}.json" if name == "partrepro" else f.name
                 add(f"{name}/{rel}", b)
+        # the fine-tuned sculpting (scripts/build_gallery_data_job.py ft-pairs-sculpt): whole or not at all
+        sft = EVAL / "v2_head" / "sculpting_ft"
+        if (sft / "DONE").exists():
+            for f in sorted(sft.glob("*.json")):
+                b = f.read_bytes()
+                json.loads(b)
+                add(f"head/sculpting_ft/{f.name}", b)
         # ROC curves (experiments/FT/roc_points.py): a family whose job finished it (DONE); each file
         # must parse. Not head/curves_v2 (the mass response), a separate tree.
         for fam in sorted(d for d in (FT / "curves_v2").glob("*") if (d / "DONE").exists()):

@@ -16,9 +16,6 @@ REVIEW = {
     "F1": (3, CLEAN),
     "F2a": (3, FIXED + "raised with the PI: spread over runs."),
     "F2b": (3, FIXED + "raised with the PI: spread over runs."),
-    "F3": (3, FIXED + "raised with the PI: the unused positive half of the colour scale and greyscale of the "
-                      "diverging map."),
-    "F4": (3, FIXED.rstrip("; ") + "."),
     "FJ": (3, CLEAN + " " + ROC_NOTE),
     "FJ-ctrl": (3, FIXED + ROC_NOTE),
     "PT": (2, FIXED + "raised with the PI: a 1-AUC log axis for (d), where the 17-class curve sets the range."),
@@ -37,8 +34,6 @@ REVIEW = {
     "FJ-ctrl-app": (3, FIXED + "raised with the PI: log x; greyscale of the ten class colours."),
     "FJ-s": (3, CLEAN),
     "CONF": (3, FIXED + "raised with the PI: blue means a high share in (a) and a loss in (b)-(d)."),
-    "F4-app": (3, FIXED.rstrip("; ") + "."),
-    "F3-scatter": (3, FIXED + SCATTER_NOTE),
     "F3-app": (3, FIXED + SCATTER_NOTE),
     "F3-app2": (3, FIXED + SCATTER_NOTE),
     "F3-app3": (1, "new page, not yet reviewed."),
@@ -56,7 +51,6 @@ REVIEW = {
     "A17-probe": (3, FIXED + BINNED_NOTE),
     "F10a-flav": (1, "new page, not yet reviewed."),
     "F10a-mass": (3, FIXED + "its ratio range differs slightly from F10a's (each set by its own points)."),
-    "INVENTORY": (1, FIXED.rstrip("; ") + "."),
 }
 
 # Round 5 (PI, 2026-11-07): what changed on each page since the approved round 4, shown on the gallery page for page-by-page
@@ -65,11 +59,19 @@ NAMES = "short legend names (188 classes, no pretraining, ...) with a mode tag (
 CAPTION = "caption opens with what was trained on what"
 TICKS = "rejection ticks in plain numbers (no small exponents)"
 CHANGES = {
+    "INVENTORY": "CHANGED: the map of the story-based placement (PI, 2026-11-08): tier, number, draft sentence and "
+                 "evidence of every item; the sculpting test; book numbers; printed at 100%.",
+    "PALETTE": "CHANGED: F4-mech in place of the dropped F4 in the colour-vision renders.",
     "F1": f"CHANGED: {CAPTION}.",
     "F2a": f"CHANGED: bars of the spread over pretraining runs (SD over three, range over two); {NAMES}; {CAPTION}.",
     "F2b": f"CHANGED: bars of the spread over pretraining runs (SD over three, range over two); {NAMES}; {CAPTION}.",
-    "F3": f"CHANGED: drawn at 18.5 cm height, so the book prints every text at its 8-9 pt; {CAPTION}.",
-    "F4": f"CHANGED: {TICKS}; {NAMES}; {CAPTION}.",
+    "F3-main": "NEW: 17 against 188 classes per class, linear probe (F3-scatter's b) beside fine-tuned (F3-ft's c) on one "
+               "axis range, replacing the heatmap F3 and F3-scatter.",
+    "F4-mech": "NEW: X→bb̄ vs cc̄ and X→bc vs bq, cs, the label sets above and the flavor-boundary partitions with 188 "
+               "classes below, replacing F4 and F4-app.",
+    "F4-mech-ft": "NEW: F4-mech's form after fine-tuning, on natural-mix test jets, on F4-mech's axes (absent until "
+                  "the fine-tuned pairs job is read out).",
+    "F4-other": "NEW: F4's other pairs, X→YY→bb̄qq vs cc̄qq and X→ee vs μμ, with QCD bb̄ vs cc̄, label sets (appendix).",
     "FJ": f"CHANGED: {TICKS}; {CAPTION}.",
     "FJ-ctrl": f"CHANGED: {TICKS}; {CAPTION}.",
     "PT": f"CHANGED: {NAMES}; {CAPTION}.",
@@ -80,9 +82,16 @@ CHANGES = {
     "F9b": f"CHANGED: soft-drop mass off the axis as arrows at the edge, values in the panel title; one hollow marker per "
            f"mass-regression model; {NAMES}; {CAPTION}.",
     "F10a": f"CHANGED: {CAPTION}.",
-    "F10b": f"CHANGED: random-selection floor drawn (black dashed), y axis extended to hold it; the three flavor-boundary partitions added (M4); {NAMES}; {CAPTION}.",
+    "F10b": f"CHANGED: bands of the spread over pretraining runs (SD over three, range over two); the flavor-boundary "
+            f"partitions moved to F10b-flav, leaving the label sets and the two mass models; random-selection floor "
+            f"kept; moved to the appendix, main text if at 1% 17 - 188 > 0 and 17 + mass - 17 < 0, each beyond 3 sigma; "
+            f"{NAMES}; {CAPTION}.",
+    "F10b-flav": "NEW: F10b's form for the three flavor-boundary partitions with 188 classes for reference, moved out of "
+                 "the main-text F10b (appendix).",
+    "F10-ft": "NEW: F10b's form after fine-tuning on JetClass-II, on the same natural-mix test jets as F10b, with its "
+              "floor (absent until the fine-tuned sculpting job is read out).",
     "F10c": "NEW: 1/JSD50 against R50 per model, DisCo Fig. 3's plane, bars of the spread over pretraining runs on both "
-            "axes (absent until the at_eps_s50 read-out lands).",
+            "axes, from head/sculpting_v3's sig_eff_50; legend in three columns, clear of the panel.",
     "F11": f"CHANGED: {NAMES}; {CAPTION}.",
     "VAL": f"CHANGED: {NAMES}; {CAPTION}.",
     "A10": f"CHANGED: SD bands over pretraining runs, as F8; {NAMES}; {CAPTION}.",
@@ -93,8 +102,6 @@ CHANGES = {
     "FJ-ctrl-app": f"CHANGED: {TICKS}; {CAPTION}.",
     "FJ-s": f"CHANGED: {TICKS}; {CAPTION}.",
     "CONF": f"CHANGED: {CAPTION}.",
-    "F4-app": f"CHANGED: {TICKS}; {NAMES}; {CAPTION}.",
-    "F3-scatter": f"CHANGED: {CAPTION}.",
     "F3-app": f"CHANGED: panels in F3-ft's order (162, 43, 17 classes, random partitions); {CAPTION}.",
     "F3-app3": "NEW: the two mass-regression models, moved out of F3-app so probe and fine-tuning pages share one order.",
     "F3-app2": f"CHANGED: the three flavor-boundary partitions, (e)-(g) as in F3-ft2; {CAPTION}.",

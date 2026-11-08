@@ -290,3 +290,69 @@ def test_the_sculpting_rerun_reads_every_run_on_the_cpu_into_a_new_directory():
 def test_the_flavour_tag_needs_what_the_working_tree_has():
     for path, text in HB.FLAV_NEEDED.items():
         assert text in (ROOT / path).read_text(), path
+
+
+# ------------------------------------------- plan 2026-11-08 step 2: the fine-tuned networks on the same jets
+
+def test_the_fine_tuned_networks_are_two_jobs_the_pretrained_cells_and_from_scratch():
+    """ft-head-x-raunav: the 27 pretrained cells, launchable now; ft-head-x-scratch-raunav: the three from-scratch
+    seeds, each index refusing (exit 42) until its cell is DONE; together every cell of ft_head_cells once."""
+    jobs = HB.ft_head_jobs()
+    assert list(jobs) == ["ft-head-x-raunav", "ft-head-x-scratch-raunav"] == [HB.FT_HEAD_NAME, HB.FT_HEAD_SCRATCH_NAME]
+    assert jobs[HB.FT_HEAD_NAME] + jobs[HB.FT_HEAD_SCRATCH_NAME] == HB.ft_head_cells()
+    assert len(jobs[HB.FT_HEAD_NAME]) == 27 and all(m.startswith("mtx-") for m, _c in jobs[HB.FT_HEAD_NAME])
+    assert [m for m, _c in jobs[HB.FT_HEAD_SCRATCH_NAME]] == ["scratch-s1", "scratch-s2", "scratch-s3"]
+    spec = HB.ft_head_spec(HB.FT_HEAD_SCRATCH_NAME)
+    d, a = yaml.safe_load(spec), _args(spec)
+    assert d["metadata"]["name"] == "ft-head-x-scratch-raunav" and d["spec"]["completions"] == 3
+    assert d["spec"]["parallelism"] == 3 and "--branch mtx-s2.86 " in a
+    assert a.index('[ -f ${CELL}/DONE ]') < a.index("extract_v2.py") and "not DONE\"; exit 42; }" in a
+    for i, (m, c) in enumerate(jobs[HB.FT_HEAD_SCRATCH_NAME]):
+        assert f"  {i}) MODEL={m}; CELL={c};;\n" in a
+    assert (HB.OUT_DIR / "job-ft-head-x-scratch-raunav.yaml").read_text() == spec
+    assert "def head_loaded(" in HB.FT_HEAD_NEEDED["experiments/EVAL/extract_v2.py"]
+
+
+def test_the_fine_tuned_networks_run_on_the_head_sculptings_jets_one_cell_per_index():
+    spec = HB.ft_head_spec()
+    d, a = yaml.safe_load(spec), _args(spec)
+    cells = HB.ft_head_jobs()[HB.FT_HEAD_NAME]
+    assert d["metadata"]["name"] == HB.FT_HEAD_NAME == "ft-head-x-raunav" and HB.FT_HEAD_PIN == "mtx-s2.86"
+    assert d["spec"]["completionMode"] == "Indexed" and d["spec"]["completions"] == len(cells) == 27
+    assert d["spec"]["parallelism"] <= 5 and d["spec"]["podFailurePolicy"]["rules"][0]["onExitCodes"]["values"] == [42]
+    assert subprocess.run(["bash", "-n"], input=a, text=True).returncode == 0
+    assert "--branch mtx-s2.86 " in a and '[ "${USED}" -le 85 ]' in a and "configmap" not in spec.lower()
+    for i, (m, c) in enumerate(cells):
+        assert f"  {i}) MODEL={m}; CELL={c};;\n" in a
+    assert a.index('[ -f ${OUT}/manifest.json ] && { echo "${MODEL} done"; exit 0; }') < a.index("[ -f ${CELL}/DONE ]") \
+        < a.index("extract_v2.py")
+    assert "not DONE\"; exit 42; }" in a and f"OUT={HB.FT_HEAD_ROOT}/${{MODEL}}\n" in a
+    assert ("--run-dir ${CELL} --rung L188 --num-classes 188 --num-reg 0 \\\n"
+            f"  --checkpoints ${{CELL}}/net_best_epoch_state.pt --data-config {HB.CONFIG} --max-jets {HB.N_TEST}") in a
+    assert "--keep-head-outputs --data-test " + HB.BF.test2m_list() + " --out ${X}" in a
+    assert f"REF={HB.HEAD_ROOT}/{HB.OBS_MODEL}/test/best70/manifest.json" in a
+    # the manifest is written last, after the labels are checked against the pretraining head's jets
+    assert a.index("label188_sha256") < a.index("head_outputs.npz.tmp") < a.index("mv ${OUT}/manifest.json.tmp")
+    c = d["spec"]["template"]["spec"]
+    assert {v["name"]: v["persistentVolumeClaim"]["claimName"] for v in c["volumes"] if "persistentVolumeClaim" in v} \
+        == {"jc2": "tn-pvc-base-jetclass2", "data": "transfer-learning-vol"}
+    assert {"name": "jc2", "mountPath": "/jc2", "readOnly": True} in c["containers"][0]["volumeMounts"]
+    ex = {e["key"]: e for e in c["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"][
+        "nodeSelectorTerms"][0]["matchExpressions"]}
+    launch = HB.BJ._launch()
+    assert ex["nvidia.com/gpu.product"] == {"key": "nvidia.com/gpu.product", "operator": "In",
+                                            "values": list(launch.V2_FT_GPU)}
+    assert set(launch.V2_BAD_NODES) <= set(ex["kubernetes.io/hostname"]["values"])
+    assert (HB.OUT_DIR / "job-ft-head-x-raunav.yaml").read_text() == spec
+    assert HB.ft_planned_bytes() == 30 * 2_000_000 * (2 * 188 + 8 + 2 + 4 * len(xv.HEAD_OBSERVERS))
+    for path, text in HB.FT_HEAD_NEEDED.items():
+        assert text in (ROOT / path).read_text(), path
+
+
+def test_the_head_config_feeds_the_fine_tuned_network_the_inputs_it_was_trained_on():
+    cfg = {f: yaml.safe_load((ROOT / f).read_text()) for f in
+           (HB.CONFIG, "configs/finetune/JetClassII_L188_noweight.yaml", "configs/data/JetClassII_base.yaml")}
+    a, b, c = cfg.values()
+    for k in ("inputs", "preprocess", "selection", "new_variables"):
+        assert a[k] == b[k] == c[k], k
+    assert a["labels"] == c["labels"] == {"type": "custom", "value": {"truth_label": "jet_label"}}

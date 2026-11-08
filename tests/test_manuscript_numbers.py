@@ -59,7 +59,12 @@ GENERATED = {"results_generated.tex",
              "tables/mlst_mass_detail.tex", "tables/mlst_per_run.tex", "tables/mlst_xbx_rej.tex",
              "tables/mlst_partrepro.tex", "tables/mlst_lrsweep.tex", "tables/mlst_inputs.tex",
              "tables/mlst_jetclass_all.tex", "tables/mlst_jetclass_nbkg.tex", "tables/mlst_jetclass_probe.tex",
-             "tables/mlst_rand_prong.tex"}
+             "tables/mlst_rand_prong.tex",
+             # 2026-11-07: the coarse targets, the QCD heavy-flavor subclasses, the sculpting bootstrap
+             "tables/mlst_coarse.tex", "tables/mlst_qcdhf.tex", "tables/mlst_sculpt_boot.tex",
+             # the review books (experiments/FIGS/make_results_book.py writes them): the gallery's figures with
+             # its captions and the generated tables above, for review; not the manuscript, which main.tex inputs
+             "results_book.tex", "results_supplement.tex", "results_book_all.tex"}
 
 # Directories of paper/journal that hold no compiled manuscript: draft 89, kept as a source of facts
 # only (PI, 2026-11-02), is never compiled, so its typed numbers are not the paper's.

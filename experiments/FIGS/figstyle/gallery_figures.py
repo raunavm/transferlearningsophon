@@ -13,24 +13,29 @@ import gallery_common as C
 import gallery_labelset
 import gallery_palette
 import gallery_physics
+import gallery_placement
 import gallery_review
 import gallery_roc
 import gallery_inventory
 import style_v5 as S
 
 MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_roc, gallery_inventory)
-ORDER = ("SOPHON-FIG2", "PALETTE",       # gallery only; then the paper's order: main text, appendix
-         "F1", "F2a", "F2b", "F3", "F4", "FJ", "FJ-ctrl", "PT", "F6", "F8", "F9a", "F9b", "F10a", "F10b", "F10c", "F11",
-         "VAL", "A10", "A8", "F6-app", "FJ-app", "FJ-ctrl-app", "FJ-s", "CONF", "F4-app", "F3-scatter", "F3-app",
-         "F3-app2", "F3-app3", "F3-ft", "F3-ft2", "A3R", "A3R-ft", "UMAP-jc1", "UMAP-jc2-had", "UMAP-jc2-lep", "UMAP-top",
-         "UMAP-qg", "A17-res", "A17-qcd", "A17-probe", "F10a-mass", "F10a-flav", "INVENTORY")
+ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement): main text,
+         "F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11",
+         # appendix
+         "FJ", "F4-other", "F4-mech-ft", "PT", "F6", "F6-app", "A10", "F9a", "F10a", "F10b", "F10b-flav", "F10c",
+         "F10a-flav", "F10-ft", "UMAP-jc2-had", "VAL",
+         # supplement
+         "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "CONF", "F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2", "A3R",
+         "A3R-ft", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "A17-res", "A17-qcd", "A17-probe", "F10a-mass",
+         "SOPHON-FIG2", "PALETTE")      # gallery only
 
 
 # the figures the PI approved page by page (2026-11-05), drawn into the paper by the render job (--paper);
-# F11 waits for its samples, and the pages still coming back through the gallery are not here
-PAPER = ("F1", "F2a", "F2b", "F3", "F3-scatter", "F3-app", "F3-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F4",
-         "F4-app", "F6", "F6-app", "F8", "A8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b",
-         "A3R", "A3R-ft", "VAL")
+# F11 waits for its samples, and the pages still coming back through the gallery are not here; F3, F3-scatter, F4 and
+# F4-app were dropped (gallery_placement.DROPPED, PI 2026-11-08)
+PAPER = ("F1", "F2a", "F2b", "F3-app", "F3-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F6", "F6-app", "F8",
+         "A8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "A3R", "A3R-ft", "VAL")
 
 
 def main() -> int:
@@ -50,6 +55,10 @@ def main() -> int:
         rec = {k: v for k, v in dataclasses.asdict(page).items() if k != "draw"}
         rec["passes"], rec["review"] = gallery_review.REVIEW.get(page.id, (rec["passes"], rec["review"]))
         rec["change"] = gallery_review.CHANGES.get(page.id, "")       # "NEW: ..." / "CHANGED: ...", shown on the page
+        if page.id in gallery_placement.TIER:                         # the paper's placement and the sentence it backs
+            rec["place"], rec["backs"] = gallery_placement.place(page.id), gallery_placement.BACKS[page.id]
+            rec["evidence"] = ", ".join(f"{gallery_placement.number(k)} ({k})" for k in gallery_placement.evidence(page.id))
+            rec["title"] = rec["title"].removesuffix(" (appendix)")    # the place names the tier
         try:
             page.draw(a.outdir / page.id)
             rec["drawn"] = True

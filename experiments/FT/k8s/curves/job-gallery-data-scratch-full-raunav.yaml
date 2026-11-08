@@ -17,7 +17,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          for T in 1 2 3 4 5; do git clone -q --depth 1 --branch "mtx-s2.85" https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
+          for T in 1 2 3 4 5; do git clone -q --depth 1 --branch "mtx-s2.86" https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
           cd /workspace/repo
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           [ "${USED}" -le 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }

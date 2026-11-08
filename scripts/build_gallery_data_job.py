@@ -8,8 +8,11 @@
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode long   # the long-budget JetClass-II cells
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode long-jc1   # the long-budget JetClass cells
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode scratch-full   # from scratch, full schedule, 1e6
+    python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode ft-pairs-sculpt   # fine-tuned pairs + sculpting
+    python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode sculpt-boot   # paired bootstrap of the head sculpting
 """
 import argparse
+import importlib.util
 import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -178,13 +181,72 @@ def calls_kin() -> str:
     return "\n".join("          " + c for c in out)
 
 
+SCULPT_FT = "/data/results/eval/v2_head/sculpting_ft"
+
+
+def _hb():
+    spec = importlib.util.spec_from_file_location("build_head_jobs", ROOT / "scripts/build_head_jobs.py")
+    hb = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hb)
+    return hb
+
+
+def ft_trees() -> dict:
+    """{tree: [init]} of build_head_jobs.ft_head_cells (<tree>/<init>/N1000000/s<S>), in its order."""
+    out = {}
+    for _m, cell in _hb().ft_head_cells():
+        tree, init, _n, _s = cell.rsplit("/", 3)
+        if init not in out.setdefault(tree, []):
+            out[tree].append(init)
+    return out
+
+
+def calls_ft_pairs_sculpt() -> str:
+    """The JetClass-II fine-tuning at 1e6 (plan 2026-11-08 step 2), from each cell's outputs on the TEST2M jets of
+    the head sculpting (build_head_jobs.py --ft-head; every model's manifest present first): the seven pairs of
+    the pair table into curves_v2/pairs_ft, the 27 paper runs and the three full-schedule from-scratch seeds in the
+    one directory, DONE after all of them; then the QCD mass sculpting of each into SCULPT_FT, DONE after the last
+    sculpting_ft.py call (one per tree), so the pull (pull_mlst_data.py) never takes a part of it."""
+    hb = _hb()
+    trees = ft_trees()
+    heads = " ".join(f"{hb.FT_HEAD_ROOT}/{m}/manifest.json" for m, _c in hb.ft_head_cells())
+    out = [f"for f in {heads}" + '; do [ -e "${f}" ] || { echo "FATAL: no ${f}"; exit 42; }; done']
+    out += [f"python3 experiments/FT/roc_points.py ft --family pairs_ft --tree {tree} --task jc2b --n {JC2_N} "
+            f"--inits {' '.join(inits)} --head-root {hb.FT_HEAD_ROOT} --out-dir {ROC}/pairs_ft"
+            for tree, inits in trees.items()]
+    out.append(f"echo done > {ROC}/pairs_ft/DONE")
+    out += [f"python3 experiments/EVAL/sculpting_ft.py --tree {tree} --n {JC2_N} --inits {' '.join(inits)} "
+            f"--head-root {hb.FT_HEAD_ROOT} --out-dir {SCULPT_FT}" for tree, inits in trees.items()]
+    out.append(f"echo done > {SCULPT_FT}/DONE")
+    return "\n".join("          " + c for c in out)
+
+
+SCULPT_BOOT = "/data/results/eval/v2_head/sculpting_boot.json"
+
+
+def calls_sculpt_boot() -> str:
+    """sculpting_boot.py on the head outputs of the 22 runs of the sculpting rerun (build_head_jobs.SCULPT_V3), its
+    replica 0 checked against their sculpting_v3 documents, every one present first."""
+    hb = _hb()
+    heads = [f"{hb.HEAD_ROOT}/{m}/test/best70/head_outputs.npz" for m in hb.SCULPT_V3]
+    heads += [f"{hb.SCULPT_V3_DIR}/{m}_sculpting.json" for m in hb.SCULPT_V3]
+    sets = " ".join(f"{m}={arm}" for m, _r, arm, _k, _g in hb.flav_models())
+    out = ["for f in " + " ".join(heads) + '; do [ -e "${f}" ] || { echo "FATAL: no ${f}"; exit 42; }; done',
+           f"python3 experiments/EVAL/sculpting_boot.py --head-root {hb.HEAD_ROOT} --models {' '.join(hb.SCULPT_V3)} "
+           f"--label-set {sets} --replicas 200 --sculpting-dir {hb.SCULPT_V3_DIR} --out {SCULPT_BOOT}"]
+    return "\n".join("          " + c for c in out)
+
+
 MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
          "kin": (calls_kin, "gallery-data-kin-raunav", "top_probe"),
          "sib2": (calls_sib2, "gallery-data-sib2-raunav", "pairs_sib2"),
          "long": (calls_long, "gallery-data-long-raunav", "jc2_ft_ovr_long"),
          "long-jc1": (calls_long_jc1, "gallery-data-long-jc1-raunav", "jc1_ft_long jc1_ft_ovr_long"),
          "scratch-full": (calls_scratch_full, "gallery-data-scratch-full-raunav",
-                          "jc2_ft_ovr_fulldecay jc1_ft_fulldecay jc1_ft_ovr_fulldecay")}
+                          "jc2_ft_ovr_fulldecay jc1_ft_fulldecay jc1_ft_ovr_fulldecay"),
+         # absolute directories are made as they are, the others under ROC
+         "ft-pairs-sculpt": (calls_ft_pairs_sculpt, "gallery-data-ft-pairs-sculpt-raunav", f"pairs_ft {SCULPT_FT}"),
+         "sculpt-boot": (calls_sculpt_boot, "sculpt-boot-raunav", "/data/results/eval/v2_head")}
 
 
 def main() -> int:
@@ -197,7 +259,8 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     text = SPEC.format(image=IMAGE, tag=a.tag, roc=ROC, calls=fn())
     text = text.replace("name: gallery-data-raunav", f"name: {name}").replace(
-        f"mkdir -p {ROC}/top_probe {ROC}/qg_probe {ROC}/jc2_ft_ovr", "mkdir -p " + " ".join(f"{ROC}/{d}" for d in dirs.split()))
+        f"mkdir -p {ROC}/top_probe {ROC}/qg_probe {ROC}/jc2_ft_ovr",
+        "mkdir -p " + " ".join(d if d.startswith("/") else f"{ROC}/{d}" for d in dirs.split()))
     out.write_text(text)
     print(out)
     return 0

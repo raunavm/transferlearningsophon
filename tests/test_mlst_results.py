@@ -33,13 +33,15 @@ def test_a_cell_is_the_mean_and_sample_sd_with_missing_runs_marked():
     fmt = lambda m, s: seen.append((m, s)) or "X"
     assert M._cell([0.1, 0.2, 0.3], 3, fmt) == "X"
     assert seen[0][0] == pytest.approx(0.2) and seen[0][1] == pytest.approx(0.1)   # ddof=1
-    assert M._cell([0.1, None, 0.3], 3, fmt) == r"0.10, 0.30 \pending{2 of 3}"
+    assert M._cell([0.1, None, 0.3], 3, fmt) == r"0.1000, 0.3000 \pending{2 of 3}"   # a table: _two's precision
     assert M._cell([None, None], 2, fmt) == r"\pending{no run yet}"
 
 
 def test_two_runs_print_both_values_to_the_digit_of_their_difference():
-    # never beyond four significant figures (2026-10-31), even where the difference is smaller
-    assert M._cell([1.1661, 1.1652], 2, MT.fmt_pm) == "1.166, 1.165"
+    # in a sentence: never beyond four significant figures (2026-10-31), even where the difference is smaller
+    assert M._cell([1.1661, 1.1652], 2, MT.fmt_pm, sep=" and ") == "1.166 and 1.165"
+    # in a table, one precision per magnitude so that a column reads alike (fe2583c; PI 2026-11-07)
+    assert M._cell([1.1661, 1.1652], 2, MT.fmt_pm) == "1.17, 1.17"
     assert M._cell([22.515, 22.467], 2, MT.fmt_pm, sep=" and ") == "22.52 and 22.47"
     assert M._cell([0.4123, 0.4161], 2, MT.fmt_pm) == "0.4123, 0.4161"
     assert M._cell([0.5, 0.5], 2, MT.fmt_pm) == "0.5000, 0.5000"      # a table column reads alike
@@ -134,7 +136,11 @@ def test_the_index_covers_every_kind_of_pulled_file():
         # 2026-11-06: the census of selected training jets; round 3 UMAP (frozen and fine-tuned, every task)
         "jc2_train", "umap_v2",
         # round 3 (2026-11-06): performance against jet pT, the JetClass confusion matrices
-        "perf_vs_pt", "confusion_jc1"}
+        "perf_vs_pt", "confusion_jc1",
+        # 2026-11-07: the coarse targets, the QCD heavy-flavor subclasses, the released Sophon checkpoint's probes,
+        # the checkpoint identity check
+        "linprobe/fits_v4_coarse", "linprobe/fits_v4_qcdhf", "linprobe/sophon", "linprobe/sophon_qcdhf",
+        "ckpt_identity"}
 
 
 def _ft_tree(d, inits, n_seeds_scratch=3, bound=False, budget=True):
@@ -179,8 +185,8 @@ def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_
     assert r"\begin{longtable}" in t and r"\label{tab:ft}" in t and "%SPLIT%" not in t
     assert "1{,}200{,}000" in t and "1{,}600{,}000" in t
     # each task in its own metric (PI 2026-11-02, no 1 - AUC outside JetClass-II): JetClass-II the AUC
-    # (0.90 and 0.91), top/q-g R30 (300 x AUC: 270 and 273)
-    assert "0.900, 0.910" in t and "270.0, 273.0" in t and "100, 90" not in t
+    # (0.90 and 0.91, four decimals in a column of fractions), top/q-g R30 (300 x AUC: 270 and 273, integers)
+    assert "0.9000, 0.9100" in t and "270, 273" in t and "100, 90" not in t
     body, fewest = M.table_ft_rej(per, runs, MT.fmt_pm, ("L188",))
     assert fewest == 120 and r"\pending{2 of 3}" in body and body.count(r"\\") == 4
     per["jc2"]["l188-s1"][1000].append(per["jc2"]["l188-s1"][1000][0])
@@ -1188,9 +1194,9 @@ def test_the_ee_mumu_probe_joins_the_v4_pairs_and_gives_its_macros(tmp_path):
     runs = {"L188": ["mtx-l188-s1"], "R42_Q1": ["mtx-r42q1-s1"]}
     assert M.separated(fits, runs, "ee_vs_mm") == {"1"} and M.separated(fits, runs, "bb_vs_cc") == set()
     t = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", "R42_Q1"))
-    first = t.split("%SPLIT%")[0]
-    assert r"$X\to ee$ vs $\mu\mu$" in first and first.count(r"\multicolumn{2}") == 4
-    assert r"\Kmid{} classes & " in first and r"0.960$^{\dagger}$ & -- \\" in first   # no ratio to a perfect separation
+    # no ratio to a perfect separation: the pair's group has no rho column
+    assert r"\multicolumn{1}{c}{$X\to ee$ vs $\mu\mu$}" in t and t.count(r"\multicolumn{2}") == len(M.PAIRS) - 1
+    assert r"\Kmid{} classes & " in t and r"0.9600$^{\dagger}$ & " in t
     assert M.ZERO_NOTE and M.ZERO_NOTE in M._float("pairs", t, True, fill={"__ZERO__": M.zero_note(fits, runs)})
     # the comparisons the text quotes: a dash and words, never a division by zero
     em = _PEm()
@@ -1223,14 +1229,14 @@ def test_the_jetclass2_fine_tuning_block_has_the_ratio_column_at_one_million_jet
     jc2, jc1 = t.split(M.BLOCK_SEP)[0], t.split(M.BLOCK_SEP)[3]
     assert r"& $\rho$ \\" in jc2 and r"\rho" not in jc1
     # (1 - 0.91) / (1 - 0.90) run by run; the 188-class row 1; from scratch has none
-    assert r"\Kcoarse{} classes & 0.910 & 0.910 & 0.900 \\" in jc2 and r"\Kfull{} classes & 0.900 & 0.900 & 1.00 \\" in jc2
+    assert r"\Kcoarse{} classes & 0.9100 & 0.9100 & 0.900 \\" in jc2 and r"\Kfull{} classes & 0.9000 & 0.9000 & 1.00 \\" in jc2
     assert jc2.splitlines()[-1].startswith(M.SCRATCH_LABEL) and jc2.splitlines()[-1].endswith(r"& -- \\")
     acc = t.split(M.BLOCK_SEP)[1]                                   # the JetClass-II accuracy, no ratio column
     assert "{JetClass-II, accuracy}" in acc and r"\rho" not in acc
     # a 188-class run without its 10^6 cell: the 188-class ratio cell says how many runs it rests on
     del per["jc2"]["l188-s2"][1000000]
     two = M.table_ft(per, {"L188": ["mtx-l188-s1", "mtx-l188-s2"]}, MT.fmt_pm, ("L188",)).split(M.BLOCK_SEP)[0]
-    assert r"\Kfull{} classes & 0.900, 0.920 & 0.900 \pending{1 of 2} & 1.00 \pending{1 of 2} \\" in two
+    assert r"\Kfull{} classes & 0.9000, 0.9200 & 0.9000 \pending{1 of 2} & 1.00 \pending{1 of 2} \\" in two
     none = M.table_ft(per, {"L188": ["mtx-l188-s3"]}, MT.fmt_pm, ("L188",)).split(M.BLOCK_SEP)[0]
     assert r"\Kfull{} classes & " + " & ".join([r"\pending{no run yet}"] * 3) + r" \\" in none
 
@@ -1245,7 +1251,9 @@ def test_the_new_paper_macros_wait_for_their_inputs_and_the_captions_use_the_met
     assert "eq:resolution" in M.CAPTIONS["mass"][1] and r"m_{\mathrm{pred}}" not in M.CAPTIONS["mass"][1]
     cap = {k: c for k, (_, c) in M.CAPTIONS.items()}
     assert "eq:discr" in cap["jetclass"] and "p_c" not in cap["jetclass"] and r"1-g_{\mathrm{QCD}}" in cap["sculpt"]
-    assert r"\MlstMassMinJets" in cap["mass_detail"] and all(
+    # the blank-bin sentence with \MlstMassMinJets fills __BLANK__ when the table is written (bc9ad07)
+    assert r"\MlstMassMinJets" in (ROOT / "paper/journal/tables/mlst_mass_detail.tex").read_text()
+    assert "__BLANK__" in cap["mass_detail"] and all(
         r"$\nmin$" in cap[k] and "eq:cut" in cap[k] and "__MINBKG__ " not in cap[k] for k in ("jetclass", "rand_prong"))
     assert "ee_vs_mm" not in M.MLP_JC2 and [k for k, *_ in M.PAIRS[:4]][-1] == "ee_vs_mm"
 
@@ -1351,11 +1359,11 @@ def test_the_probes_against_size_pool_the_random_partitions_and_add_the_controls
     t = M.table_probes_n(fits, M._pooled(runs), MT.fmt_pm, ("L188", "FLAV_F0", M.RAND_POOLED), kin=True)
     assert r"\begin{longtable}" in t and r"\label{tab:probesn}" in t and "%SPLIT%" not in t
     rows = [ln for ln in t.splitlines() if ln.startswith(M.LABEL["FLAV_F0"])]
-    assert [r.split(" & ")[1].removesuffix(r" \\") for r in rows] == [
+    assert [r.split(" & ")[1].removesuffix("*").removesuffix(r" \\") for r in rows] == [
         M._cell([f(v["mtx-flavf0-s1"]), f(v["mtx-flavf0-s2"])], 2, MT.fmt_pm) for f in (lambda x: x, lambda x: 100 * x)]
     pooled = [v[runs[a][0]] for a in M.RAND]
     jc2 = next(ln for ln in t.splitlines() if ln.startswith(M.LABEL[M.RAND_POOLED]))
-    assert jc2.split(" & ")[1].removesuffix(r" \\") == M._cell(pooled, 5, MT.fmt_pm)
+    assert jc2.split(" & ")[1].removesuffix("*").removesuffix(r" \\") == M._cell(pooled, 5, MT.fmt_pm)
     assert not any(ln.startswith(M.LABEL["RAND2_p1"]) for ln in t.splitlines())     # pooled, not one by one
     kin = [ln for ln in t.splitlines() if ln.startswith(M.LABEL["KIN"])]
     assert kin == [M.LABEL["KIN"] + " & 133 \\\\"]                                     # top only, three figures
@@ -1395,7 +1403,7 @@ def test_the_kinematic_model_joins_the_top_rows_of_the_probe_mlp_and_fine_tuning
     lines = topb.splitlines()
     assert lines.index(next(ln for ln in lines if ln.startswith(M.LABEL["KIN"]))) == \
         lines.index(next(ln for ln in lines if ln.startswith(M.SCRATCH_LABEL))) + 1
-    assert M.LABEL["KIN"] + " & 92.4 & 1{,}800 \\\\" in topb
+    assert M.LABEL["KIN"] + " & 92.4 & 1{,}803 \\\\" in topb       # from 100 on four significant figures
     assert sum(b.count(M.LABEL["KIN"]) for b in blocks) == 1
 
 
@@ -1469,6 +1477,18 @@ def test_a_table_column_prints_at_one_precision_its_standard_deviations_included
     assert r"z & 301\,$\pm$\,0 & 0.7101, 0.7202 \\" in t and r"w & 295\,$\pm$\,7 & 0.7000 \\" in t
     small = M.uniform_columns(r"a & " + T(0.9760, 0.00003) + r" \\")
     assert small == r"a & 0.9760\,$\pm$\,$<$0.0001 \\"
+
+
+def test_identical_runs_print_pm_0_through_float_noise():
+    """Three identical runs whose mean is not exact give an SD of ~1e-17, not 0: within 1e-12 of the mean's size
+    that is zero, so the cell prints +-0 and the column's place is not set by the noise."""
+    for mean, noise in ((2.3, 3e-16), (1234.5, 2e-13), (0.0, 5e-13), (0.7, 0.0)):
+        assert M._zero_sd(mean, noise)
+    assert not M._zero_sd(0.5, 1e-9) and not M._zero_sd(1234.5, 1e-8)
+    tok = M.V4.tok
+    t = M.uniform_columns("\n".join([r"x & " + tok("p", 312.4, 6.3) + r" \\", r"y & " + tok("p", 301.0, 2e-14) + r" \\"]))
+    assert t == "\n".join([r"x & 312\,$\pm$\,6 \\", r"y & 301\,$\pm$\,0 \\"])
+    assert M.uniform_columns(r"z & " + tok("p", 0.7153, 1e-17) + r" \\") == r"z & 0.7153\,$\pm$\,0 \\"
 
 
 def test_the_jetclass_bold_is_chosen_among_the_values_without_a_dagger():
@@ -1549,3 +1569,181 @@ def test_a_breakable_table_keeps_its_caption_with_the_first_block_and_marks_the_
     n = t.count(r"\begin{tabular}")
     assert n > 1 and t.count(r"\TableContinued{tab:probes}{tab:probes:") == n - 1
     assert len(set(re.findall(r"\\begin\{tabular\}\{(.*?p\{[\d.]+cm\})", t))) == 1      # one label width
+
+
+def test_the_released_sophon_checkpoint_is_a_reference_row_below_a_rule():
+    """PI 2026-11-08: the released checkpoint in the frozen-probe tables, last and below a rule, with no ratio to a
+    188-class run; its top and quark/gluon probes keep the missing inputs zero where our runs use the chosen
+    substitution."""
+    jc2 = lambda a: {"1000000": {"converged": True, "accuracy": 0.4, "macro_auc_ovr": a, "macro_auc_resonant": a,
+                                 "macro_auc_qcd": a}}
+    bench = lambda r: {"1200000": {"converged": True, "accuracy": 0.9, "auc": 0.98, "r50": r, "r30": 2 * r}}
+    jc1 = {"1000000": {"converged": True, "accuracy": 0.7, "macro_auc_ovr": 0.97, "rejection_vs_qcd": {}}}
+    doc = lambda ck, a, r: {"cells": {ck: {"jc2_188": jc2(a), "jc1": jc1,
+                                           **{ds: bench(r) for ds in ("top", "qg", "qg_herwig")}}}}
+    fits = {"mtx-l188-s1": doc("best70", 0.98, 100.0), M.SOPHON_MODEL: doc("released", 0.97, 50.0)}
+    runs = {"L188": ["mtx-l188-s1"], M.SOPHON: [M.SOPHON_MODEL]}
+    assert M._ck(M.SOPHON_MODEL) == M.SOPHON_CK == "released"
+    fill = {"mtx-l188-s1": {"cells": {"best70": {"top.ntop": bench(150.0)}}}}
+    chosen = {"top": "mean", "qg": None, "qg_herwig": None}
+    t = M.table_probes(fits, runs, MT.fmt_pm, ("L188", M.SOPHON), None, fill, chosen)
+    for part in t.split("%SPLIT%"):
+        lines = part.strip().splitlines()
+        k = next(i for i, ln in enumerate(lines) if ln.startswith(M.LABEL[M.SOPHON] + " & "))
+        assert lines[k - 1] == r"\midrule" and lines[k + 1] == r"\bottomrule"
+    upper, lower = (p.strip().splitlines() for p in t.split("%SPLIT%"))
+    row = lambda lines, lab: next(ln for ln in lines if ln.startswith(lab + " & ")).removesuffix(r" \\").split(" & ")
+    assert row(upper, M.LABEL[M.SOPHON])[3] == "--"                                  # no ratio to a 188-class run
+    assert row(lower, M.LABEL[M.SOPHON])[4] == M._cell([100.0], 1, MT.fmt_pm)        # top R30, missing inputs zero
+    assert row(lower, M.LABEL["L188"])[4] == M._cell([300.0], 1, MT.fmt_pm)          # top R30, the chosen mean
+    f = M._float("probes", t, True)
+    assert r"\mbox{released Sophon checkpoint (LP)}" in f and "outside the controlled comparison" in f
+    assert "fetch-by-files" not in f and "kinematics at the head" not in f
+    co = {M.SOPHON_MODEL: {"cells": {"released": {"jc2bal_coarse": {t: {"1000000": {"accuracy": 0.5, "macro_auc_ovr": 0.9}}
+                                                                    for t, _ in M.COARSE_TARGETS}}}}}
+    c = M.table_coarse(co, runs, MT.fmt_pm, ("L188", M.SOPHON)).splitlines()
+    k = next(i for i, ln in enumerate(c) if ln.startswith(M.LABEL[M.SOPHON] + " & "))
+    assert c[k - 1] == r"\midrule" and c[k].split(" & ")[1] == "0.5000"
+
+
+def test_the_pair_table_groups_the_rows_by_mode_with_the_mode_in_the_group_heading():
+    """PI 2026-11-08: the fine-tuned pairs in the pair table, the (LP) and the (f.t.) rows as two row groups with the
+    mode in the group's heading and no tag on the rows, every pair a column group (AUC, rho); from scratch has no
+    probe, the random networks no fine-tuning; the f.t. group is one pending row until the read-out is pulled."""
+    pairs = lambda auc: {M.PAIR_N: {k: {"auc": auc} for k, *_ in M.PAIRS}}
+    fits = {"mtx-l188-s1": {"cells": {"best70": {M.PAIR_DS: pairs(0.95)}}},
+            "mtx-r16q1-s1": {"cells": {"best70": {M.PAIR_DS: pairs(0.90)}}},
+            **{m: {"cells": {"init": {M.PAIR_DS: pairs(0.6)}}} for m in M.INIT_MODELS}}
+    runs = {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"], M.INIT: list(M.INIT_MODELS)}
+    ft = {"mtx-l188-s1": {k: {"auc": 0.98} for k, *_ in M.PAIRS}, "mtx-r16q1-s1": {k: {"auc": 0.96} for k, *_ in M.PAIRS},
+          **{m: {k: {"auc": 0.9 + 0.01 * i} for k, *_ in M.PAIRS} for i, m in enumerate(M.FT_SCRATCH_MODELS)}}
+    t = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", "R16_Q1", M.INIT), ft)
+    assert "%SPLIT%" not in t and t.count(r"\multicolumn{2}{c}{") == len(M.PAIRS)
+    lines = t.splitlines()
+    lp, f = (lines.index(rf"\multicolumn{{{1 + 2 * len(M.PAIRS)}}}{{l}}{{\textit{{{M.MODE_DEF[m]}}}}} \\")
+             for m in ("lp", "ft"))
+    row = lambda group, lab: next(ln for ln in group if ln.startswith(lab + " & ")).removesuffix(r" \\").split(" & ")
+    assert [ln.split(" & ")[0] for ln in lines[lp + 1:f - 1]] == [M.LABEL["L188"], M.LABEL["R16_Q1"], M.LABEL[M.INIT]]
+    assert [ln.split(" & ")[0] for ln in lines[f + 1:-2]] == [M.LABEL["L188"], M.LABEL["R16_Q1"], M.SCRATCH_LABEL]
+    assert row(lines[f:], M.LABEL["R16_Q1"])[1:3] == [M._cell([0.96], 1, MT.fmt_pm, frac=True),
+                                                     M._cell([(1 - 0.96) / (1 - 0.98)], 1, MT.fmt_pm)]
+    assert row(lines[f:], M.SCRATCH_LABEL)[1] == M._cell([0.9, 0.91, 0.92], 3, MT.fmt_pm, frac=True)
+    assert row(lines[lp:f], M.LABEL[M.INIT])[2] == "--"
+    tab = M._float("pairs", t, True, fill={"__ZERO__": M.zero_note(fits, runs, ft)}, label_cm=M.PAIRS_LABEL_CM)
+    assert r"\mbox{\Kfull{} classes} " in tab and not re.search(r"(classes|pretraining|network) \((LP|f\.t\.)\)", tab)
+    assert "(f.t.), the network fine-tuned" in tab and "natural composition" in tab and "pairs" not in M.MODES
+    empty = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188",), {}).splitlines()
+    k = empty.index(rf"\multicolumn{{{1 + 2 * len(M.PAIRS)}}}{{l}}{{\textit{{{M.MODE_DEF['ft']}}}}} \\")
+    assert empty[k + 1] == rf"\multicolumn{{{1 + 2 * len(M.PAIRS)}}}{{l}}{{\pending{{no run yet}}}} \\"
+    assert M.load_pairs_ft(DATA.parent / "no_such_dir") == {}
+
+
+def test_the_sculpting_bootstrap_table_reads_the_verdicts_and_refuses_another_sigma():
+    """Plan 2026-11-08: a sculpting difference stands when |delta| > 3 sigma, sigma^2 = run SD^2 + bootstrap SD^2
+    (head/sculpting_boot.json); one row group per working point, the passing ones bold."""
+    x = lambda d, run, boot: {"delta": d, "run_sd": run, "boot_sd": boot, "sigma": math.hypot(run, boot),
+                              "z": d / math.hypot(run, boot), "pass": abs(d) > 3 * math.hypot(run, boot)}
+    doc = {"replicas": 200, "differences": {"17-188": {"configuration": "r16q1", "reference": "l188", **{
+        wp: {"distance": x(0.0122, 0.003, 0.001) if wp == "eps_b=0.01" else x(0.001, 0.003, 0.001)}
+        for wp, _ in M.SCULPT_BOOT_WPS}}}}
+    runs = {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"]}
+    t = M.table_sculpt_boot(doc, runs).splitlines()
+    rows = [ln for ln in t if ln.startswith(M.LABEL["R16_Q1"] + " $-$ " + M.LABEL["L188"] + " & ")]
+    assert len(rows) == len(M.SCULPT_BOOT_WPS) and r"\textbf{" in rows[0] and r"\textbf{" not in rows[1]
+    assert rows[0].split(" & ")[1:4] == ["1.22", "0.30", "0.10"]
+    doc["differences"]["17-188"]["eps_s=0.5"]["distance"]["sigma"] = 0.003 / math.sqrt(3)
+    with pytest.raises(SystemExit, match="hypot"):
+        M.table_sculpt_boot(doc, runs)
+
+
+def test_the_results_book_is_the_gallery_placement_and_boxes_only_provisional_items(tmp_path, monkeypatch, capsys):
+    """PI 2026-11-08: main text, appendix and supplement from the gallery's placement (one source), so each item has
+    the map's number; a missing figure or a pending table is fatal unless the placement marks it PROVISIONAL: a box
+    keeps such a figure's number, such a table is set with its pending cells; tables joined by " + " share a number; the supplement refers into the paper book
+    through xr-hyper, loaded before hyperref, and needs the paper book's .aux."""
+    B = _load("make_results_book_t", "experiments/FIGS/make_results_book.py")
+    G = B.G
+    B.check_spec()
+    for tier in G.TIERS:
+        figs = [k for k in B.TIERS[tier] if not k.startswith("tab:")]
+        assert figs == [k for k, t, _ in G.FIGURES if t == tier]
+        assert [k for k in B.TIERS[tier] if k.startswith("tab:")] == [k for k, t, _ in G.TABLES if t == tier]
+        assert all(G.number(k) == f"Fig. {B.PREFIX[tier]}{n}" for n, k in enumerate(figs, 1))
+    labels = [lab for k, _, _ in G.TABLES for lab in k.split(" + ")]
+    assert set(labels) <= set(B.TABLE_FILE)                     # every placed table is one make_tables writes
+    (tmp_path / "tables").mkdir()
+    (tmp_path / "main.tex").write_text("\\documentclass{article}\n\\usepackage[hidelinks]{hyperref}\n\\title{x}\n")
+    for lab in labels:
+        (tmp_path / "tables" / f"{B.TABLE_FILE[lab]}.tex").write_text(
+            "\\begin{table}[t]\n\\caption{c}\\label{" + lab + "}\n\\begin{tabular}{l}a\\end{tabular}\n\\end{table}\n")
+    monkeypatch.setattr(B, "PAPER", tmp_path)
+    monkeypatch.setattr(B, "figure", lambda pid, rec, src: f"% figure {pid}\n")
+    monkeypatch.setattr(G, "PROVISIONAL", {"F11": "waits", "tab:mass": "waits"})
+    (tmp_path / "tables" / f"{B.TABLE_FILE['tab:mass']}.tex").write_text(
+        "\\begin{table}[t]\n\\caption{c}\\label{tab:mass}\n\\begin{tabular}{l}\\pending{x}\\end{tabular}\n\\end{table}\n")
+    figs = [k for k, _, _ in G.FIGURES]
+    pages = tmp_path / "render"
+    pages.mkdir()
+    write = lambda ids: (pages / "pages.json").write_text(json.dumps([{"id": i, "drawn": True} for i in ids]))
+    write([i for i in figs if i != "F11"])
+    B.build(pages, "paper")
+    out = capsys.readouterr().out
+    assert "F11 is provisional" in out and "tab:mass is provisional" in out
+    book = (tmp_path / "results_book.tex").read_text()
+    assert r"\label{fig:F11}" in book and r"\label{tab:mass}" in book and "% figure FJ-ctrl" not in book
+    assert r"\pending{x}" in book and book.count("fbox") == 1             # the table as it is, F11 a box
+    assert book.index("% figure F1\n") < book.index("% tables/mlst_jetclass.tex") < book.index(r"{A\arabic{figure}}")
+    assert r"\renewcommand{\thetable}{\arabic{table}b}" in book and "externaldocument" not in book
+    with pytest.raises(SystemExit, match="results_book.aux"):
+        B.build(pages, "supplement")
+    (tmp_path / "results_book.aux").write_text("")
+    B.build(pages, "supplement")
+    supp = (tmp_path / "results_supplement.tex").read_text()
+    assert supp.index(r"\usepackage{xr-hyper}") < supp.index("{hyperref}") < supp.index(r"\externaldocument{results_book}")
+    assert "% figure FJ-ctrl" in supp and "% figure F1\n" not in supp
+    write([i for i in figs if i not in ("F11", "F8")])
+    with pytest.raises(SystemExit, match="F8 was not drawn"):
+        B.build(pages, "paper")
+
+
+def test_the_citation_check_finds_a_figure_or_table_that_nothing_else_cites(tmp_path):
+    """PI 2026-11-08: anything nothing cites is dropped. A reference inside the label's own float, or in its own
+    generated table, or commented out, does not count."""
+    C = _load("check_citations_t", "experiments/FIGS/check_citations.py")
+    (tmp_path / "sections").mkdir()
+    (tmp_path / "tables").mkdir()
+    (tmp_path / "main.tex").write_text("\\input{sections/a}\n% \\input{sections/old}\n\\input{tables/t1}\n"
+                                       "\\input{tables/t2.tex}\n")
+    (tmp_path / "sections/a.tex").write_text(
+        "See \\cref{fig:x,tab:two}.\n\\begin{figure}\\caption{As \\ref{fig:y}.}\\label{fig:x}\\end{figure}\n"
+        "\\begin{figure}\\caption{As figure~\\ref{fig:y}.}\\label{fig:y}\\end{figure}\n% table~\\ref{tab:three}\n")
+    (tmp_path / "tables/t1.tex").write_text("\\begin{center}\\captionof{table}{c}\\label{tab:one}\\end{center}\n")
+    (tmp_path / "tables/t2.tex").write_text("\\begin{table}\\caption{As table~\\ref{tab:one}}\\label{tab:two}\\end{table}\n"
+                                            "\\begin{table}\\caption{d, table~\\ref{tab:three}}\\label{tab:three}\\end{table}\n")
+    cited = C.citations(tmp_path / "main.tex")
+    assert cited["fig:x"] and cited["fig:y"] and cited["tab:two"] and cited["tab:one"]
+    assert cited["tab:three"] == []
+
+
+def test_the_gallery_citation_check_fails_on_no_sentence_another_tier_or_an_unplaced_item(tmp_path, capsys):
+    """check_citations.py --gallery against a fake placement module (BACKS, TIER) and book: clean passes; an item with
+    no sentence, one the book places in another tier, one only the book places and one the book does not place fail."""
+    import types
+    C = _load("check_citations_g", "experiments/FIGS/check_citations.py")
+    tiers = {"F1": "main", "tab:a": "main", "F2": "appendix"}
+    backs = {k: "A sentence." for k in tiers}
+    book = lambda t: types.SimpleNamespace(TIERS=t, PREFIX={"main": "", "appendix": "A"}, check_spec=lambda: None,
+                                           M=types.SimpleNamespace(CAPTIONS={"a": ("tab:a", "c")}))
+    (tmp_path / "gallery_figures.py").write_text("ORDER = ('F1', 'F2')\n")
+
+    def run(backs, tiers, placed):
+        (tmp_path / "fake_placement.py").write_text(f"BACKS = {backs!r}\nTIER = {tiers!r}\n")
+        return C.gallery(tmp_path, book(placed))
+    ok = {"main": ["F1", "tab:a"], "appendix": ["F2"]}
+    assert run(backs, tiers, ok) == 0
+    assert run({**backs, "F2": ""}, tiers, ok) == 1 and "no planned citing sentence: F2" in capsys.readouterr().out
+    assert run(backs, {**tiers, "F2": "main"}, ok) == 1 and "F2 (appendix here, main in the gallery)" in capsys.readouterr().out
+    assert run(backs, tiers, {"main": ["F1", "tab:a"], "appendix": []}) == 1
+    assert "placed nowhere in the book: F2" in capsys.readouterr().out
+    assert run({**backs, "F3": "S."}, tiers, {**ok, "appendix": ["F2", "F3"]}) == 1
+    assert "in no tier of the gallery's map: F3" in capsys.readouterr().out

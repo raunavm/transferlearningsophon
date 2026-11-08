@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """The gallery's uncertainty arithmetic, kept free of data loading so tests can import it: the relative uncertainty of a
-mean rejection curve (F6, F6-app ratio panels) and the soft-drop reference's off-axis rule (F9b, A17)."""
+mean rejection curve (F6, F6-app ratio panels), the band of the spread over runs (F10b) and the soft-drop reference's
+off-axis rule (F9b, A17)."""
 from __future__ import annotations
 
 import numpy as np
@@ -25,3 +26,13 @@ def extend_to(lo: float, hi: float, ref, keep: float = 0.5) -> tuple | None:
     r = r[np.isfinite(r)]
     a, b = min(lo, r.min(initial=lo)), max(hi, r.max(initial=hi))
     return (a, b) if hi - lo >= keep * (b - a) else None
+
+
+def spread_band(per) -> tuple | None:
+    """(lower, upper) of the spread over runs at each point, per (runs, points): mean -+ the SD (ddof 1) over three or
+    more runs, the range over two (F2a's rule); None for one run (F10b, F10b-flav, F10-ft)."""
+    per = np.asarray(per, float)
+    if len(per) > 2:
+        mean, sd = per.mean(axis=0), per.std(axis=0, ddof=1)
+        return mean - sd, mean + sd
+    return (per.min(axis=0), per.max(axis=0)) if len(per) == 2 else None

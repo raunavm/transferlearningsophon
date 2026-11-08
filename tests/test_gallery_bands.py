@@ -52,6 +52,16 @@ def test_the_reference_is_taken_in_only_while_the_series_keep_half_the_axis():
     assert B.extend_to(0.1, 0.2, [np.nan, 0.15]) == (0.1, 0.2)
 
 
+def test_the_spread_band_is_the_sd_over_three_runs_the_range_over_two_and_none_for_one():
+    per = np.array([[1.0, 4.0], [2.0, 6.0], [6.0, 8.0]])
+    lo, hi = B.spread_band(per)
+    sd = per.std(axis=0, ddof=1)
+    assert lo == pytest.approx(per.mean(axis=0) - sd) and hi == pytest.approx(per.mean(axis=0) + sd)
+    lo, hi = B.spread_band(per[:2])
+    assert list(lo) == [1.0, 4.0] and list(hi) == [2.0, 6.0]
+    assert B.spread_band(per[:1]) is None
+
+
 def test_every_change_marker_names_a_gallery_page_and_says_new_or_changed():
     tree = ast.parse((FIG / "gallery_figures.py").read_text())
     order = next(ast.literal_eval(n.value) for n in tree.body

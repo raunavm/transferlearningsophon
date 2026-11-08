@@ -271,6 +271,26 @@ def test_a_trunk_without_an_output_layer_loads_whole_or_not_at_all(tmp_path):
         xv.load_headless(_part(k=1), tmp_path / "classifier.pt")
 
 
+def test_kept_head_outputs_need_the_whole_output_layer(tmp_path):
+    """--keep-head-outputs: a classifier checkpoint whose output layer loads only in part (load_trunk_or_die's
+    strict=False tolerates it) is refused; the counts go into the manifest either way."""
+    import torch
+    ex = _load("extract_features", "experiments/EVAL/extract_features.py")
+    src = _part(k=17)
+    state = src.state_dict()
+    torch.save(state, tmp_path / "whole.pt")
+    torch.save({k: v for k, v in state.items() if not k.startswith("mod.fc.0.")}, tmp_path / "no_hidden.pt")
+    torch.save({**state, "mod.fc.9.bias": torch.zeros(17)}, tmp_path / "stray.pt")
+    prov = ex.load_trunk_or_die(_part(k=17), tmp_path / "whole.pt", 17)
+    assert xv.head_loaded(prov, tmp_path / "whole.pt", True) == {"head_missing": 0, "head_unexpected": 0}
+    for f, counts in (("no_hidden.pt", {"head_missing": 2, "head_unexpected": 0}),
+                      ("stray.pt", {"head_missing": 0, "head_unexpected": 1})):
+        prov = ex.load_trunk_or_die(_part(k=17), tmp_path / f, 17)
+        assert xv.head_loaded(prov, tmp_path / f, False) == counts          # recorded, not refused, without it
+        with pytest.raises(SystemExit, match="output-layer tensors missing"):
+            xv.head_loaded(prov, tmp_path / f, True)
+
+
 @pytest.mark.parametrize("rung", ["L188", "R42_Q1", "R16_Q1"])
 def test_head_scores_are_anomaly_class_sums_and_consistent_probabilities(rung):
     k = len({r[rung] for r in an.read_map()})

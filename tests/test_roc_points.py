@@ -455,5 +455,129 @@ def test_the_full_schedule_scratch_job_writes_new_families_the_readers_prefer_on
                          f"{GD.FULL_JC1_TREE} --task jc1 --n 1000000 --out {GD.FULL_JC1}")
     assert len(lines) == 8
     spec = (ROOT / "experiments/FT/k8s/curves/job-gallery-data-scratch-full-raunav.yaml").read_text()
-    assert "name: gallery-data-scratch-full-raunav" in spec and '--branch "mtx-s2.85"' in spec
+    # repinned before it ran: roc_points.py changed after mtx-s2.85 (tests/test_spec_pins.py)
+    assert "name: gallery-data-scratch-full-raunav" in spec and '--branch "mtx-s2.86"' in spec
     assert all(ln in spec for ln in lines)
+
+
+# ------------------------------------------- fine-tuned class pairs (pairs_ft, plan 2026-11-08 step 2)
+
+def _jc2_ft_cell(tmp_path, init, tree="budget", seed=1, n_per=60, rng_seed=11):
+    """A JetClass-II cell at 1e6 and its outputs on the natural test jets (<tmp>/heads/<model>): every class of the
+    pairs' sides and two classes of no pair, n_per jets each, 188 random logits with each jet's own class raised."""
+    import hashlib
+    rng = np.random.default_rng(rng_seed)
+    classes = sorted({c for sides in RP.pair_sides().values() for side in sides for c in side} | {5, 120})
+    y = np.repeat(classes, n_per).astype(np.int16)
+    z = rng.normal(size=(y.size, 188)).astype(np.float32)     # float32: float16's ties would make D's rounding the test
+    z[np.arange(y.size), y] += 1.0
+    c = tmp_path / tree / "leg_jc2b" / init / "N1000000" / f"s{seed}"
+    c.mkdir(parents=True)
+    (c / RP.FT_CKPT).write_bytes(init.encode())
+    (c / "DONE").touch()
+    model = f"{init}-s{seed}" if init == "scratch" else f"mtx-{init}"
+    h = tmp_path / "heads" / model
+    h.mkdir(parents=True)
+    np.savez(h / "head_outputs.npz", label188=y, logits=z)
+    (h / "manifest.json").write_text(json.dumps({"num_classes": 188, "num_reg": 0,
+                                                 "checkpoint_sha256": hashlib.sha256(init.encode()).hexdigest()}))
+    return y.astype(np.int64), z.astype(np.float64), c.parents[2]
+
+
+def _pairs_ft(tmp_path, tree_dir, inits):
+    return RP.main(["ft", "--family", "pairs_ft", "--tree", str(tree_dir), "--task", "jc2b", "--n", "1000000",
+                    "--inits", *inits, "--head-root", str(tmp_path / "heads"), "--out-dir", str(tmp_path / "pairs_ft"),
+                    "--allow-out", str(tmp_path)])
+
+
+def test_the_fine_tuned_pairs_are_the_pair_tables_pairs_with_the_linear_probes_sides():
+    MR = _load("mlst_results_rp", "experiments/FIGS/mlst_results.py")
+    assert list(RP.FT_PAIRS) == [k for k, *_ in MR.PAIRS] and list(RP.pair_sides()) == list(RP.FT_PAIRS)
+    names = RP.native_names()
+    groups = RP.LP.native_pair_groups(names)
+    for key, sig, bkg in ((k, a, b) for k, _h, a, b in MR.PAIRS):
+        a, b = RP.pair_sides()[key]
+        if key in groups:
+            assert (a, b) == groups[key], key
+        for side, want in ((a, sig), (b, bkg)):
+            if not isinstance(want, str):
+                assert [names[c] for c in side] == list(want), key
+    assert all(names[c].startswith("label_QCD_") and "b" in names[c][10:] for c in RP.pair_sides()["qcd_b_vs_light"][0])
+    assert RP.FT_TASK["pairs_ft"] == "jc2b"
+
+
+def test_fine_tuned_pairs_rank_by_the_summed_softmax_of_each_side_on_the_pairs_jets(tmp_path):
+    y, z, tree = _jc2_ft_cell(tmp_path, "l188-s1", "budget_long")
+    _pairs_ft(tmp_path, tree, ["l188-s1"])
+    doc = json.loads((tmp_path / "pairs_ft" / "mtx-l188-s1.json").read_text())
+    assert doc["family"] == "pairs_ft" and doc["method"] == "fine-tuning" and doc["source_tree"] == "budget_long"
+    MR = _load("mlst_results_rp2", "experiments/FIGS/mlst_results.py")
+    assert list(doc["curves"]) == [k for k, *_ in MR.PAIRS]                  # every pair of the pair table
+    p = np.exp(z - z.max(1, keepdims=True))
+    p /= p.sum(1, keepdims=True)
+    names = RP.native_names()
+    for key, c in doc["curves"].items():
+        a, b = (list(s) for s in RP.pair_sides()[key])
+        m = np.isin(y, a + b)
+        ga, gb = p[m][:, a].sum(1), p[m][:, b].sum(1)
+        assert c["auc"] == pytest.approx(roc_auc_score(np.isin(y[m], a), ga / (ga + gb)), abs=1e-12), key
+        assert (c["n_signal"], c["n_background"]) == (60 * len(a), 60 * len(b))
+        assert c["signal"] == [names[i] for i in a] and c["background"] == [names[i] for i in b] and c["n_train"] == 1_000_000
+        assert c["source"]["file"] == str(tmp_path / "heads" / "mtx-l188-s1" / "head_outputs.npz")
+    assert doc["curves"]["bc_vs_bq_cs"]["background"] == ["label_X_bq", "label_X_cs"]
+
+
+def test_head_outputs_of_another_checkpoint_are_refused(tmp_path):
+    _y, _z, tree = _jc2_ft_cell(tmp_path, "l188-s1")
+    (tree / "l188-s1" / "N1000000" / "s1" / RP.FT_CKPT).write_bytes(b"another state")
+    RP.sha256.cache_clear()
+    with pytest.raises(SystemExit, match="is not the head output of"):
+        _pairs_ft(tmp_path, tree, ["l188-s1"])
+    assert not (tmp_path / "pairs_ft" / "mtx-l188-s1.json").exists()
+
+
+def test_the_pair_discriminant_keeps_its_order_where_d_rounds_to_one():
+    z = np.zeros((4, 188))
+    a, b = RP.pair_sides()["bb_vs_cc"]
+    z[:, a[0]] = (60.0, 61.0, 62.0, 63.0)          # D = 1 - e^-60 ... rounds to 1.0 in float64
+    d = RP._lse(z[:, list(a)]) - RP._lse(z[:, list(b)])
+    assert list(np.argsort(d)) == [0, 1, 2, 3] and np.allclose(np.diff(d), 1.0)
+
+
+def test_the_fine_tuned_pair_job_waits_for_every_head_and_writes_done_after_the_last_model():
+    """build_gallery_data_job.py --mode ft-pairs-sculpt: every cell of build_head_jobs.ft_head_cells (the 27 paper
+    runs, the long budget where there is a cell, and the three full-schedule from-scratch seeds) into the one
+    curves_v2/pairs_ft directory, which mlst_results.load_pairs_ft reads, DONE after the last."""
+    GD = _load("build_gallery_data_job", "scripts/build_gallery_data_job.py")
+    HB = _load("build_head_jobs_rp", "scripts/build_head_jobs.py")
+    bfb = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
+    cells = HB.ft_head_cells()
+    runs = [m.removeprefix("mtx-") for m in V4.paper_models()]
+    assert [m for m, _c in cells] == V4.paper_models() + ["scratch-s1", "scratch-s2", "scratch-s3"] and len(runs) == 27
+    long = {r for r in runs if r in bfb.LONG_JC2B or r.startswith(("rand", "flav"))}
+    for m, c in cells[:27]:
+        r = m.removeprefix("mtx-")
+        assert c == f"{bfb.LONG_ROOT if r in long else bfb.BUDGET_ROOT}/leg_jc2b/{r}/N1000000/s1"
+    assert [c for _m, c in cells[27:]] == [c["out"] for c in bfb.long_scratch_full_cells("jc2b", "1e-3")]
+    assert all(c.startswith(GD.FULL_JC2_TREE + "/scratch/N1000000/s") for _m, c in cells[27:])
+    fn, name, dirs = GD.MODES["ft-pairs-sculpt"]
+    assert "ft-pairs-sculpt-scratch" not in GD.MODES
+    lines = [ln.strip() for ln in fn().splitlines()]
+    assert name == "gallery-data-ft-pairs-sculpt-raunav" and dirs.split() == ["pairs_ft", GD.SCULPT_FT]
+    heads = lines[0].removeprefix("for f in ").split(";")[0].split()
+    assert heads == [f"{HB.FT_HEAD_ROOT}/{m}/manifest.json" for m, _c in cells] and "exit 42" in lines[0]
+    pairs = [ln for ln in lines if "roc_points.py ft --family pairs_ft" in ln]
+    got = []
+    for ln in pairs:
+        a = ln.split()
+        assert a[a.index("--head-root") + 1] == HB.FT_HEAD_ROOT and a[-2:] == ["--out-dir", f"{GD.ROC}/pairs_ft"]
+        got += [f"{a[a.index('--tree') + 1]}/{i}" for i in a[a.index("--inits") + 1:a.index("--head-root")]]
+    assert sorted(got) == sorted({c.rsplit("/", 2)[0] for _m, c in cells}) and len(pairs) == 3
+    assert lines[1:5] == pairs + [f"echo done > {GD.ROC}/pairs_ft/DONE"]
+    assert not any("pairs-summary" in ln for ln in lines)
+    assert RP.FT_HEAD_ROOT == pathlib.Path(HB.FT_HEAD_ROOT)
+    spec = (ROOT / f"experiments/FT/k8s/curves/job-{name}.yaml").read_text()
+    assert f"name: {name}" in spec and "backoffLimit: 1" in spec and '[ "${USED}" -le 85 ]' in spec
+    assert '--branch "mtx-s2.86"' in spec and f"mkdir -p {GD.ROC}/pairs_ft {GD.SCULPT_FT}" in spec
+    assert "configmap" not in spec.lower() and all(ln in spec for ln in lines)
+    assert not (ROOT / "experiments/FT/k8s/curves/job-gallery-data-ft-pairs-sculpt-scratch-raunav.yaml").exists()

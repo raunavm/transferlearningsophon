@@ -1,98 +1,163 @@
 #!/usr/bin/env python3
-"""The gallery's inventory page (figure round 4, docs/figstyle/ROUND4_BRIEF.md Part 5): every figure of the paper,
-main text and appendix in paper order, with its panels, its series and the encoding it uses. Colour encodes the
-model everywhere except F10a's working points and the class and family figures (JetClass classes, JetClass-II
-families), which use the fixed tab10 set."""
+"""The gallery's one-page map (PI, 2026-11-08, the story-based cut): every figure and table of the paper by tier (main
+text, appendix, supplement), its number within the tier and the draft sentence it backs with the items that sentence
+also rests on (gallery_placement), the sculpting test that decides F10b's tier (head/sculpting_boot.json), the PI's book
+numbers against the gallery ids, and what the placement drops. Drawn at the gallery page's width and at a
+height that leaves the page's notes room under it, so it prints at 100% and its 8 pt is 8 pt."""
 from __future__ import annotations
 
+import json
 import pathlib
 
+from matplotlib.font_manager import FontProperties
+from matplotlib.textpath import TextToPath
+
 import gallery_common as C
+import gallery_placement as G
 import style_v5 as S
 
-LS = "label sets: palette colours, solid, filled"
-ROC = "solid, no markers"
-# (figure, place, panels, series, encoding)
-ROWS = [
-    ("F1", "main", "2: design, the two uses", "four label-set columns", "label-set colours (tint)"),
-    ("F2a", "main", "4 tasks", "4 label sets, 3 controls, 5 random, scratch", LS + "; controls own colours left of 17"),
-    ("F2b", "main", "4 tasks", "4 label sets, 3 controls, scratch", "as F2a"),
-    ("F3", "main", "1 heatmap", "6 models × 188 classes", "diverging map; no model colour"),
-    ("F4", "main", "4 class pairs", "4 label sets", "label-set colours; " + ROC),
-    ("FJ", "main", "4 label sets", "10 JetClass classes", "tab10 classes; " + ROC),
-    ("FJ-ctrl", "main", "4 controls", "10 JetClass classes", "tab10 classes; " + ROC),
-    ("PT", "main", "4: JetClass-II, controls, JetClass, X→bb̄ vs cc̄", "4 label sets, 3 controls", LS + "; SD bands"),
-    ("F6", "main", "3 + ratios", "4 label sets, scratch, kinematic", ROC + "; scratch dashed, kinematic dotted"),
-    ("F8", "main", "4 tasks", "188 fine-tuned, probe, scratch", "188 colour; probe tint dashed hollow; SD bands"),
-    ("F9a", "main", "2 jet groups", "soft-drop, 2 mass outputs", "black reference; label-set colours, solid"),
-    ("F9b", "main", "2×2 + ratio/RSD", "soft-drop, 2 mass outputs", "as F9a, markers filled"),
-    ("F10a", "main", "4 label sets + ratios", "inclusive, 10%, 1%", "working points black and greys (exception)"),
-    ("F10b", "main", "1", "4 label sets, 2 mass outputs", LS + "; mass outputs dashed hollow beside them"),
-    ("F11", "main", "placeholder", "waits for the X→bb̄ and X→bs samples", "-"),
-    ("VAL", "appendix", "1", "4 label sets", "label-set colours, solid"),
-    ("A10", "appendix", "4 tasks", "4 label-set probes, scratch", LS + "; scratch dashed"),
-    ("A8", "appendix", "4 tasks", "4 label sets fine-tuned, scratch", LS + "; scratch dashed"),
-    ("F6-app", "appendix", "3 + ratios", "4 label-set probes, scratch", ROC + "; scratch dashed"),
-    ("FJ-app", "appendix", "4 label sets", "10 JetClass classes", "tab10 classes; " + ROC),
-    ("FJ-ctrl-app", "appendix", "4 controls", "10 JetClass classes", "tab10 classes; " + ROC),
-    ("FJ-s", "appendix", "1", "10 JetClass classes", "tab10 classes; " + ROC),
-    ("CONF", "appendix", "4 matrices", "188; 162/43/17 minus 188", "sequential and diverging maps"),
-    ("F4-app", "appendix", "4 class pairs", "3 controls, 188", "palette colours; " + ROC),
-    ("F3-scatter", "appendix", "2", "188 classes per panel", "tab10 families, filled circles"),
-    ("F3-app", "appendix", "4", "188 classes per panel", "tab10 families"),
-    ("F3-app2", "appendix", "3", "188 classes per panel", "tab10 families"),
-    ("F3-app3", "appendix", "2", "188 classes per panel", "tab10 families"),
-    ("F3-ft", "appendix", "4", "188 classes per panel", "tab10 families"),
-    ("F3-ft2", "appendix", "3", "188 classes per panel", "tab10 families"),
-    ("A3R", "appendix", "4 label sets", "188 classes", "tab10 families, thin; " + ROC),
-    ("A3R-ft", "appendix", "4 label sets", "188 classes", "tab10 families, thin; " + ROC),
-    ("UMAP-jc1", "appendix", "2×2", "10 JetClass classes", "tab10 classes, points"),
-    ("UMAP-jc2-had", "appendix", "2×2", "4 classes", "tab10, points"),
-    ("UMAP-jc2-lep", "appendix", "2×2", "2 classes", "tab10, points"),
-    ("UMAP-top", "appendix", "2×2", "top, QCD", "tab10, points"),
-    ("UMAP-qg", "appendix", "2×2", "quark, gluon", "tab10, points"),
-    ("A17-res", "appendix", "2×2 + ratio/RSD", "soft-drop, 2 mass outputs", "as F9b"),
-    ("A17-qcd", "appendix", "2×2 + ratio/RSD", "soft-drop, 2 mass outputs", "as F9b"),
-    ("A17-probe", "appendix", "2×2 + ratio/RSD", "4 MLP probes, 2 mass outputs", LS + "; mass outputs dashed hollow"),
-    ("F10a-mass", "appendix", "2 + ratios", "inclusive, 10%, 1%", "as F10a"),
-    ("F10a-flav", "appendix", "3 + ratios", "inclusive, 10%, 1%", "as F10a"),
-]
-COLS = (("Figure", 0.0), ("Place", 2.15), ("Panels", 3.5), ("Series", 6.45), ("Encoding", 10.1))
-ROW_H = 0.5
+W, H = 27.7, 15.7           # cm: the landscape gallery page's width; its height less the change, caption and notes
+COLUMNS = 3
+GAP = 0.6                   # cm between columns
+PT = 8.0
+SPACING = 1.25              # matplotlib linespacing: a line pitch of 0.293 cm (8.3 pt) for STIX at PT, measured
+LINE = 0.293                # cm per line
+INDENT = 0.3                # cm: a row's continuation lines, so rows part without a gap
+BOOT = C.P.DATA / "head/sculpting_boot.json"     # experiments/EVAL/sculpting_boot.py
+# the bootstrap's differences (sculpting_boot.DIFFS) and working points, as the map names them
+BOOT_DIFFS = (("17-188", "17 − 188"), ("43-188", "43 − 188"), ("17mass-17", "17 + mass − 17"),
+              ("162mass-162", "162 + mass − 162"), ("flavf0-188", "no flavor − 188"),
+              ("flavf1-188", "b-quark − 188"), ("flavf1r-188", "random flavor − 188"))
+BOOT_WPS = (("eps_b=0.01", "QCD 1%"), ("eps_b=0.1", "QCD 10%"), ("eps_s=0.5", "res. 50%"))
+# cm within a map column: the left edge of the difference, then per working point the right edges of Δ and Δ/σ
+BOOT_X = (0.0, 3.4, 4.3, 5.5, 6.4, 7.6, 8.5)
+
+
+def _rows(items: tuple) -> list:
+    """(number, ids, sentence) per row, consecutive items of one tier and one sentence merged ("Fig. S1–S4"); the
+    sentence ends with what it also rests on (gallery_placement.EVIDENCE)."""
+    rows = []
+    for key, tier, sentence in items:
+        num, ids = G.number(key), key + (f"; {G.PROVISIONAL[key]}" if key in G.PROVISIONAL else "")
+        if also := G.evidence(key)[1:]:
+            sentence += f" [also {', '.join(map(G.number, also))}]"
+        if rows and rows[-1][2] == sentence and rows[-1][3] == tier:
+            rows[-1] = (f"{rows[-1][0].split('–')[0]}–{num.split()[-1]}", f"{rows[-1][1]}, {ids}", sentence, tier)
+        else:
+            rows.append((num, ids, sentence, tier))
+    return [r[:3] for r in rows]
+
+
+def _boot_rows(path: pathlib.Path) -> list:
+    """The sculpting test, one table row per difference: at each working point the Jensen-Shannon distance difference
+    (in units of 0.01) and Δ/σ, starred where it passes, as sculpting_boot.json gives them (the run and bootstrap SDs
+    are in tab:sculptboot); then F10b's tier by gallery_placement.f10b_main. Or one line saying the file is pending."""
+    if not path.exists():
+        return [("", f"Pending {path.name}: the paired bootstrap over the test jets (experiments/EVAL/sculpting_boot.py).", "")]
+    diffs = json.loads(path.read_text())["differences"]
+    num = lambda v, fmt: format(v, fmt).replace("-", "−")     # noqa: E731
+    rows = [("", ("", *(c for _, wp_label in BOOT_WPS for c in ("", wp_label))), ""),     # over each Δ/σ
+            ("", ("Difference", *("Δ", "Δ/σ") * len(BOOT_WPS)), "")]
+    for name, label in BOOT_DIFFS:
+        cells = [label]
+        for wp, _ in BOOT_WPS:
+            d = diffs.get(name, {}).get(wp, {}).get("distance")
+            cells += ["–", "–"] if d is None else [
+                num(100 * d["delta"], ".2f"), ("–" if d["z"] is None else num(d["z"], ".1f")) + ("*" if d["pass"] else "")]
+        rows.append(("", tuple(cells), ""))
+    rows.append(("", f"F10b: {'main text' if G.f10b_main(diffs) else 'appendix'}.", ""))
+    return rows
+
+
+def blocks() -> list:
+    """(heading, rows) in the map's order; a row is (number, ids, sentence), ("", text, "") for running text, or
+    ("", cells, "") for a table row (the sculpting test)."""
+    out = []
+    for tier in G.TIERS:
+        for kind, items in (("figures", G.FIGURES), ("tables", G.TABLES)):
+            out.append((f"{G.TIER_NAME[tier]}: {kind}", _rows(tuple(i for i in items if i[1] == tier))))
+    out[0] = ("Main text: figures (every sentence a DRAFT, worded to today's numbers; [also ...]: what else it rests on)",
+              out[0][1])
+    out.append(("Sculpting test: Δ of the distance (0.01) at cuts keeping 1% or 10% of QCD or 50% of resonant jets; "
+                "*: |Δ| > 3σ. F10b main text if at QCD 1% 17 − 188 > 0 and 17 + mass − 17 < 0, both passing",
+                _boot_rows(BOOT)))
+    out.append(("Results-book figure numbers, as gallery ids", [("", "; ".join(f"{b} = {g}" for b, g in G.BOOK_NAMES) + ".", "")]))
+    lost = f" NEITHER PLACED NOR DROPPED: {', '.join(unplaced())}." if unplaced() else ""
+    out.append(("Not placed", [("", f"Dropped figures: {', '.join(G.DROPPED)}. Tables dropped (nothing cites them): "
+                                    f"{', '.join(G.DROPPED_TABLES)}.{lost}", "")]))
+    return out
+
+
+def unplaced() -> list:
+    """The table labels of mlst_results.CAPTIONS that no tier holds and the placement does not drop (none, when the
+    placement is whole; check_citations.py --gallery fails on any)."""
+    placed = {k for t, *_ in G.TABLES for k in t.split(" + ")} | set(G.DROPPED_TABLES)
+    return sorted(label for label, *_ in C.M.CAPTIONS.values() if label not in placed)
 
 
 def draw_inventory(path: pathlib.Path) -> None:
-    import textwrap
-    wrapped = [[textwrap.wrap(c, w) or [""] for c, w in zip(r, (12, 9, 20, 24, 30))] for r in ROWS]
-    heights = [max(len(c) for c in r) * ROW_H * 0.82 + 0.12 for r in wrapped]
-    H = 1.6 + sum(heights)
-    fig = S.figure_cm(S.PRINT_W, H + 0.4)
-    ax = S.axes_cm(fig, 0.3, 0.9, 14.5, H - 0.5)
-    ax.set_xlim(0, 14.5)
-    ax.set_ylim(H - 0.5, 0)
+    fig = S.figure_cm(W, H)
+    ax = S.axes_cm(fig, 0, 0, W, H)
+    ax.set_xlim(0, W)
+    ax.set_ylim(H, 0)
     ax.axis("off")
-    for name, x in COLS:
-        ax.text(x, 0.2, name, fontsize=S.LEGEND_PT5, fontweight="bold", va="center")
-    ax.axhline(0.45, color="#000000", linewidth=0.6)
-    y = 0.6
-    for r, h in zip(wrapped, heights):
-        for (_, x), lines in zip(COLS, r):
-            ax.text(x, y, "\n".join(lines), fontsize=8.0, va="top", linespacing=1.05)
-        y += h
-        ax.axhline(y - 0.06, color="#BBBBBB", linewidth=0.3)
-    S.heading(fig, "Inventory: every figure of the paper, in paper order")
+    col_w = (W - (COLUMNS - 1) * GAP) / COLUMNS
+    col, y = 0, 0.0
+
+    def room(lines: int) -> float:
+        nonlocal col, y
+        if y + lines * LINE > H:
+            col, y = col + 1, 0.0
+            if col >= COLUMNS:
+                raise SystemExit("FATAL: the map does not fit one page; shorten the sentences")
+        return col * (col_w + GAP)
+
+    def wrap(text: str, bold: bool = False, indent: float = INDENT) -> list:
+        """Words filled to the column's width as drawn (TextToPath), the first line across it, the rest indent in."""
+        prop = FontProperties(size=PT, weight="bold" if bold else "normal")
+        width = lambda t: TextToPath().get_text_width_height_descent(t, prop, ismath="$" in t)[0] / 72 * 2.54
+        lines = [""]
+        for word in text.split():
+            line = f"{lines[-1]} {word}".strip()
+            if lines[-1] and width(line) > col_w - (indent if len(lines) > 1 else 0):
+                lines.append(word)
+            else:
+                lines[-1] = line
+        return lines
+
+    for heading, rows in blocks():
+        lines = wrap(heading, bold=True, indent=0)
+        x = room(len(lines) + 2)            # never a heading alone at the foot of a column
+        ax.text(x, y, "\n".join(lines), fontsize=PT, fontweight="bold", va="top", linespacing=SPACING)
+        y += LINE * (len(lines) + 0.15)
+        for num, ids, sentence in rows:
+            if isinstance(ids, tuple):          # a table row: one line, cells at BOOT_X
+                x = room(1)
+                for k, (dx, cell) in enumerate(zip(BOOT_X, ids)):
+                    ax.text(x + dx, y, cell, fontsize=PT, va="top", ha="left" if k == 0 else "right")
+                y += LINE
+                continue
+            lines = wrap(f"{num} ({ids}): {sentence}" if num else ids)
+            x = room(len(lines))
+            ax.text(x, y, lines[0], fontsize=PT, va="top")
+            if lines[1:]:
+                ax.text(x + INDENT, y + LINE, "\n".join(lines[1:]), fontsize=PT, va="top", linespacing=SPACING)
+            y += len(lines) * LINE
+        y += LINE * 0.4
     S.save(fig, path)
 
 
 PAGES = [
     C.Page(
         id="INVENTORY",
-        title="Inventory (round 4)",
+        title="The one-page map: placement of every figure and table",
         precedent=[],
-        precedent_label="None: the inventory the round-4 brief asks for",
-        caption="Every figure of the paper in paper order, main text then appendix: its panels, its series and the "
-                "colour and line encoding it uses. Colour names the model in every figure except the working points "
-                "of the mass-sculpting figures, the heatmaps, and the class and family figures, which use one fixed ten-color set.",
-        differs="Not a paper figure.",
-        draw=draw_inventory),
+        precedent_label="None: the map the PI's story-based cut asks for",
+        caption="Every figure and table of the paper by tier: main text, then appendix, then supplement, each with its "
+                "number within the tier, its gallery id or table label and the draft sentence it backs, of the abstract "
+                "or conclusions for the main text and of the main text for the appendix. Then the sculpting test, the "
+                "results book's numbers against the gallery ids and the figures and tables dropped.",
+        differs="Not a paper figure. Drawn across the whole gallery page, at the size it prints.",
+        draw=draw_inventory,
+        wide=True),
 ]

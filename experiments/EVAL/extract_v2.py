@@ -333,6 +333,17 @@ def load_headless(model, path: pathlib.Path) -> dict:
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
 
 
+def head_loaded(prov: dict, path: pathlib.Path, keep_head: bool) -> dict:
+    """The output layer's load counts (extract_features.load_trunk_or_die) for the manifest. With --keep-head-outputs
+    a missing or unexpected head tensor is FATAL: load_trunk_or_die tolerates them (strict=False), and the kept
+    outputs would then come from an output layer left at its random initialisation."""
+    counts = {k: prov[k] for k in ("head_missing", "head_unexpected")}
+    if keep_head and any(counts.values()):
+        raise SystemExit(f"FATAL: {path}: {counts['head_missing']} output-layer tensors missing and "
+                         f"{counts['head_unexpected']} unexpected; its head outputs would not be the checkpoint's")
+    return counts
+
+
 def head_score_columns(logits: np.ndarray, rung: str, signals: dict[str, int]) -> dict:
     """The per-jet output-layer scores the analyses read, from float32 logits.
 
@@ -696,7 +707,8 @@ def main(argv=None) -> int:
                 else ex.load_trunk_or_die(m, path, a.num_classes, a.num_reg))
         models[tag] = m.to(device).eval()
         meta["checkpoints"][tag] = {"checkpoint": str(path), "checkpoint_sha256": prov["sha256"],
-                                    **({"checkpoint_format": prov["format"]} if tag in headless else {})}
+                                    **({"checkpoint_format": prov["format"]} if tag in headless
+                                       else head_loaded(prov, path, a.keep_head_outputs))}
     if a.variants:
         iv = _load("input_variants", "experiments/EVAL/input_variants.py")
         s = iv.slots(iv.pf_names(dc))

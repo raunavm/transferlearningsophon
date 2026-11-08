@@ -18,6 +18,8 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 
 def _load(name, rel):
     spec = importlib.util.spec_from_file_location(name, REPO / rel)
+    if getattr(sys.modules.get(name), "__file__", None) == spec.origin:
+        return sys.modules[name]    # one module object per process, whichever file loaded it first
     m = importlib.util.module_from_spec(spec)
     sys.modules[name] = m           # the census workers unpickle census_file by module name
     spec.loader.exec_module(m)
