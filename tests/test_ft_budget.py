@@ -192,6 +192,24 @@ def test_from_scratch_full_schedule_cells_below_1e6_cover_every_task_and_size():
     assert all(c["out"].startswith("/data/results/ft_v2/budget_fulldecay/") for c in cells)
 
 
+def test_pretrained_full_schedule_cells_are_the_old_cells_run_to_their_last_epoch():
+    """The 188- and 17-class cells below 1e5 (PI 2026-11-08): the same cell as the one launched, every field but its
+    tree and patience_from, which runs it to the last epoch with the best validation epoch, as from scratch."""
+    cells = bfb.pre_full_cells("1e-3")
+    assert len(cells) == 36 and (cells[0]["task"], cells[0]["n"]) == ("top", 1000)
+    assert sorted({(c["task"], c["n"]) for c in cells}) == sorted(
+        [(t, n) for t in ("top", "qg") for n in (1_000, 10_000)] + [("jc1", 10_000), ("jc2b", 10_000)])
+    old = {(c["task"], c["init"], c["n"]): c for c in bfb.bench_cells("1e-3", "1e-3", ("top", "qg", "jc1"))
+           + bfb.jc2b_cells("1e-3", "1e-3") if c["init"]}
+    for c in cells:
+        assert c["init"].split("-")[0] in ("l188", "r16q1") and c["patience_from"] == c["epochs"] == 400
+        o = old[(c["task"], c["init"], c["n"])]
+        assert {k: v for k, v in c.items() if k not in ("out", "patience_from")} == {k: v for k, v in o.items() if k != "out"}
+        assert c["out"] == o["out"].replace("/ft_v2/budget/", "/ft_v2/budget_prefull/")
+        assert not es.decide({e: 1.0 if e == 0 else 0.5 for e in range(399)}, set(range(399)), c["patience"],
+                             c["patience_from"])[0]
+
+
 def test_long_control_cells_are_the_eleven_partition_runs_on_jetclass2_with_the_long_budget():
     ctrl = bfb.long_ctrl_cells("1e-3")
     assert sorted(c["init"] for c in ctrl) == sorted(r for r in bfb.paper_runs() if r.startswith(("rand", "flav")))

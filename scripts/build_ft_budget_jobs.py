@@ -61,6 +61,10 @@ LONG_ROOT = "/data/results/ft_v2/budget_long"
 LONG_FULL_ROOT = "/data/results/ft_v2/budget_long_fulldecay"
 BUDGET_FULL_ROOT = "/data/results/ft_v2/budget_fulldecay"    # the same below 1e6: patience from epoch 0 stopped
 # every from-scratch cell there before its decay began (2026-11-07)
+# pretrained below 1e5 with the stopping rule from scratch now uses (PI 2026-11-08): every one of the 153 pretrained
+# cells at 1e3 and 1e4 stopped by patience, so the 188- and 17-class runs are rerun to their last epoch, best validation
+PRE_FULL_ROOT, PRE_FULL_RUNS = "/data/results/ft_v2/budget_prefull", ("l188", "r16q1")
+PRE_FULL_SIZES = (("top", 1000), ("qg", 1000), ("top", 10000), ("qg", 10000), ("jc1", 10000), ("jc2b", 10000))
 LONG_EPOCHS, LONG_N, LONG_JC2B = 160, 1_000_000, ("r16q1-s1", "r16q1mass-s1", "r16q1mass-s2")
 SWEEP_ROOT = "/data/results/ft_v2/lrsweep_v2"     # the 500-step sweep stays in .../lrsweep (RUNS.csv)
 MTX_V2 = "/data/results/mtx_v2"
@@ -184,6 +188,14 @@ def scratch_full_cells(lr_scratch: str, lr_scratch_qg: str) -> list:
         out += [{**(c := cell(task, "", n, s, lr, BUDGET_FULL_ROOT)), "patience_from": c["epochs"]}
                 for n in sizes for s in SCRATCH_SEEDS]
     return out
+
+
+def pre_full_cells(lr_pre: str) -> list:
+    """The 188- and 17-class pretrained cells (three pretraining runs each) at every task and size below 1e5, their
+    own recipe run to the last epoch with the best validation epoch over all, as from scratch: 36 cells, top at 1e3
+    first (the size where the full schedule moved from scratch)."""
+    return [{**(c := cell(task, f"{r}-s{k}", n, 1, lr_pre, PRE_FULL_ROOT)), "patience_from": c["epochs"]}
+            for task, n in PRE_FULL_SIZES for r in PRE_FULL_RUNS for k in (1, 2, 3)]
 
 
 def long_ctrl_cells(lr_pre: str) -> list:
@@ -415,7 +427,7 @@ def main(argv=None) -> int:
     ap.add_argument("--indices", default=None,
                     help="comma-separated indices of the full kind's job: a -retry job of those cells only")
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl",
-                                                 "long-scratch-full", "scratch-full"))
+                                                 "long-scratch-full", "scratch-full", "pre-full"))
     a = ap.parse_args(argv)
     if a.indices and len(a.kinds) != 1:
         ap.error("--indices needs exactly one kind")
@@ -436,6 +448,7 @@ def main(argv=None) -> int:
                      "long-jc2b": lambda: long_cells("jc2b", a.lr_pre, a.lr_scratch),
                      "long-jc1": lambda: long_cells("jc1", a.lr_pre, a.lr_scratch),
                      "long-jc2b-ctrl": lambda: long_ctrl_cells(a.lr_pre),
+                     "pre-full": lambda: pre_full_cells(a.lr_pre),
                      "scratch-full": lambda: scratch_full_cells(a.lr_scratch, a.lr_scratch_qg or a.lr_scratch),
                      "long-scratch-full": lambda: (long_scratch_full_cells("jc2b", a.lr_scratch)
                                                    + long_scratch_full_cells("jc1", a.lr_scratch))}[kind]()
