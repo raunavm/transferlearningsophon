@@ -56,6 +56,9 @@ OUT_DIR = ROOT / "experiments" / "FT" / "k8s" / "budget"
 BUDGET_ROOT = "/data/results/ft_v2/budget"
 FILLCHECK_ROOT = "/data/results/ft_v2/fillcheck"
 LONG_ROOT = "/data/results/ft_v2/budget_long"
+# from scratch with its whole flat+decay schedule (2026-11-07): the long cells' patience counted from the decay's
+# start stopped them 10 of 48 decay epochs in, so their best checkpoints are all from the flat phase
+LONG_FULL_ROOT = "/data/results/ft_v2/budget_long_fulldecay"
 LONG_EPOCHS, LONG_N, LONG_JC2B = 160, 1_000_000, ("r16q1-s1", "r16q1mass-s1", "r16q1mass-s2")
 SWEEP_ROOT = "/data/results/ft_v2/lrsweep_v2"     # the 500-step sweep stays in .../lrsweep (RUNS.csv)
 MTX_V2 = "/data/results/mtx_v2"
@@ -159,6 +162,13 @@ def long_cells(task: str, lr_pre: str, lr_scratch: str) -> list:
            for s in SCRATCH_SEEDS]      # weaver's flat+decay: the last 30% of the epochs decay
     out += [cell(task, r, LONG_N, 1, lr_pre, LONG_ROOT) for r in inits]
     return [{**c, "epochs": LONG_EPOCHS} for c in out]
+
+
+def long_scratch_full_cells(task: str, lr_scratch: str) -> list:
+    """From scratch at 1e6 with the long budget run to its last epoch, ParT's recipe in full: no early stop, the
+    best validation epoch over all 160 (patience counted from the end)."""
+    return [{**cell(task, "", LONG_N, s, lr_scratch, LONG_FULL_ROOT), "epochs": LONG_EPOCHS, "patience_from": LONG_EPOCHS}
+            for s in SCRATCH_SEEDS]
 
 
 def long_ctrl_cells(lr_pre: str) -> list:
@@ -389,7 +399,8 @@ def main(argv=None) -> int:
                     "cells peaked at 53 GiB over 22 pods, and 88Gi kept them off nodes with a free GPU, 2026-11-07)")
     ap.add_argument("--indices", default=None,
                     help="comma-separated indices of the full kind's job: a -retry job of those cells only")
-    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl"))
+    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl",
+                                                 "long-scratch-full"))
     a = ap.parse_args(argv)
     if a.indices and len(a.kinds) != 1:
         ap.error("--indices needs exactly one kind")
@@ -409,7 +420,9 @@ def main(argv=None) -> int:
                      "kin": lambda: kin_cells(a.lr_pre),
                      "long-jc2b": lambda: long_cells("jc2b", a.lr_pre, a.lr_scratch),
                      "long-jc1": lambda: long_cells("jc1", a.lr_pre, a.lr_scratch),
-                     "long-jc2b-ctrl": lambda: long_ctrl_cells(a.lr_pre)}[kind]()
+                     "long-jc2b-ctrl": lambda: long_ctrl_cells(a.lr_pre),
+                     "long-scratch-full": lambda: (long_scratch_full_cells("jc2b", a.lr_scratch)
+                                                   + long_scratch_full_cells("jc1", a.lr_scratch))}[kind]()
             mem = "48Gi" if kind in ("bench", "kin") else "64Gi"
         if any(c["n"] >= 1_000_000 for c in cells):
             # weaver holds a whole training file in memory: 48Gi OOM-killed the top fill check at

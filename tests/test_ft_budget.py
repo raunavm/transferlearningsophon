@@ -172,6 +172,16 @@ def test_long_cells_are_the_runs_at_the_limit_with_four_times_the_budget():
         assert c.get("patience_from", 0) == (0 if c["init"] else 112)
 
 
+def test_from_scratch_full_schedule_cells_run_all_160_epochs_into_their_own_tree():
+    cells = bfb.long_scratch_full_cells("jc2b", "1e-3") + bfb.long_scratch_full_cells("jc1", "1e-3")
+    assert len(cells) == 6 and all(c["init"] == "" and c["n"] == 1_000_000 for c in cells)
+    for c in cells:
+        assert c["epochs"] == 160 and c["patience_from"] == 160       # no early stop before the last epoch
+        assert not es.decide({e: 1.0 if e == 0 else 0.5 for e in range(159)}, set(range(159)), c["patience"],
+                             c["patience_from"])[0]
+        assert c["out"].startswith("/data/results/ft_v2/budget_long_fulldecay/")
+
+
 def test_long_control_cells_are_the_eleven_partition_runs_on_jetclass2_with_the_long_budget():
     ctrl = bfb.long_ctrl_cells("1e-3")
     assert sorted(c["init"] for c in ctrl) == sorted(r for r in bfb.paper_runs() if r.startswith(("rand", "flav")))
