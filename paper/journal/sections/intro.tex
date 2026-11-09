@@ -97,7 +97,7 @@ the label sets are those of every later figure.}
 % CHECK: MlstCmpJcTwoRandOverCoarse < 1; MlstCmpJcTwoF{one,oner}OverFzero < 1 (both runs)
 % CHECK: MlstFtJcOneCoarseNRejDrop >= two and MlstFtJcOne{Res,Mid}NRejDrop = none, on the long-budget runs once all 30 are in
 % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull agree with 1 within their SD
-% CHECK: MlstCmpMlpResMassOverRes < 1 and MlstSculptCoarseMassOverCoarseOne < 1; MlstCmpJcTwoResMassOverRes within a few per cent of 1
+% CHECK: MlstCmpMlpResMassOverRes < 1; MlstCmpJcTwoResMassOverRes within a few per cent of 1 (sculpting is out of the findings: one mass-regression difference passes 3 sigma, PI 2026-11-09)
 We find that a linear probe on the frozen features loses performance on the classes that the label set
 merges, and loses the most when quark flavors are merged. At the same number of classes, the random
 partitions lose less than the \Kcoarse-class level, and a single flavor boundary lowers the error of the
@@ -106,8 +106,7 @@ fine-tuning, the \Kcoarse-class labels still lower the background rejection for 
 JetClass, a separate simulation with every input of the network present. On top tagging and quark/gluon
 discrimination, whose public datasets lack some of the network's inputs, the label sets agree within the
 spread between pretraining runs. The auxiliary mass regression makes the jet mass predictable from the
-frozen features and reduces the sculpting of the background mass distribution, at a small cost to the
-classification. A pretraining label set for jets should therefore contain every distinction that
+frozen features at a small cost to the classification. A pretraining label set for jets should therefore contain every distinction that
 downstream discriminants sum over, and the flavor boundaries. Section~\ref{sec:related} reviews related
 work, section~\ref{sec:methods} describes the data, the label sets and the evaluation,
 section~\ref{sec:results} presents the results, and section~\ref{sec:discussion} discusses them.

@@ -14,8 +14,9 @@ frozen features of every label set. Each model with the auxiliary mass regressio
 \MlstMassNRunsWord{} pretraining runs; its tables give both values, and the text quotes the one less
 favorable to the claim. The sculpting
 results use the QCD jets of the JetClass-II test set and the output scores of the four levels of the
-class hierarchy and of the two models with the auxiliary mass regression. The full output scores were
-extracted only for these models, so the random partitions are not part of the sculpting study.
+class hierarchy, of the two models with the auxiliary mass regression and of the three random partitions
+with controlled flavor boundaries. The full output scores were extracted only for these models, so the
+other random partitions are not part of the sculpting study.
 
 The auxiliary mass regression gives a narrower mass response than the reconstructed soft-drop mass.
 Over all test jets, the regressed mass of the \Kres-class model with the auxiliary mass regression % CHECK: MlstMassHeadResMassOverUncorr below 1 in both runs
@@ -96,67 +97,17 @@ classes, the larger loss share at \Kcoarse{} classes shows no larger cost; with 
 per model a modest one cannot be excluded, and a pair of models with the same loss share at both label
 sets would test it.
 
-Coarser labels sculpt the QCD mass distribution more, but only for tight selections. The
-Jensen--Shannon distance between the soft-drop mass distributions of the selected and of all QCD jets
-is larger for the \Kcoarse-class model than for the \Kfull-class model at QCD efficiencies from % CHECK: MlstSculptDiffEffLo and MlstSculptDiffEffHi bound the unbroken stretch of grid points around the 1% working point that pass the rule (today 0.52% and 1.2%; 1.8% fails, against the PI's note of 0.5 to 2 per cent)
-\MlstSculptDiffEffLo{} to \MlstSculptDiffEffHi{} (figure~\ref{fig:f10b}). At looser cuts these two % CHECK: MlstSculptCoarseOverFullTen within 2 SD of 1; 43/188 does exceed 2 SD at some looser cuts, so this sentence names only these two label sets
-label sets agree within their spread. Below that window, outside the range of figure~\ref{fig:f10b}, the
-mean ratio stays above one but within % CHECK: the window's lower edge MlstSculptDiffEffLo must stay at F10b's first point (gallery_physics F10B_FROM = 5e-3, the 0.52% grid point), so that nothing below it is in the figure
-% CHECK: 17/188 within 2 SD at the grid points between the lowest stored efficiency and the window (today z 1.9, 0.9, 0.5); at the lowest stored efficiency the rule passes (1.051 +- 0.005), so nothing here may say the label sets agree there
-twice its standard deviation, and at the lowest stored efficiency, \MlstSculptLowestEff{}, only \MlstSculptLowestNPass{} QCD jets pass. That is so few that a random % CHECK: MlstSculptLowestMaxFloorSd below 2 (today about 1.7); the PI's 2026-11-02 wording "within one SD" came from an imprecise mock-up summary and is not what the data show
-selection of the same number of jets gives a distance almost as large: every configuration lies within
-\MlstSculptLowestMaxFloorSd{} standard deviations of a random selection there, so the distances at the
-tightest cuts are close to those of a selection that ignores the mass. The upper edge likely marks
-where a cut starts to reach the jets that the label sets rank differently.
-
-\begin{figure}
-\centering
-\paperfig{\linewidth}{F10a}
-\caption{Soft-drop mass distribution of the QCD jets of the JetClass-II test set before any selection
-(inclusive) and after selections on the summed score of the resonant classes at QCD efficiencies $\epsB$ of
-\SculptEffHigh{} and \SculptEffLow, for the models pretrained on (a) \Kfull, (b) \Kres, (c) \Kmid{} and (d)
-\Kcoarse{} classes and on (e) \Kres{} and (f) \Kcoarse{} classes with the auxiliary mass regression (+ mass),
-each the mean over its runs. Horizontal bars show the bin width. The lower panels give the ratio to the
-inclusive distribution. The values are in table~\ref{tab:sculpt}.}
-\label{fig:f10a}
-\end{figure}
-
-\begin{figure}
-\centering
-\paperfig{\linewidth}{F10b}
-\caption{Jensen--Shannon distance $\dJS$ of equation~(\ref{eq:djs}) between the soft-drop mass distributions of
-the QCD jets of the JetClass-II test set before and after a selection on the summed score of the resonant
-classes, against the QCD efficiency $\epsB$ of the selection, for the models pretrained on \Kfull, \Kres,
-\Kmid{} and \Kcoarse{} classes and on \Kres{} and \Kcoarse{} classes with the auxiliary mass regression. Each
-point is the mean over runs: \MlstNRunsWord{} for each level of the class hierarchy and \MlstMassNRunsWord{}
-for each model with the auxiliary mass regression.}
-\label{fig:f10b}
-\end{figure}
-
-Inside that window the \Kfull-class model already sculpts: at the tighter of the two working points % CHECK: MlstSculptFullOverFloorOne above 1 by more than 2 SD (today 1.40 +- 0.08)
-its selection lies at \MlstSculptFullOverFloorOnePr{} of a random selection of the same size, and the % CHECK: MlstSculptCoarseOverFullOne above 1 by more than 2 SD (today 1.28 +- 0.05)
-\Kcoarse-class model's at \MlstSculptCoarseOverFullOnePr{} of the \Kfull-class model's
-(figure~\ref{fig:f10a}(a), (d); table~\ref{tab:sculpt}). The difference does not come from the mass
-content of the labels: a class is defined by its decay products, so every class spans the whole mass
-range, and the reweighting flattens each category in $p_{\mathrm{T}}$ and $\msd$. It
-lies instead in how each network rejects QCD jets. Without quark-flavor classes, the \Kcoarse-class model likely
-relies more on prong structure, which for QCD jets changes with $\msd/p_{\mathrm{T}}$, and
-less on flavor and displaced vertices, which change little with the mass. The \Kmid-class model keeps
-the quark-flavor boundaries that the \Kcoarse-class level removes while merging other distinctions, so
-it tests this explanation: if flavor is the cause, it sculpts like the \Kfull-class model. Its % CHECK: MlstSculptMidOne between MlstSculptFullOne and MlstSculptCoarseOne with SD comparable to their difference (today 0.051 +- 0.007 vs 0.044 and 0.056); rewrite if it sides with either
-distance lies between the two, with a spread comparable to their difference (table~\ref{tab:sculpt}),
-so the test does not yet decide.
-
-The auxiliary mass regression reduces the sculpting of the \Kcoarse-class model at the tighter
-working point: with it, the selection reaches \MlstSculptCoarseMassOverCoarseOnePr{} of the % CHECK: MlstSculptCoarseMassOverCoarseOnePr states a reduction (both runs below 1 beyond twice the hierarchy-level SD, the Methods two-run rule; today about 0.70 and 0.82); if it reads "equal within", rewrite "reduces"
-\Kcoarse-class model's (figures~\ref{fig:f10a}(f) and~\ref{fig:f10b}). A likely reason is that features which carry
-the jet mass let the classification judge prong structure against the mass itself, so the QCD jets it
-keeps follow their original mass distribution more closely. The \Kres-class pair tests this, since the
-same mechanism should act there. At this working point it does not support the mechanism (distance with % CHECK: MlstSculptResMassOverResOnePr reads "equal within" (today 0.962 and 0.983), MlstSculptResMassOverResTenPr states a reduction (0.789 and 0.860) and MlstSculptCoarseMassOverCoarseTenPr reads "equal within" (0.941 and 0.789), all under the Methods two-run rule; if any changes, rewrite
-over without the auxiliary mass regression: \MlstSculptResMassOverResOnePr{}); at \SculptEffHigh{} the
-\Kres-class pair falls (\MlstSculptResMassOverResTenPr{}) and the \Kcoarse-class pair does not
-(\MlstSculptCoarseMassOverCoarseTenPr{}; table~\ref{tab:sculpt}), so where the reduction appears depends
-on the label set.
+% PI 2026-11-09: the main text reports exactly the sculpting differences beyond 3 sigma (tab:sculptboot,
+% gallery_placement.F10B_STATED, tested against sculpting_boot.json) and nothing else; figures, tables and the
+% floor are in appendix sec:app-sculpt.
+A cut on the pretraining head of the \Kmid- or the \Kcoarse-class model sculpts the QCD mass distribution
+more than a cut on the \Kfull-class head, each at one working point, and the auxiliary mass regression reduces
+the sculpting by the \Kres-class head. These are the only differences between pretraining heads that exceed
+three times their uncertainty (table~\ref{tab:sculptboot}): the \Kcoarse-class head at a QCD efficiency of
+\SculptEffLow, the \Kmid-class head at \SculptEffHigh{} and the \Kres-class head with the auxiliary mass
+regression at \SculptEffHigh. Every other difference lies within its uncertainty, among them the auxiliary mass
+regression at \Kcoarse{} classes and the three random partitions with controlled flavor boundaries against
+the \Kfull-class model (appendix~\ref{sec:app-sculpt}).
 
 % BEGIN XBX
 \subsection{$X\to b\bar b$ and $X\to bs$ resonance tagging}\label{sec:xbx}

@@ -566,6 +566,12 @@ figure~\ref{fig:f3} lie.
 
 \input{tables/mlst_pairs}
 
+Table~\ref{tab:qcdhf} gives the rejection of QCD jets by Sophon's $X\to b\bar b$ discriminant read from the
+frozen features, for QCD jets with two or more $b$ quarks, with one, and for all QCD jets, each subclass at its
+share of the natural test set.
+
+\input{tables/mlst_qcdhf}
+
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{F4-app}
@@ -708,11 +714,79 @@ resolution to those of the soft-drop mass.}
 \label{fig:a17probe}
 \end{figure}
 
-Table~\ref{tab:sculpt} gives the values behind figures~\ref{fig:f10a} and~\ref{fig:f10b} at QCD efficiencies of
-\SculptEffHigh{} and \SculptEffLow, beside the distance that a random selection of as many QCD test jets
-gives.
+\subsection{Mass sculpting}\label{sec:app-sculpt}
+
+Figure~\ref{fig:f10a} shows the soft-drop mass of the QCD test jets before and after a cut on the pretraining
+head at QCD efficiencies of \SculptEffHigh{} and \SculptEffLow, and figure~\ref{fig:f10b} the distance $\dJS$
+of equation~(\ref{eq:djs}) against the QCD efficiency of the cut. Table~\ref{tab:sculpt} gives the distances
+at the two working points beside that of a random selection of as many QCD jets. At a given $\epsB$ every
+model passes the same number of QCD jets, so this floor is common to all of them and does not enter a
+difference between two models. Table~\ref{tab:sculptboot} tests those differences as section~\ref{sec:evaluation}
+describes. The differences that exceed three times their uncertainty are the \Kcoarse-class model against the \Kfull-class
+model at \SculptEffLow, the \Kmid-class model against the \Kfull-class model at \SculptEffHigh, and the
+\Kres-class model with the auxiliary mass regression against the one without it at \SculptEffHigh. The three
+random partitions with controlled flavor boundaries (figures~\ref{fig:f10bflav} and~\ref{fig:f10aflav}) differ
+from the \Kfull-class model by less. Figure~\ref{fig:f10c} places every model in the plane of the DisCo
+paper~\cite[figure~3]{disco}, the background rejection against the inverse Jensen--Shannon divergence at the cut
+that keeps 50\% of the resonant jets; there no difference reaches three times its uncertainty
+(table~\ref{tab:sculptboot}).
+% CHECK: the three differences named here are exactly gallery_placement.F10B_STATED, the passes in
+% experiments/FIGS/data/v2/head/sculpting_boot.json (tests/test_gallery_placement.py)
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{F10a}
+\caption{Soft-drop mass distribution of the QCD jets of the JetClass-II test set before any selection
+(inclusive) and after a cut on the pretraining head, on one minus the summed score of the QCD classes, at QCD
+efficiencies $\epsB$ of \SculptEffHigh{} and \SculptEffLow, for the networks pretrained on (a) \Kfull, (b)
+\Kres, (c) \Kmid{} and (d) \Kcoarse{} classes, each the mean over its \MlstNRunsWord{} runs. Horizontal bars
+show the bin width. The lower panels give the ratio to the inclusive distribution. The values are in
+table~\ref{tab:sculpt}.}
+\label{fig:f10a}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{F10b}
+\caption{Jensen--Shannon distance $\dJS$ of equation~(\ref{eq:djs}) between the soft-drop mass distributions of
+the QCD jets of the JetClass-II test set before and after a cut on the pretraining head, against the QCD
+efficiency $\epsB$ of the cut, for the networks pretrained on \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes
+(\MlstNRunsWord{} runs each) and on \Kres{} and \Kcoarse{} classes with the auxiliary mass regression
+(\MlstMassNRunsWord{} runs each). Lines are means over runs, bands the standard deviation (the range for two
+runs). Black dashed: a random selection of as many QCD jets.}
+\label{fig:f10b}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{F10b-flav}
+\caption{As figure~\ref{fig:f10b}, for the random partitions with no flavor boundary, a $b$-quark boundary and a
+random flavor boundary (\RandFlavRuns{} runs each), with the \Kfull-class networks for reference.}
+\label{fig:f10bflav}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{F10a-flav}
+\caption{As figure~\ref{fig:f10a}, for the random partitions with (a) no flavor boundary, (b) a $b$-quark
+boundary and (c) a random flavor boundary, each the mean over its \RandFlavRuns{} runs.}
+\label{fig:f10aflav}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{F10c}
+\caption{Cuts on the pretraining head in the plane of the DisCo paper~\cite[figure~3]{disco}: the inverse
+Jensen--Shannon divergence between the soft-drop mass of all QCD test jets of JetClass-II and of those passing
+the cut, against the QCD rejection $R_{50}$, both at the cut that keeps 50\% of the resonant test jets, for
+every network with a pretraining head in figures~\ref{fig:f10b} and~\ref{fig:f10bflav}. Points are means over
+runs, bars the standard deviation (the range for two runs).}
+\label{fig:f10c}
+\end{figure}
 
 \input{tables/mlst_sculpt}
+
+\input{tables/mlst_sculpt_boot}
 
 \subsection{Resonance tagging of $X\to b\bar b$ and $X\to bs$}\label{sec:app-xbxres}
 % CHECK: pending X->bb/X->bs samples; drop this subsection with F9 if they are not staged by 2026-11-12

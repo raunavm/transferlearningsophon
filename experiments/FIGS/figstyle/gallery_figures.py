@@ -35,7 +35,8 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
 # F11 waits for its samples, and the pages still coming back through the gallery are not here; F3, F3-scatter, F4 and
 # F4-app were dropped (gallery_placement.DROPPED, PI 2026-11-08)
 PAPER = ("F1", "F2a", "F2b", "F3-app", "F3-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F6", "F6-app", "F8",
-         "A8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "A3R", "A3R-ft", "VAL")
+         "A8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",
+         "A3R", "A3R-ft", "VAL")      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
 
 
 def main() -> int:

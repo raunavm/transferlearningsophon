@@ -499,7 +499,7 @@ def test_the_render_job_builds_the_paper_and_keeps_the_mockup_spec(tmp_path):
     O = _mod("build_render_job_base", f)       # REPO / an absolute path is that path
     commit = "abcdef1" + "0" * 33
     spec = lambda X: X.SPEC.format(short=commit[:7], commit=commit, image=X.IMAGE, pins=X.PINS,
-                                   tectonic=X.TECTONIC, **X.MOCKUPS)
+                                   tectonic=X.TECTONIC, line=85, **X.MOCKUPS)     # the default storage line
     assert spec(R) == spec(O)
 
 

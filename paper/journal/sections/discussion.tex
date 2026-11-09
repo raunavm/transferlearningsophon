@@ -42,13 +42,12 @@ table~\ref{tab:jetclass}). Keep the QCD classes apart where a downstream task se
 flavor: merging them leaves the resonant classes unchanged but costs the QCD pairs
 (table~\ref{tab:pairs}) and the one discriminant that sums QCD classes
 (table~\ref{tab:usecase}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of tab:pairs show 162 above 188
-Add an auxiliary mass regression: it puts the jet mass into the frozen features and lowers the sculpting
-of the QCD mass distribution, for the \Kcoarse-class model at a QCD efficiency of \SculptEffLow{} and for
-the \Kres-class model at \SculptEffHigh{} (tables~\ref{tab:mass} and~\ref{tab:sculpt} and
-figures~\ref{fig:f9a}, \ref{fig:f10a} and~\ref{fig:f10b}). Its cost to the classification of the pretraining classes
+Add an auxiliary mass regression: it puts the jet mass into the frozen features (table~\ref{tab:mass} and
+figure~\ref{fig:f9a}). Its effect on mass sculpting is resolved only for the \Kres-class model at a QCD
+efficiency of \SculptEffHigh, where it reduces it (table~\ref{tab:sculptboot}). Its cost to the classification of the pretraining classes
 is small; after fine-tuning on top tagging neither label set with it shows a change beyond the uncertainty
 of $R_{30}$, and \MlstMassNRunsWord{} runs per model cannot exclude a modest one
-(section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; MlstSculptCoarseMassOverCoarseOnePr and MlstSculptResMassOverResTenPr state a reduction under the Methods two-run rule (today 0.697, 0.824 and 0.789, 0.860); as section 4.6 states, MlstFtTopRthirtyResMassOverResPr and MlstFtTopRthirtyCoarseMassOverCoarsePr read "equal within" under the Methods two-run rule (raw R30 today: 1.12 and 0.89; 0.90 and 0.92); if either states a direction beyond MlstBootTestMaxRthirtyFt, rewrite both sections
+(section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; the sculpting clause is gallery_placement.F10B_STATED's 162mass-162 at eps_B 10% (the only mass-regression difference beyond 3 sigma in sculpting_boot.json, PI 2026-11-09); as section 4.6 states, MlstFtTopRthirtyResMassOverResPr and MlstFtTopRthirtyCoarseMassOverCoarsePr read "equal within" under the Methods two-run rule (raw R30 today: 1.12 and 0.89; 0.90 and 0.92); if either states a direction beyond MlstBootTestMaxRthirtyFt, rewrite both sections
 For benchmarks with missing inputs, compare label sets by fine-tuning with the missing input features
 set to zero, which gives every label set identical inputs; input dropout during pretraining, which
 replaces some inputs with zeros, is the published alternative~\cite{omnilearn,jpjepa}. Report the variation between pretraining runs, because the

@@ -354,8 +354,7 @@ tagging or quark/gluon discrimination, and never as a table headline. $\Delta\AU
 $c$ against the rest with that of the \Kfull-class model of the same seed, in percentage points.
 
 No published jet foundation model reports results for every class it is pretrained on. Sophon and GloParT sum
-classes into discriminants~\cite{sophon,glopartdp}, and OmniLearned evaluates its classes only through a summed
-anomaly score~\cite{omnilearned}. We show all \Kfull{} JetClass-II classes in one heatmap of $\Delta\AUC_c$
+classes into discriminants~\cite{sophon,glopartdp}. We show all \Kfull{} JetClass-II classes in one heatmap of $\Delta\AUC_c$
 (figure~\ref{fig:f3}). The classes are grouped by their \Kcoarse-class parent, and the color scale is linear,
 diverging and centered at zero, after the per-class heatmap of JetParticle-JEPA~\cite{jpjepa}.
 
@@ -404,9 +403,15 @@ QCD test jets and $h_{\mathrm{QCD}}$ of all QCD test jets by their Jensen--Shann
 where $D_{\mathrm{KL}}$ is the Kullback--Leibler divergence with logarithms to base 2. $\dJS$ is the square root of
 the Jensen--Shannon divergence~\cite{lin}, a metric between distributions~\cite{endres}, and lies between 0 and 1;
 figure~\ref{fig:f10b} also traces it over a grid of QCD efficiencies $\epsB$. A random selection of as many QCD jets
-gives a distance above zero from the size of the sample alone. The expected distance of such a selection,
-drawn without replacement, is therefore the floor against which each distance is read: it asks whether a
-distance is larger than a random selection of the same size would give.
+gives a distance above zero from the size of the sample alone; its expected value, for a selection drawn
+without replacement, is shown beside each distance. At a given $\epsB$ every model passes the same number of QCD
+jets, so this floor is the same for all of them, and a difference between two models is tested directly. For a
+configuration and its reference we average the difference in $\dJS$ over the seeds they share. Its uncertainty
+$\sigma$ adds in quadrature the standard deviation of the per-seed differences and the standard deviation of
+the average over bootstrap replicas of the test jets, in which the QCD and the resonant jets are resampled with
+replacement and every network is scored on the same replica. A difference is reported when it exceeds three
+times $\sigma$. At the cut that keeps 50\% of the resonant jets we also give the background rejection $R_{50}$
+and the inverse Jensen--Shannon divergence, as the DisCo paper does~\cite{disco}.
 
 We repeat Sophon's resonance-tagging benchmark~\cite[Sec.~III]{sophon} at every label set, for a spin-0
 resonance $X$ of mass \XbxMx~GeV decaying to $b\bar b$ or to $bs$. In the \Kfull- and \Kres-class models,

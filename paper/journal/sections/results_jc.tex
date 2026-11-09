@@ -87,7 +87,11 @@ table~\ref{tab:probes}). The merge from \Kfull{} to \Kres{} classes moves no bou
 classes: it removes only the division of QCD jets by their numbers of $b$, $c$ and $s$ quarks, which
 the loss then stops rewarding. Of the discriminants in table~\ref{tab:usecase}, this merge removes only
 one, a score against QCD jets split by their heavy-flavor content, as in the QCD subclasses that GN3X
-distinguishes~\cite{atlasgnx}. Only an analysis that needs that subdivision pays for the merge.
+distinguishes~\cite{atlasgnx}. Only an analysis that needs that subdivision pays for the merge. The merge
+does not lower the rejection of $b$-flavored QCD jets by Sophon's $X\to b\bar b$ discriminant read from
+the frozen features: with \Kres{} classes the linear probe rejects QCD jets with one or with two $b$ quarks as
+the \Kfull-class probe does, within the spread between runs (table~\ref{tab:qcdhf}).
+% CHECK: tab:qcdhf, 162 against 188 classes in the b and bb columns within one SD of each other (2026-11-09: 1,134 +- 117 vs 1,101 +- 151; 74 +- 5 vs 66 +- 5)
 % CHECK: MlstCmpJcTwoQcdResOverFull > 1 by more than 2 SD (today 1.087 +- 0.006).
 
 At a fixed number of classes, which classes are merged decides the cost. A random partition with
