@@ -27,10 +27,8 @@ F10B_WP = "eps_b=0.01"
 F10B_STATED = (("17-188", "eps_b=0.01"), ("43-188", "eps_b=0.1"), ("162mass-162", "eps_b=0.1"))
 # a placement that waits on a result; the two tables only while they hold pending cells (make_results_book sets a
 # PROVISIONAL table with its pending cells, and a box for a PROVISIONAL figure not drawn yet)
-PROVISIONAL = {"F11": SAMPLES, "F4-mech-ft": FT_READOUT, "F10-ft": FT_READOUT, "tab:xbx": SAMPLES, "tab:xbxrej": SAMPLES,
-               "tab:pairs": "its fine-tuned columns wait for the fine-tuned read-out"}
-SCULPT_FLAV = ("No flavor-boundary partition sculpts the QCD mass differently from 188 classes by more than three times "
-               "the uncertainty.")
+PROVISIONAL = {"F11": SAMPLES, "tab:xbx": SAMPLES, "tab:xbxrej": SAMPLES}     # the fine-tuned read-out is in (2026-11-09)
+SCULPT_FLAV = "No flavor-boundary partition sculpts the QCD mass differently from 188 classes beyond 3σ."
 FJ_S = "Cited beside [[FJ]]: partitions, linear probes, from scratch."
 SCATTER_S = "Cited from [[F3-main]]: the other scatter panels."
 XBX = "X→bb̄ and X→bs transfer: written when the samples arrive."
@@ -55,7 +53,8 @@ _FIGURES = (
     ("FJ", APPENDIX, "[[tab:jetclass]]'s rejections come from these per-class ROC curves."),
     ("F4-other", APPENDIX, "On the other flavor pairs the 17-class probes separate least, 43 classes as little on X→ee "
                            "vs μμ; 162 classes, merging QCD, lose on QCD bb̄ vs cc̄."),
-    ("F4-mech-ft", APPENDIX, "The fine-tuned pairs are quoted from [[tab:pairs]]'s fine-tuned columns."),
+    ("F4-mech-ft", APPENDIX, "After fine-tuning, 17 classes still separate the quark-flavor pairs worse than 188, by "
+                             "less than linear probes do; a b-quark boundary recovers part of it on X→bb̄ vs cc̄ only."),
     ("PT", APPENDIX, "In every jet-pT bin the JetClass-II probes keep the label-set order, and 17 classes stay lowest on "
                      "JetClass after fine-tuning and on X→bb̄ vs cc̄."),
     ("F6", APPENDIX, "Fine-tuned on top and quark/gluon tagging, Pythia and Herwig, the label sets differ by about the "
@@ -73,8 +72,8 @@ _FIGURES = (
     ("F10c", APPENDIX, "At 50% resonant efficiency no label-set difference in QCD mass sculpting exceeds three times "
                        "its uncertainty."),
     ("F10a-flav", APPENDIX, SCULPT_FLAV),
-    ("F10-ft", APPENDIX, "After fine-tuning on JetClass-II the same comparison on natural-mix test jets; the sentence "
-                         "waits for the read-out."),
+    ("F10-ft", APPENDIX, "Fine-tuned on class-balanced JetClass-II, every network sculpts the QCD mass several times "
+                         "more than the pretraining heads, with or without pretraining, all within the run spread."),
     ("UMAP-jc2-had", APPENDIX, "Qualitatively, 188-class frozen features separate X→bb̄, cc̄ and qq̄ and 17-class ones "
                                "only order them; after fine-tuning both separate them."),
     ("VAL", APPENDIX, "Validation accuracy levels off for every label set during pretraining."),

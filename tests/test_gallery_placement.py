@@ -48,10 +48,9 @@ def test_the_main_text_is_the_pis_list_in_order():
     assert main == ["F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11"]
     assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:jetclass", "tab:benchtop + tab:benchqg", "tab:mass",
                                                           "tab:xbx", "tab:xbxrej"]
-    ft = "waits for the fine-tuned read-out"
-    assert G.PROVISIONAL == {"F11": "waits for the samples", "F4-mech-ft": ft, "F10-ft": ft,
-                             "tab:xbx": "waits for the samples", "tab:xbxrej": "waits for the samples",
-                             "tab:pairs": "its fine-tuned columns wait for the fine-tuned read-out"}
+    # the fine-tuned read-out is in (2026-11-09): only X->bb/X->bs waits, for its samples
+    assert G.PROVISIONAL == {"F11": "waits for the samples", "tab:xbx": "waits for the samples",
+                             "tab:xbxrej": "waits for the samples"}
     assert set(G.PROVISIONAL) <= set(G.TIER) and all(v.isascii() for v in G.PROVISIONAL.values())    # the book's boxes
     # F10b in the appendix between F10a and F10c, F10b-flav beside it: the bootstrap's 17 + mass - 17 at 1% is -2.0 sigma
     appendix = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
@@ -143,11 +142,11 @@ def _book(monkeypatch, tmp_path):
 def test_the_book_sets_pending_cells_only_in_a_provisional_table(monkeypatch, tmp_path):
     book = _book(monkeypatch, tmp_path)
     tex = "\\begin{table}[t]\n\\caption{A.}\\label{%s}\n1 & \\pending{no run yet} \\\\\n\\end{table}\n"
-    for key in ("tab:pairs", "tab:probes"):
+    for key in ("tab:xbx", "tab:probes"):
         (tmp_path / "tables" / f"{book.TABLE_FILE[key]}.tex").write_text(tex % key)
-    assert "tab:pairs" in G.PROVISIONAL and "tab:probes" not in G.PROVISIONAL
-    out = book.table_item("tab:pairs", G.APPENDIX)
-    assert "\\pending{no run yet}" in out and "\\label{tab:pairs}" in out and "fbox" not in out
+    assert "tab:xbx" in G.PROVISIONAL and "tab:probes" not in G.PROVISIONAL
+    out = book.table_item("tab:xbx", G.MAIN)
+    assert "\\pending{no run yet}" in out and "\\label{tab:xbx}" in out and "fbox" not in out
     with pytest.raises(SystemExit, match="still has"):
         book.table_item("tab:probes", G.APPENDIX)
 

@@ -474,16 +474,17 @@ def _floor(sc: dict, m: str) -> dict:
     return {e: f for e, (_, f) in M._curve(sc, m).items()}
 
 
-def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str) -> None:
+def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs: dict | None = None) -> None:
     """Round 4: exact size, one 10 cm panel, the legend above it; each row's mean over runs with a band of the spread
     over runs (gallery_bands.spread_band), the label sets solid and filled, the mass models dashed and hollow (mode "mass"); the
-    floor black dashed; both axes logarithmic, labelled in plain numbers."""
+    floor black dashed; both axes logarithmic, labelled in plain numbers. runs: {row: models}, RUNS by default."""
+    runs = RUNS if runs is None else runs
     fig = S.figure_cm(S.PRINT_W, 10.6)
     ax = S.axes_cm(fig, 3.2, 2.4, 9.6, 7.1)
     S.fine_grid(ax)
     drawn = []
     for row in rows:
-        have = [sc[m]["curve"] for m in RUNS[row] if m in sc]
+        have = [sc[m]["curve"] for m in runs[row] if m in sc]
         if not have:
             continue
         eff = np.array([c["eff"] for c in have[0]], float)
@@ -497,14 +498,14 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str) -> N
         drawn.append(row)
     if not drawn:
         raise Absent("no mass sculpting curve of the models shown")
-    ref = _floor(sc, next(m for m in RUNS[drawn[0]] if m in sc))
+    ref = _floor(sc, next(m for m in runs[drawn[0]] if m in sc))
     eff = np.array(sorted(ref))
     keep = eff >= F10B_FROM
     ax.plot(eff[keep], [ref[e] for e in eff[keep]], **S.REFERENCE, zorder=1.5, label="random selection of as many QCD jets")
     ax.set_xscale("log")
     ax.set_yscale("log")
     for axis, lim, at in ((ax.xaxis, ax.get_xlim(), (0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5)),
-                          (ax.yaxis, ax.get_ylim(), (0.002, 0.005, 0.01, 0.02, 0.05, 0.1))):
+                          (ax.yaxis, ax.get_ylim(), (0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5))):
         axis.set_major_locator(FixedLocator([v for v in at if lim[0] <= v <= lim[1]]))
         axis.set_major_formatter(FuncFormatter((lambda v, _: f"{100 * v:g}%") if axis is ax.xaxis else (lambda v, _: f"{v:g}")))
         axis.set_minor_formatter(NullFormatter())       # efficiency in percent, as F10a's working points
@@ -536,7 +537,11 @@ def draw_f10_ft(path: pathlib.Path) -> None:
     sc = {p.stem.removesuffix("_sculpting"): json.loads(p.read_text()) for p in sorted((P.DATA / SCULPT_FT).glob("*.json"))}
     if not sc:
         raise Absent(f"no fine-tuned sculpting files ({SCULPT_FT}/<model>.json)")
-    _sculpt_curves(path, sc, SCULPT_ROWS, "Mass sculpting of QCD jets after fine-tuning on JetClass-II")
+    scratch = [f"scratch-s{k}" for k in (1, 2, 3)]
+    if not all(m in sc for m in scratch):
+        raise Absent(f"the three from-scratch networks' sculpting files ({SCULPT_FT}/scratch-s<k>.json)")
+    _sculpt_curves(path, sc, SCULPT_ROWS + ("SCRATCH",), "Mass sculpting of QCD jets after fine-tuning on JetClass-II",
+                   {**RUNS, "SCRATCH": scratch})
 
 
 # ------------------------------------------------------------------ F10c (DisCo Fig. 3's plane)
@@ -843,11 +848,11 @@ F10B_FLAV_CAPTION = (
     "those passing a cut on 1 - g_QCD, against its QCD efficiency eps_B. Bands: range over runs, SD over three. "
     "Black dashed: a random selection of as many QCD jets.")
 F10_FT_CAPTION = (
-    "Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (three runs) and with 162 and 17 classes "
-    "plus mass regression (two runs), fine-tuned on one million class-balanced JetClass-II jets and scored on 2 "
-    "million JetClass-II test jets in their natural class mix: Jensen-Shannon distance between QCD soft-drop mass "
-    "before and after a cut on 1 - g_QCD, against its QCD efficiency eps_B. Bands: SD over runs, range over two. "
-    "Black dashed: random selection of as many QCD jets.")
+    "Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (three runs) and 162 and 17 classes plus "
+    "mass regression (two runs), and the same network without pretraining (three seeds), fine-tuned on one million "
+    "class-balanced JetClass-II jets and scored on 2 million natural-mix test jets: Jensen-Shannon "
+    "distance between QCD soft-drop mass before and after a cut on 1 - g_QCD, against QCD efficiency eps_B. Bands: "
+    "SD, range over two. Black dashed: random selection of as many QCD jets.")
 F10C_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II, used without further training, in the "
     "plane of the DisCo paper's Fig. 3: the inverse Jensen-Shannon divergence between the soft-drop mass of all "
@@ -1007,7 +1012,7 @@ PAGES = [
          "the floor is F10b's: a random selection of as many QCD jets.",
          draw_f10_ft,
          "Reads head/sculpting_ft/<model>.json (experiments/EVAL/sculpting_ft.py): the curve's js_distance and n_pass; "
-         "absent until pulled. From scratch is added after the reruns."),
+         "absent until pulled. From scratch: the three full-schedule networks (scratch-s1..3), dark grey dashed."),
     Page("F11", "Resonance tagging", ["2405.12972/fig2.png"], "Sophon Fig. 2", F11_CAPTION,
          "Same layout, limits on x, fonts and legend place; round 3's faint grid and thinner lines. y axis eps_S/sqrt(eps_B), in words figure of merit, instead of the "
          "significance Z, and x axis QCD efficiency instead of SM background efficiency, because Z needs the SM backgrounds, which "
