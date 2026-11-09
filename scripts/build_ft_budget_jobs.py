@@ -419,8 +419,13 @@ def cell_cases(cells: list) -> str:
                    f"VAL={c['val']}; PATFROM={c.get('patience_from', 0)}; CELL={c['out']};;\n" for i, c in enumerate(cells))
 
 
+GPU_POOLS = ("gpu", "a100")     # nvidia.com/<pool>: NRP's A100s are their own resource (cms-ml quota 26, shared)
+
+
 def spec(name: str, cells: list, tag: str, parallelism: int, memory: str, cpu: int = 4,
-         line: int = storage_line.GENERAL) -> str:
+         line: int = storage_line.GENERAL, pool: str = "gpu") -> str:
+    if pool not in GPU_POOLS:
+        raise SystemExit(f"FATAL: GPU pool {pool}: one of {GPU_POOLS}")
     launch = _launch()
     script = (CELL_SCRIPT.replace("__LINE__", str(storage_line.check(line))).replace("__CASES__", cell_cases(cells)).replace("__TASKS__", task_cases())
               .replace("__BATCH__", str(BATCH)).replace("__HERWIG__", " ".join(HERWIG_TEST)))
@@ -435,6 +440,10 @@ def spec(name: str, cells: list, tag: str, parallelism: int, memory: str, cpu: i
     exclude = ", ".join(f'"{n}"' for n in launch.V2_BAD_NODES + launch.V2_LATER_BAD_NODES)
     if len(name) > 63:
         raise SystemExit(f"{name}: too long")
+    # the A100 resource itself picks the product; the general pool lists the products we accept
+    products = "" if pool == "a100" else (
+        "              - key: nvidia.com/gpu.product\n                operator: In\n"
+        f"                values: [{', '.join(repr(g).replace(chr(39), chr(34)) for g in launch.V2_FT_GPU)}]\n")
     return f"""apiVersion: batch/v1
 kind: Job
 metadata:
@@ -471,8 +480,8 @@ spec:
         - |
 {body}
         resources:
-          requests: {{ memory: "{memory}", cpu: "{cpu}", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
-          limits:   {{ memory: "{memory}", cpu: "{cpu}", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }}
+          requests: {{ memory: "{memory}", cpu: "{cpu}", nvidia.com/{pool}: "1", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "{memory}", cpu: "{cpu}", nvidia.com/{pool}: "1", ephemeral-storage: "20Gi" }}
         volumeMounts:
         - {{ name: data, mountPath: /data }}
         - {{ name: dshm, mountPath: /dev/shm }}
@@ -486,10 +495,7 @@ spec:
               - key: topology.kubernetes.io/region
                 operator: In
                 values: ["us-west"]
-              - key: nvidia.com/gpu.product
-                operator: In
-                values: [{", ".join(f'"{g}"' for g in launch.V2_FT_GPU)}]
-              - key: kubernetes.io/hostname
+{products}              - key: kubernetes.io/hostname
                 operator: NotIn
                 values: [{exclude}]
       volumes:
@@ -512,6 +518,9 @@ def main(argv=None) -> int:
     ap.add_argument("--name-suffix", default="", help="a second job of the same cells, e.g. cpu3")
     ap.add_argument("--mem", default="", help="memory per pod, overriding the rule below (64Gi: the long JetClass "
                     "cells peaked at 53 GiB over 22 pods, and 88Gi kept them off nodes with a free GPU, 2026-11-07)")
+    ap.add_argument("--gpu-pool", default="gpu", choices=GPU_POOLS,
+                    help="a100: request nvidia.com/a100 (NRP's separate A100 pool) instead of nvidia.com/gpu")
+    ap.add_argument("--part", default=None, help="with --indices: the name of one part of a kind split over GPU pools")
     ap.add_argument("--indices", default=None,
                     help="comma-separated indices of the full kind's job: a -retry job of those cells only")
     ap.add_argument("--rerun", action="append", default=[], metavar="TASK:N",
@@ -521,6 +530,8 @@ def main(argv=None) -> int:
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full"))
     a = ap.parse_args(argv)
+    if a.part and not a.indices:
+        ap.error("--part needs --indices")
     if a.indices and len(a.kinds) != 1:
         ap.error("--indices needs exactly one kind")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -564,11 +575,12 @@ def main(argv=None) -> int:
         name = f"ft-budget-{kind}-raunav"
         if a.indices:
             cells = [cells[int(i)] for i in a.indices.split(",")]
-            name = f"ft-budget-{kind}-retry-raunav"
+            # --part: one part of a kind split over GPU pools (disjoint indices, never also run by another job)
+            name = f"ft-budget-{kind}-{a.part}-raunav" if a.part else f"ft-budget-{kind}-retry-raunav"
         if a.name_suffix:
             name = name.replace("-raunav", f"-{a.name_suffix}-raunav")
         p = OUT_DIR / f"job-{name}.yaml"
-        p.write_text(spec(name, cells, a.tag, a.parallelism, mem, a.cpu, a.storage_line))
+        p.write_text(spec(name, cells, a.tag, a.parallelism, mem, a.cpu, a.storage_line, a.gpu_pool))
         print(p, len(cells), "cells")
     return 0
 
