@@ -51,6 +51,7 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   checks/test_disjoint.json        TEST2M shares no jet with the fine-tuning sets (experiments/EVAL/check_test_disjoint.py)
   budget/{budget,lrsweep}_metrics.json  the fixed-budget fine-tuning read-outs (experiments/FT/budget_metrics.py);
                                    budget_{,long_}fulldecay_metrics.json the from-scratch cells with the whole schedule
+  budget/jc1_acc_boot_N<N>.json    the paired bootstrap of the JetClass accuracy differences (experiments/FT/jc1_acc_boot.py)
   partrepro/<variant>.json         ParT's top-tagging script reproduced (scripts/build_partrepro_jobs.py)
   dup_check/<file>.json            per-jet comparisons of near-identical results (experiments/EVAL/dup_check.py)
   perf_vs_pt/<task>/<model>.json   performance against jet pT, jc2 (linear probe) and jc1 (fine-tuning)
@@ -200,6 +201,8 @@ def main() -> int:
               (FT / "budget_long_fulldecay", "budget", "budget_long_fulldecay_metrics.json"),
               # pretrained cells run to their last epoch (equal-stopping test and its reruns, 2026-11-08/09)
               (FT / "budget_prefull", "budget", "budget_prefull_metrics.json"),
+              # the JetClass accuracy differences against the run spread and a bootstrap of the test jets (PI 2026-11-09)
+              (FT / "jc1_acc_boot", "budget", "jc1_acc_boot_N*.json"),
               # the TEST2M disjointness proof (experiments/EVAL/check_test_disjoint.py, 2026-11-09: all 30 fine-tuned heads)
               (pathlib.Path("/data/results/checks"), "checks", "test_disjoint.json"),
               (FT / "lrsweep_v2", "budget", "lrsweep_metrics.json"),     # 50-step checks (2026-11-01)

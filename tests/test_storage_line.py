@@ -24,6 +24,7 @@ bfb = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
 btj = _load("build_test_job", "scripts/build_test_job.py")
 bgj = _load("build_gallery_job", "scripts/build_gallery_job.py")
 brj = _load("build_render_job", "scripts/build_render_job.py")
+bgd = _load("build_gallery_data_job", "scripts/build_gallery_data_job.py")
 LINE = re.compile(r'\[ "\$\{USED\}" -le (\d+) \]')
 
 
@@ -45,7 +46,7 @@ def test_every_builder_defaults_to_85_and_takes_90_but_never_more():
     assert _lines(bfb.spec("x-raunav", cells, "mtx-s2.87", 1, "48Gi", line=90)) == {90}
     assert _lines(btj.spec("a" * 40, "full", [], True)[1]) == {85}
     assert _lines(btj.spec("a" * 40, "full", [], True, 90)[1]) == {90}
-    for spec in (bgj.SPEC, brj.SPEC):
+    for spec in (bgj.SPEC, brj.SPEC, bgd.SPEC):
         assert "-le {line} ]" in spec and "-le 85" not in spec
     with pytest.raises(SystemExit):
         bfb.spec("x-raunav", cells, "mtx-s2.87", 1, "48Gi", line=91)

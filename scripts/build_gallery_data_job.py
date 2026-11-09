@@ -10,12 +10,16 @@
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode scratch-full   # from scratch, full schedule, 1e6
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode ft-pairs-sculpt   # fine-tuned pairs + sculpting
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode sculpt-boot   # paired bootstrap of the head sculpting
+    python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode jc1-acc-boot --storage-line 90   # JetClass accuracy, 1e6
 """
 import argparse
 import importlib.util
 import pathlib
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+import storage_line  # noqa: E402
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 OUT = ROOT / "experiments" / "FT" / "k8s" / "curves" / "job-gallery-data-raunav.yaml"
 ROC = "/data/results/ft_v2/curves_v2"
@@ -66,7 +70,7 @@ spec:
           for T in 1 2 3 4 5; do git clone -q --depth 1 --branch "{tag}" https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
           cd /workspace/repo
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
-          [ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
+          [ "${{USED}}" -le {line} ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
           pip install --no-cache-dir -q pyarrow==25.0.1 scikit-learn
           export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8
           mkdir -p {roc}/top_probe {roc}/qg_probe {roc}/jc2_ft_ovr
@@ -237,6 +241,20 @@ def calls_sculpt_boot() -> str:
     return "\n".join("          " + c for c in out)
 
 
+JC1_BOOT = "/data/results/ft_v2/jc1_acc_boot"
+JC1_BOOT_N = 1_000_000
+
+
+def calls_jc1_acc_boot() -> str:
+    """jc1_acc_boot.py on the long-budget JetClass cells at 1e6 (PI 2026-11-09), replica 0 checked against their
+    read-out; DONE after it, so the pull never takes a part."""
+    root = "/data/results/ft_v2/budget_long"
+    out = [f"python3 experiments/FT/jc1_acc_boot.py --root {root} --n {JC1_BOOT_N} --metrics {root}/budget_long_metrics.json "
+           f"--replicas 200 --out {JC1_BOOT}/jc1_acc_boot_N{JC1_BOOT_N}.json",
+           f"echo done > {JC1_BOOT}/DONE"]
+    return "\n".join("          " + c for c in out)
+
+
 MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
          "kin": (calls_kin, "gallery-data-kin-raunav", "top_probe"),
          "sib2": (calls_sib2, "gallery-data-sib2-raunav", "pairs_sib2"),
@@ -246,18 +264,20 @@ MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
                           "jc2_ft_ovr_fulldecay jc1_ft_fulldecay jc1_ft_ovr_fulldecay"),
          # absolute directories are made as they are, the others under ROC
          "ft-pairs-sculpt": (calls_ft_pairs_sculpt, "gallery-data-ft-pairs-sculpt-raunav", f"pairs_ft {SCULPT_FT}"),
-         "sculpt-boot": (calls_sculpt_boot, "sculpt-boot-raunav", "/data/results/eval/v2_head")}
+         "sculpt-boot": (calls_sculpt_boot, "sculpt-boot-raunav", "/data/results/eval/v2_head"),
+         "jc1-acc-boot": (calls_jc1_acc_boot, "jc1-acc-boot-raunav", JC1_BOOT)}
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--mode", default="", choices=tuple(MODES))
+    storage_line.add_argument(ap)
     a = ap.parse_args()
     fn, name, dirs = MODES[a.mode]
     out = OUT.with_name(f"job-{name}.yaml")
     out.parent.mkdir(parents=True, exist_ok=True)
-    text = SPEC.format(image=IMAGE, tag=a.tag, roc=ROC, calls=fn())
+    text = SPEC.format(image=IMAGE, tag=a.tag, roc=ROC, calls=fn(), line=storage_line.check(a.storage_line))
     text = text.replace("name: gallery-data-raunav", f"name: {name}").replace(
         f"mkdir -p {ROC}/top_probe {ROC}/qg_probe {ROC}/jc2_ft_ovr",
         "mkdir -p " + " ".join(d if d.startswith("/") else f"{ROC}/{d}" for d in dirs.split()))
