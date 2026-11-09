@@ -297,7 +297,7 @@ def test_a_missing_input_is_reported_not_invented(root):
     # the inputs that never existed are named too, and T4 says why it is absent
     assert any("label_recovery_curve_v1err" in x for x in missing)
     assert any("bench_metrics" in x for x in missing)
-    assert any("anomaly_v1err" in x for x in missing)
+    assert not any("anomaly" in x for x in missing)     # out of the paper (PI 2026-11-09): not read at all
     assert any("T4" in s for s in skipped)
 
 
@@ -464,13 +464,6 @@ def test_later_results_are_the_stored_values_re_read_independently():
                if (r["task"], r["probe"], r["draw"]) == ("bvc_4prong", "linear", 3))
     assert got["RandOmaBvcFourprongDrawThreeLinear"] == M.math_safe(
         M.fmt_one_sci(math.exp(row["control_log1m_auc"])))
-    # sigma_min straight from the per-model results, not from the summary file.
-    raw = _load(_load(prov["AnomalySigmaMinMahalanobisXYYBbbbOneseven"]["source_file"])
-                ["provenance"]["inputs"]["anomaly"]["path"])
-    v = [raw["arms"][f"r16q1-s{s}"]["signals"]["label_X_YY_bbbb"]["2000"]["mahalanobis"]["sigma_min"]
-         for s in range(1, 6)]
-    assert got["AnomalySigmaMinMahalanobisXYYBbbbOneseven"] == M.math_safe(
-        M.fmt_pm(np.mean(v), np.std(v, ddof=1)))
     s7 = _load(prov["MassResSigmaEffOneseven"]["source_file"])["table"]
     v = [r["sigma_eff"] for r in s7 if r["cell"] == "17" and r["probe"] == "ridge"]
     assert len(v) == 5 and got["MassResSigmaEffOneseven"] == f"{sum(v) / 5:.4f}"
@@ -832,8 +825,8 @@ def test_captions_state_the_run_counts_and_working_point_the_data_hold():
     cap = built["tables/realdata.tex"]
     assert f"pass {M.fmt_one(100 * res['eff'], 0)}\\% of the jets" in cap
     assert f"fitted jointly to the {len(J['per_label_set']['shapes']['pool'])} pretrained models" in cap
+    assert "tables/anomaly.tex" not in built       # anomaly is out of the paper (PI 2026-11-09)
     S = _load("experiments/FIGS/data/anomaly_v1err/analysis/anomaly_summary.json")
-    assert f"over the {M.words(M.anomaly_n_runs(S))} pretraining runs" in built["tables/anomaly.tex"]
     S["families"]["knn"][next(iter(S["families"]["knn"]))][S["conventions"]["primary_injection"]][
         "levels"]["17"]["arms"].pop()
     with pytest.raises(SystemExit, match="runs; the text states one number"):
@@ -1008,34 +1001,6 @@ def _iv(got, name, pattern=r"([\d.+-]+)~\[([\d.+-]+), ([\d.+-]+)\]"):
     return tuple(map(float, m.groups()))
 
 
-def test_what_the_text_says_about_anomaly_holds_on_the_paired_intervals():
-    """Sec. 4.7: the frozen-feature detectors lose multi-b sensitivity from 43 classes
-    down, disagree on X->bb, and separate 188 from 162 only on bbbb; for the output
-    ratio no paired difference between vocabularies is resolved, at epoch 79 or averaged
-    over epochs 70-79; the output ratio is less sensitive than the Mahalanobis distance
-    on every b signal except bbb at 17 classes."""
-    got, _ = _repo_macros()
-    above = lambda n: _iv(got, n)[1] > 1
-    below = lambda n: _iv(got, n)[2] < 1
-    has_1 = lambda n: _iv(got, n)[1] <= 1 <= _iv(got, n)[2]
-    for det in ("Mahalanobis", "Knn"):
-        assert above(f"PairedAnomaly{det}XYYBbbbFourthreeOverOnesixtwo")
-        assert above(f"PairedAnomaly{det}XYYBbbbOnesevenOverFourthree")
-        assert below(f"PairedAnomaly{det}XYYBbbbOnesixtwoOverOneeighteight")
-        assert all(has_1(f"PairedAnomaly{det}{s}OnesixtwoOverOneeighteight") for s in ("XBb", "XYYBbb"))
-    for n in ("PairedAnomalyMahalanobisXYYBbbFourthreeOverOnesixtwo",
-              "PairedAnomalyMahalanobisXYYBbbOnesevenOverFourthree"):
-        assert above(n)
-    assert above("PairedAnomalyMahalanobisXBbOnesevenOverOneeighteight")
-    assert below("PairedAnomalyKnnXBbOnesevenOverOneeighteight")
-    output = [n for n in got if n.startswith("PairedAnomalyClassSumMatched")]
-    assert any("Late" in n for n in output) and any("Late" not in n for n in output)
-    assert all(has_1(n) for n in output), [n for n in output if not has_1(n)]
-    ratio = [n for n in got if n.startswith("PairedAnomalyOutputOverMahalanobis")]
-    assert ratio and all(above(n) for n in ratio if n != "PairedAnomalyOutputOverMahalanobisXYYBbbOneseven")
-    assert has_1("PairedAnomalyOutputOverMahalanobisXYYBbbOneseven")
-
-
 def test_what_the_text_says_about_label_recovery_holds_on_the_paired_intervals():
     """Sec. 4.2: at the 17-class level the 17-class models are not resolved from the
     188-class ones, at the 4- and 2-class levels they are ahead, and the MLP adds a
@@ -1078,7 +1043,7 @@ def test_what_the_text_says_about_fine_tuning_in_words_beyond_the_ratios_to_188(
 
 
 def test_run_by_run_intervals_are_re_derived_independently():
-    """The intervals the generator forms itself (anomaly, open data, label recovery),
+    """The intervals the generator forms itself (open data, label recovery; anomaly is out, PI 2026-11-09),
     recomputed here from the stored per-run values with scipy, not with its helpers."""
     import numpy as np
     from scipy import stats
@@ -1089,12 +1054,7 @@ def test_run_by_run_intervals_are_re_derived_independently():
         h = stats.t.ppf(0.975, len(d) - 1) * d.std(ddof=1) / np.sqrt(len(d))
         return d.mean(), d.mean() - h, d.mean() + h
 
-    S = _load(prov["PairedAnomalyMahalanobisXYYBbbbFourthreeOverOnesixtwo"]["source_file"])
-    cell = lambda lv: S["families"]["mahalanobis"]["label_X_YY_bbbb"]["2000"]["levels"][lv]
     run = lambda a: int(re.search(r"-s(\d+)", a).group(1))
-    a, b = (dict(zip(map(run, cell(lv)["arms"]), cell(lv)["ln_sigma_min"])) for lv in ("162", "43"))
-    m, lo, hi = t_interval([b[k] - a[k] for k in sorted(a)])
-    assert got["PairedAnomalyMahalanobisXYYBbbbFourthreeOverOnesixtwo"] == M.fmt_paired(*np.exp([m, lo, hi]))
 
     J = _load(prov["AojPairedYieldOnesevenOverOneeighteight"]["source_file"])
     L = J["per_label_set"]["label_sets"]

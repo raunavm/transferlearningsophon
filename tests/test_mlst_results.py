@@ -124,6 +124,7 @@ def test_the_index_covers_every_kind_of_pulled_file():
     assert {"compute", "linprobe/fits_v3"} <= kinds <= {
         "compute", "linprobe/fits3000", "linprobe/mass", "linprobe/fits_v3", "linprobe/fits_v3_mlp", "ft_mlst",
         "head", "fillcontrol", "curves", "bootstrap", "xbx", "jc2_test", "linprobe/fits_v3_mlp2",
+        "checks",       # 2026-11-09: the TEST2M disjointness proof, pulled from /data/results/checks
         "linprobe/fits_v3_mlp2_initbn", "linprobe/fits_v3_initbn",
         # 2026-10-31 (pull_mlst_data.py v4): the v4 probes and the outputs beside them
         "linprobe/fits_v4", "linprobe/fits_v4_mlp", "jc2bal", "budget", "partrepro", "dup_check",
@@ -1546,10 +1547,10 @@ def test_the_published_rows_carry_their_papers_parameters_and_the_physics_baseli
 def test_a_row_label_names_its_network_and_the_tables_tag_and_wraps_only_at_its_commas():
     """PI 2026-11-07: the network by its classes (or the control's shortest name), then the table's tag in ParT's
     style, then a run number; published rows keep their names; the caption's first sentence defines the tag."""
-    t = "\n".join([M.LABEL["RAND2_p1"] + r", run 1 & 1 \\", M.SCRATCH_LABEL + r" & 2 \\", M.LABEL["L188"] + r" & 3 \\",
+    t = "\n".join([M.LABEL["RAND2_p1"] + r", seed 1 & 1 \\", M.SCRATCH_LABEL + r" & 2 \\", M.LABEL["L188"] + r" & 3 \\",
                    M.LABEL[M.INIT_BN] + r" & 4 \\", r"ParT~\cite{part} & 5 \\"])
     out = M._labels(t, M.MODE["lp"]).splitlines()
-    assert out[0] == r"\mbox{random partition 1 (LP),} \mbox{run 1} & 1 \\"
+    assert out[0] == r"\mbox{random partition 1 (LP),} \mbox{seed 1} & 1 \\"
     assert out[1] == r"\mbox{no pretraining (LP)} & 2 \\" and out[2] == r"\mbox{\Kfull{} classes (LP)} & 3 \\"
     assert out[3] == r"\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 4 \\"
     assert out[4] == r"ParT~\cite{part} & 5 \\"
@@ -1747,3 +1748,27 @@ def test_the_gallery_citation_check_fails_on_no_sentence_another_tier_or_an_unpl
     assert "placed nowhere in the book: F2" in capsys.readouterr().out
     assert run({**backs, "F3": "S."}, tiers, {**ok, "appendix": ["F2", "F3"]}) == 1
     assert "in no tier of the gallery's map: F3" in capsys.readouterr().out
+
+
+def test_the_equal_stopping_cells_replace_a_task_and_size_only_complete(tmp_path):
+    """PI 2026-11-08/09: per (task, size) the pretrained cells run to their last epoch replace the old ones only when
+    every pretrained model is there; the test's six alone leave the old cells; anything else is FATAL."""
+    assert M.PRE_FULL_TEST == ("l188-s1", "l188-s2", "l188-s3", "r16q1-s1", "r16q1-s2", "r16q1-s3")
+    rec = lambda v: {"accuracy": v, "r30": v}
+    models = list(M.PRE_FULL_TEST) + ["l162-s1", "l188kin-s1"]
+    base = lambda: {"top": {**{m: {1000: [rec(0.1)], 10000: [rec(0.2)]} for m in models},
+                            M.SCRATCH: {1000: [rec(0.0)] * 3}}}
+    p = tmp_path / M.PRE_FULL
+    w = lambda cells, missing=(): p.write_text(json.dumps({"cells": cells, "missing": list(missing)}))
+    assert M.merge_prefull(base(), p) == base() and M.merge_prefull(base(), None) == base()
+    # 1e3 moved and was rerun for every model; 1e4 holds only the test's six: 1e3 replaced, 1e4 kept
+    w({**{f"leg_top/{m}/N1000/s1": rec(0.5) for m in models}, **{f"leg_top/{m}/N10000/s1": rec(0.6) for m in M.PRE_FULL_TEST}})
+    out = M.merge_prefull(base(), p)
+    assert all(out["top"][m][1000] == [rec(0.5)] and out["top"][m][10000] == [rec(0.2)] for m in models)
+    assert out["top"][M.SCRATCH][1000] == [rec(0.0)] * 3
+    for cells, missing in (({f"leg_top/{m}/N1000/s1": rec(0.5) for m in models[:7]}, ()),
+                           ({f"leg_top/{m}/N1000/s1": rec(0.5) for m in models}, ["leg_top/l162-s1/N10000/s1"]),
+                           ({f"leg_top/scratch/N1000/s1": rec(0.5)}, ())):
+        w(cells, missing)
+        with pytest.raises(SystemExit, match="FATAL"):
+            M.merge_prefull(base(), p)

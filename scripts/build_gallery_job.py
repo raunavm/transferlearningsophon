@@ -2,12 +2,16 @@
 """The CPU job that draws the figure gallery's mock-ups at the pushed HEAD into
 /data/results/render/<commit>-gallery/ (experiments/FIGS/figstyle/gallery_figures.py).
 
-    python3 scripts/build_gallery_job.py
+    python3 scripts/build_gallery_job.py [--storage-line 90]
 """
+import argparse
 import pathlib
 import subprocess
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+import storage_line  # noqa: E402
 OUT_DIR = ROOT / "experiments" / "FIGS" / "k8s"
 IMAGE = "gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121"
 SPEC = """apiVersion: batch/v1
@@ -31,7 +35,7 @@ spec:
           set -uo pipefail
           OUT=/data/results/render/{short}-gallery
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
-          [ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
+          [ "${{USED}}" -le {line} ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
           mkdir -p ${{OUT}}/figures
           for T in 1 2 3 4 5; do git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
           cd /workspace/repo && git checkout -q {commit} || exit 1
@@ -60,12 +64,15 @@ spec:
 """
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    storage_line.add_argument(ap)
+    line = storage_line.check(ap.parse_args(argv).storage_line)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
     if "origin/main" not in subprocess.run(["git", "branch", "-r", "--contains", commit], cwd=ROOT, capture_output=True, text=True).stdout:
         raise SystemExit(f"FATAL: {commit[:7]} is not pushed; the pod clones it from GitHub")
     out = OUT_DIR / f"job-render-gallery-{commit[:7]}-raunav.yaml"
-    out.write_text(SPEC.format(short=commit[:7], commit=commit, image=IMAGE))
+    out.write_text(SPEC.format(short=commit[:7], commit=commit, image=IMAGE, line=line))
     print(out.relative_to(ROOT))
     return 0
 

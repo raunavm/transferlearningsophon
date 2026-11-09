@@ -24,6 +24,8 @@ import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+import storage_line  # noqa: E402
 OUT_DIR = ROOT / "experiments" / "FIGS" / "k8s"
 IMAGE = ("gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:"
          "db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7")
@@ -56,7 +58,7 @@ spec:
           set -uo pipefail
           OUT=/data/results/render/${{COMMIT:0:7}}{suffix}
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
-          [ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
+          [ "${{USED}}" -le {line} ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
           mkdir -p ${{OUT}}
           git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo || exit 1
           cd /workspace/repo && git checkout -q ${{COMMIT}} || exit 1
@@ -125,7 +127,10 @@ MOCKUPS = {"what": "figure mock-ups", "suffix": "-mockups", "texdir": "paper/moc
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mockups", action="store_true", help="the figure mock-ups instead of the paper")
-    mode = MOCKUPS if ap.parse_args().mockups else PAPER
+    storage_line.add_argument(ap)
+    a = ap.parse_args()
+    mode = MOCKUPS if a.mockups else PAPER
+    line = storage_line.check(a.storage_line)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
                             text=True, check=True).stdout.strip()
     remote = subprocess.run(["git", "branch", "-r", "--contains", commit], cwd=ROOT,
@@ -134,7 +139,7 @@ def main() -> int:
         raise SystemExit(f"FATAL: {commit[:7]} is not pushed; the pod clones it from GitHub")
     out = OUT_DIR / f"job-render{mode['suffix']}-{commit[:7]}-raunav.yaml"
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out.write_text(SPEC.format(short=commit[:7], commit=commit, image=IMAGE, pins=PINS, tectonic=TECTONIC, **mode))
+    out.write_text(SPEC.format(short=commit[:7], commit=commit, image=IMAGE, pins=PINS, tectonic=TECTONIC, line=line, **mode))
     print(out.relative_to(ROOT))
     return 0
 

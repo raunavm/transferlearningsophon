@@ -14,12 +14,15 @@ import pathlib
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+import storage_line  # noqa: E402
 OUT_DIR = ROOT / "experiments" / "MTX" / "k8s" / "v2" / "tests"
 IMAGE = ("gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@"
          "sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7")
 
 
-def spec(commit: str, label: str, tests: list, full: bool) -> tuple:
+def spec(commit: str, label: str, tests: list, full: bool, line: int = storage_line.GENERAL) -> tuple:
+    line = storage_line.check(line)
     name = f"mtx2-tests-{label}-{commit[:7]}-raunav"
     if len(name) > 63:
         raise SystemExit(f"{name}: longer than a Kubernetes name allows")
@@ -51,7 +54,7 @@ spec:
           OUT=/data/results/tests/${{COMMIT:0:7}}-{label}
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${{USED}}%  node: ${{NODE_NAME}}"
-          [ "${{USED}}" -le 85 ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
+          [ "${{USED}}" -le {line} ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}
           mkdir -p ${{OUT}}
           git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo || exit 1
           cd /workspace/repo && git checkout -q ${{COMMIT}} || exit 1
@@ -95,11 +98,12 @@ def main(argv=None) -> int:
     ap.add_argument("--commit", required=True)
     ap.add_argument("--label", required=True)
     ap.add_argument("--full", action="store_true")
+    storage_line.add_argument(ap)
     ap.add_argument("tests", nargs="*")
     a = ap.parse_args(argv)
     if not a.full and not a.tests:
         ap.error("name test files or pass --full")
-    name, text = spec(a.commit, a.label, a.tests, a.full)
+    name, text = spec(a.commit, a.label, a.tests, a.full, a.storage_line)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     path = OUT_DIR / f"job-{name}.yaml"
     path.write_text(text)

@@ -4899,6 +4899,9 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
                                        lambda d: table_mass(d, root, order))
     v1_anomaly = json.loads(paths["anomaly"].read_text()) if "anomaly" in have else None
     for key, emit, table, name in later:
+        if key == "anomaly":
+            continue        # anomaly detection is out of the paper (PI 2026-11-09): tables/anomaly*.tex stay in the
+            # repository as they are, no longer written, and no anomaly macro is emitted
         if key == "anomaly" and "anomaly" in V2:
             t = emit_v2_anomaly(em, V2["anomaly"], V2["grid"], V2["labels"], root, V2["products"],
                                 v1_anomaly, ck)

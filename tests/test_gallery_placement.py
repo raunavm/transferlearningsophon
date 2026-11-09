@@ -168,3 +168,17 @@ def test_the_book_boxes_only_a_provisional_figure_the_render_lacks(monkeypatch, 
     (tmp_path / "pages.json").write_text(json.dumps(pages))
     with pytest.raises(SystemExit, match="F2a was not drawn"):
         book.build(tmp_path, "main")
+
+
+def test_the_sculpting_sentence_names_exactly_the_differences_beyond_three_sigma():
+    """PI 2026-11-09: the main text reports the sculpting differences that pass |delta| > 3 sigma and nothing else."""
+    import json
+    doc = json.loads((ROOT / "experiments/FIGS/data/v2/head/sculpting_boot.json").read_text())["differences"]
+    passing = {(name, wp) for name, d in doc.items() for wp, v in d.items()
+               if isinstance(v, dict) and v.get("distance", {}).get("pass")}
+    assert passing == set(G.F10B_STATED)
+    sentence = G.BACKS["F10b"]
+    for words in ("17 classes", "1% QCD", "43 at 10%", "162 classes at 10%", "every other difference", "17 + mass",
+                  "flavor boundaries"):
+        assert words in sentence
+    assert "sit with" not in sentence and not G.f10b_main(doc)

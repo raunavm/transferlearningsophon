@@ -22,6 +22,9 @@ FT_READOUT = "waits for the fine-tuned read-out"
 # (17 + mass - 17 < 0), each by more than 3 sigma; (sculpting_boot.DIFFS name, required sign)
 F10B_RULE = (("17-188", +1), ("17mass-17", -1))
 F10B_WP = "eps_b=0.01"
+# the sculpting differences beyond 3 sigma that F10b's sentence names (PI 2026-11-09: those and nothing else), as
+# (sculpting_boot.DIFFS name, working point); tests/test_gallery_placement.py checks them against the bootstrap
+F10B_STATED = (("17-188", "eps_b=0.01"), ("43-188", "eps_b=0.1"), ("162mass-162", "eps_b=0.1"))
 # a placement that waits on a result; the two tables only while they hold pending cells (make_results_book sets a
 # PROVISIONAL table with its pending cells, and a box for a PROVISIONAL figure not drawn yet)
 PROVISIONAL = {"F11": SAMPLES, "F4-mech-ft": FT_READOUT, "F10-ft": FT_READOUT, "tab:xbx": SAMPLES, "tab:xbxrej": SAMPLES,
@@ -43,8 +46,7 @@ _FIGURES = (
     ("F4-mech", MAIN, "Linear probes separate quark flavors worse with 17 classes than with 188, and a flavor boundary "
                       "in a 17-class partition recovers part of the loss."),
     ("F8", MAIN, "Fine-tuning the 188-class network beats training from scratch on JetClass-II, JetClass and top "
-                 "tagging, most on small training sets, but not on the smallest quark/gluon sets; a linear probe keeps "
-                 "up only on JetClass-II."),
+                 "tagging, but not on the smallest quark/gluon sets; a linear probe keeps up only on JetClass-II."),
     ("A8", MAIN, "After fine-tuning, 17 classes stay lowest on JetClass-II and JetClass at every training-set size; on "
                  "top and quark/gluon tagging the label sets show no consistent order."),
     ("F9b", MAIN, "An auxiliary mass regression gives a better jet-mass resolution than the soft-drop mass, shown in "
@@ -63,8 +65,10 @@ _FIGURES = (
                       "classes stay lowest."),
     ("F9a", APPENDIX, "The mass output's response is narrower than the soft-drop mass's."),
     ("F10a", APPENDIX, "Cuts on the pretraining head reshape the QCD mass at 10% and 1% efficiency."),
-    ("F10b", APPENDIX, "At 1% QCD efficiency the 17-class head sculpts the QCD mass more than the 188-class head; a "
-                       "reduction by the mass regression is not resolved."),
+    # PI 2026-11-09: the main text reports exactly the differences beyond 3 sigma (tab:sculptboot), nothing else
+    ("F10b", APPENDIX, "17 classes sculpt the QCD mass more than 188 at 1% QCD efficiency, 43 at 10%; mass regression "
+                       "reduces it for 162 classes at 10%; every other difference (17 + mass, flavor boundaries) is "
+                       "within the uncertainty."),
     ("F10b-flav", APPENDIX, SCULPT_FLAV),
     ("F10c", APPENDIX, "At 50% resonant efficiency no label-set difference in QCD mass sculpting exceeds three times "
                        "its uncertainty."),

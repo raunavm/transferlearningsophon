@@ -48,6 +48,7 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    (scripts/build_xbx_jobs.py SCRATCH_ROOT_IHEP/<signal>/s<k>/)
   jc2bal/{census,manifest}.json    the class-balanced JetClass-II sets (experiments/FT/stage_jc2_balanced.py)
   head/curves_v2/<model>_{sculpting_v2,response}.json  sculpting curves and mass response histograms
+  checks/test_disjoint.json        TEST2M shares no jet with the fine-tuning sets (experiments/EVAL/check_test_disjoint.py)
   budget/{budget,lrsweep}_metrics.json  the fixed-budget fine-tuning read-outs (experiments/FT/budget_metrics.py);
                                    budget_{,long_}fulldecay_metrics.json the from-scratch cells with the whole schedule
   partrepro/<variant>.json         ParT's top-tagging script reproduced (scripts/build_partrepro_jobs.py)
@@ -197,6 +198,10 @@ def main() -> int:
               # from scratch with the whole flat+decay schedule (job-budget-readout-e, 2026-11-07)
               (FT / "budget_fulldecay", "budget", "budget_fulldecay_metrics.json"),
               (FT / "budget_long_fulldecay", "budget", "budget_long_fulldecay_metrics.json"),
+              # pretrained cells run to their last epoch (equal-stopping test and its reruns, 2026-11-08/09)
+              (FT / "budget_prefull", "budget", "budget_prefull_metrics.json"),
+              # the TEST2M disjointness proof (experiments/EVAL/check_test_disjoint.py, 2026-11-09: all 30 fine-tuned heads)
+              (pathlib.Path("/data/results/checks"), "checks", "test_disjoint.json"),
               (FT / "lrsweep_v2", "budget", "lrsweep_metrics.json"),     # 50-step checks (2026-11-01)
               (pathlib.Path("/data/results/partrepro"), "partrepro", "*/metrics.json"),
               (EVAL / "dup_check", "dup_check", "*.json"),

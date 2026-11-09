@@ -330,9 +330,10 @@ def _pct_cell(values: list, n_expected: int, fmt_pm) -> str:
 
 
 def _row(arm: str, runs: dict) -> str:
-    """The row label; a random partition, pretrained with a single seed, also names that run."""
+    """The row label; a random partition, pretrained with a single seed, also names that seed (the writing guide's
+    glossary: "seed", never "run k", PI 2026-11-09)."""
     if arm in RAND and len(runs[arm]) == 1:
-        return f"{LABEL[arm]}, run {runs[arm][0].rsplit('-s', 1)[1]}"
+        return f"{LABEL[arm]}, seed {runs[arm][0].rsplit('-s', 1)[1]}"
     return LABEL[arm]
 
 
@@ -1747,7 +1748,7 @@ def table_coarse(co, runs, fmt_pm, rows) -> str:
     out = [r"\begin{tabular}{l" + "cc" * n + "}", r"\toprule",
            " & " + " & ".join(r"\multicolumn{2}{c}{target: %s}" % w for _, w in COARSE_TARGETS) + r" \\",
            "".join(r"\cmidrule(lr){%d-%d}" % (2 + 2 * i, 3 + 2 * i) for i in range(n)),
-           " & " + " & ".join(["accuracy & macro AUC"] * n) + r" \\", r"\midrule"]
+           " & " + " & ".join(["accuracy & AUC"] * n) + r" \\", r"\midrule"]
     for arm in rows:
         ms, ck = ((INIT_MODELS, "init") if arm == INIT else (INIT_MODELS, "init_bn") if arm == INIT_BN
                   else (runs[arm], SOPHON_CK) if arm == SOPHON else (runs[arm], PRIMARY))
@@ -1894,7 +1895,7 @@ def load_ft(data: pathlib.Path) -> tuple:
                     for init, by_n in cells.items()}
     return tag, merge_budget(per, data / "budget" / "budget_metrics.json",
                              data / "budget" / "budget_long_metrics.json",
-                             [data / "budget" / f for f in SCRATCH_FULL]), absent
+                             [data / "budget" / f for f in SCRATCH_FULL], data / "budget" / PRE_FULL), absent
 
 
 # 2026-10-31 (plan 3.1, 3.4): below the full set every fine-tuning is the fixed-budget recipe
@@ -1908,6 +1909,13 @@ BUDGET_SCRATCH = "scratch"          # build_ft_budget_jobs.cell's directory for 
 # from-scratch cell of its (task, size), the fixed-budget and the long-budget alike; once both are pulled no
 # from-scratch cell stopped by the patience rule is read.
 SCRATCH_FULL = {"budget_fulldecay_metrics.json": 30, "budget_long_fulldecay_metrics.json": 6}
+# Pretrained cells run to their last epoch (PI 2026-11-08, operationalised 2026-11-09; build_ft_budget_jobs pre_full_cells
+# and pre_full_rerun_cells): the 188- and 17-class runs at every task and size below 1e5, and, where either moved by more
+# than its old seed SD, every other pretrained cell there. Per (task, size), used complete or not at all: every pretrained
+# model the fixed-budget read-out has there -> they replace the old cells; only the equal-stopping test's six -> the old
+# cells stand (nothing moved); anything else is FATAL.
+PRE_FULL = "budget_prefull_metrics.json"
+PRE_FULL_TEST = tuple(f"{a}-s{k}" for a in ("l188", "r16q1") for k in (1, 2, 3))
 
 
 def _budget_cells(path: pathlib.Path) -> dict:
@@ -1924,7 +1932,8 @@ def _budget_cells(path: pathlib.Path) -> dict:
     return out
 
 
-def merge_budget(per: dict, budget: pathlib.Path, long: pathlib.Path | None = None, full=()) -> dict:
+def merge_budget(per: dict, budget: pathlib.Path, long: pathlib.Path | None = None, full=(),
+                 prefull: pathlib.Path | None = None) -> dict:
     """per with the superseded cells removed (below FULL_N; every natural-mix JetClass-II cell) and
     the fixed-budget cells added, the from-scratch ones under SCRATCH. The long-budget cells at 1e6
     (budget_long, PI 2026-11-05) then replace every cell of the same task, model and size, the
@@ -1961,6 +1970,27 @@ def merge_budget(per: dict, budget: pathlib.Path, long: pathlib.Path | None = No
             new.add((key, n))
     if full and all(src.exists() for src in full) and old - new:
         raise SystemExit(f"FATAL: old from-scratch budget cells still read at {sorted(old - new)}")
+    return merge_prefull(out, prefull)
+
+
+def merge_prefull(out: dict, prefull: pathlib.Path | None) -> dict:
+    """out with the pretrained cells of every (task, size) the equal-stopping read-out holds completely replaced by its
+    cells (PRE_FULL's rule); a (task, size) with only PRE_FULL_TEST keeps its old cells; a partial set is FATAL."""
+    if prefull is None or not prefull.exists():
+        return out
+    doc = json.loads(prefull.read_text())
+    cells = _budget_cells(prefull)
+    if doc.get("missing") or any(init == SCRATCH for _, init, _ in cells):
+        raise SystemExit(f"FATAL: {prefull}: missing {doc.get('missing')} or a from-scratch cell; used complete or not at all")
+    for key, n in sorted({(k, n) for k, _, n in cells}):
+        have = {init for k, init, m in cells if (k, m) == (key, n)}
+        want = {init for init, by_n in out.get(key, {}).items() if init != SCRATCH and n in by_n}
+        if have == want:
+            for init in want:
+                out[key][init][n] = cells[(key, init, n)]
+        elif have != set(PRE_FULL_TEST):
+            raise SystemExit(f"FATAL: {prefull}: {key} N={n} holds {sorted(have)}, neither all {len(want)} pretrained "
+                             f"models nor only the equal-stopping test's {PRE_FULL_TEST}")
     return out
 
 
@@ -2486,12 +2516,25 @@ def ft_gpu_types(data: pathlib.Path) -> tuple[dict, dict]:
         for c in json.loads(f.read_text()).values():
             out[c["init"]].add(gpu_name(c["gpu_device_name"]))
     full = [p for f in SCRATCH_FULL if (p := data / "budget" / f).exists()]
-    for b in [data / "budget" / "budget_metrics.json"] + full:
+    pre = data / "budget" / PRE_FULL
+    pre_cells = json.loads(pre.read_text())["cells"] if pre.exists() else {}
+    old = data / "budget" / "budget_metrics.json"
+    old_cells = json.loads(old.read_text())["cells"] if old.exists() else {}
+    where = lambda cells: {(k.split("/")[0], k.split("/")[2]): set() for k in cells}
+    held, have = where(old_cells), where(pre_cells)
+    for cells, by in ((old_cells, held), (pre_cells, have)):
+        for k in cells:
+            if k.split("/")[1] != BUDGET_SCRATCH:
+                by[(k.split("/")[0], k.split("/")[2])].add(k.split("/")[1])
+    replaced = {w for w, inits in have.items() if inits and inits == held.get(w)}    # merge_prefull's rule
+    for b in [old] + full + ([pre] if pre_cells else []):
         if not b.exists():
             continue
         for k, c in json.loads(b.read_text())["cells"].items():
-            if full and b not in full and k.split("/")[1] == BUDGET_SCRATCH:
+            if full and b not in full and b != pre and k.split("/")[1] == BUDGET_SCRATCH:
                 continue        # replaced by the full-schedule from-scratch cells (merge_budget)
+            if b == old and (k.split("/")[0], k.split("/")[2]) in replaced and k.split("/")[1] != BUDGET_SCRATCH:
+                continue        # replaced by the pretrained cells run to their last epoch (merge_prefull)
             g = c.get("gpu") or c.get("manifest", {}).get("gpu_device_name")
             if g:
                 out[k.split("/")[1]].add(gpu_name(g))
@@ -3594,7 +3637,7 @@ CAPTIONS = {
                "one million class-balanced JetClass-II jets and scored on its class-balanced test set, with the "
                "classes merged into coarser targets: the 43 and the 17 groups of the class hierarchy, and the 17 "
                "groups of the partition with no flavor boundary. Accuracy and the area under the curve averaged over "
-               "the target's groups; the test set is balanced over the 188 native classes, not over the groups. "
+               "the target's groups; the test set is balanced over the 188 JetClass-II classes, not over the groups. "
                + SPREAD + " " + SOPHON_SHORT),
     "qcdhf": ("tab:qcdhf", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
               "and 17 classes and of the controls, trained on "
@@ -4134,13 +4177,13 @@ def _mode_word(key: str, part: int = 0) -> str | None:
 
 
 def _labels(tab: str, tag: str | None = None) -> str:
-    """Every row label that is a LABEL (or no pretraining), with a run number or not: the table's tag after the
-    name, before the run ('random partition 1 (LP), run 1'), and the label kept whole between its commas."""
+    """Every row label that is a LABEL (or no pretraining), with a seed number or not: the table's tag after the
+    name, before the seed ('random partition 1 (LP), seed 1'), and the label kept whole between its commas."""
     known = sorted(set(LABEL.values()) | {SCRATCH_LABEL}, key=len, reverse=True)
     out = []
     for ln in tab.split("\n"):
         first = _depth0_split(ln, "&")[0] if "&" in ln else ""
-        k = next((k for k in known if re.fullmatch(re.escape(k) + r"(, run \d+)?\s*", first)), None)
+        k = next((k for k in known if re.fullmatch(re.escape(k) + r"(, seed \d+)?\s*", first)), None)
         if k:
             run = first.strip()[len(k):]
             ln = _label_parts(k + (f" {tag}" if tag else "") + run) + " " + ln[len(first):]

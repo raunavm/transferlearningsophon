@@ -17,9 +17,9 @@
   "census_roles_disjoint": true,
   "spec_files_in_ft_heldout": 0,
   "specs": [
-   "/tmp/repo/specs/job-ft-head-x-raunav.yaml",
-   "/tmp/repo/specs/job-ft-head-x-scratch-raunav.yaml",
-   "/tmp/repo/specs/job-head-x-l188-s1-raunav.yaml"
+   "experiments/EVAL/k8s/v2/head/job-head-x-l188-s1-raunav.yaml",
+   "experiments/EVAL/k8s/v2/head/job-ft-head-x-raunav.yaml",
+   "experiments/EVAL/k8s/v2/head/job-ft-head-x-scratch-raunav.yaml"
   ],
   "census_matches_JC2_ROLES": {
    "ft_heldout": true,
@@ -40,6 +40,12 @@
    "n_test_files": 335,
    "cell": "/data/results/ft_v2/budget_long/leg_jc2b/flavf0-s1/N1000000/s1"
   },
+  "mtx-flavf0-s2": {
+   "n": 2000000,
+   "label188_sha256_matches": true,
+   "n_test_files": 335,
+   "cell": "/data/results/ft_v2/budget_long/leg_jc2b/flavf0-s2/N1000000/s1"
+  },
   "mtx-flavf1-s1": {
    "n": 2000000,
    "label188_sha256_matches": true,
@@ -57,6 +63,12 @@
    "label188_sha256_matches": true,
    "n_test_files": 335,
    "cell": "/data/results/ft_v2/budget_long/leg_jc2b/flavf1r-s1/N1000000/s1"
+  },
+  "mtx-flavf1r-s2": {
+   "n": 2000000,
+   "label188_sha256_matches": true,
+   "n_test_files": 335,
+   "cell": "/data/results/ft_v2/budget_long/leg_jc2b/flavf1r-s2/N1000000/s1"
   },
   "mtx-l162-s1": {
    "n": 2000000,
@@ -189,6 +201,18 @@
    "label188_sha256_matches": true,
    "n_test_files": 335,
    "cell": "/data/results/ft_v2/budget_long_fulldecay/leg_jc2b/scratch/N1000000/s1"
+  },
+  "scratch-s2": {
+   "n": 2000000,
+   "label188_sha256_matches": true,
+   "n_test_files": 335,
+   "cell": "/data/results/ft_v2/budget_long_fulldecay/leg_jc2b/scratch/N1000000/s2"
+  },
+  "scratch-s3": {
+   "n": 2000000,
+   "label188_sha256_matches": true,
+   "n_test_files": 335,
+   "cell": "/data/results/ft_v2/budget_long_fulldecay/leg_jc2b/scratch/N1000000/s3"
   }
  },
  "cells": {
@@ -424,8 +448,24 @@
    "subset": "/data/finetune/jc2_bal/train_N10000_s1.parquet",
    "val": "/data/finetune/jc2_bal/val.parquet"
   },
+  "budget_fulldecay/leg_jc2b/scratch/N10000/s2": {
+   "subset": "/data/finetune/jc2_bal/train_N10000_s1.parquet",
+   "val": "/data/finetune/jc2_bal/val.parquet"
+  },
   "budget_fulldecay/leg_jc2b/scratch/N10000/s3": {
    "subset": "/data/finetune/jc2_bal/train_N10000_s1.parquet",
+   "val": "/data/finetune/jc2_bal/val.parquet"
+  },
+  "budget_fulldecay/leg_jc2b/scratch/N100000/s1": {
+   "subset": "/data/finetune/jc2_bal/train_N100000_s1.parquet",
+   "val": "/data/finetune/jc2_bal/val.parquet"
+  },
+  "budget_fulldecay/leg_jc2b/scratch/N100000/s2": {
+   "subset": "/data/finetune/jc2_bal/train_N100000_s1.parquet",
+   "val": "/data/finetune/jc2_bal/val.parquet"
+  },
+  "budget_fulldecay/leg_jc2b/scratch/N100000/s3": {
+   "subset": "/data/finetune/jc2_bal/train_N100000_s1.parquet",
    "val": "/data/finetune/jc2_bal/val.parquet"
   },
   "budget_long/leg_jc2b/flavf0-s1/N1000000/s1": {
@@ -509,7 +549,7 @@
    "val": "/data/finetune/jc2_bal/val.parquet"
   }
  },
- "n_cells": 79,
+ "n_cells": 83,
  "sets": {
   "train_N1000000_s1.parquet": {
    "rows": 958933,
