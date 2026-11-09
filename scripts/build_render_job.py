@@ -99,10 +99,13 @@ spec:
 # the paper: its numbers and tables, then its figures, then main.tex; the generated files are
 # collected at their paths in the repository, so they copy back as they are
 PAPER = {"what": "paper", "suffix": "", "texdir": "paper/journal", "texfile": "main",
-         "draw": """          python3 experiments/FIGS/make_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
+         # gallery_figures imports gallery_palette, which imports fitz (pymupdf): the gallery job's pin (2026-11-09:
+         # without it every paper render since the palette page drew no gallery figure)
+         "draw": """          pip install --no-cache-dir -q pymupdf==1.26.7 || exit 1
+          python3 experiments/FIGS/make_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
           python3 experiments/FIGS/paper_figures.py > ${OUT}/figures.txt 2>&1; echo "figures rc=$?"
           python3 experiments/FIGS/figstyle/gallery_figures.py --paper --outdir figures/mlst/gallery > ${OUT}/gallery.txt 2>&1; echo "gallery rc=$?"
-          tail -15 ${OUT}/tables.txt ${OUT}/figures.txt ${OUT}/gallery.txt
+          tail -n 15 ${OUT}/tables.txt ${OUT}/figures.txt ${OUT}/gallery.txt
 """,
          "collect": """          mkdir -p ${OUT}/figures/mlst ${OUT}/paper/journal
           cp -f figures/mlst/*.pdf figures/mlst/*.png ${OUT}/figures/mlst/ 2>/dev/null
