@@ -917,21 +917,6 @@ def test_the_top_rejection_at_half_signal_efficiency_masks_a_curve_below_its_cut
     assert "MlstFtTopRfiftyCoarseOverFull" not in em.m and "MlstFtTopRfiftyCoarseOverFull" in {n for n, _, _ in M.REQUIRED}
 
 
-def test_the_share_of_the_jetclass_gap_the_partitions_recover():
-    runs = M._paper(ROOT)
-    rej = lambda m, c: (800.0 if "r16q1" in m else 900.0 if "rand2" in m else 1000.0, 200)
-    pre = _jc1_pre(runs, rej)
-    for arm in M.RAND:
-        for m in runs[arm]:
-            pc = {c: {"rejection": dict(zip(("rejection", "n_bkg_pass"), rej(m, c)))} for c, _ in M.V4.JC1_COLS}
-            pre[m[len("mtx-"):]] = {"N1000000": {"s1": {"jc1": {"accuracy": 0.84, "per_class": pc}}}}
-    em = _PEm()
-    M.jetclass_macros(em, pre, runs, None, MT.fmt_pm, MT.words)
-    assert em.m["MlstFtJcOneRandGapShareWZ"] == "about half"
-    assert M._gap_share([0.54, 0.56]) == "about half" and M._gap_share([0.2, 0.56]) == r"20--56\%"
-    assert M._gap_share([]).startswith(r"\pending")
-
-
 def test_the_ee_mumu_auc_over_the_partitions_that_merge_the_pair():
     aucs = {"RAND2_p1": 0.99, "RAND2_p2": 0.98, "RAND2_p3": 0.5}
     runs = {**{a: [] for a in M.MAIN + M.FLAV + (M.INIT, M.INIT_BN)}, **{a: [] for a in M.RAND},
@@ -1772,3 +1757,34 @@ def test_the_equal_stopping_cells_replace_a_task_and_size_only_complete(tmp_path
         w(cells, missing)
         with pytest.raises(SystemExit, match="FATAL"):
             M.merge_prefull(base(), p)
+
+
+def _jc1_boot_doc(delta, run_sd, boot_sd):
+    s = math.hypot(run_sd, boot_sd)
+    x = {"delta": delta, "run_sd": run_sd, "boot_sd": boot_sd, "sigma": s, "z": delta / s, "pass": abs(delta) > 3 * s}
+    d = {"accuracy_ref": [0.8475, 0.8463, 0.8467], "accuracy_config": [0.8418, 0.8421, 0.8428],
+         "accuracy": dict(x), "error_ratio": dict(x)}
+    return d
+
+
+def test_the_jetclass_accuracy_statement_rests_on_the_3_sigma_bootstrap(tmp_path):
+    """PI 2026-11-09: the JetClass statement is the 17-class accuracy at 1e6 with sigma from the run SD and a
+    bootstrap of the test jets; a ratio within 3 sigma is 'consistent'; a sigma that is not the hypot is FATAL."""
+    (tmp_path / "budget").mkdir()
+    f = tmp_path / "budget" / "jc1_acc_boot_N1000000.json"
+    doc = {"replicas": 200, "n_test_jets": 2000000,
+           "diffs": {"l162-l188": _jc1_boot_doc(-0.0046, 0.0072, 0.0006), "r42q1-l188": _jc1_boot_doc(0.0061, 0.0044, 0.0006),
+                     "r16q1-l188": _jc1_boot_doc(0.03015, 0.00627, 0.00075)}}
+    f.write_text(json.dumps(doc))
+    em = _PEm()
+    M.jc1_boot_macros(em, tmp_path, MT.fmt_int, [])
+    assert em.m["MlstFtJcOneErrCoarseOverFullBoot"] == r"(3.0\,\ensuremath{\pm}\,0.6)\% more errors"
+    assert em.m["MlstFtJcOneErrResOverFullBoot"] == em.m["MlstFtJcOneErrMidOverFullBoot"] == "consistent"
+    assert (em.m["MlstFtJcOneAccFullBoot"], em.m["MlstFtJcOneAccCoarseBoot"]) == ("0.847", "0.842")
+    doc["diffs"]["r16q1-l188"]["error_ratio"]["sigma"] = 0.001
+    f.write_text(json.dumps(doc))
+    with pytest.raises(SystemExit, match="hypot"):
+        M.jc1_boot_macros(_PEm(), tmp_path, MT.fmt_int, [])
+    missing = []
+    M.jc1_boot_macros(_PEm(), tmp_path / "none", MT.fmt_int, missing)
+    assert missing and "bootstrap" in missing[0]

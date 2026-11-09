@@ -18,7 +18,7 @@ rejection; the figures show accuracy, $R_{30}$ and ROC curves. The
 subsections move outward from the pretraining classes. JetClass-II and JetClass come first, then the two public
 benchmarks, top tagging and quark/gluon discrimination; fine-tuning with few training jets, the jet mass
 and resonance tagging follow.
-% CHECK: drop "and resonance tagging" if section 4.7 and F9 are dropped (samples not staged by 2026-11-12).
+% CHECK: pending Xbx* (section 4.7 waits for the samples)
 
 \subsection{JetClass-II: the pretraining classes}\label{sec:jetclasstwo}
 
@@ -87,10 +87,9 @@ table~\ref{tab:probes}). The merge from \Kfull{} to \Kres{} classes moves no bou
 classes: it removes only the division of QCD jets by their numbers of $b$, $c$ and $s$ quarks, which
 the loss then stops rewarding. Of the discriminants in table~\ref{tab:usecase}, this merge removes only
 one, a score against QCD jets split by their heavy-flavor content, as in the QCD subclasses that GN3X
-distinguishes~\cite{atlasgnx}. Only an analysis that needs that subdivision pays for the merge. The merge
-does not lower the rejection of $b$-flavored QCD jets by Sophon's $X\to b\bar b$ discriminant read from
-the frozen features: with \Kres{} classes the linear probe rejects QCD jets with one or with two $b$ quarks as
-the \Kfull-class probe does, within the spread between runs (table~\ref{tab:qcdhf}).
+distinguishes~\cite{atlasgnx}. Only an analysis that needs that subdivision pays for the merge. With \Kres{}
+classes, the rejection of QCD jets with one or with two $b$ quarks by Sophon's $X\to b\bar b$ discriminant
+read from the frozen features is consistent with that of the \Kfull-class probe (table~\ref{tab:qcdhf}).
 % CHECK: tab:qcdhf, 162 against 188 classes in the b and bb columns within one SD of each other (2026-11-09: 1,134 +- 117 vs 1,101 +- 151; 74 +- 5 vs 66 +- 5)
 % CHECK: MlstCmpJcTwoQcdResOverFull > 1 by more than 2 SD (today 1.087 +- 0.006).
 
@@ -112,17 +111,14 @@ Because the partitions were selected to cut across the \Kcoarse-class groups
 (section~\ref{sec:labelsets}), they show that the class count alone does not set the cost on the
 pretraining classes, not that any grouping into \Kcoarse{} classes would do as well.
 
-Fine-tuning tests whether the gap survives once every weight adapts to the \Kfull{} classes. After
-fine-tuning on the largest class-balanced training set, the \Kcoarse-class model makes
+Fine-tuning on JetClass-II measures how much of a merged distinction fine-tuning recovers: its target is
+the \Kfull-class pretraining task itself, so every distinction the coarse labels removed is rewarded again.
+After fine-tuning on the largest class-balanced training set, the \Kcoarse-class model makes
 \MlstFtCmpJcTwoCoarseOverFullESixPr{} than the \Kfull-class model (the ratio column of
 table~\ref{tab:ft}), where a linear probe on its frozen features makes \MlstCmpJcTwoCoarseOverFullPr{}
-(table~\ref{tab:probes}); the accuracy after fine-tuning is drawn in figure~\ref{fig:f2b}(a).
-% CHECK: pending MlstFtCmpJcTwoCoarseOverFullESix; if it is a null ("equal within"), rewrite the first
-% clause as "matches the 188-class model (...)".
-Fine-tuning trains on all \Kfull{} classes, so every distinction the coarse labels removed is rewarded
-again, and what remains is the cost of starting from features that lack them, at this number of
-training jets. The partitions are not fine-tuned on JetClass-II, so this comparison is between levels of
-the hierarchy only.
+(table~\ref{tab:probes}): fine-tuning recovers most of the merged distinctions at this number of training
+jets, but not all. The accuracy after fine-tuning is drawn in figure~\ref{fig:f2b}(a). The partitions are not
+fine-tuned on JetClass-II, so this comparison is between levels of the hierarchy only.
 % CHECK: rewrite when ft-budget-long-jc2b-ctrl reads out
 
 Per class, the largest relative costs fall on decays that differ from another class only in lepton flavor
@@ -325,46 +321,22 @@ begins where $\nmin$ background jets remain. Colors and titles as in figure~\ref
 \label{fig:fjctrl}
 \end{figure}
 
-After fine-tuning, the \Kres- and \Kmid-class models match the \Kfull-class model on JetClass: neither
-differs from it in any signal class by the rule of section~\ref{sec:uncertainties}
-(table~\ref{tab:jetclass}; figures~\ref{fig:f2b}(b) and~\ref{fig:fj}).
-% CHECK: MlstFtJcOneResNRejDiff and MlstFtJcOneMidNRejDiff are zero (none).
+After fine-tuning on \FtSizeESix{} jets, the \Kcoarse-class model reaches an accuracy of
+\MlstFtJcOneAccCoarseBoot{} on JetClass against \MlstFtJcOneAccFullBoot{} for the \Kfull-class model:
+\MlstFtJcOneErrCoarseOverFullBoot{} (table~\ref{tab:jetclass}; figure~\ref{fig:f2b}(b)). The uncertainty
+combines the standard deviation of the paired difference over the \MlstNRunsWord{} pretraining runs with a
+bootstrap of the \MlstFtJcOneBootJets{} test jets, \MlstFtJcOneBootReplicas{} resamples shared by every run,
+and the difference is \MlstFtJcOneErrCoarseOverFullZ{} times it. By the same test the \Kres- and \Kmid-class
+models are consistent with the \Kfull-class model, and per signal class the rejection of every label set at
+ParT's working point is consistent with that of the \Kfull-class model (tables~\ref{tab:jetclass}
+and~\ref{tab:jetclassall}; figure~\ref{fig:fj}).
+% CHECK: MlstFtJcOneErrResOverFullBoot and MlstFtJcOneErrMidOverFullBoot read "consistent"; MlstFtJcOne{Res,Mid,Coarse}NRejDiff are zero.
 The \Kmid-class labels give up the number of $b$ and $c$ quarks, gluons against light quarks and
 electrons against muons, and none of these losses shows here. JetClass's signal classes differ from one
 another and from the background by their number of prongs and by whether they contain $b$ or $c$
-quarks, and the \Kmid-class labels keep both. The largest departure, in the Higgs decay to four
-quarks, stays within twice its standard deviation over the runs (table~\ref{tab:jetclassall}).
-% CHECK: the largest 43/188 departure is H->4q and does not meet the rule (today 0.885 +- 0.062).
+quarks, and the \Kmid-class labels keep both; the cost appears only at the level that merges quark flavor.
 
-At \Kcoarse{} classes the rejection falls in several signal classes: \MlstFtJcOneCoarseRejDropClasses{}
-(table~\ref{tab:jetclass}).
-The Higgs decay to four quarks loses the most, with \MlstFtJcOneRejHfourqCoarseOverFullPr{}. The loss
-is spread over classes rather than concentrated in a class defined by flavor, and $H\to b\bar b$ shows
-no drop, but its rejection rests on so few passing background jets that its counting uncertainty is
-larger than the drops seen elsewhere (table~\ref{tab:jetclassnbkg}).
-% CHECK: MlstFtJcOneCoarseRejDropClasses does not contain H->bb and lists several classes; the H->4q drop
-% is the largest of them; the H->bb counting uncertainty (about 31 passing jets) exceeds the H->4q drop.
-The drops appear only at the level that removes quark flavor; the \Kmid-class model, whose labels still
-separate decays with $b$ quarks, with $c$ quarks and with neither, shows none of them. The fine-tuned
-\Kcoarse-class network therefore likely starts from features that carry less of the charm and bottom
-content that $W$, $Z$ and Higgs decays to quarks often have and that QCD jets rarely have.
-
-On JetClass the random partitions recover part of the gap between the \Kcoarse- and \Kfull-class
-models, and how much depends on the signal class. With \RandVtwoRuns{} run per partition, we read
-these values descriptively. Figure~\ref{fig:fjctrl} draws the curves of each JetClass class against the rest for
-the random partitions and the partitions with controlled flavor boundaries. The partitions' fine-tuned accuracy exceeds that of the \Kcoarse-class model by
-\MlstFtJcOneAccRandMinusCoarse{} (absolute), which places them between the \Kcoarse- and \Kmid-class
-models, whereas on the pretraining classes they did better than the \Kmid-class level. Of the classes where
-the \Kcoarse-class model loses rejection by the rule of section~\ref{sec:uncertainties}, they recover
-\MlstFtJcOneRandGapShareWZ{} of the gap on $W\to qq'$ and $Z\to q\bar q$ and little on the Higgs decay to four
-quarks. On the other signal classes there is no gap to share by that rule. On $H\to c\bar c$ it is smaller
-than its counting uncertainty, and in the two top-quark classes fewer than $\nmin$ QCD jets pass, so these
-classes cannot show whether the partitions recover it (table~\ref{tab:jetclassall}).
-% CHECK: today accuracy 188 0.8491, partitions 0.8461, 43 0.8480, 17 0.8434 (curves/full_best70_leg2.json);
-% the partitions recover about half of the 17-to-188 rejection gap on W, Z (54, 56%) and little on H->4q (20%);
-% MlstFtJcOneCoarseRejDropClasses is exactly H->4q, W, Z; H->cc 0.890 +- 0.042 with counting uncertainty about 17% (67-78 passing jets);
-% Tbqq and Tbl have 11-19 passing jets at 188 classes, below JC1_MIN_BKG.
-The partitions were built to cut across the \Kcoarse-class groups, and in doing so they put decays with
-different numbers of prongs into one group (table~\ref{tab:randprong}). They likely keep the flavor
-boundaries that help separate $W$ and $Z$ decays from the background and lose the prong-count boundaries
-that the Higgs decay to four quarks relies on.
+Figure~\ref{fig:fjctrl} draws the curves of each JetClass class against the rest for the random partitions
+and the partitions with controlled flavor boundaries. With \RandVtwoRuns{} run per partition, their fine-tuned
+accuracy is consistent with that of the \Kcoarse-class model.
+% CHECK: the partitions' accuracy minus the 17-class accuracy at 1e6 stays within 3 sigma (2026-11-09: +0.0021, z = 2.2).

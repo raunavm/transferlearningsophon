@@ -2601,20 +2601,11 @@ def _rej_diff(pre, runs, arm, ref, c) -> tuple:
     return r, d, d and m < 1
 
 
-def _gap_share(v: list) -> str:
-    """Shares of a gap in words where each is near one half, otherwise their range in per cent."""
-    if not v:
-        return r"\pending{runs}"
-    return "about half" if all(0.4 <= x <= 0.6 for x in v) else f"{_sig2(100 * min(v))}--{_sig2(100 * max(v))}\\%"
-
-
 def jetclass_macros(em, pre: dict, runs: dict, src, fmt_pm, words) -> None:
     """MlstFtJcOneRej<class><arm>Over<ref>: the fine-tuned rejection of a JetClass signal class at
     ParT's working point, run by run; ...RandOverFull over the partitions (and its range);
     MlstFtJcOne<arm>NRejDrop / NRejDiff / RejDropClasses: the classes whose ratio to the 188-class
-    model meets the difference rule (_rej_diff); MlstFtJcOneAccRandMinusCoarse;
-    MlstFtJcOneRandGapShareWZ: how much of the 17-to-188 rejection gap the random partitions recover
-    on W and Z, the two-prong classes whose gap meets the rule, in words (_gap_share)."""
+    model meets the difference rule (_rej_diff); MlstFtJcOneAccRandMinusCoarse."""
     heads = dict(V4.JC1_COLS)
     em.macro("MlstFtJcOneNSignal", words(len(V4.JC1_COLS)), src, "JC1_COLS (count)", "JetClass signal classes")
     for c, _ in V4.JC1_COLS:
@@ -2645,20 +2636,57 @@ def jetclass_macros(em, pre: dict, runs: dict, src, fmt_pm, words) -> None:
         em.macro(f"MlstFtJcOne{w}RejDropClasses", ("none" if not names else names[0] if len(names) == 1 else
                                                     ", ".join(names[:-1]) + " and " + names[-1]), src,
                  "per_class rejections", "the classes of ...NRejDrop, in ParT's column order")
-    share = {}
-    for c in ("label_Wqq", "label_Zqq"):
-        f = lambda m, c=c: None if (x := _jc1_rej(pre, m, c)) is None else x["rejection"]
-        rand = [x for x in _rand_over(runs, "L188", f) if x is not None]
-        coarse = [x for x in _ratio_vals(runs, "R16_Q1", "L188", f)[0] if x is not None]
-        if rand and coarse and float(np.mean(coarse)) != 1:
-            share[c] = (float(np.mean(rand)) - float(np.mean(coarse))) / (1 - float(np.mean(coarse)))
-    em.macro("MlstFtJcOneRandGapShareWZ", _gap_share(list(share.values())), src, "per_class rejections",
-             "(mean partition ratio to 188 - mean 17/188 ratio) / (1 - mean 17/188 ratio): "
-             + ", ".join(f"{c} {100 * v:.0f}%" for c, v in share.items()))
     acc = lambda ms: [b["accuracy"] for m in ms if (b := _jc1_block(pre, m)) is not None]
     a, b = acc([m for x in RAND for m in runs[x]]), acc(runs["R16_Q1"])
     em.macro("MlstFtJcOneAccRandMinusCoarse", f"{np.mean(a) - np.mean(b):+.3f}" if a and b else r"\pending{runs}", src,
              "cells.*.N1000000.s1.jc1.accuracy", "mean over the random partitions minus the mean over the 17-class runs")
+
+
+# (fine-tuning jets, macro suffix): 1e6 for the JetClass statement, 1e4 for the advice line (PI 2026-11-09)
+JC1_BOOT_SIZES = ((1_000_000, ""), (10_000, "EFour"))
+JC1_BOOT_ARM = {"Res": "l162-l188", "Mid": "r42q1-l188", "Coarse": "r16q1-l188"}
+
+
+def jc1_boot_macros(em, data: pathlib.Path, fmt_int, missing: list) -> None:
+    """The JetClass accuracy against the 188-class model at each size of JC1_BOOT_SIZES (experiments/FT/jc1_acc_boot.py,
+    PI 2026-11-09): a difference stands when |delta| > 3 sigma, sigma^2 = run SD^2 + bootstrap SD^2 over the test jets.
+    MlstFtJcOneAcc{Full,Coarse}Boot<sfx>: the mean accuracies; MlstFtJcOneErr<arm>OverFullBoot<sfx>: the share of more
+    errors with sigma, or 'consistent' where it does not pass; ...Z<sfx>: |delta| / sigma; MlstFtJcOneBootReplicas,
+    ...BootJets (from the 1e6 document)."""
+    for n, sfx in JC1_BOOT_SIZES:
+        f = data / "budget" / f"jc1_acc_boot_N{n}.json"
+        if f.exists():
+            _jc1_boot(em, f, sfx, fmt_int, emit_common=not sfx)
+        else:
+            missing.append(f"JetClass accuracy bootstrap -- experiments/FIGS/data/v2/budget/{f.name}")
+
+
+def _jc1_boot(em, f: pathlib.Path, sfx: str, fmt_int, emit_common: bool) -> None:
+    doc = json.loads(f.read_text())
+    for name, d in doc["diffs"].items():
+        for q in ("accuracy", "error_ratio"):
+            x = d[q]
+            if not math.isclose(x["sigma"], math.hypot(x["run_sd"], x["boot_sd"]), rel_tol=1e-9) \
+                    or x["pass"] != (abs(x["delta"]) > 3 * x["sigma"]):
+                raise SystemExit(f"FATAL: {f.name} {name} {q}: sigma is not hypot(run SD, bootstrap SD) "
+                                 "or pass is not |delta| > 3 sigma")
+    c = doc["diffs"][JC1_BOOT_ARM["Coarse"]]
+    em.macro("MlstFtJcOneAccFullBoot" + sfx, f"{np.mean(c['accuracy_ref']):.3f}", f, "diffs.r16q1-l188.accuracy_ref (mean)")
+    em.macro("MlstFtJcOneAccCoarseBoot" + sfx, f"{np.mean(c['accuracy_config']):.3f}", f,
+             "diffs.r16q1-l188.accuracy_config (mean)")
+    for arm, key in JC1_BOOT_ARM.items():
+        e = doc["diffs"][key]["error_ratio"]
+        sig = float(f"{100 * e['sigma']:.1g}")
+        dec = max(0, -math.floor(math.log10(sig)))
+        body = (rf"({100 * e['delta']:.{dec}f}\,\ensuremath{{\pm}}\,{sig:.{dec}f})\% more errors" if e["pass"] and e["delta"] > 0
+                else rf"({100 * -e['delta']:.{dec}f}\,\ensuremath{{\pm}}\,{sig:.{dec}f})\% fewer errors" if e["pass"]
+                else "consistent")
+        em.macro(f"MlstFtJcOneErr{arm}OverFullBoot{sfx}", body, f, f"diffs.{key}.error_ratio",
+                 "delta and sigma = hypot(run SD, bootstrap SD) in per cent; 'consistent' when |delta| <= 3 sigma")
+        em.macro(f"MlstFtJcOneErr{arm}OverFullZ{sfx}", f"{abs(e['z']):.1f}", f, f"diffs.{key}.error_ratio.z", "|delta| / sigma")
+    if emit_common:
+        em.macro("MlstFtJcOneBootReplicas", fmt_int(doc["replicas"]), f, "replicas")
+        em.macro("MlstFtJcOneBootJets", fmt_int(doc["n_test_jets"]), f, "n_test_jets")
 
 
 def table_jetclass_probe(fits, runs, fmt_pm, rows) -> str:
@@ -3852,13 +3880,13 @@ LONGTABLES = (("per_class", "mlst_per_class"), ("per_run", "mlst_per_run"))
 # waits on: one still not emitted after build() becomes a red marker and is listed as missing, so a
 # sentence written with it compiles and shows what it waits for. (name, waits on, twins)
 REQUIRED = (
+    ("MlstFtJcOneErrCoarseOverFullBootEFour", "the JetClass bootstrap at 1e4 (after the equal-stopping read-out)", ""),
     ("DesignNTrainSelected", "a committed count of the selected pretraining jets", ""),
     ("FtBudgetEvalSmall", "build_ft_budget_jobs.py", ""),
     ("LpSubstitutionTop", "fill fits", ""), ("LpSubstitutionQg", "fill fits", ""),
     ("MlstFtJcOneCoarseNRejDrop", "JetClass curves", ""), ("MlstFtJcOneCoarseRejDropClasses", "JetClass curves", ""),
     ("MlstFtJcOneRejHfourqCoarseOverFull", "JetClass curves", "Pr"), ("MlstFtJcOneRejHfourqMidOverFull", "JetClass curves", "Pr"),
     ("MlstFtJcOneRejTbqqRandOverFull", "JetClass curves", "Pr"), ("MlstFtJcOneAccRandMinusCoarse", "JetClass curves", ""),
-    ("MlstFtJcOneRandGapShareWZ", "JetClass curves", ""),
     ("MlstFtCmpJcTwoCoarseOverFullESix", "class-balanced JetClass-II fine-tuning", "Pr"),
     ("MlstPerClassRandFlavMergedOverApart", "probes", "Pr"), ("MlstPerClassCoarseNDoubled", "probes", ""),
     ("MlstPerClassCoarseQuarkLeptonN", "probes", ""), ("MlstBnMaxDevPair", "probes", ""),
@@ -4531,6 +4559,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         out["tables/mlst_jetclass_nbkg.tex"] = _float("jetclass_nbkg", V4.table_jetclass_nbkg(
             pre, ref, pooled, MAIN + MASS + ("RAND",) + FLAV, lab, SCRATCH, 1_000_000), True)
         jetclass_macros(em, pre, runs, src, fmt_pm, words)
+        jc1_boot_macros(em, data, fmt_int, missing)
         out["tables/mlst_rand_prong.tex"] = _float("rand_prong", rp := table_rand_prong(pre, runs, root, TAB), True, fill={"__PRONG__": (
             r"which prong-count boundaries each keeps ($\bullet$: no group holds classes of both prong counts),"
             if r"\bullet" in rp else "none keeps a boundary between two, three and four prongs (for each pair of these "

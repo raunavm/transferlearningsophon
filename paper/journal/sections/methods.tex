@@ -265,6 +265,9 @@ one rule, identical for pretrained and from-scratch networks: a fixed maximum nu
 (appendix~\ref{sec:app-ft}). Missing inputs are set to zero in every fine-tuning. On JetClass-II the levels of
 the hierarchy and the models with the auxiliary mass regression are fine-tuned, while the controls are
 evaluated with linear probes only.
+Fine-tuning on JetClass-II has the \Kfull-class pretraining task itself as its target, so it measures how
+much of the distinctions a coarser label set merged fine-tuning recovers; the transfer comparisons rest on
+JetClass, top tagging and quark/gluon discrimination.
 % CHECK: rewrite when ft-budget-long-jc2b-ctrl reads out
 One fine-tuning per
 pretraining run spends the compute on pretraining runs, whose variation this study must measure. Separating

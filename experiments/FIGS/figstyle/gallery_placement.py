@@ -36,34 +36,34 @@ XBX = "X→bb̄ and X→bs transfer: written when the samples arrive."
 # (gallery id, tier, draft sentence), in paper order within each tier; items that share a sentence share a row on the map
 _FIGURES = (
     ("F1", MAIN, "We pretrain one network on the same jets, in the same order, and change only the label set."),
-    ("F2a", MAIN, "On JetClass-II and JetClass, frozen features lose performance as the label set coarsens, most at 17 "
-                  "classes; at a fixed class count, which classes merge matters."),
-    ("F2b", MAIN, "After fine-tuning the coarsest labels still cost accuracy on JetClass-II and JetClass; on top and "
-                  "quark/gluon tagging the label sets differ by about the run spread or less."),
+    ("F2a", MAIN, "On JetClass-II, frozen features lose with each coarser label set, most where quark flavor merges, "
+                  "and at a fixed class count by which classes merge; on JetClass only 17 below 43 is resolved."),
+    ("F2b", MAIN, "Fine-tuned, 17 classes give about 3% more errors on JetClass, the label sets are consistent on top "
+                  "and quark/gluon; JetClass-II shows partial recovery."),
     ("F3-main", MAIN, "The 17-class loss falls unevenly over the classes; fine-tuning shrinks it but does not remove it."),
     ("F4-mech", MAIN, "Linear probes separate quark flavors worse with 17 classes than with 188, and a flavor boundary "
-                      "in a 17-class partition recovers part of the loss."),
-    ("F8", MAIN, "Fine-tuning the 188-class network beats training from scratch on JetClass-II, JetClass and top "
-                 "tagging, but not on the smallest quark/gluon sets; a linear probe keeps up only on JetClass-II."),
-    ("A8", MAIN, "After fine-tuning, 17 classes stay lowest on JetClass-II and JetClass at every training-set size; on "
-                 "top and quark/gluon tagging the label sets show no consistent order."),
+                      "in a 17-class partition recovers part of the loss, except on X→bb̄ vs cc̄."),
+    ("F8", MAIN, "Fine-tuning the 188-class network beats training from scratch on JetClass-II and JetClass at every "
+                 "size; on top and quark/gluon tagging the two are consistent."),
+    ("A8", MAIN, "Fine-tuned, 17 classes stay lowest on JetClass-II at every size and below 188 on JetClass at 10,000 "
+                 "and a million jets; top and quark/gluon are consistent."),
     ("F9b", MAIN, "An auxiliary mass regression gives a better jet-mass resolution than the soft-drop mass, shown in "
                   "bins of jet pT and generator mass."),
     ("F11", MAIN, XBX),
     ("FJ", APPENDIX, "[[tab:jetclass]]'s rejections come from these per-class ROC curves."),
-    ("F4-other", APPENDIX, "On the other flavor pairs the 17-class probes separate least, 43 classes as little on X→ee "
-                           "vs μμ; 162 classes, merging QCD, lose on QCD bb̄ vs cc̄."),
+    ("F4-other", APPENDIX, "On QCD flavor pairs 17-class probes separate least; on X→ee vs μμ 43 classes fall below 188; 162 "
+                           "loses on QCD bb̄ vs cc̄."),
     ("F4-mech-ft", APPENDIX, "After fine-tuning, 17 classes still separate the quark-flavor pairs worse than 188, by "
-                             "less than linear probes do; a b-quark boundary recovers part of it on X→bb̄ vs cc̄ only."),
-    ("PT", APPENDIX, "In every jet-pT bin the JetClass-II probes keep the label-set order, and 17 classes stay lowest on "
-                     "JetClass after fine-tuning and on X→bb̄ vs cc̄."),
-    ("F6", APPENDIX, "Fine-tuned on top and quark/gluon tagging, Pythia and Herwig, the label sets differ by about the "
-                     "run spread or less."),
-    ("F6-app", APPENDIX, "On top and quark/gluon tagging every linear probe stays below fine-tuning."),
-    ("A10", APPENDIX, "The JetClass-II probes keep the label-set order at every training-set size; on JetClass 17 "
-                      "classes stay lowest."),
+                             "less than linear probes do; the flavor boundaries are consistent with none."),
+    ("PT", APPENDIX, "Per jet-pT bin, 43 and 17 classes fall behind 188 on JetClass-II probes; JetClass fine-tuning and "
+                     "X→bb̄ vs cc̄ are consistent but for the lowest JetClass bin."),
+    ("F6", APPENDIX, "Fine-tuned on top and quark/gluon tagging, Pythia and Herwig, the label sets are consistent."),
+    ("F6-app", APPENDIX, "On the full top and quark/gluon sets every linear probe stays below fine-tuning."),
+    ("A10", APPENDIX, "At every size the 43- and 17-class probes fall behind 188 on JetClass-II, 162 at all sizes but "
+                      "10,000 jets; on JetClass 17 fall below 43 only."),
     ("F9a", APPENDIX, "The mass output's response is narrower than the soft-drop mass's."),
-    ("F10a", APPENDIX, "Cuts on the pretraining head reshape the QCD mass at 10% and 1% efficiency."),
+    ("F10a", APPENDIX, "Head cuts sculpt the QCD mass beyond a random selection at 10% QCD efficiency for all, at 1% only "
+                       "for 17 classes and two flavor partitions."),
     # PI 2026-11-09: the main text reports exactly the differences beyond 3 sigma (tab:sculptboot), nothing else
     ("F10b", APPENDIX, "17 classes sculpt the QCD mass more than 188 at 1% QCD efficiency, 43 at 10%; mass regression "
                        "reduces it for 162 classes at 10%; every other difference (17 + mass, flavor boundaries) is "
@@ -73,7 +73,7 @@ _FIGURES = (
                        "its uncertainty."),
     ("F10a-flav", APPENDIX, SCULPT_FLAV),
     ("F10-ft", APPENDIX, "Fine-tuned on class-balanced JetClass-II, every network sculpts the QCD mass several times "
-                         "more than the pretraining heads, with or without pretraining, all within the run spread."),
+                         "more than the pretraining heads; label sets and no pretraining are consistent."),
     ("UMAP-jc2-had", APPENDIX, "Qualitatively, 188-class frozen features separate X→bb̄, cc̄ and qq̄ and 17-class ones "
                                "only order them; after fine-tuning both separate them."),
     ("VAL", APPENDIX, "Validation accuracy levels off for every label set during pretraining."),
@@ -88,25 +88,26 @@ _FIGURES = (
 )
 # (table label, tier, draft sentence); tab:benchtop and tab:benchqg become one table if it fits at the current type size
 _TABLES = (
-    ("tab:jetclass", MAIN, "Fine-tuned, the coarsest labels still lower the rejection for several JetClass classes."),
-    ("tab:benchtop + tab:benchqg", MAIN, "On top and quark/gluon tagging the label sets differ by about the run "
-                                         "spread or less."),
+    ("tab:jetclass", MAIN, "Fine-tuned on a million JetClass jets, 17 classes give about 3% more errors than 188; per class the "
+                           "label sets are consistent."),
+    ("tab:benchtop + tab:benchqg", MAIN, "On top and quark/gluon tagging the label sets are consistent."),
     ("tab:mass", MAIN, "An auxiliary mass regression puts the jet mass into the frozen features."),
     ("tab:xbx", MAIN, XBX),
     ("tab:xbxrej", MAIN, XBX),
     ("tab:probes", APPENDIX, "Every probe behind [[F2a]], with the released Sophon checkpoint."),
     ("tab:mlp", APPENDIX, "Nonlinear probes repeat the linear-probe comparisons."),
-    ("tab:coarse", APPENDIX, "Scored on the 43 groups, 17-class features fall behind; on the 17 groups the label sets agree."),
-    ("tab:qcdhf", APPENDIX, "Merging the 27 QCD classes (162) does not lower the X→bb̄ discriminant's rejection of "
-                            "b-flavored QCD."),
-    ("tab:fill", APPENDIX, "Filling the missing inputs with zeros, the training mean or random draws changes the "
-                           "linear probes."),
+    ("tab:coarse", APPENDIX, "Scored on the 43 groups, 17-class features fall behind; on the 17 groups the label sets "
+                             "are consistent."),
+    ("tab:qcdhf", APPENDIX, "With the 27 QCD classes merged (162), the X→bb̄ discriminant's rejection of b-flavored QCD "
+                            "is consistent with 188."),
+    ("tab:fill", APPENDIX, "Random draws for the missing top inputs beat zeros; the mean, and every quark/gluon fill, are "
+                           "consistent with zeros."),
     ("tab:inputs", APPENDIX, "Top and quark/gluon data lack some inputs, which are set to zero."),
     ("tab:bn", APPENDIX, "BatchNorm statistics recomputed, against the checkpoints as trained."),
     ("tab:partrepro", APPENDIX, "Our from-scratch training against ParT's published top-tagging result."),
     ("tab:lrsweep", APPENDIX, "The fine-tuning learning rate was chosen on validation."),
     ("tab:ft", APPENDIX, "Every label set fine-tuned at every training-set size."),
-    ("tab:randprong", APPENDIX, "The random partitions mix prong counts, which likely limits H→4q."),
+    ("tab:randprong", APPENDIX, "The prong counts each random partition mixes."),
     ("tab:pairs", APPENDIX, "Pair separations, linear probe and fine-tuned, quoted from this table."),
     ("tab:sculpt", APPENDIX, "Sculpting at 10% and 1% QCD efficiency, beside the random-selection floor."),
     ("tab:sculptboot", APPENDIX, "The sculpting differences and their combined uncertainties that decide [[F10b]]'s "

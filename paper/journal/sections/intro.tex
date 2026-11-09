@@ -95,17 +95,17 @@ the label sets are those of every later figure.}
 % P6. Findings, one per sentence; the recommendation; the outline.
 % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull; MlstCmpJcTwoQcdResOverFull > 1 and MlstCmpJcTwoResResOverFull agrees with 1
 % CHECK: MlstCmpJcTwoRandOverCoarse < 1; MlstCmpJcTwoF{one,oner}OverFzero < 1 (both runs)
-% CHECK: MlstFtJcOneCoarseNRejDrop >= two and MlstFtJcOne{Res,Mid}NRejDrop = none, on the long-budget runs once all 30 are in
+% CHECK: MlstFtJcOneErrCoarseOverFullBoot passes 3 sigma and MlstFtJcOneErr{Res,Mid}OverFullBoot read "consistent"
 % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull agree with 1 within their SD
 % CHECK: MlstCmpMlpResMassOverRes < 1; MlstCmpJcTwoResMassOverRes within a few per cent of 1 (sculpting is out of the findings: one mass-regression difference passes 3 sigma, PI 2026-11-09)
-We find that a linear probe on the frozen features loses performance on the classes that the label set
-merges, and loses the most when quark flavors are merged. At the same number of classes, the random
-partitions lose less than the \Kcoarse-class level, and a single flavor boundary lowers the error of the
-probe, so the loss depends on which classes are merged and not only on how many remain. After
-fine-tuning, the \Kcoarse-class labels still lower the background rejection for several signal classes of
-JetClass, a separate simulation with every input of the network present. On top tagging and quark/gluon
-discrimination, whose public datasets lack some of the network's inputs, the label sets agree within the
-spread between pretraining runs. The auxiliary mass regression makes the jet mass predictable from the
+We find that coarser pretraining labels make the frozen features substantially worse: a linear probe
+makes more errors on the pretraining classes at every coarser level of the hierarchy, and merging quark
+flavor is the costliest single merge. At the same number of classes, the random partitions lose less than
+the \Kcoarse-class level, and a single flavor boundary lowers the error of the probe, so which classes are
+merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \MlstFtJcOneErrCoarseOverFullBoot{}
+on JetClass, a separate simulation with every input of the network present, and on top tagging and
+quark/gluon discrimination, whose public datasets lack some of the network's inputs, the label sets show no
+resolved difference. The auxiliary mass regression makes the jet mass predictable from the
 frozen features at a small cost to the classification. A pretraining label set for jets should therefore contain every distinction that
 downstream discriminants sum over, and the flavor boundaries. Section~\ref{sec:related} reviews related
 work, section~\ref{sec:methods} describes the data, the label sets and the evaluation,

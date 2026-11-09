@@ -1,8 +1,8 @@
 % Discussion and conclusion (outline section 5): four run-in paragraphs, no new numbers.
 \section{Discussion and conclusion}\label{sec:discussion}
 
-Frozen features keep what the pretraining labels separate, and the cost of a coarse label set sits
-where its merges remove flavor. On the pretraining classes a linear probe separates the \Kfull{} classes less
+Frozen features keep what the pretraining labels separate, and merging quark flavor is the costliest
+single merge. On the pretraining classes a linear probe separates the \Kfull{} classes less
 well at every coarser level of the class hierarchy (figure~\ref{fig:f2a}(a)), and the step that removes
 quark flavor costs the most in wrongly ordered pairs of jets (table~\ref{tab:probes}). % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull > 1
 Merging the QCD classes costs only the QCD classes. Random partitions into \Kcoarse{} classes, built to
@@ -11,16 +11,12 @@ not set the cost. Per class, decays merged with their lepton-flavor counterparts
 decays merged with their quark-flavor counterparts carry the largest summed cost
 (figure~\ref{fig:f3}; data release, \texttt{jetclass2\_per\_class.csv}). % CHECK: MlstPerClassCoarseTopClass is a lepton-flavor class; MlstPerClassCoarseQuarkShare > MlstPerClassCoarseLeptonShare
 A single flavor boundary placed at random among the four-quark decays keeps flavor readable even for
-pairs it does not cut (figure~\ref{fig:f4}). Fine-tuning does not remove the effect where every input is present: on
-JetClass the \Kcoarse-class model still rejects less background than the \Kfull-class model in several
-signal classes (table~\ref{tab:jetclass}). % CHECK: MlstFtJcOneCoarseNRejDrop at least two (outline: five)
-There the random partitions recover only part of that loss: \MlstFtJcOneRandGapShareWZ{} of it on
-$W\to qq'$ and $Z\to q\bar q$, and little on the Higgs decay to four quarks, which likely relies on the
-prong-count boundaries the partitions mix
-(table~\ref{tab:jetclassall}). % CHECK: as section 4.2 (results_jc.tex): share of the 17-to-188 rejection gap recovered, today 54 and 56% on W, Z and 20% on H->4q (curves/full_best70_leg2.json); the other classes have no gap by the rule
-On top tagging and quark/gluon
-discrimination, which lack some inputs, the fine-tuned label sets lie much closer together
-(tables~\ref{tab:benchtop} and~\ref{tab:benchqg}).
+pairs it does not cut (figure~\ref{fig:f4}). Fine-tuning shrinks the cost but does not remove it where every input is present: on JetClass the
+\Kcoarse-class model gives \MlstFtJcOneErrCoarseOverFullBoot{} than the \Kfull-class model, while the
+\Kres- and \Kmid-class models are consistent with it (table~\ref{tab:jetclass}).
+% CHECK: MlstFtJcOneErrCoarseOverFullBoot passes 3 sigma; MlstFtJcOneErr{Res,Mid}OverFullBoot read "consistent"
+On top tagging and quark/gluon discrimination, which lack some inputs, the fine-tuned label sets show no
+resolved difference (tables~\ref{tab:benchtop} and~\ref{tab:benchqg}).
 With the missing inputs set to zero, a linear probe on the frozen features of the \Kfull-class model
 matches the randomly initialized network on top tagging (\MlstLpTopRthirtyFullOverInitBnZeroPr{}); with the
 substitution chosen on validation it reaches \MlstLpTopRthirtyFullOverInitBnPr{} of that network, and
@@ -36,9 +32,9 @@ The results translate into concrete choices for a pretraining label set. Keep ev
 downstream discriminant sums over, because a merge removes the discriminant from the output layer
 whatever the frozen features keep: Sophon's $X\to b\bar{b}$ discriminant cannot be formed from the
 \Kmid-class labels, and the $D_{bc}$ discriminant of the boosted $|V_{cb}|$ measurement exists only at
-\Kfull{} and \Kres{} classes (table~\ref{tab:usecase}). Keep the flavor boundaries, which the
-pretraining classes and JetClass both reward (figures~\ref{fig:f2a}--\ref{fig:f4} and
-table~\ref{tab:jetclass}). Keep the QCD classes apart where a downstream task separates QCD jets by
+\Kfull{} and \Kres{} classes (table~\ref{tab:usecase}). Keep the flavor boundaries: on the pretraining classes a single one lowers the error of the linear probe,
+and on JetClass the cost after fine-tuning appears only at the merge of quark flavor
+(figures~\ref{fig:f2a}--\ref{fig:f4} and table~\ref{tab:jetclass}). Keep the QCD classes apart where a downstream task separates QCD jets by
 flavor: merging them leaves the resonant classes unchanged but costs the QCD pairs
 (table~\ref{tab:pairs}) and the one discriminant that sums QCD classes
 (table~\ref{tab:usecase}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of tab:pairs show 162 above 188
@@ -50,7 +46,11 @@ of $R_{30}$, and \MlstMassNRunsWord{} runs per model cannot exclude a modest one
 (section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; the sculpting clause is gallery_placement.F10B_STATED's 162mass-162 at eps_B 10% (the only mass-regression difference beyond 3 sigma in sculpting_boot.json, PI 2026-11-09); as section 4.6 states, MlstFtTopRthirtyResMassOverResPr and MlstFtTopRthirtyCoarseMassOverCoarsePr read "equal within" under the Methods two-run rule (raw R30 today: 1.12 and 0.89; 0.90 and 0.92); if either states a direction beyond MlstBootTestMaxRthirtyFt, rewrite both sections
 For benchmarks with missing inputs, compare label sets by fine-tuning with the missing input features
 set to zero, which gives every label set identical inputs; input dropout during pretraining, which
-replaces some inputs with zeros, is the published alternative~\cite{omnilearn,jpjepa}. Report the variation between pretraining runs, because the
+replaces some inputs with zeros, is the published alternative~\cite{omnilearn,jpjepa}. The label set matters most where the features stay frozen or the fine-tuning set is small: after
+fine-tuning on JetClass the \Kcoarse-class labels give \MlstFtJcOneErrCoarseOverFullBootEFour{} at
+\FtSizeEFour{} jets and \MlstFtJcOneErrCoarseOverFullBoot{} at \FtSizeESix{}.
+% CHECK: MlstFtJcOneErrCoarseOverFullBootEFour waits for the 1e4 bootstrap after the equal-stopping read-out (2026-11-09: about 7% more errors, z = 4.6 with the binomial term); top and quark/gluon at small training sets wait for the equal-stopping results
+Report the variation between pretraining runs, because the
 label-set effects here are measured against it (section~\ref{sec:uncertainties}) and a single
 pretrained model cannot tell the two apart.
 
