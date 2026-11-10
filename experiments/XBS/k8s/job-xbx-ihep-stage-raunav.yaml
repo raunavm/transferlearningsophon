@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.88" \
+          git clone --depth 1 --branch "mtx-s2.90" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -38,9 +38,9 @@ spec:
           [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
           mkdir -p /data/xbx/v2
           STAGED=""; FAILED=""
-          F_xbb=$(ls /data/xbx/ihep/Xbb_ntuple/*.root 2>/dev/null | sort || true)
+          F_xbb=$(ls /data/Xbb-Xbs-data/Xbb_ntuple/*.root 2>/dev/null | sort || true)
           if [ -z "${F_xbb}" ]; then
-            echo "no files in /data/xbx/ihep/Xbb_ntuple: xbb not staged"
+            echo "no files in /data/Xbb-Xbs-data/Xbb_ntuple: xbb not staged"
           elif python3 experiments/XBS/stage_xbx.py inspect --file "${F_xbb%%[[:space:]]*}" && \
                python3 experiments/XBS/stage_xbx.py check --window 93.75 143.75 --files ${F_xbb} --out /data/xbx/v2/check_xbb.json; then
             [ -f /data/xbx/v2/xbb/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 convert --name xbb --window 93.75 143.75 --files ${F_xbb} || halt
@@ -49,9 +49,9 @@ spec:
           else
             echo "xbb failed its inspection or check (/data/xbx/v2/check_xbb.json): not staged"; FAILED="${FAILED} xbb"
           fi
-          F_xbs=$(ls /data/xbx/ihep/Xbs_ntuple/*.root 2>/dev/null | sort || true)
+          F_xbs=$(ls /data/Xbb-Xbs-data/Xbs_ntuple/*.root 2>/dev/null | sort || true)
           if [ -z "${F_xbs}" ]; then
-            echo "no files in /data/xbx/ihep/Xbs_ntuple: xbs not staged"
+            echo "no files in /data/Xbb-Xbs-data/Xbs_ntuple: xbs not staged"
           elif python3 experiments/XBS/stage_xbx.py inspect --file "${F_xbs%%[[:space:]]*}" && \
                python3 experiments/XBS/stage_xbx.py check --window 93.75 143.75 --files ${F_xbs} --out /data/xbx/v2/check_xbs.json; then
             [ -f /data/xbx/v2/xbs/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 convert --name xbs --window 93.75 143.75 --files ${F_xbs} || halt
@@ -74,7 +74,7 @@ spec:
             fi
           done
           echo "closure passed:${PASSED}"
-          [ -n "${STAGED}${FAILED}" ] || { echo "FATAL: no sample in /data/xbx/ihep/Xbb_ntuple or /data/xbx/ihep/Xbs_ntuple"; exit 42; }
+          [ -n "${STAGED}${FAILED}" ] || { echo "FATAL: no sample in /data/Xbb-Xbs-data/Xbb_ntuple or /data/Xbb-Xbs-data/Xbs_ntuple"; exit 42; }
           echo "staged:${STAGED}"
           du -sh /data/xbx/v2/* || true
           [ -z "${FAILED}" ] || { echo "FATAL: failed its check:${FAILED}"; exit 42; }

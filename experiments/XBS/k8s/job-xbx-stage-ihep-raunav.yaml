@@ -37,13 +37,13 @@ spec:
           echo "PVC used: ${USED}%"
           [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
           mkdir -p /data/xbx/v2
-          F_xbb=$(ls /data/xbx/ihep/Xbb_ntuple/*.root 2>/dev/null | sort || true)
-          [ -n "${F_xbb}" ] || { echo "FATAL: no files in /data/xbx/ihep/Xbb_ntuple"; exit 42; }
+          F_xbb=$(ls /data/Xbb-Xbs-data/Xbb_ntuple/*.root 2>/dev/null | sort || true)
+          [ -n "${F_xbb}" ] || { echo "FATAL: no files in /data/Xbb-Xbs-data/Xbb_ntuple"; exit 42; }
           python3 experiments/XBS/stage_xbx.py check --files ${F_xbb} --out /data/xbx/v2/check_xbb.json || halt
           [ -f /data/xbx/v2/xbb/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 convert --name xbb --files ${F_xbb} || halt
           [ -f /data/xbx/v2/pairs/xbb/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 pair --signal xbb || halt
-          F_xbs=$(ls /data/xbx/ihep/Xbs_ntuple/*.root 2>/dev/null | sort || true)
-          [ -n "${F_xbs}" ] || { echo "FATAL: no files in /data/xbx/ihep/Xbs_ntuple"; exit 42; }
+          F_xbs=$(ls /data/Xbb-Xbs-data/Xbs_ntuple/*.root 2>/dev/null | sort || true)
+          [ -n "${F_xbs}" ] || { echo "FATAL: no files in /data/Xbb-Xbs-data/Xbs_ntuple"; exit 42; }
           python3 experiments/XBS/stage_xbx.py check --files ${F_xbs} --out /data/xbx/v2/check_xbs.json || halt
           [ -f /data/xbx/v2/xbs/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 convert --name xbs --files ${F_xbs} || halt
           [ -f /data/xbx/v2/pairs/xbs/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 pair --signal xbs || halt

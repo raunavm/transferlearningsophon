@@ -68,8 +68,8 @@ PIN_REPORT = "mtx-s2.28"   # experiments/XBS/xbx_report.py (2026-10-31; s2.27 ra
 # figure and table code it imports (cd2cf4d)
 # mtx-s2.86 (2026-11-07): none ran at mtx-s2.71; xbx_report.py's imports changed after it
 # mtx-s2.88 (2026-11-09): none ran at mtx-s2.86; make_tables, mlst_results and the gallery code changed after it
-PIN_IHEP_REPORT = "mtx-s2.88"
-PIN_IHEP = "mtx-s2.88"   # A5 gate 1 (input closure against JetClass-II X->bq) and any GPU for the scratch runs
+PIN_IHEP_REPORT = "mtx-s2.90"
+PIN_IHEP = "mtx-s2.90"   # A5 gate 1 (input closure against JetClass-II X->bq) and any GPU for the scratch runs
 # mtx-s2.41: the first pin with gate 1; no IHEP spec ran at it, and extract_v2.py changed after it (05d3238)
 PIN_DRYRUN = "mtx-s2.20"   # the scratch dry run as it ran (complete 2026-10-31)
 # mtx-s2.20: the first IHEP pin; no IHEP spec ran at it
@@ -108,9 +108,9 @@ FITS_IHEP = f"{EX_ROOT}/fits_ihep"
 SCRATCH_ROOT = "/data/results/xbx/scratch"
 SCRATCH_ROOT_IHEP = "/data/results/xbx/scratch_ihep"
 DRYRUN_ROOT = "/data/results/xbx/scratch_dryrun"
-# where the PI's copy of the samples goes, one folder per sample as at the source (UAF
-# /ceph/cms/store/user/woodson/{Xbb,Xbs}_ntuple, 30 ROOT files each)
-SAMPLE_DIRS = {"xbb": "/data/xbx/ihep/Xbb_ntuple", "xbs": "/data/xbx/ihep/Xbs_ntuple"}
+# where the samples are, one folder per sample as at the source (UAF /ceph/cms/store/user/woodson/{Xbb,Xbs}_ntuple,
+# 30 ROOT files each): copied by Jason Weitz on 2026-11-09, read in place, never moved or written
+SAMPLE_DIRS = {"xbb": "/data/Xbb-Xbs-data/Xbb_ntuple", "xbs": "/data/Xbb-Xbs-data/Xbs_ntuple"}
 CLOSURE_ROOT = f"{STAGE}/closure"   # A5 gate 1, one folder per sample
 IHEP_SIGNALS = ("xbb", "xbs")
 MX = 125.0     # the PI: "the SM (mX=125) Xbb and Xbs samples"; confirm on arrival (inspect, check's m_SD peak)

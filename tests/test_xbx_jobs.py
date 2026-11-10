@@ -154,9 +154,9 @@ def _run_stage(tmp_path, present, failing=(), hard_flag=()):
     closure verdict fails for those in hard_flag: (exit code, logged calls)."""
     tmp_path.mkdir(parents=True)
     s = _script(SPECS["job-xbx-ihep-stage-raunav.yaml"])
-    s = s[s.index(f"mkdir -p {B.STAGE}"):].replace("/data/xbx", str(tmp_path / "data/xbx"))
+    s = s[s.index(f"mkdir -p {B.STAGE}"):].replace("/data/", str(tmp_path / "data") + "/")
     for sig in present:
-        d = pathlib.Path(B.SAMPLE_DIRS[sig].replace("/data/xbx", str(tmp_path / "data/xbx")))
+        d = pathlib.Path(B.SAMPLE_DIRS[sig].replace("/data/", str(tmp_path / "data") + "/"))
         d.mkdir(parents=True)
         for k in range(3):
             (d / f"{sig}_{k}.root").write_text("")
@@ -174,7 +174,7 @@ def _run_stage(tmp_path, present, failing=(), hard_flag=()):
 def test_the_real_sample_staging_stages_whichever_sample_is_present(tmp_path):
     rc, calls = _run_stage(tmp_path / "xbs", ["xbs"])
     assert rc == 0 and "convert --name xbs" in calls and "pair --signal xbs" in calls and "xbb" not in calls
-    assert "inspect --file " + str(tmp_path / "xbs/data/xbx/ihep/Xbs_ntuple/xbs_0.root") + "\n" in calls
+    assert "inspect --file " + str(tmp_path / "xbs/data/Xbb-Xbs-data/Xbs_ntuple/xbs_0.root") + "\n" in calls
     rc, calls = _run_stage(tmp_path / "both", ["xbb", "xbs"])
     assert rc == 0 and calls.count("convert --name") == 2
     rc, calls = _run_stage(tmp_path / "none", [])
