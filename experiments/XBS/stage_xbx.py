@@ -79,6 +79,24 @@ BRANCH_MAP: dict[str, str] = {}
 TYPE_FLAGS = ("part_isChargedHadron", "part_isNeutralHadron", "part_isPhoton", "part_isElectron", "part_isMuon")
 CHARGED_FLAGS = ("part_isChargedHadron", "part_isElectron", "part_isMuon")
 DISPLACEMENT = ("part_d0val", "part_dzval", "part_d0err", "part_dzerr")
+# The X->bb / X->bs samples of 2026-11-09 store one part_pid (PDG code, 0 for a neutral hadron) where JetClass-II stores
+# the five type flags: a file with part_pid and without a flag gets that flag from the code. A code outside PID_CODES
+# is FATAL, so no particle is given a type by default.
+PID_BRANCH = "part_pid"
+PID_CODES = {"part_isChargedHadron": (211, 321, 2212), "part_isNeutralHadron": (0,), "part_isPhoton": (22,),
+             "part_isElectron": (11,), "part_isMuon": (13,)}
+
+
+def flags_from_pid(pid) -> dict:
+    """{type flag: per-particle 0/1 (jagged, as pid)} from the absolute PDG code; an unknown code is FATAL."""
+    import awkward as ak
+    a = abs(pid)
+    known = [c for codes in PID_CODES.values() for c in codes]
+    flat = np.asarray(ak.flatten(a))
+    bad = np.setdiff1d(np.unique(flat), known)
+    if bad.size:
+        raise SystemExit(f"FATAL: {PID_BRANCH} codes {bad.tolist()} have no particle type in PID_CODES")
+    return {flag: ak.values_astype(sum(a == c for c in codes) > 0, np.float32) for flag, codes in PID_CODES.items()}
 ZERO_FILL_MAX = 1e-3
 
 
@@ -127,7 +145,14 @@ def read_table(path: str, columns: list[str], mapping: dict | None = None) -> pa
             trees = sorted({k.split(";")[0] for k, v in f.classnames().items() if v == "TTree"})
             if len(trees) != 1:
                 raise SystemExit(f"FATAL: {path} has {len(trees)} TTrees: {trees}")
-            t = ak.to_arrow_table(f[trees[0]].arrays(columns), extensionarray=False)
+            tree = f[trees[0]]
+            derived = [c for c in columns if c in PID_CODES and c not in tree and PID_BRANCH in tree]
+            stored = [c for c in columns if c not in derived]
+            arr = tree.arrays(stored + ([PID_BRANCH] if derived and PID_BRANCH not in stored else []))
+            if derived:
+                flags = flags_from_pid(arr[PID_BRANCH])
+                arr = ak.zip({c: flags[c] if c in derived else arr[c] for c in columns}, depth_limit=1)
+            t = ak.to_arrow_table(arr, extensionarray=False)
     return t.rename_columns([mapping.get(c, c) for c in t.column_names])
 
 
@@ -145,6 +170,8 @@ def file_branches(path: str, mapping: dict | None = None) -> dict[str, str]:
             tree = next(f[k] for k, v in f.classnames().items() if v == "TTree")
             br = {k: "list" if ("vector" in b.typename or "[]" in b.typename) else "scalar"
                   for k, b in tree.items()}
+            if PID_BRANCH in br:          # the flags read_table derives from it
+                br.update({flag: br[PID_BRANCH] for flag in PID_CODES if flag not in br})
     return {mapping.get(k, k): v for k, v in br.items()}
 
 

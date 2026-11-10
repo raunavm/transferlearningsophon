@@ -71,8 +71,8 @@ PIN_REPORT = "mtx-s2.28"   # experiments/XBS/xbx_report.py (2026-10-31; s2.27 ra
 # figure and table code it imports (cd2cf4d)
 # mtx-s2.86 (2026-11-07): none ran at mtx-s2.71; xbx_report.py's imports changed after it
 # mtx-s2.88 (2026-11-09): none ran at mtx-s2.86; make_tables, mlst_results and the gallery code changed after it
-PIN_IHEP_REPORT = "mtx-s2.90"
-PIN_IHEP = "mtx-s2.90"   # A5 gate 1 (input closure against JetClass-II X->bq) and any GPU for the scratch runs
+PIN_IHEP_REPORT = "mtx-s2.91"
+PIN_IHEP = "mtx-s2.91"   # A5 gate 1 (input closure against JetClass-II X->bq) and any GPU for the scratch runs
 # mtx-s2.41: the first pin with gate 1; no IHEP spec ran at it, and extract_v2.py changed after it (05d3238)
 PIN_DRYRUN = "mtx-s2.20"   # the scratch dry run as it ran (complete 2026-10-31)
 # mtx-s2.20: the first IHEP pin; no IHEP spec ran at it
@@ -127,7 +127,7 @@ def _ihep_line(specs: dict) -> dict:
             raise SystemExit(f"FATAL: {name}: {specs[name].count(GUARD)} storage guards, expected 1")
         specs[name] = specs[name].replace(GUARD, f"-le {IHEP_LINE} ]")
     return specs
-MX = 125.0     # the PI: "the SM (mX=125) Xbb and Xbs samples"; confirm on arrival (inspect, check's m_SD peak)
+MX = 200.0     # the samples of 2026-11-09: m_SD peaks at 175-200 GeV and falls off above 225 (Sophon's Fig. 2 mass); window 150-230 GeV
 # the stand-in until the samples come; then xbb and xbs (xbb_jc2 in xbb's place if the
 # IHEP folder holds no X->bb sample)
 SIGNALS = ("xbb_jc2",)

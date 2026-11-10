@@ -34,7 +34,7 @@ spec:
         args:
         - |
           set -euo pipefail
-          git clone --depth 1 --branch "mtx-s2.90" \
+          git clone --depth 1 --branch "mtx-s2.91" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -105,7 +105,7 @@ spec:
             rm -f ${OUT}/features_${P}/features.npy
           done
           [ -f ${OUT}/endpoints.json ] || python3 experiments/XBS/fit_xbx.py scratch --sig ${OUT}/features_sig --qcd ${OUT}/features_qcd \
-            --out ${OUT}/endpoints.json --window 93.75 143.75 --mx 125 --ft-manifest ${OUT}/ft_manifest.json
+            --out ${OUT}/endpoints.json --window 150 230 --mx 200 --ft-manifest ${OUT}/ft_manifest.json
           [ -f ${OUT}/net_best_epoch_state.pt ] || {
             echo "FATAL: no net_best_epoch_state.pt in ${OUT}; refusing to prune"; exit 1; }
           rm -f ${OUT}/net_epoch-*_state.pt ${OUT}/net_epoch-*_optimizer.pt

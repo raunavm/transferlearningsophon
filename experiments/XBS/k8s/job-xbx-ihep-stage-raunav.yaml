@@ -24,7 +24,7 @@ spec:
           set -euo pipefail
           # a signal (OOM, lost node) is retried; any other failure is deterministic
           halt () { rc=$?; [ $rc -ge 128 ] && exit $rc; echo "HALT: exit $rc, not retried"; exit 42; }
-          git clone --depth 1 --branch "mtx-s2.90" \
+          git clone --depth 1 --branch "mtx-s2.91" \
             https://github.com/raunavm/transferlearningsophon.git \
             /workspace/transferlearningsophon
           cd /workspace/transferlearningsophon
@@ -42,8 +42,8 @@ spec:
           if [ -z "${F_xbb}" ]; then
             echo "no files in /data/Xbb-Xbs-data/Xbb_ntuple: xbb not staged"
           elif python3 experiments/XBS/stage_xbx.py inspect --file "${F_xbb%%[[:space:]]*}" && \
-               python3 experiments/XBS/stage_xbx.py check --window 93.75 143.75 --files ${F_xbb} --out /data/xbx/v2/check_xbb.json; then
-            [ -f /data/xbx/v2/xbb/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 convert --name xbb --window 93.75 143.75 --files ${F_xbb} || halt
+               python3 experiments/XBS/stage_xbx.py check --window 150 230 --files ${F_xbb} --out /data/xbx/v2/check_xbb.json; then
+            [ -f /data/xbx/v2/xbb/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 convert --name xbb --window 150 230 --files ${F_xbb} || halt
             [ -f /data/xbx/v2/pairs/xbb/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 pair --signal xbb || halt
             STAGED="${STAGED} xbb"
           else
@@ -53,8 +53,8 @@ spec:
           if [ -z "${F_xbs}" ]; then
             echo "no files in /data/Xbb-Xbs-data/Xbs_ntuple: xbs not staged"
           elif python3 experiments/XBS/stage_xbx.py inspect --file "${F_xbs%%[[:space:]]*}" && \
-               python3 experiments/XBS/stage_xbx.py check --window 93.75 143.75 --files ${F_xbs} --out /data/xbx/v2/check_xbs.json; then
-            [ -f /data/xbx/v2/xbs/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 convert --name xbs --window 93.75 143.75 --files ${F_xbs} || halt
+               python3 experiments/XBS/stage_xbx.py check --window 150 230 --files ${F_xbs} --out /data/xbx/v2/check_xbs.json; then
+            [ -f /data/xbx/v2/xbs/eval/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 convert --name xbs --window 150 230 --files ${F_xbs} || halt
             [ -f /data/xbx/v2/pairs/xbs/DONE ] || python3 experiments/XBS/stage_xbx.py --root /data/xbx/v2 pair --signal xbs || halt
             STAGED="${STAGED} xbs"
           else
@@ -66,7 +66,7 @@ spec:
             C=/data/xbx/v2/closure/${s}; mkdir -p ${C}
             [ -f ${C}/closure.json ] || python3 experiments/AOJ/closure.py --config configs/xbx/JetClassII_xbx.yaml --ref-config configs/xbx/JetClassII_xbx.yaml \
               --aoj $(ls /data/xbx/v2/${s}/eval/*.parquet | sort) --reference $(ls /data/xbx/v2/xbq_jc2/eval/*.parquet | sort) \
-              --msd-window 93.75 143.75 --out ${C} || halt
+              --msd-window 150 230 --out ${C} || halt
             if python3 -c "import json, sys; sys.exit(1 if json.load(open('${C}/closure.json'))['hard_flags'] else 0)"; then
               touch ${C}/PASS; PASSED="${PASSED} ${s}"
             else

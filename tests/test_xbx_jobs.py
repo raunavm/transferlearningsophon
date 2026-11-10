@@ -129,13 +129,15 @@ def test_the_real_sample_jobs_have_their_own_names_and_write_somewhere_new():
 
 
 def test_every_real_sample_spec_passes_the_window_rule_and_the_mass():
-    assert B.MX == 125 and B.X.window_for(B.MX) == (93.75, 143.75)
+    assert B.MX == 200 and B.X.window_for(B.MX) == (150, 230)       # the samples' mass, confirmed on arrival (2026-11-09)
     for n, text in SPECS.items():
         s = _script(text)
         if "-ihep-" in n and ("-fit-" in n or "-scratch-" in n):
-            assert "--window 93.75 143.75 --mx 125 " in s, n
+            assert "--window 150 230 --mx 200 " in s, n
         if "-ihep-stage-" in n:
-            assert s.count("--window 93.75 143.75 --files") == 4 and "--mx" not in s
+            assert s.count("--window 150 230 --files") == 4 and "--mx" not in s
+    s = _script(B.build(mx=125.0)["job-xbx-ihep-xbs-fit-l188-s1-raunav.yaml"])
+    assert "--window 93.75 143.75 --mx 125 " in s
     s = _script(B.build(mx=200.0)["job-xbx-ihep-xbs-fit-l188-s1-raunav.yaml"])
     assert "--window 150 230 --mx 200 " in s
 

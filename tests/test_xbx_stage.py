@@ -346,3 +346,40 @@ def test_the_closure_reference_is_the_test_files_x_to_bq_jets_in_the_window(jc2,
     s = pa.concat_tables([pq.read_table(p) for p in jc2[("ft_test", "xbq_jc2")]]).to_pandas()
     want = s[(s.jet_label == 6) & (s.jet_pt > 200) & (s.jet_pt < 2500) & (s.jet_sdmass > 50) & (s.jet_sdmass < 300)]
     assert ST.XBQ_LABEL == 6 and t.num_rows == len(want) > 0 and set(np.asarray(t.column("xbx_class"))) == {1}
+
+
+def test_the_type_flags_come_from_the_pdg_code_and_an_unknown_code_is_fatal():
+    """The X->bb / X->bs samples of 2026-11-09 store part_pid for the five type flags: every particle gets exactly one
+    flag, by the absolute code (0: neutral hadron), and a code with no type stops the staging."""
+    import awkward as ak
+    pid = ak.Array([[211.0, -321.0, 2212.0, 0.0, 22.0], [-11.0, 13.0, -2212.0], []])
+    f = ST.flags_from_pid(pid)
+    assert set(f) == set(ST.TYPE_FLAGS)
+    assert f["part_isChargedHadron"].tolist() == [[1, 1, 1, 0, 0], [0, 0, 1], []]
+    assert f["part_isNeutralHadron"].tolist() == [[0, 0, 0, 1, 0], [0, 0, 0], []]
+    assert f["part_isPhoton"].tolist() == [[0, 0, 0, 0, 1], [0, 0, 0], []]
+    assert f["part_isElectron"].tolist() == [[0, 0, 0, 0, 0], [1, 0, 0], []]
+    assert f["part_isMuon"].tolist() == [[0, 0, 0, 0, 0], [0, 1, 0], []]
+    assert ak.all(sum(f[k] for k in ST.TYPE_FLAGS) == 1)
+    with pytest.raises(SystemExit, match="130"):
+        ST.flags_from_pid(ak.Array([[211.0, 130.0]]))
+
+
+def test_a_root_file_with_part_pid_reads_as_one_with_the_flags(tmp_path):
+    import awkward as ak
+    import uproot
+    path = tmp_path / "ntuples_0.root"
+    part = ak.zip({"pid": ak.Array([[211.0, 22.0], [0.0, -13.0, 11.0]]), "px": ak.Array([[1.0, 2.0], [3.0, 4.0, 5.0]])})
+    try:
+        with uproot.recreate(path) as f:
+            tree = f.mktree("tree", {"part": part.type, "jet_pt": np.dtype("f4")})
+            tree.extend({"part": part, "jet_pt": np.array([400.0, 500.0], "f4")})
+    except AttributeError as e:
+        pytest.skip(f"uproot cannot write ROOT here: {e}")
+    br = ST.file_branches(str(path))
+    assert all(br[k] == "list" for k in ST.TYPE_FLAGS) and br["jet_pt"] == "scalar"
+    t = ST.read_table(str(path), ["jet_pt", "part_px", "part_isPhoton", "part_isMuon", "part_isNeutralHadron"])
+    assert t.column_names == ["jet_pt", "part_px", "part_isPhoton", "part_isMuon", "part_isNeutralHadron"]
+    assert t.column("part_isPhoton").to_pylist() == [[0, 1], [0, 0, 0]]
+    assert t.column("part_isMuon").to_pylist() == [[0, 0], [0, 1, 0]]
+    assert t.column("part_isNeutralHadron").to_pylist() == [[0, 0], [1, 0, 0]]
