@@ -129,13 +129,16 @@ HOST_NOTIN = re.compile(r"(- key: kubernetes\.io/hostname\n\s+operator: NotIn\n\
 
 # measured 2026-11-10 on the first real-sample pair (X->bs, 188 classes run 1): extraction 3.0 GiB peak, about 1.2 CPUs,
 # 8 min; fit 1.8 GiB, about 0.4 CPUs, 1.5 min. NRP refuses an account whose pods use too little of what they request
-IHEP_REQ = {"memory": "8Gi", "cpu": "2"}
+# 2026-11-10: three X->bb fits were OOM-killed at 8Gi (the kernel's recorded maximum 5.5-5.9 GiB misses the final
+# spike), so the fits get 24Gi; they last about 2 min, extractions about 8 min at 3 GiB
+IHEP_REQ = {"x": {"memory": "8Gi", "cpu": "2"}, "fit": {"memory": "24Gi", "cpu": "2"}}
 
 
 def _ihep_size(name: str, text: str) -> str:
     """One real-sample extraction or fit spec at IHEP_REQ (requests and limits), its GPU request kept."""
     pat = re.compile(r'((?:requests|limits):\s+\{ )memory: "\d+Gi", cpu: "\d+"')
-    text, n = pat.subn(lambda m: m[1] + f'memory: "{IHEP_REQ["memory"]}", cpu: "{IHEP_REQ["cpu"]}"', text)
+    req = IHEP_REQ["fit" if re.match(r"job-xbx-ihep-(xbb|xbs)-fit-", name) else "x"]
+    text, n = pat.subn(lambda m: m[1] + f'memory: "{req["memory"]}", cpu: "{req["cpu"]}"', text)
     if n != 2:
         raise SystemExit(f"FATAL: {name}: {n} requests/limits lines, expected 2")
     return text

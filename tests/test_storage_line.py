@@ -154,5 +154,7 @@ def test_the_real_sample_specs_avoid_the_node_whose_gpu_plugin_failed():
 def test_the_real_sample_extractions_and_fits_request_what_they_were_measured_to_use():
     bx = _load("build_xbx_jobs", "scripts/build_xbx_jobs.py")
     for name, text in bx.build(tuple(bx.SIGNALS), bx.MX).items():
-        sized = bool(re.match(r"job-xbx-ihep-(xbb|xbs)-(x|fit)-", name))
-        assert (text.count('memory: "8Gi", cpu: "2"') == 2) == sized, name
+        x = bool(re.match(r"job-xbx-ihep-(xbb|xbs)-x-", name))
+        fit = bool(re.match(r"job-xbx-ihep-(xbb|xbs)-fit-", name))
+        assert (text.count('memory: "8Gi", cpu: "2"') == 2) == x, name
+        assert (text.count('memory: "24Gi", cpu: "2"') == 2) == fit, name
