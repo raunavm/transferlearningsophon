@@ -159,3 +159,5 @@ def test_the_real_sample_extractions_and_fits_request_what_they_were_measured_to
         fit = bool(re.match(r"job-xbx-ihep-(xbb|xbs)-fit-", name))
         assert (text.count('memory: "8Gi", cpu: "2"') == 2) == x, name
         assert (text.count('memory: "24Gi", cpu: "2"') == 2) == fit, name
+        scratch = name.startswith("job-xbx-ihep-scratch-")
+        assert (text.count('memory: "24Gi", cpu: "4"') == 2) == scratch, name

@@ -131,14 +131,18 @@ HOST_NOTIN = re.compile(r"(- key: kubernetes\.io/hostname\n\s+operator: NotIn\n\
 # measured 2026-11-10 on the first real-sample pair (X->bs, 188 classes run 1): extraction 3.0 GiB peak, about 1.2 CPUs,
 # 8 min; fit 1.8 GiB, about 0.4 CPUs, 1.5 min. NRP refuses an account whose pods use too little of what they request
 # 2026-11-10: three X->bb fits were OOM-killed at 8Gi (the kernel's recorded maximum 5.5-5.9 GiB misses the final
-# spike), so the fits get 24Gi; they last about 2 min, extractions about 8 min at 3 GiB
-IHEP_REQ = {"x": {"memory": "8Gi", "cpu": "2"}, "fit": {"memory": "24Gi", "cpu": "2"}}
+# spike), so the fits get 24Gi; they last about 2 min, extractions about 8 min at 3 GiB. The from-scratch X->bs runs
+# (weaver on about 100k jets, then the same extraction and fit) get the fits' 24Gi, twice the 11-12 GiB peak of the
+# small fine-tuning cells, in place of the 88Gi that kept seed 1 waiting 4 h for a node
+IHEP_REQ = {"x": {"memory": "8Gi", "cpu": "2"}, "fit": {"memory": "24Gi", "cpu": "2"},
+            "scratch": {"memory": "24Gi", "cpu": "4"}}
 
 
 def _ihep_size(name: str, text: str) -> str:
-    """One real-sample extraction or fit spec at IHEP_REQ (requests and limits), its GPU request kept."""
+    """One real-sample extraction, fit or from-scratch spec at IHEP_REQ (requests and limits), its GPU request kept."""
     pat = re.compile(r'((?:requests|limits):\s+\{ )memory: "\d+Gi", cpu: "\d+"')
-    req = IHEP_REQ["fit" if re.match(r"job-xbx-ihep-(xbb|xbs)-fit-", name) else "x"]
+    kind = re.match(r"job-xbx-ihep-(?:(?:xbb|xbs)-(x|fit)|(scratch))-", name)
+    req = IHEP_REQ[kind[1] or kind[2]]
     text, n = pat.subn(lambda m: m[1] + f'memory: "{req["memory"]}", cpu: "{req["cpu"]}"', text)
     if n != 2:
         raise SystemExit(f"FATAL: {name}: {n} requests/limits lines, expected 2")
@@ -152,7 +156,7 @@ def _ihep_line(specs: dict) -> dict:
         if specs[name].count(GUARD) != 1 or len(HOST_NOTIN.findall(specs[name])) != 1:
             raise SystemExit(f"FATAL: {name}: expected one storage guard and one hostname exclusion")
         specs[name] = specs[name].replace(GUARD, f"-le {IHEP_LINE} ]")
-        if re.match(r"job-xbx-ihep-(xbb|xbs)-(x|fit)-", name):
+        if re.match(r"job-xbx-ihep-((xbb|xbs)-(x|fit)|scratch)-", name):
             specs[name] = _ihep_size(name, specs[name])
         specs[name] = HOST_NOTIN.sub(lambda m: m[1] + m[2] + "".join(f', "{n}"' for n in IHEP_BAD_NODES) + "]",
                                      specs[name])
