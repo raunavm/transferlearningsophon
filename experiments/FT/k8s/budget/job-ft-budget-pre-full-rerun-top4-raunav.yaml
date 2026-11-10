@@ -7,7 +7,7 @@ metadata:
 spec:
   completionMode: Indexed
   completions: 22
-  parallelism: 4
+  parallelism: 8
   backoffLimitPerIndex: 3
   podFailurePolicy:
     rules:
@@ -149,8 +149,8 @@ spec:
           touch ${CELL}/DONE
           echo "FT BUDGET CELL ${IDX} DONE: ${CELL}"
         resources:
-          requests: { memory: "24Gi", cpu: "3", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "24Gi", cpu: "3", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "16Gi", cpu: "3", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "16Gi", cpu: "3", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
