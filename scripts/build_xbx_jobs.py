@@ -60,6 +60,9 @@ import importlib.util
 import pathlib
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import storage_line  # noqa: E402
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "experiments" / "XBS" / "k8s"
 PIN = "mtx-s2.17"     # the stand-in chain as it ran
@@ -113,6 +116,17 @@ DRYRUN_ROOT = "/data/results/xbx/scratch_dryrun"
 SAMPLE_DIRS = {"xbb": "/data/Xbb-Xbs-data/Xbb_ntuple", "xbs": "/data/Xbb-Xbs-data/Xbs_ntuple"}
 CLOSURE_ROOT = f"{STAGE}/closure"   # A5 gate 1, one folder per sample
 IHEP_SIGNALS = ("xbb", "xbs")
+GUARD = "-lt 85 ]"          # every spec's one /data guard (refuses at 85% and above)
+IHEP_LINE = storage_line.check(storage_line.FINISHING)   # PI 2026-11-09: the real-sample chain runs to the finishing line
+
+
+def _ihep_line(specs: dict) -> dict:
+    """The job-xbx-ihep-* specs with their one guard at IHEP_LINE; the stand-in specs keep 85%."""
+    for name in [n for n in specs if n.startswith("job-xbx-ihep-")]:
+        if specs[name].count(GUARD) != 1:
+            raise SystemExit(f"FATAL: {name}: {specs[name].count(GUARD)} storage guards, expected 1")
+        specs[name] = specs[name].replace(GUARD, f"-le {IHEP_LINE} ]")
+    return specs
 MX = 125.0     # the PI: "the SM (mX=125) Xbb and Xbs samples"; confirm on arrival (inspect, check's m_SD peak)
 # the stand-in until the samples come; then xbb and xbs (xbb_jc2 in xbb's place if the
 # IHEP folder holds no X->bb sample)
@@ -483,7 +497,7 @@ def build(signals=SIGNALS, mx=MX) -> dict[str, str]:
     specs["job-xbx-ihep-report-raunav.yaml"] = report_spec("xbx-ihep-report-raunav", FITS_IHEP,
                                                            f"{EX_ROOT}/report_ihep_{PIN_IHEP_REPORT}",
                                                            pin=PIN_IHEP_REPORT)
-    return specs
+    return _ihep_line(specs)
 
 
 def main(argv=None) -> int:

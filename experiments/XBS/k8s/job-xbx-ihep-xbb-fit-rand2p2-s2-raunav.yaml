@@ -35,7 +35,7 @@ spec:
           export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${USED}%"
-          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          [ "${USED}" -le 90 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
           gpu_ok () { timeout 300 python3 -c 'import torch; torch.ones(8, device="cuda").add_(1).sum().item()' >/dev/null 2>&1; }
           gpu_ok || { echo "no working GPU on $(hostname); retried elsewhere"; exit 137; }
           python3 experiments/XBS/fit_xbx.py model --root /data/results/eval/xbx --model mtx-rand2p2-s2 \

@@ -35,7 +35,7 @@ spec:
           export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${USED}%"
-          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          [ "${USED}" -le 90 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
           mkdir -p /data/xbx/v2
           STAGED=""; FAILED=""
           F_xbb=$(ls /data/Xbb-Xbs-data/Xbb_ntuple/*.root 2>/dev/null | sort || true)

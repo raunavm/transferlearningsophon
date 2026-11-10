@@ -128,3 +128,17 @@ def test_the_equal_stopping_readout_waits_for_every_cell_at_90(tmp_path, monkeyp
         assert _lines(p.read_text()) == {90}
     for p in K8S.glob("job-ft-budget-pre-full-rerun*-raunav.yaml"):
         assert _lines(p.read_text()) == {90} and 'value: "mtx-s2.87"' in p.read_text()
+
+
+def test_the_real_sample_xbb_xbs_chain_takes_the_finishing_line_and_the_stand_in_keeps_85():
+    """PI 2026-11-09 ("increase the line"): every job-xbx-ihep-* spec has its one guard at 90, every other spec at 85."""
+    bx = _load("build_xbx_jobs", "scripts/build_xbx_jobs.py")
+    assert bx.IHEP_LINE == sl.FINISHING == 90
+    n = 0
+    for name, text in bx.build(tuple(bx.SIGNALS), bx.MX).items():
+        if name.startswith("job-xbx-ihep-"):
+            assert text.count("-le 90 ]") == 1 and bx.GUARD not in text
+            n += 1
+        else:
+            assert text.count(bx.GUARD) == 1 and "-le 90 ]" not in text
+    assert n > 100

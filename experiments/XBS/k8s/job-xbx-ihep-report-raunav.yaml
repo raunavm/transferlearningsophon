@@ -35,7 +35,7 @@ spec:
           export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
           USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
           echo "PVC used: ${USED}%"
-          [ "${USED}" -lt 85 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          [ "${USED}" -le 90 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
           [ ! -e /data/results/eval/xbx/report_ihep_mtx-s2.90 ] || { echo "FATAL: /data/results/eval/xbx/report_ihep_mtx-s2.90 exists"; exit 42; }
           pip install --no-cache-dir -q matplotlib==3.10.7 mplhep==0.4.1 || exit 1
           python3 experiments/XBS/xbx_report.py --fits /data/results/eval/xbx/fits_ihep --out /data/results/eval/xbx/report_ihep_mtx-s2.90 || halt
