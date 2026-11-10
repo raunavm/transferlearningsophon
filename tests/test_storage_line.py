@@ -142,3 +142,10 @@ def test_the_real_sample_xbb_xbs_chain_takes_the_finishing_line_and_the_stand_in
         else:
             assert text.count(bx.GUARD) == 1 and "-le 90 ]" not in text
     assert n > 100
+
+
+def test_the_real_sample_specs_avoid_the_node_whose_gpu_plugin_failed():
+    bx = _load("build_xbx_jobs", "scripts/build_xbx_jobs.py")
+    for name, text in bx.build(tuple(bx.SIGNALS), bx.MX).items():
+        assert ('"k8s-haosu-12.sdsc.optiputer.net"' in text) == name.startswith("job-xbx-ihep-"), name
+        assert len(bx.HOST_NOTIN.findall(text)) == 1

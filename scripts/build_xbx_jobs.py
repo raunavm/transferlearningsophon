@@ -58,6 +58,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import pathlib
+import re
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -120,12 +121,21 @@ GUARD = "-lt 85 ]"          # every spec's one /data guard (refuses at 85% and a
 IHEP_LINE = storage_line.check(storage_line.FINISHING)   # PI 2026-11-09: the real-sample chain runs to the finishing line
 
 
+# 2026-11-10: k8s-haosu-12's GPU device plugin refused six pods of the first real-sample fit in seven minutes
+# (UnexpectedAdmissionError, GetPreferredAllocation failed), each a counted failure
+IHEP_BAD_NODES = ("k8s-haosu-12.sdsc.optiputer.net",)
+HOST_NOTIN = re.compile(r"(- key: kubernetes\.io/hostname\n\s+operator: NotIn\n\s+values: \[)([^\]]*)\]")
+
+
 def _ihep_line(specs: dict) -> dict:
-    """The job-xbx-ihep-* specs with their one guard at IHEP_LINE; the stand-in specs keep 85%."""
+    """The job-xbx-ihep-* specs with their one guard at IHEP_LINE and IHEP_BAD_NODES added to their one hostname
+    exclusion; the stand-in specs keep 85% and their exclusion."""
     for name in [n for n in specs if n.startswith("job-xbx-ihep-")]:
-        if specs[name].count(GUARD) != 1:
-            raise SystemExit(f"FATAL: {name}: {specs[name].count(GUARD)} storage guards, expected 1")
+        if specs[name].count(GUARD) != 1 or len(HOST_NOTIN.findall(specs[name])) != 1:
+            raise SystemExit(f"FATAL: {name}: expected one storage guard and one hostname exclusion")
         specs[name] = specs[name].replace(GUARD, f"-le {IHEP_LINE} ]")
+        specs[name] = HOST_NOTIN.sub(lambda m: m[1] + m[2] + "".join(f', "{n}"' for n in IHEP_BAD_NODES) + "]",
+                                     specs[name])
     return specs
 MX = 200.0     # the samples of 2026-11-09: m_SD peaks at 175-200 GeV and falls off above 225 (Sophon's Fig. 2 mass); window 150-230 GeV
 # the stand-in until the samples come; then xbb and xbs (xbb_jc2 in xbb's place if the
