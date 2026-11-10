@@ -352,6 +352,7 @@ def test_the_type_flags_come_from_the_pdg_code_and_an_unknown_code_is_fatal():
     """The X->bb / X->bs samples of 2026-11-09 store part_pid for the five type flags: every particle gets exactly one
     flag, by the absolute code (0: neutral hadron), and a code with no type stops the staging."""
     import awkward as ak
+    assert ak.all(ST.flags_from_pid(ak.Array([[3112.0, -3222.0, 3312.0]]))["part_isChargedHadron"] == 1)
     pid = ak.Array([[211.0, -321.0, 2212.0, 0.0, 22.0], [-11.0, 13.0, -2212.0], []])
     f = ST.flags_from_pid(pid)
     assert set(f) == set(ST.TYPE_FLAGS)

@@ -83,7 +83,8 @@ DISPLACEMENT = ("part_d0val", "part_dzval", "part_d0err", "part_dzerr")
 # the five type flags: a file with part_pid and without a flag gets that flag from the code. A code outside PID_CODES
 # is FATAL, so no particle is given a type by default.
 PID_BRANCH = "part_pid"
-PID_CODES = {"part_isChargedHadron": (211, 321, 2212), "part_isNeutralHadron": (0,), "part_isPhoton": (22,),
+# (census of all 60 files, 2026-11-10: 11.5 M particles, the strange baryons 3112, 3222, 3312 are 114 of them)
+PID_CODES = {"part_isChargedHadron": (211, 321, 2212, 3112, 3222, 3312), "part_isNeutralHadron": (0,), "part_isPhoton": (22,),
              "part_isElectron": (11,), "part_isMuon": (13,)}
 
 
