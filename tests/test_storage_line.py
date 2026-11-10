@@ -149,3 +149,10 @@ def test_the_real_sample_specs_avoid_the_node_whose_gpu_plugin_failed():
     for name, text in bx.build(tuple(bx.SIGNALS), bx.MX).items():
         assert ('"k8s-haosu-12.sdsc.optiputer.net"' in text) == name.startswith("job-xbx-ihep-"), name
         assert len(bx.HOST_NOTIN.findall(text)) == 1
+
+
+def test_the_real_sample_extractions_and_fits_request_what_they_were_measured_to_use():
+    bx = _load("build_xbx_jobs", "scripts/build_xbx_jobs.py")
+    for name, text in bx.build(tuple(bx.SIGNALS), bx.MX).items():
+        sized = bool(re.match(r"job-xbx-ihep-(xbb|xbs)-(x|fit)-", name))
+        assert (text.count('memory: "8Gi", cpu: "2"') == 2) == sized, name

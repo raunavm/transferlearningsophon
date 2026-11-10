@@ -127,6 +127,20 @@ IHEP_BAD_NODES = ("k8s-haosu-12.sdsc.optiputer.net",)
 HOST_NOTIN = re.compile(r"(- key: kubernetes\.io/hostname\n\s+operator: NotIn\n\s+values: \[)([^\]]*)\]")
 
 
+# measured 2026-11-10 on the first real-sample pair (X->bs, 188 classes run 1): extraction 3.0 GiB peak, about 1.2 CPUs,
+# 8 min; fit 1.8 GiB, about 0.4 CPUs, 1.5 min. NRP refuses an account whose pods use too little of what they request
+IHEP_REQ = {"memory": "8Gi", "cpu": "2"}
+
+
+def _ihep_size(name: str, text: str) -> str:
+    """One real-sample extraction or fit spec at IHEP_REQ (requests and limits), its GPU request kept."""
+    pat = re.compile(r'((?:requests|limits):\s+\{ )memory: "\d+Gi", cpu: "\d+"')
+    text, n = pat.subn(lambda m: m[1] + f'memory: "{IHEP_REQ["memory"]}", cpu: "{IHEP_REQ["cpu"]}"', text)
+    if n != 2:
+        raise SystemExit(f"FATAL: {name}: {n} requests/limits lines, expected 2")
+    return text
+
+
 def _ihep_line(specs: dict) -> dict:
     """The job-xbx-ihep-* specs with their one guard at IHEP_LINE and IHEP_BAD_NODES added to their one hostname
     exclusion; the stand-in specs keep 85% and their exclusion."""
@@ -134,6 +148,8 @@ def _ihep_line(specs: dict) -> dict:
         if specs[name].count(GUARD) != 1 or len(HOST_NOTIN.findall(specs[name])) != 1:
             raise SystemExit(f"FATAL: {name}: expected one storage guard and one hostname exclusion")
         specs[name] = specs[name].replace(GUARD, f"-le {IHEP_LINE} ]")
+        if re.match(r"job-xbx-ihep-(xbb|xbs)-(x|fit)-", name):
+            specs[name] = _ihep_size(name, specs[name])
         specs[name] = HOST_NOTIN.sub(lambda m: m[1] + m[2] + "".join(f', "{n}"' for n in IHEP_BAD_NODES) + "]",
                                      specs[name])
     return specs
