@@ -14,7 +14,7 @@ JetClass-II's types, plus xbx_class (1 signal, 0 QCD). Under --root (/data/xbx/v
   <sig>/pool/, <sig>/eval/
                    an outside sample: checked against the config (check(): every branch, of
                    the right kind; no zero-filled input in any file; A5's floor of 10,000
-                   evaluation jets in the window), selected, and split per jet 80 % / 20 % (A5)
+                   evaluation jets in the window), selected, and split per jet 75 % / 25 % (EVAL_FRACTION)
   pairs/<sig>/train_<k>.parquet, val.parquet
                    A5's draw (experiments/XBS/xbx.py matched_draw): N_TRAIN signal and N_TRAIN
                    QCD jets with the same count in every (pT, m_SD) cell of the base config's
@@ -60,7 +60,10 @@ STAGE_WINDOW = (50.0, 300.0)
 N_TRAIN = 1_250_000      # per class (A5)
 N_VAL = 25_600           # per class: 50 batches of 512
 SHARD_ROWS = 500_000     # weaver loads a whole file per fetch
-EVAL_FRACTION = 0.2      # A5: a per-jet split, 80 % training pool, 20 % evaluation
+# A per-jet split of an outside sample: 75 % training pool, 25 % evaluation. A5 wrote 80 / 20 before the samples came;
+# they hold about 48,000 jets each in the scored window (2026-11-10), and 20 % leaves 9,545 and 9,997 evaluation jets,
+# under A5's floor of 10,000. Set before any score was computed; the floor is unchanged.
+EVAL_FRACTION = 0.25
 QCD_LABELS = (161, 188)  # jet_label 161..187
 XBB_LABEL = 0
 XBQ_LABEL = 6            # label_X_bq (configs/labelmaps/rung_label_maps.v1.csv)
