@@ -213,7 +213,7 @@ def test_an_outside_sample_is_checked_then_split_per_jet(jc2, tmp_path, monkeypa
     ev = pq.read_table(root / "xbs/eval/Xbs_0.parquet")
     c = counts[str(good)]
     assert pool.num_rows + ev.num_rows == c["selected"] and ev.num_rows == c["eval"]
-    assert 0.15 < ev.num_rows / c["selected"] < 0.25
+    assert ST.EVAL_FRACTION == 0.25 and 0.20 < ev.num_rows / c["selected"] < 0.30
     # the floor counts exactly the evaluation jets convert writes, inside the window
     m = np.asarray(ev.column("jet_sdmass"))
     assert rep["eval_in_window"] == int(((m > W125[0]) & (m < W125[1])).sum())
