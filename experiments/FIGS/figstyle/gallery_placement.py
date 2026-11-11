@@ -30,8 +30,7 @@ PROVISIONAL = {}     # nothing waits: the fine-tuned read-out (2026-11-09) and X
 SCULPT_FLAV = "No flavor-boundary partition sculpts the QCD mass differently from 188 classes beyond 3σ."
 FJ_S = "Cited beside [[FJ]]: partitions, linear probes, from scratch."
 SCATTER_S = "Cited from [[F3-main]]: the other scatter panels."
-XBX = ("On Sophon's X→bb̄ and X→bs samples a classifier on 17-class frozen features keeps fewer signal jets at 1% QCD "
-       "efficiency than one on 188-class features: 66% against 72%, and 59% against 69%.")
+XBX = "17 classes keep fewer X→bb̄ and X→bs signal jets than 188 on Sophon's samples."
 
 # (gallery id, tier, draft sentence), in paper order within each tier; items that share a sentence share a row on the map
 _FIGURES = (
