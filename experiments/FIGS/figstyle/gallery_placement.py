@@ -53,10 +53,10 @@ _FIGURES = (
     ("FJ", APPENDIX, "[[tab:jetclass]]'s rejections come from these per-class ROC curves."),
     ("F4-other", APPENDIX, "On QCD flavor pairs 17-class probes separate least; on X→ee vs μμ 43 classes fall below 188; 162 "
                            "loses on QCD bb̄ vs cc̄."),
-    ("F4-mech-ft", APPENDIX, "After fine-tuning, 17 classes still separate the quark-flavor pairs worse than 188, by "
-                             "less than linear probes do; the flavor boundaries are consistent with none."),
-    ("PT", APPENDIX, "Per jet-pT bin, 43 and 17 classes fall behind 188 on JetClass-II probes; JetClass fine-tuning and "
-                     "X→bb̄ vs cc̄ are consistent but for the lowest JetClass bin."),
+    ("F4-mech-ft", APPENDIX, "Fine-tuned, 17 classes still separate quark-flavor pairs worse than 188, by less than "
+                             "probes; the flavor boundaries are consistent with none."),
+    ("PT", APPENDIX, "Per jet-pT bin, 43 and 17 classes fall behind 188 on JetClass-II probes; elsewhere they agree "
+                     "but in the lowest JetClass bin."),
     ("F6", APPENDIX, "Fine-tuned on top and quark/gluon tagging, Pythia and Herwig, the label sets are consistent."),
     ("F6-app", APPENDIX, "On the full top and quark/gluon sets every linear probe stays below fine-tuning."),
     ("A10", APPENDIX, "At every size the 43- and 17-class probes fall behind 188 on JetClass-II, 162 at all sizes but "
@@ -68,8 +68,9 @@ _FIGURES = (
     ("F10a", APPENDIX, "Head cuts sculpt the QCD mass beyond a random selection at 10% QCD efficiency for all, at 1% only "
                        "for 17 classes and two flavor partitions."),
     # PI 2026-11-09: the main text reports exactly the differences beyond 3 sigma (tab:sculptboot), nothing else
-    ("F10b", APPENDIX, "17 classes sculpt the QCD mass more than 188 at 1% QCD efficiency, 43 at 10%; a mass "
-                       "regression reduces it for 162 at 10%; every other difference is within the uncertainty."),
+    ("F10b", APPENDIX, "17 classes sculpt the QCD mass more than 188 at 1% QCD efficiency, 43 at 10%; mass regression "
+                       "reduces it for 162 classes at 10%; every other difference (17 + mass, flavor boundaries) is "
+                       "within the uncertainty."),
     ("F10b-flav", APPENDIX, SCULPT_FLAV),
     ("F10c", APPENDIX, "At 50% resonant efficiency no label-set difference in QCD mass sculpting exceeds three times "
                        "its uncertainty."),
