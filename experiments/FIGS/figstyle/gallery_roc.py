@@ -355,9 +355,10 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
     sets (and the kinematic-inputs model); from scratch is drawn and may leave it. From scratch always from the
     fine-tuned families."""
     top_ft, qg_ft = _family("top_ft"), _family("qg_ft")
-    left, own, top_cm, rgap, bottom = ROC_LEFT, 0.78, 2.2, 0.1, 0.95    # own: the tick labels of (b) and (c)
+    left, own, top_cm, rgap, bottom = 1.2, 0.75, 2.2, 0.1, 0.95     # own: the tick labels of (b) and (c)
     gap = own                               # every panel its own tick labels, one gap between panels
-    w = (S.PRINT_W - left - own - gap - 0.1) / 3       # 4.0 cm, figcheck's least for three panels in a row
+    w = (S.PRINT_W - left - own - gap - 0.25) / 3      # 4.0 cm, figcheck's least for three panels in a row; 0.25 cm
+    # on the right holds (c)'s last x label
     h = w
     fig = S.figure_cm(S.PRINT_W, top_cm + h * (1 + RATIO_HEIGHT) + rgap + bottom)
     boxes = [(left, top_cm, w, h), (left + w + own, top_cm, w, h), (left + 2 * w + own + gap, top_cm, w, h)]

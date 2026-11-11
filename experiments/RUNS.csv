@@ -1682,3 +1682,5 @@ mtx2-tests-book-421f97f-raunav,2026-11-11T21:22:43Z,launched,"Table and figure t
 render-gallery-421f97f-raunav,2026-11-11T21:27:51Z,failed,"Pod lost partway (23 files written; its node unreachable, logs timed out); job deleted and relaunched from the same spec.",experiments/FIGS/k8s/job-render-gallery-421f97f-raunav.yaml
 render-gallery-421f97f-raunav,2026-11-11T21:27:51Z,launched,"Relaunch of round 15.",experiments/FIGS/k8s/job-render-gallery-421f97f-raunav.yaml
 mtx2-tests-book-421f97f-raunav,2026-11-11T21:27:51Z,complete,"120 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-421f97f-raunav.yaml
+render-gallery-421f97f-raunav,2026-11-11T21:33:37Z,complete,"Round 15: benchmark panels 3.9 cm (< 4.0) after labelling (c); fixed in round 16.",experiments/FIGS/k8s/job-render-gallery-421f97f-raunav.yaml
+render-gallery-f23d236-raunav,2026-11-11T21:33:37Z,launched,"Book pass round 16 at f23d236.",experiments/FIGS/k8s/job-render-gallery-f23d236-raunav.yaml
