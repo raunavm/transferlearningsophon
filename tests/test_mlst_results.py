@@ -1802,3 +1802,18 @@ def test_the_jetclass_accuracy_statement_rests_on_the_3_sigma_bootstrap(tmp_path
     missing = []
     M.jc1_boot_macros(_PEm(), tmp_path / "none", MT.fmt_int, missing)
     assert missing and "bootstrap" in missing[0]
+
+
+def test_the_hidden_layer_rows_sit_at_the_foot_of_the_nonlinear_table_first_block():
+    """Two rows alone on a page (PI 2026-11-11): the class-token and hidden-layer linear probes join the first block,
+    under a rule, in its JetClass-II AUC and quark/gluon columns."""
+    runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2"]}
+    rec = {"macro_auc_ovr": 0.98, "auc": 0.88, "r50": 30.0, "r30": 70.0}
+    raw = {m: {"cells": {M.PRIMARY: {k: {"1000": rec} for k in ("jc2bal", "jc2bal.hidden", "qg", "qg.hidden")}}}
+           for m in runs["L188"]}
+    t = M.table_mlp({}, runs, MT.fmt_pm, ("L188",), raw_v4=raw)
+    first = t.split("%SPLIT%")[0]
+    row = next(ln for ln in first.splitlines() if "512-unit hidden layer" in ln)
+    cells = row.rstrip(" \\").split(" & ")
+    assert len(cells) == 12 and cells[2:8] == ["--"] * 6 and cells[10:] == ["--"] * 2
+    assert "%SPLIT%" not in t.split("512-unit hidden layer")[0].split("class token")[-1]

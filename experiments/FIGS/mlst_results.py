@@ -1112,7 +1112,7 @@ def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None, kin=False) -> str:
         out.append(LABEL["KIN"] + " & " + " & ".join(["--"] * 5 + [_cell([_mlp_val(mlp, KIN_MODEL, "top")], 1, fmt_pm, frac=True),
                                                             _cell([_mlp_val(mlp, KIN_MODEL, "top", "r30")], 1, fmt_pm)]
                                                 + ["--"] * 4) + r" \\")
-    out += [r"\bottomrule", r"\end{tabular}"]
+    out += _hidden_rows(raw_v4, runs, fmt_pm) + [r"\bottomrule", r"\end{tabular}"]
     for part in (MLP_PAIRS[:3], MLP_PAIRS[3:]):
         out += ["%SPLIT%", r"\begin{tabular}{l" + "cc" * len(part) + "}", r"\toprule",
                 " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{h}}}" for _, h, _, _ in part) + r" \\",
@@ -1129,10 +1129,10 @@ def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None, kin=False) -> str:
         out += [r"\bottomrule", r"\end{tabular}"]
     if nat_only:
         out += ["%SPLIT%", r"\begin{tabular}{l" + "c" * (2 + len(MLP_PAIRS)) + "}", r"\toprule",
-                r"natural-composition & \multicolumn{2}{c}{JetClass-II} & \multicolumn{" + str(len(MLP_PAIRS))
+                r" & \multicolumn{2}{c}{JetClass-II} & \multicolumn{" + str(len(MLP_PAIRS))
                 + r"}{c}{$\rho$ on the class pairs} \\",
                 r"\cmidrule(lr){2-3}\cmidrule(lr){4-" + str(3 + len(MLP_PAIRS)) + "}",
-                r"test set & AUC & $\rho$ & " + " & ".join(h for _, h, _, _ in MLP_PAIRS) + r" \\", r"\midrule"]
+                r"natural-composition test set & AUC & $\rho$ & " + " & ".join(h for _, h, _, _ in MLP_PAIRS) + r" \\", r"\midrule"]
         for arm in MAIN + tuple(nat_only):
             cells = [_cell([_mlp_val(nat, m, "jc2_188") for m in runs[arm]], len(runs[arm]), fmt_pm, frac=True)]
             for t in ("jc2_188", *(k for k, *_ in MLP_PAIRS)):
@@ -1140,22 +1140,27 @@ def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None, kin=False) -> str:
                 cells.append(_cell(r, k, fmt_pm) if k else "--")
             out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
         out += [r"\bottomrule", r"\end{tabular}"]
-    hid = [m for m in runs["L188"] if "jc2bal.hidden" in (raw_v4 or {}).get(m, {}).get("cells", {}).get(PRIMARY, {})]
-    if hid:
-        def cell(m, key, met):
-            c = raw_v4[m]["cells"][PRIMARY].get(key, {})
-            c = c[max(c, key=int)] if c else None
-            return None if c is None else (_rej(c, met) if met.startswith("r") else c[met])
-        rows_h = ((LABEL["L188"] + " (LP), class token", (("jc2bal", "macro_auc_ovr"), ("qg", "auc"), ("qg", "r30"))),
-                  (LABEL["L188"] + " (LP), 512-unit hidden layer",
-                   (("jc2bal.hidden", "macro_auc_ovr"), ("qg.hidden", "auc"), ("qg.hidden", "r30"))))
-        out += ["%SPLIT%", r"\begin{tabular}{lccc}", r"\toprule",
-                r" & JetClass-II AUC & quark/gluon AUC & quark/gluon $R_{30}$ \\", r"\midrule"]
-        for name, keys in rows_h:
-            out.append(name + " & " + " & ".join(_cell([cell(m, k, met) for m in hid], len(runs["L188"]), fmt_pm, frac=met != "r30")
-                                                 for k, met in keys) + r" \\")
-        out += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(out + [""])
+
+
+def _hidden_rows(raw_v4, runs, fmt_pm) -> list:
+    """The linear probe on the pretraining head's 512-unit hidden layer beside the one on the class token (188 classes),
+    as rows under a rule at the foot of the nonlinear-probe table's first block, in its JetClass-II AUC and quark/gluon
+    columns (a dash elsewhere): a block of its own was two rows alone on a page (PI 2026-11-11)."""
+    hid = [m for m in runs["L188"] if "jc2bal.hidden" in (raw_v4 or {}).get(m, {}).get("cells", {}).get(PRIMARY, {})]
+    if not hid:
+        return []
+
+    def cell(m, key, met):
+        c = raw_v4[m]["cells"][PRIMARY].get(key, {})
+        c = c[max(c, key=int)] if c else None
+        return None if c is None else (_rej(c, met) if met.startswith("r") else c[met])
+    out = [r"\midrule"]
+    for name, sfx in ((LABEL["L188"] + " (LP), class token", ""), (LABEL["L188"] + " (LP), 512-unit hidden layer", ".hidden")):
+        jc2, auc, r30 = (_cell([cell(m, k + sfx, met) for m in hid], len(runs["L188"]), fmt_pm, frac=met != "r30")
+                         for k, met in (("jc2bal", "macro_auc_ovr"), ("qg", "auc"), ("qg", "r30")))
+        out.append(name + " & " + " & ".join([jc2] + ["--"] * 6 + [auc, r30] + ["--"] * 2) + r" \\")
+    return out
 
 
 CMP_MLP = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"),
@@ -2227,7 +2232,11 @@ def topcheck_macros(em, data: pathlib.Path, per, index, fmt_pm, missing: list) -
 
 
 def gpu_name(device: str) -> str:
-    return device.replace("NVIDIA ", "").replace("GeForce ", "").replace("Tesla ", "").replace("-SXM2-32GB", "")
+    name = device.replace("NVIDIA ", "").replace("GeForce ", "").replace("Tesla ", "").replace("-SXM2-32GB", "")
+    return A100_NAMES.get(name, name)
+
+
+A100_NAMES = {"A100-PCIE-40GB": "A100 40GB PCIe", "A100-SXM4-80GB": "A100 80GB SXM4", "A100-SXM4-40GB": "A100 40GB SXM4"}
 
 
 def _whole(name: str) -> str:
@@ -3510,7 +3519,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
     head = r"run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\"
     wrap = lambda cm: r">{\raggedright\arraybackslash}p{" + cm + "cm}"      # noqa: E731
     lines = [r"\begin{landscape}", "{\\small", LT_SETUP,
-             r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap("6.3") + "r" + wrap("10.8") + "@{}}",
+             r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap("6.0") + "r" + wrap("9.6") + "@{}}",
              r"\caption{__CAPTION__}\label{tab:compute}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
              r"\multicolumn{4}{l}{\textit{Table~\ref{tab:compute} (continued)}} \\", r"\toprule", head, r"\midrule", r"\endhead",
              r"\bottomrule", r"\endlastfoot"]

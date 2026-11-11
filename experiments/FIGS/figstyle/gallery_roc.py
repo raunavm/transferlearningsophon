@@ -395,7 +395,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
                             linewidth=S.LW_CURVE)
         _y_range([ax] if k == 0 else axes[1:])
         ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v - 1) < 1e-9 else S.pow10(v)))
-        rx.yaxis.set_major_locator(MaxNLocator(nbins=4, steps=[1, 2, 5, 10], prune="upper"))   # 1.0 a tick; none at the top edge
+        rx.yaxis.set_major_locator(MaxNLocator(nbins=3, steps=[1, 2, 5, 10], prune="upper"))   # 1.0 a tick; none at the top edge; three labels at most in a short panel
         rx.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.2f}"))        # one format in every ratio panel
         v = np.array(shown, float)
         v = v[np.isfinite(v)]
