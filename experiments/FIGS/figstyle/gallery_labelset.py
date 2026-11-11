@@ -345,6 +345,136 @@ def draw_f2b_dot(path) -> None:
     _draw_f2_dot(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning")
 
 
+# ------------------------------------------------------------------ F2 relative to 188 classes (PI 2026-11-11, alternatives)
+# Each network's value over that of the 188-class network of the same pretraining seed (-sK), minus one, in percent;
+# the mean and SD over seeds. 188 classes is the zero line. Random partitions have one run (seed 1) each.
+REL_ROWS = {"L162": 0.0, "R42_Q1": 1.0, "R16_Q1": 2.0}
+REL_DIVIDER = 2.75
+X_REL = "Change from 188 classes (%)"
+
+
+def _seed(m: str) -> str:
+    return m.rsplit("-s", 1)[1]
+
+
+def _paired(row: str, value) -> list:
+    """100 (v / v_188 - 1) per run of row, paired with the 188-class run of its seed; runs without both left out."""
+    ref = {_seed(m): v for m in RUNS["L188"] if (v := value(m)) is not None}
+    return [100.0 * (v / ref[_seed(m)] - 1) for m in RUNS[row] if (v := value(m)) is not None and _seed(m) in ref]
+
+
+def _rel_rows(groups) -> dict:
+    shown = [k for k in DOT_CONTROL_ORDER if any(key == k for _, key, _ in groups)]
+    return {**REL_ROWS, **{k: 3.5 + i for i, k in enumerate(shown)}}
+
+
+def _draw_f2_rel(path, value_of, groups, absent: str, heading: str) -> None:
+    """F2 as a horizontal dot plot of the paired change from 188 classes, a 2x2 grid of near-square panels."""
+    from matplotlib.lines import Line2D
+    values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
+    if not any(values):
+        raise C.Absent(absent)
+    rows = _rel_rows(groups)
+    names = {**DOT_NAMES}
+    top, bottom = 1.75, 1.0
+    fig = S.figure_cm(S.PRINT_W, top + 2 * DOT_H + DOT_HGAP + bottom)
+    axes = [S.axes_cm(fig, DOT_LEFT + j * (DOT_W + DOT_WGAP), top + i * (DOT_H + DOT_HGAP), DOT_W, DOT_H)
+            for i in range(2) for j in range(2)]
+    for k, (ax, value, (key, _, ds, met, *_)) in enumerate(zip(axes, values, P.F2_PANELS)):
+        S.title(ax, TITLES[key])
+        ax.set_ylim(max(rows.values()) + 0.6, -0.6)
+        ax.yaxis.set_major_locator(ticker.FixedLocator(list(rows.values())))
+        ax.yaxis.set_major_formatter(ticker.FixedFormatter([names[r] for r in rows] if k % 2 == 0 else [""] * len(rows)))
+        ax.yaxis.set_minor_locator(ticker.NullLocator())
+        ax.tick_params(axis="y", length=0)
+        ax.axhline(REL_DIVIDER, color=S.GREY_MID, linewidth=S.LW_THIN, zorder=0.5)
+        ax.axvline(0.0, color=S.SERIES["L188"], linewidth=S.LW_CURVE, zorder=1.5)
+        S.labels(ax, X_REL, None)
+        if value is None:
+            _empty_panel(ax)
+            continue
+        S.fine_grid(ax)
+        xs = [0.0]
+        for r, y in REL_ROWS.items():
+            if v := _paired(r, value):
+                mean, lo, hi = P.F._spread(v)
+                xs += L.row(ax, y, mean, lo, hi, color=S.SERIES[r], probe=False)
+        for _, key_, rws in groups:
+            for i, r in enumerate(rws):
+                if v := _paired(r, value):
+                    mean, lo, hi = P.F._spread(v)
+                    y = rows[key_] + DOT_RAND_SPREAD * (i - (len(rws) - 1) / 2)
+                    xs += L.row(ax, y, mean, lo, hi, color=S.SERIES[key_], probe=False)
+        ax.set_xlim(*_range(ax, xs, False))
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10]))
+    for i in (0, 2):
+        _dot_bracket(fig, axes[i], {k: v for k, v in rows.items() if k in DOT_CONTROL_ORDER})
+    S.letter_panels(axes)
+    S.heading(fig, heading)
+    handles = [Line2D([], [], linestyle="none", **L.dot("#000000", False), label="mean and SD over seeds, paired"),
+               Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_CURVE, label="188 classes (zero)")]
+    S.fig_legend(fig, handles, top_cm=0.6, ncol=2)
+    S.save(fig, path)
+
+
+HEAT = ["#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#F7F7F7", "#FDDBC7", "#F4A582", "#D6604D", "#B2182B"]   # Tol BuRd
+HEAT_COLS = ("JetClass-II\naccuracy", "JetClass\naccuracy", "Top tagging\n$R_{30}$", "Quark/gluon\n$R_{30}$")
+
+
+def _draw_f2_heat(path, value_of, groups, absent: str, heading: str) -> None:
+    """F2 as a table of the paired change from 188 classes (%): rows the label sets and controls, columns the four
+    tasks, each cell mean +- SD over seeds, coloured on one diverging scale (red: worse than 188, blue: better)."""
+    from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
+    values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
+    if not any(values):
+        raise C.Absent(absent)
+    shown = [k for k in DOT_CONTROL_ORDER if any(key == k for _, key, _ in groups)]
+    members = {key_: rws for _, key_, rws in groups}
+    order = list(REL_ROWS) + shown
+    cells = np.full((len(order), 4), np.nan)
+    text = [["" for _ in range(4)] for _ in order]
+    for j, value in enumerate(values):
+        if value is None:
+            continue
+        for i, r in enumerate(order):
+            v = [x for m in members.get(r, [r]) for x in _paired(m, value)]
+            if v:
+                mean, lo, hi = P.F._spread(v)
+                cells[i, j] = mean
+                text[i][j] = f"{mean:+.1f}" + ("" if lo is None else f" ± {(lo + hi) / 2:.1f}")
+    lim = float(np.nanmax(np.abs(cells)))
+    cmap = LinearSegmentedColormap.from_list("burd", HEAT[::-1])      # red for a loss
+    left, top, cw, ch = 3.6, 1.9, 2.75, 0.62
+    fig = S.figure_cm(S.PRINT_W, top + ch * len(order) + 0.25 + 0.6)
+    ax = S.axes_cm(fig, left, top, 4 * cw, ch * len(order) + (0.25 if shown else 0))
+    gap = 0.4                 # rows of the controls sit below a gap
+    ys = [i + (gap if r in shown else 0) for i, r in enumerate(order)]
+    norm = TwoSlopeNorm(vcenter=0.0, vmin=-lim, vmax=lim)
+    for i, (r, y) in enumerate(zip(order, ys)):
+        for j in range(4):
+            if np.isfinite(cells[i, j]):
+                c = cmap(norm(cells[i, j]))
+                ax.add_patch(plt.Rectangle((j, y), 1, 1, facecolor=c, edgecolor="white", linewidth=1.5))
+                dark = sum(c[:3]) < 1.3
+                ax.text(j + 0.5, y + 0.5, text[i][j], ha="center", va="center", fontsize=S.TICK_PT5,
+                        color="white" if dark else "#000000")
+    ax.set_xlim(0, 4)
+    ax.set_ylim(ys[-1] + 1, 0)
+    ax.set_xticks([j + 0.5 for j in range(4)])
+    ax.set_xticklabels(HEAT_COLS, fontsize=S.TICK_PT5)
+    ax.xaxis.tick_top()
+    ax.set_yticks([y + 0.5 for y in ys])
+    ax.set_yticklabels([DOT_NAMES[r] for r in order], fontsize=S.TICK_PT5)
+    ax.tick_params(length=0)
+    for side in ax.spines.values():
+        side.set_visible(False)
+    if shown:
+        a, b = ys[len(REL_ROWS)] + 0.1, ys[-1] + 0.9
+        _dot_bracket(fig, ax, {"_a": a + 0.3, "_b": b - 0.3})
+    S.heading(fig, heading + ": change from 188 classes of the same seed (%)")
+    S.save(fig, path)
+
+
 def draw_f2a(path, style: str = "A") -> None:
     if style != "A":
         return _draw_f2_cat(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
@@ -950,3 +1080,21 @@ PAGES = [
         differs="Accuracy, not loss; one curve per label set; no marker for 80 points; theme grid.",
         draw=draw_val),
 ]
+
+
+def draw_f2a_rel(path) -> None:
+    _draw_f2_rel(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
+                 "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
+
+
+def draw_f2b_rel(path) -> None:
+    _draw_f2_rel(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning")
+
+
+def draw_f2a_heat(path) -> None:
+    _draw_f2_heat(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
+                  "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
+
+
+def draw_f2b_heat(path) -> None:
+    _draw_f2_heat(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning")

@@ -83,6 +83,18 @@ PAGES = [
           .replace("against the pretraining label set", "for each pretraining label set (rows)")
           .replace("bars the SD", "horizontal bars the SD").replace("dashed,", "vertical dashed line,"),
           draw=lambda path: LS.draw_f2b_dot(path)),
+    Page(id="CMP-F2-REL", title="Fig. 2 relative to 188 classes", precedent=[], precedent_label="", differs=DIFFERS,
+          caption="For each pretraining label set (rows) and the 17-class controls, the change in linear-probe performance from the network pretrained with 188 classes and the same seed, in percent: class-balanced JetClass-II and JetClass accuracy, top and quark/gluon R30. Markers are means, horizontal bars the SD over seeds (two for the flavor boundaries; random partitions one run each). The vertical line is 188 classes.",
+          draw=lambda path: LS.draw_f2a_rel(path)),
+    Page(id="CMP-F3-REL", title="Fig. 3 relative to 188 classes", precedent=[], precedent_label="", differs=DIFFERS,
+          caption="For each pretraining label set (rows) and the 17-class controls, the change in fine-tuned performance from the network pretrained with 188 classes and the same seed, in percent: class-balanced JetClass-II and JetClass accuracy, top and quark/gluon R30. Markers are means, horizontal bars the SD over seeds (two for the flavor boundaries; random partitions one run each). The vertical line is 188 classes.",
+          draw=lambda path: LS.draw_f2b_rel(path)),
+    Page(id="CMP-F2-HEAT", title="Fig. 2 as a table of changes", precedent=[], precedent_label="", differs=DIFFERS,
+          caption="For each pretraining label set (rows) and the 17-class controls, the change in linear-probe performance from the network pretrained with 188 classes and the same seed, in percent, mean and SD over seeds, for the four tasks (columns). Red: worse than 188 classes, blue: better, on one scale; random partitions: the mean over the five, one run each.",
+          draw=lambda path: LS.draw_f2a_heat(path)),
+    Page(id="CMP-F3-HEAT", title="Fig. 3 as a table of changes", precedent=[], precedent_label="", differs=DIFFERS,
+          caption="For each pretraining label set (rows) and the 17-class controls, the change in fine-tuned performance from the network pretrained with 188 classes and the same seed, in percent, mean and SD over seeds, for the four tasks (columns). Red: worse than 188 classes, blue: better, on one scale; random partitions: the mean over the five, one run each.",
+          draw=lambda path: LS.draw_f2b_heat(path)),
     Page(id="CMP-FONT-T", title="Fig. A4 (a), current font", precedent=[], precedent_label="", differs=DIFFERS, caption="Panel (a) of Fig. A4 in the current Times-like font (STIX), at "
           "its printed size, for comparison with the same panel in Latin Modern, the body font of the book. Accuracy of "
           "linear probes on class-balanced JetClass-II against jet transverse momentum for the four label sets.",
