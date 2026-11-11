@@ -147,7 +147,7 @@ def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
     the text width; the legend beside the panel left a third of the width empty)."""
     w = S.PRINT_W - 1.5 - 0.2
     h = 0.7 * w
-    top = 1.95
+    top = 2.4
     fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
     ax = S.axes_cm(fig, 1.5, top, w, h)
     _roc_axes(ax, x_step=0.2)
@@ -157,7 +157,7 @@ def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
     _y_range([ax])
     S.labels(ax, S.X_EPS, S.Y_REJ)
     S.heading(fig, f"{heading}, mean AUC over classes {np.mean(list(aucs.values())):.3f}; each class's AUC in the legend")
-    S.fig_legend(fig, _class_handles(aucs), top_cm=0.6, ncol=5)
+    S.fig_legend(fig, _class_handles(aucs), top_cm=0.6, ncol=4)
     S.save(fig, path)
 
 
@@ -236,7 +236,7 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
     shown = {a for rows, *_ in panels for a in rows}
     top = 1.9 if len(shown) <= 4 else 2.35
     if len(panels) == 3:        # one row of three equal panels (PI 2026-11-11: no empty slot)
-        fig, grid, _ = S.grid_cm(1, 3, w=S.PANEL_3, aspect=1.0, top=top, left=ROC_LEFT, wgap=ROC_WGAP)
+        fig, grid, _ = S.grid_cm(1, 3, w=4.1, aspect=1.0, top=top, left=ROC_LEFT, wgap=ROC_WGAP)
         for ax in grid.flat:
             _roc_axes(ax)
             S.labels(ax, xlabel=S.X_EPS)

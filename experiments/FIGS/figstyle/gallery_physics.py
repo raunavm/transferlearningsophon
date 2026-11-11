@@ -576,7 +576,7 @@ def draw_f11(path: pathlib.Path) -> None:
         raise Absent(f"X→bb and X→bs fits on Sophon's samples ({P.DATA / 'xbx'}): not pulled")
     # two panels side by side at the text width, one legend above them (PI 2026-11-11: aligned with the text block,
     # one line width in the legend, the x range fitted to the curves)
-    fig, grid, _ = S.grid_cm(1, 2, aspect=0.85, top=2.3, left=1.2, wgap=0.7, bottom=1.15)
+    fig, grid, _ = S.grid_cm(1, 2, w=6.35, aspect=0.85, top=2.3, left=1.2, wgap=0.7, bottom=1.15)
     axes = list(grid[0])
     top, xs, handles = 0.0, [], {}
     for ax, (_, series) in zip(axes, panels):
