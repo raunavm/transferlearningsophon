@@ -147,7 +147,7 @@ def test_the_real_sample_xbb_xbs_chain_takes_the_finishing_line_and_the_stand_in
 def test_the_real_sample_specs_avoid_the_nodes_whose_gpus_failed():
     bx = _load("build_xbx_jobs", "scripts/build_xbx_jobs.py")
     for name, text in bx.build(tuple(bx.SIGNALS), bx.MX).items():
-        for node in ("k8s-haosu-12.sdsc.optiputer.net", "k8s-haosu-09.sdsc.optiputer.net"):
+        for node in ("k8s-haosu-12.sdsc.optiputer.net", "k8s-haosu-09.sdsc.optiputer.net", "k8s-haosu-06.sdsc.optiputer.net"):
             assert (f'"{node}"' in text) == name.startswith("job-xbx-ihep-"), name
         assert len(bx.HOST_NOTIN.findall(text)) == 1
 

@@ -123,8 +123,9 @@ IHEP_LINE = storage_line.check(storage_line.FINISHING)   # PI 2026-11-09: the re
 
 # 2026-11-10: k8s-haosu-12's GPU device plugin refused six pods of the first real-sample fit in seven minutes
 # (UnexpectedAdmissionError, GetPreferredAllocation failed), each a counted failure; k8s-haosu-09 lost a GPU the same
-# day ("GPU is lost", a fit died there with a CUDA launch failure, then seven pods were refused)
-IHEP_BAD_NODES = ("k8s-haosu-12.sdsc.optiputer.net", "k8s-haosu-09.sdsc.optiputer.net")
+# day ("GPU is lost", a fit died there with a CUDA launch failure, then seven pods were refused); k8s-haosu-06 refused
+# every pod of two X->bs extractions on 2026-11-11 (14 pods, the same GetPreferredAllocation error)
+IHEP_BAD_NODES = ("k8s-haosu-12.sdsc.optiputer.net", "k8s-haosu-09.sdsc.optiputer.net", "k8s-haosu-06.sdsc.optiputer.net")
 HOST_NOTIN = re.compile(r"(- key: kubernetes\.io/hostname\n\s+operator: NotIn\n\s+values: \[)([^\]]*)\]")
 
 
