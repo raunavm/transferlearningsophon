@@ -3794,7 +3794,7 @@ CAPTIONS = {
                "on the full training sets of top and quark/gluon (also scored on Herwig jets): accuracy, AUC and the background rejections $R_{50}$ and $R_{30}$, $1/\\epsB$ at "
                "50\\% and 30\\% signal efficiency. " + SPREAD + " From scratch: three training seeds. Every rejection rests on at least __FEWEST__ background jets passing the cut."),
     "bench_top": ("tab:benchtop", "Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 "
-                  "classes, or not pretrained, fine-tuned on the full top training set (\\LitPartTopNTrainMillion{} million "
+                  "classes and fine-tuned, or trained from scratch, on the full top training set (\\LitPartTopNTrainMillion{} million "
                   "jets): accuracy, AUC and the background rejections $R_{50}$ and $R_{30}$, $1/\\epsB$ at 50\\% and 30\\% signal "
                   "efficiency, and the number of trainable parameters. "
                   "Published rows from the tables cited, the parameters from each model's paper (ParT and ParticleNet-f.t.: "
@@ -3810,7 +3810,7 @@ CAPTIONS = {
                   "every value within one standard deviation of it (the larger of the two values' standard deviations; a "
                   "configuration with two runs is compared by their mean and standard deviation)."),
     "bench_qg": ("tab:benchqg", "Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 "
-                 "and 17 classes, or not pretrained, fine-tuned on the full training set (\\LitQgTrainMillion{} million "
+                 "and 17 classes and fine-tuned, or trained from scratch, on the full training set (\\LitQgTrainMillion{} million "
                  "Pythia jets) with the particle type as five flags and the charge (ParT's exp inputs), "
                  "and scored on Pythia and on Herwig jets: accuracy, AUC and $1/\\epsB$ at 50\\% and 30\\% quark "
                  "efficiency, and the number of trainable parameters. Our models see the \\FillQgNZero{} displacement "
@@ -3826,7 +3826,7 @@ CAPTIONS = {
              "__JC2COMP__ test jets (\\MlstBootResamples{} resamples within each class). Top and quark/gluon: the ratio of "
              "$R_{30}$, the test-sample part from the number of background jets passing the cut."),
     "jetclass": ("tab:jetclass", "JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 "
-                 "classes, or not pretrained, fine-tuned on one million JetClass jets, in the form of ParT's Table~1: "
+                 "classes and fine-tuned, or trained from scratch, on one million JetClass jets, in the form of ParT's Table~1: "
                  "the number of trainable parameters, accuracy, AUC averaged over all pairs of "
                  "classes (one against one, ParT's convention; on JetClass's equal class sizes it equals the "
                  "one-against-rest average, checked), and for each signal class the rejection of QCD jets at 50\\% "
@@ -3868,8 +3868,8 @@ CAPTIONS = {
                    "each partition's fine-tuned rejection of QCD per signal class over that of the \\Kfull-class run of the "
                    "same seed. $^\\dagger$: fewer than $\\nmin$ QCD jets pass in the partition's run or in that "
                    "\\Kfull-class run (equation~(\\ref{eq:cut}))."),
-    "lrsweep": ("tab:lrsweep", "Learning-rate choice for fine-tuning Sophon's network, pretrained on JetClass-II with "
-                "\\Kfull{} classes (run 1) or not pretrained, on $10^{4}$ top and quark/gluon jets: the best validation "
+    "lrsweep": ("tab:lrsweep", "Learning-rate choice for training Sophon's network, pretrained on JetClass-II with "
+                "\\Kfull{} classes (run 1) or trained from scratch, on $10^{4}$ top and quark/gluon jets: the best validation "
                 "accuracy of each rate on top and quark/gluon and their sum. Pretrained: the rate of the pretrained layers, with the new "
                 "output head at 50 times that rate, at most $5\\times10^{-3}$. $^{\\ast}$: the rate chosen, on the sum for the pretrained "
                 "weights and on each task's accuracy for the networks trained from scratch; the test jets play no part."),
@@ -4039,8 +4039,8 @@ CAPTION_SHORT = {
             "between their label sets at the largest training set, as the standard deviation of the logarithm of "
             "the ratio over the pretraining runs / that from the finite test sample. JetClass-II: the ratio of "
             "$1-\\mathrm{AUC}$; top and quark/gluon: the ratio of $R_{30}$.",
-    "lrsweep": "Learning-rate choice for fine-tuning Sophon's network, pretrained on JetClass-II with \\Kfull{} "
-               "classes (run 1) or not pretrained, on $10^{4}$ top and quark/gluon jets: the best validation "
+    "lrsweep": "Learning-rate choice for training Sophon's network, pretrained on JetClass-II with \\Kfull{} "
+               "classes (run 1) or trained from scratch, on $10^{4}$ top and quark/gluon jets: the best validation "
                "accuracy of each rate and their sum. Pretrained: the rate of the pretrained layers, the new output "
                "head at 50 times it. $^{\\ast}$: the rate chosen.",
     "mass_detail": f"Jet-mass regression on JetClass-II from {NETS}, in detail, over all test jets and over resonant "
@@ -4063,20 +4063,20 @@ CAPTION_SHORT = {
           "classes (all and QCD classes) and the accuracy, the accuracy on JetClass, and $R_{30}$ on top, "
           "quark/gluon and Herwig jets. $\\rho$: $1-\\mathrm{AUC}$ at $10^{6}$ jets over that of the \\Kfull-class "
           "run of the same seed. A dash: not run at that size. " + SD_SHORT,
-    "bench_top": "Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not "
-                 "pretrained, fine-tuned on the full top training set (\\LitPartTopNTrainMillion{} million jets), "
+    "bench_top": "Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or "
+                 "trained from scratch, on the full top training set (\\LitPartTopNTrainMillion{} million jets), "
                  "beside published models: accuracy, AUC, the background rejections $R_{50}$ and $R_{30}$ "
                  "($1/\\epsB$ at 50\\% and 30\\% signal efficiency) and the number of trainable parameters. Ours: "
                  "mean $\\pm$ standard deviation over the pretraining runs, three seeds from scratch; published "
                  "uncertainties as given there. Bold: the best value of each column and every value within one "
                  "standard deviation of it.",
-    "bench_qg": "Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, "
-                "or not pretrained, fine-tuned on the full training set (\\LitQgTrainMillion{} million Pythia jets; "
+    "bench_qg": "Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes "
+                "and fine-tuned, or trained from scratch, on the full training set (\\LitQgTrainMillion{} million Pythia jets; "
                 "particle type as five flags and the charge) and scored on Pythia and on Herwig jets, beside "
                 "published models: accuracy, AUC, $1/\\epsB$ at 50\\% and 30\\% quark efficiency and the number of "
                 "trainable parameters. Uncertainties and bold as in table~\\ref{tab:benchtop}.",
-    "jetclass": "JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not "
-                "pretrained, fine-tuned on one million JetClass jets, beside published models (2 million jets, from "
+    "jetclass": "JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or "
+                "trained from scratch, on one million JetClass jets, beside published models (2 million jets, from "
                 "scratch): accuracy, AUC averaged over class pairs, and QCD rejection at each signal class's efficiency. "
                 "Ours: mean $\\pm$ SD over three runs ($\\pm\\,0$: the same QCD jets pass). Bold: within one SD of a "
                 "column's best. $^\\dagger$: fewer than \\MlstMinBkgPass{} QCD jets pass in a run; never bold.",
