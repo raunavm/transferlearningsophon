@@ -8,34 +8,34 @@
 \toprule
 run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\
 \midrule
-\Kfull{} classes, run 1 & V100 (135) & 135 & L4, RTX 3090, TITAN RTX, V100 \\
-\Kfull{} classes, run 2 & V100 (145) & 145 & L4, RTX 4090, TITAN RTX, V100 \\
-\Kfull{} classes, run 3 & RTX 3090 (116) & 116 & L4, L40, RTX 5000 Ada Generation, V100 \\
+\Kfull{} classes, run 1 & V100 (135) & 135 & L4, L40, RTX 3090, V100 \\
+\Kfull{} classes, run 2 & V100 (145) & 145 & A100 80GB PCIe, L4, RTX 4090, RTX 5000 Ada Generation, TITAN RTX, V100 \\
+\Kfull{} classes, run 3 & RTX 3090 (116) & 116 & A100-SXM4-80GB, L4, L40, RTX 5000 Ada Generation, V100 \\
 \Kres{} classes, run 1 & V100 (75), RTX 3090 (54) & 129 & L4, L40, RTX 3090, RTX 5000 Ada Generation, TITAN RTX, V100 \\
-\Kres{} classes, run 2 & V100 (86), RTX 3090 (40) & 126 & L4, L40, Quadro RTX 6000, RTX 5000 Ada Generation, V100 \\
-\Kres{} classes, run 3 & V100 (123), L4 (39) & 162 & Quadro RTX 6000, RTX 3090, TITAN RTX, V100 \\
-\Kmid{} classes, run 1 & RTX 3090 (113) & 113 & L4, RTX 3090, TITAN RTX, V100 \\
-\Kmid{} classes, run 2 & V100 (101), RTX 3090 (24) & 125 & L4, L40, Quadro RTX 6000, RTX 3090, TITAN RTX, V100 \\
+\Kres{} classes, run 2 & V100 (86), RTX 3090 (40) & 126 & Quadro RTX 6000, RTX 5000 Ada Generation, V100 \\
+\Kres{} classes, run 3 & V100 (123), L4 (39) & 162 & L4, Quadro RTX 6000, RTX 3090, TITAN RTX, V100 \\
+\Kmid{} classes, run 1 & RTX 3090 (113) & 113 & L4, Quadro RTX 6000, TITAN RTX, V100 \\
+\Kmid{} classes, run 2 & V100 (101), RTX 3090 (24) & 125 & L4, Quadro RTX 6000, RTX 3090, RTX 5000 Ada Generation, TITAN RTX, V100 \\
 \Kmid{} classes, run 3 & V100 (107), RTX 3090 (20) & 127 & L4, L40, RTX 3090, V100 \\
-\Kcoarse{} classes, run 1 & RTX 3090 (108), L4 (3) & 111 & L4, L40, RTX 5000 Ada Generation, V100 \\
-\Kcoarse{} classes, run 2 & V100 (133) & 133 & L4, TITAN RTX, V100 \\
-\Kcoarse{} classes, run 3 & V100 (101), L4 (72) & 174 & L4, RTX 3090, RTX 4090, TITAN RTX, V100 \\
+\Kcoarse{} classes, run 1 & RTX 3090 (108), L4 (3) & 111 & A100-SXM4-80GB, L4, L40, RTX 3090, RTX 5000 Ada Generation, V100 \\
+\Kcoarse{} classes, run 2 & V100 (133) & 133 & A100 80GB PCIe, A100-SXM4-80GB, L4, RTX 3090, TITAN RTX, V100 \\
+\Kcoarse{} classes, run 3 & V100 (101), L4 (72) & 174 & A100-PCIE-40GB, A100-SXM4-80GB, L4, Quadro RTX 6000, RTX 3090, RTX 4090, RTX 5000 Ada Generation, TITAN RTX, V100 \\
 \Kres{} classes + mass, run 1 & V100 (129), RTX 3090 (26) & 155 & L4, Quadro RTX 6000, RTX 3090, RTX 4090, TITAN RTX, V100 \\
-\Kres{} classes + mass, run 2 & V100 (130), RTX 3090 (15) & 145 & L4, Quadro RTX 6000, RTX 3090, RTX 5000 Ada Generation, V100 \\
-\Kcoarse{} classes + mass, run 1 & V100 (126), RTX 3090 (16) & 142 & L4, L40, RTX 3090, RTX 5000 Ada Generation, TITAN RTX, V100 \\
-\Kcoarse{} classes + mass, run 2 & RTX 3090 (101) & 101 & L4, L40, Quadro RTX 6000, V100 \\
-random partition 1, run 1 & RTX 3090 (78), V100 (38) & 116 & L4, L40, Quadro RTX 6000, RTX 3090, TITAN RTX, V100 \\
-random partition 2, run 2 & RTX 3090 (110) & 110 & L4, TITAN RTX, V100 \\
+\Kres{} classes + mass, run 2 & V100 (130), RTX 3090 (15) & 145 & L4, Quadro RTX 6000, RTX 3090, RTX 5000 Ada Generation, TITAN RTX, V100 \\
+\Kcoarse{} classes + mass, run 1 & V100 (126), RTX 3090 (16) & 142 & L4, L40, RTX 3090, TITAN RTX, V100 \\
+\Kcoarse{} classes + mass, run 2 & RTX 3090 (101) & 101 & L4, L40, RTX 5000 Ada Generation, V100 \\
+random partition 1, run 1 & RTX 3090 (78), V100 (38) & 116 & L4, Quadro RTX 6000, RTX 3090, RTX 5000 Ada Generation, V100 \\
+random partition 2, run 2 & RTX 3090 (110) & 110 & L4, V100 \\
 random partition 3, run 1 & RTX 3090 (109) & 109 & L4, L40, RTX 3090, V100 \\
-random partition 4, run 2 & RTX 3090 (107) & 107 & L4, L40, RTX 3090, V100 \\
-random partition 5, run 2 & RTX 3090 (98) & 98 & L4, L40, Quadro RTX 6000, V100 \\
-no flavor boundary, run 1 & RTX 3090 (99) & 99 & L4, TITAN RTX, V100 \\
-no flavor boundary, run 2 & RTX 3090 (130) & 130 & L4, Quadro RTX 6000, RTX 4090, RTX 5000 Ada Generation, V100 \\
-$b$-quark boundary, run 1 & V100 (98), RTX 3090 (24) & 122 & L4, Quadro RTX 6000, TITAN RTX, V100 \\
-$b$-quark boundary, run 2 & RTX 3090 (137) & 137 & L4, L40, Quadro RTX 6000, RTX 4090, TITAN RTX, V100 \\
-random flavor boundary, run 1 & RTX 3090 (125) & 125 & L4, RTX 3090, RTX 5000 Ada Generation, V100 \\
-random flavor boundary, run 2 & V100 (135), RTX 3090 (7) & 142 & L4, L40, Quadro RTX 6000, V100 \\
-\mbox{\Kfull{} classes,} \mbox{kinematic inputs only} & RTX 4090 (75) & 75 & L40, V100 \\
+random partition 4, run 2 & RTX 3090 (107) & 107 & A100 80GB PCIe, L4, RTX 3090, TITAN RTX, V100 \\
+random partition 5, run 2 & RTX 3090 (98) & 98 & A100 80GB PCIe, A100-PCIE-40GB, L4, L40, Quadro RTX 6000, V100 \\
+no flavor boundary, run 1 & RTX 3090 (99) & 99 & A100 80GB PCIe, A100-SXM4-80GB, L4, RTX 3090, TITAN RTX, V100 \\
+no flavor boundary, run 2 & RTX 3090 (130) & 130 & A100-SXM4-80GB, L4, Quadro RTX 6000, RTX 4090, V100 \\
+$b$-quark boundary, run 1 & V100 (98), RTX 3090 (24) & 122 & A100 80GB PCIe, A100-SXM4-80GB, L4, Quadro RTX 6000, RTX 3090, TITAN RTX, V100 \\
+$b$-quark boundary, run 2 & RTX 3090 (137) & 137 & A100 80GB PCIe, A100-SXM4-80GB, L4, L40, L40S, Quadro RTX 6000, TITAN RTX, V100 \\
+random flavor boundary, run 1 & RTX 3090 (125) & 125 & A100 80GB PCIe, L4, RTX 3090, V100 \\
+random flavor boundary, run 2 & V100 (135), RTX 3090 (7) & 142 & A100-SXM4-80GB, L40, Quadro RTX 6000, RTX 5000 Ada Generation, V100 \\
+\mbox{\Kfull{} classes,} \mbox{kinematic inputs only} & RTX 4090 (75) & 75 & A100-PCIE-40GB, L40, TITAN RTX, V100 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
