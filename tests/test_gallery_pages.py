@@ -93,10 +93,10 @@ def test_the_million_jet_block_formats_mean_and_sd_in_the_last_digit():
     assert V._pm([0.98541, 0.98542, 0.98541]) == "0.9854(<1)" and V._pm(None) == "–" and V._pm([0.5, 0.5]) == "0.5000"
     vals = {"L188": [[0.4, 0.41]] * 4, "R16_Q1": [[0.4, 0.41]] * 4, "SCRATCH": [None, [0.4, 0.41], [0.4, 0.41], [0.4, 0.41]]}
     rows = V._ft_rows(vals)
-    assert [r[1][0] for r in rows[2:5]] == ["188 classes (f.t.)", "17 classes (f.t.)", "no pretraining (f.t.)"]
-    assert rows[4][1] == ("no pretraining (f.t.)", "–", "0.405(7)", "0.405(7)", "0.405(7)")
-    assert all(r[2] == V.FT_X for r in rows[:5]) and rows[-1][1].startswith("No pretraining: ParT's full flat+decay")
-    assert rows[-1][1].endswith("–: pending: JetClass-II accuracy, no pretraining.")
+    assert [r[1][0] for r in rows[2:5]] == ["188 classes (f.t.)", "17 classes (f.t.)", "from scratch"]
+    assert rows[4][1] == ("from scratch", "–", "0.405(7)", "0.405(7)", "0.405(7)")
+    assert all(r[2] == V.FT_X for r in rows[:5]) and rows[-1][1].startswith("From scratch: ParT's full flat+decay")
+    assert rows[-1][1].endswith("–: pending: JetClass-II accuracy, from scratch.")
     assert not V._ft_rows({a: [[0.4, 0.41]] * 4 for a in V.FT_ARMS})[-1][1].count("pending")
 
 

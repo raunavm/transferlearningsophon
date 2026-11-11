@@ -70,7 +70,7 @@ MASS = ("L162_MASS", "R16_Q1_MASS")
 LEGEND = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes",
           "RAND": "random partitions", "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary",
           "FLAV_F1R": "random flavor boundary", "L162_MASS": "162 classes + mass", "R16_Q1_MASS": "17 classes + mass",
-          "KIN": "188 classes, kinematic inputs only", "SCRATCH": "no pretraining", "INIT_BN": "random network"}
+          "KIN": "188 classes, kinematic inputs only", "SCRATCH": "from scratch", "INIT_BN": "random network"}
 PROBE, MLP_PROBE, FINE_TUNED = "(LP)", "(MLP)", "(f.t.)"
 TINT_188 = "#" + "".join(f"{round(int(SERIES['L188'][i:i + 2], 16) + 0.4 * (255 - int(SERIES['L188'][i:i + 2], 16))):02X}"
                          for i in (1, 3, 5))

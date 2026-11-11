@@ -72,7 +72,7 @@ _FIGURES = (
                        "its uncertainty."),
     ("F10a-flav", APPENDIX, SCULPT_FLAV),
     ("F10-ft", APPENDIX, "Fine-tuned on class-balanced JetClass-II, every network sculpts the QCD mass several times "
-                         "more than the pretraining heads; label sets and no pretraining are consistent."),
+                         "more than the pretraining heads; the label sets and training from scratch are consistent."),
     ("UMAP-jc2-had", APPENDIX, "Qualitatively, 188-class frozen features separate X→bb̄, cc̄ and qq̄ and 17-class ones "
                                "only order them; after fine-tuning both separate them."),
     ("VAL", APPENDIX, "Validation accuracy levels off for every label set during pretraining."),

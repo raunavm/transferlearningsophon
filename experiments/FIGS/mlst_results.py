@@ -91,7 +91,7 @@ def _ck(model: str) -> str:
 
 # Row labels (PI, 2026-11-07, in the style of ParT's "-f.t."): the network pretrained on JetClass-II by its classes, or
 # the control by the shortest name the paper uses, and in a table of one downstream mode its tag (MODE, MODES):
-# "188 classes (LP)", "no pretraining (f.t.)". Where the mode changes across columns the column headings name it.
+# "188 classes (LP)"; "from scratch" carries no tag (it is trained, not fine-tuned or probed). Where the mode changes across columns the column headings name it.
 LABEL = {"L188": r"\Kfull{} classes", "L162": r"\Kres{} classes", "R42_Q1": r"\Kmid{} classes",
          "R16_Q1": r"\Kcoarse{} classes", "L162_MASS": r"\Kres{} classes + mass", "R16_Q1_MASS": r"\Kcoarse{} classes + mass",
          "FLAV_F0": "no flavor boundary", "FLAV_F1": r"$b$-quark boundary", "FLAV_F1R": "random flavor boundary",
@@ -99,7 +99,7 @@ LABEL = {"L188": r"\Kfull{} classes", "L162": r"\Kres{} classes", "R42_Q1": r"\K
          "KIN": r"\Kfull{} classes, kinematic inputs only", RAND_POOLED: "random partitions",
          SOPHON: "released Sophon checkpoint",
          **{f"RAND2_p{k}": f"random partition {k}" for k in range(1, 6)}}
-SCRATCH_LABEL = V4.SCRATCH_LABEL      # "no pretraining": a fine-tuning table's reference
+SCRATCH_LABEL = V4.SCRATCH_LABEL      # "from scratch": a fine-tuning table's reference, never mode-tagged
 MODE = {"ft": "(f.t.)", "lp": "(LP)", "mlp": "(MLP)"}
 MODE_DEF = {"ft": "(f.t.): fine-tuned", "lp": "(LP): linear probe on the frozen features",
             "mlp": "(MLP): multilayer-perceptron probe on the frozen features"}
@@ -4350,7 +4350,7 @@ def _mode_word(key: str, part: int = 0) -> str | None:
 
 
 def _labels(tab: str, tag: str | None = None) -> str:
-    """Every row label that is a LABEL (or no pretraining), with a seed number or not: the table's tag after the
+    """Every row label that is a LABEL (or from scratch), with a seed number or not: the table's tag after the
     name, before the seed ('random partition 1 (LP), seed 1'), and the label kept whole between its commas."""
     known = sorted(set(LABEL.values()) | {SCRATCH_LABEL}, key=len, reverse=True)
     out = []
@@ -4359,7 +4359,8 @@ def _labels(tab: str, tag: str | None = None) -> str:
         k = next((k for k in known if re.fullmatch(re.escape(k) + r"(, seed \d+)?\s*", first)), None)
         if k:
             run = first.strip()[len(k):]
-            ln = _label_parts(k + (f" {tag}" if tag else "") + run) + " " + ln[len(first):]
+            mode = f" {tag}" if tag and k != SCRATCH_LABEL else ""     # from scratch is neither fine-tuned nor probed
+            ln = _label_parts(k + mode + run) + " " + ln[len(first):]
         out.append(ln)
     return "\n".join(out)
 

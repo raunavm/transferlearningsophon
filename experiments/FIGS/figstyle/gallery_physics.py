@@ -827,7 +827,7 @@ F10B_FLAV_CAPTION = (
     "Black dashed: a random selection of as many QCD jets.")
 F10_FT_CAPTION = (
     "Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (three runs) and 162 and 17 classes plus "
-    "mass regression (two runs), and the same network without pretraining (three seeds), fine-tuned on one million "
+    "mass regression (two runs), and the same network trained from scratch (three seeds) on one million "
     "class-balanced JetClass-II jets and scored on 2 million natural-mix test jets: Jensen-Shannon "
     "distance between QCD soft-drop mass before and after a cut on 1 - g_QCD, against QCD efficiency eps_B. Bands: "
     "SD, range over two. Black dashed: random selection of as many QCD jets.")

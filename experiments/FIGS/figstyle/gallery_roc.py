@@ -386,7 +386,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
                             linewidth=S.LW_CURVE)
         models = P._scratch_models(ft)
         s = mean_over_runs(ft, models, key)
-        _plot(ax, s, **S.look("SCRATCH"), linewidth=S.LW_CURVE, label=S.LEGEND["SCRATCH"] + ("" if word == "fine-tuned" else f" {S.FINE_TUNED}"), zorder=1.9)  # under the label sets
+        _plot(ax, s, **S.look("SCRATCH"), linewidth=S.LW_CURVE, label=S.LEGEND["SCRATCH"], zorder=1.9)  # under the label sets
         if word == "fine-tuned":            # beside probes the fine-tuned reference is up to ten times higher: its
             # ratio would set the range and flatten the probes, so the probe figure's ratio panels hold the probes only
             shown += _ratio(rx, s, ref, _rel_error(ft, models, key), band=True, **S.look("SCRATCH"),
@@ -478,7 +478,7 @@ PAGES = [
                  "fine-tuned on one million JetClass jets: background rejection against signal efficiency with "
                  "each JetClass class as signal against the other nine, the mean over three pretraining runs, "
                  "ending where fewer than 20 background jets remain. Titles give the mean area under the curve "
-                 "over the ten classes; the heading, that of a network without pretraining trained from scratch.",
+                 "over the ten classes; the heading, that of a network trained from scratch.",
          differs="Against landscape: ten classes of one network, not fifteen networks; solid tab10. Against the poster: "
                  "rejection against efficiency (PI); four panels, not two; legend names only, as the AUCs do not fit.",
          draw=draw_fj),
@@ -496,7 +496,7 @@ PAGES = [
     Page(id="FJ-s", title="JetClass trained from scratch",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (AUC in legend)",
-         caption="A network without pretraining, trained from scratch on one million JetClass jets: background "
+         caption="A network trained from scratch on one million JetClass jets: background "
                  "rejection against signal efficiency with each of the ten JetClass classes as signal and the "
                  "other nine as background, the mean over three trainings, ending where fewer than 20 background "
                  "jets remain. The legend gives each class's area under the curve; the heading gives their mean.",
@@ -567,8 +567,8 @@ PAGES = [
     Page(id="F6", title="Benchmarks after fine-tuning",
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
-         caption="The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and a network without "
-                 "pretraining, fine-tuned on the full top and quark/gluon training sets: rejection against "
+         caption="The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, fine-tuned, and a network "
+                 "trained from scratch, on the full top and quark/gluon training sets: rejection against "
                  "efficiency, means over three runs; dotted, one run with 188 classes and kinematic inputs only. "
                  "Lower panels: ratio to 188 classes; bands: each curve's SD over runs and 68% binomial "
                  "uncertainty of the passing background count, in quadrature. On Herwig jets, 43 and 17 classes "
@@ -589,8 +589,8 @@ PAGES = [
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
-                 "and 17 classes, trained on the full top and quark/gluon training sets, and a network without "
-                 "pretraining, fine-tuned from scratch (f.t.): rejection against efficiency, means over three "
+                 "and 17 classes, trained on the full top and quark/gluon training sets, and a network "
+                 "trained from scratch: rejection against efficiency, means over three "
                  "runs; dotted, one run with 188 classes and kinematic inputs only. Lower panels: the probes' "
                  "ratio to 188 classes; bands: each curve's SD over runs and 68% binomial uncertainty of the passing "
                  "background count, in quadrature.",

@@ -282,7 +282,7 @@ BENCH_COLS = (("acc", "accuracy", 3), ("auc", "auc", 4), ("r50", "r50", None), (
 METHOD_TEX = {"MIParT-L-f.t.": "MIParT-L-f.t.", "L-GATr-f.t.": "L-GATr-f.t."}
 # the heading over our rows: how the network was used downstream (PI, 2026-11-07)
 MODE_FT = "this work"      # the heading over our rows; each row names its network and how it was used
-SCRATCH_LABEL = "no pretraining"
+SCRATCH_LABEL = "from scratch"     # trained, not fine-tuned: no mode tag (PI 2026-11-11)
 PARAMS_HEAD = r"\# params"
 
 

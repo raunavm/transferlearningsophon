@@ -1614,9 +1614,9 @@
 \newcommand{\FtLrPre}{\ensuremath{10^{-3}}}  % experiments/FIGS/data/v2/budget/lrsweep_metrics.json :: argmax of the summed validation metric, pretrained :: sha256 7cdc148054ca902c
 \newcommand{\FtLrScratchTop}{\ensuremath{10^{-3}}}  % experiments/FIGS/data/v2/budget/lrsweep_metrics.json :: argmax of the validation metric on top, from scratch :: sha256 7cdc148054ca902c :: agrees with LR of the launched job-ft-budget-bench, -jc1, -jc2b, -scratch-full and -long-scratch-full from-scratch cells
 \newcommand{\FtLrScratchQg}{\ensuremath{3\times10^{-3}}}  % experiments/FIGS/data/v2/budget/lrsweep_metrics.json :: argmax of the validation metric on quark/gluon, from scratch :: sha256 7cdc148054ca902c :: agrees with LR of the launched job-ft-budget-bench and -scratch-full from-scratch cells
-\newcommand{\MlstNParamsFt}{2{,}209{,}270}  % experiments/FIGS/mlst_v4.py :: our_params(2, 17) :: sha256 fa536b4866ffd651 :: trainable parameters of our fine-tuned network, two outputs (top, quark/gluon)
-\newcommand{\MlstNParamsFtKin}{2{,}207{,}950}  % experiments/FIGS/mlst_v4.py :: our_params(2, 7) :: sha256 fa536b4866ffd651 :: trainable parameters of our fine-tuned network, two outputs, the 7 kinematic inputs
-\newcommand{\MlstNParamsJc}{2{,}213{,}374}  % experiments/FIGS/mlst_v4.py :: our_params(10, 17) :: sha256 fa536b4866ffd651 :: trainable parameters of our fine-tuned network, the ten JetClass classes
+\newcommand{\MlstNParamsFt}{2{,}209{,}270}  % experiments/FIGS/mlst_v4.py :: our_params(2, 17) :: sha256 8f08d4fd221c2fed :: trainable parameters of our fine-tuned network, two outputs (top, quark/gluon)
+\newcommand{\MlstNParamsFtKin}{2{,}207{,}950}  % experiments/FIGS/mlst_v4.py :: our_params(2, 7) :: sha256 8f08d4fd221c2fed :: trainable parameters of our fine-tuned network, two outputs, the 7 kinematic inputs
+\newcommand{\MlstNParamsJc}{2{,}213{,}374}  % experiments/FIGS/mlst_v4.py :: our_params(10, 17) :: sha256 8f08d4fd221c2fed :: trainable parameters of our fine-tuned network, the ten JetClass classes
 \newcommand{\MlstProbeRunsDone}{27}  % experiments/FIGS/data/v2/index.json :: runs with a linear-probe fit (count) :: sha256 2c52b7bbfecca454 :: of the paper's runs
 \newcommand{\MlstPaperRuns}{27}  % configs/arms/v2_paper_runs.txt :: runs (count) :: sha256 b04562b14ea8cbc7
 \newcommand{\MlstSdRelUnc}{50\%}  % configs/arms/v2_paper_runs.txt :: relative standard error of a standard deviation from the runs of a hierarchy level, 1/sqrt(2(n-1)) :: sha256 b04562b14ea8cbc7
@@ -2209,7 +2209,7 @@
 \newcommand{\MlstRocJcTwoHurtMaxDrop}{2.8}  % experiments/FIGS/data/v2/index.json :: jc2_roc_classes on the class-balanced probes; candidates with at least 1000 test jets :: sha256 2c52b7bbfecca454 :: largest AUC loss at 17 classes of the hurt, pp
 \newcommand{\MlstRocJcTwoStableMaxChange}{15}  % experiments/FIGS/data/v2/index.json :: jc2_roc_classes on the class-balanced probes; candidates with at least 1000 test jets :: sha256 2c52b7bbfecca454 :: largest change of 1 - AUC at any label set of the stable classes, per cent of the 188-class value
 \newcommand{\MlstJcBalNThin}{4}  % experiments/FIGS/data/v2/jc2bal/census.json :: counts.ft_test :: sha256 a4379ee0817254cf :: classes with fewer than 1000 class-balanced test jets (F3 hatching)
-\newcommand{\MlstMinBkgPass}{20}  % experiments/FIGS/mlst_v4.py :: JC1_MIN_BKG :: sha256 fa536b4866ffd651 :: fewest background jets behind a drawn ROC point or a quoted rejection
+\newcommand{\MlstMinBkgPass}{20}  % experiments/FIGS/mlst_v4.py :: JC1_MIN_BKG :: sha256 8f08d4fd221c2fed :: fewest background jets behind a drawn ROC point or a quoted rejection
 \newcommand{\MlstMassMinJets}{100}  % experiments/EVAL/atlas_resolution.py :: MIN_JETS :: sha256 b82cc219f79f0f14 :: jets below which a mass bin is null
 \newcommand{\MlstRocCutBbFull}{0.79}  % experiments/FIGS/data/v2/index.json :: curves_v2/pairs curve bb_vs_cc: largest cut.eps_s over the L188 runs ('not reached' when a run's cut is null or leaves fewer than 2 grid points) :: sha256 2c52b7bbfecca454
 \newcommand{\MlstRocCutBbRes}{0.77}  % experiments/FIGS/data/v2/index.json :: curves_v2/pairs curve bb_vs_cc: largest cut.eps_s over the L162 runs ('not reached' when a run's cut is null or leaves fewer than 2 grid points) :: sha256 2c52b7bbfecca454

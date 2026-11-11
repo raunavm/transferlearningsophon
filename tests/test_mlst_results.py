@@ -1538,7 +1538,7 @@ def test_a_row_label_names_its_network_and_the_tables_tag_and_wraps_only_at_its_
                    M.LABEL[M.INIT_BN] + r" & 4 \\", r"ParT~\cite{part} & 5 \\"])
     out = M._labels(t, M.MODE["lp"]).splitlines()
     assert out[0] == r"\mbox{random partition 1 (LP),} \mbox{seed 1} & 1 \\"
-    assert out[1] == r"\mbox{no pretraining (LP)} & 2 \\" and out[2] == r"\mbox{\Kfull{} classes (LP)} & 3 \\"
+    assert out[1] == r"\mbox{from scratch} & 2 \\" and out[2] == r"\mbox{\Kfull{} classes (LP)} & 3 \\"
     assert out[3] == r"\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 4 \\"
     assert out[4] == r"ParT~\cite{part} & 5 \\"
     assert M._labels(t).splitlines()[2] == r"\mbox{\Kfull{} classes} & 3 \\"          # a table of several modes

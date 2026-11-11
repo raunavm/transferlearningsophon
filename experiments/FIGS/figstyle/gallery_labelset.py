@@ -363,7 +363,7 @@ def draw_f8(path) -> None:
                                    (P.probe_series(M, I, RUNS, ds, met, "L188", chosen), probe_line, probe_mark,
                                     f"{S.LEGEND['L188']} {S.PROBE}"),
                                    _model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft",
-                                          f"{S.LEGEND['SCRATCH']} {S.FINE_TUNED}")]
+                                          S.LEGEND['SCRATCH'])]
     _draw_size(path, series, True, "no fine-tuning read-outs or linear probes", "188-class pretraining against training from scratch",
                ncol=2)
 
@@ -372,7 +372,7 @@ def draw_a10(path) -> None:
     chosen = _chosen()
     series = lambda key, ds, met: [_model(P.probe_series(M, I, RUNS, ds, met, row, chosen), row, "ft", S.LEGEND[row])   # probes only: solid
                                    for row in S.LEVELS] + [_model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft",
-                                                                  f"{S.LEGEND['SCRATCH']} {S.FINE_TUNED}")]
+                                                                  S.LEGEND['SCRATCH'])]
     _draw_size(path, series, True, "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
 
 
@@ -534,7 +534,7 @@ PAGES = [
                 "JetClass (accuracy) and on top and quark/gluon tagging (rejection R30 at 30% signal efficiency), "
                 "against the number of pretraining classes. Markers are means; bars the SD over three pretraining "
                 "runs, the range over two for the flavor-boundary partitions; each random partition has one run. "
-                "Dashed: no pretraining, trained from scratch.",
+                "Dashed: trained from scratch.",
         differs="Four panels against Hong's one, for the four tasks; Hong has no controls. Round 4: 6.5 cm panels in a "
                 "2x2, a figure legend above them that names every colour, filled markers (probes only in the figure) and a grey line "
                 "for the hierarchy, controls offset left of 17 with their own shapes, and each y range holding the "
@@ -550,7 +550,7 @@ PAGES = [
                 "partitions with controlled flavor boundaries, fine-tuned and scored on class-balanced "
                 "JetClass-II and JetClass (accuracy) and on top and quark/gluon tagging (rejection R30 at 30% "
                 "signal efficiency), against the number of pretraining classes. Markers are means; bars the SD "
-                "over three pretraining runs, the range over two for the partitions. Dashed: no pretraining, "
+                "over three pretraining runs, the range over two for the partitions. Dashed: trained from scratch, "
                 "trained from scratch.",
         differs="As F2a. Hong's own figure is fine-tuned too, so this page is the closer "
                 "copy.",
@@ -640,7 +640,7 @@ PAGES = [
         precedent=["2401.13537/fig3.png", "2401.13536/fig1.png"],
         precedent_label="Golling Fig. 3, Vigl Fig. 1 top",
         caption="The network pretrained on JetClass-II with 188 classes, fine-tuned (f.t.) and as a linear probe "
-                "on its frozen features (LP), and a network without pretraining trained from scratch (f.t.), "
+                "on its frozen features (LP), and a network trained from scratch, "
                 "scored on class-balanced JetClass-II and JetClass (accuracy) and on top and quark/gluon tagging "
                 "(R30), against the number of training jets. Points are means, bands the SD over three "
                 "pretraining runs (from scratch: three trainings). Stars: published ParT (JetClass: same inputs; "
@@ -665,7 +665,7 @@ PAGES = [
         precedent_label="Golling Fig. 3",
         caption="Fine-tuned networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, trained and "
                 "scored on class-balanced JetClass-II and JetClass (accuracy) and on top and quark/gluon tagging "
-                "(R30), against the number of training jets; dashed, no pretraining, trained from scratch. Points "
+                "(R30), against the number of training jets; dashed, trained from scratch. Points "
                 "are means, bands the SD over three pretraining runs (from scratch: three trainings). Stars: "
                 "published ParT (JetClass: same inputs; top: kinematic; quark/gluon: kinematic and particle "
                 "type).",
@@ -680,8 +680,8 @@ PAGES = [
         precedent_label="Golling Fig. 3",
         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and "
                 "17 classes, trained and scored on class-balanced JetClass-II and JetClass (accuracy) and on top "
-                "and quark/gluon tagging (R30), against the number of training jets; dashed, no pretraining, "
-                "fine-tuned from scratch (f.t.). Points are means, bands the SD over three pretraining runs (from "
+                "and quark/gluon tagging (R30), against the number of training jets; dashed, a network "
+                "trained from scratch. Points are means, bands the SD over three pretraining runs (from "
                 "scratch: three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; "
                 "quark/gluon: kinematic and particle type).",
         differs="Four panels against Golling's one; four label sets against three training modes. SD bands as "

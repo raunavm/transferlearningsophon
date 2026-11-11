@@ -134,10 +134,11 @@ def _ft_rows(values: dict) -> list:
     pending (not read out or not pulled)."""
     rows = [("", ("", "", "JetClass-II, balanced", "", "JetClass"), FT_X),
             ("", ("", "accuracy", "AUC", "accuracy", "AUC"), FT_X)]
-    rows += [("", (f"{S.LEGEND[a]} {S.FINE_TUNED}", *map(_pm, values[a])), FT_X) for a in FT_ARMS]
+    rows += [("", (S.LEGEND[a] + ("" if a == "SCRATCH" else f" {S.FINE_TUNED}"), *map(_pm, values[a])), FT_X)
+             for a in FT_ARMS]
     names = ("JetClass-II accuracy", "JetClass-II AUC", "JetClass accuracy", "JetClass AUC")
     gaps = [f"{n}, {S.LEGEND[a]}" for a in FT_ARMS for n, v in zip(names, values[a]) if not v]
-    rows.append(("", "No pretraining: ParT's full flat+decay schedule, the best validation epoch kept."
+    rows.append(("", "From scratch: ParT's full flat+decay schedule, the best validation epoch kept."
                      + (f" –: pending: {'; '.join(gaps)}." if gaps else ""), ""))
     return rows
 
