@@ -250,7 +250,7 @@ DOT_NAMES = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes
              "RAND": "random partitions", "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary",
              "FLAV_F1R": "random flavor boundary"}
 DOT_RAND_SPREAD = 0.12      # rows between the five random partitions within their row
-DOT_LEFT, DOT_W, DOT_H, DOT_WGAP, DOT_HGAP = 4.2, 5.1, 5.0, 0.45, 1.35
+DOT_LEFT, DOT_W, DOT_H, DOT_WGAP, DOT_HGAP = 4.2, 5.0, 5.0, 0.45, 1.35
 
 
 def _dot_rows(ax, labelled: bool) -> None:

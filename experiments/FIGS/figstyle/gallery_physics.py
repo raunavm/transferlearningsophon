@@ -225,7 +225,7 @@ def draw_f9a(path: pathlib.Path) -> None:
     response range, the bins in which any series of either panel reaches SHOWN_FROM of its peak; only those bins are
     drawn, so no histogram runs off the axes."""
     atlas = _atlas()
-    fig, axes, _ = S.grid_cm(1, 2, w=6.5, aspect=0.85, top=1.85, left=1.5, wgap=0.3)
+    fig, axes, _ = S.grid_cm(1, 2, w=6.5, aspect=0.85, top=1.85, left=1.5, wgap=0.3, bottom=1.2)
     panels = [(_response_series(atlas, g), t) for g, t in (("resonant", "Resonant jets"), ("qcd", "QCD jets"))]
     e = panels[0][0][0]
     on = np.flatnonzero(np.any([v >= SHOWN_FROM * v.max() for (_, series), _ in panels for v, _, _ in series], axis=0))
@@ -325,7 +325,7 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
     rows = math.ceil((len(series) + 1) / ncol)
     refs = np.empty((2, 2), object)
     fig, axes, raxes = S.grid_cm(2, 2, w=6.1, aspect=0.72, ratio=RATIO_ATLAS, top=0.95 + 0.45 * rows + 0.5, left=1.85,
-                                 wgap=0.6, hgap=1.0)      # Latin Modern: room for the y label and the last x label
+                                 wgap=0.6, hgap=1.0, bottom=1.25)      # Latin Modern: room for the y label and the last x label
     for i, which in enumerate(("median", "resolution")):
         for j, (axis, xlabel) in enumerate((("vs_pt", X_PT), ("vs_mgen", X_MGEN))):
             refs[i, j] = _quantity(axes[i, j], raxes[i, j], atlas, group, axis, series, which)
@@ -490,7 +490,7 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs
     S.log_axis(ax, "x", force=True)
     S.log_axis(ax, "y", force=True)
     S.heading(fig, heading)
-    S.labels(ax, r"QCD efficiency ($\varepsilon_B$)", "Jensen-Shannon distance")
+    S.labels(ax, r"QCD efficiency ($\varepsilon_B$)", "Jensen–Shannon distance")
     S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=3)
     S.save(fig, path)
 
@@ -805,9 +805,8 @@ F9B_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs): median response r = m/m_gen (a, b) and resolution sigma_r, half the 15.9-84.1% "
     "quantile range of r over its median (c, d), of test jets against pT (a, c) and generator mass (b, d; 20-500 "
-    "GeV), with the soft-drop mass (black). Points at bin centres, bars the range over the two runs; within a bin "
-    "the series are set slightly apart. The resolution axis is logarithmic. Lower panels: ratio to the soft-drop "
-    "mass.")
+    "GeV), with the soft-drop mass (black). Points at bin centres, set apart within a bin; bars: range over runs. "
+    "Log resolution axis; lower panels: ratio to the soft-drop mass.")
 A17_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs), on {group} test jets: median response r (a, b) and resolution sigma_r (c, d), as in "
@@ -938,10 +937,9 @@ PAGES = [
     Page("A17-probe", "Mass from frozen features and from the mass output (appendix)", ["ATL-PHYS-PUB-2024-015/fig8.png"],
          "ATLAS 2024-015 Fig. 8",
          "The jet mass from networks pretrained on JetClass-II: an MLP probe (MLP) regressing it from the frozen "
-         "features with 188, 162, 43 and 17 classes (open circles, three runs), and the mass output with 162 and 17 "
-         "classes and an auxiliary mass regression (filled, two runs). Median response r (a, b) and resolution "
-         "sigma_r (c, d) of test jets against pT (a, c) and generator mass (b, d; 20-500 GeV); points at bin "
-         "centres, bars the spread over runs, set apart within a bin; sub-panels as in the main-text mass figure.",
+         "features with 188, 162, 43 and 17 classes (open, three runs), and the mass output with 162 and 17 classes "
+         "and a mass regression (filled, two runs): median response r (a, b) and resolution sigma_r (c, d) against "
+         "pT (a, c) and generator mass (b, d). Points at bin centres, set apart within a bin; bars: spread over runs.",
          "As F9b, with six series and the soft-drop mass (PI): the four probes in the label sets' colours, the two mass "
          "outputs in the 162- and 17-class colours as F10b, one marker shape per series at the bin centres and in the legend, "
          "since each mass output shares its label set's colour. Round 4: the 2x2 of F9b, legend above the panels. "
