@@ -446,7 +446,7 @@ def _draw_embeddings(path, grid: list, heading: str, colours=None, legend_rows=N
     groups = docs[0][0]["groups"]
     ncol = 5 if len(groups) > 5 else len(groups)
     legend_rows_n = math.ceil(len(groups) / ncol)
-    fig, axes, _ = S.grid_cm(len(grid), len(grid[0]), aspect=1.0, w=6.5, left=0.8, wgap=0.3, hgap=0.6, bottom=0.3,
+    fig, axes, _ = S.grid_cm(len(grid), len(grid[0]), aspect=1.0, w=7.0, left=0.35, wgap=0.3, hgap=0.6, bottom=0.3,
                              top=1.15 + 0.5 * legend_rows_n)
     for r, (row, drow) in enumerate(zip(grid, docs)):
         for ax, (_, title), d in zip(axes[r], row, drow):

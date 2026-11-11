@@ -37,24 +37,17 @@ random network, BatchNorm recomputed (LP) & 0.2470\,$\pm$\,0.0030 & 0.8505\,$\pm
 \midrule
 released Sophon checkpoint (LP) & 0.6493 & 0.9840 & 0.7160 & 0.9784 \\
 \end{longtable}
-\addtocounter{table}{-1}
-\begin{longtable}{@{\extracolsep{\fill}}lcc@{}}
-\multicolumn{3}{l}{\textit{Table~\ref{tab:coarse} (continued)}} \\
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+{\small\textit{Table~\ref{tab:coarse} (continued)}}
+\par\smallskip
+\small
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
 \toprule
-& \multicolumn{2}{c}{target: 17 groups, no flavor boundary} \\
+ & \multicolumn{2}{c}{target: 17 groups, no flavor boundary} \\
 \cmidrule(lr){2-3}
  & accuracy & AUC \\
 \midrule
-\endfirsthead
-\multicolumn{3}{l}{\textit{Table~\ref{tab:coarse} (continued)}} \\
-\toprule
-& \multicolumn{2}{c}{target: 17 groups, no flavor boundary} \\
-\cmidrule(lr){2-3}
- & accuracy & AUC \\
-\midrule
-\endhead
-\bottomrule
-\endlastfoot
 \Kfull{} classes (LP) & 0.6421\,$\pm$\,0.0017 & 0.9565\,$\pm$\,0.0004 \\
 \Kres{} classes (LP) & 0.6390\,$\pm$\,0.0036 & 0.9554\,$\pm$\,0.0009 \\
 \Kmid{} classes (LP) & 0.5642\,$\pm$\,0.0045 & 0.9423\,$\pm$\,0.0008 \\
@@ -73,6 +66,9 @@ random network (LP) & 0.2916\,$\pm$\,0.0022 & 0.7706\,$\pm$\,0.0012 \\
 random network, BatchNorm recomputed (LP) & 0.3254\,$\pm$\,0.0071 & 0.8100\,$\pm$\,0.0059 \\
 \midrule
 released Sophon checkpoint (LP) & 0.6348 & 0.9544 \\
-\end{longtable}
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
 }
 \end{landscape}

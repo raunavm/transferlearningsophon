@@ -55,7 +55,7 @@ TEX = [("X→YY→bb̄qq", r"$X\to YY\to b\bar bqq$"), ("cc̄qq", r"$c\bar cqq$"
        ("H→bb̄", r"$H\to b\bar b$"), ("Z→qq̄", r"$Z\to q\bar q$"), ("W→qq′", r"$W\to qq'$"), ("X→bs", r"$X\to bs$"),
        ("X→ee", r"$X\to ee$"), ("X→μμ", r"$X\to\mu\mu$"), ("μμ", r"$\mu\mu$"), ("X→bb", r"$X\to b\bar b$"),
        ("cc̄", r"$c\bar c$"), ("bb̄", r"$b\bar b$"),
-       ("r = m/m_gen", r"$r = m/m_{\mathrm{gen}}$"), ("sigma_r", r"$\sigma_r$"), ("eps_B", r"$\varepsilon_B$"),
+       ("r = m/m_gen", r"$r = m/m_{\mathrm{gen}}$"), (" pT ", r" $p_{\mathrm{T}}$ "), ("sigma_r", r"$\sigma_r$"), ("eps_B", r"$\varepsilon_B$"),
        ("1 - g_QCD", r"$1-g_{\mathrm{QCD}}$"), ("16-84%", r"16--84\%"), ("20-500 GeV", r"20--500~GeV"),
        ("R30", r"$R_{30}$"), ("10^4", r"$10^{4}$"), ("10^3", r"$10^{3}$"), ("10^6", r"$10^{6}$"),
        (" (a)-(c)", r" (a)--(c)"), ("(b)-(d)", r"(b)--(d)"), ("15.9-84.1%", r"15.9--84.1\%"),

@@ -20,7 +20,7 @@ from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
 
 GROOMED = "Soft-drop mass"
 MASS_ROWS = (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))     # a mass model and its label set's name
-NAMES = {**S.NAME, **{row: f"{S.NAME[base]}, mass regression" for row, base in MASS_ROWS}}
+NAMES = {**S.NAME, **{row: S.LEGEND[row] for row, _ in MASS_ROWS}}      # "162 classes + mass", as every legend and table
 RATIO_ATLAS, RATIO_CMS = 0.44, 0.33     # lower axes over main axes: ATLAS 2024-015 Figs. 7-8, CMS Fig. 8 (catalogue)
 STACK_GAP, COLUMN_GAP = 0.08, 0.32      # a main and its lower axes; two columns with their own y axes
 SHOWN_FROM = 0.05       # a response axis covers the bins with this share of the largest bin of any series
@@ -285,7 +285,7 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
         ax.set_ylim(v.min() / 1.3, v.max() * 1.15)
     else:
         _fit_y(ax, [*vals, ref])
-    _fit_y(rx, lows)
+    _fit_y(rx, lows, pad=0.18)       # the reference at 1 clear of the frame, its tick labelled
     ax.set_xlim(e[0], e[-1])
     for a_ in (ax, rx):
         S.fine_grid(a_)
@@ -339,9 +339,6 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
             S.clear_edge_labels(axes[i, j], low=True)       # clear of the ratio panel below
             S.clear_edge_labels(raxes[i, j], high=True)
     fig.align_ylabels([axes[0, 0], raxes[0, 0], axes[1, 0], raxes[1, 0]])
-    for rx in raxes[:, 1]:      # the right column's label at its last tick would run off the page
-        hi = rx.get_xlim()[1]
-        rx.xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=hi: "" if v >= hi - 1e-9 else f"{v:g}"))
     S.letter_panels(list(axes.flat))
     S.heading(fig, heading)
     S.fig_legend(fig, axes[0, 0].get_legend_handles_labels()[0], top_cm=0.6, ncol=ncol)
@@ -381,8 +378,8 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
         raise Absent("no mass sculpting curve of the models shown")
     ncols = 3 if len(shown) == 3 else 2         # three panels in one row (PI 2026-11-11: no empty slot)
     nrows = math.ceil(len(shown) / ncols)
-    fig, axes, raxes = S.grid_cm(nrows, ncols, w=S.PANEL_3 if ncols == 3 else S.PANEL_W, aspect=0.75 if ncols == 2 else 0.95,
-                                 ratio=RATIO_CMS, top=1.6, left=1.3, wgap=0.35, hgap=1.0)
+    fig, axes, raxes = S.grid_cm(nrows, ncols, w=S.PANEL_3 if ncols == 3 else 6.4, aspect=0.75 if ncols == 2 else 0.95,
+                                 ratio=RATIO_CMS, top=1.6, left=1.3, wgap=0.55, hgap=1.0)
     panels = list(zip(axes.flat, raxes.flat))
     peak, ratios = 0.0, [[1.0]]
     for k_panel, ((ax, rx), (a, ms)) in enumerate(zip(panels, shown)):
@@ -420,9 +417,6 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
             raxes[i, j].tick_params(labelleft=False)
         axes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=5, prune="lower"))
         raxes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=3, prune="both"))
-        for j in range(ncols - 1):         # a panel's last x label is left to the next panel's axis beside it
-            hi = raxes[i, j].get_xlim()[1]
-            raxes[i, j].xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=hi: "" if v >= hi - 1e-9 else f"{v:g}"))
         S.clear_edge_labels(raxes[i, 0], high=True)     # clear of the panel above
         S.labels(axes[i, 0], ylabel="Fraction of jets")
         S.labels(raxes[i, 0], ylabel="Ratio to\ninclusive")
@@ -582,7 +576,7 @@ def draw_f11(path: pathlib.Path) -> None:
         raise Absent(f"X→bb and X→bs fits on Sophon's samples ({P.DATA / 'xbx'}): not pulled")
     # two panels side by side at the text width, one legend above them (PI 2026-11-11: aligned with the text block,
     # one line width in the legend, the x range fitted to the curves)
-    fig, grid, _ = S.grid_cm(1, 2, aspect=0.85, top=2.3, left=1.2, wgap=0.35, bottom=1.15)
+    fig, grid, _ = S.grid_cm(1, 2, aspect=0.85, top=2.3, left=1.2, wgap=0.7, bottom=1.15)
     axes = list(grid[0])
     top, xs, handles = 0.0, [], {}
     for ax, (_, series) in zip(axes, panels):
@@ -601,8 +595,6 @@ def draw_f11(path: pathlib.Path) -> None:
         S.title(ax, what)
         S.labels(ax, xlabel=r"QCD efficiency ($\varepsilon_B$)")
     axes[1].tick_params(labelleft=False)
-    hi = axes[0].get_xlim()[1]        # (a)'s last x label is left to (b)'s axis, which starts beside it
-    axes[0].xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if v >= hi * (1 - 1e-9) else S.pow10(v)))
     S.labels(axes[0], ylabel=r"Figure of merit ($\varepsilon_S/\varepsilon_B^{1/2}$)")
     S.letter_panels(axes)
     S.heading(fig, "Resonance tagging on Sophon's samples")
@@ -760,7 +752,7 @@ def draw_conf(path: pathlib.Path) -> None:
         ax.minorticks_off()
         S.labels(ax, "Predicted class" if k >= 2 else None, "True class" if k % 2 == 0 else None)
     for x, image, word in ((xs[0], images[0], "(a): fraction of the true class\n(percent)"),
-                           (xs[1], images[-1], "(b)-(d): difference from 188 classes\n(percentage points)")):
+                           (xs[1], images[-1], "(b)\u2013(d): difference from 188 classes\n(percentage points)")):
         cax = S.axes_cm(fig, x, cb_top, w, 0.28)
         cb = fig.colorbar(image, cax=cax, orientation="horizontal")
         cb.ax.xaxis.set_ticks_position("top")

@@ -760,7 +760,7 @@ def _task_longtable(blocks: list, label: str) -> str:
     return "\n".join([r"\begin{landscape}", "{\\small", LT_SETUP,
                       r"\begin{longtable}{@{\extracolsep{\fill}}l" + "c" * ncol + "@{}}",
                       rf"\caption{{__CAPTION__}}\label{{{label}}}\\", r"\toprule", r"\endfirsthead",
-                      r"\multicolumn{" + str(ncol + 1) + r"}{l}{\textit{continued}} \\", r"\toprule", r"\endhead",
+                      r"\multicolumn{" + str(ncol + 1) + r"}{l}{\textit{Table~\ref{" + label + r"} (continued)}} \\", r"\toprule", r"\endhead",
                       r"\bottomrule", r"\endlastfoot", *body, r"\end{longtable}", "}", r"\end{landscape}", ""])
 
 
@@ -3502,7 +3502,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
     lines = [r"\begin{landscape}", "{\\small", LT_SETUP,
              r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap("6.5") + "r" + wrap("9.0") + "@{}}",
              r"\caption{__CAPTION__}\label{tab:compute}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
-             r"\multicolumn{4}{l}{\textit{continued}} \\", r"\toprule", head, r"\midrule", r"\endhead",
+             r"\multicolumn{4}{l}{\textit{Table~\ref{tab:compute} (continued)}} \\", r"\toprule", head, r"\midrule", r"\endhead",
              r"\bottomrule", r"\endlastfoot"]
     hours = {}
     items = [(arm, f"{LABEL[arm]}, run {_idx(m)}", m) for arm, ms in runs.items() if arm not in (INIT, INIT_BN) for m in ms]
@@ -3591,7 +3591,7 @@ def table_per_run(fits, per, runs, fmt_pm, fill=None, chosen=None) -> str:
     return "\n".join([r"\begin{landscape}", "{\\small", LT_SETUP,
                       r"\begin{longtable}{@{\extracolsep{\fill}}l" + "c" * 9 + "@{}}",
                       r"\caption{__CAPTION__}\label{tab:perrun}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
-                      r"\multicolumn{10}{l}{\textit{continued}} \\", r"\toprule", head, r"\midrule", r"\endhead",
+                      r"\multicolumn{10}{l}{\textit{Table~\ref{tab:perrun} (continued)}} \\", r"\toprule", head, r"\midrule", r"\endhead",
                       r"\bottomrule", r"\endlastfoot", *rows, r"\end{longtable}", "}", r"\end{landscape}", ""])
 
 
@@ -4382,11 +4382,20 @@ def _stretch(tab: str) -> str:
 
 
 def _turned_long(blocks: list, cap: str, label: str, tail: list) -> str:
-    """Blocks of a table too wide for the upright page and too tall for the turned one, as longtables in landscape:
-    each across the whole line, its rows breaking across pages under its repeated heading; the caption above the
-    first, "continued" above every later page and block."""
+    """Blocks of a table too wide for the upright page, in landscape across the whole line. A block that fits a turned
+    page stays whole on one (no stub of a few rows under a repeated heading, no heading stranded at the foot of a
+    page); a block taller than the page is a longtable whose rows break under its repeated heading. The caption
+    above the first block, "Table N (continued)" above every later block and page; one table number."""
+    cont = rf"{{\small\textit{{Table~\ref{{{label}}} (continued)}}}}"
     out = [r"\begin{landscape}", "{\\small", LT_SETUP]
     for k, b in enumerate(blocks):
+        fits = _height_cm([b], "") + (0.45 * (len(cap) / 150 + 1) if k == 0 else 0.6) <= LAND_FULL_CM
+        if fits:
+            head = ([rf"\captionof{{table}}{{{cap}}}", rf"\label{{{label}}}", r"\par\medskip"] if k == 0
+                    else [cont, r"\par\smallskip"])
+            out += [r"\begin{center}", r"\begin{minipage}{\linewidth}\centering", *([r"\normalsize"] if k == 0 else []),
+                    *head, r"\small", _stretch(b), r"\end{minipage}", r"\end{center}"]
+            continue
         m = re.match(r"\s*\\begin\{tabular\}\{([lc]+)\}(.*)\\end\{tabular\}\s*$", b, re.S)
         if not m or r"\midrule" not in m.group(2):
             raise SystemExit(f"FATAL: {label}: a block that is no plain tabular with a heading cannot be set as a longtable")
@@ -4394,11 +4403,11 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list) -> str:
         head, rows = inner.split(r"\midrule", 1)
         head = head.replace(r"\toprule", "").strip()
         rows = rows.rsplit(r"\bottomrule", 1)[0].strip()
-        cont = rf"\multicolumn{{{len(spec)}}}{{l}}{{\textit{{Table~\ref{{{label}}} (continued)}}}} \\"
+        more = rf"\multicolumn{{{len(spec)}}}{{l}}{{\textit{{Table~\ref{{{label}}} (continued)}}}} \\"
         out += ([r"\addtocounter{table}{-1}"] if k else []) + [      # a longtable steps the counter: one number a table
                 r"\begin{longtable}{@{\extracolsep{\fill}}" + spec + "@{}}",
-                (rf"\caption{{{cap}}}\label{{{label}}}\\" if k == 0 else cont), r"\toprule", head, r"\midrule", r"\endfirsthead",
-                cont, r"\toprule", head, r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot", rows, r"\end{longtable}"]
+                (rf"\caption{{{cap}}}\label{{{label}}}\\" if k == 0 else more), r"\toprule", head, r"\midrule", r"\endfirsthead",
+                more, r"\toprule", head, r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot", rows, r"\end{longtable}"]
     return "\n".join(out + [*tail, "}", r"\end{landscape}", ""])
 
 

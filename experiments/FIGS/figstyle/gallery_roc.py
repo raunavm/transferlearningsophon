@@ -19,7 +19,7 @@ import style_v5 as S
 
 # rejection ticks as powers of ten (PI, 2026-11-11: log axes labelled 10^n everywhere)
 PLAIN = FuncFormatter(S.pow10)
-ROC_LEFT, ROC_WGAP = 1.3, 0.25     # cm: room for the tick labels beside the y label; the right column's y labels are off
+ROC_LEFT, ROC_WGAP = 1.3, 0.5     # cm: room for the tick labels beside the y label; the right column's y labels are off
 GRID = {"left": 0.1, "right": 0.965, "top": 0.92, "bottom": 0.06, "hspace": 0.1}
 STACKED_GRID = {"top": 0.98, "bottom": 0.06, "hspace": 0.35}
 FAMILIES = ("QCD", "Two-prong quarks and gluons", "Two-prong leptons", "Three-prong", "Four-prong",
@@ -84,7 +84,7 @@ def _right_labels_off(axes) -> None:
     """A row whose two panels show one y range gives its tick labels once, on the left (the plain-number labels leave
     no room between the columns); the left panel's "1.0" is left to the right panel's axis, which starts beside it."""
     for left, right in axes:
-        left.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v) < 1e-9 or v > 1 - 1e-9 else f"{v:.1f}"))
+        left.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v) < 1e-9 else f"{v:.1f}"))     # 1.0 on every panel
         if np.allclose(left.get_ylim(), right.get_ylim()):
             right.tick_params(labelleft=False)
         else:
@@ -143,11 +143,11 @@ def _auc(v: float) -> str:
 
 
 def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
-    """One panel, the class AUCs in a legend beside it on the right (PI, 2026-11-07): not above, where it took a
-    tall band, and not inside, where ten curves leave no empty corner. Full width, as the other figures."""
-    w = 7.3
-    h = 0.85 * w
-    top = 0.9
+    """One panel across the text width, the class legend with each class's AUC above it (PI 2026-11-11: every figure
+    the text width; the legend beside the panel left a third of the width empty)."""
+    w = S.PRINT_W - 1.5 - 0.2
+    h = 0.7 * w
+    top = 1.95
     fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
     ax = S.axes_cm(fig, 1.5, top, w, h)
     _roc_axes(ax, x_step=0.2)
@@ -156,9 +156,8 @@ def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
     _jc1_curves(ax, docs, models, auc_in_legend=False)
     _y_range([ax])
     S.labels(ax, S.X_EPS, S.Y_REJ)
-    S.heading(fig, f"{heading}, mean AUC over classes {np.mean(list(aucs.values())):.3f}")
-    S.legend(ax, handles=_class_handles(aucs), loc="center left", bbox_to_anchor=(1.03, 0.5), handlelength=S.HANDLE,
-             title="Signal class (AUC)", title_fontsize=S.LEGEND_PT5)
+    S.heading(fig, f"{heading}, mean AUC over classes {np.mean(list(aucs.values())):.3f}; each class's AUC in the legend")
+    S.fig_legend(fig, _class_handles(aucs), top_cm=0.6, ncol=5)
     S.save(fig, path)
 
 
@@ -202,7 +201,7 @@ def draw_fj(path: pathlib.Path) -> None:
 
 
 def draw_fj_ctrl(path: pathlib.Path) -> None:
-    _jc1_four(path, "jc1_ft_ovr", "Fine-tuned on $10^6$ JetClass jets, 17-class random partitions", _controls())
+    _jc1_four(path, "jc1_ft_ovr", "Fine-tuned on $10^6$ JetClass jets, 17-class partitions", _controls())
 
 
 def draw_fj_s(path: pathlib.Path) -> None:
@@ -218,7 +217,7 @@ def draw_fj_app(path: pathlib.Path) -> None:
 
 
 def draw_fj_ctrl_app(path: pathlib.Path) -> None:
-    _jc1_four(path, "jc1_probe_ovr", "Linear probes on $10^6$ JetClass jets, 17-class random partitions",
+    _jc1_four(path, "jc1_probe_ovr", "Linear probes on $10^6$ JetClass jets, 17-class partitions",
               _controls(), legend=False)
 
 
@@ -274,7 +273,7 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
             ax.tick_params(labelleft=False)
         zero = drawn[0].get_xlim()[0] == 0          # no "0.0" in a corner, beside the y axis's first label
         for ax in axes.flat[:-1]:     # the "1.0" of a panel is left to the next panel's axis, which starts beside it
-            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if v > 1 - 1e-9 or (zero and abs(v) < 1e-9) else f"{v:.1f}"))
+            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if zero and abs(v) < 1e-9 else f"{v:.1f}"))
         axes.flat[-1].xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if zero and abs(v) < 1e-9 else f"{v:.1f}"))
     else:
         _right_labels_off(axes)
@@ -283,8 +282,7 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
             lo = axes[0, j].get_xlim()[0]
             for ax in axes[:, j]:
                 ax.xaxis.set_major_formatter(FuncFormatter(
-                    lambda v, _, lo=lo, last=j == 1: "" if (not last and v > 1 - 1e-9) or abs(v - lo) < 1e-9
-                    else f"{v:.1f}"))     # no label where two panels' labels would meet
+                    lambda v, _, lo=lo: "" if abs(v - lo) < 1e-9 else f"{v:.1f}"))     # no label where two panels' labels would meet
     S.fig_legend(fig, [handles[w] for w in order if w in handles], top_cm=0.6, ncol=4)
     S.letter_panels(list(axes.flat)[:len(panels)])
     S.save(fig, path)
@@ -354,7 +352,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
     sets (and the kinematic-inputs model); from scratch is drawn and may leave it. From scratch always from the
     fine-tuned families."""
     top_ft, qg_ft = _family("top_ft"), _family("qg_ft")
-    left, own, gap, top_cm, rgap, bottom = ROC_LEFT, 0.95, ROC_WGAP, 2.2, 0.1, 0.95    # own: (b)'s tick labels
+    left, own, gap, top_cm, rgap, bottom = ROC_LEFT, 0.95, 0.45, 2.2, 0.1, 0.95    # own: (b)'s tick labels
     w = (S.PRINT_W - left - own - gap - 0.2) / 3
     h = w
     fig = S.figure_cm(S.PRINT_W, top_cm + h * (1 + RATIO_HEIGHT) + rgap + bottom)
@@ -375,8 +373,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         _roc_axes(ax)
         S.fine_grid(rx)
         rx.xaxis.set_major_locator(MultipleLocator(0.2))
-        rx.xaxis.set_major_formatter(FuncFormatter(lambda v, _, k=k: "" if abs(v) < 1e-9 or (k == 1 and v > 1 - 1e-9)
-                                                   else f"{v:.1f}"))     # (b)'s "1.0" left to (c)'s axis beside it
+        rx.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v) < 1e-9 else f"{v:.1f}"))
         ref = mean_over_runs(docs, RUNS["L188"], key)
         shown = [1.0]
         for level in S.LEVELS[::-1]:            # the 188-class curve last, on top
@@ -429,6 +426,9 @@ def draw_f6_app(path: pathlib.Path) -> None:
     _benchmarks(path, _family("top_probe"), _family("qg_probe"), "linear probes", True)
 
 
+EVERY_CLASS_LW = 0.7     # 188 curves a panel: thin, opaque, and the legend handles as thin
+
+
 def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
     docs = _family(family)
     names = {r["jet_label"]: r["class_name"] for r in M._class_rows(P.REPO)}
@@ -439,11 +439,11 @@ def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
         for label in names:
             s = mean_over_runs(docs, RUNS[level], label)
             aucs.append(s[2])
-            _plot(ax, s, color=colour[label], linewidth=0.4, alpha=0.7)
+            _plot(ax, s, color=colour[label], linewidth=EVERY_CLASS_LW)
         S.title(ax, f"{S.NAME[level]}, mean AUC {np.mean(aucs):.3f}")
     _y_range(list(axes.flat))
     _right_labels_off(axes)
-    S.fig_legend(fig, [Line2D([], [], color=S.TAB10[i], linewidth=S.LW_CURVE, label=f) for i, f in enumerate(FAMILIES)],
+    S.fig_legend(fig, [Line2D([], [], color=S.TAB10[i], linewidth=EVERY_CLASS_LW, label=f) for i, f in enumerate(FAMILIES)],
                  top_cm=0.6, ncol=3)        # above the panels, off the curves (PI, 2026-11-07)
     S.letter_panels(axes.flat)
     S.save(fig, path)

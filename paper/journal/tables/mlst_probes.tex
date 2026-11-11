@@ -37,24 +37,17 @@ random network, BatchNorm recomputed (LP) & 0.1017\,$\pm$\,0.0017 & 0.8664\,$\pm
 \midrule
 released Sophon checkpoint (LP) & 0.4340 & 0.9799 & -- & 0.9812 \\
 \end{longtable}
-\addtocounter{table}{-1}
-\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\multicolumn{5}{l}{\textit{Table~\ref{tab:probes} (continued)}} \\
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+{\small\textit{Table~\ref{tab:probes} (continued)}}
+\par\smallskip
+\small
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
-& \multicolumn{2}{c}{JetClass-II} & \multicolumn{2}{c}{JetClass} \\
+ & \multicolumn{2}{c}{JetClass-II} & \multicolumn{2}{c}{JetClass} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & AUC, resonant & AUC, QCD & accuracy & AUC \\
 \midrule
-\endfirsthead
-\multicolumn{5}{l}{\textit{Table~\ref{tab:probes} (continued)}} \\
-\toprule
-& \multicolumn{2}{c}{JetClass-II} & \multicolumn{2}{c}{JetClass} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
- & AUC, resonant & AUC, QCD & accuracy & AUC \\
-\midrule
-\endhead
-\bottomrule
-\endlastfoot
 \Kfull{} classes (LP) & 0.9830\,$\pm$\,$<$0.0001 & 0.9632\,$\pm$\,$<$0.0001 & 0.7709\,$\pm$\,0.0023 & 0.9682\,$\pm$\,0.0006 \\
 \Kres{} classes (LP) & 0.9829\,$\pm$\,0.0001 & 0.9600\,$\pm$\,0.0002 & 0.7709\,$\pm$\,0.0005 & 0.9683\,$\pm$\,0.0002 \\
 \Kmid{} classes (LP) & 0.9785\,$\pm$\,0.0002 & 0.9583\,$\pm$\,0.0003 & 0.7695\,$\pm$\,0.0014 & 0.9680\,$\pm$\,0.0004 \\
@@ -73,27 +66,22 @@ random network (LP) & 0.8152\,$\pm$\,0.0024 & 0.7936\,$\pm$\,0.0054 & 0.4077\,$\
 random network, BatchNorm recomputed (LP) & 0.8737\,$\pm$\,0.0044 & 0.8232\,$\pm$\,0.0012 & 0.4751\,$\pm$\,0.0054 & 0.8655\,$\pm$\,0.0040 \\
 \midrule
 released Sophon checkpoint (LP) & 0.9828 & 0.9624 & 0.7679 & 0.9675 \\
-\end{longtable}
-\addtocounter{table}{-1}
-\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\multicolumn{5}{l}{\textit{Table~\ref{tab:probes} (continued)}} \\
-\toprule
-& \multicolumn{4}{c}{top} \\
- & \multicolumn{4}{c}{missing inputs: random draws} \\
-\cmidrule(lr){2-5}
- & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\endfirsthead
-\multicolumn{5}{l}{\textit{Table~\ref{tab:probes} (continued)}} \\
-\toprule
-& \multicolumn{4}{c}{top} \\
- & \multicolumn{4}{c}{missing inputs: random draws} \\
-\cmidrule(lr){2-5}
- & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\endhead
 \bottomrule
-\endlastfoot
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+{\small\textit{Table~\ref{tab:probes} (continued)}}
+\par\smallskip
+\small
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\toprule
+ & \multicolumn{4}{c}{top} \\
+ & \multicolumn{4}{c}{missing inputs: random draws} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
 \Kfull{} classes (LP) & 0.9112\,$\pm$\,0.0015 & 0.9686\,$\pm$\,0.0007 & 86.6\,$\pm$\,3.9 & 228\,$\pm$\,25 \\
 \Kres{} classes (LP) & 0.9098\,$\pm$\,0.0031 & 0.9671\,$\pm$\,0.0020 & 79.4\,$\pm$\,9.3 & 199\,$\pm$\,25 \\
 \Kmid{} classes (LP) & 0.9101\,$\pm$\,0.0019 & 0.9681\,$\pm$\,0.0013 & 87.7\,$\pm$\,3.5 & 231\,$\pm$\,8 \\
@@ -113,27 +101,22 @@ random network, BatchNorm recomputed (LP) & 0.8783\,$\pm$\,0.0021 & 0.9354\,$\pm
 \Kfull{} classes, kinematic inputs only (LP) & 0.9163 & 0.9713 & 94.2 & 231 \\
 \midrule
 released Sophon checkpoint (LP) & 0.8882 & 0.9509 & 39.3 & 97 \\
-\end{longtable}
-\addtocounter{table}{-1}
-\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\multicolumn{5}{l}{\textit{Table~\ref{tab:probes} (continued)}} \\
-\toprule
-& \multicolumn{4}{c}{quark/gluon} \\
- & \multicolumn{4}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-5}
- & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\endfirsthead
-\multicolumn{5}{l}{\textit{Table~\ref{tab:probes} (continued)}} \\
-\toprule
-& \multicolumn{4}{c}{quark/gluon} \\
- & \multicolumn{4}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-5}
- & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\endhead
 \bottomrule
-\endlastfoot
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+{\small\textit{Table~\ref{tab:probes} (continued)}}
+\par\smallskip
+\small
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\toprule
+ & \multicolumn{4}{c}{quark/gluon} \\
+ & \multicolumn{4}{c}{missing inputs: the training mean} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
 \Kfull{} classes (LP) & 0.8076\,$\pm$\,0.0004 & 0.8835\,$\pm$\,0.0002 & 26.17\,$\pm$\,0.35 & 72.7\,$\pm$\,2.4 \\
 \Kres{} classes (LP) & 0.8051\,$\pm$\,0.0015 & 0.8818\,$\pm$\,0.0018 & 25.59\,$\pm$\,0.41 & 71.0\,$\pm$\,0.3 \\
 \Kmid{} classes (LP) & 0.8055\,$\pm$\,0.0009 & 0.8821\,$\pm$\,0.0011 & 25.68\,$\pm$\,0.64 & 70.8\,$\pm$\,1.8 \\
@@ -152,27 +135,22 @@ random network (LP) & 0.7851\,$\pm$\,0.0018 & 0.8612\,$\pm$\,0.0016 & 19.40\,$\p
 random network, BatchNorm recomputed (LP) & 0.7845\,$\pm$\,0.0013 & 0.8600\,$\pm$\,0.0009 & 18.70\,$\pm$\,0.18 & 52.2\,$\pm$\,0.8 \\
 \midrule
 released Sophon checkpoint (LP) & 0.7917 & 0.8656 & 19.30 & 54.3 \\
-\end{longtable}
-\addtocounter{table}{-1}
-\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\multicolumn{5}{l}{\textit{Table~\ref{tab:probes} (continued)}} \\
-\toprule
-& \multicolumn{4}{c}{quark/gluon, Herwig} \\
- & \multicolumn{4}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-5}
- & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\endfirsthead
-\multicolumn{5}{l}{\textit{Table~\ref{tab:probes} (continued)}} \\
-\toprule
-& \multicolumn{4}{c}{quark/gluon, Herwig} \\
- & \multicolumn{4}{c}{missing inputs: the training mean} \\
-\cmidrule(lr){2-5}
- & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\endhead
 \bottomrule
-\endlastfoot
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+{\small\textit{Table~\ref{tab:probes} (continued)}}
+\par\smallskip
+\small
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\toprule
+ & \multicolumn{4}{c}{quark/gluon, Herwig} \\
+ & \multicolumn{4}{c}{missing inputs: the training mean} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
 \Kfull{} classes (LP) & 0.7229\,$\pm$\,0.0033 & 0.8075\,$\pm$\,0.0006 & 11.81\,$\pm$\,0.10 & 35.0\,$\pm$\,2.6 \\
 \Kres{} classes (LP) & 0.7234\,$\pm$\,0.0022 & 0.8068\,$\pm$\,0.0022 & 11.63\,$\pm$\,0.43 & 35.9\,$\pm$\,1.7 \\
 \Kmid{} classes (LP) & 0.7206\,$\pm$\,0.0005 & 0.8058\,$\pm$\,0.0011 & 11.52\,$\pm$\,0.23 & 34.4\,$\pm$\,1.7 \\
@@ -191,6 +169,9 @@ random network (LP) & 0.7205\,$\pm$\,0.0021 & 0.7965\,$\pm$\,0.0009 & 10.58\,$\p
 random network, BatchNorm recomputed (LP) & 0.7194\,$\pm$\,0.0034 & 0.7972\,$\pm$\,0.0019 & 10.48\,$\pm$\,0.21 & 30.7\,$\pm$\,0.5 \\
 \midrule
 released Sophon checkpoint (LP) & 0.7153 & 0.7964 & 10.32 & 29.9 \\
-\end{longtable}
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
 }
 \end{landscape}

@@ -1,23 +1,19 @@
 \begin{landscape}
 {\small
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2: }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
-\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, on JetClass-II at its natural composition, with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed; (LP): linear probe on the frozen features. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}\label{tab:bn}\\
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\normalsize
+\captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, on JetClass-II at its natural composition, with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed; (LP): linear probe on the frozen features. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}
+\label{tab:bn}
+\par\medskip
+\small
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
-& \multicolumn{2}{c}{BatchNorm as trained} & \multicolumn{2}{c}{BatchNorm recomputed} \\
+ & \multicolumn{2}{c}{BatchNorm as trained} & \multicolumn{2}{c}{BatchNorm recomputed} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
-\endfirsthead
-\multicolumn{5}{l}{\textit{Table~\ref{tab:bn} (continued)}} \\
-\toprule
-& \multicolumn{2}{c}{BatchNorm as trained} & \multicolumn{2}{c}{BatchNorm recomputed} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
- & AUC & $\rho$ & AUC & $\rho$ \\
-\midrule
-\endhead
-\bottomrule
-\endlastfoot
 \Kfull{} classes (LP) & 0.9760\,$\pm$\,$<$0.0001 & 1.000 & 0.9760\,$\pm$\,$<$0.0001 & 1.000 \\
 \Kres{} classes (LP) & 0.9748\,$\pm$\,0.0003 & 1.049\,$\pm$\,0.014 & 0.9748\,$\pm$\,0.0003 & 1.050\,$\pm$\,0.014 \\
 \Kmid{} classes (LP) & 0.9719\,$\pm$\,0.0006 & 1.171\,$\pm$\,0.024 & 0.9719\,$\pm$\,0.0006 & 1.172\,$\pm$\,0.025 \\
@@ -33,6 +29,9 @@ no flavor boundary (LP) & 0.9657, 0.9645 & 1.432, 1.477 & 0.9657, 0.9645 & 1.432
 $b$-quark boundary (LP) & 0.9698, 0.9701 & 1.260, 1.245 & 0.9698, 0.9701 & 1.260, 1.245 \\
 random flavor boundary (LP) & 0.9698, 0.9698 & 1.259, 1.254 & 0.9698, 0.9698 & 1.260, 1.254 \\
 random network (LP) & 0.8058\,$\pm$\,0.0018 & -- & 0.8525\,$\pm$\,0.0019 & -- \\
-\end{longtable}
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
 }
 \end{landscape}
