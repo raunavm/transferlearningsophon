@@ -148,9 +148,9 @@ def table(M, MT, runs, fits: dict, scratch: dict | None = None) -> str:
                 rf"\cmidrule(lr){{2-{len(cols) + 1}}}",
                 " & " + " & ".join(rf"\multicolumn{{{b_ - a_ + 1}}}{{c}}{{{words[sig]}}}" for sig, a_, b_ in groups) + r" \\",
                 "".join(rf"\cmidrule(lr){{{a_}-{b_}}}" for _, a_, b_ in groups),
-                "Pretraining & " + " & ".join(lab.split(", ", 1)[1] for _, _, lab in cols) + r" \\"]
+                "pretraining & " + " & ".join(lab.split(", ", 1)[1] for _, _, lab in cols) + r" \\"]
     else:
-        head = ["Pretraining & " + " & ".join(rf"{lab} ($\varepsilon_B={stars[s]:g}$)" for s, _, lab in cols) + r" \\"]
+        head = ["pretraining & " + " & ".join(rf"{lab} ($\varepsilon_B={stars[s]:g}$)" for s, _, lab in cols) + r" \\"]
     lines = [r"\begin{tabular}{l" + "c" * len(cols) + "}", r"\toprule", *head, r"\midrule"]
     eff = {(s, n): efficiencies(M, runs, fits, s, n) for s, n, _ in cols}
     for row in ROWS:

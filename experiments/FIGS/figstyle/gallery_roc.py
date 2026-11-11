@@ -260,7 +260,7 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
             separated.sort(key=order.index)
             words = (" and ".join(w.removesuffix(" classes") for w in separated) + " classes"
                      if all(w.endswith(" classes") for w in separated) else ", ".join(separated))
-            ax.text(0.97, 0.95, "Complete separation:\n" + words, transform=ax.transAxes, ha="right",
+            ax.text(0.93, 0.95, "Complete separation:\n" + words, transform=ax.transAxes, ha="right",
                     va="top", fontsize=S.LEGEND_PT5)     # no frame, as the legends (style_v4)
         S.title(ax, name)
     drawn = [ax for ax in axes.flat if ax.lines]

@@ -379,7 +379,7 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
     ncols = 3 if len(shown) == 3 else 2         # three panels in one row (PI 2026-11-11: no empty slot)
     nrows = math.ceil(len(shown) / ncols)
     fig, axes, raxes = S.grid_cm(nrows, ncols, w=S.PANEL_3 if ncols == 3 else 6.4, aspect=0.75 if ncols == 2 else 0.95,
-                                 ratio=RATIO_CMS, top=1.6, left=1.3, wgap=0.55, hgap=1.0)
+                                 ratio=RATIO_CMS, top=1.9, left=1.3, wgap=0.55, hgap=1.0)
     panels = list(zip(axes.flat, raxes.flat))
     peak, ratios = 0.0, [[1.0]]
     for k_panel, ((ax, rx), (a, ms)) in enumerate(zip(panels, shown)):

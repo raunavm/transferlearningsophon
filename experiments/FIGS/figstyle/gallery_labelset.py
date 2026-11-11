@@ -75,7 +75,7 @@ def _mean(row: str, value):
 
 CONNECTOR = {"color": "#888888", "linewidth": S.LW_THIN, "zorder": 1}      # joins the hierarchy's points: no model colour
 # the 17-class controls sit at 17 classes, small symmetric offsets either side of the 17-class point
-CONTROL_X = {"FLAV_F0": -0.26, "FLAV_F1": -0.13, "FLAV_F1R": 0.13, "RAND": 0.28}
+CONTROL_X = {"FLAV_F0": -0.26, "FLAV_F1": -0.13, "FLAV_F1R": 0.13, "RAND": 0.33}
 
 
 def _spread_point(ax, x: float, vals: list, key: str, size: float, zorder: float) -> list:
@@ -129,7 +129,7 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch_label: s
         for _, key_, rows in groups:
             for row in rows:
                 if v := P._vals(RUNS, row, value):
-                    spread = 0.035 * (rows.index(row) - (len(rows) - 1) / 2)    # the five random partitions apart
+                    spread = 0.05 * (rows.index(row) - (len(rows) - 1) / 2)    # the five random partitions apart, each countable
                     ys += _spread_point(ax, CONTROL_X[key_] + spread, v, key_, MARKER, 2)
         for row, x, _ in line:      # each label set's point in its own colour and marker, over the controls
             ys += _spread_point(ax, x, P._vals(RUNS, row, value), row, MARKER + 0.5, 3)
@@ -215,7 +215,7 @@ def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear pro
     # one range for the two figures of a split (scope: every panel of both), so their axes match
     ranged = pairs if scope is None else [scored(p) for p in scope]
     lo = min(v for pts in ranged for x, y, *_ in pts for v in (x, y))
-    lim = (lo - 0.04 * (1 - lo), 1.0 + 0.01 * (1 - lo))     # the lowest point and the points at AUC 1 clear of the frame
+    lim = (lo - 0.04 * (1 - lo), 1.0 + 0.04 * (1 - lo))     # the lowest point and the points at AUC 1 clear of the frame
     for k, (ax, pts, (_, title, *_)) in enumerate(zip(cells, pairs, panels)):
         S.fine_grid(ax)
         if not pts:
@@ -447,7 +447,7 @@ def _draw_embeddings(path, grid: list, heading: str, colours=None, legend_rows=N
     ncol = 5 if len(groups) > 5 else len(groups)
     legend_rows_n = math.ceil(len(groups) / ncol)
     fig, axes, _ = S.grid_cm(len(grid), len(grid[0]), aspect=1.0, w=7.0, left=0.35, wgap=0.3, hgap=0.6, bottom=0.3,
-                             top=1.15 + 0.5 * legend_rows_n)
+                             top=1.4 + 0.5 * legend_rows_n)
     for r, (row, drow) in enumerate(zip(grid, docs)):
         for ax, (_, title), d in zip(axes[r], row, drow):
             _embedding(ax, d, colours or S.TAB10)
@@ -493,21 +493,20 @@ def _umap_page(page: str) -> C.Page:
 
 
 def draw_val(path) -> None:
-    """Exact size, one panel across the text width (PI 2026-11-11), the legend inside."""
+    """Exact size, one panel across the text width (PI 2026-11-11), the legend above it."""
     docs = M._load(P.DATA / "compute")
     w = S.PRINT_W - 1.5 - 0.2
-    fig = S.figure_cm(S.PRINT_W, 0.7 + 0.7 * w + 1.0)
-    ax = S.axes_cm(fig, 1.5, 0.7, w, 0.7 * w)
+    fig = S.figure_cm(S.PRINT_W, 1.6 + 0.7 * w + 1.0)
+    ax = S.axes_cm(fig, 1.5, 1.6, w, 0.7 * w)
     S.fine_grid(ax)
     for level in S.LEVELS:
         have = [[e["val_acc"] for e in docs[m]["epochs"]] for m in RUNS[level] if m in docs and "val_acc" in docs[m]["epochs"][0]]
         if not have:
             raise C.Absent("no validation accuracy per epoch (compute/)")
         ax.plot(range(1, len(have[0]) + 1), np.mean(have, axis=0), **S.look(level), linewidth=S.LW_CURVE, label=S.LEGEND[level])
-    S.title(ax, "Pretraining on JetClass-II")
+    S.heading(fig, "Pretraining on JetClass-II")
     S.labels(ax, "Pretraining epoch", "Validation accuracy")
-    h_, l_ = ax.get_legend_handles_labels()
-    S.legend(ax, handles=h_[::-1], labels=l_[::-1], loc="center right")   # top to bottom as the curves lie
+    S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=4)     # above the panel, 188 first, as every figure
     S.save(fig, path)
 
 

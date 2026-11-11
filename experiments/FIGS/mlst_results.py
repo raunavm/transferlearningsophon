@@ -4001,7 +4001,7 @@ CAPTION_SHORT = {
     "qcdhf": f"Linear probes on the frozen features of {NETS} and of the controls, trained on one million "
              "class-balanced JetClass-II jets: rejection $R_{50}$ of Sophon's $X\\to b\\bar b$ discriminant at "
              "50\\% $X\\to b\\bar b$ efficiency for QCD jets with two or more $b$ quarks, with one $b$ quark, and "
-             "for all QCD jets. $^\\dagger$: fewer than \\MlstMinBkgPass{} jets pass in a run. " + SD_SHORT,
+             "for all QCD jets. " + SD_SHORT + " $^\\dagger$: fewer than \\MlstMinBkgPass{} jets pass in a run.",
     "bn": f"Linear probes on the frozen features of {NETS} and of the controls, on JetClass-II at its natural "
           "composition, with the BatchNorm statistics as accumulated in pretraining and recomputed on training "
           "jets: the AUC averaged over the classes and " + RHO_SHORT + ". " + SD_SHORT,
@@ -4014,10 +4014,17 @@ CAPTION_SHORT = {
             "JetClass-II accuracy (percent) when those slots are substituted. Lower part: $R_{30}$ on top and "
             "quark/gluon tagging. Bold: the best substitution of each row and data set. " + SD_SHORT,
     "mass": "Jet mass from frozen features: a multilayer perceptron regresses the mass from the frozen features of "
-            f"{NETS} (two of them also with a mass regression) and of the random network without pretraining; the "
-            "soft-drop mass is the reference. Resolution $\\sigma_r$, half the 15.9--84.1\\% quantile range of the "
-            "response $r = m/m_{\\mathrm{gen}}$ over its median (lower is better), and the median response, over "
-            "all JetClass-II test jets with a generator match. " + SD_SHORT,
+            f"{NETS} (two also with a mass regression) and of the random network; the soft-drop mass is the "
+            "reference. Resolution $\\sigma_r$, half the 15.9--84.1\\% quantile range of the response "
+            "$r = m/m_{\\mathrm{gen}}$ over its median, and the median response. " + SD_SHORT,
+    "boot": f"Linear probes on the frozen features and fine-tuning of {NETS}: uncertainty (percent) of the comparisons "
+            "between their label sets at the largest training set, as the standard deviation of the logarithm of "
+            "the ratio over the pretraining runs / that from the finite test sample. JetClass-II: the ratio of "
+            "$1-\\mathrm{AUC}$; top and quark/gluon: the ratio of $R_{30}$.",
+    "lrsweep": "Learning-rate choice for fine-tuning Sophon's network, pretrained on JetClass-II with \\Kfull{} "
+               "classes (run 1) or not pretrained, on $10^{4}$ top and quark/gluon jets: the best validation "
+               "accuracy of each rate and their sum. Pretrained: the rate of the pretrained layers, the new output "
+               "head at 50 times it. $^{\\ast}$: the rate chosen.",
     "mass_detail": f"Jet-mass regression on JetClass-II from {NETS}, in detail, over all test jets and over resonant "
                    "and QCD jets: resolution and median response of the regression output of the models pretrained "
                    "with the mass regression and of ridge and multilayer-perceptron regressions on frozen features "
@@ -4051,13 +4058,12 @@ CAPTION_SHORT = {
                 "published models: accuracy, AUC, $1/\\epsB$ at 50\\% and 30\\% quark efficiency and the number of "
                 "trainable parameters. Uncertainties and bold as in table~\\ref{tab:benchtop}.",
     "jetclass": "JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not "
-                "pretrained, fine-tuned on one million JetClass jets, in the form of ParT's Table 1: trainable "
-                "parameters, accuracy, AUC averaged over all pairs of classes, and for each signal class the "
-                "rejection of QCD jets at 50\\% signal efficiency (99\\% for $H\\to\\ell\\nu qq'$, 99.5\\% for "
-                "$t\\to b\\ell\\nu$). Published rows: trained from scratch on 2 million jets. Ours: mean $\\pm$ "
-                "standard deviation over the three pretraining runs. Bold: the best value of each column and every "
-                "value within one standard deviation of it. $^\\dagger$: fewer than \\MlstMinBkgPass{} QCD jets "
-                "pass in at least one run.",
+                "pretrained, fine-tuned on one million JetClass jets: trainable parameters, accuracy, AUC averaged "
+                "over all pairs of classes, and for each signal class the rejection of QCD jets at the signal "
+                "efficiency in its heading. Published rows: trained from scratch on 2 million jets. Ours: mean "
+                "$\\pm$ standard deviation over three pretraining runs ($\\pm\\,0$: the runs pass the same number of "
+                "QCD jets). Bold: the best value of a column and every value within one standard deviation of it. "
+                "$^\\dagger$: fewer than \\MlstMinBkgPass{} QCD jets pass in a run; never bold.",
     "jetclass_all": f"JetClass fine-tuning as table~\\ref{{tab:jetclass}} of {NETS} and of the controls; the row of "
                     "all five random partitions gives the mean $\\pm$ standard deviation over them. " + SD_SHORT
                     + " Bold and $^\\dagger$ as there.",
@@ -4424,6 +4430,7 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     assert "__" not in cap, cap
     if "dagger" not in body:            # a mark the caption explains but no cell carries
         cap = cap.replace(" Bold and $^\\dagger$ as there.", " Bold as there.").replace(" $^\\dagger$ as there.", "")
+        cap = re.sub(r" \$\^\{?\\dagger\}?\$: [^.]*\.", "", cap)
     if "^{*}" not in body:
         cap = cap.replace(" $^{*}$: a probe that did not converge.", "")
     parts = [_labels(uniform_columns(b.strip()), _mode_word(key, k)) for k, b in enumerate(body.split("%SPLIT%"))]
