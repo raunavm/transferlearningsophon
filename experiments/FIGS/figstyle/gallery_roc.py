@@ -283,8 +283,8 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
             lo = axes[0, j].get_xlim()[0]
             for ax in axes[:, j]:
                 ax.xaxis.set_major_formatter(FuncFormatter(
-                    lambda v, _, lo=lo, last=j == 1: "" if (not last and v > 1 - 1e-9) or (lo == 0 and abs(v) < 1e-9)
-                    or (last and abs(v - lo) < 1e-9) else f"{v:.1f}"))     # no label where two panels' labels would meet
+                    lambda v, _, lo=lo, last=j == 1: "" if (not last and v > 1 - 1e-9) or abs(v - lo) < 1e-9
+                    else f"{v:.1f}"))     # no label where two panels' labels would meet
     S.fig_legend(fig, [handles[w] for w in order if w in handles], top_cm=0.6, ncol=4)
     S.letter_panels(list(axes.flat)[:len(panels)])
     S.save(fig, path)

@@ -135,15 +135,23 @@ def table(M, MT, runs, fits: dict, scratch: dict | None = None) -> str:
         cols.append((s, None, f"{t}, transfer"))
         if s == "xbb":
             cols.append((s, "zero_shot_xbb", f"{t}, direct"))
-    if len(set(stars.values())) == 1:       # one working point: named once, across the columns
+    words = {s: t for s, t in have}
+    if len(set(stars.values())) == 1:       # one working point, named once across the columns; a signal over its read-outs
         star = next(iter(stars.values()))
-        over = (rf" & \multicolumn{{{len(cols)}}}{{c}}{{signal efficiency (\%) at $\varepsilon_B={star:g}$}} \\"
-                + "\n" + rf"\cmidrule(lr){{2-{len(cols) + 1}}}")
-        head = " & ".join(lab for _, _, lab in cols)
+        groups = []                         # (signal, first column, last column), columns counted from 2
+        for k, (sig, _, _) in enumerate(cols, start=2):
+            if groups and groups[-1][0] == sig:
+                groups[-1][2] = k
+            else:
+                groups.append([sig, k, k])
+        head = [rf" & \multicolumn{{{len(cols)}}}{{c}}{{signal efficiency (\%) at $\varepsilon_B={star:g}$}} \\",
+                rf"\cmidrule(lr){{2-{len(cols) + 1}}}",
+                " & " + " & ".join(rf"\multicolumn{{{b_ - a_ + 1}}}{{c}}{{{words[sig]}}}" for sig, a_, b_ in groups) + r" \\",
+                "".join(rf"\cmidrule(lr){{{a_}-{b_}}}" for _, a_, b_ in groups),
+                "Pretraining & " + " & ".join(lab.split(", ", 1)[1] for _, _, lab in cols) + r" \\"]
     else:
-        over, head = None, " & ".join(rf"{lab} ($\varepsilon_B={stars[s]:g}$)" for s, _, lab in cols)
-    lines = [r"\begin{tabular}{l" + "c" * len(cols) + "}", r"\toprule", *([over] if over else []),
-             rf"Pretraining & {head} \\", r"\midrule"]
+        head = ["Pretraining & " + " & ".join(rf"{lab} ($\varepsilon_B={stars[s]:g}$)" for s, _, lab in cols) + r" \\"]
+    lines = [r"\begin{tabular}{l" + "c" * len(cols) + "}", r"\toprule", *head, r"\midrule"]
     eff = {(s, n): efficiencies(M, runs, fits, s, n) for s, n, _ in cols}
     for row in ROWS:
         name = "random partitions (all five)" if row == "RAND" else M.LABEL[row]

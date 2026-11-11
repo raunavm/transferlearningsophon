@@ -1546,17 +1546,28 @@ def test_a_row_label_names_its_network_and_the_tables_tag_and_wraps_only_at_its_
     assert cap == "Linear probes on networks pretrained on JetClass-II with 188 classes; " + M.MODE_DEF["lp"] + ". More."
 
 
-def test_a_breakable_table_keeps_its_caption_with_the_first_block_and_marks_the_others_continued():
+def test_a_table_too_wide_and_too_tall_is_a_landscape_longtable_with_one_caption():
+    """PI 2026-11-11: no narrow blocks, nothing shrunk, no wrapped label. A table wider than the upright page and
+    taller than the turned one is set in landscape as longtables across the whole line, the caption once and
+    "continued" above every later page and block, one table number."""
     rows = [M.LABEL[a] + " & " + " & ".join([M.TAB(0.9, 0.001)] * 14) + r" \\" for a in M.ALL_ROWS] * 3
     body = "\n".join([r"\begin{tabular}{l" + "c" * 14 + "}", r"\toprule", " & " + " & ".join(f"c{i}" for i in range(14))
                       + r" \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
     t = M._float("probes", body, True)
-    assert r"\captionof{table}" in t and M.V4.TOK_OPEN not in t and "pretraining &" not in t
-    first = t[t.index(r"\begin{minipage}"):t.index(r"\end{minipage}")]
-    assert r"\captionof{table}" in first and r"\begin{tabular*}" in first        # one unbreakable unit
-    n = t.count(r"\begin{tabular*}{\linewidth}")                  # every block across the whole line (PI 2026-11-11)
-    assert n > 1 and t.count(r"\TableContinued{tab:probes}{tab:probes:") == n - 1
-    assert "adjustbox" not in t and r"p{" not in t and r"\mbox" not in t     # nothing shrunk, no wrapping label
+    assert M.V4.TOK_OPEN not in t and "pretraining &" not in t
+    assert t.startswith(r"\begin{landscape}") and t.rstrip().endswith(r"\end{landscape}")
+    n = t.count(r"\begin{longtable}{@{\extracolsep{\fill}}l")
+    assert n > 1 and t.count(r"\caption{") == 1 and t.count(r"\label{tab:probes}") == 1
+    assert t.count(r"\addtocounter{table}{-1}") == n - 1 and t.count(r"\endhead") == n
+    assert "(continued)" in t and "adjustbox" not in t and r"p{" not in t and r"\mbox" not in t
+
+
+def test_a_table_that_fits_is_one_tabular_across_the_whole_line():
+    body = "\n".join([r"\begin{tabular}{lcc}", r"\toprule", r" & a & b \\", r"\midrule",
+                      M.LABEL["L188"] + r" & 1 & 2 \\", r"\bottomrule", r"\end{tabular}"])
+    t = M._float("coarse", body)
+    assert t.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}") == 1 and "landscape" not in t
+    assert "adjustbox" not in t and r"\begin{table}[t]" in t
 
 
 def test_the_released_sophon_checkpoint_is_a_reference_row_below_a_rule():

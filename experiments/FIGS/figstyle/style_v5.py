@@ -88,10 +88,10 @@ def pow10(v: float, _=None) -> str:
     return rf"$10^{{{e}}}$" if abs(m - 1) < 1e-6 else rf"${m:g}\times10^{{{e}}}$"
 
 
-def log_axis(ax, which: str = "y", force: bool = False) -> None:
+def log_axis(ax, which: str = "y", force: bool = False, fine: bool = False) -> None:
     """A positive axis whose limits are set: logarithmic with 10^n labels when it spans a decade or more (with 2 and 5
     times 10^n labelled too while fewer than two powers of ten lie inside), linear with round ticks below a decade,
-    where a log axis has no power of ten to label (force: logarithmic whatever it spans). Minor ticks are never labelled."""
+    where a log axis has no power of ten to label (force: logarithmic whatever it spans; fine: 1, 2 and 5 times 10^n labelled whatever it spans). Minor ticks are never labelled."""
     from matplotlib import ticker
     lo, hi = getattr(ax, f"get_{which}lim")()
     axis = getattr(ax, f"{which}axis")
@@ -104,7 +104,7 @@ def log_axis(ax, which: str = "y", force: bool = False) -> None:
     getattr(ax, f"set_{which}scale")("log")
     getattr(ax, f"set_{which}lim")(lo, hi)
     decades = [10.0 ** e for e in range(int(np.ceil(np.log10(lo) - 1e-9)), int(np.floor(np.log10(hi) + 1e-9)) + 1)]
-    ticks = decades if len(decades) >= 2 else [m * 10.0 ** e for e in range(int(np.floor(np.log10(lo))), int(np.ceil(np.log10(hi))) + 1)
+    ticks = decades if len(decades) >= 2 and not fine else [m * 10.0 ** e for e in range(int(np.floor(np.log10(lo))), int(np.ceil(np.log10(hi))) + 1)
                                                for m in (1, 2, 5) if lo <= m * 10.0 ** e <= hi]
     axis.set_major_locator(ticker.FixedLocator(ticks))
     axis.set_major_formatter(ticker.FuncFormatter(pow10))

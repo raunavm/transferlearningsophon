@@ -70,7 +70,8 @@ def test_the_table_and_macros(fits_dir, tmp_path):
     runs = M._paper(REPO)
     fits = XR.load(fits_dir, {"xbb_jc2": "xbb"})
     tex = XR.table(M, MT, runs, fits)
-    assert r"$X\to b\bar b$, transfer" in tex and r"$X\to b\bar b$, direct" in tex and "bs" not in tex
+    # the signal over its two read-outs, the working point once across the columns (PI 2026-11-11)
+    assert r"\multicolumn{2}{c}{$X\to b\bar b$}" in tex and "Pretraining & transfer & direct" in tex and "bs" not in tex
     row17 = next(line for line in tex.splitlines() if line.startswith(M.LABEL["R16_Q1"] + " &"))
     assert row17.endswith(r"-- \\")             # no direct discriminant at 17 classes
     em = MT.Emitter(pathlib.Path("/"))

@@ -335,7 +335,7 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
             if which == "median":
                 axes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=5, steps=[1, 2, 5, 10], prune="lower"))
             else:
-                S.log_axis(axes[i, j], force=True)
+                S.log_axis(axes[i, j], force=True, fine=True)
             S.clear_edge_labels(axes[i, j], low=True)       # clear of the ratio panel below
             S.clear_edge_labels(raxes[i, j], high=True)
     fig.align_ylabels([axes[0, 0], raxes[0, 0], axes[1, 0], raxes[1, 0]])
@@ -458,7 +458,7 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs
     (mode "mass"); the floor black dashed; both axes logarithmic, labelled 10^n. runs: {row: models}, RUNS by default."""
     runs = RUNS if runs is None else runs
     legend_rows = math.ceil((sum(any(m in sc for m in runs[r]) for r in rows) + 1) / 3)
-    top, w = 0.8 + 0.42 * legend_rows, S.PRINT_W - 1.5 - 0.2
+    top, w = 0.95 + 0.45 * legend_rows, S.PRINT_W - 1.5 - 0.2
     h = 0.7 * w
     fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
     ax = S.axes_cm(fig, 1.5, top, w, h)
@@ -532,7 +532,7 @@ def draw_f10c(path: pathlib.Path) -> None:
     """One point per model: the mean over runs of R50 (x) and 1/JSD50 (y), with the spread over pretraining runs on
     both axes (mlst_figures._spread: SD for three runs, range for two); DisCo Fig. 3's axes, both logarithmic."""
     sc = I["sculpt"]
-    top, w = 0.8 + 0.42 * 3, S.PRINT_W - 1.5 - 0.2      # one panel across the text width, the legend just above it
+    top, w = 0.95 + 0.45 * 3, S.PRINT_W - 1.5 - 0.2      # one panel across the text width, the legend just above it
     fig = S.figure_cm(S.PRINT_W, top + 0.7 * w + 1.0)
     ax = S.axes_cm(fig, 1.5, top, w, 0.7 * w)
     S.fine_grid(ax)
