@@ -41,7 +41,10 @@ spec:
           cd /workspace/repo && git checkout -q {commit} || exit 1
           pip install --no-cache-dir -q matplotlib==3.10.7 mplhep==0.4.1 pyarrow pymupdf==1.26.7 || exit 1
           python3 experiments/FIGS/figstyle/gallery_figures.py --outdir ${{OUT}}/figures 2>&1 | tee ${{OUT}}/figures.txt
-          (cd ${{OUT}} && tar czf out.tgz figures figures.txt)
+          # the measured checklist of every drawn page (figcheck: fonts, overlaps, points outside the axes, ...)
+          IDS=$(python3 -c "import json,sys;print(' '.join(p['id'] for p in json.load(open(sys.argv[1])) if p['drawn'] and p['id'] not in ('INVENTORY','PALETTE','SOPHON-FIG2')))" ${{OUT}}/figures/pages.json)
+          python3 experiments/FIGS/figstyle/figcheck.py --outdir /tmp/check --only ${{IDS}} > ${{OUT}}/check.txt 2>&1 || echo "figcheck rc=$?" >> ${{OUT}}/check.txt
+          (cd ${{OUT}} && tar czf out.tgz figures figures.txt check.txt)
           ls -la ${{OUT}}/figures | head -60
           echo "RENDER COMPLETE"
         resources:

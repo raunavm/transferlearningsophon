@@ -17,9 +17,9 @@ from gallery_bands import rejection_rel_error
 from gallery_common import Absent, M, P, Page, ROC, RUNS, mean_over_runs
 import style_v5 as S
 
-# rejection ticks in plain numbers (PI, 2026-11-07: every tick label at least 8 pt; a 10^n exponent prints at about 70%)
-PLAIN = FuncFormatter(lambda v, _: f"{v:g}")
-ROC_LEFT, ROC_WGAP = 1.5, 0.25     # cm: room for "100000" beside the y label; the right column's y labels are off
+# rejection ticks as powers of ten (PI, 2026-11-11: log axes labelled 10^n everywhere)
+PLAIN = FuncFormatter(S.pow10)
+ROC_LEFT, ROC_WGAP = 1.3, 0.25     # cm: room for the tick labels beside the y label; the right column's y labels are off
 GRID = {"left": 0.1, "right": 0.965, "top": 0.92, "bottom": 0.06, "hspace": 0.1}
 STACKED_GRID = {"top": 0.98, "bottom": 0.06, "hspace": 0.35}
 FAMILIES = ("QCD", "Two-prong quarks and gluons", "Two-prong leptons", "Three-prong", "Four-prong",
@@ -92,15 +92,26 @@ def _right_labels_off(axes) -> None:
 
 
 def _y_range(axes) -> None:
-    """From 1 to where the highest curve stops, or the decade just above it, so curves leave through the frame."""
-    highest = max(float(line.get_ydata().max()) for ax in axes for line in ax.lines)
-    decade = 10.0 ** np.ceil(np.log10(highest))
-    axes[0].set_ylim(1, decade if decade / highest < 1.3 else 1.1 * highest)
+    """From 1 to just above the highest point of any curve, so every curve is whole inside the frame (PI 2026-11-11)."""
+    highest = max(float(np.nanmax(line.get_ydata())) for ax in axes for line in ax.lines)
+    for ax in axes:
+        ax.set_ylim(1, highest * 1.25)
+
+
+def _x_range(axes) -> None:
+    """One x range for the panels, from just below the lowest efficiency any curve reaches (a tenth, rounded down) to 1,
+    so no stretch of the axis is empty; from 0 when the curves start below 0.1."""
+    lowest = min(float(np.nanmin(line.get_xdata())) for ax in axes for line in ax.lines)
+    lo = np.floor(lowest * 10 - 1e-9) / 10 if lowest >= 0.1 else 0.0
+    for ax in axes:
+        ax.set_xlim(lo, 1)
+        ax.xaxis.set_major_locator(MultipleLocator(0.2 if 1 - lo > 0.55 else 0.1))
+        ax.xaxis.set_minor_locator(MultipleLocator(0.1 if 1 - lo > 0.55 else 0.05))
 
 
 def _legend(ax, **kw):
     kw.setdefault("loc", "lower left")
-    return S.legend(ax, handlelength=1.2, handletextpad=0.4, columnspacing=0.4, **kw)
+    return S.legend(ax, handlelength=S.HANDLE, handletextpad=0.4, columnspacing=0.4, **kw)
 
 
 def _plot(ax, s, **kw) -> None:
@@ -110,7 +121,7 @@ def _plot(ax, s, **kw) -> None:
 
 
 def _jc1_curves(ax, docs: dict, models: list, auc_in_legend: bool) -> float:
-    """Ten class-against-the-rest curves, solid (every ROC figure, PI 2026-11-07); returns the macro AUC."""
+    """Ten class-against-the-rest curves, solid (every ROC figure, PI 2026-11-07); returns the mean AUC over classes."""
     aucs = []
     for c in S.JC1_CLASSES:
         s = mean_over_runs(docs, models, c)
@@ -145,8 +156,8 @@ def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
     _jc1_curves(ax, docs, models, auc_in_legend=False)
     _y_range([ax])
     S.labels(ax, S.X_EPS, S.Y_REJ)
-    S.heading(fig, f"{heading}, macro AUC {np.mean(list(aucs.values())):.3f}")
-    S.legend(ax, handles=_class_handles(aucs), loc="center left", bbox_to_anchor=(1.03, 0.5), handlelength=1.6,
+    S.heading(fig, f"{heading}, mean AUC over classes {np.mean(list(aucs.values())):.3f}")
+    S.legend(ax, handles=_class_handles(aucs), loc="center left", bbox_to_anchor=(1.03, 0.5), handlelength=S.HANDLE,
              title="Signal class (AUC)", title_fontsize=S.LEGEND_PT5)
     S.save(fig, path)
 
@@ -166,10 +177,10 @@ def _jc1_four(path: pathlib.Path, family: str, heading: str, panels: list, legen
         row[1].tick_params(labelleft=False)      # one y range: its labels once, clear of the "1.0" beside them
     for ax in axes[1]:
         S.labels(ax, xlabel=S.X_EPS)
-    S.heading(fig, f"{heading}; fully trained from scratch, macro AUC {reference:.3f}")
+    S.heading(fig, f"{heading}; mean AUC over classes, from scratch {reference:.3f}")
     for ax, (models, name) in zip(axes.flat, panels):
         auc = _jc1_curves(ax, docs, models, auc_in_legend=False)
-        S.title(ax, f"{name}, macro AUC {auc:.3f}")
+        S.title(ax, f"{name}, mean AUC {auc:.3f}")
     _y_range(list(axes.flat))
     _right_labels_off(axes)
     S.fig_legend(fig, _class_handles(), top_cm=0.6, ncol=5)
@@ -182,7 +193,7 @@ def _label_sets() -> list:
 
 
 def _controls() -> list:
-    """The three controlled partitions, and the five random partitions together (macro AUC within 3e-4)."""
+    """The three controlled partitions, and the five random partitions together (mean AUC over classes within 3e-4)."""
     return [(RUNS[a], S.NAME[a]) for a in S.CONTROLS] + [([m for r in M.RAND for m in RUNS[r]], "Five random partitions")]
 
 
@@ -211,20 +222,30 @@ def draw_fj_ctrl_app(path: pathlib.Path) -> None:
               _controls(), legend=False)
 
 
-F4_YMAX = 1e4          # one y range on all four panels (PI 2026-11-05)
 PAIR_LABEL_SETS = tuple(S.LEVELS[::-1])              # the 188-class curve last, so it shows where the 162-class one lies
 PAIR_BOUNDARIES = tuple(S.CONTROLS) + ("L188",)       # the three flavor boundaries, 188 classes for reference
 
 
 def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
     """panels: (models, pair key, title), up to four in a 2x2, each model a solid curve in its colour. X->ee vs X->mumu
-    of the linear probes is read from every test jet of the pair (pairs_sib2) where that exists. Every panel runs from
-    1 to F4_YMAX, and a model whose runs keep fewer than 20 background jets at every efficiency is named in the panel
+    of the linear probes is read from every test jet of the pair (pairs_sib2) where that exists. Every panel has one
+    y range, from 1 to above the highest curve (PI 2026-11-05, 2026-11-11), and one x range fitted to the curves; three
+    panels go in one row. A model whose runs keep fewer than 20 background jets at every efficiency is named in the panel
     as complete separation. One legend above the panels, off the curves, for every model drawn as a curve."""
     docs = _family(family)
     order = [S.LEGEND[a] for a in S.LEVELS + tuple(S.CONTROLS)]
     shown = {a for rows, *_ in panels for a in rows}
-    fig, axes = _axes_2x2(sharey=False, wspace=0.2, heading=heading, top=1.9 if len(shown) <= 4 else 2.35)
+    top = 1.9 if len(shown) <= 4 else 2.35
+    if len(panels) == 3:        # one row of three equal panels (PI 2026-11-11: no empty slot)
+        fig, grid, _ = S.grid_cm(1, 3, w=4.3, aspect=1.0, top=top, left=ROC_LEFT, wgap=ROC_WGAP)
+        for ax in grid.flat:
+            _roc_axes(ax)
+            S.labels(ax, xlabel=S.X_EPS)
+        S.labels(grid[0, 0], ylabel=S.Y_REJ)
+        S.heading(fig, heading)
+        axes = grid
+    else:
+        fig, axes = _axes_2x2(sharey=False, wspace=0.2, heading=heading, top=top)
     handles = {}
     for ax, (rows, key, name) in zip(axes.flat, panels):
         d = ROC["pairs_sib2"] if family == "pairs" and key == "ee_vs_mm" and ROC.get("pairs_sib2") else docs
@@ -243,14 +264,26 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
             ax.text(0.97, 0.95, "Complete separation:\n" + words, transform=ax.transAxes, ha="right",
                     va="top", fontsize=S.LEGEND_PT5)     # no frame, as the legends (style_v4)
         S.title(ax, name)
+    drawn = [ax for ax in axes.flat if ax.lines]
+    _y_range(drawn)
+    _x_range(drawn)
     for ax in axes.flat:
-        ax.set_ylim(1, F4_YMAX)
-    _right_labels_off(axes)
-    for ax in list(axes.flat)[len(panels):]:
-        ax.axis("off")
-    if len(panels) == 3:        # the lower-right cell is empty: (b) takes the x label, and (c) its "1.0" back
-        S.labels(axes[0, 1], xlabel=S.X_EPS)
-        axes[1, 0].xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v) < 1e-9 else f"{v:.1f}"))
+        ax.set_ylim(drawn[0].get_ylim())
+        ax.set_xlim(drawn[0].get_xlim())
+        ax.xaxis.set_major_locator(drawn[0].xaxis.get_major_locator())
+    if len(panels) == 3:
+        for ax in axes.flat[1:]:
+            ax.tick_params(labelleft=False)
+        for ax in axes.flat[:-1]:     # the "1.0" of a panel is left to the next panel's axis, which starts beside it
+            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if v > 1 - 1e-9 else f"{v:.1f}"))
+        axes.flat[-1].xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.1f}"))
+    else:
+        _right_labels_off(axes)
+        lo = drawn[0].get_xlim()[0]
+        for ax in axes[:, 0]:
+            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _, lo=lo: "" if v > 1 - 1e-9 or (lo == 0 and abs(v) < 1e-9) else f"{v:.1f}"))
+        for ax in axes[:, 1]:
+            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _, lo=lo: "" if (lo == 0 and abs(v) < 1e-9) else f"{v:.1f}"))
     S.fig_legend(fig, [handles[w] for w in order if w in handles], top_cm=0.6, ncol=4)
     S.letter_panels(list(axes.flat)[:len(panels)])
     S.save(fig, path)
@@ -281,8 +314,6 @@ def draw_f4_other(path: pathlib.Path) -> None:
 RATIO_HEIGHT = 0.35     # F6's ratio panels, one height for all three (OmniLearned Fig. 3's form)
 RATIO_RANGE_FROM = 0.1  # the ratio range is set by efficiencies from 0.1: below, a few background jets swing it
 STACKED_RATIO = (14 * S.CM, 22 * S.CM)
-BOOK_H = 18.5           # cm: the tallest figure the results book prints at full size (make_results_book.MAX_H_CM); F6 and
-                        # F6-app are drawn at it, so their text prints at its drawn size (PI 2026-11-07: at least 8 pt)
 
 
 def _rel_error(docs: dict, models: list, key: str):
@@ -317,19 +348,16 @@ def _ratio(rx, s, ref, rel=None, band: bool = False, **kw) -> list:
 
 
 def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None:
-    """Round 4: top tagging alone at full width on the first row, quark/gluon Pythia and Herwig side by side on the
-    second; a ratio panel to the 188-class curve under each, 0.35 of its height. The ratio range is set by the label
+    """Three panels of one size in one row (PI 2026-11-11): top tagging, quark/gluon Pythia and Herwig, a ratio panel
+    to the 188-class curve under each, 0.35 of its height; one legend above the panels. The ratio range is set by the label
     sets (and the kinematic-inputs model); from scratch is drawn and may leave it. From scratch always from the
     fine-tuned families."""
     top_ft, qg_ft = _family("top_ft"), _family("qg_ft")
-    left, gap, top_cm, rgap, row_gap, bottom = ROC_LEFT, ROC_WGAP, 1.2, 0.1, 1.2, 0.95
-    w1, w2 = S.PRINT_W - left - 0.3, S.PANEL_W
-    h2 = 0.7 * w2 + 0.01     # clear of the aspect rule's 0.7 at print
-    H = BOOK_H          # the first row's height takes what the second leaves (item 5, PI 2026-11-07)
-    h1 = (H - top_cm - 2 * rgap - row_gap - h2 * (1 + RATIO_HEIGHT) - bottom) / (1 + RATIO_HEIGHT)
-    fig = S.figure_cm(S.PRINT_W, H)
-    y2 = top_cm + h1 * (1 + RATIO_HEIGHT) + rgap + row_gap
-    boxes = [(left, top_cm, w1, h1), (left, y2, w2, h2), (left + w2 + gap, y2, w2, h2)]
+    left, own, gap, top_cm, rgap, bottom = ROC_LEFT, 0.95, ROC_WGAP, 2.0, 0.1, 0.95    # own: (b)'s tick labels
+    w = (S.PRINT_W - left - own - gap - 0.2) / 3
+    h = w
+    fig = S.figure_cm(S.PRINT_W, top_cm + h * (1 + RATIO_HEIGHT) + rgap + bottom)
+    boxes = [(left, top_cm, w, h), (left + w + own, top_cm, w, h), (left + 2 * w + own + gap, top_cm, w, h)]
     axes, ratios = [], []
     for x, y, w, h in boxes:
         ax = S.axes_cm(fig, x, y, w, h)
@@ -370,7 +398,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         _y_range([ax] if k == 0 else axes[1:])
         top_ax = ax if k == 0 else axes[1]
         top_ax.set_ylim(1, 10.0 ** np.ceil(np.log10(top_ax.get_ylim()[1])))     # from 10^0 to a labelled decade
-        ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v - 1) < 1e-9 else f"{v:g}"))
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v - 1) < 1e-9 else S.pow10(v)))
         rx.yaxis.set_major_locator(MaxNLocator(nbins=4, steps=[1, 2, 5, 10], prune="upper"))   # 1.0 a tick; none at the top edge
         rx.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.2f}"))        # one format in every ratio panel
         v = np.array(shown, float)
@@ -382,14 +410,15 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         rx.set_ylim(lo - pad, hi + pad)
         rx.set_xlim(0, 1)
         S.title(ax, f"({'abc'[k]}) {name}")
-        if k < 2:
+        if k == 0:
             S.labels(ax, ylabel=S.Y_REJ)
-            S.labels(rx, ylabel="Ratio to 188")      # "classes" does not fit the quark/gluon ratio panel; the caption says it
-        S.labels(rx, xlabel=S.X_EPS)
+            S.labels(rx, ylabel="Ratio to 188")      # "classes" does not fit the ratio panel; the caption says it
+        if k == 2:
+            S.labels(rx, xlabel=S.X_EPS)
     handles, labels = axes[0].get_legend_handles_labels()
     order = [labels.index(S.LEGEND[a]) for a in S.LEVELS] + [i for i, lab in enumerate(labels)
                                                              if lab not in [S.LEGEND[a] for a in S.LEVELS]]
-    _legend(axes[0], handles=[handles[i] for i in order], labels=[labels[i] for i in order], ncol=2)
+    S.fig_legend(fig, [handles[i] for i in order], top_cm=0.65, ncol=3)
     S.heading(fig, f"{word.capitalize()} on the full benchmark training sets")
     S.save(fig, path)
 
@@ -413,7 +442,7 @@ def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
             s = mean_over_runs(docs, RUNS[level], label)
             aucs.append(s[2])
             _plot(ax, s, color=colour[label], linewidth=0.4, alpha=0.7)
-        S.title(ax, f"{S.NAME[level]}, macro AUC {np.mean(aucs):.3f}")
+        S.title(ax, f"{S.NAME[level]}, mean AUC {np.mean(aucs):.3f}")
     _y_range(list(axes.flat))
     _right_labels_off(axes)
     S.fig_legend(fig, [Line2D([], [], color=S.TAB10[i], linewidth=S.LW_CURVE, label=f) for i, f in enumerate(FAMILIES)],
@@ -451,7 +480,7 @@ PAGES = [
                  "averaged), fine-tuned on one million JetClass jets: rejection against efficiency for each class "
                  "against the other nine, ending where fewer than 20 background jets remain. Titles give the mean "
                  "area under the curve; the heading, that of a network trained from scratch.",
-         differs="As FJ. The five plain random partitions share one panel, to stay at four: their macro AUCs lie within "
+         differs="As FJ. The five plain random partitions share one panel, to stay at four: their mean AUCs over classes lie within "
                  "3e-4 of each other. Eight panels, one per partition, is the alternative.",
          draw=draw_fj_ctrl),
     Page(id="FJ-s", title="JetClass trained from scratch",
@@ -483,7 +512,7 @@ PAGES = [
                  "jets: rejection against efficiency for each class against the other nine, ending where fewer "
                  "than 20 background jets remain. Titles give the mean area under the curve; the heading, from "
                  "scratch.",
-         differs="As FJ-ctrl, with no legend, as FJ-app. The five plain partitions' macro AUCs lie within 5e-4 of each other.",
+         differs="As FJ-ctrl, with no legend, as FJ-app. The five plain partitions' mean AUCs over classes lie within 5e-4 of each other.",
          draw=draw_fj_ctrl_app),
     Page(id="F4-mech", title="Flavor separation: what the labels merge",
          precedent=["1902.09914/fig5.png"],

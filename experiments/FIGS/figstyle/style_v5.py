@@ -27,8 +27,8 @@ Colour encodes the model, line style and marker fill encode the mode, in every f
 Every ROC figure: solid lines, no markers (from scratch dashed, kinematic inputs dotted, as round 3).
 Pairwise CIEDE2000 of the four label-set colours: smallest 24.8 (188 and 162) in normal vision, 22.0 under deuteranopia
 and 13.5 under protanopia (Machado 2009); every control at least 19.8 from every label set (rose and purple), at least
-14.0 under either simulation (palette_check.pi_palette). The JetClass classes and the JetClass-II families keep tab10
-(style_v3), a separate set. Two exceptions to colour = model: F8 draws one model in three modes, the linear probe in
+14.0 under either simulation (palette_check.pi_palette). The JetClass classes and the JetClass-II families share CLASS10
+(Tol muted and black), a separate set. Two exceptions to colour = model: F8 draws one model in three modes, the linear probe in
 TINT_188 (the 188 colour 40% towards white), and F10a draws working points in black and greys (WORKING_POINT), the panel
 naming the model.
 """
@@ -43,6 +43,14 @@ from style_v4 import (CM, FULL, FOUR_PANELS, HEIGHT, JC1_CLASSES, JC1_COLOUR, JC
                       use_style, grid, fine_grid, legend, NAME, REFERENCE)
 
 GREY_DARK, GREY_MID, GREY_LIGHT = "#555555", "#BBBBBB", "#DDDDDD"
+LW_CURVE = 1.3                                   # a curve and its legend handle, wide enough to tell the colours apart
+HANDLE = 2.6                                     # legend handle length (em): a dashed handle shows two dashes
+# One colourblind-safe qualitative set for everything that is not a model: the ten JetClass classes, the JetClass-II
+# decay families and the UMAP groups (PI 2026-11-11; was matplotlib's tab10). Tol muted and black, ordered so that
+# the first six (the families) are the furthest apart.
+CLASS10 = ["#000000", "#332288", "#88CCEE", "#117733", "#DDCC77", "#CC6677", "#882255", "#44AA99", "#999933", "#AA4499"]
+TAB10 = CLASS10                                  # the name the pages use
+JC1_COLOUR = dict(zip(JC1_CLASSES, CLASS10))
 NAME = {**NAME, "FLAV_F1": "$b$-quark boundary"}          # quark flavours in italic, as everywhere in the paper
 # a prime as a glyph beside the q (mathtext's q' raises it like a second superscript)
 JC1_TEX = {k: v.replace("qq'", r"qq\prime") for k, v in JC1_TEX.items()}
@@ -69,6 +77,39 @@ TINT_188 = "#" + "".join(f"{round(int(SERIES['L188'][i:i + 2], 16) + 0.4 * (255 
 WORKING_POINT = {"inclusive": {"color": "#000000", "marker": "o", "fillstyle": "full"},
                  "10%": {"color": GREY_DARK, "marker": "s", "fillstyle": "none"},
                  "1%": {"color": "#999999", "marker": "x", "fillstyle": "full"}}
+
+
+def pow10(v: float, _=None) -> str:
+    """A log-axis tick label, 10^n at a power of ten and m x 10^n between (PI 2026-11-11: never "100000")."""
+    if v <= 0:
+        return ""
+    e = int(np.floor(np.log10(v) + 1e-9))
+    m = v / 10.0 ** e
+    return rf"$10^{{{e}}}$" if abs(m - 1) < 1e-6 else rf"${m:g}\times10^{{{e}}}$"
+
+
+def log_axis(ax, which: str = "y", force: bool = False) -> None:
+    """A positive axis whose limits are set: logarithmic with 10^n labels when it spans a decade or more (with 2 and 5
+    times 10^n labelled too while fewer than three powers of ten lie inside), linear with round ticks below a decade,
+    where a log axis has no power of ten to label (force: logarithmic whatever it spans). Minor ticks are never labelled."""
+    from matplotlib import ticker
+    lo, hi = getattr(ax, f"get_{which}lim")()
+    axis = getattr(ax, f"{which}axis")
+    if hi / lo < 10 and not force:
+        getattr(ax, f"set_{which}scale")("linear")
+        getattr(ax, f"set_{which}lim")(lo, hi)
+        axis.set_major_locator(ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]))
+        axis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
+        return
+    getattr(ax, f"set_{which}scale")("log")
+    getattr(ax, f"set_{which}lim")(lo, hi)
+    decades = [10.0 ** e for e in range(int(np.ceil(np.log10(lo) - 1e-9)), int(np.floor(np.log10(hi) + 1e-9)) + 1)]
+    ticks = decades if len(decades) >= 3 else [m * 10.0 ** e for e in range(int(np.floor(np.log10(lo))), int(np.ceil(np.log10(hi))) + 1)
+                                               for m in (1, 2, 5) if lo <= m * 10.0 ** e <= hi]
+    axis.set_major_locator(ticker.FixedLocator(ticks))
+    axis.set_major_formatter(ticker.FuncFormatter(pow10))
+    axis.set_minor_locator(ticker.LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=12))
+    axis.set_minor_formatter(ticker.NullFormatter())
 
 
 def mode_of(key: str, mode: str) -> str:
@@ -165,7 +206,7 @@ def heading(fig, text: str, top_cm: float = 0.15) -> None:
 def legend(ax, **kw):
     kw.setdefault("loc", "upper right")
     kw.setdefault("frameon", False)
-    kw.setdefault("handlelength", 1.8)
+    kw.setdefault("handlelength", HANDLE)
     return ax.legend(fontsize=kw.pop("fontsize", LEGEND_PT5), borderpad=0.3, labelspacing=0.3, **kw)
 
 
@@ -173,4 +214,4 @@ def fig_legend(fig, handles, top_cm: float, ncol: int, **kw):
     """A figure-level legend centred above the panels, its top edge top_cm below the figure's top."""
     return fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 1 - top_cm / (fig.get_figheight() / CM)),
                       ncol=ncol, frameon=False, fontsize=LEGEND_PT5, borderpad=0.2, labelspacing=0.3,
-                      columnspacing=1.2, handlelength=1.8, **kw)
+                      columnspacing=1.2, handlelength=HANDLE, **kw)

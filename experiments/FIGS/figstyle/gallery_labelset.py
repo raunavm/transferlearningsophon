@@ -38,19 +38,9 @@ def _panels_2x2():
 
 
 def _log_y(ax, which: str = "y") -> None:
-    """R30 on a log axis, labelled in plain numbers (1, 2, 5 times a power of ten; powers of ten only when that gives
-    more than seven), the same in every panel; minor ticks are never labelled. which="x": the same on x (F10c)."""
-    getattr(ax, f"set_{which}scale")("log")
-    lo, hi = getattr(ax, f"get_{which}lim")()
-    axis = getattr(ax, f"{which}axis")
-    axis.set_minor_formatter(ticker.NullFormatter())
-    vals = [m * 10.0 ** e for e in range(math.floor(math.log10(lo)), math.ceil(math.log10(hi))) for m in (1, 2, 5)]
-    if sum(lo <= v <= hi for v in vals) > 7:       # several decades: the powers of ten only
-        vals = [v for v in vals if f"{v:g}".startswith("1")]
-    if sum(lo <= v <= hi for v in vals) < 3:
-        vals = ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]).tick_values(lo, hi)
-    axis.set_major_locator(ticker.FixedLocator([v for v in vals if lo <= v <= hi]))
-    axis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
+    """R30 on a log axis labelled 10^n, or linear where its range is under a decade (style_v5.log_axis), the same rule
+    in every panel. which="x": the same on x (F10c)."""
+    S.log_axis(ax, which)
 
 
 def _empty_panel(ax) -> None:
@@ -59,14 +49,17 @@ def _empty_panel(ax) -> None:
 
 
 # ------------------------------------------------------------------ F2: metric against the number of classes
+CLASS_COUNTS = (17, 43, 162, 188)
+CLASS_X = {"R16_Q1": 0, "R42_Q1": 1, "L162": 2, "L188": 3}     # one evenly spaced slot per label set, labelled by its count
+
+
 def _classes_axis(ax) -> None:
-    ax.set_xscale("log")
-    ax.set_xlim(9.6, 260)            # the leftmost random partition clear of the spine
-    ax.xaxis.set_major_locator(ticker.FixedLocator([17, 43, 162, 188]))
-    ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}"))
+    """The four label sets as evenly spaced slots labelled with their class counts (PI 2026-11-11: on a log axis the
+    162 and 188 labels touched and the 17-class controls, offset to the left, read as fewer classes)."""
+    ax.set_xlim(-0.5, 3.5)
+    ax.xaxis.set_major_locator(ticker.FixedLocator(range(4)))
+    ax.xaxis.set_major_formatter(ticker.FixedFormatter([str(n) for n in CLASS_COUNTS]))
     ax.xaxis.set_minor_locator(ticker.NullLocator())
-    for lab, ha in zip(ax.get_xticklabels(), ("center", "center", "right", "left")):   # 162 and 188 lean apart
-        lab.set_horizontalalignment(ha)
 
 
 def _mean(row: str, value):
@@ -75,7 +68,8 @@ def _mean(row: str, value):
 
 
 CONNECTOR = {"color": "#888888", "linewidth": S.LW_THIN, "zorder": 1}      # joins the hierarchy's points: no model colour
-CONTROL_X = {"FLAV_F0": 15.0, "FLAV_F1": 13.7, "FLAV_F1R": 12.5, "RAND": 11.4}  # the 17-class controls, offset left of 17
+# the 17-class controls sit at 17 classes, small symmetric offsets either side of the 17-class point
+CONTROL_X = {"FLAV_F0": -0.26, "FLAV_F1": -0.13, "FLAV_F1R": 0.13, "RAND": 0.28}
 
 
 def _spread_point(ax, x: float, vals: list, key: str, size: float, zorder: float) -> list:
@@ -102,14 +96,14 @@ def _f2_handles(groups: list, scratch: str) -> list:
     from matplotlib.lines import Line2D
     hs = [Line2D([], [], linestyle="none", **S.marker(r, size=MARKER + 0.5), label=S.LEGEND[r]) for r in S.LEVELS]
     hs += [Line2D([], [], linestyle="none", **S.marker(r, size=MARKER + 0.5), label=lab) for lab, r, _ in groups]
-    hs += [Line2D([], [], **CONNECTOR, label="Hierarchy"),
+    hs += [Line2D([], [], **CONNECTOR, label="nested label sets"),
            Line2D([], [], **S.look("SCRATCH", linewidth=S.LW_CURVE), label=scratch)]
     return hs
 
 
 def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch_label: str = S.LEGEND["SCRATCH"]) -> None:
     """value_of(key, n, ds, met): a run's value or None for the task; groups: (legend label, style key, rows) of the
-    markers at 17 classes, drawn left of 17 at CONTROL_X so they do not hide the 17-class point. Filled markers in both
+    markers at 17 classes, drawn at 17 with the offsets of CONTROL_X so they do not hide the 17-class point. Filled markers in both
     F2a and F2b: each holds one mode (PI, 2026-11-07)."""
     values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
     if not any(values):
@@ -123,14 +117,14 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch_label: s
             _classes_axis(ax)
             continue
         S.fine_grid(ax)
-        line = [(row, x, y) for row, x in P.X_OF.items() if (y := _mean(row, value)) is not None]
+        line = sorted(((row, x, y) for row, x in CLASS_X.items() if (y := _mean(row, value)) is not None), key=lambda t: t[1])
         ax.plot([x for _, x, _ in line], [y for *_, y in line], **CONNECTOR)
         ys = []
         for _, key_, rows in groups:
             for row in rows:
                 if v := P._vals(RUNS, row, value):
-                    spread = 1 + 0.035 * (rows.index(row) - (len(rows) - 1) / 2)    # the five random partitions apart
-                    ys += _spread_point(ax, CONTROL_X[key_] * spread, v, key_, MARKER, 2)
+                    spread = 0.035 * (rows.index(row) - (len(rows) - 1) / 2)    # the five random partitions apart
+                    ys += _spread_point(ax, CONTROL_X[key_] + spread, v, key_, MARKER, 2)
         for row, x, _ in line:      # each label set's point in its own colour and marker, over the controls
             ys += _spread_point(ax, x, P._vals(RUNS, row, value), row, MARKER + 0.5, 3)
         log = met == "r30"
@@ -165,8 +159,7 @@ def _controlled():
 
 def draw_f2a(path) -> None:
     _draw_f2(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
-             "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features",
-             scratch_label=f"{S.LEGEND['SCRATCH']} {S.FINE_TUNED}")     # a fine-tuned network among probes: tagged
+             "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
 
 
 def draw_f2b(path) -> None:
@@ -189,24 +182,25 @@ def _ft_class_auc(models: list) -> dict:
 
 
 def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear probes", letters: str = "abcd", scope=None,
-                  absent: str = "no class-balanced JetClass-II linear probes (linprobe/fits_v4)") -> None:
+                  absent: str = "no class-balanced JetClass-II linear probes (linprobe/fits_v4)",
+                  ylabel: str = "AUC, the panel's network") -> None:
     """panels: (runs, title) or (runs, title, auc_of), two to four; a panel's own auc_of (F3-main: probe | fine-tuned)
     reads both its model and the 188-class one. One point per class; below the dashed line the class does worse than
-    with 188 classes. Round 4: square 6.5 cm panels, two per row; the legend above the panels, or in the empty fourth
-    cell of a three-panel figure; letters names the panels (a second figure continues the first's letters)."""
+    with 188 classes. Square panels, two per row at 6.5 cm, three in one row at 4.3 cm (PI 2026-11-11: no empty slot);
+    the legend above the panels; letters names the panels (a second figure continues the first's letters)."""
     from matplotlib.lines import Line2D
     of = lambda panel: panel[2] if len(panel) > 2 else auc_of
     if not all(of(p)(RUNS["L188"]) for p in panels):
         raise C.Absent(absent)
     family = {int(r["jet_label"]): family_of(r["class_name"]) for r in M._class_rows(P.REPO)}
-    nrows = math.ceil(len(panels) / 2)
-    in_cell = len(panels) == 3
-    fig, axes, _ = S.grid_cm(nrows, 2, aspect=1.0, top=1.15 if in_cell else 2.2, left=1.3, wgap=0.4)
+    ncols = 3 if len(panels) == 3 else 2
+    nrows = math.ceil(len(panels) / ncols)
+    fig, axes, _ = S.grid_cm(nrows, ncols, w=4.3 if ncols == 3 else S.PANEL_W, aspect=1.0, top=2.2, left=1.3, wgap=0.4)
     cells = list(axes.flat)
     for ax in cells[1:]:
         ax.sharex(cells[0])
         ax.sharey(cells[0])
-    for ax in axes[:, 1]:
+    for ax in axes[:, 1:].flat:
         ax.tick_params(labelleft=False)      # one y range: its tick labels once, on the left
     def scored(panel) -> list:
         full, other = of(panel)(RUNS["L188"]), of(panel)(panel[0])
@@ -227,9 +221,9 @@ def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear pro
                 ax.plot(*zip(*xy), color=S.TAB10[i], marker="o", markersize=3, linestyle="none", clip_on=False,
                         zorder=3.1 if len(xy) < 10 else 3)    # over the frame; a small family over the large ones
         S.title(ax, f"({letters[k]}) {title}")
-        if k % 2 == 0:
-            S.labels(ax, ylabel="AUC, this model")
-        if k + 2 >= len(panels):
+        if k % ncols == 0:
+            S.labels(ax, ylabel=ylabel)
+        if k + ncols >= len(panels):
             S.labels(ax, xlabel="AUC, 188 classes")
     cells[0].set_xlim(lim)
     cells[0].set_ylim(lim)
@@ -237,12 +231,7 @@ def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear pro
         axis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))
     handles = [Line2D([], [], color=S.TAB10[i], marker="o", markersize=4, linestyle="none", label=f)
                for i, f in enumerate(FAMILIES)] + [Line2D([], [], **S.REFERENCE, label="Same as 188 classes")]
-    if in_cell:
-        cells[-1].axis("off")
-        cells[-1].legend(handles=handles, loc="center", fontsize=S.LEGEND_PT5, frameon=False, borderpad=0.3,
-                         labelspacing=0.4)
-    else:
-        S.fig_legend(fig, handles, top_cm=0.6, ncol=4)
+    S.fig_legend(fig, handles, top_cm=0.6, ncol=4)
     S.heading(fig, f"{word} on $10^6$ JetClass-II jets, class by class")
     S.save(fig, path)
 
@@ -270,7 +259,7 @@ def draw_f3_main(path) -> None:
     fine-tuning shows."""
     _draw_scatter(path, [(RUNS["R16_Q1"], f"{S.LEGEND['R16_Q1']} {S.PROBE}", _class_auc),
                          (RUNS["R16_Q1"], f"{S.LEGEND['R16_Q1']} {S.FINE_TUNED}", _ft_class_auc)],
-                  word="Linear probes (LP) and fine-tuned (f.t.)")
+                  word="Linear probes (LP) and fine-tuned (f.t.)", ylabel=f"AUC, {S.LEGEND['R16_Q1']}")
 
 
 def draw_f3_app(path) -> None:
@@ -314,7 +303,7 @@ def _model(series: dict, key: str, mode: str, label: str) -> tuple:
     return series, S.look(key, mode), S.marker(key, mode), label
 
 
-SIZE_X = (6e2, 2.6e6)       # 10^3 to the largest training set (1.6e6 quark/gluon jets), padded
+SIZE_PAD = 1.7              # a panel's x axis runs from its smallest training set over SIZE_PAD to its largest times it
 
 
 def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int = 3) -> None:
@@ -327,7 +316,11 @@ def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int
     fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=1.4 + 0.42 * rows, left=1.2, wgap=0.8)
     for k, (ax, panel, (key, _, met, *_)) in enumerate(zip(axes.flat, panels, P.SIZE_PANELS)):
         ax.set_xscale("log")
-        ax.set_xlim(*SIZE_X)          # one x range in every panel, so the decades line up
+        ns = [n for s_, *_ in panel for n in s_] + ([PUBLISHED[key][0]] if key in PUBLISHED else [])
+        if ns:                        # each panel's range from its own points: no empty decade (PI 2026-11-11)
+            ax.set_xlim(min(ns) / SIZE_PAD, max(ns) * SIZE_PAD)
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(S.pow10))
+        ax.xaxis.set_minor_formatter(ticker.NullFormatter())
         S.title(ax, TITLES[key])
         S.labels(ax, X_JETS if k >= 2 else None, (Y_R30 if met == "r30" else Y_ACC) if k % 2 == 0 else None)
         if not any(s for s, *_ in panel):
@@ -337,8 +330,8 @@ def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int
         for series, line, mark, label in panel:
             _curve(ax, series, line, mark, label, band)
         if key in PUBLISHED:
-            ax.plot(*PUBLISHED[key], color="#000000", marker="*", markersize=7, markeredgecolor="white", markeredgewidth=0.6,
-                    linestyle="none", label="ParT, published", zorder=4)     # on top, its white edge clear of the points
+            ax.plot(*PUBLISHED[key], color="#000000", marker="*", markersize=11, markeredgecolor="white", markeredgewidth=0.7,
+                    linestyle="none", label="ParT, published", zorder=10)    # on top of every marker, large enough to see
         if met == "r30":
             _log_y(ax)
         else:

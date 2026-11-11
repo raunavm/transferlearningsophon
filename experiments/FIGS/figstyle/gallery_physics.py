@@ -11,11 +11,11 @@ import pathlib
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import FixedLocator, FuncFormatter, MaxNLocator, NullFormatter
+from matplotlib.ticker import FuncFormatter, MaxNLocator
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Circle, FancyBboxPatch, Polygon, Rectangle
 
-from gallery_bands import extend_to, spread_band
+from gallery_bands import spread_band
 from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
 from gallery_labelset import _log_y
 
@@ -26,10 +26,9 @@ RATIO_ATLAS, RATIO_CMS = 0.44, 0.33     # lower axes over main axes: ATLAS 2024-
 STACK_GAP, COLUMN_GAP = 0.08, 0.32      # a main and its lower axes; two columns with their own y axes
 SHOWN_FROM = 0.05       # a response axis covers the bins with this share of the largest bin of any series
 HIST_ROOM = 1.45        # top of a histogram's y axis over its peak: room for the legend above the curves
-SELECTION_COLOUR = {1: S.TAB10[0], 2: S.TAB10[6]}     # F10a, as CMS Fig. 8's: black inclusive; then CMS's blue, and pink:
+SELECTION_COLOUR = {1: "#4477AA", 2: "#EE6677"}     # F10a, as CMS Fig. 8: black inclusive, then blue and red (Tol bright):
 # no colour of the palette (style_v4.SERIES), so no working point reads as a model
 SCULPT_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS")
-F10A_TOP = 260.0        # GeV, F10a: the bin edge that covers CMS Fig. 8's 30 to 250 GeV
 F10B_FROM = 5e-3        # F10b: the first point is the 5.2e-3 grid point; CMS Fig. 9 left stops at 0.5%
 DIRECT_LOOK = S.look("L188", linestyle="-.")     # F11: the 188-class model read out another way, as F8's linear probe
 
@@ -80,7 +79,8 @@ def draw_sophon_fig2(path: pathlib.Path) -> None:
 # Schematic rows of the four label sets, top to bottom, not to scale: each level's boxes are unions of the boxes
 # to its left, the last row group is the QCD jets
 BOXES = {"L188": (1,) * 14, "L162": (1,) * 11 + (3,), "R42_Q1": (2, 2, 2, 2, 2, 1, 3), "R16_Q1": (4, 4, 3, 3)}
-MERGES = ("QCD quark\ncontent", "flavor beyond the\nheaviest quark, $s$ vs $u,d$,\nquark counts, gluon\nvs quark, $e$ vs $\\mu$",
+# each no wider than the step it sits under (0.84 in)
+MERGES = ("QCD quark\ncontent", "flavor beyond\nheaviest quark,\n$s$ vs $u,d$,\nquark counts,\ngluon vs quark,\n$e$ vs $\\mu$",
           "$b$, $c$, light")
 TRAINED, FROZEN = "#f2ead0", "#e6e6e6"     # round 4: no label-set hue outside the label-set columns (a warm neutral)
 FAN = "#cccccc"
@@ -117,46 +117,53 @@ def _fan(ax, a: list, b: list, colour: str, width: float) -> None:
 def _use(ax, x: float, fill: str, word: str, action: str, name: str, hidden: bool) -> None:
     """One use of the features in (b): the network, a new head of two outputs (with a new 512-unit hidden layer
     when fine-tuning, as the fine-tuned network has one; a linear probe is one layer), what is trained, the name."""
-    nodes = _network(ax, x, 0.72, 0.92, 0.84, fill, word, S.LEGEND_PT)
+    nodes = _network(ax, x, 0.72, 0.92, 0.84, fill, word, S.LEGEND_PT5)
     outs = [(x + 1.8, 0.92), (x + 1.8, 1.36)]
     if hidden:
         mid = _hidden(ax, x + 1.36, 0.84, 1.44, "white")
         _fan(ax, nodes, mid, NEW_LAYER, 0.3)
         _fan(ax, mid, outs, NEW_LAYER, 0.3)
-        ax.text(x + 1.36, 1.56, "512", ha="center", va="bottom", fontsize=S.LEGEND_PT, zorder=5)
+        ax.text(x + 1.36, 1.56, "512", ha="center", va="bottom", fontsize=S.LEGEND_PT5, zorder=5)
     else:
         _fan(ax, nodes, outs, NEW_LAYER, 0.4)
     for xy in outs:
         ax.add_patch(Circle(xy, 0.05, fc="white", ec="black", lw=0.5, zorder=4))
-    ax.text(x + 1.36, 0.6, action, ha="center", va="center", fontsize=S.LEGEND_PT, zorder=5,
+    ax.text(x + 1.36, 0.6, action, ha="center", va="center", fontsize=S.LEGEND_PT5, zorder=5,
             bbox=dict(boxstyle="square,pad=0.25", fc="white", ec="#808080", lw=0.5))
     ax.text(x + 1.0, 0.3, name, ha="center", va="center", fontsize=S.LABEL_PT, zorder=5)
 
 
 def draw_f1(path: pathlib.Path) -> None:
-    w, h = S.FULL - 0.2, 4.9     # inches: one data unit is one inch on the page; save adds 0.1 in a side (pad_inches)
+    # inches: one data unit is one inch on the page, the figure exactly the text width (15 cm), saved at that size.
+    # (a) is drawn RAISE inches above (b), which leaves the room each merge's words need under its own arrow
+    w, h, RAISE = S.FULL, 5.35, 0.45
     fig = plt.figure(figsize=(w, h))
-    ax = fig.add_axes((0, 0, 1, 1))
-    ax.set_xlim(0, w)
-    ax.set_ylim(0, h)
+    fig.exact_size = True
+    low = fig.add_axes((0, 0, 1, 1))
+    low.set_xlim(-0.1, w - 0.1)
+    low.set_ylim(0, h)
+    low.set_axis_off()
+    ax = fig.add_axes((0, RAISE / h, 1, (h - RAISE) / h))
+    ax.set_xlim(-0.1, w - 0.1)
+    ax.set_ylim(0, h - RAISE)
     ax.set_axis_off()
     bold = dict(fontsize=S.LABEL_PT, fontweight="bold", va="center")
     ax.text(0, 4.72, "(a) Pretraining", **bold)
     ax.text(3.9, 4.68, "Four nested label sets, one pretraining each", ha="center", va="center", fontsize=S.LABEL_PT)
     # the jets go into the one network
     ax.add_patch(Polygon([(0.05, 3.82), (0.05, 3.2), (0.5, 3.5)], fc="#d0d0d0", ec="none", zorder=2))
-    ax.text(0.28, 3.05, "same jets", ha="center", va="center", fontsize=S.LEGEND_PT)
+    ax.text(0.28, 3.05, "same jets", ha="center", va="center", fontsize=S.LEGEND_PT5)
     ax.annotate("", xy=(0.72, 3.5), xytext=(0.5, 3.5),
                 arrowprops=dict(arrowstyle="-|>", color="black", lw=1.0, shrinkA=0, shrinkB=0))
     nodes = _network(ax, 0.72, 2.95, 1.14, 1.1, TRAINED, "One network", S.LABEL_PT)
-    ax.text(0.72 + 0.51, 3.2, "same initial\nweights", ha="center", va="center", fontsize=S.LEGEND_PT, zorder=3)
-    ax.text(1.79, 4.13, "features", ha="center", va="center", fontsize=S.LEGEND_PT)
+    ax.text(0.72 + 0.51, 3.2, "same initial\nweights", ha="center", va="center", fontsize=S.LEGEND_PT5, zorder=3)
+    ax.text(1.79, 4.13, "features", ha="center", va="center", fontsize=S.LEGEND_PT5)
     # the label sets: one column each, a merged class spans the rows it merges
     # the head's hidden layer, between the features and every label set's outputs (fc_params [(512, 0.1)])
     hid = _hidden(ax, 2.2, 3.06, 3.94, TRAINED)
-    ax.text(2.2, 4.13, "512", ha="center", va="center", fontsize=S.LEGEND_PT)     # as in (b); "512 hidden" ran into "features"
+    ax.text(2.2, 4.13, "512", ha="center", va="center", fontsize=S.LEGEND_PT5)     # as in (b); "512 hidden" ran into "features"
     _fan(ax, nodes, hid, FAN, 0.3)
-    top, bottom, cw, pitch, x0 = 4.35, 2.75, 0.58, 0.80, 2.60     # the 17-class column ends at 5.58 in, inside the 5.71 in canvas
+    top, bottom, cw, pitch, x0 = 4.35, 2.75, 0.56, 0.84, 2.60     # the 17-class column ends at 5.68 in, inside the canvas (5.81 in)
     rows = (top - bottom) / sum(BOXES["L188"])
     for k, (row, spans) in enumerate(BOXES.items()):
         x = x0 + k * pitch
@@ -168,27 +175,22 @@ def draw_f1(path: pathlib.Path) -> None:
             y -= n * rows
         if spans[-1] > 1:
             ax.text(x + cw / 2, bottom + spans[-1] * rows / 2, "QCD", ha="center", va="center",
-                    fontsize=S.LEGEND_PT, zorder=3)
+                    fontsize=S.LEGEND_PT5, zorder=3)
     for a in hid:
         for r in range(sum(BOXES["L188"])):
             ax.plot(*zip(a, (x0, top - (r + 0.5) * rows)), color=FAN, linewidth=0.3, zorder=1)
     # what each merge removes
-    ax.text(x0 + cw / 2 - 0.06, 2.62, "Each merge\nremoves:", ha="right", va="center", fontsize=S.LEGEND_PT)   # left of the first arrow, clear of the callout
+    ax.text(x0 + cw / 2 - 0.06, 2.62, "Each merge\nremoves:", ha="right", va="center", fontsize=S.LEGEND_PT5)   # left of the first arrow
     for k, words in enumerate(MERGES):
         x = x0 + k * pitch + cw / 2
         ax.annotate("", xy=(x + pitch, 2.69), xytext=(x, 2.69),
                     arrowprops=dict(arrowstyle="-|>", color="black", lw=0.7, shrinkA=0, shrinkB=0))
-        ax.text(x + pitch / 2, 2.63, words, ha="center", va="top", fontsize=S.LEGEND_PT)
-    # the uses, on one card (Sophon's shadowed card and callout), since both start from the features
-    ax.text(0, 2.02, "(b) Use", **bold)
-    for dx, dy in ((0.05, 0.05), (0, 0)):
-        ax.add_patch(Rectangle((0.25 + dx, 0.15 + dy), 5.4, 1.7, fc="#f0f0f0", ec="#808080", lw=0.6, zorder=0.5))
-    tip, a, b = (1.79, 2.95), (1.3, 1.855), (2.2, 1.855)
-    ax.add_patch(Polygon([tip, a, b], fc="#f0f0f0", ec="none", zorder=0.6))
-    for corner in (a, b):
-        ax.plot(*zip(tip, corner), color="#808080", linewidth=0.6, zorder=0.7)
-    _use(ax, 0.45, FROZEN, "frozen", "Train a linear layer", "Frozen features, linear probe", hidden=False)
-    _use(ax, 3.2, TRAINED, "trained", "Train all weights", "Fine-tuning", hidden=True)
+        ax.text(x + pitch / 2, 2.63, words, ha="center", va="top", fontsize=S.LEGEND_PT5)
+    # the uses, on one card, since both start from the features
+    low.text(0, 2.02, "(b) Use", **bold)
+    low.add_patch(Rectangle((0.25, 0.15), 5.4, 1.7, fc="#f0f0f0", ec="#808080", lw=0.6, zorder=0.5))
+    _use(low, 0.45, FROZEN, "frozen", "Train a linear layer", "Frozen features, linear probe", hidden=False)
+    _use(low, 3.2, TRAINED, "trained", "Train all weights", "Fine-tuning", hidden=True)
     S.save(fig, path)
 
 
@@ -251,39 +253,39 @@ def _mass_series(mode: str = "ft") -> list:
     """(runs, estimator, line, mark, label) of the two mass-regression models' outputs: solid, or dashed (mode "mass")
     where they share a panel with the same label set's other output (A17-probe); one hollow marker per model in every
     figure (PI, 2026-11-07)."""
-    return [(RUNS[row], "regressed", S.look(row, mode), S.marker(row, "mass"),
+    return [(RUNS[row], "regressed", S.look(row, mode), None,
              S.LEGEND[row] + (" (mass output)" if mode == "mass" else "")) for row, _ in MASS_ROWS]
 
 
 def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
-    """One column of one row: the median (which="median") or the resolution against axis, and below it the ratio
-    to the soft-drop mass or the root square difference. The upper y range is set by the regression series, widened
-    to the soft-drop mass where the series' differences stay readable (gallery_bands.extend_to, PI 2026-11-07).
+    """One column of one row: the median (which="median") or the resolution against axis as step lines without
+    markers, and below it the ratio to the soft-drop mass. The y range holds every series and the soft-drop mass
+    (PI 2026-11-11: nothing off the axes, no arrows); the resolution is on a log axis, which that takes.
     Returns (soft-drop values, bin edges) for _reference, drawn once the row's ranges are final."""
     g = P._groomed(atlas, group)[axis]
     e = np.asarray(g["edges"], float)
-    c = 0.5 * (e[1:] + e[:-1])
     ref = P._arr(g[which])
     ax.plot([], [], **GROOMED_LOOK, label=GROOMED)                          # the legend key; bins drawn below
-    rx.axhline(1.0 if which == "median" else 0.0, **GROOMED_LOOK)
-    vals, lows = [], [[1.0 if which == "median" else 0.0]]
+    rx.axhline(1.0, **GROOMED_LOOK)
+    vals, lows = [], [[1.0]]
     for runs, est, line, mark, label in series:
         bl = [b[axis] for m in runs if (b := P._block(atlas, m, est, group))]
         if not bl:
             continue
         v = np.mean([P._arr(b[which]) for b in bl], axis=0)
-        low = v / ref if which == "median" else np.sign(v - ref) * np.sqrt(np.abs(v ** 2 - ref ** 2))
+        low = v / ref
         ax.stairs(v, e, baseline=None, **line, linewidth=S.LW_CURVE)
         rx.stairs(low, e, baseline=None, **line, linewidth=S.LW_CURVE)
-        for a_, y_ in ((ax, v), (rx, low)):
-            a_.plot(c, y_, linestyle="none", **mark, markersize=3)
-        ax.plot([], [], **line, linewidth=S.LW_CURVE, **mark, markersize=3, label=label)     # the legend key
+        ax.plot([], [], **line, linewidth=S.LW_CURVE, label=label)     # the legend key
         vals.append(v)
         lows.append(low)
-    _fit_y(ax, vals)
-    _fit_y(rx, lows)
-    if extend_to(*ax.get_ylim(), ref) is not None:
+    if which == "resolution":
+        v = np.concatenate([np.ravel(x) for x in (*vals, ref)])
+        v = v[np.isfinite(v)]
+        ax.set_ylim(v.min() / 1.15, v.max() * 1.15)
+    else:
         _fit_y(ax, [*vals, ref])
+    _fit_y(rx, lows)
     ax.set_xlim(e[0], e[-1])
     for a_ in (ax, rx):
         S.fine_grid(a_)
@@ -291,23 +293,8 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
 
 
 def _reference(ax, ref, e) -> None:
-    """The soft-drop mass in the bins where it lies in the y range; in the others an arrow at the top or bottom edge
-    of the bin, and its values there in the panel title (inside the panel they would cross the series)."""
-    lo, hi = ax.get_ylim()
-    inside = (ref >= lo) & (ref <= hi)
-    ax.hlines(ref[inside], e[:-1][inside], e[1:][inside], **GROOMED_LOOK)
-    c = 0.5 * (e[1:] + e[:-1])
-    words = []
-    for out, y0, y1, sign in ((ref < lo, 0.1, 0.01, "\u2193"), (ref > hi, 0.9, 0.99, "\u2191")):
-        if not out.any():
-            continue
-        for x in c[out]:
-            ax.annotate("", xy=(x, y1), xytext=(x, y0), xycoords=("data", "axes fraction"),
-                        arrowprops=dict(arrowstyle="-|>", color="black", lw=0.8, mutation_scale=7))
-        v = ref[out]
-        words.append(sign + (f"{v.min():.2f}" if np.ptp(v) < 0.005 else f"{v.min():.2f}\u2013{v.max():.2f}"))
-    if words:
-        S.title(ax, f"{GROOMED} " + " ".join(words))
+    """The soft-drop mass in every bin, inside the y range (_quantity's limits hold it)."""
+    ax.hlines(ref, e[:-1], e[1:], **GROOMED_LOOK)
 
 
 X_PT, X_MGEN = r"Jet $p_{\mathrm{T}}$ [GeV]", r"Generator mass ($m_{\mathrm{gen}}$) [GeV]"
@@ -325,9 +312,9 @@ def _share_row(row) -> None:
 
 
 def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol: int) -> None:
-    """Round 4 (ROUND4_BRIEF Part 3): median response (upper row) and resolution (lower row) against jet pT (left)
-    and generator mass (right), 6.5 cm panels, each with its ratio (RSD) sub-panel; one y range per row; the legend
-    above the panels."""
+    """Median response (upper row) and resolution (lower row, log axis) against jet pT (left) and generator mass
+    (right), 6.5 cm panels, each with the ratio to the soft-drop mass below; one y range per row; the legend above
+    the panels."""
     atlas = _atlas()
     rows = math.ceil((len(series) + 1) / ncol)
     refs = np.empty((2, 2), object)
@@ -344,13 +331,14 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
         for j in range(2):
             _reference(axes[i, j], *refs[i, j])
         S.labels(axes[i, 0], ylabel=r"Median response ($r$)" if which == "median" else r"Resolution ($\sigma_r$)")
-        S.labels(raxes[i, 0], ylabel="Ratio" if which == "median" else "RSD")
+        S.labels(raxes[i, 0], ylabel="Ratio")
         for j in range(2):
             raxes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=3, steps=[1, 2, 5, 10], prune="upper"))
-            axes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=5, steps=[1, 2, 5, 10], prune="lower"))
+            if which == "median":
+                axes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=5, steps=[1, 2, 5, 10], prune="lower"))
+            else:
+                S.log_axis(axes[i, j], force=True)
     fig.align_ylabels([axes[0, 0], raxes[0, 0], axes[1, 0], raxes[1, 0]])
-    for rx in raxes[1]:         # RSD in one decimal in every figure
-        rx.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.1f}".replace("-", "\u2212")))
     for rx in raxes[:, 1]:      # the right column's label at its last tick would run off the page
         hi = rx.get_xlim()[1]
         rx.xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=hi: "" if v >= hi - 1e-9 else f"{v:g}"))
@@ -371,7 +359,7 @@ def _a17(path: pathlib.Path, group: str) -> None:
 def draw_a17_probe(path: pathlib.Path) -> None:
     """Six series: the MLP on the frozen features of the four label sets (solid, filled) and the two mass outputs
     (dashed, hollow); the legend above the panels."""
-    series = [(RUNS[a], "mlp", S.look(a, "ft"), S.marker(a, "ft"), f"{S.LEGEND[a]} {S.MLP_PROBE}") for a in S.LEVELS]
+    series = [(RUNS[a], "mlp", S.look(a, "ft"), None, f"{S.LEGEND[a]} {S.MLP_PROBE}") for a in S.LEVELS]
     series += _mass_series("mass")
     _binned_2x2(path, "all", series, "Mass from frozen features and from the mass output", 2)
 
@@ -383,67 +371,58 @@ def _sculpt() -> dict:
     return I["sculpt"]
 
 
-def _points(ax, x, y, half, marker: str, colour: str, hollow: bool, width: float, label: str | None = None,
-            zorder: float = 2) -> None:
-    """CMS's points: a marker on the bin's centre and a horizontal bar across the bin, nothing joined."""
-    ax.errorbar(x, y, xerr=half, fmt=marker, color=colour, markerfacecolor="none" if hollow else colour,
-                markersize=2.5, elinewidth=width, capsize=0, label=label, zorder=zorder)
-
-
 def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
-    """Round 4: one 6.5 cm panel per model, two per row, each with its ratio to the inclusive distribution (CMS's
-    height); working points in black and greys (style_v5.WORKING_POINT), no model colour, since the title names the
-    model; one y range per row."""
+    """One panel per model, two per row at 6.5 cm or three in one row at 4.3 cm, each with its ratio to the inclusive
+    distribution (CMS's height); step histograms over the files' whole mass range, the inclusive one black and the
+    working points blue and red (SELECTION_COLOUR), no model colour, since the title names the model; one y range."""
     sc = _sculpt()
     shown = [(a, ms) for a in rows if (ms := [m for m in RUNS[a] if m in sc])]
     if not shown:
         raise Absent("no mass sculpting curve of the models shown")
-    nrows = math.ceil(len(shown) / 2)
-    fig, axes, raxes = S.grid_cm(nrows, 2, aspect=0.75, ratio=RATIO_CMS, top=1.6, left=1.3, wgap=0.35, hgap=1.0)
+    ncols = 3 if len(shown) == 3 else 2         # three panels in one row (PI 2026-11-11: no empty slot)
+    nrows = math.ceil(len(shown) / ncols)
+    fig, axes, raxes = S.grid_cm(nrows, ncols, w=4.3 if ncols == 3 else S.PANEL_W, aspect=0.75 if ncols == 2 else 0.95,
+                                 ratio=RATIO_CMS, top=1.6, left=1.3, wgap=0.35, hgap=1.0)
     panels = list(zip(axes.flat, raxes.flat))
     peak, ratios = 0.0, [[1.0]]
     for k_panel, ((ax, rx), (a, ms)) in enumerate(zip(panels, shown)):
         e = np.asarray(sc[ms[0]]["bins_jet_sdmass"], float)
-        keep = e[1:] <= F10A_TOP
-        mid, half = ((e[:-1] + e[1:]) / 2)[keep], (np.diff(e) / 2)[keep]
         before = np.asarray(sc[ms[0]]["hist_before"], float)
         before = before / before.sum()
-        wp_in = S.WORKING_POINT["inclusive"]
-        _points(ax, mid, before[keep], half, wp_in["marker"], wp_in["color"], False, S.LW_THIN, "Inclusive", zorder=2.1)
-        peak = max(peak, before[keep].max())
-        rx.axhline(1.0, **S.REFERENCE, zorder=1)      # under the points
-        for wp, _ in P.WPS:
-            look = S.WORKING_POINT[f"{100 * float(wp):g}%"]
+        # step histograms over the whole mass range, no markers (PI 2026-11-11)
+        ax.stairs(before, e, baseline=None, color="#000000", linewidth=S.LW_CURVE, label="Inclusive", zorder=2.1)
+        peak = max(peak, before.max())
+        rx.axhline(1.0, color="#000000", linewidth=S.LW_CURVE, zorder=1)
+        for k_wp, (wp, _) in enumerate(P.WPS, start=1):
             after = np.mean([np.asarray(sc[m]["working_points"][wp]["hist_after"], float)
                              / np.sum(sc[m]["working_points"][wp]["hist_after"]) for m in ms], axis=0)
             with np.errstate(divide="ignore", invalid="ignore"):
                 r = np.where(before > 0, after / before, np.nan)
             label = f"$\\varepsilon_B = {100 * float(wp):g}\\%$"
-            hollow = look["fillstyle"] == "none"
-            _points(ax, mid, after[keep], half, look["marker"], look["color"], hollow, S.LW_THIN, label)
-            _points(rx, mid, r[keep], half, look["marker"], look["color"], hollow, S.LW_THIN)
-            peak = max(peak, after[keep].max())
-            ratios.append(r[keep])
-        ax.set_xlim(e[0], F10A_TOP)
+            ax.stairs(after, e, baseline=None, color=SELECTION_COLOUR[k_wp], linewidth=S.LW_CURVE, label=label)
+            rx.stairs(r, e, baseline=None, color=SELECTION_COLOUR[k_wp], linewidth=S.LW_CURVE)
+            peak = max(peak, after.max())
+            ratios.append(r)
+        ax.set_xlim(e[0], e[-1])
         ax.tick_params(labelbottom=False)
         S.title(ax, NAMES[a])
-        if k_panel >= len(shown) - 2:
+        if k_panel >= len(shown) - ncols:
             S.labels(rx, xlabel=r"Jet mass ($m_{\mathrm{SD}}$) [GeV]")
         S.fine_grid(ax)
         S.fine_grid(rx)
-    for ax, rx in panels[len(shown):]:
-        ax.axis("off")
-        rx.axis("off")
     for i in range(nrows):
         axes[i, 0].set_ylim(0, 1.1 * peak)
-        _fit_y(raxes[i, 0], ratios, pad=0.15)        # markers at the extremes clear of the frame
-        for j in (1,):
+        _fit_y(raxes[i, 0], ratios, pad=0.1)
+        for j in range(1, ncols):
             axes[i, j].sharey(axes[i, 0])
             raxes[i, j].sharey(raxes[i, 0])
             axes[i, j].tick_params(labelleft=False)
             raxes[i, j].tick_params(labelleft=False)
         axes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=5, prune="lower"))
         raxes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=3, prune="upper"))
+        for j in range(ncols - 1):         # a panel's last x label is left to the next panel's axis beside it
+            hi = raxes[i, j].get_xlim()[1]
+            raxes[i, j].xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=hi: "" if v >= hi - 1e-9 else f"{v:g}"))
         S.labels(axes[i, 0], ylabel="Fraction of jets")
         S.labels(raxes[i, 0], ylabel="Ratio to\ninclusive")
     S.letter_panels([ax for ax, _ in panels[:len(shown)]])
@@ -473,12 +452,15 @@ def _floor(sc: dict, m: str) -> dict:
 
 
 def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs: dict | None = None) -> None:
-    """Round 4: exact size, one 10 cm panel, the legend above it; each row's mean over runs with a band of the spread
-    over runs (gallery_bands.spread_band), the label sets solid and filled, the mass models dashed and hollow (mode "mass"); the
-    floor black dashed; both axes logarithmic, labelled in plain numbers. runs: {row: models}, RUNS by default."""
+    """Exact size, one panel across the text width, the legend just above it; each row's mean over runs with a band of
+    the spread over runs (gallery_bands.spread_band), the label sets solid and filled, the mass models dashed and hollow
+    (mode "mass"); the floor black dashed; both axes logarithmic, labelled 10^n. runs: {row: models}, RUNS by default."""
     runs = RUNS if runs is None else runs
-    fig = S.figure_cm(S.PRINT_W, 10.6)
-    ax = S.axes_cm(fig, 3.2, 2.4, 9.6, 7.1)
+    legend_rows = math.ceil((sum(any(m in sc for m in runs[r]) for r in rows) + 1) / 3)
+    top, w = 0.95 + 0.45 * legend_rows, S.PRINT_W - 1.5 - 0.2
+    h = 0.7 * w
+    fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
+    ax = S.axes_cm(fig, 1.5, top, w, h)
     S.fine_grid(ax)
     drawn = []
     for row in rows:
@@ -502,11 +484,9 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs
     ax.plot(eff[keep], [ref[e] for e in eff[keep]], **S.REFERENCE, zorder=1.5, label="random selection of as many QCD jets")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    for axis, lim, at in ((ax.xaxis, ax.get_xlim(), (0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5)),
-                          (ax.yaxis, ax.get_ylim(), (0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5))):
-        axis.set_major_locator(FixedLocator([v for v in at if lim[0] <= v <= lim[1]]))
-        axis.set_major_formatter(FuncFormatter((lambda v, _: f"{100 * v:g}%") if axis is ax.xaxis else (lambda v, _: f"{v:g}")))
-        axis.set_minor_formatter(NullFormatter())       # efficiency in percent, as F10a's working points
+    ax.autoscale_view()
+    S.log_axis(ax, "x", force=True)
+    S.log_axis(ax, "y", force=True)
     S.heading(fig, heading)
     S.labels(ax, r"QCD efficiency ($\varepsilon_B$)", "Jensen-Shannon distance")
     S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=3)
@@ -551,8 +531,9 @@ def draw_f10c(path: pathlib.Path) -> None:
     """One point per model: the mean over runs of R50 (x) and 1/JSD50 (y), with the spread over pretraining runs on
     both axes (mlst_figures._spread: SD for three runs, range for two); DisCo Fig. 3's axes, both logarithmic."""
     sc = I["sculpt"]
-    fig = S.figure_cm(S.PRINT_W, 10.6)
-    ax = S.axes_cm(fig, 3.2, 2.4, 9.6, 7.1)
+    top, w = 0.95 + 0.45 * 3, S.PRINT_W - 1.5 - 0.2      # one panel across the text width, the legend just above it
+    fig = S.figure_cm(S.PRINT_W, top + 0.7 * w + 1.0)
+    ax = S.axes_cm(fig, 1.5, top, w, 0.7 * w)
     S.fine_grid(ax)
     drawn = 0
     for row in F10C_ROWS:
@@ -598,24 +579,31 @@ def draw_f11(path: pathlib.Path) -> None:
     panels = [(sig, _xbx_series(XR, sig)) for sig, _ in XR.SIGNALS]
     if not all(series for _, series in panels):
         raise Absent(f"X→bb and X→bs fits on Sophon's samples ({P.DATA / 'xbx'}): not pulled")
-    fig, axes = plt.subplots(2, 1, figsize=S.ONE_PANEL, sharex=True)
-    top = 0.0
+    # two panels side by side at the text width, one legend above them (PI 2026-11-11: aligned with the text block,
+    # one line width in the legend, the x range fitted to the curves)
+    fig, grid, _ = S.grid_cm(1, 2, aspect=0.85, top=2.3, left=1.2, wgap=0.35)
+    axes = list(grid[0])
+    top, xs, handles = 0.0, [], {}
     for ax, (_, series) in zip(axes, panels):
         for label, style, rs in series:
             x, y, _ = P.xbx_curves(M, rs)
             mean = y.mean(axis=0)
-            ax.plot(x, mean, **{**style, "linewidth": S.LW_CURVE}, label=label)
+            line, = ax.plot(x, mean, **{**style, "linewidth": S.LW_CURVE}, label=label)
+            handles.setdefault(label, line)
             top = max(top, float(np.nanmax(mean)))
-        S.legend(ax)
-    for ax, what in zip(axes, (r"$X\rightarrow bb$ tagging performance", r"$X\rightarrow bs$ tagging performance")):
+            xs += [float(np.min(x)), float(np.max(x))]
+    for ax, what in zip(axes, (r"$X\rightarrow b\bar{b}$", r"$X\rightarrow bs$")):
         S.fine_grid(ax)
-        ax.set_xscale("log")
-        ax.set_xlim(1e-5, 1)
-        ax.set_ylim(0, 1.5 * top)
+        ax.set_xlim(min(xs) / 1.3, max(xs))
+        ax.set_ylim(0, 1.08 * top)
+        S.log_axis(ax, "x")
         S.title(ax, what)
-        S.labels(ax, ylabel=r"Figure of merit ($\varepsilon_S/\sqrt{\varepsilon_B}$)")
-    S.labels(axes[1], xlabel=r"QCD efficiency ($\varepsilon_B$)")
+        S.labels(ax, xlabel=r"QCD efficiency ($\varepsilon_B$)")
+    axes[1].tick_params(labelleft=False)
+    S.labels(axes[0], ylabel=r"Figure of merit ($\varepsilon_S/\varepsilon_B^{1/2}$)")
     S.letter_panels(axes)
+    S.heading(fig, "Resonance tagging on Sophon's samples")
+    S.fig_legend(fig, list(handles.values()), top_cm=0.6, ncol=3)
     S.save(fig, path)
 
 
@@ -808,30 +796,28 @@ F9B_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs): median response r = m/m_gen (a, b) and resolution sigma_r, half the 15.9-84.1% "
     "quantile range of r over its median (c, d), of test jets against pT (a, c) and generator mass (b, d; 20-500 "
-    "GeV). Lower panels: ratio to the soft-drop mass and signed root square difference (RSD). Arrows: soft-drop "
-    "mass off the axis, its values in the title.")
+    "GeV), with the soft-drop mass (black). The resolution axis is logarithmic. Lower panels: ratio to the "
+    "soft-drop mass.")
 A17_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs), on {group} test jets: median response r (a, b) and resolution sigma_r (c, d), as in "
-    "the main-text figure, against pT (a, c) and generator mass (b, d; 20-500 GeV). Lower panels: ratio to the "
-    "soft-drop mass and signed root square difference (RSD). Arrows: soft-drop mass off the axis, its values in "
-    "the panel title.")
+    "the main-text figure, against pT (a, c) and generator mass (b, d; 20-500 GeV), with the soft-drop mass "
+    "(black). Lower panels: ratio to the soft-drop mass.")
 F10A_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, used "
     "without further training: soft-drop mass of QCD test jets before any selection (inclusive) and after cuts on "
     "1 - g_QCD, one minus the summed QCD score, at QCD efficiencies eps_B of 10% and 1% (mean of three runs). "
-    "Bars show the bin width; the axis stops at 260 GeV. Below each panel, the ratio to the inclusive "
-    "distribution.")
+    "Below each panel, the ratio to the inclusive distribution.")
 F10A_MASS_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary "
     "mass regression, used without further training: soft-drop mass of QCD test jets before any selection and "
     "after cuts on 1 - g_QCD at QCD efficiencies eps_B of 10% and 1% (mean of two runs), with the ratio to the "
-    "inclusive distribution below. The axis stops at 260 GeV.")
+    "inclusive distribution below.")
 F10A_FLAV_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 17 classes and no flavor boundary, a "
     "b-quark boundary or a random flavor boundary, used without further training: soft-drop mass of QCD test jets "
     "before any selection and after cuts on 1 - g_QCD at QCD efficiencies eps_B of 10% and 1% (mean of two runs), "
-    "with the ratio to the inclusive distribution below. The axis stops at 260 GeV.")
+    "with the ratio to the inclusive distribution below.")
 F10B_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (solid, "
     "three runs) and with 162 and 17 classes plus mass regression (dashed, two runs), used without further "
@@ -856,10 +842,10 @@ F10C_CAPTION = (
     "QCD test jets and of those passing a cut on 1 - g_QCD (y), against the QCD rejection (x), both at the cut "
     "that keeps 50% of resonant test jets. Points are means, bars the SD over pretraining runs (range over two).")
 F11_CAPTION = (
-    "Networks pretrained on JetClass-II, on Sophon's X→bb (upper) and X→bs (lower) samples against QCD jets in the "
+    "Networks pretrained on JetClass-II, on Sophon's (a) X→bb̄ and (b) X→bs samples against QCD jets in the "
     "soft-drop mass window: signal efficiency over the square root of the background efficiency against QCD "
     "efficiency, from a classifier trained on the frozen features of each network (transfer), from the direct "
-    "discriminant of the 188-class pretraining head (X→bb) and from networks trained from scratch (X→bs). Curves are means over "
+    "discriminant of the 188-class pretraining head (X→bb̄) and from networks trained from scratch (X→bs). Curves are means over "
     "pretraining runs and end where fewer than 20 background jets remain.")
 PT_CAPTION = (
     "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on the "
@@ -931,8 +917,9 @@ PAGES = [
          "ATLAS's bins to 1500 GeV in truth pT. Connected steps instead of one disconnected segment per bin, and no bands (PI limit), though "
          "ATLAS draws them. Three series instead of two, colours as F9a, each model's marker (v, P) at the bin centres. No "
          "dotted line at 1 in the median panel. Faint dashed grid at major y ticks (round 3), where ATLAS has none. Median response (r) and Resolution "
-         "(sigma_r) instead of ATLAS's longer axis words. The lower panels keep ATLAS's ratio "
-         "and its RSD, sgn(s'-s) sqrt|s'^2-s^2|, at its height (0.44). " + ATLAS_LOOK + ".",
+         "(sigma_r) instead of ATLAS's longer axis words. Both lower panels are the ratio to the soft-drop mass (2026-11-11; "
+         "ATLAS's lower resolution panel is an RSD), at ATLAS's height (0.44); the soft-drop mass is inside both ranges, "
+         "the resolution on a log axis; step lines carry no markers. " + ATLAS_LOOK + ".",
          draw_f9b, MASS_RUNS_NOTE),
     Page("A17-res", "Mass regression on resonant jets", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8",
          A17_CAPTION.format(group="resonant"), A17_DIFFERS, lambda path: _a17(path, "resonant"), MASS_RUNS_NOTE),
@@ -943,8 +930,8 @@ PAGES = [
          "The jet mass from networks pretrained on JetClass-II: an MLP probe (MLP) regressing it from the frozen "
          "features with 188, 162, 43 and 17 classes (solid, three runs), and the mass output with 162 and 17 "
          "classes and an auxiliary mass regression (dashed, two runs). Median response r (a, b) and resolution "
-         "sigma_r (c, d) of test jets against pT (a, c) and generator mass (b, d; 20-500 GeV); sub-panels and "
-         "arrows as in the main-text mass figure.",
+         "sigma_r (c, d) of test jets against pT (a, c) and generator mass (b, d; 20-500 GeV); sub-panels as "
+         "in the main-text mass figure.",
          "As F9b, with six series and the soft-drop mass (PI): the four probes in the label sets' colours, the two mass "
          "outputs in the 162- and 17-class colours as F10b, one marker shape per series at the bin centres and in the legend, "
          "since each mass output shares its label set's colour. Round 4: the 2x2 of F9b, legend above the panels. "
@@ -953,7 +940,7 @@ PAGES = [
     Page("F10a", "Mass sculpting: QCD mass", ["2604.09809/fig8.png"], "CMS JME-25-001 Fig. 8", F10A_CAPTION,
          "Six panels, one per model (PI), all jet pT, instead of CMS's six (two models, three pT ranges), with "
          "one y axis across them. Two working points instead of three, because the files hold 10% and "
-         "1%. Mass from 20 to 260 GeV in 20 GeV bins, the bins that cover CMS's 30 to 250 GeV; the files run to 500 GeV, "
+         "1%. Mass from 20 to 500 GeV in 20 GeV bins, the files' whole range (CMS: 30 to 250 GeV), as step histograms; previously to 260 GeV, where the files run to 500 GeV, "
          "and the twelve bins cut hold 5.9% of the inclusive jets and 6.4 to 7.6% of the selected ones (fractions stay "
          "those of all jets to 500 GeV). Colours are black, blue and pink instead of black, blue, red, orange: no colour "
          "of our palette, where red and orange are random partitions with controlled flavor boundaries. "

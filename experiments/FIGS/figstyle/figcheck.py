@@ -15,6 +15,7 @@ Per figure <id> in <dir>: <id>.pdf (the figure as the paper includes it), <id>_p
              filled bands, scatter points, images)
   notation   plain-text "to ee", "mu", "bb", "->", "LOOK:", "Data today", "PI" in any text or the caption
   letters    main panels whose titles do not start (a), (b), ... in reading order
+  outside    a plotted point, curve vertex, band or step-histogram vertex beyond its axes' limits
   caption    outside 40-80 words
 The print size is the paper's: \\linewidth = 15 cm, except PRINT_CM. The saved PDF is cut to its tight box
 (style_v3.save), so sizes are measured times print width / saved width.
@@ -43,12 +44,14 @@ from matplotlib.transforms import Bbox  # noqa: E402
 import palette_check as PC  # noqa: E402
 
 PRINT_CM = {"VAL": 10.5, "INVENTORY": 27.7}     # \paperfig widths other than \linewidth (15 cm); the map: the gallery page
-MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.5, {"F3-app": 5.0, "F3-ft": 5.0}
+# three panels in one row are 4.1 to 4.3 cm wide (PI 2026-11-11: no empty slot in a grid)
+MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.5, {"F3-app": 5.0, "F3-ft": 5.0, "F3-app2": 4.0, "F3-ft2": 4.0, "F4-other": 4.0,
+                                     "F6": 4.0, "F6-app": 4.0, "F10a-flav": 4.0}
 MIN_PT, ASPECT, PAD_IN, DPI = 8.0, (0.7, 1.3), 0.1, 300
 BANNED = [(re.compile(p), why) for p, why in (
     (r"\bto\s+(ee|mu|mumu|bb|cc|qq|bs|bc|b\b)", "plain 'to' for an arrow"), (r"\bmu\b", "plain 'mu'"),
     (r"\b(bb|cc|qq|mumu)\b(?![\u0304\u2032])", "plain parton pair"), (r"->", "ASCII arrow"), (r"LOOK:", "internal note"),
-    (r"Data today", "internal note"), (r"\bPI\b", "internal note"))]
+    (r"Data today", "internal note"), (r"\bPI\b", "internal note"), (r"(?i)macro[- ]AUC", "banned term: mean AUC over classes"))]
 
 
 def plain(text: str) -> str:
@@ -124,6 +127,63 @@ def data_hit(ax, box: Bbox) -> str | None:
     return None
 
 
+def outside(ax) -> list:
+    """What ax draws in data coordinates beyond its limits (PI 2026-11-11: nothing off the axes, no clipped curve or
+    point): line vertices, scatter points, band and step-histogram vertices. Non-finite values are no point; on a log
+    axis neither is a value at or below zero (a histogram's baseline)."""
+    (x0, x1), (y0, y1) = sorted(ax.get_xlim()), sorted(ax.get_ylim())
+    tx, ty = 1e-9 * max(abs(x0), abs(x1), 1e-300), 1e-9 * max(abs(y0), abs(y1), 1e-300)
+    logx, logy = ax.get_xscale() == "log", ax.get_yscale() == "log"
+
+    def count(xy, check_x=True, check_y=True) -> int:
+        xy = np.asarray(xy, float).reshape(-1, 2)
+        ok = np.isfinite(xy).all(axis=1)
+        if logx:
+            ok &= xy[:, 0] > 0
+        if logy:
+            ok &= xy[:, 1] > 0
+        xy = xy[ok]
+        bad = np.zeros(len(xy), bool)
+        if check_x:
+            bad |= (xy[:, 0] < x0 - tx) | (xy[:, 0] > x1 + tx)
+        if check_y:
+            bad |= (xy[:, 1] < y0 - ty) | (xy[:, 1] > y1 + ty)
+        return int(bad.sum())
+
+    found = []
+    where = ax.get_title() or "untitled panel"
+    for ln in ax.lines:
+        if not ln.get_visible() or not len(ln.get_xdata()):
+            continue
+        tr = ln.get_transform()
+        if tr == ax.transData:
+            n = count(ln.get_xydata())
+        elif tr == ax.get_yaxis_transform():        # axhline: y in data coordinates
+            n = count(ln.get_xydata(), check_x=False)
+        elif tr == ax.get_xaxis_transform():        # axvline
+            n = count(ln.get_xydata(), check_y=False)
+        else:
+            continue
+        if n:
+            found.append(f"{where!r}: {n} point(s) of line {ln.get_label()!r} outside the axes")
+    for c in ax.collections:
+        if not c.get_visible():
+            continue
+        if isinstance(c, PolyCollection) and c.get_transform() == ax.transData:
+            n = sum(count(p.vertices) for p in c.get_paths())
+        elif len(c.get_offsets()) and c.get_offset_transform() == ax.transData:
+            n = count(c.get_offsets())
+        else:
+            continue
+        if n:
+            found.append(f"{where!r}: {n} vertex/point(s) of {type(c).__name__} {c.get_label()!r} outside the axes")
+    for patch in ax.patches:
+        if patch.get_visible() and patch.get_transform() == ax.transData and type(patch).__name__ == "StepPatch":
+            if (n := count(patch.get_path().vertices)):
+                found.append(f"{where!r}: {n} vertex(es) of step histogram {patch.get_label()!r} outside the axes")
+    return found
+
+
 def classify(fig, r) -> tuple[list, dict]:
     """(main panels, {axes: why exempt from the aspect rule})."""
     axes = [ax for ax in fig.axes if ax.get_visible()]
@@ -153,8 +213,11 @@ def check(fig, name: str, print_cm: float, min_panel: float) -> dict:
 
     scale = print_cm / 2.54 / saved_in
     px_per_cm = fig.dpi / scale / 2.54             # display pixels per printed centimetre
-    found = {k: [] for k in ("panel", "font", "overlap", "notation", "letters")}
+    found = {k: [] for k in ("panel", "font", "overlap", "notation", "letters", "outside")}
     main, exempt = classify(fig, r)
+    for ax in fig.axes:
+        if ax.get_visible() and ax.axison:
+            found["outside"] += outside(ax)
     for ax in main:
         b = ax.get_window_extent(r)
         w, h = b.width / px_per_cm, b.height / px_per_cm
