@@ -11,6 +11,7 @@
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode ft-pairs-sculpt   # fine-tuned pairs + sculpting
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode sculpt-boot   # paired bootstrap of the head sculpting
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode jc1-acc-boot --storage-line 90   # JetClass accuracy, 1e6
+    python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode jc1-acc-boot-1e4 --storage-line 90   # and 1e4
 """
 import argparse
 import importlib.util
@@ -255,6 +256,16 @@ def calls_jc1_acc_boot() -> str:
     return "\n".join("          " + c for c in out)
 
 
+def calls_jc1_acc_boot_1e4() -> str:
+    """The same at 1e4 on the fixed-budget cells, which the equal-stopping test kept (JetClass 1e4 did not move,
+    2026-11-10); written under a .new name and moved, so the pull never takes a part."""
+    root, f = "/data/results/ft_v2/budget", f"{JC1_BOOT}/jc1_acc_boot_N10000.json"
+    out = [f"python3 experiments/FT/jc1_acc_boot.py --root {root} --n 10000 --metrics {root}/budget_metrics.json "
+           f"--replicas 200 --out {f}.new",
+           f"mv -n {f}.new {f}"]
+    return "\n".join("          " + c for c in out)
+
+
 MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
          "kin": (calls_kin, "gallery-data-kin-raunav", "top_probe"),
          "sib2": (calls_sib2, "gallery-data-sib2-raunav", "pairs_sib2"),
@@ -265,7 +276,8 @@ MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
          # absolute directories are made as they are, the others under ROC
          "ft-pairs-sculpt": (calls_ft_pairs_sculpt, "gallery-data-ft-pairs-sculpt-raunav", f"pairs_ft {SCULPT_FT}"),
          "sculpt-boot": (calls_sculpt_boot, "sculpt-boot-raunav", "/data/results/eval/v2_head"),
-         "jc1-acc-boot": (calls_jc1_acc_boot, "jc1-acc-boot-raunav", JC1_BOOT)}
+         "jc1-acc-boot": (calls_jc1_acc_boot, "jc1-acc-boot-raunav", JC1_BOOT),
+         "jc1-acc-boot-1e4": (calls_jc1_acc_boot_1e4, "jc1-acc-boot-1e4-raunav", JC1_BOOT)}
 
 
 def main() -> int:
