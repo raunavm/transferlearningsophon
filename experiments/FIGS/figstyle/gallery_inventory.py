@@ -13,6 +13,7 @@ import pathlib
 
 import numpy as np
 
+import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextToPath
 
@@ -170,6 +171,12 @@ def unplaced() -> list:
 
 
 def draw_inventory(path: pathlib.Path) -> None:
+    """The map is the gallery's index, not a figure of the paper: it keeps STIX, for which LINE was measured."""
+    with plt.rc_context({"font.family": "STIXGeneral", "mathtext.fontset": "stix"}):
+        _draw_inventory(path)
+
+
+def _draw_inventory(path: pathlib.Path) -> None:
     fig = S.figure_cm(W, H)
     ax = S.axes_cm(fig, 0, 0, W, H)
     ax.set_xlim(0, W)

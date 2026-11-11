@@ -159,7 +159,7 @@ def _jc1_one(path: pathlib.Path, models: list, heading: str) -> None:
     _jc1_curves(ax, docs, models, auc_in_legend=False)
     _y_range([ax])
     S.labels(ax, S.X_EPS, S.Y_REJ)
-    S.heading(fig, f"{heading}, mean AUC over classes {np.mean(list(aucs.values())):.3f}; each class's AUC in the legend")
+    S.heading(fig, f"{heading}; mean AUC over classes {np.mean(list(aucs.values())):.3f}, per class in the legend")
     S.fig_legend(fig, _class_handles(aucs), top_cm=0.6, ncol=4)
     S.save(fig, path)
 
@@ -200,7 +200,7 @@ def _controls() -> list:
 
 
 def draw_fj(path: pathlib.Path) -> None:
-    _jc1_four(path, "jc1_ft_ovr", "Fine-tuned on $10^6$ JetClass jets, per pretraining label set", _label_sets())
+    _jc1_four(path, "jc1_ft_ovr", "Fine-tuned on $10^6$ JetClass jets", _label_sets())
 
 
 def draw_fj_ctrl(path: pathlib.Path) -> None:
@@ -215,7 +215,7 @@ def draw_fj_s(path: pathlib.Path) -> None:
 
 
 def draw_fj_app(path: pathlib.Path) -> None:
-    _jc1_four(path, "jc1_probe_ovr", "Linear probes on $10^6$ JetClass jets, per pretraining label set", _label_sets(),
+    _jc1_four(path, "jc1_probe_ovr", "Linear probes on $10^6$ JetClass jets", _label_sets(),
               legend=False)     # probe curves lie lower: a legend would cover Z->qq
 
 

@@ -225,7 +225,7 @@ def draw_f9a(path: pathlib.Path) -> None:
     response range, the bins in which any series of either panel reaches SHOWN_FROM of its peak; only those bins are
     drawn, so no histogram runs off the axes."""
     atlas = _atlas()
-    fig, axes, _ = S.grid_cm(1, 2, w=6.65, aspect=0.85, top=1.85, left=1.2, wgap=0.3)
+    fig, axes, _ = S.grid_cm(1, 2, w=6.5, aspect=0.85, top=1.85, left=1.5, wgap=0.3)
     panels = [(_response_series(atlas, g), t) for g, t in (("resonant", "Resonant jets"), ("qcd", "QCD jets"))]
     e = panels[0][0][0]
     on = np.flatnonzero(np.any([v >= SHOWN_FROM * v.max() for (_, series), _ in panels for v, _, _ in series], axis=0))
@@ -324,8 +324,8 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
     atlas = _atlas()
     rows = math.ceil((len(series) + 1) / ncol)
     refs = np.empty((2, 2), object)
-    fig, axes, raxes = S.grid_cm(2, 2, w=6.3, aspect=0.72, ratio=RATIO_ATLAS, top=0.95 + 0.45 * rows + 0.5, left=1.6,
-                                 wgap=0.6, hgap=1.0)
+    fig, axes, raxes = S.grid_cm(2, 2, w=6.1, aspect=0.72, ratio=RATIO_ATLAS, top=0.95 + 0.45 * rows + 0.5, left=1.85,
+                                 wgap=0.6, hgap=1.0)      # Latin Modern: room for the y label and the last x label
     for i, which in enumerate(("median", "resolution")):
         for j, (axis, xlabel) in enumerate((("vs_pt", X_PT), ("vs_mgen", X_MGEN))):
             refs[i, j] = _quantity(axes[i, j], raxes[i, j], atlas, group, axis, series, which)
@@ -458,10 +458,10 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs
     (mode "mass"); the floor black dashed; both axes logarithmic, labelled 10^n. runs: {row: models}, RUNS by default."""
     runs = RUNS if runs is None else runs
     legend_rows = math.ceil((sum(any(m in sc for m in runs[r]) for r in rows) + 1) / 3)
-    top, w = 0.95 + 0.45 * legend_rows, S.PRINT_W - 1.5 - 0.2
+    top, w = 0.95 + 0.45 * legend_rows, S.PRINT_W - 1.75 - 0.2
     h = 0.7 * w
     fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
-    ax = S.axes_cm(fig, 1.5, top, w, h)
+    ax = S.axes_cm(fig, 1.75, top, w, h)
     S.fine_grid(ax)
     drawn = []
     for row in rows:
@@ -601,6 +601,7 @@ def draw_f11(path: pathlib.Path) -> None:
         S.title(ax, what)
         S.labels(ax, xlabel=r"QCD efficiency ($\varepsilon_B$)")
     axes[1].tick_params(labelleft=False)
+    S.clear_edge_labels(axes[0], low=True)          # its 0 clear of the first x label in the corner
     S.labels(axes[0], ylabel=r"Figure of merit ($\varepsilon_S/\varepsilon_B^{1/2}$)")
     S.letter_panels(axes)
     S.heading(fig, "Resonance tagging on Sophon's samples")
@@ -858,12 +859,10 @@ F11_CAPTION = (
     "discriminant of the 188-class pretraining head (X→bb̄) and from networks trained from scratch (X→bs). Curves are means over "
     "pretraining runs and end where fewer than 20 background jets remain.")
 PT_CAPTION = (
-    "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on the "
-    "frozen features, trained and scored on class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining "
-    "classes; (b) the same for 17-class partitions with controlled flavor boundaries, with 188 and 17 classes for "
+    "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on "
+    "class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining classes; (b) the same for 17-class partitions with controlled flavor boundaries, with 188 and 17 classes for "
     "reference; (c) accuracy on JetClass after fine-tuning on one million jets; (d) the probes' AUC of X→bb̄ "
-    "against X→cc̄. Points are means at the bin centres, bars the SD over pretraining runs; within a bin the "
-    "series are set slightly apart.")
+    "against X→cc̄. Points: means at bin centres, set apart within a bin; bars: SD over pretraining runs.")
 CONF_CAPTION = (
     "Networks pretrained on JetClass-II, fine-tuned on one million JetClass jets: (a) the percentage of each true "
     "class assigned to each predicted class with 188 pretraining classes; (b)-(d) the change in that percentage "

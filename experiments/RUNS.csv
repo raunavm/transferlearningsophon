@@ -1711,3 +1711,5 @@ render-gallery-7a7076b-raunav,2026-11-11T22:48:07Z,launched,"Comparison round 2.
 mtx2-tests-book-7a7076b-raunav,2026-11-11T22:48:07Z,launched,"Tests at 7a7076b.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-7a7076b-raunav.yaml
 render-gallery-7a7076b-raunav,2026-11-11T22:56:43Z,complete,"Comparison round 2 clean by eye (Fig. 2 B/C panels 0.25 high by design); style_comparison.pdf built; books rebuilt with F8-auc, A8-auc, A10-auc (72 + 36 pages) and restamped.",experiments/FIGS/k8s/job-render-gallery-7a7076b-raunav.yaml
 mtx2-tests-book-7a7076b-raunav,2026-11-11T22:56:43Z,complete,"127 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-7a7076b-raunav.yaml
+render-gallery-dd385b9-raunav,2026-11-11T23:07:29Z,launched,"PI choices 2026-11-11: scans in style C, binned figures as offset points, filled markers, Latin Modern in every figure; Figs. 2 and 3 as dot plots on comparison pages.",experiments/FIGS/k8s/job-render-gallery-dd385b9-raunav.yaml
+mtx2-tests-book-dd385b9-raunav,2026-11-11T23:07:29Z,launched,"Tests at dd385b9.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-dd385b9-raunav.yaml
