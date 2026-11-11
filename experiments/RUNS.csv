@@ -1684,3 +1684,7 @@ render-gallery-421f97f-raunav,2026-11-11T21:27:51Z,launched,"Relaunch of round 1
 mtx2-tests-book-421f97f-raunav,2026-11-11T21:27:51Z,complete,"120 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-421f97f-raunav.yaml
 render-gallery-421f97f-raunav,2026-11-11T21:33:37Z,complete,"Round 15: benchmark panels 3.9 cm (< 4.0) after labelling (c); fixed in round 16.",experiments/FIGS/k8s/job-render-gallery-421f97f-raunav.yaml
 render-gallery-f23d236-raunav,2026-11-11T21:33:37Z,launched,"Book pass round 16 at f23d236.",experiments/FIGS/k8s/job-render-gallery-f23d236-raunav.yaml
+render-gallery-f23d236-raunav,2026-11-11T21:39:32Z,complete,"Round 16: (c)'s last x label off the page; fixed in round 17.",experiments/FIGS/k8s/job-render-gallery-f23d236-raunav.yaml
+render-gallery-dab5a28-raunav,2026-11-11T21:39:32Z,launched,"Book pass round 17 at dab5a28.",experiments/FIGS/k8s/job-render-gallery-dab5a28-raunav.yaml
+render-gallery-dab5a28-raunav,2026-11-11T21:45:43Z,complete,"Round 17: no measured figcheck finding (one caption note on F4-other); the book pass's final render: results_book.pdf 69 pages, results_supplement.pdf 36, both with CHANGED copies.",experiments/FIGS/k8s/job-render-gallery-dab5a28-raunav.yaml
+mtx2-tests-bookfull-dab5a28-raunav,2026-11-11T21:45:43Z,launched,"Full suite at the book pass's final commit; supersedes the one at 43dcbb1.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-bookfull-dab5a28-raunav.yaml
