@@ -3587,11 +3587,12 @@ def table_per_run(fits, per, runs, fmt_pm, fill=None, chosen=None) -> str:
                 v = _scratch(per, key, _sizes(per, key)[-1], met) if _sizes(per, key) else []
                 vals.append(one(v[s] if s < len(v) else None))
             rows.append(f"{SCRATCH_LABEL}, run {s + 1} & -- & -- & -- & -- & " + " & ".join(vals) + r" \\")
-    return "\n".join(["{\\scriptsize", "\\setlength{\\tabcolsep}{2pt}",
-                      r"\begin{longtable}{>{\raggedright\arraybackslash}p{3.7cm}" + "c" * 9 + "}",
+    # in landscape across the whole line at the tables' \\small, the row labels on one line (PI 2026-11-11)
+    return "\n".join([r"\begin{landscape}", "{\\small", LT_SETUP,
+                      r"\begin{longtable}{@{\extracolsep{\fill}}l" + "c" * 9 + "@{}}",
                       r"\caption{__CAPTION__}\label{tab:perrun}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
-                      r"\toprule", head, r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot", *rows,
-                      r"\end{longtable}", "}", ""])
+                      r"\multicolumn{10}{l}{\textit{continued}} \\", r"\toprule", head, r"\midrule", r"\endhead",
+                      r"\bottomrule", r"\endlastfoot", *rows, r"\end{longtable}", "}", r"\end{landscape}", ""])
 
 
 # ------------------------------------------------------------------ captions and assembly
