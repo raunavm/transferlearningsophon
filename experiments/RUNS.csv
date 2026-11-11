@@ -1692,3 +1692,7 @@ render-gallery-74dcee0-raunav,2026-11-11T21:57:39Z,complete,"'from scratch' repl
 mtx2-tests-book-74dcee0-raunav,2026-11-11T21:57:39Z,complete,"120 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-74dcee0-raunav.yaml
 render-gallery-2093036-raunav,2026-11-11T22:11:18Z,launched,"Scaling figures in AUC (PI 2026-11-11): F8-auc, A8-auc, A10-auc.",experiments/FIGS/k8s/job-render-gallery-2093036-raunav.yaml
 mtx2-tests-book-2093036-raunav,2026-11-11T22:11:18Z,launched,"Table and figure tests at 2093036.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-2093036-raunav.yaml
+render-gallery-2093036-raunav,2026-11-11T22:18:41Z,complete,"AUC pages drawn; the map no longer fitted (three more rows) and two pages had been put in the main text; moved to the appendix as one row.",experiments/FIGS/k8s/job-render-gallery-2093036-raunav.yaml
+mtx2-tests-book-2093036-raunav,2026-11-11T22:18:41Z,complete,"117 passed, 3 failed (main-text list, appendix numbers); fixed at 4e13d0f.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-2093036-raunav.yaml
+render-gallery-4e13d0f-raunav,2026-11-11T22:18:41Z,launched,"AUC scaling figures in the appendix after A10.",experiments/FIGS/k8s/job-render-gallery-4e13d0f-raunav.yaml
+mtx2-tests-book-4e13d0f-raunav,2026-11-11T22:18:41Z,launched,"Table and figure tests at 4e13d0f.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-4e13d0f-raunav.yaml

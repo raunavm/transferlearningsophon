@@ -30,7 +30,7 @@ PROVISIONAL = {}     # nothing waits: the fine-tuned read-out (2026-11-09) and X
 SCULPT_FLAV = "No flavor-boundary partition sculpts the QCD mass differently from 188 classes beyond 3σ."
 FJ_S = "Cited beside [[FJ]]: partitions, linear probes, from scratch."
 SCATTER_S = "Cited from [[F3-main]]: the other scatter panels."
-AUC_S = "Cited beside [[F8]], [[A8]] and [[A10]]: the same in AUC."
+AUC_S = "[[F8]], [[A8]] and [[A10]] in AUC."
 XBX = "17 classes keep fewer X→bb̄ and X→bs signal jets than 188 on Sophon's samples."
 
 # (gallery id, tier, draft sentence), in paper order within each tier; items that share a sentence share a row on the map
@@ -68,9 +68,8 @@ _FIGURES = (
     ("F10a", APPENDIX, "Head cuts sculpt the QCD mass beyond a random selection at 10% QCD efficiency for all, at 1% only "
                        "for 17 classes and two flavor partitions."),
     # PI 2026-11-09: the main text reports exactly the differences beyond 3 sigma (tab:sculptboot), nothing else
-    ("F10b", APPENDIX, "17 classes sculpt the QCD mass more than 188 at 1% QCD efficiency, 43 at 10%; mass regression "
-                       "reduces it for 162 classes at 10%; every other difference (17 + mass, flavor boundaries) is "
-                       "within the uncertainty."),
+    ("F10b", APPENDIX, "17 classes sculpt the QCD mass more than 188 at 1% QCD efficiency, 43 at 10%; a mass "
+                       "regression reduces it for 162 at 10%; every other difference is within the uncertainty."),
     ("F10b-flav", APPENDIX, SCULPT_FLAV),
     ("F10c", APPENDIX, "At 50% resonant efficiency no label-set difference in QCD mass sculpting exceeds three times "
                        "its uncertainty."),
