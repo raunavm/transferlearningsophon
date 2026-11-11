@@ -117,6 +117,12 @@ SIZE_PANELS = (("jc2", "jc2_188", "accuracy", "JetClass-II", "Accuracy"),
                ("jc1", "jc1", "accuracy", "JetClass", "Accuracy"),
                ("top", "top", "r30", "Top tagging", r"$R_{30}$"),
                ("qg", "qg", "r30", "Quark/gluon tagging", r"$R_{30}$"))
+# the same four tasks in AUC: averaged over the classes (one against the rest) on JetClass-II and JetClass, of the
+# binary task on top and quark/gluon (PI 2026-11-11)
+SIZE_PANELS_AUC = (("jc2", "jc2_188", "macro_auc_ovr", "JetClass-II", "Mean AUC over classes"),
+                   ("jc1", "jc1", "macro_auc_ovr", "JetClass", "Mean AUC over classes"),
+                   ("top", "top", "auc", "Top tagging", "AUC"),
+                   ("qg", "qg", "auc", "Quark/gluon tagging", "AUC"))
 F8B_SHOWN = ("L188", "R16_Q1", "R16_Q1_MASS")
 WPS = (("0.1", "-"), ("0.01", ":"))
 # ROC panels: main and ratio axes' heights; the configurations compared with the 188-class mean,
@@ -926,12 +932,13 @@ def scratch_series(M, per, key: str, met: str) -> dict:
 
 def probe_series(M, I, runs, ds: str, met: str, row: str, chosen: dict) -> dict:
     """{training jets: [linear-probe value of each run of row]}: JetClass-II and JetClass from the
-    v4 fits; top and quark/gluon R30 under the substitution chosen on validation (zero while it is
+    v4 fits; top and quark/gluon (R30 or AUC) under the substitution chosen on validation (zero while it is
     pending), as the tables (mlst_results._bench_rec, _bench_sizes)."""
     fits, fill = I["fits"], I["fill"]
     if ds in ("top", "qg"):
         sizes = M._bench_sizes(fits, fill, chosen, ds)
-        get = lambda m, n: M._rej(M._bench_rec(fits, fill, chosen, m, ds, n), "r30")
+        get = lambda m, n: (lambda r: M._rej(r, met) if met.startswith("r") else None if r is None else r.get(met))(
+            M._bench_rec(fits, fill, chosen, m, ds, n))
     else:
         sizes = sorted({n for f in fits.values() for ck in f["cells"].values() for n in ck.get(ds, {})}, key=int)
         get = lambda m, n: (lambda r: None if r is None else r.get(met))(M._probe_rec(fits, m, ds, n))

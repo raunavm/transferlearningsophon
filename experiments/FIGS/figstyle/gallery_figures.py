@@ -21,9 +21,9 @@ import style_v5 as S
 
 MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_roc, gallery_inventory)
 ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement): main text,
-         "F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11",
+         "F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "F8-auc", "A8", "A8-auc", "F9b", "F11",
          # appendix
-         "FJ", "F4-other", "F4-mech-ft", "PT", "F6", "F6-app", "A10", "F9a", "F10a", "F10b", "F10b-flav", "F10c",
+         "FJ", "F4-other", "F4-mech-ft", "PT", "F6", "F6-app", "A10", "A10-auc", "F9a", "F10a", "F10b", "F10b-flav", "F10c",
          "F10a-flav", "F10-ft", "UMAP-jc2-had", "VAL",
          # supplement
          "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "CONF", "F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2", "A3R",
@@ -35,7 +35,7 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
 # F11 waits for its samples, and the pages still coming back through the gallery are not here; F3, F3-scatter, F4 and
 # F4-app were dropped (gallery_placement.DROPPED, PI 2026-11-08)
 PAPER = ("F1", "F2a", "F2b", "F3-app", "F3-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F6", "F6-app", "F8",
-         "A8", "A10", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",
+         "F8-auc", "A8", "A8-auc", "A10", "A10-auc", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",
          "A3R", "A3R-ft", "VAL")      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
 
 

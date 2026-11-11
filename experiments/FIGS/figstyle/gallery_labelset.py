@@ -26,6 +26,10 @@ X_CLASSES, X_JETS = "Number of pretraining classes", "Number of training jets"
 LEGEND_PANEL = 1        # JetClass: its curves stay high on the right, so its lower right is empty in F2, F8 and A10
 TITLES = {key: title for key, _, _, _, title, _ in P.F2_PANELS}
 PUBLISHED = {"jc1": (2_000_000, 0.836), "top": (1_200_000, 1602.0), "qg": (1_600_000, 101.2)}     # ParT's published values, as in the paper's benchmark tables
+# ParT's published AUCs, as in the same tables (JetClass: averaged over class pairs, equal to one against the rest on
+# its balanced test set, which mlst_v4 checks)
+PUBLISHED_AUC = {"jc1": (2_000_000, 0.9834), "top": (1_200_000, 0.9858), "qg": (1_600_000, 0.9121)}
+Y_OF = {"accuracy": "Accuracy", "r30": r"Rejection ($R_{30}$)", "macro_auc_ovr": "Mean AUC over classes", "auc": "AUC"}
 
 
 def _chosen() -> dict:
@@ -312,31 +316,32 @@ def _model(series: dict, key: str, mode: str, label: str) -> tuple:
 SIZE_PAD = 1.7              # a panel's x axis runs from its smallest training set over SIZE_PAD to its largest times it
 
 
-def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int = 3) -> None:
+def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int = 3, auc: bool = False) -> None:
     """series_of(key, ds, met): [(series, line, mark, label)] of a panel. Round 4: four 6.5 cm panels, the legend above
-    in ncol columns."""
-    panels = [series_of(key, ds, met) for key, ds, met, *_ in P.SIZE_PANELS]
+    in ncol columns. auc: the same four tasks in AUC (P.SIZE_PANELS_AUC) with ParT's published AUCs."""
+    spec, published = (P.SIZE_PANELS_AUC, PUBLISHED_AUC) if auc else (P.SIZE_PANELS, PUBLISHED)
+    panels = [series_of(key, ds, met) for key, ds, met, *_ in spec]
     if not any(s for p in panels for s, *_ in p):
         raise C.Absent(absent)
     rows = math.ceil((max(len(p) for p in panels) + 1) / ncol)       # the series and the published star
     fig, axes, _ = S.grid_cm(2, 2, w=6.35, aspect=0.85, top=1.4 + 0.42 * rows, left=1.4, wgap=0.8)
-    for k, (ax, panel, (key, _, met, *_)) in enumerate(zip(axes.flat, panels, P.SIZE_PANELS)):
+    for k, (ax, panel, (key, _, met, *_)) in enumerate(zip(axes.flat, panels, spec)):
         ax.set_xscale("log")
-        ns = [n for s_, *_ in panel for n in s_] + ([PUBLISHED[key][0]] if key in PUBLISHED else [])
+        ns = [n for s_, *_ in panel for n in s_] + ([published[key][0]] if key in published else [])
         if ns:                        # each panel's range from its own points: no empty decade (PI 2026-11-11)
             ax.set_xlim(min(ns) / SIZE_PAD, max(ns) * SIZE_PAD)
         ax.xaxis.set_major_formatter(ticker.FuncFormatter(S.pow10))
         ax.xaxis.set_minor_formatter(ticker.NullFormatter())
         S.title(ax, TITLES[key])
-        S.labels(ax, X_JETS if k >= 2 else None, (Y_R30 if met == "r30" else Y_ACC) if k % 2 == 0 else None)
+        S.labels(ax, X_JETS if k >= 2 else None, Y_OF[met] if k % 2 == 0 else None)
         if not any(s for s, *_ in panel):
             _empty_panel(ax)
             continue
         S.fine_grid(ax)
         for series, line, mark, label in panel:
             _curve(ax, series, line, mark, label, band)
-        if key in PUBLISHED:
-            ax.plot(*PUBLISHED[key], color="#000000", marker="*", markersize=11, markeredgecolor="white", markeredgewidth=0.7,
+        if key in published:
+            ax.plot(*published[key], color="#000000", marker="*", markersize=11, markeredgecolor="white", markeredgewidth=0.7,
                     linestyle="none", label="ParT, published", zorder=10)    # on top of every marker, large enough to see
         if met == "r30":
             _log_y(ax)
@@ -352,7 +357,7 @@ def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int
     S.save(fig, path)
 
 
-def draw_f8(path) -> None:
+def draw_f8(path, auc: bool = False) -> None:
     """One model in three modes: fine-tuned in the 188 colour, the linear probe in its 40% tint (style_v5.TINT_188,
     used only here), from scratch dark grey."""
     chosen = _chosen()
@@ -364,24 +369,25 @@ def draw_f8(path) -> None:
                                     f"{S.LEGEND['L188']} {S.PROBE}"),
                                    _model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft",
                                           S.LEGEND['SCRATCH'])]
-    _draw_size(path, series, True, "no fine-tuning read-outs or linear probes", "188-class pretraining against training from scratch",
-               ncol=2)
+    _draw_size(path, series, True, "no fine-tuning read-outs or linear probes", "188-class pretraining against training from scratch"
+               + (", AUC" if auc else ""), ncol=2, auc=auc)
 
 
-def draw_a10(path) -> None:
+def draw_a10(path, auc: bool = False) -> None:
     chosen = _chosen()
     series = lambda key, ds, met: [_model(P.probe_series(M, I, RUNS, ds, met, row, chosen), row, "ft", S.LEGEND[row])   # probes only: solid
                                    for row in S.LEVELS] + [_model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft",
                                                                   S.LEGEND['SCRATCH'])]
-    _draw_size(path, series, True, "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
+    _draw_size(path, series, True, "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features"
+               + (", AUC" if auc else ""), auc=auc)
 
 
-def draw_a8(path) -> None:
+def draw_a8(path, auc: bool = False) -> None:
     """A10's form after fine-tuning: the four label sets and from scratch."""
     series = lambda key, ds, met: [_model(P.ft_series(M, I["per"], RUNS, key, met, row), row, "ft", S.LEGEND[row])
                                    for row in S.LEVELS] + [_model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft",
                                                                   S.LEGEND["SCRATCH"])]
-    _draw_size(path, series, True, "no fine-tuning read-outs", "Fine-tuned")
+    _draw_size(path, series, True, "no fine-tuning read-outs", "Fine-tuned" + (", AUC" if auc else ""), auc=auc)
 
 
 # ------------------------------------------------------------------ the UMAP and the pretraining curve
@@ -659,6 +665,20 @@ PAGES = [
                   "1,000,000: all three from-scratch runs and 3 of 16 pretrained runs reached the 40-epoch limit, so "
                   f"from scratch is probably still improving there. {SUBST_NOTE}"),
     C.Page(
+        id="F8-auc",
+        title="Pretraining against the number of training jets, AUC",
+        precedent=["2401.13537/fig3.png"],
+        precedent_label="Golling Fig. 3",
+        caption="The network pretrained on JetClass-II with 188 classes, fine-tuned (f.t.) and as a linear probe "
+                "on its frozen features (LP), and a network trained from scratch: "
+                "the AUC averaged over the classes (one against the rest) on class-balanced JetClass-II and JetClass "
+                "and the AUC of top and quark/gluon tagging, "
+                "against the number of training jets. Points are means, bands the SD over three pretraining runs (from "
+                "scratch: three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; "
+                "quark/gluon: kinematic and particle type).",
+        differs="F8's form in AUC (PI 2026-11-11: the scaling figures need AUC as well as accuracy and rejection).",
+        draw=lambda path: draw_f8(path, auc=True)),
+    C.Page(
         id="A8",
         title="Fine-tuned against the number of training jets (appendix)",
         precedent=["2401.13537/fig3.png"],
@@ -673,6 +693,20 @@ PAGES = [
         draw=draw_a8,
         data_note="From the fine-tuning read-outs as they stand: the long-budget cells at 10^6 on JetClass and "
                   "JetClass-II, and the small-size benchmark cells still running, replace their points when read out."),
+    C.Page(
+        id="A8-auc",
+        title="Fine-tuned against the number of training jets, AUC (appendix)",
+        precedent=["2401.13537/fig3.png"],
+        precedent_label="Golling Fig. 3",
+        caption="Fine-tuned networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, and (dashed) a "
+                "network trained from scratch: "
+                "the AUC averaged over the classes (one against the rest) on class-balanced JetClass-II and JetClass "
+                "and the AUC of top and quark/gluon tagging, "
+                "against the number of training jets. Points are means, bands the SD over three pretraining runs (from "
+                "scratch: three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; "
+                "quark/gluon: kinematic and particle type).",
+        differs="A8's form in AUC (PI 2026-11-11: the scaling figures need AUC as well as accuracy and rejection).",
+        draw=lambda path: draw_a8(path, auc=True)),
     C.Page(
         id="A10",
         title="Linear probes against the number of training jets",
@@ -690,6 +724,20 @@ PAGES = [
                 "frame, as Golling. Log y on R30.",
         draw=draw_a10,
         data_note=SUBST_NOTE),
+    C.Page(
+        id="A10-auc",
+        title="Linear probes against the number of training jets, AUC",
+        precedent=["2401.13537/fig3.png"],
+        precedent_label="Golling Fig. 3",
+        caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and "
+                "17 classes, and (dashed) a network trained from scratch: "
+                "the AUC averaged over the classes (one against the rest) on class-balanced JetClass-II and JetClass "
+                "and the AUC of top and quark/gluon tagging, "
+                "against the number of training jets. Points are means, bands the SD over three pretraining runs (from "
+                "scratch: three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; "
+                "quark/gluon: kinematic and particle type).",
+        differs="A10's form in AUC (PI 2026-11-11: the scaling figures need AUC as well as accuracy and rejection).",
+        draw=lambda path: draw_a10(path, auc=True)),
     *[_umap_page(page) for page in UMAP_PAGES],
     C.Page(
         id="VAL",

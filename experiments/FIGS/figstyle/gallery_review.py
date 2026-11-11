@@ -37,6 +37,9 @@ REVIEW = {
     "F3-app": (3, FIXED + SCATTER_NOTE),
     "F3-app2": (3, FIXED + SCATTER_NOTE),
     "F3-app3": (1, "new page, not yet reviewed."),
+    "F8-auc": (1, "new page, not yet reviewed."),
+    "A8-auc": (1, "new page, not yet reviewed."),
+    "A10-auc": (1, "new page, not yet reviewed."),
     "F3-ft": (3, FIXED + SCATTER_NOTE),
     "F3-ft2": (3, FIXED + SCATTER_NOTE),
     "A3R": (3, CLEAN),
@@ -59,6 +62,10 @@ NAMES = "short legend names (188 classes, no pretraining, ...) with a mode tag (
 CAPTION = "caption opens with what was trained on what"
 TICKS = "rejection ticks in plain numbers (no small exponents)"
 CHANGES = {
+    "F8-auc": "NEW: F8 in AUC (PI 2026-11-11): the AUC averaged over the classes on JetClass-II and JetClass, the AUC of "
+              "top and quark/gluon tagging, with ParT's published AUCs.",
+    "A8-auc": "NEW: A8 in AUC, as F8-auc.",
+    "A10-auc": "NEW: A10 in AUC, as F8-auc.",
     "INVENTORY": "CHANGED: the map of the story-based placement (PI, 2026-11-08): tier, number, draft sentence and "
                  "evidence of every item; the sculpting test; book numbers; printed at 100%.",
     "PALETTE": "CHANGED: F4-mech in place of the dropped F4 in the colour-vision renders.",

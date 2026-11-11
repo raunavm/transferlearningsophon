@@ -44,8 +44,10 @@ _FIGURES = (
                       "in a 17-class partition recovers part of the loss, except on X→bb̄ vs cc̄."),
     ("F8", MAIN, "Fine-tuning the 188-class network beats training from scratch on JetClass-II and JetClass at every "
                  "size; on top and quark/gluon tagging the two are consistent."),
+    ("F8-auc", MAIN, "Cited beside [[F8]]: the same models and tasks in AUC."),
     ("A8", MAIN, "Fine-tuned, 17 classes stay lowest on JetClass-II at every size and below 188 on JetClass at 10,000 "
                  "and a million jets; top and quark/gluon are consistent."),
+    ("A8-auc", MAIN, "Cited beside [[A8]]: the same networks in AUC."),
     ("F9b", MAIN, "An auxiliary mass regression gives a better jet-mass resolution than the soft-drop mass, shown in "
                   "bins of jet pT and generator mass."),
     ("F11", MAIN, XBX),
@@ -60,6 +62,7 @@ _FIGURES = (
     ("F6-app", APPENDIX, "On the full top and quark/gluon sets every linear probe stays below fine-tuning."),
     ("A10", APPENDIX, "At every size the 43- and 17-class probes fall behind 188 on JetClass-II, 162 at all sizes but "
                       "10,000 jets; on JetClass 17 fall below 43 only."),
+    ("A10-auc", APPENDIX, "Cited beside [[A10]]: the same probes in AUC."),
     ("F9a", APPENDIX, "The mass output's response is narrower than the soft-drop mass's."),
     ("F10a", APPENDIX, "Head cuts sculpt the QCD mass beyond a random selection at 10% QCD efficiency for all, at 1% only "
                        "for 17 classes and two flavor partitions."),
@@ -121,9 +124,9 @@ _TABLES = (
 # what a sentence rests on beyond its own item
 EVIDENCE = {
     "F2a": ("tab:probes",), "F2b": ("tab:jetclass", "tab:benchtop + tab:benchqg"), "F3-main": ("tab:ft",),
-    "F4-mech": ("tab:pairs",), "F8": ("tab:ft",), "A8": ("tab:ft",), "F9b": ("tab:massdetail",),
+    "F4-mech": ("tab:pairs",), "F8": ("tab:ft",), "F8-auc": ("tab:ft",), "A8": ("tab:ft",), "A8-auc": ("tab:ft",), "F9b": ("tab:massdetail",),
     "F4-other": ("tab:pairs",), "F4-mech-ft": ("tab:pairs",), "F6": ("tab:benchtop + tab:benchqg", "tab:boot"),
-    "F6-app": ("tab:ft",), "A10": ("tab:probes",), "F9a": ("tab:massdetail",),
+    "F6-app": ("tab:ft",), "A10": ("tab:probes",), "A10-auc": ("tab:probes",), "F9a": ("tab:massdetail",),
     **{k: ("tab:sculpt", "tab:sculptboot") for k in ("F10b", "F10b-flav", "F10c", "F10a-flav")}, "tab:mass": ("tab:massdetail",),
 }
 TIER = {k: t for k, t, _ in _FIGURES + _TABLES}
