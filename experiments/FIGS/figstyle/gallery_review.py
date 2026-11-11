@@ -92,7 +92,8 @@ CHANGES = {
               "floor (absent until the fine-tuned sculpting job is read out).",
     "F10c": "NEW: 1/JSD50 against R50 per model, DisCo Fig. 3's plane, bars of the spread over pretraining runs on both "
             "axes, from head/sculpting_v3's sig_eff_50; legend in three columns, clear of the panel.",
-    "F11": f"CHANGED: {NAMES}; {CAPTION}.",
+    "F11": "CHANGED: both panels now on Sophon's samples (were stand-in jets and an empty panel): the transfer classifiers of the "
+           "four label sets, the 188-class direct discriminant on X→bb, from scratch on X→bs.",
     "VAL": f"CHANGED: {NAMES}; {CAPTION}.",
     "A10": f"CHANGED: SD bands over pretraining runs, as F8; {NAMES}; {CAPTION}.",
     "A8": f"CHANGED: SD bands over pretraining runs, as F8; {NAMES}; {CAPTION}.",

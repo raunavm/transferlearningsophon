@@ -15,7 +15,6 @@ import re
 MAIN, APPENDIX, SUPPLEMENT = "main", "appendix", "supplement"
 TIERS = (MAIN, APPENDIX, SUPPLEMENT)
 TIER_NAME = {MAIN: "Main text", APPENDIX: "Appendix", SUPPLEMENT: "Supplement"}
-SAMPLES = "waits for the samples"
 FT_READOUT = "waits for the fine-tuned read-out"
 # F10b's promotion to the main text (plan "Sculpting condition", PI 2026-11-08), sign included: at 1% QCD efficiency
 # the 17-class head sculpts more than the 188-class one (17 - 188 > 0) and the mass regression takes that back
@@ -27,11 +26,12 @@ F10B_WP = "eps_b=0.01"
 F10B_STATED = (("17-188", "eps_b=0.01"), ("43-188", "eps_b=0.1"), ("162mass-162", "eps_b=0.1"))
 # a placement that waits on a result; the two tables only while they hold pending cells (make_results_book sets a
 # PROVISIONAL table with its pending cells, and a box for a PROVISIONAL figure not drawn yet)
-PROVISIONAL = {"F11": SAMPLES, "tab:xbx": SAMPLES, "tab:xbxrej": SAMPLES}     # the fine-tuned read-out is in (2026-11-09)
+PROVISIONAL = {}     # nothing waits: the fine-tuned read-out (2026-11-09) and X→bb/X→bs on Sophon's samples (2026-11-11) are in
 SCULPT_FLAV = "No flavor-boundary partition sculpts the QCD mass differently from 188 classes beyond 3σ."
 FJ_S = "Cited beside [[FJ]]: partitions, linear probes, from scratch."
 SCATTER_S = "Cited from [[F3-main]]: the other scatter panels."
-XBX = "X→bb̄ and X→bs transfer: written when the samples arrive."
+XBX = ("On Sophon's X→bb̄ and X→bs samples a classifier on 17-class frozen features keeps fewer signal jets at 1% QCD "
+       "efficiency than one on 188-class features: 66% against 72%, and 59% against 69%.")
 
 # (gallery id, tier, draft sentence), in paper order within each tier; items that share a sentence share a row on the map
 _FIGURES = (

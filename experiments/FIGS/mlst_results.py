@@ -3438,6 +3438,9 @@ def table_xbx_rej(xfits, scr, runs, fmt_pm) -> str:
         cells = []
         for sig, name in cols:
             nm = "linear" if arm == INIT and name == "head" else name
+            if all(sig in xfits.get(m, {}) and xfits[m][sig].get(nm) is None for m in ms):
+                cells += ["--", "--"]           # every run is fitted and none has this read-out: it cannot be formed
+                continue
             cells += [_cell([_xr30(xfits, m, sig, nm, k) for m in ms], len(ms), fmt_pm) for k in ("r50", "r30")]
         out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
     s = scr.get("xbs", [])

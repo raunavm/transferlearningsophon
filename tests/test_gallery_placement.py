@@ -48,9 +48,8 @@ def test_the_main_text_is_the_pis_list_in_order():
     assert main == ["F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11"]
     assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:jetclass", "tab:benchtop + tab:benchqg", "tab:mass",
                                                           "tab:xbx", "tab:xbxrej"]
-    # the fine-tuned read-out is in (2026-11-09): only X->bb/X->bs waits, for its samples
-    assert G.PROVISIONAL == {"F11": "waits for the samples", "tab:xbx": "waits for the samples",
-                             "tab:xbxrej": "waits for the samples"}
+    # the fine-tuned read-out (2026-11-09) and X->bb/X->bs on Sophon's samples (2026-11-11) are in: nothing waits
+    assert G.PROVISIONAL == {}
     assert set(G.PROVISIONAL) <= set(G.TIER) and all(v.isascii() for v in G.PROVISIONAL.values())    # the book's boxes
     # F10b in the appendix between F10a and F10c, F10b-flav beside it: the bootstrap's 17 + mass - 17 at 1% is -2.0 sigma
     appendix = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
@@ -83,7 +82,7 @@ def test_numbers_count_within_each_tier_and_kind():
     assert G.number("F1") == "Fig. 1" and G.number("F3-main") == "Fig. 4" and G.number("FJ") == "Fig. A1"
     assert G.number("tab:jetclass") == "Table 1" and G.number("tab:probes") == "Table A1"
     assert G.number("FJ-ctrl") == "Fig. S1" and G.number("tab:perrun") == "Table S1"
-    assert G.place("F10b") == "Appendix, Fig. A10" and G.place("F11") == "Main text, Fig. 9; waits for the samples"
+    assert G.place("F10b") == "Appendix, Fig. A10" and G.place("F11") == "Main text, Fig. 9"
     assert G.number("tab:sculptboot") == "Table A14" and G.number("tab:boot") == "Table A15"
 
 
@@ -157,6 +156,7 @@ def test_the_book_boxes_only_a_provisional_figure_the_render_lacks(monkeypatch, 
     monkeypatch.setattr(book, "table_item", lambda key, tier: "")
     monkeypatch.setattr(book, "figure", lambda pid, rec, src: f"FIGURE {pid}\n")
     main = [k for k, t, _ in G.FIGURES if t == G.MAIN]
+    monkeypatch.setattr(G, "PROVISIONAL", {"F11": "waits for the samples"})
     pages = [{"id": k, "drawn": k != "F11"} for k, _, _ in G.FIGURES]
     (tmp_path / "pages.json").write_text(json.dumps(pages))
     monkeypatch.setattr(book, "OUTPUTS", {**book.OUTPUTS, "main": ("main_only", (G.MAIN,))})

@@ -32,8 +32,6 @@ SCULPT_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS")
 F10A_TOP = 260.0        # GeV, F10a: the bin edge that covers CMS Fig. 8's 30 to 250 GeV
 F10B_FROM = 5e-3        # F10b: the first point is the 5.2e-3 grid point; CMS Fig. 9 left stops at 0.5%
 DIRECT_LOOK = S.look("L188", linestyle="-.")     # F11: the 188-class model read out another way, as F8's linear probe
-FITS = pathlib.Path("/data/results/eval/xbx/fits")      # the dry-run fits on the stand-in jets: cluster only
-STANDIN = "xbb_jc2"
 
 
 def _fit_y(ax, values: list, room: float = 0.0, pad: float = 0.08) -> None:
@@ -578,39 +576,38 @@ def draw_f10c(path: pathlib.Path) -> None:
 
 
 # ------------------------------------------------------------------ F11
-def _standin_series(XR, fits: dict) -> list:
-    """(label, look, readouts per run) on the stand-in jets: the 188-class output scores (Sophon's direct
-    discriminant, Eq. 4), then each label set's classifier on the frozen features (the fits' "head"; the linear
-    probe where a fit has none)."""
-    of = lambda row, key: [r for m in RUNS[row] if (r := XR.readout(fits.get(m, {}).get(STANDIN, {}), key))]
+def _xbx_series(XR, signal: str) -> list:
+    """(label, look, readouts per run) of one signal on Sophon's samples (xbx/, pulled): for X->bb the 188-class
+    output scores (Sophon's direct discriminant, Eq. 4), then each label set's transfer classifier on the frozen features (the tables' read-out),
+    then for X->bs the networks trained from scratch (xbx_scratch/)."""
+    fits = I["xbx"]
+    of = lambda row, key: [r for m in RUNS[row] if (r := XR.readout(fits.get(m, {}).get(signal, {}), key))]
     out = []
-    if direct := of("L188", "zero_shot_xbb"):
+    if signal == "xbb" and (direct := of("L188", "zero_shot_xbb")):
         out.append((f"{S.LEGEND['L188']} (direct discriminant)", DIRECT_LOOK, direct))
     for row in S.LEVELS:
-        for key, word in (("head", "(transfer)"), ("linear", S.PROBE)):
-            if rs := of(row, key):
-                out.append((f"{S.LEGEND[row]} {word}", S.look(row), rs))
-                break
+        if rs := of(row, "head"):
+            out.append((f"{S.LEGEND[row]} (transfer)", S.look(row), rs))
+    if scr := I["xbx_scratch"].get(signal, []):
+        out.append((S.LEGEND["SCRATCH"], S.look("SCRATCH"), scr))
     return out
 
 
 def draw_f11(path: pathlib.Path) -> None:
-    if not FITS.is_dir():
-        raise Absent(f"the stand-in fits ({FITS}) are on the cluster only")
     XR = P._xr()
-    series = _standin_series(XR, XR.load(FITS))
-    if not series:
-        raise Absent(f"no {STANDIN} readout of the label sets under {FITS}")
+    panels = [(sig, _xbx_series(XR, sig)) for sig, _ in XR.SIGNALS]
+    if not all(series for _, series in panels):
+        raise Absent(f"X→bb and X→bs fits on Sophon's samples ({P.DATA / 'xbx'}): not pulled")
     fig, axes = plt.subplots(2, 1, figsize=S.ONE_PANEL, sharex=True)
     top = 0.0
-    for label, style, rs in series:
-        x, y, _ = P.xbx_curves(M, rs)
-        mean = y.mean(axis=0)
-        axes[0].plot(x, mean, **style, linewidth=S.LW_CURVE, label=label)
-        top = max(top, float(np.nanmax(mean)))
-    S.legend(axes[0])
-    for ax, what in zip(axes, (r"$X\rightarrow bb$ tagging performance, stand-in jets",
-                               r"$X\rightarrow bs$ tagging performance")):
+    for ax, (_, series) in zip(axes, panels):
+        for label, style, rs in series:
+            x, y, _ = P.xbx_curves(M, rs)
+            mean = y.mean(axis=0)
+            ax.plot(x, mean, **{**style, "linewidth": S.LW_CURVE}, label=label)
+            top = max(top, float(np.nanmax(mean)))
+        S.legend(ax)
+    for ax, what in zip(axes, (r"$X\rightarrow bb$ tagging performance", r"$X\rightarrow bs$ tagging performance")):
         S.fine_grid(ax)
         ax.set_xscale("log")
         ax.set_xlim(1e-5, 1)
@@ -859,11 +856,11 @@ F10C_CAPTION = (
     "QCD test jets and of those passing a cut on 1 - g_QCD (y), against the QCD rejection (x), both at the cut "
     "that keeps 50% of resonant test jets. Points are means, bars the SD over pretraining runs (range over two).")
 F11_CAPTION = (
-    "Networks pretrained on JetClass-II: signal efficiency over the square root of the background efficiency "
-    "against QCD efficiency for X→bb on stand-in JetClass-II jets (upper) and X→bs (lower, no samples yet), from "
-    "the direct discriminant of the 188-class pretraining head and from a classifier trained on the frozen "
-    "features of each network (LP: linear probe). Curves are means over pretraining runs and end where fewer than "
-    "20 background jets remain.")
+    "Networks pretrained on JetClass-II, on Sophon's X→bb (upper) and X→bs (lower) samples against QCD jets in the "
+    "soft-drop mass window: signal efficiency over the square root of the background efficiency against QCD "
+    "efficiency, from a classifier trained on the frozen features of each network (transfer), from the direct "
+    "discriminant of the 188-class pretraining head (X→bb) and from networks trained from scratch (X→bs). Curves are means over "
+    "pretraining runs and end where fewer than 20 background jets remain.")
 PT_CAPTION = (
     "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on the "
     "frozen features, trained and scored on class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining "
@@ -1016,18 +1013,16 @@ PAGES = [
     Page("F11", "Resonance tagging", ["2405.12972/fig2.png"], "Sophon Fig. 2", F11_CAPTION,
          "Same layout, limits on x, fonts and legend place; round 3's faint grid and thinner lines. y axis eps_S/sqrt(eps_B), in words figure of merit, instead of the "
          "significance Z, and x axis QCD efficiency instead of SM background efficiency, because Z needs the SM backgrounds, which "
-         "we do not have. Upper panel on stand-in jets from JetClass-II, not Sophon's samples. Lower panel empty, "
-         "not invented curves. Roles: the 188-class direct discriminant is Sophon's direct curve, in the 188 colour dash-dot, "
-         "a second read-out of the 188-class model as F8's linear probe (Sophon: grey, dotted); the four classifiers on frozen features take Sophon's transfer role, moved "
-         "to X→bb on the stand-in because X→bs has no samples; Sophon* (42 classes, separately trained) has no counterpart; "
-         "from-scratch curves take the ParT and ParticleNet role and are not drawn yet. Five series against Sophon's four. "
-         "Solid lines but the dash-dot discriminant, where Sophon's are dotted for two series. y limits from the data, with the top at "
+         "we do not have. Both panels on Sophon's samples. Roles: the 188-class direct discriminant is Sophon's direct curve, in the 188 colour dash-dot "
+         "(Sophon: grey, dotted); the four classifiers on frozen features take Sophon's transfer role, on both signals; "
+         "Sophon* (42 classes, separately trained) has no counterpart; the from-scratch networks take the ParT and ParticleNet role on X→bs. "
+         "y limits from the data, with the top at "
          "1.5 times the highest curve to clear the legend, not 0 to 5.4. Curves have 26 points or fewer (the fits' "
          "efficiency grid) and end at 20 background jets, so they are coarser and shorter than Sophon's.",
          draw_f11,
-         "Stand-in only: X→bb from JetClass-II jets, /data/results/eval/xbx/fits (cluster), so the page is absent off "
-         "the cluster. X→bs: no samples exist, the panel is empty. The significance Z is not computed: it needs the SM "
-         "backgrounds. From scratch is not drawn: only a two-epoch dry run exists."),
+         "Reads xbx/<signal>/<model>.json and xbx_scratch/xbs/s<k>.json (pulled 2026-11-11). The significance Z is not "
+         "computed: it needs the SM backgrounds. No from-scratch network was trained on X→bb, and X→bs has no direct "
+         "discriminant (no pretraining class)."),
     Page("PT", "Performance against jet pT", ["2004.08262/fig17.png", "1808.07858/fig2.png"],
          "CMS DeepAK8 Fig. 17, ATLAS top/W Fig. 2", PT_CAPTION,
          "Absolute values per pT bin (round 4): accuracy in (a)-(c) and the X→bb̄ against X→cc̄ AUC in (d), not the "
