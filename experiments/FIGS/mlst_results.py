@@ -3974,7 +3974,8 @@ CAPTION_SHORT = {
     "probes": f"Linear probes on the frozen features of {NETS} and of the controls, at each task's largest training "
               "set. Upper part: JetClass-II (class-balanced test set) and JetClass. Lower part: top and quark/gluon "
               "tagging (also on Herwig jets). Accuracy, AUC averaged over the classes, " + RHO_SHORT + ", and the "
-              "background rejections $R_{50}$ and $R_{30}$. " + SD_SHORT + " $^{*}$: a probe that did not converge.",
+              "background rejections $R_{50}$ and $R_{30}$. Below the rule: the released Sophon checkpoint, outside the "
+              "controlled comparison. " + SD_SHORT + " $^{*}$: a probe that did not converge.",
     "pairs": f"Pairs of JetClass-II classes separated by {NETS} and by the controls: the AUC of a binary linear probe "
              "on the frozen features (LP) and of the network fine-tuned on $10^{6}$ class-balanced JetClass-II jets "
              "(f.t.), and " + RHO_SHORT + " in the same mode; the two modes are scored on different test jets. "
@@ -4013,7 +4014,7 @@ CAPTION_SHORT = {
                    "and QCD jets: resolution and median response of the regression output of the models pretrained "
                    "with the mass regression and of ridge and multilayer-perceptron regressions on frozen features "
                    "(upper part), and of the soft-drop mass and the regression output against jet "
-                   "$p_{\\mathrm{T}}$ and the generator-level soft-drop mass (lower parts). " + SD_SHORT,
+                   "$p_{\\mathrm{T}}$ and the generator-level soft-drop mass (lower parts); __BLANK__ " + SD_SHORT,
     "sculpt": f"Mass sculpting by the output scores of {NETS}, with 162 and 17 classes plus a mass "
               "regression__SCULPT_FLAV__: Jensen--Shannon distance (base 2) $\\times10^{2}$ between the "
               "$m_{\\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on "
@@ -4372,6 +4373,27 @@ def _stretch(tab: str) -> str:
                   tab, count=1).replace(r"\end{tabular}", r"\end{tabular*}")
 
 
+def _turned_long(blocks: list, cap: str, label: str, tail: list) -> str:
+    """Blocks of a table too wide for the upright page and too tall for the turned one, as longtables in landscape:
+    each across the whole line, its rows breaking across pages under its repeated heading; the caption above the
+    first, "continued" above every later page and block."""
+    out = [r"\begin{landscape}", "{\\small", r"\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}"]
+    for k, b in enumerate(blocks):
+        m = re.match(r"\s*\\begin\{tabular\}\{([lc]+)\}(.*)\\end\{tabular\}\s*$", b, re.S)
+        if not m or r"\midrule" not in m.group(2):
+            raise SystemExit(f"FATAL: {label}: a block that is no plain tabular with a heading cannot be set as a longtable")
+        spec, inner = m.group(1), m.group(2)
+        head, rows = inner.split(r"\midrule", 1)
+        head = head.replace(r"\toprule", "").strip()
+        rows = rows.rsplit(r"\bottomrule", 1)[0].strip()
+        cont = rf"\multicolumn{{{len(spec)}}}{{l}}{{\textit{{Table~\ref{{{label}}} (continued)}}}} \\"
+        out += ([r"\addtocounter{table}{-1}"] if k else []) + [      # a longtable steps the counter: one number a table
+                r"\begin{longtable}{@{\extracolsep{\fill}}" + spec + "@{}}",
+                (rf"\caption{{{cap}}}\label{{{label}}}\\" if k == 0 else cont), r"\toprule", head, r"\midrule", r"\endfirsthead",
+                cont, r"\toprule", head, r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot", rows, r"\end{longtable}"]
+    return "\n".join(out + [*tail, "}", r"\end{landscape}", ""])
+
+
 def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, notes: list | None = None,
            label_cm: float = NO_WRAP, budget: float = PORTRAIT_CM) -> str:
     """A generated table (PI 2026-11-11): at the full text width; a tabular wider than the text block is set in
@@ -4390,17 +4412,19 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     parts = [_labels(uniform_columns(b.strip()), _mode_word(key, k)) for k, b in enumerate(body.split("%SPLIT%"))]
     parts = [re.sub(r"\\mbox\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", t) if "begin{tabular}" in t else t for t in parts]
     cap = _define_tags(cap, key)
+    tail = [rf"\par\smallskip{{\footnotesize {n}}}" for n in notes or []]
     cut = {o: [t.strip() for b in parts for t in split_wide(b, w, NO_WRAP)]
            for o, w in (("upright", PORTRAIT_CM), ("turned", LANDSCAPE_CM))}
     # upright when nothing is cut; turned when that keeps the table whole; a table cut either way takes the
     # orientation with fewer pages (upright on a tie: an upright page stacks more blocks)
     fits_turned = (_height_cm(cut["turned"][:1], "") + 0.45 * (len(cap) / 150 + 1) <= LAND_FULL_CM
                    and all(_height_cm([b], "") <= LAND_FULL_CM for b in cut["turned"][1:]))    # no block taller than the page
-    upright = len(cut["upright"]) == len(parts) or not fits_turned or (
+    upright = len(cut["upright"]) == len(parts) or (
         len(cut["turned"]) > len(parts) and _pages(cut["upright"], cap, PAGE_FULL_CM, 90)
         <= _pages(cut["turned"], cap, LAND_FULL_CM, 150))
+    if not upright and not fits_turned:     # wide and taller than a turned page: its rows break across turned pages
+        return _turned_long(cut["turned"], cap, label, tail)
     boxes = [_stretch(t) for t in cut["upright" if upright else "turned"]]
-    tail = [rf"\par\smallskip{{\footnotesize {n}}}" for n in notes or []]
     turn = ([r"\begin{landscape}"], [r"\end{landscape}"]) if not upright else ([], [])
     if _height_cm(boxes, cap) <= (PAGE_CM if upright else LAND_PAGE_CM):
         return "\n".join([*turn[0], rf"\begin{{{env}}}[t]", r"\centering", r"\small",

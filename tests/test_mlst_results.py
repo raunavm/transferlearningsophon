@@ -936,7 +936,7 @@ def test_the_ee_mumu_auc_over_the_partitions_that_merge_the_pair():
 
 def test_the_inputs_table_reads_which_inputs_each_data_set_lacks():
     t = M.table_inputs(ROOT, None)
-    assert r"electric charge & --- & $\bullet$" in t and r"$\sigma_{d_0}$ & --- & ---" in t
+    assert r"electric charge & -- & $\bullet$" in t and r"$\sigma_{d_0}$ & -- & --" in t     # one dash everywhere (PI 2026-11-11)
     assert r"$\Delta\eta$ & $\bullet$ & $\bullet$ & -- &" in t and r"\pending{offsets}" in t
     assert t.count(r" \\") == 17 + 1
 
@@ -1417,7 +1417,9 @@ def test_the_task_longtables_keep_each_heading_with_its_first_row(tmp_path):
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
     lines = t.splitlines()
     ncol = int(next(ln for ln in lines if ln.startswith(r"\multicolumn")).split("}")[0].split("{")[1])
-    assert r"\begin{longtable}{>{\raggedright\arraybackslash}p{" + M.LONG_LABEL_CM + "}" + "c" * (ncol - 1) + "}" in lines
+    # across the whole line, the row labels on one line (PI 2026-11-11), set in landscape
+    assert r"\begin{longtable}{@{\extracolsep{\fill}}l" + "c" * (ncol - 1) + "@{}}" in lines
+    assert lines[0] == r"\begin{landscape}" and r"\end{landscape}" in lines and "{\\small" in lines
     titles = [i for i, ln in enumerate(lines) if ln.startswith(r"\multicolumn") and "continued" not in ln]
     assert len(titles) == len(M.FT_TASKS) + 1                  # JetClass-II: AUC and accuracy
     for i in titles:
@@ -1551,10 +1553,10 @@ def test_a_breakable_table_keeps_its_caption_with_the_first_block_and_marks_the_
     t = M._float("probes", body, True)
     assert r"\captionof{table}" in t and M.V4.TOK_OPEN not in t and "pretraining &" not in t
     first = t[t.index(r"\begin{minipage}"):t.index(r"\end{minipage}")]
-    assert r"\captionof{table}" in first and r"\begin{tabular}" in first        # one unbreakable unit
-    n = t.count(r"\begin{tabular}")
+    assert r"\captionof{table}" in first and r"\begin{tabular*}" in first        # one unbreakable unit
+    n = t.count(r"\begin{tabular*}{\linewidth}")                  # every block across the whole line (PI 2026-11-11)
     assert n > 1 and t.count(r"\TableContinued{tab:probes}{tab:probes:") == n - 1
-    assert len(set(re.findall(r"\\begin\{tabular\}\{(.*?p\{[\d.]+cm\})", t))) == 1      # one label width
+    assert "adjustbox" not in t and r"p{" not in t and r"\mbox" not in t     # nothing shrunk, no wrapping label
 
 
 def test_the_released_sophon_checkpoint_is_a_reference_row_below_a_rule():
@@ -1583,7 +1585,7 @@ def test_the_released_sophon_checkpoint_is_a_reference_row_below_a_rule():
     assert row(lower, M.LABEL[M.SOPHON])[4] == M._cell([100.0], 1, MT.fmt_pm)        # top R30, missing inputs zero
     assert row(lower, M.LABEL["L188"])[4] == M._cell([300.0], 1, MT.fmt_pm)          # top R30, the chosen mean
     f = M._float("probes", t, True)
-    assert r"\mbox{released Sophon checkpoint (LP)}" in f and "outside the controlled comparison" in f
+    assert "released Sophon checkpoint (LP) &" in f and "outside the controlled comparison" in f
     assert "fetch-by-files" not in f and "kinematics at the head" not in f
     co = {M.SOPHON_MODEL: {"cells": {"released": {"jc2bal_coarse": {t: {"1000000": {"accuracy": 0.5, "macro_auc_ovr": 0.9}}
                                                                     for t, _ in M.COARSE_TARGETS}}}}}
@@ -1616,8 +1618,9 @@ def test_the_pair_table_groups_the_rows_by_mode_with_the_mode_in_the_group_headi
     assert row(lines[f:], M.SCRATCH_LABEL)[1] == M._cell([0.9, 0.91, 0.92], 3, MT.fmt_pm, frac=True)
     assert row(lines[lp:f], M.LABEL[M.INIT])[2] == "--"
     tab = M._float("pairs", t, True, fill={"__ZERO__": M.zero_note(fits, runs, ft)}, label_cm=M.PAIRS_LABEL_CM)
-    assert r"\mbox{\Kfull{} classes} " in tab and not re.search(r"(classes|pretraining|network) \((LP|f\.t\.)\)", tab)
-    assert "(f.t.), the network fine-tuned" in tab and "natural composition" in tab and "pairs" not in M.MODES
+    assert r"\Kfull{} classes & " in tab and not re.search(r"(classes|pretraining|network) \((LP|f\.t\.)\)", tab)
+    assert "(f.t.)" in tab and "fine-tuned on" in tab and "pairs" not in M.MODES
+    assert "natural composition" in M.CAPTIONS["pairs"][1]         # the full account, kept for the text
     empty = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188",), {}).splitlines()
     k = empty.index(rf"\multicolumn{{{1 + 2 * len(M.PAIRS)}}}{{l}}{{\textit{{{M.MODE_DEF['ft']}}}}} \\")
     assert empty[k + 1] == rf"\multicolumn{{{1 + 2 * len(M.PAIRS)}}}{{l}}{{\pending{{no run yet}}}} \\"

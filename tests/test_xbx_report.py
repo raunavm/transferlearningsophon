@@ -72,7 +72,7 @@ def test_the_table_and_macros(fits_dir, tmp_path):
     tex = XR.table(M, MT, runs, fits)
     assert r"$X\to b\bar b$, transfer" in tex and r"$X\to b\bar b$, direct" in tex and "bs" not in tex
     row17 = next(line for line in tex.splitlines() if line.startswith(M.LABEL["R16_Q1"] + " &"))
-    assert row17.endswith(r"--- \\")            # no direct discriminant at 17 classes
+    assert row17.endswith(r"-- \\")             # no direct discriminant at 17 classes
     em = MT.Emitter(pathlib.Path("/"))
     XR.macros(em, MT, fits, next(fits_dir.glob("*.json")).resolve())
     got = {n: b for n, b, _ in em.macros}

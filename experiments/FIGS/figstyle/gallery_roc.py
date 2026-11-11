@@ -266,12 +266,10 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
         S.title(ax, name)
     drawn = [ax for ax in axes.flat if ax.lines]
     _y_range(drawn)
-    _x_range(drawn)
     for ax in axes.flat:
         ax.set_ylim(drawn[0].get_ylim())
-        ax.set_xlim(drawn[0].get_xlim())
-        ax.xaxis.set_major_locator(drawn[0].xaxis.get_major_locator())
     if len(panels) == 3:
+        _x_range(drawn)
         for ax in axes.flat[1:]:
             ax.tick_params(labelleft=False)
         zero = drawn[0].get_xlim()[0] == 0          # no "0.0" in a corner, beside the y axis's first label
@@ -280,11 +278,13 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
         axes.flat[-1].xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if zero and abs(v) < 1e-9 else f"{v:.1f}"))
     else:
         _right_labels_off(axes)
-        lo = drawn[0].get_xlim()[0]
-        for ax in axes[:, 0]:
-            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _, lo=lo: "" if v > 1 - 1e-9 or (lo == 0 and abs(v) < 1e-9) else f"{v:.1f}"))
-        for ax in axes[:, 1]:
-            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _, lo=lo: "" if (lo == 0 and abs(v) < 1e-9) else f"{v:.1f}"))
+        for j in range(2):          # a column holds one pair: its x range fitted to that pair's curves (PI 2026-11-11)
+            _x_range([ax for ax in axes[:, j] if ax.lines])
+            lo = axes[0, j].get_xlim()[0]
+            for ax in axes[:, j]:
+                ax.xaxis.set_major_formatter(FuncFormatter(
+                    lambda v, _, lo=lo, last=j == 1: "" if (not last and v > 1 - 1e-9) or (lo == 0 and abs(v) < 1e-9)
+                    or (last and abs(v - lo) < 1e-9) else f"{v:.1f}"))     # no label where two panels' labels would meet
     S.fig_legend(fig, [handles[w] for w in order if w in handles], top_cm=0.6, ncol=4)
     S.letter_panels(list(axes.flat)[:len(panels)])
     S.save(fig, path)
@@ -544,7 +544,7 @@ PAGES = [
          precedent_label="Landscape Fig. 5",
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and "
                  "17 classes, trained and scored on three pairs of JetClass-II classes differing only in flavor "
-                 "(signal first): (a) X→YY→bb̄qq̄ vs cc̄qq̄, (b) X→ee vs μμ and (c) QCD bb̄ vs cc̄. Means over three "
+                 "(signal first): (a) X→YY→bb̄qq vs cc̄qq, (b) X→ee vs μμ and (c) QCD bb̄ vs cc̄. Means over three "
                  "pretraining runs; curves end where fewer than 20 background jets remain; a network with no curve "
                  "is named in its panel.",
          differs="F4's (b) and (d) with QCD bb̄ vs cc̄ (PI, 2026-11-08); as F4-mech otherwise, the fourth cell empty.",

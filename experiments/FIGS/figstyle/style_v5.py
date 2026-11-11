@@ -114,17 +114,21 @@ def log_axis(ax, which: str = "y", force: bool = False) -> None:
 
 def clear_edge_labels(ax, low: bool = False, high: bool = False, share: float = 0.07) -> None:
     """No y tick label within share of the axis's lower (low) or upper (high) end, where it would touch the panel
-    stacked against that end; the ticks stay. Call once the limits and the formatter are final."""
+    stacked against that end; the ticks stay. The other labels: 10^n on a log axis, otherwise the decimals the tick
+    step needs, the same on every tick. Call once the limits and the locator are final."""
     from matplotlib import ticker
     lo, hi = ax.get_ylim()
-    inner = ax.yaxis.get_major_formatter()
     log = ax.get_yscale() == "log"
     pos = (lambda v: (np.log(v) - np.log(lo)) / (np.log(hi) - np.log(lo))) if log else (lambda v: (v - lo) / (hi - lo))
 
-    def fmt(v, i):
+    def fmt(v, _):
         if (log and v <= 0) or (low and pos(v) < share) or (high and pos(v) > 1 - share):
             return ""
-        return inner(v, i)
+        if log:
+            return pow10(v)
+        locs = np.asarray(ax.yaxis.get_majorticklocs(), float)
+        step = float(np.min(np.diff(locs))) if len(locs) > 1 else 1.0
+        return f"{v:.{max(0, int(np.ceil(-np.log10(step) - 1e-9)))}f}"
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(fmt))
 
 

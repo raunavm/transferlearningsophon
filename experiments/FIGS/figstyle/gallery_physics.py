@@ -224,7 +224,7 @@ def draw_f9a(path: pathlib.Path) -> None:
     response range, the bins in which any series of either panel reaches SHOWN_FROM of its peak; only those bins are
     drawn, so no histogram runs off the axes."""
     atlas = _atlas()
-    fig, axes, _ = S.grid_cm(1, 2, w=6.65, aspect=0.85, top=1.6, left=1.2, wgap=0.3)
+    fig, axes, _ = S.grid_cm(1, 2, w=6.65, aspect=0.85, top=1.85, left=1.2, wgap=0.3)
     panels = [(_response_series(atlas, g), t) for g, t in (("resonant", "Resonant jets"), ("qcd", "QCD jets"))]
     e = panels[0][0][0]
     on = np.flatnonzero(np.any([v >= SHOWN_FROM * v.max() for (_, series), _ in panels for v, _, _ in series], axis=0))
