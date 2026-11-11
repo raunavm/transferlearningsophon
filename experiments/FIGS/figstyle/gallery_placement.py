@@ -140,7 +140,7 @@ DROPPED = ("F3", "F4", "F4-app", "F3-scatter")      # F3-scatter: its panels are
 # mlst_results tables the plan places nowhere: nothing cites them, so they are dropped (PI 2026-11-08); the plan's
 # "missing inputs (fill)" is tab:fill and its "fine-tuning vs size" tab:ft, both placed above
 DROPPED_TABLES = ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:perclass", "tab:probesn")
-COMPARE = ("CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-F2-B", "CMP-F2-C", "CMP-FONT-T", "CMP-FONT-LM")     # the PI's style comparison, 2026-11-11
+COMPARE = ("CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-F2-B", "CMP-F2-C", "CMP-F2-DOT", "CMP-F3-DOT", "CMP-FONT-T", "CMP-FONT-LM")     # the PI's style comparison, 2026-11-11
 GALLERY_ONLY = ("INVENTORY", "SOPHON-FIG2", "PALETTE") + COMPARE    # gallery pages that are not figures of the paper
 REF = re.compile(r"\[\[(.+?)\]\]")
 

@@ -1,4 +1,7 @@
-"""Line graphs against a scanned quantity: the styles of the PI's comparison (2026-11-11).
+"""Line graphs against a scanned quantity: the styles of the PI's comparison (2026-11-11). The PI chose (2026-11-11):
+scans (training-set size, a cut's efficiency) in C, no error bars and no offsets; binned measurements (jet pT, generator
+mass) as points with +-1 SD bars and no lines, offset within a bin, said in the caption; markers filled everywhere,
+open circles only where linear probes and fine-tuned networks share a panel. B stays for the comparison page.
 
 A, the current style: each model's own marker shape, filled or hollow, 4-5 pt with an outline; SD bands at 20%.
 B, error bars: 1.3 pt lines; one marker shape (a 3 pt circle, no outline; open for a linear probe); +-1 SD as vertical
@@ -17,6 +20,8 @@ DOT = 3.0               # pt, the one marker of B and C
 OPEN_EDGE = 0.8         # pt, the outline of an open (linear-probe) circle
 BAR = 1.0               # pt, error bars
 BAND = 0.15             # opacity of C's bands
+SCAN = "C"              # the chosen style of every scan
+BIN_TEXT = "Within a bin the series are set slightly apart so that their bars do not overlap."
 OFFSET_DEX = 0.022      # B: log10 offset between neighbouring series in a size scan (about 5%)
 OFFSET_TEXT = "Series are offset horizontally by a few per cent so that their error bars do not overlap."
 
@@ -69,4 +74,12 @@ def category(ax, x: float, mean: float, lo, hi, *, color: str, probe: bool, labe
     ax.errorbar([x], [mean], yerr=None if lo is None else [[lo], [hi]], fmt="none", ecolor=color, elinewidth=BAR,
                 capsize=0, zorder=2.4)
     ax.plot([x], [mean], linestyle="none", **dot(color, probe), label=label, zorder=2.6)
+    return [mean - (lo or 0.0), mean + (hi or 0.0)]
+
+
+def row(ax, y: float, mean: float, lo, hi, *, color: str, probe: bool, label: str | None = None) -> list:
+    """One row of a horizontal dot plot (the pretraining label set on y): the mean with its +-1 SD bar along x."""
+    ax.errorbar([mean], [y], xerr=None if lo is None else [[lo], [hi]], fmt="none", ecolor=color, elinewidth=BAR,
+                capsize=0, zorder=2.4)
+    ax.plot([mean], [y], linestyle="none", **dot(color, probe), label=label, zorder=2.6)
     return [mean - (lo or 0.0), mean + (hi or 0.0)]

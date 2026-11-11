@@ -240,6 +240,104 @@ def _draw_f2_cat(path, value_of, groups, absent: str, heading: str, probe: bool)
     S.save(fig, path)
 
 
+# ------------------------------------------------------------------ F2 as a horizontal dot plot (PI 2026-11-11)
+# Rows top to bottom: the four label sets, a divider, the 17-class controls under a "17 classes" bracket on the left;
+# the metric along x with each row's mean and a horizontal SD bar; from scratch a vertical dashed line.
+DOT_ROWS = {"L188": 0.0, "L162": 1.0, "R42_Q1": 2.0, "R16_Q1": 3.0}
+DOT_DIVIDER = 3.75
+DOT_CONTROLS = {"RAND": 4.5, "FLAV_F0": 5.5, "FLAV_F1": 6.5, "FLAV_F1R": 7.5}
+DOT_NAMES = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes",
+             "RAND": "random partitions", "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary",
+             "FLAV_F1R": "random flavor boundary"}
+DOT_RAND_SPREAD = 0.12      # rows between the five random partitions within their row
+DOT_LEFT, DOT_W, DOT_H, DOT_WGAP, DOT_HGAP = 4.2, 5.1, 5.0, 0.45, 1.35
+
+
+def _dot_rows(ax, labelled: bool) -> None:
+    ax.set_ylim(8.1, -0.6)
+    ys = list(DOT_ROWS.values()) + list(DOT_CONTROLS.values())
+    ax.yaxis.set_major_locator(ticker.FixedLocator(ys))
+    names = [DOT_NAMES[k] for k in (*DOT_ROWS, *DOT_CONTROLS)]
+    ax.yaxis.set_major_formatter(ticker.FixedFormatter(names if labelled else [""] * len(names)))
+    ax.yaxis.set_minor_locator(ticker.NullLocator())
+    ax.tick_params(axis="y", length=0)
+    ax.axhline(DOT_DIVIDER, color=S.GREY_MID, linewidth=S.LW_THIN, zorder=0.5)
+
+
+def _dot_bracket(fig, ax) -> None:
+    """ "17 classes" on the left of the control rows' labels: a bracket spanning them, the words turned along it."""
+    from matplotlib.transforms import blended_transform_factory
+    tr = blended_transform_factory(fig.transFigure, ax.transData)
+    x = 0.6 / S.PRINT_W                   # 0.6 cm from the figure's left edge, left of the longest row label
+    a, b = min(DOT_CONTROLS.values()) - 0.4, max(DOT_CONTROLS.values()) + 0.4
+    tick = 0.12 / S.PRINT_W
+    fig.add_artist(plt.Line2D([x + tick, x, x, x + tick], [a, a, b, b], transform=tr, color="#000000",
+                              linewidth=S.LW_THIN))
+    fig.text(x - 0.05 / S.PRINT_W, (a + b) / 2, "17 classes", transform=tr, rotation=90, ha="right", va="center",
+             fontsize=S.TICK_PT5)
+
+
+def _draw_f2_dot(path, value_of, groups, absent: str, heading: str) -> None:
+    """F2 (Figs. 2 and 3) as a horizontal dot plot in a 2x2 grid of near-square panels; filled markers (one mode)."""
+    from matplotlib.lines import Line2D
+    values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
+    if not any(values):
+        raise C.Absent(absent)
+    top, bottom = 1.75, 1.0
+    fig = S.figure_cm(S.PRINT_W, top + 2 * DOT_H + DOT_HGAP + bottom)
+    axes = [S.axes_cm(fig, DOT_LEFT + j * (DOT_W + DOT_WGAP), top + i * (DOT_H + DOT_HGAP), DOT_W, DOT_H)
+            for i in range(2) for j in range(2)]
+    for k, (ax, value, (key, _, ds, met, *_)) in enumerate(zip(axes, values, P.F2_PANELS)):
+        S.title(ax, TITLES[key])
+        _dot_rows(ax, k % 2 == 0)
+        S.labels(ax, Y_R30 if met == "r30" else Y_ACC, None)
+        if value is None:
+            _empty_panel(ax)
+            continue
+        S.fine_grid(ax)
+        xs = []
+        for r, y in DOT_ROWS.items():
+            if v := P._vals(RUNS, r, value):
+                mean, lo, hi = P.F._spread(v)
+                xs += L.row(ax, y, mean, lo, hi, color=S.SERIES[r], probe=False)
+        for _, key_, rows in groups:
+            for i, r in enumerate(rows):
+                if v := P._vals(RUNS, r, value):
+                    mean, lo, hi = P.F._spread(v)
+                    y = DOT_CONTROLS[key_] + DOT_RAND_SPREAD * (i - (len(rows) - 1) / 2)
+                    xs += L.row(ax, y, mean, lo, hi, color=S.SERIES[key_], probe=False)
+        scratch = P.scratch_series(M, I["per"], key, met)
+        if scratch:
+            ref = float(np.mean(scratch[max(scratch)]))
+            ax.axvline(ref, **S.look("SCRATCH", linewidth=S.LW_CURVE), zorder=1.5)
+            xs.append(ref)
+        log = met == "r30"
+        ax.set_xlim(*_range(ax, xs, log))
+        if log:
+            ax.set_xscale("log")
+            ax.set_xlim(*_range(ax, xs, True))
+            S.log_axis(ax, "x")
+        else:
+            ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))
+    for i in (0, 2):
+        _dot_bracket(fig, axes[i])
+    S.letter_panels(axes)
+    S.heading(fig, heading)
+    handles = [Line2D([], [], linestyle="none", **L.dot("#000000", False), label="mean and SD over pretraining runs"),
+               Line2D([], [], **S.look("SCRATCH", linewidth=S.LW_CURVE), label=S.LEGEND["SCRATCH"])]
+    S.fig_legend(fig, handles, top_cm=0.6, ncol=2)
+    S.save(fig, path)
+
+
+def draw_f2a_dot(path) -> None:
+    _draw_f2_dot(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
+                 "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
+
+
+def draw_f2b_dot(path) -> None:
+    _draw_f2_dot(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning")
+
+
 def draw_f2a(path, style: str = "A") -> None:
     if style != "A":
         return _draw_f2_cat(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
@@ -383,7 +481,7 @@ def draw_f3_ft2(path) -> None:
 
 
 # ------------------------------------------------------------------ F8, A10: metric against the number of jets
-def _curve(ax, series: dict, line: dict, mark: dict, label: str, band: bool, style: str = "A", k: int = 0,
+def _curve(ax, series: dict, line: dict, mark: dict, label: str, band: bool, style: str = L.SCAN, k: int = 0,
            n: int = 1) -> None:
     """Mean over runs; line the colour and line style, mark the marker and its fill (style_v5.marker); with band,
     Golling's: the SD (range for two runs), same colour, no edge. style B or C: lines_v6.scan, the k-th of n series."""
@@ -410,7 +508,7 @@ SIZE_PAD = 1.7              # a panel's x axis runs from its smallest training s
 
 
 def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int = 3, auc: bool = False,
-               style: str = "A") -> None:
+               style: str = L.SCAN) -> None:
     """series_of(key, ds, met): [(series, line, mark, label)] of a panel. Round 4: four 6.5 cm panels, the legend above
     in ncol columns. auc: the same four tasks in AUC (P.SIZE_PANELS_AUC) with ParT's published AUCs."""
     spec, published = (P.SIZE_PANELS_AUC, PUBLISHED_AUC) if auc else (P.SIZE_PANELS, PUBLISHED)
@@ -476,7 +574,7 @@ def draw_a10(path, auc: bool = False) -> None:
                + (", AUC" if auc else ""), auc=auc)
 
 
-def draw_a8(path, auc: bool = False, style: str = "A") -> None:
+def draw_a8(path, auc: bool = False, style: str = L.SCAN) -> None:
     """A10's form after fine-tuning: the four label sets and from scratch."""
     series = lambda key, ds, met: [_model(P.ft_series(M, I["per"], RUNS, key, met, row), row, "ft", S.LEGEND[row])
                                    for row in S.LEVELS] + [_model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft",

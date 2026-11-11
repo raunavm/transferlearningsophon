@@ -258,44 +258,51 @@ def _mass_series(mode: str = "ft") -> list:
              S.LEGEND[row] + (" (mass output)" if mode == "mass" else "")) for row, _ in MASS_ROWS]
 
 
+PROBE_ESTS = ("mlp", "ridge")      # regressions on frozen features, against the networks' own mass output
+
+
 def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
-    """One column of one row: the median (which="median") or the resolution against axis as step lines without
-    markers, and below it the ratio to the soft-drop mass. The y range holds every series and the soft-drop mass
-    (PI 2026-11-11: nothing off the axes, no arrows); the resolution is on a log axis, which that takes.
-    Returns (soft-drop values, bin edges) for _reference, drawn once the row's ranges are final."""
+    """One column of one row: the median (which="median") or the resolution against axis, binned, so points at the bin
+    centres with +-1 SD bars over runs and no lines (PI 2026-11-11), the soft-drop mass first in black, the series
+    offset within a bin (lines_v6.binned); below, the ratio to the soft-drop mass. The y range holds every point and
+    bar (PI 2026-11-11: nothing off the axes); the resolution is on a log axis. Returns (soft-drop values, bin edges)."""
     g = P._groomed(atlas, group)[axis]
     e = np.asarray(g["edges"], float)
+    c = 0.5 * (e[1:] + e[:-1])
+    step = 0.12 * float(np.min(np.diff(e)))
     ref = P._arr(g[which])
-    ax.plot([], [], **GROOMED_LOOK, label=GROOMED)                          # the legend key; bins drawn below
-    rx.axhline(1.0, **GROOMED_LOOK)
-    vals, lows = [], [[1.0]]
-    for runs, est, line, mark, label in series:
-        bl = [b[axis] for m in runs if (b := P._block(atlas, m, est, group))]
-        if not bl:
-            continue
-        v = np.mean([P._arr(b[which]) for b in bl], axis=0)
-        low = v / ref
-        ax.stairs(v, e, baseline=None, **line, linewidth=S.LW_CURVE)
-        rx.stairs(low, e, baseline=None, **line, linewidth=S.LW_CURVE)
-        ax.plot([], [], **line, linewidth=S.LW_CURVE, label=label)     # the legend key
-        vals.append(v)
-        lows.append(low)
+    drawn = [(runs, est, line, label) for runs, est, line, mark, label in series
+             if any(P._block(atlas, m, est, group) for m in runs)]
+    n = len(drawn) + 1
+    # a probe beside a network's own output (A17-probe, the same colours) is open; one mode a panel stays filled
+    mixed = len({est in PROBE_ESTS for _, est, _, _ in drawn}) > 1
+    zero = np.zeros_like(ref)
+    L.binned(ax, c, ref, zero, zero, color=GROOMED_LOOK["color"], probe=False, label=GROOMED, k=0, n=n, step=step)
+    rx.axhline(1.0, **GROOMED_LOOK, zorder=1.5)
+    ends, lows = [ref], [np.array([1.0])]
+    for k, (runs, est, line, label) in enumerate(drawn, 1):
+        per = np.array([P._arr(b[axis][which]) for m in runs if (b := P._block(atlas, m, est, group))], float)
+        st = [P.F._spread(list(per[:, i])) for i in range(per.shape[1])]
+        mean = np.array([s_[0] for s_ in st])
+        lo = np.array([s_[1] or 0.0 for s_ in st])
+        hi = np.array([s_[2] or 0.0 for s_ in st])
+        probe = mixed and est in PROBE_ESTS
+        L.binned(ax, c, mean, lo, hi, color=line["color"], probe=probe, label=label, k=k, n=n, step=step)
+        L.binned(rx, c, mean / ref, lo / ref, hi / ref, color=line["color"], probe=probe, label="_nolegend_", k=k, n=n,
+                 step=step)
+        ends += [mean - lo, mean + hi]
+        lows += [(mean - lo) / ref, (mean + hi) / ref]
     if which == "resolution":
-        v = np.concatenate([np.ravel(x) for x in (*vals, ref)])
-        v = v[np.isfinite(v)]
+        v = np.concatenate([np.ravel(x) for x in ends])
+        v = v[np.isfinite(v) & (v > 0)]
         ax.set_ylim(v.min() / 1.3, v.max() * 1.15)
     else:
-        _fit_y(ax, [*vals, ref])
+        _fit_y(ax, ends)
     _fit_y(rx, lows, pad=0.18)       # the reference at 1 clear of the frame, its tick labelled
     ax.set_xlim(e[0], e[-1])
     for a_ in (ax, rx):
         S.fine_grid(a_)
     return ref, e
-
-
-def _reference(ax, ref, e) -> None:
-    """The soft-drop mass in every bin, inside the y range (_quantity's limits hold it)."""
-    ax.hlines(ref, e[:-1], e[1:], **GROOMED_LOOK)
 
 
 X_PT, X_MGEN = r"Jet $p_{\mathrm{T}}$ [GeV]", r"Generator mass ($m_{\mathrm{gen}}$) [GeV]"
@@ -327,8 +334,6 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
                 S.labels(raxes[i, j], xlabel=xlabel)
         for row_axes in (axes[i], raxes[i]):
             _share_row(row_axes)
-        for j in range(2):
-            _reference(axes[i, j], *refs[i, j])
         S.labels(axes[i, 0], ylabel=r"Median response ($r$)" if which == "median" else r"Resolution ($\sigma_r$)")
         S.labels(raxes[i, 0], ylabel="Ratio")
         for j in range(2):
@@ -466,11 +471,12 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs
         eff = np.array([c["eff"] for c in have[0]], float)
         per = np.array([[c["js_distance"] for c in h] for h in have], float)
         keep = eff >= F10B_FROM
-        mode = "mass" if row in S.MASS else "ft"        # beside the 162- and 17-class curves of the same colour
-        ax.plot(eff[keep], per.mean(axis=0)[keep], **S.look(row, mode), linewidth=S.LW_CURVE, **S.marker(row, mode, 3.5),
-                label=S.LEGEND[row])
-        if (band := spread_band(per)) is not None:
-            ax.fill_between(eff[keep], band[0][keep], band[1][keep], color=S.SERIES[row], alpha=0.2, linewidth=0)
+        mode = "mass" if row in S.MASS else "ft"        # dashed beside the 162- and 17-class curves of the same colour
+        mean = per.mean(axis=0)
+        band = spread_band(per)
+        lo, hi = (np.zeros_like(mean), np.zeros_like(mean)) if band is None else (mean - band[0], band[1] - mean)
+        L.scan(ax, eff[keep], mean[keep], lo[keep], hi[keep], color=S.SERIES[row],
+               linestyle=S.look(row, mode)["linestyle"], probe=False, label=S.LEGEND[row], style=L.SCAN)
         drawn.append(row)
     if not drawn:
         raise Absent("no mass sculpting curve of the models shown")
@@ -537,10 +543,9 @@ def draw_f10c(path: pathlib.Path) -> None:
         if not pts:
             continue
         (x, xl, xh), (y, yl, yh) = (P.F._spread(v) for v in ([p["rejection"] for p in pts], [1 / p["jsd"] for p in pts]))
-        mode = "mass" if row in S.MASS else "ft"
         ax.errorbar(x, y, xerr=None if xl is None else [[xl], [xh]], yerr=None if yl is None else [[yl], [yh]],
-                    linestyle="none", color=S.SERIES[row], elinewidth=S.LW_THIN, capsize=0,
-                    **S.marker(row, mode, 5), label=S.LEGEND[row])
+                    fmt="none", ecolor=S.SERIES[row], elinewidth=L.BAR, capsize=0)
+        ax.plot([x], [y], linestyle="none", **L.dot(S.SERIES[row], False), label=S.LEGEND[row], zorder=2.6)
         drawn += 1
     if not drawn:
         raise Absent(f"no {F10C_KEY} in the sculpting files (head/sculpting_v3/*_sculpting.json)")
@@ -665,7 +670,7 @@ def _pt_panel(ax, docs: dict, rows: tuple, value, ylabel: str, style: str = "A",
         S.labels(ax, ylabel=ylabel)
 
 
-def draw_pt(path: pathlib.Path, style: str = "A") -> None:
+def draw_pt(path: pathlib.Path, style: str = "B") -> None:
     """Round 4 (ROUND4_BRIEF Part 4): absolute values per pT bin, no ratio. Upper row JetClass-II accuracy of the
     linear probes, (a) per label set and (b) for the controlled partitions with the 188- and 17-class models for
     reference, on one y axis; lower row (c) JetClass accuracy after fine-tuning and (d) the probes' AUC of X->bb
@@ -682,7 +687,7 @@ def draw_pt(path: pathlib.Path, style: str = "A") -> None:
     for k, (ax, docs, rows, value, ylabel, text) in enumerate(panels):
         S.title(ax, text)
         S.fine_grid(ax)
-        _pt_panel(ax, docs, rows, value, ylabel, style, probe="inear probes" in text)
+        _pt_panel(ax, docs, rows, value, ylabel, style)      # one mode a panel: filled (PI 2026-11-11)
         S.labels(ax, xlabel=X_PT)          # (c) is JetClass, 500-1000 GeV: every panel its own
     lo, hi = min(a.get_ylim()[0], b.get_ylim()[0]), max(a.get_ylim()[1], b.get_ylim()[1])
     for ax in (a, b):
@@ -799,13 +804,15 @@ F9B_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs): median response r = m/m_gen (a, b) and resolution sigma_r, half the 15.9-84.1% "
     "quantile range of r over its median (c, d), of test jets against pT (a, c) and generator mass (b, d; 20-500 "
-    "GeV), with the soft-drop mass (black). The resolution axis is logarithmic. Lower panels: ratio to the "
-    "soft-drop mass.")
+    "GeV), with the soft-drop mass (black). Points at bin centres, bars the range over the two runs; within a bin "
+    "the series are set slightly apart. The resolution axis is logarithmic. Lower panels: ratio to the soft-drop "
+    "mass.")
 A17_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs), on {group} test jets: median response r (a, b) and resolution sigma_r (c, d), as in "
     "the main-text figure, against pT (a, c) and generator mass (b, d; 20-500 GeV), with the soft-drop mass "
-    "(black). Lower panels: ratio to the soft-drop mass.")
+    "(black); points at bin centres, bars the range over runs, set slightly apart within a bin. Lower panels: ratio "
+    "to the soft-drop mass.")
 F10A_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, used "
     "without further training: soft-drop mass of QCD test jets before any selection (inclusive) and after cuts on "
@@ -855,7 +862,8 @@ PT_CAPTION = (
     "frozen features, trained and scored on class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining "
     "classes; (b) the same for 17-class partitions with controlled flavor boundaries, with 188 and 17 classes for "
     "reference; (c) accuracy on JetClass after fine-tuning on one million jets; (d) the probes' AUC of X→bb̄ "
-    "against X→cc̄. Points are means, bands the SD over pretraining runs.")
+    "against X→cc̄. Points are means at the bin centres, bars the SD over pretraining runs; within a bin the "
+    "series are set slightly apart.")
 CONF_CAPTION = (
     "Networks pretrained on JetClass-II, fine-tuned on one million JetClass jets: (a) the percentage of each true "
     "class assigned to each predicted class with 188 pretraining classes; (b)-(d) the change in that percentage "
@@ -931,10 +939,10 @@ PAGES = [
     Page("A17-probe", "Mass from frozen features and from the mass output (appendix)", ["ATL-PHYS-PUB-2024-015/fig8.png"],
          "ATLAS 2024-015 Fig. 8",
          "The jet mass from networks pretrained on JetClass-II: an MLP probe (MLP) regressing it from the frozen "
-         "features with 188, 162, 43 and 17 classes (solid, three runs), and the mass output with 162 and 17 "
-         "classes and an auxiliary mass regression (dashed, two runs). Median response r (a, b) and resolution "
-         "sigma_r (c, d) of test jets against pT (a, c) and generator mass (b, d; 20-500 GeV); sub-panels as "
-         "in the main-text mass figure.",
+         "features with 188, 162, 43 and 17 classes (open circles, three runs), and the mass output with 162 and 17 "
+         "classes and an auxiliary mass regression (filled, two runs). Median response r (a, b) and resolution "
+         "sigma_r (c, d) of test jets against pT (a, c) and generator mass (b, d; 20-500 GeV); points at bin "
+         "centres, bars the spread over runs, set apart within a bin; sub-panels as in the main-text mass figure.",
          "As F9b, with six series and the soft-drop mass (PI): the four probes in the label sets' colours, the two mass "
          "outputs in the 162- and 17-class colours as F10b, one marker shape per series at the bin centres and in the legend, "
          "since each mass output shares its label set's colour. Round 4: the 2x2 of F9b, legend above the panels. "

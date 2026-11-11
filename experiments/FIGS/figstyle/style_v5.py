@@ -34,6 +34,8 @@ naming the model.
 """
 from __future__ import annotations
 
+import pathlib
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -188,8 +190,17 @@ PANEL_3 = 4.2                                   # cm, a panel of three in one ro
 LABEL_PT5, TICK_PT5, TITLE_PT5, LEGEND_PT5 = 9.0, 8.0, 9.0, 8.5
 
 
+FONT_DIR = pathlib.Path(__file__).resolve().parent / "fonts"     # lmroman10 (GUST Font License), from TeX
+BODY_FONT = "Latin Modern Roman"        # the paper's body font (main.tex: article, Latin Modern; maths Computer Modern)
+
+
 def use_style5(simplify: bool = False) -> None:
     use_style(simplify)
+    from matplotlib import font_manager
+    for f in sorted(FONT_DIR.glob("lmroman10-*.otf")):
+        font_manager.fontManager.addfont(str(f))
+    # PI 2026-11-11: every figure in the paper's body font, not STIX
+    plt.rcParams.update({"font.family": BODY_FONT, "mathtext.fontset": "cm", "axes.formatter.use_mathtext": True})
     plt.rcParams.update({"font.size": LABEL_PT5, "axes.labelsize": LABEL_PT5, "axes.titlesize": TITLE_PT5,
                          "xtick.labelsize": TICK_PT5, "ytick.labelsize": TICK_PT5, "legend.fontsize": LEGEND_PT5,
                          "xtick.major.pad": 2.5, "ytick.major.pad": 2.5, "axes.labelpad": 2.5, "axes.titlepad": 4.0})

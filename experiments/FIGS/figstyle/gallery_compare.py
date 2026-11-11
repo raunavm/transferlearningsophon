@@ -74,6 +74,15 @@ PAGES = [
           draw=lambda path: LS.draw_f2a(path, style="B")),
     Page(id="CMP-F2-C", title="Fig. 2, style C (categorical: as B)", precedent=[], precedent_label="", differs=DIFFERS, caption=F2,
           draw=lambda path: LS.draw_f2a(path, style="C")),
+    Page(id="CMP-F2-DOT", title="Fig. 2 as a horizontal dot plot", precedent=[], precedent_label="", differs=DIFFERS,
+          caption=F2.replace("against the pretraining label set", "for each pretraining label set (rows)")
+          .replace("bars the SD", "horizontal bars the SD").replace("dashed,", "vertical dashed line,"),
+          draw=lambda path: LS.draw_f2a_dot(path)),
+    Page(id="CMP-F3-DOT", title="Fig. 3 as a horizontal dot plot", precedent=[], precedent_label="", differs=DIFFERS,
+          caption=F2.replace("Linear probes on the frozen features of networks", "Fine-tuned networks")
+          .replace("against the pretraining label set", "for each pretraining label set (rows)")
+          .replace("bars the SD", "horizontal bars the SD").replace("dashed,", "vertical dashed line,"),
+          draw=lambda path: LS.draw_f2b_dot(path)),
     Page(id="CMP-FONT-T", title="Fig. A4 (a), current font", precedent=[], precedent_label="", differs=DIFFERS, caption="Panel (a) of Fig. A4 in the current Times-like font (STIX), at "
           "its printed size, for comparison with the same panel in Latin Modern, the body font of the book. Accuracy of "
           "linear probes on class-balanced JetClass-II against jet transverse momentum for the four label sets.",
