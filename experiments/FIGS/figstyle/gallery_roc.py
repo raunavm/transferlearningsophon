@@ -405,9 +405,10 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         if k == 2:                          # the shared ratio range holds both quark/gluon panels
             lo, hi = min(lo, ratios[1].get_ylim()[0] + pad), max(hi, ratios[1].get_ylim()[1] - pad)
         rx.set_ylim(lo - pad, hi + pad)
-        # the widest step that still puts three labels in the panel, 1.0 among them (MaxNLocator's nbins gave six)
+        # the widest step that still puts two labels in the short panel, 1.0 among them (MaxNLocator's nbins gave six,
+        # four touched)
         inside = lambda q: math.floor((hi + pad) / q + 1e-9) - math.ceil((lo - pad) / q - 1e-9) + 1     # noqa: E731
-        step = max(q for q in (0.005, 0.01, 0.02, 0.025, 0.05, 0.1, 0.2, 0.25, 0.5, 1.0) if inside(q) >= 3)
+        step = max(q for q in (0.005, 0.01, 0.02, 0.025, 0.05, 0.1, 0.2, 0.25, 0.5, 1.0) if inside(q) >= 2)
         rx.yaxis.set_major_locator(MultipleLocator(step))
         rx.set_xlim(0, 1)
         S.title(ax, f"({'abc'[k]}) {name}")
