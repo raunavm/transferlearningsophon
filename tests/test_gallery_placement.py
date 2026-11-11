@@ -143,7 +143,8 @@ def test_the_book_sets_pending_cells_only_in_a_provisional_table(monkeypatch, tm
     tex = "\\begin{table}[t]\n\\caption{A.}\\label{%s}\n1 & \\pending{no run yet} \\\\\n\\end{table}\n"
     for key in ("tab:xbx", "tab:probes"):
         (tmp_path / "tables" / f"{book.TABLE_FILE[key]}.tex").write_text(tex % key)
-    assert "tab:xbx" in G.PROVISIONAL and "tab:probes" not in G.PROVISIONAL
+    # nothing is provisional now (2026-11-11): the rule is tested with an entry of its own
+    monkeypatch.setattr(book.G, "PROVISIONAL", {"tab:xbx": "waits for the samples"})
     out = book.table_item("tab:xbx", G.MAIN)
     assert "\\pending{no run yet}" in out and "\\label{tab:xbx}" in out and "fbox" not in out
     with pytest.raises(SystemExit, match="still has"):
@@ -156,7 +157,7 @@ def test_the_book_boxes_only_a_provisional_figure_the_render_lacks(monkeypatch, 
     monkeypatch.setattr(book, "table_item", lambda key, tier: "")
     monkeypatch.setattr(book, "figure", lambda pid, rec, src: f"FIGURE {pid}\n")
     main = [k for k, t, _ in G.FIGURES if t == G.MAIN]
-    monkeypatch.setattr(G, "PROVISIONAL", {"F11": "waits for the samples"})
+    monkeypatch.setattr(book.G, "PROVISIONAL", {"F11": "waits for the samples"})
     pages = [{"id": k, "drawn": k != "F11"} for k, _, _ in G.FIGURES]
     (tmp_path / "pages.json").write_text(json.dumps(pages))
     monkeypatch.setattr(book, "OUTPUTS", {**book.OUTPUTS, "main": ("main_only", (G.MAIN,))})
