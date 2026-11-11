@@ -416,7 +416,7 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
             axes[i, j].tick_params(labelleft=False)
             raxes[i, j].tick_params(labelleft=False)
         axes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=5, prune="lower"))
-        raxes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=3, prune="both"))
+        raxes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=4, steps=[1, 5, 10], prune="both"))     # 1.0 a tick
         S.clear_edge_labels(raxes[i, 0], high=True)     # clear of the panel above
         S.labels(axes[i, 0], ylabel="Fraction of jets")
         S.labels(raxes[i, 0], ylabel="Ratio to\ninclusive")
@@ -661,16 +661,16 @@ def draw_pt(path: pathlib.Path) -> None:
     """Round 4 (ROUND4_BRIEF Part 4): absolute values per pT bin, no ratio. Upper row JetClass-II accuracy of the
     linear probes, (a) per label set and (b) for the controlled partitions with the 188- and 17-class models for
     reference, on one y axis; lower row (c) JetClass accuracy after fine-tuning and (d) the probes' AUC of X->bb
-    against X->cc, its quantity in its title (two y labels do not fit beside 6.5 cm panels). No from scratch."""
+    against X->cc, with its own y label (PI 2026-11-11: every axis labelled). No from scratch."""
     jc2, jc1 = M._load(PERF / "jc2"), M._load(PERF / "jc1")
     if not (jc2 and jc1):
         raise Absent("no performance against jet pT (perf_vs_pt/jc2, perf_vs_pt/jc1)")
-    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=2.35, left=1.25, wgap=0.75, hgap=1.6)
+    fig, axes, _ = S.grid_cm(2, 2, w=6.25, aspect=0.85, top=2.35, left=1.25, wgap=1.25, hgap=1.6)
     (a, b), (cx, d) = axes
     panels = ((a, jc2, S.LEVELS, _accuracy, "Accuracy", "JetClass-II, linear probes"),
               (b, jc2, ("L188", "R16_Q1") + tuple(S.CONTROLS), _accuracy, None, "JetClass-II, linear probes, controls"),
               (cx, jc1, S.LEVELS, _accuracy, "Accuracy", "JetClass, fine-tuned"),
-              (d, jc2, S.LEVELS, _bb_cc, None, r"Linear probes, AUC $X\to b\bar{b}$ vs $c\bar{c}$"))
+              (d, jc2, S.LEVELS, _bb_cc, "AUC", r"Linear probes, $X\to b\bar{b}$ vs $c\bar{c}$"))
     for k, (ax, docs, rows, value, ylabel, text) in enumerate(panels):
         S.title(ax, text)
         S.fine_grid(ax)

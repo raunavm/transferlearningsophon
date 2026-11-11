@@ -1,8 +1,8 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\small\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
 \small
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not pretrained, fine-tuned on one million JetClass jets: trainable parameters, accuracy, AUC averaged over all pairs of classes, and for each signal class the rejection of QCD jets at the signal efficiency in its heading; (f.t.): fine-tuned. Published rows: trained from scratch on 2 million jets. Ours: mean $\pm$ standard deviation over three pretraining runs ($\pm\,0$: the runs pass the same number of QCD jets). Bold: the best value of a column and every value within one standard deviation of it. $^\dagger$: fewer than \MlstMinBkgPass{} QCD jets pass in a run; never bold.}
+\captionof{table}{JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not pretrained, fine-tuned on one million JetClass jets, beside published models trained from scratch on 2 million: accuracy, AUC averaged over all pairs of classes, and the rejection of QCD jets at each signal class's efficiency; (f.t.): fine-tuned. Ours: mean $\pm$ standard deviation over three pretraining runs ($\pm\,0$: the same number of QCD jets pass). Bold: within one standard deviation of a column's best. $^\dagger$: fewer than \MlstMinBkgPass{} QCD jets pass in a run; never bold.}
 \label{tab:jetclass}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}

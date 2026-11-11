@@ -740,6 +740,9 @@ def _head_rule(ncols: int) -> str:
 
 
 
+BLOCK_WHOLE = 24    # rows of a task block kept on one turned page (it holds about 30 lines at \\small)
+
+
 def _task_longtable(blocks: list, label: str) -> str:
     """One longtable of task blocks [(title, [heading cells, row cells, ...])]: each block opens with
     its title across the table and its own heading row; a row may have fewer cells than the widest
@@ -753,7 +756,9 @@ def _task_longtable(blocks: list, label: str) -> str:
     for k, (title, (head, *rest)) in enumerate(blocks):
         # \\* keeps a block's title and heading on the page of its first row
         rows = [row(c) for c in rest]
-        if len(rows) >= 2:
+        if len(rows) <= BLOCK_WHOLE:    # a block that fits a turned page never breaks: every page shows its heading
+            rows[:-1] = [r + "*" for r in rows[:-1]]
+        elif len(rows) >= 2:
             rows[-2] += "*"         # a block's last row never sits alone on a page
         body += ([BLOCK_SEP] if k else []) + [r"\multicolumn{" + str(ncol + 1) + "}{l}{" + title + r"} \\*",
                                               row(head) + "*", _head_rule(ncol + 1)] + rows
@@ -2225,6 +2230,11 @@ def gpu_name(device: str) -> str:
     return device.replace("NVIDIA ", "").replace("GeForce ", "").replace("Tesla ", "").replace("-SXM2-32GB", "")
 
 
+def _whole(name: str) -> str:
+    """A GPU's name kept on one line of a wrapping list."""
+    return r"\mbox{" + name + "}"
+
+
 def check_index(data: pathlib.Path) -> pathlib.Path:
     """index.json against the files beside it: every file listed, with the bytes pulled."""
     import hashlib
@@ -3500,7 +3510,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
     head = r"run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\"
     wrap = lambda cm: r">{\raggedright\arraybackslash}p{" + cm + "cm}"      # noqa: E731
     lines = [r"\begin{landscape}", "{\\small", LT_SETUP,
-             r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap("6.5") + "r" + wrap("9.0") + "@{}}",
+             r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap("6.3") + "r" + wrap("10.8") + "@{}}",
              r"\caption{__CAPTION__}\label{tab:compute}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
              r"\multicolumn{4}{l}{\textit{Table~\ref{tab:compute} (continued)}} \\", r"\toprule", head, r"\midrule", r"\endhead",
              r"\bottomrule", r"\endlastfoot"]
@@ -3508,7 +3518,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
     items = [(arm, f"{LABEL[arm]}, run {_idx(m)}", m) for arm, ms in runs.items() if arm not in (INIT, INIT_BN) for m in ms]
     items += [(None, lab, m) for lab, m in extra]
     for arm, name, m in items:
-        ftg = ", ".join((ft_gpus or {}).get(m[len("mtx-"):], [])) or "--"
+        ftg = ", ".join(map(_whole, (ft_gpus or {}).get(m[len("mtx-"):], []))) or "--"
         if (k := (ft_nodev or {}).get(m[len("mtx-"):])):
             ftg += rf" \pending{{{k} cells without a device}}"
         if m not in comp:
@@ -3519,7 +3529,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
             h[gpu_name(e["device"])] += (e["train_seconds"] + e["val_seconds"]) / 3600
         if arm is not None:
             hours.setdefault(arm, collections.Counter()).update(h)
-        types = ", ".join(f"{g} ({h[g]:.0f})" for g in sorted(h, key=lambda g: -h[g]))
+        types = ", ".join(_whole(f"{g} ({h[g]:.0f})") for g in sorted(h, key=lambda g: -h[g]))
         lines.append(rf"{name} & {types} & {fmt_int(round(sum(h.values())))} & {ftg} \\")
     return "\n".join(lines + [r"\end{longtable}", "}", r"\end{landscape}", ""]), hours
 
@@ -4010,12 +4020,12 @@ CAPTION_SHORT = {
                      "scratch) and from linear probes on the frozen features (lower part, beside the random "
                      "network). " + SD_SHORT,
     "fill": f"Linear probes on the frozen features of {NETS} and of the controls, with the inputs a data set lacks "
-            "set to zero, to the training mean or to random draws of a real particle. Upper part: relative drop in "
-            "JetClass-II accuracy (percent) when those slots are substituted. Lower part: $R_{30}$ on top and "
+            "set to zero, to the training mean or to random draws of a real particle: the relative drop in "
+            "JetClass-II accuracy (percent) when those slots are substituted, then $R_{30}$ on top and "
             "quark/gluon tagging. Bold: the best substitution of each row and data set. " + SD_SHORT,
     "mass": "Jet mass from frozen features: a multilayer perceptron regresses the mass from the frozen features of "
-            f"{NETS} (two also with a mass regression) and of the random network; the soft-drop mass is the "
-            "reference. Resolution $\\sigma_r$, half the 15.9--84.1\\% quantile range of the response "
+            f"{NETS} (two also with a mass regression) and of the random network, beside the soft-drop mass. "
+            "Resolution $\\sigma_r$, half the 15.9--84.1\\% quantile range of the response "
             "$r = m/m_{\\mathrm{gen}}$ over its median, and the median response. " + SD_SHORT,
     "boot": f"Linear probes on the frozen features and fine-tuning of {NETS}: uncertainty (percent) of the comparisons "
             "between their label sets at the largest training set, as the standard deviation of the logarithm of "
@@ -4058,12 +4068,11 @@ CAPTION_SHORT = {
                 "published models: accuracy, AUC, $1/\\epsB$ at 50\\% and 30\\% quark efficiency and the number of "
                 "trainable parameters. Uncertainties and bold as in table~\\ref{tab:benchtop}.",
     "jetclass": "JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not "
-                "pretrained, fine-tuned on one million JetClass jets: trainable parameters, accuracy, AUC averaged "
-                "over all pairs of classes, and for each signal class the rejection of QCD jets at the signal "
-                "efficiency in its heading. Published rows: trained from scratch on 2 million jets. Ours: mean "
-                "$\\pm$ standard deviation over three pretraining runs ($\\pm\\,0$: the runs pass the same number of "
-                "QCD jets). Bold: the best value of a column and every value within one standard deviation of it. "
-                "$^\\dagger$: fewer than \\MlstMinBkgPass{} QCD jets pass in a run; never bold.",
+                "pretrained, fine-tuned on one million JetClass jets, beside published models trained from scratch on "
+                "2 million: accuracy, AUC averaged over all pairs of classes, and the rejection of QCD jets at each "
+                "signal class's efficiency. Ours: mean $\\pm$ standard deviation over three pretraining runs "
+                "($\\pm\\,0$: the same number of QCD jets pass). Bold: within one standard deviation of a column's "
+                "best. $^\\dagger$: fewer than \\MlstMinBkgPass{} QCD jets pass in a run; never bold.",
     "jetclass_all": f"JetClass fine-tuning as table~\\ref{{tab:jetclass}} of {NETS} and of the controls; the row of "
                     "all five random partitions gives the mean $\\pm$ standard deviation over them. " + SD_SHORT
                     + " Bold and $^\\dagger$ as there.",
@@ -4361,7 +4370,7 @@ def _common_label(boxes: list, label_cm: float = LABEL_CM) -> list:
 
 
 CONTINUED = (r"\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax"
-             r"{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}")
+             r"\makebox[\linewidth][l]{\small\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}")
 
 
 def _define_tags(cap: str, key: str) -> str:
@@ -4392,7 +4401,7 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list) -> str:
     page stays whole on one (no stub of a few rows under a repeated heading, no heading stranded at the foot of a
     page); a block taller than the page is a longtable whose rows break under its repeated heading. The caption
     above the first block, "Table N (continued)" above every later block and page; one table number."""
-    cont = rf"{{\small\textit{{Table~\ref{{{label}}} (continued)}}}}"
+    cont = rf"\makebox[\linewidth][l]{{\small\textit{{Table~\ref{{{label}}} (continued)}}}}"
     out = [r"\begin{landscape}", "{\\small", LT_SETUP]
     for k, b in enumerate(blocks):
         fits = _height_cm([b], "") + (0.45 * (len(cap) / 150 + 1) if k == 0 else 0.6) <= LAND_FULL_CM

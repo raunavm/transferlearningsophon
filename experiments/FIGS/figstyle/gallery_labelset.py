@@ -448,11 +448,14 @@ def _draw_embeddings(path, grid: list, heading: str, colours=None, legend_rows=N
     legend_rows_n = math.ceil(len(groups) / ncol)
     fig, axes, _ = S.grid_cm(len(grid), len(grid[0]), aspect=1.0, w=7.0, left=0.35, wgap=0.3, hgap=0.6, bottom=0.3,
                              top=1.4 + 0.5 * legend_rows_n)
+    if colours is None:         # QCD black, as in every class figure; the other classes take the colours after it
+        rest = iter(S.TAB10[1:])
+        colours = [S.TAB10[0] if name == "QCD" else next(rest) for name in groups]
     for r, (row, drow) in enumerate(zip(grid, docs)):
         for ax, (_, title), d in zip(axes[r], row, drow):
-            _embedding(ax, d, colours or S.TAB10)
+            _embedding(ax, d, colours)
             S.title(ax, title)
-    handles = [Line2D([], [], color=(colours or S.TAB10)[k], marker="o", markersize=5, linestyle="none",
+    handles = [Line2D([], [], color=colours[k], marker="o", markersize=5, linestyle="none",
                       label=EMBED_NAMES[name]) for k, name in enumerate(groups)]
     S.fig_legend(fig, handles, top_cm=0.6, ncol=ncol)
     S.letter_panels(axes.flat)

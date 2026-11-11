@@ -1,4 +1,4 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\small\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
 \small
 \begin{minipage}{\linewidth}\centering

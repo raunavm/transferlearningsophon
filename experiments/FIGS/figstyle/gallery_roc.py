@@ -384,9 +384,10 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         models = P._scratch_models(ft)
         s = mean_over_runs(ft, models, key)
         _plot(ax, s, **S.look("SCRATCH"), linewidth=S.LW_CURVE, label=S.LEGEND["SCRATCH"] + ("" if word == "fine-tuned" else f" {S.FINE_TUNED}"), zorder=1.9)  # under the label sets
-        scratch = _ratio(rx, s, ref, _rel_error(ft, models, key), band=True, **S.look("SCRATCH"), linewidth=S.LW_CURVE,
-                         zorder=1.9)
-        shown += scratch                    # every ratio drawn is inside its panel (PI 2026-11-11)
+        if word == "fine-tuned":            # beside probes the fine-tuned reference is up to ten times higher: its
+            # ratio would set the range and flatten the probes, so the probe figure's ratio panels hold the probes only
+            shown += _ratio(rx, s, ref, _rel_error(ft, models, key), band=True, **S.look("SCRATCH"),
+                            linewidth=S.LW_CURVE, zorder=1.9)       # every ratio drawn is inside its panel
         if kinematic and key == "top" and M.KIN_MODEL in docs:
             s = mean_over_runs(docs, [M.KIN_MODEL], key)
             _plot(ax, s, **S.look("KIN"), linewidth=S.LW_CURVE, label=S.LEGEND["KIN"])
@@ -408,8 +409,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         if k == 0:
             S.labels(ax, ylabel=S.Y_REJ)
             S.labels(rx, ylabel="Ratio to 188")      # "classes" does not fit the ratio panel; the caption says it
-        if k == 2:
-            S.labels(rx, xlabel=S.X_EPS)
+        S.labels(rx, xlabel=S.X_EPS)        # under every panel, as in the other ROC figures
     handles, labels = axes[0].get_legend_handles_labels()
     order = [labels.index(S.LEGEND[a]) for a in S.LEVELS] + [i for i, lab in enumerate(labels)
                                                              if lab not in [S.LEGEND[a] for a in S.LEVELS]]
@@ -426,7 +426,7 @@ def draw_f6_app(path: pathlib.Path) -> None:
     _benchmarks(path, _family("top_probe"), _family("qg_probe"), "linear probes", True)
 
 
-EVERY_CLASS_LW = 0.7     # 188 curves a panel: thin, opaque, and the legend handles as thin
+EVERY_CLASS_LW = 1.0     # 188 curves a panel: thin, opaque, and the legend handles as thin
 
 
 def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
@@ -579,8 +579,8 @@ PAGES = [
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
                  "and 17 classes, trained on the full top and quark/gluon training sets, and a network without "
                  "pretraining, fine-tuned from scratch (f.t.): rejection against efficiency, means over three "
-                 "runs; dotted, one run with 188 classes and kinematic inputs only. Lower panels: ratio to 188 "
-                 "classes; bands: each curve's SD over runs and 68% binomial uncertainty of the passing "
+                 "runs; dotted, one run with 188 classes and kinematic inputs only. Lower panels: the probes' "
+                 "ratio to 188 classes; bands: each curve's SD over runs and 68% binomial uncertainty of the passing "
                  "background count, in quadrature.",
          differs="As F6, with linear probes; the ratio is to the 188-class probe.",
          data_note="The kinematic-inputs model's probe is one run (curves_v2/top_probe/mtx-l188kin-s1.json), so its "
