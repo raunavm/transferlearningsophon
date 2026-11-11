@@ -1548,18 +1548,23 @@ def test_a_row_label_names_its_network_and_the_tables_tag_and_wraps_only_at_its_
 
 def test_a_table_too_wide_and_too_tall_is_a_landscape_longtable_with_one_caption():
     """PI 2026-11-11: no narrow blocks, nothing shrunk, no wrapped label. A table wider than the upright page and
-    taller than the turned one is set in landscape as longtables across the whole line, the caption once and
-    "continued" above every later page and block, one table number."""
+    taller than the turned one is cut into full-width blocks in the orientation with fewer pages (landscape
+    longtables or upright whole blocks), the caption once and "continued" above every later page and block, one
+    table number."""
     rows = [M.LABEL[a] + " & " + " & ".join([M.TAB(0.9, 0.001)] * 14) + r" \\" for a in M.ALL_ROWS] * 3
     body = "\n".join([r"\begin{tabular}{l" + "c" * 14 + "}", r"\toprule", " & " + " & ".join(f"c{i}" for i in range(14))
                       + r" \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
     t = M._float("probes", body, True)
     assert M.V4.TOK_OPEN not in t and "pretraining &" not in t
-    assert t.startswith(r"\begin{landscape}") and t.rstrip().endswith(r"\end{landscape}")
-    n = t.count(r"\begin{longtable}{@{\extracolsep{\fill}}l")
-    assert n > 1 and t.count(r"\caption{") == 1 and t.count(r"\label{tab:probes}") == 1
-    assert t.count(r"\addtocounter{table}{-1}") == n - 1 and t.count(r"\endhead") == n
+    # the orientation with fewer pages (round 6): upright whole blocks, or landscape longtables
+    assert t.count(r"\caption") == 1 and t.count(r"\label{tab:probes}") == 1
     assert "(continued)" in t and "adjustbox" not in t and r"}p{" not in t and r"\mbox" not in t
+    if r"\begin{longtable}" in t:
+        assert t.startswith(r"\begin{landscape}") and t.rstrip().endswith(r"\end{landscape}")
+        n = t.count(r"\begin{longtable}{@{\extracolsep{\fill}}l")
+        assert t.count(r"\addtocounter{table}{-1}") == n - 1 and t.count(r"\endhead") == n
+    else:
+        assert t.count(r"\begin{tabular*}{\linewidth}") > 1 and r"\TableContinued" in t
 
 
 def test_a_table_that_fits_is_one_tabular_across_the_whole_line():

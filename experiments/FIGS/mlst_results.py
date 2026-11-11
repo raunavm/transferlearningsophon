@@ -4032,10 +4032,9 @@ CAPTION_SHORT = {
             "set to zero, to the training mean or to random draws of a real particle: the relative drop in "
             "JetClass-II accuracy (percent) when those slots are substituted, then $R_{30}$ on top and "
             "quark/gluon tagging. Bold: the best substitution of each row and data set. " + SD_SHORT,
-    "mass": "Jet mass from frozen features: a multilayer perceptron regresses the mass from the frozen features of "
-            f"{NETS} (two also with a mass regression) and of the random network, beside the soft-drop mass. "
-            "Resolution $\\sigma_r$, half the 15.9--84.1\\% quantile range of the response "
-            "$r = m/m_{\\mathrm{gen}}$ over its median, and the median response. " + SD_SHORT,
+    "mass": f"Jet mass regressed from the frozen features of {NETS} (two also with a mass regression) and of the "
+            "random network, beside the soft-drop mass. Resolution $\\sigma_r$: half the 15.9--84.1\\% quantile "
+            "range of $r = m/m_{\\mathrm{gen}}$ over its median; median response of $r$. " + SD_SHORT,
     "boot": f"Linear probes on the frozen features and fine-tuning of {NETS}: uncertainty (percent) of the comparisons "
             "between their label sets at the largest training set, as the standard deviation of the logarithm of "
             "the ratio over the pretraining runs / that from the finite test sample. JetClass-II: the ratio of "

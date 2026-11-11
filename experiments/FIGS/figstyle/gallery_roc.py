@@ -395,7 +395,6 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
                             linewidth=S.LW_CURVE)
         _y_range([ax] if k == 0 else axes[1:])
         ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v - 1) < 1e-9 else S.pow10(v)))
-        rx.yaxis.set_major_locator(MaxNLocator(nbins=3, steps=[1, 2, 5, 10], prune="upper"))   # 1.0 a tick; none at the top edge; three labels at most in a short panel
         rx.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.2f}"))        # one format in every ratio panel
         v = np.array(shown, float)
         v = v[np.isfinite(v)]
@@ -404,6 +403,9 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         if k == 2:                          # the shared ratio range holds both quark/gluon panels
             lo, hi = min(lo, ratios[1].get_ylim()[0] + pad), max(hi, ratios[1].get_ylim()[1] - pad)
         rx.set_ylim(lo - pad, hi + pad)
+        # three or four labels in a short panel, 1.0 among them (MaxNLocator's nbins gave six)
+        step = next(q for q in (0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0) if (hi - lo + 2 * pad) / q <= 3.5)
+        rx.yaxis.set_major_locator(MultipleLocator(step))
         rx.set_xlim(0, 1)
         S.title(ax, f"({'abc'[k]}) {name}")
         if k == 0:
