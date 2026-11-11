@@ -545,7 +545,8 @@ def draw_f10c(path: pathlib.Path) -> None:
         (x, xl, xh), (y, yl, yh) = (P.F._spread(v) for v in ([p["rejection"] for p in pts], [1 / p["jsd"] for p in pts]))
         ax.errorbar(x, y, xerr=None if xl is None else [[xl], [xh]], yerr=None if yl is None else [[yl], [yh]],
                     fmt="none", ecolor=S.SERIES[row], elinewidth=L.BAR, capsize=0)
-        ax.plot([x], [y], linestyle="none", **L.dot(S.SERIES[row], False), label=S.LEGEND[row], zorder=2.6)
+        # a mass-regression model shares its label set's colour: open, the label set filled (as A17-probe)
+        ax.plot([x], [y], linestyle="none", **L.dot(S.SERIES[row], row in S.MASS), label=S.LEGEND[row], zorder=2.6)
         drawn += 1
     if not drawn:
         raise Absent(f"no {F10C_KEY} in the sculpting files (head/sculpting_v3/*_sculpting.json)")
@@ -850,7 +851,8 @@ F10C_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II, used without further training, in the "
     "plane of the DisCo paper's Fig. 3: the inverse Jensen-Shannon divergence between the soft-drop mass of all "
     "QCD test jets and of those passing a cut on 1 - g_QCD (y), against the QCD rejection (x), both at the cut "
-    "that keeps 50% of resonant test jets. Points are means, bars the SD over pretraining runs (range over two).")
+    "that keeps 50% of resonant test jets. Points are means (open: with mass regression), bars the SD over "
+    "pretraining runs (range over two).")
 F11_CAPTION = (
     "Networks pretrained on JetClass-II, on Sophon's (a) X→bb̄ and (b) X→bs samples against QCD jets in the "
     "soft-drop mass window: signal efficiency over the square root of the background efficiency against QCD "

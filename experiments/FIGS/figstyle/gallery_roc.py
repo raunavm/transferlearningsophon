@@ -417,7 +417,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         rx.set_xlim(0, 1)
         S.title(ax, f"({'abc'[k]}) {name}")
         if k == 0:
-            S.labels(ax, ylabel=S.Y_REJ)
+            S.labels(ax, ylabel=r"Rejection ($1/\varepsilon_B$)")       # short: clear of the ratio label below
             S.labels(rx, ylabel="Ratio to 188")      # "classes" does not fit the ratio panel; the caption says it
         S.labels(rx, xlabel=S.X_EPS)        # under every panel, as in the other ROC figures
     handles, labels = axes[0].get_legend_handles_labels()

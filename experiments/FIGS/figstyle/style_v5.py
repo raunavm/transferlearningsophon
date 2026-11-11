@@ -55,7 +55,7 @@ TAB10 = CLASS10                                  # the name the pages use
 JC1_COLOUR = dict(zip(JC1_CLASSES, CLASS10))
 NAME = {**NAME, "FLAV_F1": "$b$-quark boundary"}          # quark flavours in italic, as everywhere in the paper
 # a prime as a glyph beside the q (mathtext's q' raises it like a second superscript)
-JC1_TEX = {k: v.replace("qq'", r"qq\prime") for k, v in JC1_TEX.items()}
+JC1_TEX = {k: v.replace("qq'", r"qq^{\prime}") for k, v in JC1_TEX.items()}     # Computer Modern: a raised prime
 SERIES = {"L188": "#332288", "L162": "#AA4499", "R42_Q1": "#999933", "R16_Q1": "#44AA99",
           "FLAV_F0": "#CC6677", "FLAV_F1": "#117733", "FLAV_F1R": "#88CCEE",
           "RAND": GREY_MID, "INIT_BN": GREY_LIGHT, "SCRATCH": GREY_DARK}
@@ -269,4 +269,4 @@ def fig_legend(fig, handles, top_cm: float, ncol: int, **kw):
     """A figure-level legend centred above the panels, its top edge top_cm below the figure's top."""
     return fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 1 - top_cm / (fig.get_figheight() / CM)),
                       ncol=ncol, frameon=False, fontsize=LEGEND_PT5, borderpad=0.2, labelspacing=0.3,
-                      columnspacing=1.2, handlelength=HANDLE, **kw)
+                      columnspacing=1.2, handlelength=HANDLE, markerscale=1.6, **kw)     # 3 pt dots readable in the key

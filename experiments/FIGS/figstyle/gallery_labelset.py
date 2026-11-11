@@ -756,8 +756,7 @@ PAGES = [
                 "partitions with controlled flavor boundaries, fine-tuned and scored on class-balanced "
                 "JetClass-II and JetClass (accuracy) and on top and quark/gluon tagging (rejection R30 at 30% "
                 "signal efficiency), against the number of pretraining classes. Markers are means; bars the SD "
-                "over three pretraining runs, the range over two for the partitions. Dashed: trained from scratch, "
-                "trained from scratch.",
+                "over three pretraining runs, the range over two for the partitions. Dashed: trained from scratch.",
         differs="As F2a. Hong's own figure is fine-tuned too, so this page is the closer "
                 "copy.",
         draw=draw_f2b,
