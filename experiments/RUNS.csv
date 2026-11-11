@@ -1674,3 +1674,5 @@ mtx2-tests-book-f931989-raunav,2026-11-11T20:57:33Z,complete,"120 passed, 1 skip
 render-gallery-8e12659-raunav,2026-11-11T20:57:33Z,launched,"Book pass round 12 at 8e12659 (figures only).",experiments/FIGS/k8s/job-render-gallery-8e12659-raunav.yaml
 render-gallery-8e12659-raunav,2026-11-11T21:02:39Z,complete,"Round 12: no figcheck finding; UMAP and every-class order fixed; quark/gluon ratio panel four touching labels, fixed in round 13.",experiments/FIGS/k8s/job-render-gallery-8e12659-raunav.yaml
 render-gallery-3565785-raunav,2026-11-11T21:02:39Z,launched,"Book pass round 13 at 3565785.",experiments/FIGS/k8s/job-render-gallery-3565785-raunav.yaml
+render-gallery-3565785-raunav,2026-11-11T21:08:02Z,complete,"Round 13: a ratio label on the frame above (figcheck overlap, F6-app); fixed in round 14.",experiments/FIGS/k8s/job-render-gallery-3565785-raunav.yaml
+render-gallery-2b53bcf-raunav,2026-11-11T21:08:02Z,launched,"Book pass round 14 at 2b53bcf.",experiments/FIGS/k8s/job-render-gallery-2b53bcf-raunav.yaml

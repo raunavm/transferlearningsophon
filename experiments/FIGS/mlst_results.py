@@ -760,12 +760,12 @@ def _task_longtable(blocks: list, label: str) -> str:
             rows[:-1] = [r + "*" for r in rows[:-1]]
         elif len(rows) >= 2:
             rows[-2] += "*"         # a block's last row never sits alone on a page
-        body += ([BLOCK_SEP] if k else []) + [r"\multicolumn{" + str(ncol + 1) + "}{l}{" + title + r"} \\*",
+        body += ([BLOCK_SEP] if k else []) + [r"\multicolumn{" + str(ncol + 1) + "}{@{}l}{" + title + r"} \\*",
                                               row(head) + "*", _head_rule(ncol + 1)] + rows
     return "\n".join([r"\begin{landscape}", "{\\small", LT_SETUP,
                       r"\begin{longtable}{@{\extracolsep{\fill}}l" + "c" * ncol + "@{}}",
                       rf"\caption{{__CAPTION__}}\label{{{label}}}\\", r"\toprule", r"\endfirsthead",
-                      r"\multicolumn{" + str(ncol + 1) + r"}{l}{\textit{Table~\ref{" + label + r"} (continued)}} \\", r"\toprule", r"\endhead",
+                      r"\multicolumn{" + str(ncol + 1) + r"}{@{}l}{\textit{Table~\ref{" + label + r"} (continued)}} \\", r"\toprule", r"\endhead",
                       r"\bottomrule", r"\endlastfoot", *body, r"\end{longtable}", "}", r"\end{landscape}", ""])
 
 
@@ -1474,7 +1474,7 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
     of the soft-drop mass and the regression output against jet pT and generator mass. One label
     column; the estimator (upper part) and the jet group (lower parts) are section rows."""
     ng = len(MASS_GROUPS)
-    sec = lambda t, k: r"\multicolumn{" + str(k) + r"}{l}{\textit{" + t + r"}} \\"   # noqa: E731
+    sec = lambda t, k: r"\multicolumn{" + str(k) + r"}{@{}l}{\textit{" + t + r"}} \\"   # noqa: E731
     out = [r"\begin{tabular}{l" + "c" * 2 * ng + "}", r"\toprule",
            rf" & \multicolumn{{{ng}}}{{c}}{{resolution}} & \multicolumn{{{ng}}}{{c}}{{median response}} \\",
            rf"\cmidrule(lr){{2-{1 + ng}}}\cmidrule(lr){{{2 + ng}-{1 + 2 * ng}}}",
@@ -3521,7 +3521,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
     lines = [r"\begin{landscape}", "{\\small", LT_SETUP,
              r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap("6.0") + "r" + wrap("9.6") + "@{}}",
              r"\caption{__CAPTION__}\label{tab:compute}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
-             r"\multicolumn{4}{l}{\textit{Table~\ref{tab:compute} (continued)}} \\", r"\toprule", head, r"\midrule", r"\endhead",
+             r"\multicolumn{4}{@{}l}{\textit{Table~\ref{tab:compute} (continued)}} \\", r"\toprule", head, r"\midrule", r"\endhead",
              r"\bottomrule", r"\endlastfoot"]
     hours = {}
     items = [(arm, f"{LABEL[arm]}, run {_idx(m)}", m) for arm, ms in runs.items() if arm not in (INIT, INIT_BN) for m in ms]
@@ -3610,7 +3610,7 @@ def table_per_run(fits, per, runs, fmt_pm, fill=None, chosen=None) -> str:
     return "\n".join([r"\begin{landscape}", "{\\small", LT_SETUP,
                       r"\begin{longtable}{@{\extracolsep{\fill}}l" + "c" * 9 + "@{}}",
                       r"\caption{__CAPTION__}\label{tab:perrun}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
-                      r"\multicolumn{10}{l}{\textit{Table~\ref{tab:perrun} (continued)}} \\", r"\toprule", head, r"\midrule", r"\endhead",
+                      r"\multicolumn{10}{@{}l}{\textit{Table~\ref{tab:perrun} (continued)}} \\", r"\toprule", head, r"\midrule", r"\endhead",
                       r"\bottomrule", r"\endlastfoot", *rows, r"\end{longtable}", "}", r"\end{landscape}", ""])
 
 
@@ -4011,8 +4011,8 @@ CAPTION_SHORT = {
     "mlp": "Nonlinear probes (a multilayer perceptron with one hidden layer of \\LpMlpHidden{} units) on the frozen "
            f"features of {NETS} and of the controls, at the largest training set of each task: the quantities of "
            "table~\\ref{tab:probes} and the class pairs of table~\\ref{tab:pairs}; then the models scored on the "
-           "natural-composition test set only, and the linear probe on the hidden layer of the pretraining head "
-           "beside the one on the class token. " + SD_SHORT,
+           "natural-composition test set only, and the linear probe (LP) on the hidden layer of the pretraining "
+           "head beside the one on the class token. " + SD_SHORT,
     "coarse": f"Linear probes on the frozen features of {NETS} and of the controls, trained on one million "
               "class-balanced JetClass-II jets, with the classes merged into coarser targets: the 43 and the 17 "
               "groups of the class hierarchy and the 17 groups of the partition with no flavor boundary. Accuracy "
@@ -4027,7 +4027,7 @@ CAPTION_SHORT = {
     "jc1_class_auc": f"The {NETS} and the controls, trained on one million JetClass jets: the AUC of each JetClass "
                      "class against the other nine, fine-tuned (upper part, beside the network trained from "
                      "scratch) and from linear probes on the frozen features (lower part, beside the random "
-                     "network). " + SD_SHORT,
+                     "network with BatchNorm recomputed). " + SD_SHORT,
     "fill": f"Linear probes on the frozen features of {NETS} and of the controls, with the inputs a data set lacks "
             "set to zero, to the training mean or to random draws of a real particle: the relative drop in "
             "JetClass-II accuracy (percent) when those slots are substituted, then $R_{30}$ on top and "
@@ -4076,11 +4076,10 @@ CAPTION_SHORT = {
                 "published models: accuracy, AUC, $1/\\epsB$ at 50\\% and 30\\% quark efficiency and the number of "
                 "trainable parameters. Uncertainties and bold as in table~\\ref{tab:benchtop}.",
     "jetclass": "JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not "
-                "pretrained, fine-tuned on one million JetClass jets, beside published models trained from scratch on "
-                "2 million: accuracy, AUC averaged over all pairs of classes, and the rejection of QCD jets at each "
-                "signal class's efficiency. Ours: mean $\\pm$ standard deviation over three pretraining runs "
-                "($\\pm\\,0$: the same number of QCD jets pass). Bold: within one standard deviation of a column's "
-                "best. $^\\dagger$: fewer than \\MlstMinBkgPass{} QCD jets pass in a run; never bold.",
+                "pretrained, fine-tuned on one million JetClass jets, beside published models (2 million jets, from "
+                "scratch): accuracy, AUC averaged over class pairs, and QCD rejection at each signal class's efficiency. "
+                "Ours: mean $\\pm$ SD over three runs ($\\pm\\,0$: the same QCD jets pass). Bold: within one SD of a "
+                "column's best. $^\\dagger$: fewer than \\MlstMinBkgPass{} QCD jets pass in a run; never bold.",
     "jetclass_all": f"JetClass fine-tuning as table~\\ref{{tab:jetclass}} of {NETS} and of the controls; the row of "
                     "all five random partitions gives the mean $\\pm$ standard deviation over them. " + SD_SHORT
                     + " Bold and $^\\dagger$ as there.",
@@ -4426,7 +4425,7 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list) -> str:
         head, rows = inner.split(r"\midrule", 1)
         head = head.replace(r"\toprule", "").strip()
         rows = rows.rsplit(r"\bottomrule", 1)[0].strip()
-        more = rf"\multicolumn{{{len(spec)}}}{{l}}{{\textit{{Table~\ref{{{label}}} (continued)}}}} \\"
+        more = rf"\multicolumn{{{len(spec)}}}{{@{{}}l}}{{\textit{{Table~\ref{{{label}}} (continued)}}}} \\"
         out += ([r"\addtocounter{table}{-1}"] if k else []) + [      # a longtable steps the counter: one number a table
                 r"\begin{longtable}{@{\extracolsep{\fill}}" + spec + "@{}}",
                 (rf"\caption{{{cap}}}\label{{{label}}}\\" if k == 0 else more), r"\toprule", head, r"\midrule", r"\endfirsthead",

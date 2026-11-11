@@ -94,10 +94,11 @@ def _right_labels_off(axes) -> None:
 
 
 def _y_range(axes) -> None:
-    """From 1 to just above the highest point of any curve, so every curve is whole inside the frame (PI 2026-11-11)."""
+    """From just below 1 to just above the highest point of any curve, so every curve is whole inside the frame, its
+    end at rejection 1 off the lower frame (PI 2026-11-11)."""
     highest = max(float(np.nanmax(line.get_ydata())) for ax in axes for line in ax.lines)
     for ax in axes:
-        ax.set_ylim(1, highest * 1.25)
+        ax.set_ylim(0.8, highest * 1.25)
 
 
 def _x_range(axes) -> None:
@@ -354,7 +355,8 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
     sets (and the kinematic-inputs model); from scratch is drawn and may leave it. From scratch always from the
     fine-tuned families."""
     top_ft, qg_ft = _family("top_ft"), _family("qg_ft")
-    left, own, gap, top_cm, rgap, bottom = ROC_LEFT, 0.95, 0.45, 2.2, 0.1, 0.95    # own: (b)'s tick labels
+    left, own, top_cm, rgap, bottom = ROC_LEFT, 0.95, 2.2, 0.1, 0.95    # own: the tick labels of (b) and (c)
+    gap = own                               # every panel its own tick labels, one gap between panels
     w = (S.PRINT_W - left - own - gap - 0.2) / 3
     h = w
     fig = S.figure_cm(S.PRINT_W, top_cm + h * (1 + RATIO_HEIGHT) + rgap + bottom)
@@ -366,10 +368,8 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         ax.tick_params(labelbottom=False)
         axes.append(ax)
         ratios.append(rx)
-    axes[2].sharey(axes[1])                 # Pythia and Herwig: one y range, its tick labels once
+    axes[2].sharey(axes[1])                 # Pythia and Herwig: one y range, labelled on both (PI: matching axes)
     ratios[2].sharey(ratios[1])
-    axes[2].tick_params(labelleft=False)
-    ratios[2].tick_params(labelleft=False)
     panels = ((top, top_ft, "top", "Top tagging"), (qg, qg_ft, "qg", "Quark/gluon, Pythia"), (qg, qg_ft, "qg_herwig", "Quark/gluon, Herwig"))
     for k, (ax, rx, (docs, ft, key, name)) in enumerate(zip(axes, ratios, panels)):
         _roc_axes(ax)
