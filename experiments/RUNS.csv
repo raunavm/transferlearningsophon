@@ -1721,3 +1721,6 @@ render-gallery-6261d0a-raunav,2026-11-11T23:20:05Z,launched,"Step 2 round 2.",ex
 render-gallery-6261d0a-raunav,2026-11-11T23:30:01Z,complete,"Only finding: F9b caption 84 words; Fig. 3 dot plot had an empty random-partition row; fixed at c2c437b.",experiments/FIGS/k8s/job-render-gallery-6261d0a-raunav.yaml
 render-gallery-c2c437b-raunav,2026-11-11T23:30:01Z,launched,"Step 2 round 3.",experiments/FIGS/k8s/job-render-gallery-c2c437b-raunav.yaml
 mtx2-tests-book-c2c437b-raunav,2026-11-11T23:30:01Z,launched,"Tests at c2c437b.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-c2c437b-raunav.yaml
+render-gallery-c2c437b-raunav,2026-11-11T23:39:06Z,complete,"Step 3 look: doubled from-scratch caption, small legend dots, Computer Modern prime as a slash, benchmark y labels touching, A15 mass models indistinguishable; fixed at f84798b.",experiments/FIGS/k8s/job-render-gallery-c2c437b-raunav.yaml
+render-gallery-f84798b-raunav,2026-11-11T23:39:06Z,launched,"Step 3 round 2.",experiments/FIGS/k8s/job-render-gallery-f84798b-raunav.yaml
+render-gallery-f84798b-raunav,2026-11-11T23:48:01Z,complete,"Step 3 round 2: no measured finding; every figure page of both books looked at, fixes confirmed.",experiments/FIGS/k8s/job-render-gallery-f84798b-raunav.yaml
