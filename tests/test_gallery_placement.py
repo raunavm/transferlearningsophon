@@ -24,7 +24,7 @@ def _assigned(path: pathlib.Path, name: str):
 def _page_ids() -> set:
     """Every page id the gallery modules define: Page(id="...") or Page("...", ...), and the UMAP pages."""
     ids = set(_assigned(FIG / "gallery_labelset.py", "UMAP_PAGES"))
-    for name in ("gallery_labelset", "gallery_roc", "gallery_physics", "gallery_palette", "gallery_inventory"):
+    for name in ("gallery_labelset", "gallery_roc", "gallery_physics", "gallery_palette", "gallery_inventory", "gallery_compare"):
         for n in ast.walk(ast.parse((FIG / f"{name}.py").read_text())):
             if isinstance(n, ast.Call) and getattr(n.func, "attr", getattr(n.func, "id", None)) == "Page":
                 first = n.args[0] if n.args else next((k.value for k in n.keywords if k.arg == "id"), None)

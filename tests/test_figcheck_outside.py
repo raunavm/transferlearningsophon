@@ -72,3 +72,17 @@ def test_the_check_reports_it_as_a_finding():
 
 def test_macro_auc_is_a_banned_term():
     assert figcheck.notation("188 classes, macro AUC 0.985") and not figcheck.notation("mean AUC over classes 0.985")
+
+
+def test_an_error_bar_beyond_the_axes_is_reported():
+    """Error bars are LineCollections: a bar running past the frame is a clipped point (PI 2026-11-11)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    ax.errorbar([1, 2], [1.0, 1.0], yerr=[[0.1, 2.0], [0.1, 0.1]], fmt="none")
+    ax.set_ylim(0.5, 1.5)
+    assert any("LineCollection" in f for f in figcheck.outside(ax))
+    ax.set_ylim(-1.5, 1.5)
+    assert not figcheck.outside(ax)
+    plt.close(fig)

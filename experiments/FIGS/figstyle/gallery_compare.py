@@ -29,7 +29,7 @@ def _font_panel(path, lm: bool) -> None:
     jc2 = PH.M._load(PH.PERF / "jc2")
     if not jc2:
         raise PH.Absent("no performance against jet pT (perf_vs_pt/jc2)")
-    w, h, left, top, bottom = 6.25, 0.85 * 6.25, 1.25, 0.7, 1.1
+    w, h, left, top, bottom = 6.25, 0.85 * 6.25, 1.25, 1.6, 1.1      # the legend above the panel, off the bands
     fig = S.figure_cm(left + w + 0.3, top + h + bottom)
     ax = S.axes_cm(fig, left, top, w, h)
     S.title(ax, "(a) JetClass-II, linear probes")
@@ -37,7 +37,7 @@ def _font_panel(path, lm: bool) -> None:
     PH._pt_panel(ax, jc2, S.LEVELS, PH._accuracy, "Accuracy")
     S.labels(ax, xlabel=PH.X_PT)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=ax.get_xlim()[1]: "" if v >= hi - 1e-9 else f"{v:g}"))
-    ax.legend(loc="lower right", frameon=False, fontsize=S.LEGEND_PT5, handlelength=S.HANDLE)
+    S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.1, ncol=2)
     S.save(fig, path)
 
 
@@ -54,8 +54,8 @@ F7 = ("Fine-tuned networks pretrained on JetClass-II with 188, 162, 43 and 17 cl
       "scratch (dashed), on class-balanced JetClass-II and JetClass (accuracy) and top and quark/gluon tagging (R30), "
       "against the number of training jets. Points are means over three pretraining runs; ")
 A4 = ("Networks pretrained on JetClass-II, in bins of jet transverse momentum: linear-probe accuracy on JetClass-II for "
-      "the label sets (a) and the controls (b), JetClass accuracy after fine-tuning (c), and the probes' X to bb "
-      "against X to cc AUC (d). Points are means at the bin centres, bars the SD over pretraining runs, no lines.")
+      "the label sets (a) and the controls (b), JetClass accuracy after fine-tuning (c), and the probes' X→bb̄ "
+      "against X→cc̄ AUC (d). Points are means at the bin centres, bars the SD over pretraining runs, no lines.")
 F2 = ("Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and "
       "the 17-class controls, scored on class-balanced JetClass-II and JetClass (accuracy) and top and quark/gluon "
       "tagging (R30), against the pretraining label set. Markers are means, bars the SD over pretraining runs; dashed, "

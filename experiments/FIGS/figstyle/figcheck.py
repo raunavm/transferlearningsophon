@@ -36,7 +36,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE.parent)]
 import matplotlib  # noqa: E402
 matplotlib.use("Agg")
-from matplotlib.collections import Collection, PolyCollection  # noqa: E402
+from matplotlib.collections import Collection, LineCollection, PolyCollection  # noqa: E402
 from matplotlib.image import AxesImage  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.transforms import Bbox  # noqa: E402
@@ -130,7 +130,7 @@ def data_hit(ax, box: Bbox) -> str | None:
 
 def outside(ax) -> list:
     """What ax draws in data coordinates beyond its limits (PI 2026-11-11: nothing off the axes, no clipped curve or
-    point): line vertices, scatter points, band and step-histogram vertices. Non-finite values are no point; on a log
+    point): line vertices, scatter points, error bars, band and step-histogram vertices. Non-finite values are no point; on a log
     axis neither is a value at or below zero (a histogram's baseline)."""
     (x0, x1), (y0, y1) = sorted(ax.get_xlim()), sorted(ax.get_ylim())
     tx, ty = 1e-9 * max(abs(x0), abs(x1), 1e-300), 1e-9 * max(abs(y0), abs(y1), 1e-300)
@@ -172,6 +172,8 @@ def outside(ax) -> list:
             continue
         if isinstance(c, PolyCollection) and c.get_transform() == ax.transData:
             n = sum(count(p.vertices) for p in c.get_paths())
+        elif isinstance(c, LineCollection) and c.get_transform() == ax.transData:     # error bars
+            n = sum(count(seg) for seg in c.get_segments() if len(seg))
         elif len(c.get_offsets()) and c.get_offset_transform() == ax.transData:
             n = count(c.get_offsets())
         else:

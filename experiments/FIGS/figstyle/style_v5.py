@@ -133,11 +133,13 @@ def clear_edge_labels(ax, low: bool = False, high: bool = False, share: float = 
 
 
 def data_ylim(ax, pad: float = 0.08) -> None:
-    """y limits from everything drawn in data coordinates (lines and bands), padded by pad of the span, in log space
-    on a log axis, where values at or below zero do not count."""
-    from matplotlib.collections import PolyCollection
+    """y limits from everything drawn in data coordinates (lines, bands and error bars), padded by pad of the span, in
+    log space on a log axis, where values at or below zero do not count."""
+    from matplotlib.collections import LineCollection, PolyCollection
     ys = [np.asarray(ln.get_ydata(), float) for ln in ax.lines if ln.get_transform() == ax.transData and len(ln.get_ydata())]
     ys += [p.vertices[:, 1] for c in ax.collections if isinstance(c, PolyCollection) for p in c.get_paths()]
+    ys += [np.asarray(seg, float)[:, 1] for c in ax.collections if isinstance(c, LineCollection)
+           and c.get_transform() == ax.transData for seg in c.get_segments() if len(seg)]
     v = np.concatenate([np.ravel(y) for y in ys]) if ys else np.array([])
     v = v[np.isfinite(v)]
     if ax.get_yscale() == "log":

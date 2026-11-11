@@ -1702,3 +1702,7 @@ render-gallery-8a305d1-raunav,2026-11-11T22:25:41Z,launched,"Map on one page wit
 render-gallery-8a305d1-raunav,2026-11-11T22:32:49Z,complete,"Map still one row long; and 8a305d1 shortened a sentence a test pins; restored, two other sentences tightened in 94672d6.",experiments/FIGS/k8s/job-render-gallery-8a305d1-raunav.yaml
 render-gallery-94672d6-raunav,2026-11-11T22:32:49Z,launched,"Map on one page.",experiments/FIGS/k8s/job-render-gallery-94672d6-raunav.yaml
 mtx2-tests-book-94672d6-raunav,2026-11-11T22:32:49Z,launched,"Table and figure tests at 94672d6.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-94672d6-raunav.yaml
+render-gallery-94672d6-raunav,2026-11-11T22:39:09Z,complete,"51 of 51 drawn: the map fits one page with the AUC row.",experiments/FIGS/k8s/job-render-gallery-94672d6-raunav.yaml
+mtx2-tests-book-94672d6-raunav,2026-11-11T22:39:09Z,complete,"121 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-94672d6-raunav.yaml
+render-gallery-376f855-raunav,2026-11-11T22:39:09Z,launched,"PI line-graph brief step 1: styles B and C of Figs. 7, A4, 2; Fig. A4 (a) in Latin Modern.",experiments/FIGS/k8s/job-render-gallery-376f855-raunav.yaml
+mtx2-tests-book-376f855-raunav,2026-11-11T22:39:09Z,launched,"Tests at 376f855.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-376f855-raunav.yaml
