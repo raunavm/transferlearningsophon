@@ -804,9 +804,9 @@ F9A_CAPTION = (
 F9B_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs): median response r = m/m_gen (a, b) and resolution sigma_r, half the 15.9-84.1% "
-    "quantile range of r over its median (c, d), of test jets against pT (a, c) and generator mass (b, d; 20-500 "
-    "GeV), with the soft-drop mass (black). Points at bin centres, set apart within a bin; bars: range over runs. "
-    "Log resolution axis; lower panels: ratio to the soft-drop mass.")
+    "quantile range of r over its median (c, d), against pT (a, c) and generator mass (b, d), with the soft-drop "
+    "mass (black). Points at bin centres, set apart within a bin; bars: range over runs. Lower panels: ratio to "
+    "the soft-drop mass.")
 A17_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs), on {group} test jets: median response r (a, b) and resolution sigma_r (c, d), as in "

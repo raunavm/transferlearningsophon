@@ -245,7 +245,7 @@ def _draw_f2_cat(path, value_of, groups, absent: str, heading: str, probe: bool)
 # the metric along x with each row's mean and a horizontal SD bar; from scratch a vertical dashed line.
 DOT_ROWS = {"L188": 0.0, "L162": 1.0, "R42_Q1": 2.0, "R16_Q1": 3.0}
 DOT_DIVIDER = 3.75
-DOT_CONTROLS = {"RAND": 4.5, "FLAV_F0": 5.5, "FLAV_F1": 6.5, "FLAV_F1R": 7.5}
+DOT_CONTROL_ORDER = ("RAND", "FLAV_F0", "FLAV_F1", "FLAV_F1R")      # rows from 4.5, one a row, those the figure shows
 DOT_NAMES = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes",
              "RAND": "random partitions", "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary",
              "FLAV_F1R": "random flavor boundary"}
@@ -253,23 +253,29 @@ DOT_RAND_SPREAD = 0.12      # rows between the five random partitions within the
 DOT_LEFT, DOT_W, DOT_H, DOT_WGAP, DOT_HGAP = 4.2, 5.0, 5.0, 0.45, 1.35
 
 
-def _dot_rows(ax, labelled: bool) -> None:
-    ax.set_ylim(8.1, -0.6)
-    ys = list(DOT_ROWS.values()) + list(DOT_CONTROLS.values())
+def _dot_controls(groups) -> dict:
+    """{control: row} of the controls a figure shows, in DOT_CONTROL_ORDER, from row 4.5 down (no empty row)."""
+    shown = [k for k in DOT_CONTROL_ORDER if any(key == k for _, key, _ in groups)]
+    return {k: 4.5 + i for i, k in enumerate(shown)}
+
+
+def _dot_rows(ax, labelled: bool, controls: dict) -> None:
+    ax.set_ylim(max(controls.values(), default=3.0) + 0.6, -0.6)
+    ys = list(DOT_ROWS.values()) + list(controls.values())
     ax.yaxis.set_major_locator(ticker.FixedLocator(ys))
-    names = [DOT_NAMES[k] for k in (*DOT_ROWS, *DOT_CONTROLS)]
+    names = [DOT_NAMES[k] for k in (*DOT_ROWS, *controls)]
     ax.yaxis.set_major_formatter(ticker.FixedFormatter(names if labelled else [""] * len(names)))
     ax.yaxis.set_minor_locator(ticker.NullLocator())
     ax.tick_params(axis="y", length=0)
     ax.axhline(DOT_DIVIDER, color=S.GREY_MID, linewidth=S.LW_THIN, zorder=0.5)
 
 
-def _dot_bracket(fig, ax) -> None:
+def _dot_bracket(fig, ax, controls: dict) -> None:
     """ "17 classes" on the left of the control rows' labels: a bracket spanning them, the words turned along it."""
     from matplotlib.transforms import blended_transform_factory
     tr = blended_transform_factory(fig.transFigure, ax.transData)
     x = 0.6 / S.PRINT_W                   # 0.6 cm from the figure's left edge, left of the longest row label
-    a, b = min(DOT_CONTROLS.values()) - 0.4, max(DOT_CONTROLS.values()) + 0.4
+    a, b = min(controls.values()) - 0.4, max(controls.values()) + 0.4
     tick = 0.12 / S.PRINT_W
     fig.add_artist(plt.Line2D([x + tick, x, x, x + tick], [a, a, b, b], transform=tr, color="#000000",
                               linewidth=S.LW_THIN))
@@ -284,12 +290,13 @@ def _draw_f2_dot(path, value_of, groups, absent: str, heading: str) -> None:
     if not any(values):
         raise C.Absent(absent)
     top, bottom = 1.75, 1.0
+    controls = _dot_controls(groups)
     fig = S.figure_cm(S.PRINT_W, top + 2 * DOT_H + DOT_HGAP + bottom)
     axes = [S.axes_cm(fig, DOT_LEFT + j * (DOT_W + DOT_WGAP), top + i * (DOT_H + DOT_HGAP), DOT_W, DOT_H)
             for i in range(2) for j in range(2)]
     for k, (ax, value, (key, _, ds, met, *_)) in enumerate(zip(axes, values, P.F2_PANELS)):
         S.title(ax, TITLES[key])
-        _dot_rows(ax, k % 2 == 0)
+        _dot_rows(ax, k % 2 == 0, controls)
         S.labels(ax, Y_R30 if met == "r30" else Y_ACC, None)
         if value is None:
             _empty_panel(ax)
@@ -304,7 +311,7 @@ def _draw_f2_dot(path, value_of, groups, absent: str, heading: str) -> None:
             for i, r in enumerate(rows):
                 if v := P._vals(RUNS, r, value):
                     mean, lo, hi = P.F._spread(v)
-                    y = DOT_CONTROLS[key_] + DOT_RAND_SPREAD * (i - (len(rows) - 1) / 2)
+                    y = controls[key_] + DOT_RAND_SPREAD * (i - (len(rows) - 1) / 2)
                     xs += L.row(ax, y, mean, lo, hi, color=S.SERIES[key_], probe=False)
         scratch = P.scratch_series(M, I["per"], key, met)
         if scratch:
@@ -320,7 +327,7 @@ def _draw_f2_dot(path, value_of, groups, absent: str, heading: str) -> None:
         else:
             ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))
     for i in (0, 2):
-        _dot_bracket(fig, axes[i])
+        _dot_bracket(fig, axes[i], controls)
     S.letter_panels(axes)
     S.heading(fig, heading)
     handles = [Line2D([], [], linestyle="none", **L.dot("#000000", False), label="mean and SD over pretraining runs"),
