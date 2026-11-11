@@ -90,7 +90,7 @@ def pow10(v: float, _=None) -> str:
 
 def log_axis(ax, which: str = "y", force: bool = False) -> None:
     """A positive axis whose limits are set: logarithmic with 10^n labels when it spans a decade or more (with 2 and 5
-    times 10^n labelled too while fewer than three powers of ten lie inside), linear with round ticks below a decade,
+    times 10^n labelled too while fewer than two powers of ten lie inside), linear with round ticks below a decade,
     where a log axis has no power of ten to label (force: logarithmic whatever it spans). Minor ticks are never labelled."""
     from matplotlib import ticker
     lo, hi = getattr(ax, f"get_{which}lim")()
@@ -104,7 +104,7 @@ def log_axis(ax, which: str = "y", force: bool = False) -> None:
     getattr(ax, f"set_{which}scale")("log")
     getattr(ax, f"set_{which}lim")(lo, hi)
     decades = [10.0 ** e for e in range(int(np.ceil(np.log10(lo) - 1e-9)), int(np.floor(np.log10(hi) + 1e-9)) + 1)]
-    ticks = decades if len(decades) >= 3 else [m * 10.0 ** e for e in range(int(np.floor(np.log10(lo))), int(np.ceil(np.log10(hi))) + 1)
+    ticks = decades if len(decades) >= 2 else [m * 10.0 ** e for e in range(int(np.floor(np.log10(lo))), int(np.ceil(np.log10(hi))) + 1)
                                                for m in (1, 2, 5) if lo <= m * 10.0 ** e <= hi]
     axis.set_major_locator(ticker.FixedLocator(ticks))
     axis.set_major_formatter(ticker.FuncFormatter(pow10))
@@ -140,7 +140,8 @@ def marker(key: str, mode: str = "ft", size: float | None = None) -> dict:
 # panels of at least 6.5 cm fit beside each other (ticks at 8 pt) with their tick labels; the y-axis label is written once per row when
 # the row shows one quantity.
 PRINT_W = 15.0                                  # cm, \linewidth of the paper
-PANEL_W = 6.5                                   # cm, the narrowest panel allowed
+PANEL_W = 6.5                                   # cm, a panel of a two-column figure
+PANEL_3 = 4.2                                   # cm, a panel of three in one row
 LABEL_PT5, TICK_PT5, TITLE_PT5, LEGEND_PT5 = 9.0, 8.0, 9.0, 8.5
 
 

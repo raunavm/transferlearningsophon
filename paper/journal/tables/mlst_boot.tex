@@ -3,31 +3,27 @@
 \small
 \caption{Linear probes on the frozen features and fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes: uncertainty of the comparisons between their label sets at the largest training set, in percent: the standard deviation of the logarithm of the ratio over the pretraining runs, then that from the finite test sample. JetClass-II: the ratio of $1-\mathrm{AUC}$, the test-sample part from a bootstrap of the class-balanced test jets (\MlstBootResamples{} resamples within each class). Top and quark/gluon: the ratio of $R_{30}$, the test-sample part from the number of background jets passing the cut.}
 \label{tab:boot}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{4.4cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
  & \multicolumn{3}{c}{linear probe on frozen features} \\
 \cmidrule(lr){2-4}
 ratio & JetClass-II, $1-\mathrm{AUC}$ & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
 \midrule
-\mbox{\Kres{} classes} / \mbox{\Kfull{} classes} & 0.45 / 0.15 & 25 / 2.6 & 24 / 3.5 \\
-\mbox{\Kmid{} classes} / \mbox{\Kfull{} classes} & 0.70 / 0.16 & 29 / 2.4 & 20 / 3.6 \\
-\mbox{\Kcoarse{} classes} / \mbox{\Kfull{} classes} & 1.3 / 0.21 & 16 / 2.4 & 9.8 / 3.6 \\
+\Kres{} classes / \Kfull{} classes & 0.45 / 0.15 & 25 / 2.6 & 24 / 3.5 \\
+\Kmid{} classes / \Kfull{} classes & 0.70 / 0.16 & 29 / 2.4 & 20 / 3.6 \\
+\Kcoarse{} classes / \Kfull{} classes & 1.3 / 0.21 & 16 / 2.4 & 9.8 / 3.6 \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \par\bigskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{4.4cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
  & \multicolumn{3}{c}{Sophon's network, fine-tuned} \\
 \cmidrule(lr){2-4}
 ratio & JetClass-II, $1-\mathrm{AUC}$ & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
 \midrule
-\mbox{\Kres{} classes} / \mbox{\Kfull{} classes} & 1.1 / 0.13 & 3.2 / 13 & 2.6 / 4.6 \\
-\mbox{\Kmid{} classes} / \mbox{\Kfull{} classes} & 0.20 / 0.13 & 7.3 / 13 & 2.8 / 4.6 \\
-\mbox{\Kcoarse{} classes} / \mbox{\Kfull{} classes} & 0.29 / 0.15 & 9.9 / 13 & 2.6 / 4.6 \\
+\Kres{} classes / \Kfull{} classes & 1.1 / 0.13 & 3.2 / 13 & 2.6 / 4.6 \\
+\Kmid{} classes / \Kfull{} classes & 0.20 / 0.13 & 7.3 / 13 & 2.8 / 4.6 \\
+\Kcoarse{} classes / \Kfull{} classes & 0.29 / 0.15 & 9.9 / 13 & 2.6 / 4.6 \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{table*}

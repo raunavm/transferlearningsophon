@@ -1,60 +1,30 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{landscape}
+\begin{table*}[t]
+\centering
 \small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not pretrained, fine-tuned on the full top training set (\LitPartTopNTrainMillion{} million jets): accuracy, AUC and the background rejections $R_{50}$ and $R_{30}$, $1/\epsB$ at 50\% and 30\% signal efficiency, and the number of trainable parameters; (f.t.): fine-tuned. Published rows from the tables cited, the parameters from each model's paper (ParT and ParticleNet-f.t.: ParT's JetClass models; linear EFP: a linear classifier on energy flow polynomials); f.t.\ marks a model pretrained on JetClass and fine-tuned. Ours: \MlstNParamsFt{} trainable parameters, \MlstNParamsFtKin{} with kinematic inputs only. Our pretrained models see the \FillTopNZero{} inputs the top data lack set to zero; the model with kinematic inputs only, a diagnostic of that mismatch, has none missing (one run). Uncertainties: ours, the standard deviation over the pretraining runs, one fine-tuning each, and over three seeds from scratch; ParT, the spread over \LitPartFtHeadReinits{} fine-tunings of one pretrained model with different output-layer initializations, quoted for the run of median accuracy; L-GATr and OmniLearned, the standard deviation of five trainings; the other published uncertainties as given there. Bold: the best value of each column, and every value within one standard deviation of it (the larger of the two values' standard deviations; a configuration with two runs is compared by their mean and standard deviation).}
+\caption{Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not pretrained, fine-tuned on the full top training set (\LitPartTopNTrainMillion{} million jets), beside published models: accuracy, AUC, the background rejections $R_{50}$ and $R_{30}$ ($1/\epsB$ at 50\% and 30\% signal efficiency) and the number of trainable parameters; (f.t.): fine-tuned. Ours: mean $\pm$ standard deviation over the pretraining runs, three seeds from scratch; published uncertainties as given there. Bold: the best value of each column and every value within one standard deviation of it.}
 \label{tab:benchtop}
-\par\medskip
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.55\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}cc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
 \toprule
- & \# params & accuracy \\
+ & \# params & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-linear EFP~\cite{toptag} & 1\,k & 0.932 \\
-ParticleNet~\cite{particlenet} & 366\,k & 0.940 \\
-ParT~\cite{part} & 2.14\,M & 0.940 \\
-ParT-f.t.~\cite{part} & 2.14\,M & 0.944 \\
-MIParT-L-f.t.~\cite{mipart} & 2.38\,M & 0.944 \\
-L-GATr-f.t.~\cite{lgatr} & 1.1\,M & \textbf{0.9446} \\
-OmniLearned-l~\cite{omnilearned} & 423\,M & 0.944 \\
+linear EFP~\cite{toptag} & 1\,k & 0.932 & 0.980 & -- & 384 \\
+ParticleNet~\cite{particlenet} & 366\,k & 0.940 & 0.9858 & 397\,$\pm$\,7 & 1{,}615\,$\pm$\,93 \\
+ParT~\cite{part} & 2.14\,M & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1{,}602\,$\pm$\,81 \\
+ParT-f.t.~\cite{part} & 2.14\,M & 0.944 & 0.9877 & \textbf{691\,$\pm$\,15} & 2{,}766\,$\pm$\,130 \\
+MIParT-L-f.t.~\cite{mipart} & 2.38\,M & 0.944 & 0.9878 & 640\,$\pm$\,10 & 2{,}789\,$\pm$\,133 \\
+L-GATr-f.t.~\cite{lgatr} & 1.1\,M & \textbf{0.9446} & 0.9879 & 651\,$\pm$\,11 & 2{,}894\,$\pm$\,84 \\
+OmniLearned-l~\cite{omnilearned} & 423\,M & 0.944 & \textbf{0.9880} & \textbf{688\,$\pm$\,9} & \textbf{3{,}486\,$\pm$\,157} \\
 \midrule
-\multicolumn{3}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 2.21\,M & 0.9387\,$\pm$\,0.0002 \\
-\mbox{\Kfull{} classes (f.t.)} & 2.21\,M & 0.9400\,$\pm$\,0.0002 \\
-\mbox{\Kres{} classes (f.t.)} & 2.21\,M & 0.9401\,$\pm$\,0.0002 \\
-\mbox{\Kmid{} classes (f.t.)} & 2.21\,M & 0.9402\,$\pm$\,0.0004 \\
-\mbox{\Kcoarse{} classes (f.t.)} & 2.21\,M & 0.9398\,$\pm$\,0.0001 \\
-\mbox{\Kfull{} classes,} \mbox{kinematic inputs only (f.t.)} & 2.21\,M & 0.9407 \\
+\multicolumn{6}{l}{\textit{this work}} \\
+no pretraining (f.t.) & 2.21\,M & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 \\
+\Kfull{} classes (f.t.) & 2.21\,M & 0.9400\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
+\Kres{} classes (f.t.) & 2.21\,M & 0.9401\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
+\Kmid{} classes (f.t.) & 2.21\,M & 0.9402\,$\pm$\,0.0004 & 0.9861\,$\pm$\,0.0001 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
+\Kcoarse{} classes (f.t.) & 2.21\,M & 0.9398\,$\pm$\,0.0001 & 0.9859\,$\pm$\,0.0001 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
+\Kfull{} classes, kinematic inputs only (f.t.) & 2.21\,M & 0.9407 & 0.9862 & 443 & 1{,}800 \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:benchtop}{tab:benchtop:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
-\toprule
- & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-linear EFP~\cite{toptag} & 0.980 & -- & 384 \\
-ParticleNet~\cite{particlenet} & 0.9858 & 397\,$\pm$\,7 & 1{,}615\,$\pm$\,93 \\
-ParT~\cite{part} & 0.9858 & 413\,$\pm$\,16 & 1{,}602\,$\pm$\,81 \\
-ParT-f.t.~\cite{part} & 0.9877 & \textbf{691\,$\pm$\,15} & 2{,}766\,$\pm$\,130 \\
-MIParT-L-f.t.~\cite{mipart} & 0.9878 & 640\,$\pm$\,10 & 2{,}789\,$\pm$\,133 \\
-L-GATr-f.t.~\cite{lgatr} & 0.9879 & 651\,$\pm$\,11 & 2{,}894\,$\pm$\,84 \\
-OmniLearned-l~\cite{omnilearned} & \textbf{0.9880} & \textbf{688\,$\pm$\,9} & \textbf{3{,}486\,$\pm$\,157} \\
-\midrule
-\multicolumn{4}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 \\
-\mbox{\Kfull{} classes (f.t.)} & 0.9861\,$\pm$\,0.0001 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
-\mbox{\Kres{} classes (f.t.)} & 0.9861\,$\pm$\,0.0001 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
-\mbox{\Kmid{} classes (f.t.)} & 0.9861\,$\pm$\,0.0001 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
-\mbox{\Kcoarse{} classes (f.t.)} & 0.9859\,$\pm$\,0.0001 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
-\mbox{\Kfull{} classes,} \mbox{kinematic inputs only (f.t.)} & 0.9862 & 443 & 1{,}800 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
+\end{tabular*}
 \par\smallskip{\footnotesize ParT's top-tagging training script, unchanged, on our cluster gives $R_{30}$ of \MlstPartreproRthirtyPart{} (published 1{,}602\,$\pm$\,81); with Sophon's output head, \MlstPartreproRthirtyHead{}; with the head and Sophon's jet-$p_{\mathrm{T}}$ rescaling, \MlstPartreproRthirtyRescale{} (one run each; our network from scratch, which uses the rescaling, \MlstFtTopRthirtyScratch{}); table~\ref{tab:partrepro}.}
-\end{center}
+\end{table*}
+\end{landscape}

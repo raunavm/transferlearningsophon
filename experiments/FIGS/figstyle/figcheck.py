@@ -44,8 +44,9 @@ from matplotlib.transforms import Bbox  # noqa: E402
 import palette_check as PC  # noqa: E402
 
 PRINT_CM = {"VAL": 10.5, "INVENTORY": 27.7}     # \paperfig widths other than \linewidth (15 cm); the map: the gallery page
-# three panels in one row are 4.1 to 4.3 cm wide (PI 2026-11-11: no empty slot in a grid)
-MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.5, {"F3-app": 5.0, "F3-ft": 5.0, "F3-app2": 4.0, "F3-ft2": 4.0, "F4-other": 4.0,
+# three panels in one row are 4.1 to 4.2 cm wide (PI 2026-11-11: no empty slot in a grid); two beside each other at
+# least 6.1 cm, which leaves the room wide tick labels (10^n) need
+MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.1, {"F3-app": 5.0, "F3-ft": 5.0, "F3-app2": 4.0, "F3-ft2": 4.0, "F4-other": 4.0,
                                      "F6": 4.0, "F6-app": 4.0, "F10a-flav": 4.0}
 MIN_PT, ASPECT, PAD_IN, DPI = 8.0, (0.7, 1.3), 0.1, 300
 BANNED = [(re.compile(p), why) for p, why in (

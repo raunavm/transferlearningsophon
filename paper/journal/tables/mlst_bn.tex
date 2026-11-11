@@ -1,63 +1,34 @@
+\begin{landscape}
 \providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
 \small
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained and scored on JetClass-II (natural composition, largest training set), with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: for each, the AUC averaged over the classes and beside it the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run of the same seed; (LP): linear probe on the frozen features. The class-balanced probes of the pretrained networks use their checkpoints as trained, so this check uses the natural-composition test set. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations.}
+\captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, on JetClass-II at its natural composition, with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed; (LP): linear probe on the frozen features. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}
 \label{tab:bn}
 \par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.7cm}cc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
- & \multicolumn{2}{c}{BatchNorm as trained} \\
-\cmidrule(lr){2-3}
- & AUC & $\rho$ \\
+ & \multicolumn{2}{c}{BatchNorm as trained} & \multicolumn{2}{c}{BatchNorm recomputed} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
-\mbox{\Kfull{} classes (LP)} & 0.9760\,$\pm$\,$<$0.0001 & 1.000 \\
-\mbox{\Kres{} classes (LP)} & 0.9748\,$\pm$\,0.0003 & 1.049\,$\pm$\,0.014 \\
-\mbox{\Kmid{} classes (LP)} & 0.9719\,$\pm$\,0.0006 & 1.171\,$\pm$\,0.024 \\
-\mbox{\Kcoarse{} classes (LP)} & 0.9631\,$\pm$\,0.0006 & 1.538\,$\pm$\,0.025 \\
-\mbox{\Kres{} classes + mass (LP)} & 0.9735, 0.9740 & 1.106, 1.082 \\
-\mbox{\Kcoarse{} classes + mass (LP)} & 0.9623, 0.9632 & 1.571, 1.530 \\
-\mbox{random partition 1 (LP),} \mbox{seed 1} & 0.9719 & 1.173 \\
-\mbox{random partition 2 (LP),} \mbox{seed 2} & 0.9719 & 1.167 \\
-\mbox{random partition 3 (LP),} \mbox{seed 1} & 0.9724 & 1.153 \\
-\mbox{random partition 4 (LP),} \mbox{seed 2} & 0.9723 & 1.151 \\
-\mbox{random partition 5 (LP),} \mbox{seed 2} & 0.9720 & 1.164 \\
-\mbox{no flavor boundary (LP)} & 0.9657, 0.9645 & 1.432, 1.477 \\
-\mbox{$b$-quark boundary (LP)} & 0.9698, 0.9701 & 1.260, 1.245 \\
-\mbox{random flavor boundary (LP)} & 0.9698, 0.9698 & 1.259, 1.254 \\
-\mbox{random network (LP)} & 0.8058\,$\pm$\,0.0018 & -- \\
+\Kfull{} classes (LP) & 0.9760\,$\pm$\,$<$0.0001 & 1.000 & 0.9760\,$\pm$\,$<$0.0001 & 1.000 \\
+\Kres{} classes (LP) & 0.9748\,$\pm$\,0.0003 & 1.049\,$\pm$\,0.014 & 0.9748\,$\pm$\,0.0003 & 1.050\,$\pm$\,0.014 \\
+\Kmid{} classes (LP) & 0.9719\,$\pm$\,0.0006 & 1.171\,$\pm$\,0.024 & 0.9719\,$\pm$\,0.0006 & 1.172\,$\pm$\,0.025 \\
+\Kcoarse{} classes (LP) & 0.9631\,$\pm$\,0.0006 & 1.538\,$\pm$\,0.025 & 0.9631\,$\pm$\,0.0006 & 1.537\,$\pm$\,0.026 \\
+\Kres{} classes + mass (LP) & 0.9735, 0.9740 & 1.106, 1.082 & 0.9735, 0.9740 & 1.105, 1.083 \\
+\Kcoarse{} classes + mass (LP) & 0.9623, 0.9632 & 1.571, 1.530 & 0.9623, 0.9632 & 1.572, 1.530 \\
+random partition 1 (LP), seed 1 & 0.9719 & 1.173 & 0.9719 & 1.173 \\
+random partition 2 (LP), seed 2 & 0.9719 & 1.167 & 0.9719 & 1.167 \\
+random partition 3 (LP), seed 1 & 0.9724 & 1.153 & 0.9724 & 1.153 \\
+random partition 4 (LP), seed 2 & 0.9723 & 1.151 & 0.9723 & 1.152 \\
+random partition 5 (LP), seed 2 & 0.9720 & 1.164 & 0.9720 & 1.164 \\
+no flavor boundary (LP) & 0.9657, 0.9645 & 1.432, 1.477 & 0.9657, 0.9645 & 1.432, 1.477 \\
+$b$-quark boundary (LP) & 0.9698, 0.9701 & 1.260, 1.245 & 0.9698, 0.9701 & 1.260, 1.245 \\
+random flavor boundary (LP) & 0.9698, 0.9698 & 1.259, 1.254 & 0.9698, 0.9698 & 1.260, 1.254 \\
+random network (LP) & 0.8058\,$\pm$\,0.0018 & -- & 0.8525\,$\pm$\,0.0019 & -- \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:bn}{tab:bn:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.7cm}cc}
-\toprule
- & \multicolumn{2}{c}{BatchNorm recomputed} \\
-\cmidrule(lr){2-3}
- & AUC & $\rho$ \\
-\midrule
-\mbox{\Kfull{} classes (LP)} & 0.9760\,$\pm$\,$<$0.0001 & 1.000 \\
-\mbox{\Kres{} classes (LP)} & 0.9748\,$\pm$\,0.0003 & 1.050\,$\pm$\,0.014 \\
-\mbox{\Kmid{} classes (LP)} & 0.9719\,$\pm$\,0.0006 & 1.172\,$\pm$\,0.025 \\
-\mbox{\Kcoarse{} classes (LP)} & 0.9631\,$\pm$\,0.0006 & 1.537\,$\pm$\,0.026 \\
-\mbox{\Kres{} classes + mass (LP)} & 0.9735, 0.9740 & 1.105, 1.083 \\
-\mbox{\Kcoarse{} classes + mass (LP)} & 0.9623, 0.9632 & 1.572, 1.530 \\
-\mbox{random partition 1 (LP),} \mbox{seed 1} & 0.9719 & 1.173 \\
-\mbox{random partition 2 (LP),} \mbox{seed 2} & 0.9719 & 1.167 \\
-\mbox{random partition 3 (LP),} \mbox{seed 1} & 0.9724 & 1.153 \\
-\mbox{random partition 4 (LP),} \mbox{seed 2} & 0.9723 & 1.152 \\
-\mbox{random partition 5 (LP),} \mbox{seed 2} & 0.9720 & 1.164 \\
-\mbox{no flavor boundary (LP)} & 0.9657, 0.9645 & 1.432, 1.477 \\
-\mbox{$b$-quark boundary (LP)} & 0.9698, 0.9701 & 1.260, 1.245 \\
-\mbox{random flavor boundary (LP)} & 0.9698, 0.9698 & 1.260, 1.254 \\
-\mbox{random network (LP)} & 0.8525\,$\pm$\,0.0019 & -- \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \end{center}
+\end{landscape}

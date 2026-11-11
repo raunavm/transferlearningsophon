@@ -39,7 +39,12 @@ def _panels_2x2():
 
 def _log_y(ax, which: str = "y") -> None:
     """R30 on a log axis labelled 10^n, or linear where its range is under a decade (style_v5.log_axis), the same rule
-    in every panel. which="x": the same on x (F10c)."""
+    in every panel. which="x": the same on x (F10c). The limits are taken on a log scale, where a band reaching zero or
+    below does not set them."""
+    if min(getattr(ax, f"get_{which}lim")()) <= 0:
+        getattr(ax, f"set_{which}scale")("log")
+        ax.relim()
+        ax.autoscale_view()
     S.log_axis(ax, which)
 
 
@@ -108,7 +113,7 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch_label: s
     values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
     if not any(values):
         raise C.Absent(absent)
-    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=2.6, left=1.15, wgap=0.8)     # 0.05 cm spare: the right frame whole   # room for "0.850"-wide ticks
+    fig, axes, _ = S.grid_cm(2, 2, w=6.35, aspect=0.85, top=2.6, left=1.4, wgap=0.8)     # room for the widest tick labels
     for k, (ax, value, (key, _, _, met, *_)) in enumerate(zip(axes.flat, values, P.F2_PANELS)):
         S.title(ax, TITLES[key])
         S.labels(ax, X_CLASSES if k >= 2 else None, (Y_R30 if met == "r30" else Y_ACC) if k % 2 == 0 else None)
@@ -186,7 +191,7 @@ def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear pro
                   ylabel: str = "AUC, the panel's network") -> None:
     """panels: (runs, title) or (runs, title, auc_of), two to four; a panel's own auc_of (F3-main: probe | fine-tuned)
     reads both its model and the 188-class one. One point per class; below the dashed line the class does worse than
-    with 188 classes. Square panels, two per row at 6.5 cm, three in one row at 4.3 cm (PI 2026-11-11: no empty slot);
+    with 188 classes. Square panels, two per row at 6.5 cm, three in one row at 4.2 cm (PI 2026-11-11: no empty slot);
     the legend above the panels; letters names the panels (a second figure continues the first's letters)."""
     from matplotlib.lines import Line2D
     of = lambda panel: panel[2] if len(panel) > 2 else auc_of
@@ -195,7 +200,7 @@ def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear pro
     family = {int(r["jet_label"]): family_of(r["class_name"]) for r in M._class_rows(P.REPO)}
     ncols = 3 if len(panels) == 3 else 2
     nrows = math.ceil(len(panels) / ncols)
-    fig, axes, _ = S.grid_cm(nrows, ncols, w=4.3 if ncols == 3 else S.PANEL_W, aspect=1.0, top=2.2, left=1.3, wgap=0.4)
+    fig, axes, _ = S.grid_cm(nrows, ncols, w=S.PANEL_3 if ncols == 3 else S.PANEL_W, aspect=1.0, top=2.65, left=1.3, wgap=0.4)
     cells = list(axes.flat)
     for ax in cells[1:]:
         ax.sharex(cells[0])
@@ -231,7 +236,7 @@ def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear pro
         axis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))
     handles = [Line2D([], [], color=S.TAB10[i], marker="o", markersize=4, linestyle="none", label=f)
                for i, f in enumerate(FAMILIES)] + [Line2D([], [], **S.REFERENCE, label="Same as 188 classes")]
-    S.fig_legend(fig, handles, top_cm=0.6, ncol=4)
+    S.fig_legend(fig, handles, top_cm=0.6, ncol=3)
     S.heading(fig, f"{word} on $10^6$ JetClass-II jets, class by class")
     S.save(fig, path)
 
@@ -313,7 +318,7 @@ def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int
     if not any(s for p in panels for s, *_ in p):
         raise C.Absent(absent)
     rows = math.ceil((max(len(p) for p in panels) + 1) / ncol)       # the series and the published star
-    fig, axes, _ = S.grid_cm(2, 2, aspect=0.85, top=1.4 + 0.42 * rows, left=1.2, wgap=0.8)
+    fig, axes, _ = S.grid_cm(2, 2, w=6.35, aspect=0.85, top=1.4 + 0.42 * rows, left=1.4, wgap=0.8)
     for k, (ax, panel, (key, _, met, *_)) in enumerate(zip(axes.flat, panels, P.SIZE_PANELS)):
         ax.set_xscale("log")
         ns = [n for s_, *_ in panel for n in s_] + ([PUBLISHED[key][0]] if key in PUBLISHED else [])
@@ -523,7 +528,7 @@ PAGES = [
                 "JetClass (accuracy) and on top and quark/gluon tagging (rejection R30 at 30% signal efficiency), "
                 "against the number of pretraining classes. Markers are means; bars the SD over three pretraining "
                 "runs, the range over two for the flavor-boundary partitions; each random partition has one run. "
-                "Dashed: no pretraining, fine-tuned from scratch (f.t.).",
+                "Dashed: no pretraining, trained from scratch.",
         differs="Four panels against Hong's one, for the four tasks; Hong has no controls. Round 4: 6.5 cm panels in a "
                 "2x2, a figure legend above them that names every colour, filled markers (probes only in the figure) and a grey line "
                 "for the hierarchy, controls offset left of 17 with their own shapes, and each y range holding the "

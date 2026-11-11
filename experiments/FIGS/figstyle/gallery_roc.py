@@ -237,7 +237,7 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
     shown = {a for rows, *_ in panels for a in rows}
     top = 1.9 if len(shown) <= 4 else 2.35
     if len(panels) == 3:        # one row of three equal panels (PI 2026-11-11: no empty slot)
-        fig, grid, _ = S.grid_cm(1, 3, w=4.3, aspect=1.0, top=top, left=ROC_LEFT, wgap=ROC_WGAP)
+        fig, grid, _ = S.grid_cm(1, 3, w=S.PANEL_3, aspect=1.0, top=top, left=ROC_LEFT, wgap=ROC_WGAP)
         for ax in grid.flat:
             _roc_axes(ax)
             S.labels(ax, xlabel=S.X_EPS)
@@ -274,9 +274,10 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
     if len(panels) == 3:
         for ax in axes.flat[1:]:
             ax.tick_params(labelleft=False)
+        zero = drawn[0].get_xlim()[0] == 0          # no "0.0" in a corner, beside the y axis's first label
         for ax in axes.flat[:-1]:     # the "1.0" of a panel is left to the next panel's axis, which starts beside it
-            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if v > 1 - 1e-9 else f"{v:.1f}"))
-        axes.flat[-1].xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.1f}"))
+            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if v > 1 - 1e-9 or (zero and abs(v) < 1e-9) else f"{v:.1f}"))
+        axes.flat[-1].xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if zero and abs(v) < 1e-9 else f"{v:.1f}"))
     else:
         _right_labels_off(axes)
         lo = drawn[0].get_xlim()[0]
@@ -312,7 +313,7 @@ def draw_f4_other(path: pathlib.Path) -> None:
 
 
 RATIO_HEIGHT = 0.35     # F6's ratio panels, one height for all three (OmniLearned Fig. 3's form)
-RATIO_RANGE_FROM = 0.1  # the ratio range is set by efficiencies from 0.1: below, a few background jets swing it
+RATIO_RANGE_FROM = 0.1  # a ratio is drawn at efficiencies from 0.1: below, a few background jets swing it
 STACKED_RATIO = (14 * S.CM, 22 * S.CM)
 
 
@@ -338,13 +339,13 @@ def _ratio(rx, s, ref, rel=None, band: bool = False, **kw) -> list:
     if common.size < 2:
         return []
     r = s[1][i] / ref[1][j]
-    rx.plot(common, r, **kw)
-    far = common >= RATIO_RANGE_FROM
+    far = common >= RATIO_RANGE_FROM        # drawn from there on: below, a few background jets swing the ratio
+    rx.plot(common[far], r[far], **kw)
     if rel is None:
         return list(r[far])
     lo, hi = r * (1 - rel[i]), r * (1 + rel[i])
-    rx.fill_between(common, lo, hi, color=kw["color"], alpha=0.2, linewidth=0, zorder=kw.get("zorder", 2) - 0.1)
-    return list(r[far]) + (list(lo[far]) + list(hi[far]) if band else [])
+    rx.fill_between(common[far], lo[far], hi[far], color=kw["color"], alpha=0.2, linewidth=0, zorder=kw.get("zorder", 2) - 0.1)
+    return list(r[far]) + list(lo[far]) + list(hi[far])
 
 
 def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None:
@@ -388,8 +389,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         _plot(ax, s, **S.look("SCRATCH"), linewidth=S.LW_CURVE, label=S.LEGEND["SCRATCH"] + ("" if word == "fine-tuned" else f" {S.FINE_TUNED}"), zorder=1.9)  # under the label sets
         scratch = _ratio(rx, s, ref, _rel_error(ft, models, key), band=True, **S.look("SCRATCH"), linewidth=S.LW_CURVE,
                          zorder=1.9)
-        if word == "fine-tuned":            # after fine-tuning from scratch is near the label sets: its ratio in range
-            shown += scratch
+        shown += scratch                    # every ratio drawn is inside its panel (PI 2026-11-11)
         if kinematic and key == "top" and M.KIN_MODEL in docs:
             s = mean_over_runs(docs, [M.KIN_MODEL], key)
             _plot(ax, s, **S.look("KIN"), linewidth=S.LW_CURVE, label=S.LEGEND["KIN"])

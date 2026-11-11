@@ -731,15 +731,15 @@ def _head_rule(ncols: int) -> str:
             + r"}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}")
 
 
-LONG_LABEL_CM = "4.6cm"     # holds the widest part of a tagged row label at \footnotesize
 
 
 def _task_longtable(blocks: list, label: str) -> str:
     """One longtable of task blocks [(title, [heading cells, row cells, ...])]: each block opens with
     its title across the table and its own heading row; a row may have fewer cells than the widest
-    block (the rest stay empty). Footnote-size type and a first column of fixed width, whose long row labels
-    wrap, so that the table fits the text width; continuation pages say so. The caption is the
-    placeholder __CAPTION__ (_longtable)."""
+    block (the rest stay empty). Set in landscape across the whole line at the tables' \\small, the row labels on
+    one line and the columns spaced by the line's spare width (PI 2026-11-11: no wrapped label, no numbers run
+    together, nothing below normal type); continuation pages say so. The caption is the placeholder __CAPTION__
+    (_longtable)."""
     ncol = max((len(c) - 1 for _, rows in blocks for c in rows), default=1)
     row = lambda cells: " & ".join(cells) + r" \\"
     body = []
@@ -750,11 +750,11 @@ def _task_longtable(blocks: list, label: str) -> str:
             rows[-2] += "*"         # a block's last row never sits alone on a page
         body += ([BLOCK_SEP] if k else []) + [r"\multicolumn{" + str(ncol + 1) + "}{l}{" + title + r"} \\*",
                                               row(head) + "*", _head_rule(ncol + 1)] + rows
-    return "\n".join(["{\\footnotesize", "\\setlength{\\tabcolsep}{1.2pt}",
-                      r"\begin{longtable}{>{\raggedright\arraybackslash}p{" + LONG_LABEL_CM + "}" + "c" * ncol + "}",
+    return "\n".join([r"\begin{landscape}", "{\\small", r"\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}",
+                      r"\begin{longtable}{@{\extracolsep{\fill}}l" + "c" * ncol + "@{}}",
                       rf"\caption{{__CAPTION__}}\label{{{label}}}\\", r"\toprule", r"\endfirsthead",
                       r"\multicolumn{" + str(ncol + 1) + r"}{l}{\textit{continued}} \\", r"\toprule", r"\endhead",
-                      r"\bottomrule", r"\endlastfoot", *body, r"\end{longtable}", "}", ""])
+                      r"\bottomrule", r"\endlastfoot", *body, r"\end{longtable}", "}", r"\end{landscape}", ""])
 
 
 def _pair(fits, m, key):
@@ -3372,7 +3372,7 @@ def table_inputs(root: pathlib.Path, offsets: dict | None) -> str:
         draw = ("a species drawn from JetClass-II's frequencies (top)" if name in flags else
                 "drawn given the species (top)" if name == "part_charge" else
                 "a JetClass-II particle of the same species" if name in disp else "--")
-        mt, mq = ("---" if missing_t else BULLET), ("---" if missing_q else BULLET)
+        mt, mq = ("--" if missing_t else BULLET), ("--" if missing_q else BULLET)
         out.append(f"{FEATURE_TEX.get(name, name)} & {mt} & {mq} & {z} & {mean} & {draw}" + r" \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
@@ -3467,7 +3467,8 @@ def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> N
     if xfits:
         XR.macros(em, MT, xfits, index)
         out["tables/mlst_xbx.tex"] = _float("xbx", XR.table(
-            SimpleNamespace(LABEL=LABEL, _cell=_cell, RAND=RAND, INIT_MODELS=INIT_MODELS), MT, runs, xfits))
+            SimpleNamespace(LABEL=LABEL, _cell=_cell, RAND=RAND, INIT_MODELS=INIT_MODELS, SCRATCH_LABEL=SCRATCH_LABEL),
+            MT, runs, xfits, scr))
         out["tables/mlst_xbx_rej.tex"] = _float("xbx_rej", table_xbx_rej(xfits, scr, runs, fmt_pm), True)
         xbx_ratio_macros(em, xfits, scr, runs, index, fmt_pm)
     else:
@@ -3487,8 +3488,15 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
     as each epoch recorded its device), their sum, and the GPU types its fine-tuning cells ran on
     (their manifests record the device, not the hours), with a marker counting its cells whose
     read-out records no device (ft_nodev). extra: (label, model) rows beside the grid."""
-    lines = [r"\begin{tabular}{lllr}", r"\toprule", r"run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\",
-             r"\midrule"]
+    # a longtable at the text width whose two lists of GPU types wrap inside their columns and which breaks across
+    # pages (PI 2026-11-11: it was one wide tabular shrunk to fit); the caption is the placeholder __CAPTION__
+    head = r"run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\"
+    wrap = r">{\raggedright\arraybackslash}p{4.3cm}"
+    lines = ["{\\small", r"\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}",
+             r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap + "r" + wrap + "@{}}",
+             r"\caption{__CAPTION__}\label{tab:compute}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
+             r"\multicolumn{4}{l}{\textit{continued}} \\", r"\toprule", head, r"\midrule", r"\endhead",
+             r"\bottomrule", r"\endlastfoot"]
     hours = {}
     items = [(arm, f"{LABEL[arm]}, run {_idx(m)}", m) for arm, ms in runs.items() if arm not in (INIT, INIT_BN) for m in ms]
     items += [(None, lab, m) for lab, m in extra]
@@ -3506,7 +3514,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
             hours.setdefault(arm, collections.Counter()).update(h)
         types = ", ".join(f"{g} ({h[g]:.0f})" for g in sorted(h, key=lambda g: -h[g]))
         lines.append(rf"{name} & {types} & {fmt_int(round(sum(h.values())))} & {ftg} \\")
-    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""]), hours
+    return "\n".join(lines + [r"\end{longtable}", "}", ""]), hours
 
 
 def compute_macros(em, comp, runs, hours, index, fmt_int) -> None:
@@ -3956,9 +3964,112 @@ REQUIRED = (
 )
 
 
+# The captions as printed (PI 2026-11-11: about six lines at most, the details moved into the text). CAPTIONS keeps
+# every table's full account, the source for the text when it is written; a table without an entry here prints its
+# CAPTIONS text. Placeholders (__X__) are filled as in CAPTIONS.
+SD_SHORT = "Mean $\\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration."
+NETS = "networks pretrained on JetClass-II with 188, 162, 43 and 17 classes"
+RHO_SHORT = "the ratio $\\rho$ of $1-\\mathrm{AUC}$ to the \\Kfull-class run of the same seed"
+CAPTION_SHORT = {
+    "probes": f"Linear probes on the frozen features of {NETS} and of the controls, at each task's largest training "
+              "set. Upper part: JetClass-II (class-balanced test set) and JetClass. Lower part: top and quark/gluon "
+              "tagging (also on Herwig jets). Accuracy, AUC averaged over the classes, " + RHO_SHORT + ", and the "
+              "background rejections $R_{50}$ and $R_{30}$. " + SD_SHORT + " $^{*}$: a probe that did not converge.",
+    "pairs": f"Pairs of JetClass-II classes separated by {NETS} and by the controls: the AUC of a binary linear probe "
+             "on the frozen features (LP) and of the network fine-tuned on $10^{6}$ class-balanced JetClass-II jets "
+             "(f.t.), and " + RHO_SHORT + " in the same mode; the two modes are scored on different test jets. "
+             "$^{\\dagger}$: the label set merges the two sides into one class; $^{\\ddagger}$: it merges the first "
+             "side with part of the second. " + SD_SHORT,
+    "mlp": "Nonlinear probes (a multilayer perceptron with one hidden layer of \\LpMlpHidden{} units) on the frozen "
+           f"features of {NETS} and of the controls, at the largest training set of each task: the quantities of "
+           "table~\\ref{tab:probes} and the class pairs of table~\\ref{tab:pairs}; then the models scored on the "
+           "natural-composition test set only, and the linear probe on the hidden layer of the pretraining head "
+           "beside the one on the class token. " + SD_SHORT,
+    "coarse": f"Linear probes on the frozen features of {NETS} and of the controls, trained on one million "
+              "class-balanced JetClass-II jets, with the classes merged into coarser targets: the 43 and the 17 "
+              "groups of the class hierarchy and the 17 groups of the partition with no flavor boundary. Accuracy "
+              "and AUC averaged over the target's groups. " + SD_SHORT,
+    "qcdhf": f"Linear probes on the frozen features of {NETS} and of the controls, trained on one million "
+             "class-balanced JetClass-II jets: rejection $R_{50}$ of Sophon's $X\\to b\\bar b$ discriminant at "
+             "50\\% $X\\to b\\bar b$ efficiency for QCD jets with two or more $b$ quarks, with one $b$ quark, and "
+             "for all QCD jets. $^\\dagger$: fewer than \\MlstMinBkgPass{} jets pass in a run. " + SD_SHORT,
+    "bn": f"Linear probes on the frozen features of {NETS} and of the controls, on JetClass-II at its natural "
+          "composition, with the BatchNorm statistics as accumulated in pretraining and recomputed on training "
+          "jets: the AUC averaged over the classes and " + RHO_SHORT + ". " + SD_SHORT,
+    "jc1_class_auc": f"The {NETS} and the controls, trained on one million JetClass jets: the AUC of each JetClass "
+                     "class against the other nine, fine-tuned (upper part, beside the network trained from "
+                     "scratch) and from linear probes on the frozen features (lower part, beside the random "
+                     "network). " + SD_SHORT,
+    "fill": f"Linear probes on the frozen features of {NETS} and of the controls, with the inputs a data set lacks "
+            "set to zero, to the training mean or to random draws of a real particle. Upper part: relative drop in "
+            "JetClass-II accuracy (percent) when those slots are substituted. Lower part: $R_{30}$ on top and "
+            "quark/gluon tagging. Bold: the best substitution of each row and data set. " + SD_SHORT,
+    "mass": "Jet mass from frozen features: a multilayer perceptron regresses the mass from the frozen features of "
+            f"{NETS} (two of them also with a mass regression) and of the random network without pretraining; the "
+            "soft-drop mass is the reference. Resolution $\\sigma_r$, half the 15.9--84.1\\% quantile range of the "
+            "response $r = m/m_{\\mathrm{gen}}$ over its median (lower is better), and the median response, over "
+            "all JetClass-II test jets with a generator match. " + SD_SHORT,
+    "mass_detail": f"Jet-mass regression on JetClass-II from {NETS}, in detail, over all test jets and over resonant "
+                   "and QCD jets: resolution and median response of the regression output of the models pretrained "
+                   "with the mass regression and of ridge and multilayer-perceptron regressions on frozen features "
+                   "(upper part), and of the soft-drop mass and the regression output against jet "
+                   "$p_{\\mathrm{T}}$ and the generator-level soft-drop mass (lower parts). " + SD_SHORT,
+    "sculpt": f"Mass sculpting by the output scores of {NETS}, with 162 and 17 classes plus a mass "
+              "regression__SCULPT_FLAV__: Jensen--Shannon distance (base 2) $\\times10^{2}$ between the "
+              "$m_{\\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on "
+              "$1-g_{\\mathrm{QCD}}$ at the QCD efficiency $\\epsB$ given; lower is less sculpting. Last row: a "
+              "random selection of as many QCD test jets. " + SD_SHORT,
+    "sculpt_boot": "Mass sculpting by the pretraining heads, differences between label sets: $\\Delta$, the "
+                   "Jensen--Shannon distance of table~\\ref{tab:sculpt} ($\\times10^{2}$) of the configuration "
+                   "minus that of the reference, paired by pretraining seed; its standard deviation over the seeds "
+                   "(run SD) and over __REPLICAS__ bootstrap replicas of the test jets (bootstrap SD); and "
+                   "$\\Delta/\\sigma$, $\\sigma^{2}$ the sum of the two squares. Bold: $|\\Delta| > 3\\sigma$.",
+    "ft": f"Fine-tuning of {NETS} and of the controls, and the network trained from scratch, on each task with the "
+          "number of training jets in the column headers: on class-balanced JetClass-II the AUC averaged over the "
+          "classes (all and QCD classes) and the accuracy, the accuracy on JetClass, and $R_{30}$ on top, "
+          "quark/gluon and Herwig jets. $\\rho$: $1-\\mathrm{AUC}$ at $10^{6}$ jets over that of the \\Kfull-class "
+          "run of the same seed. A dash: not run at that size. " + SD_SHORT,
+    "bench_top": "Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not "
+                 "pretrained, fine-tuned on the full top training set (\\LitPartTopNTrainMillion{} million jets), "
+                 "beside published models: accuracy, AUC, the background rejections $R_{50}$ and $R_{30}$ "
+                 "($1/\\epsB$ at 50\\% and 30\\% signal efficiency) and the number of trainable parameters. Ours: "
+                 "mean $\\pm$ standard deviation over the pretraining runs, three seeds from scratch; published "
+                 "uncertainties as given there. Bold: the best value of each column and every value within one "
+                 "standard deviation of it.",
+    "bench_qg": "Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, "
+                "or not pretrained, fine-tuned on the full training set (\\LitQgTrainMillion{} million Pythia jets; "
+                "particle type as five flags and the charge) and scored on Pythia and on Herwig jets, beside "
+                "published models: accuracy, AUC, $1/\\epsB$ at 50\\% and 30\\% quark efficiency and the number of "
+                "trainable parameters. Uncertainties and bold as in table~\\ref{tab:benchtop}.",
+    "jetclass": "JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not "
+                "pretrained, fine-tuned on one million JetClass jets, in the form of ParT's Table 1: trainable "
+                "parameters, accuracy, AUC averaged over all pairs of classes, and for each signal class the "
+                "rejection of QCD jets at 50\\% signal efficiency (99\\% for $H\\to\\ell\\nu qq'$, 99.5\\% for "
+                "$t\\to b\\ell\\nu$). Published rows: trained from scratch on 2 million jets. Ours: mean $\\pm$ "
+                "standard deviation over the three pretraining runs. Bold: the best value of each column and every "
+                "value within one standard deviation of it. $^\\dagger$: fewer than \\MlstMinBkgPass{} QCD jets "
+                "pass in at least one run.",
+    "jetclass_all": f"JetClass fine-tuning as table~\\ref{{tab:jetclass}} of {NETS} and of the controls; the row of "
+                    "all five random partitions gives the mean $\\pm$ standard deviation over them. " + SD_SHORT
+                    + " Bold and $^\\dagger$ as there.",
+    "jetclass_probe": f"Linear probes on the frozen features of {NETS} and of the controls, trained and scored on "
+                      "JetClass at the largest training set, in the columns of table~\\ref{tab:jetclass}. Below "
+                      "the rule, the released Sophon checkpoint, outside the controlled comparison. " + SD_SHORT
+                      + " $^\\dagger$ as there.",
+    "xbx_rej": "Resonance tagging in the mass window: rejection $1/\\epsB$ of QCD jets at 50\\% and 30\\% signal "
+               "efficiency. Transfer: the classifier on frozen features; direct: Sophon's discriminant from the "
+               "output scores; closest node: the pretrained $X\\to bq$ output against QCD. A dash: the read-out "
+               "cannot be formed. " + SD_SHORT,
+}
+
+
+def printed_caption(key: str) -> str:
+    return CAPTION_SHORT.get(key, CAPTIONS[key][1])
+
+
 TEXT_CM = 15.5      # widest tabular kept whole (estimated): the 15 cm text block, shrunk by a few per cent at most
 LABEL_CM = 6.3      # a wider row label wraps, at its commas, in a table that has to be split
-SHRINK_OK = 1.08    # a table at most this much wider than TEXT_CM stays whole, shrunk by adjustbox
+SHRINK_OK = 1.0     # nothing is shrunk (PI 2026-11-11); was 1.08 with adjustbox
 
 
 def _depth0_split(s: str, sep: str) -> list[str]:
@@ -4248,10 +4359,27 @@ def _define_tags(cap: str, key: str) -> str:
     return cap[:i] + "; " + "; ".join(defs) + cap[i:]
 
 
+PORTRAIT_CM = 14.6      # the text block (15 cm) less the estimate's error: a tabular estimated wider is set in landscape, never shrunk or cut to fit
+LANDSCAPE_CM = 23.6     # the text block turned (24.7 cm) less the estimate's error: only a tabular wider than this is cut into blocks, each that wide
+NO_WRAP = 99.0          # label_cm of a row-label column that never wraps
+
+
+def _stretch(tab: str) -> str:
+    """A tabular set across the whole line (tabular* with the space dealt between its columns), so that every table
+    and every block of a table has one width and one left edge (PI 2026-11-11)."""
+    return re.sub(r"\\begin\{tabular\}\{((?:[^{}]|\{[^{}]*\})*)\}",
+                  lambda m: r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}" + m.group(1) + "@{}}",
+                  tab, count=1).replace(r"\end{tabular}", r"\end{tabular*}")
+
+
 def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, notes: list | None = None,
-           label_cm: float = LABEL_CM, budget: float = TEXT_CM) -> str:
+           label_cm: float = NO_WRAP, budget: float = PORTRAIT_CM) -> str:
+    """A generated table (PI 2026-11-11): at the full text width; a tabular wider than the text block is set in
+    landscape rather than cut into narrow blocks or shrunk; a row label never wraps; nothing is scaled. Only a
+    tabular wider than the landscape block is cut (split_wide), into blocks of that one width. label_cm and budget
+    are kept for the callers that passed them and no longer narrow anything."""
     env = "table*" if wide else "table"
-    label, cap = CAPTIONS[key]
+    label, cap = CAPTIONS[key][0], printed_caption(key)
     for k, v in (fill or {}).items():
         cap = cap.replace(k, v)
     assert "__" not in cap, cap
@@ -4259,38 +4387,49 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
         cap = cap.replace(" Bold and $^\\dagger$ as there.", " Bold as there.").replace(" $^\\dagger$ as there.", "")
     if "^{*}" not in body:
         cap = cap.replace(" $^{*}$: a probe that did not converge.", "")
-    boxes = [r"\begin{adjustbox}{max width=\linewidth}" + "\n" + t.strip() + "\n" + r"\end{adjustbox}"
-             for k, b in enumerate(body.split("%SPLIT%"))
-             for t in split_wide(_labels(uniform_columns(b.strip()), _mode_word(key, k)), budget, label_cm)]
+    parts = [_labels(uniform_columns(b.strip()), _mode_word(key, k)) for k, b in enumerate(body.split("%SPLIT%"))]
+    parts = [re.sub(r"\\mbox\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", t) if "begin{tabular}" in t else t for t in parts]
     cap = _define_tags(cap, key)
-    if "begin{tabular}" in body and len(boxes) > 1:
-        boxes = _common_label(boxes, label_cm)
+    cut = {o: [t.strip() for b in parts for t in split_wide(b, w, NO_WRAP)]
+           for o, w in (("upright", PORTRAIT_CM), ("turned", LANDSCAPE_CM))}
+    # upright when nothing is cut; turned when that keeps the table whole; a table cut either way takes the
+    # orientation with fewer pages (upright on a tie: an upright page stacks more blocks)
+    upright = len(cut["upright"]) == len(parts) or (len(cut["turned"]) > len(parts)
+                                                    and _pages(cut["upright"], cap, PAGE_FULL_CM, 90)
+                                                    <= _pages(cut["turned"], cap, LAND_FULL_CM, 150))
+    boxes = [_stretch(t) for t in cut["upright" if upright else "turned"]]
     tail = [rf"\par\smallskip{{\footnotesize {n}}}" for n in notes or []]
-    if _height_cm(boxes, cap) <= PAGE_CM:
-        return "\n".join([rf"\begin{{{env}}}[t]", r"\centering", r"\small",
+    turn = ([r"\begin{landscape}"], [r"\end{landscape}"]) if not upright else ([], [])
+    if _height_cm(boxes, cap) <= (PAGE_CM if upright else LAND_PAGE_CM):
+        return "\n".join([*turn[0], rf"\begin{{{env}}}[t]", r"\centering", r"\small",
                           rf"\caption{{{cap}}}", rf"\label{{{label}}}", "\n\\par\\bigskip\n".join(boxes), *tail,
-                          rf"\end{{{env}}}", ""])
+                          rf"\end{{{env}}}", *turn[1], ""])
     # taller than a page: not a float, so that it breaks between its blocks. The caption and the first block are one
     # unbreakable unit; a later block that starts a page says that it continues the table.
-    # (a caption and first block estimated taller than UNIT_CM: the block is scaled to fit the page beside the caption)
-    first = boxes[0]
-    if _height_cm(boxes[:1], cap) > UNIT_CM:
-        first = first.replace(r"\begin{adjustbox}{max width=\linewidth}",
-                              r"\begin{adjustbox}{max width=\linewidth, max totalheight=" + FIRST_MAX_H + "}", 1)
-    out = [CONTINUED, r"\begin{center}", r"\small", r"\begin{minipage}{\linewidth}\centering",
-           rf"\captionof{{table}}{{{cap}}}", rf"\label{{{label}}}", r"\par\medskip", first, r"\end{minipage}"]
-    for k, b in enumerate(boxes[1:], 2):           # a later block never taller than a page
-        b = b.replace(r"\begin{adjustbox}{max width=\linewidth}",
-                      r"\begin{adjustbox}{max width=\linewidth, max totalheight=" + BLOCK_MAX_H + "}", 1)
+    out = [*turn[0], CONTINUED, r"\begin{center}", r"\small", r"\begin{minipage}{\linewidth}\centering",
+           rf"\captionof{{table}}{{{cap}}}", rf"\label{{{label}}}", r"\par\medskip", boxes[0], r"\end{minipage}"]
+    for k, b in enumerate(boxes[1:], 2):
         out += [r"\par\bigskip", r"\begin{minipage}{\linewidth}\centering", rf"\TableContinued{{{label}}}{{{label}:{k}}}",
                 b, r"\end{minipage}"]
-    return "\n".join(out + [*tail, r"\end{center}", ""])
+    return "\n".join(out + [*tail, r"\end{center}", *turn[1], ""])
+
+
+PAGE_FULL_CM, LAND_FULL_CM = 23.0, 13.5     # what a page holds of a table's blocks, upright and turned (estimated)
+
+
+def _pages(boxes: list, cap: str, page_cm: float, cap_chars: int) -> int:
+    """Pages a table's blocks take, each block whole on a page, the caption (cap_chars a line) above the first."""
+    pages, used = 1, 0.45 * (len(cap) / cap_chars + 1)
+    for b in boxes:
+        h = _height_cm([b], "") - 0.45
+        if used and used + h > page_cm:
+            pages, used = pages + 1, 0.0
+        used += h
+    return pages
 
 
 PAGE_CM = 17.0      # a table estimated taller than this (of the 24.7 cm text height) is set to break across pages
-UNIT_CM = 17.0      # a caption and first block estimated taller than this: the block is scaled to FIRST_MAX_H
-FIRST_MAX_H = r"0.55\textheight"
-BLOCK_MAX_H = r"0.92\textheight"
+LAND_PAGE_CM = 12.5 # the same in landscape (of the 15 cm the turned page is high)
 
 
 def _height_cm(boxes: list, cap: str) -> float:
@@ -4311,7 +4450,7 @@ def _longtable(key: str, body: str) -> str:
     """A longtable with its caption, each task block at one precision per column, the mode heading first."""
     body = BLOCK_SEP.join(uniform_columns(b) for b in body.split(BLOCK_SEP))
     body = _labels(body, _mode_word(key))
-    cap = _define_tags(CAPTIONS[key][1], key)
+    cap = _define_tags(printed_caption(key), key)
     if "^{*}" not in body.replace(r"\caption{__CAPTION__}", ""):      # a mark the caption explains but no cell carries
         cap = cap.replace(" $^{*}$: a probe that did not converge.", "")
     return body.replace("__CAPTION__", cap)
@@ -4578,7 +4717,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                            "experiments/FT/budget_metrics.py records it for top and quark/gluon only")
         body, hours = table_compute(comp, runs, fmt_int, extra=((LABEL["KIN"], KIN_MODEL),), ft_gpus=ftg,
                                     ft_nodev=nodev)
-        out["tables/compute.tex"] = _float("compute", body, True)
+        out["tables/compute.tex"] = body.replace("__CAPTION__", printed_caption("compute"))
         compute_macros(em, comp, runs, hours, index, fmt_int)
         if len(set(pre_runs) & set(comp)) < len(pre_runs):
             missing.append(f"compute records: {len(set(pre_runs) & set(comp))} of {len(pre_runs)} paper runs")

@@ -1,122 +1,89 @@
+\begin{landscape}
 \providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
 \small
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, with the three substitutions of the missing inputs (zero, the training mean, random draws of a real particle), trained at the largest training set; (LP): linear probe on the frozen features. Upper part: relative drop in JetClass-II accuracy (percent) when the slots the top (\FillTopNZero{}) or the quark/gluon (\FillQgNZero{}) data lack are substituted, against the same model with every input. Lower part: $R_{30}$ of the linear probe on top and quark/gluon jets under each substitution; the model with kinematic inputs only has nothing missing. The substitution chosen on validation is \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon. The best substitution of each row and data set is in bold. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations.}
+\captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, with the inputs a data set lacks set to zero, to the training mean or to random draws of a real particle; (LP): linear probe on the frozen features. Upper part: relative drop in JetClass-II accuracy (percent) when those slots are substituted. Lower part: $R_{30}$ on top and quark/gluon tagging. Bold: the best substitution of each row and data set. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}
 \label{tab:fill}
 \par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
  & \multicolumn{3}{c}{JetClass-II, top slots} \\
 \cmidrule(lr){2-4}
  & zero & mean & draws \\
 \midrule
-\mbox{\Kfull{} classes (LP)} & 88.9\,$\pm$\,1.0\% & 87.9\,$\pm$\,1.1\% & \textbf{85.98\,$\pm$\,0.07\%} \\
-\mbox{\Kres{} classes (LP)} & 89.0\,$\pm$\,0.9\% & 87.8\,$\pm$\,0.7\% & \textbf{85.89\,$\pm$\,0.11\%} \\
-\mbox{\Kmid{} classes (LP)} & 87.8\,$\pm$\,0.3\% & 86.7\,$\pm$\,0.9\% & \textbf{83.17\,$\pm$\,0.29\%} \\
-\mbox{\Kcoarse{} classes (LP)} & 86.7\,$\pm$\,0.7\% & 86.1\,$\pm$\,0.8\% & \textbf{81.42\,$\pm$\,0.53\%} \\
-\mbox{\Kres{} classes + mass (LP)} & 89.2, 88.3\% & 88.5, 87.8\% & \textbf{85.35, 85.37\%} \\
-\mbox{\Kcoarse{} classes + mass (LP)} & 84.8, 87.4\% & 85.9, 86.9\% & \textbf{79.14, 81.70\%} \\
-\mbox{random partition 1 (LP),} \mbox{seed 1} & 90.2\% & 88.6\% & \textbf{85.68\%} \\
-\mbox{random partition 2 (LP),} \mbox{seed 2} & 90.4\% & 88.8\% & \textbf{85.93\%} \\
-\mbox{random partition 3 (LP),} \mbox{seed 1} & 90.8\% & 89.5\% & \textbf{86.24\%} \\
-\mbox{random partition 4 (LP),} \mbox{seed 2} & 89.9\% & 88.7\% & \textbf{87.12\%} \\
-\mbox{random partition 5 (LP),} \mbox{seed 2} & 89.5\% & 89.7\% & \textbf{86.13\%} \\
-\mbox{no flavor boundary (LP)} & 88.9, 88.5\% & 88.3, 87.0\% & \textbf{83.26, 83.89\%} \\
-\mbox{$b$-quark boundary (LP)} & 87.8, 87.6\% & 88.9, 86.9\% & \textbf{84.44, 85.21\%} \\
-\mbox{random flavor boundary (LP)} & 89.6, 90.3\% & 89.4, 89.7\% & \textbf{84.94, 85.58\%} \\
-\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & \textbf{56.4\,$\pm$\,1.4\%} & 59.8\,$\pm$\,0.8\% & 59.82\,$\pm$\,1.17\% \\
+\Kfull{} classes (LP) & 88.9\,$\pm$\,1.0\% & 87.9\,$\pm$\,1.1\% & \textbf{85.98\,$\pm$\,0.07\%} \\
+\Kres{} classes (LP) & 89.0\,$\pm$\,0.9\% & 87.8\,$\pm$\,0.7\% & \textbf{85.89\,$\pm$\,0.11\%} \\
+\Kmid{} classes (LP) & 87.8\,$\pm$\,0.3\% & 86.7\,$\pm$\,0.9\% & \textbf{83.17\,$\pm$\,0.29\%} \\
+\Kcoarse{} classes (LP) & 86.7\,$\pm$\,0.7\% & 86.1\,$\pm$\,0.8\% & \textbf{81.42\,$\pm$\,0.53\%} \\
+\Kres{} classes + mass (LP) & 89.2, 88.3\% & 88.5, 87.8\% & \textbf{85.35, 85.37\%} \\
+\Kcoarse{} classes + mass (LP) & 84.8, 87.4\% & 85.9, 86.9\% & \textbf{79.14, 81.70\%} \\
+random partition 1 (LP), seed 1 & 90.2\% & 88.6\% & \textbf{85.68\%} \\
+random partition 2 (LP), seed 2 & 90.4\% & 88.8\% & \textbf{85.93\%} \\
+random partition 3 (LP), seed 1 & 90.8\% & 89.5\% & \textbf{86.24\%} \\
+random partition 4 (LP), seed 2 & 89.9\% & 88.7\% & \textbf{87.12\%} \\
+random partition 5 (LP), seed 2 & 89.5\% & 89.7\% & \textbf{86.13\%} \\
+no flavor boundary (LP) & 88.9, 88.5\% & 88.3, 87.0\% & \textbf{83.26, 83.89\%} \\
+$b$-quark boundary (LP) & 87.8, 87.6\% & 88.9, 86.9\% & \textbf{84.44, 85.21\%} \\
+random flavor boundary (LP) & 89.6, 90.3\% & 89.4, 89.7\% & \textbf{84.94, 85.58\%} \\
+random network, BatchNorm recomputed (LP) & \textbf{56.4\,$\pm$\,1.4\%} & 59.8\,$\pm$\,0.8\% & 59.82\,$\pm$\,1.17\% \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:fill}{tab:fill:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
  & \multicolumn{3}{c}{JetClass-II, quark/gluon slots} \\
 \cmidrule(lr){2-4}
  & zero & mean & draws \\
 \midrule
-\mbox{\Kfull{} classes (LP)} & 61.2\,$\pm$\,3.0\% & \textbf{48.8\,$\pm$\,1.1\%} & 54.3\,$\pm$\,0.2\% \\
-\mbox{\Kres{} classes (LP)} & 64.1\,$\pm$\,5.2\% & \textbf{49.5\,$\pm$\,0.5\%} & 54.6\,$\pm$\,0.6\% \\
-\mbox{\Kmid{} classes (LP)} & 67.6\,$\pm$\,4.8\% & \textbf{47.6\,$\pm$\,1.6\%} & 53.5\,$\pm$\,1.4\% \\
-\mbox{\Kcoarse{} classes (LP)} & 70.9\,$\pm$\,2.3\% & \textbf{50.0\,$\pm$\,1.0\%} & 51.7\,$\pm$\,0.4\% \\
-\mbox{\Kres{} classes + mass (LP)} & 61.8, 67.9\% & \textbf{49.7, 52.2\%} & 54.3, 55.1\% \\
-\mbox{\Kcoarse{} classes + mass (LP)} & 66.7, 65.4\% & \textbf{49.0, 49.6\%} & 50.8, 51.1\% \\
-\mbox{random partition 1 (LP),} \mbox{seed 1} & 66.5\% & \textbf{51.6\%} & 56.3\% \\
-\mbox{random partition 2 (LP),} \mbox{seed 2} & 69.5\% & \textbf{52.4\%} & 56.3\% \\
-\mbox{random partition 3 (LP),} \mbox{seed 1} & 63.7\% & \textbf{52.8\%} & 57.8\% \\
-\mbox{random partition 4 (LP),} \mbox{seed 2} & 72.9\% & \textbf{53.4\%} & 55.5\% \\
-\mbox{random partition 5 (LP),} \mbox{seed 2} & 69.5\% & \textbf{53.9\%} & 56.3\% \\
-\mbox{no flavor boundary (LP)} & 62.7, 62.2\% & \textbf{51.9, 51.3\%} & 53.9, 53.4\% \\
-\mbox{$b$-quark boundary (LP)} & 66.2, 62.8\% & \textbf{52.7, 52.8\%} & 55.6, 56.5\% \\
-\mbox{random flavor boundary (LP)} & 67.2, 69.0\% & \textbf{52.9, 51.8\%} & 57.2, 55.4\% \\
-\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & \textbf{8.7\,$\pm$\,2.6\%} & 10.4\,$\pm$\,1.4\% & 11.4\,$\pm$\,2.1\% \\
+\Kfull{} classes (LP) & 61.2\,$\pm$\,3.0\% & \textbf{48.8\,$\pm$\,1.1\%} & 54.3\,$\pm$\,0.2\% \\
+\Kres{} classes (LP) & 64.1\,$\pm$\,5.2\% & \textbf{49.5\,$\pm$\,0.5\%} & 54.6\,$\pm$\,0.6\% \\
+\Kmid{} classes (LP) & 67.6\,$\pm$\,4.8\% & \textbf{47.6\,$\pm$\,1.6\%} & 53.5\,$\pm$\,1.4\% \\
+\Kcoarse{} classes (LP) & 70.9\,$\pm$\,2.3\% & \textbf{50.0\,$\pm$\,1.0\%} & 51.7\,$\pm$\,0.4\% \\
+\Kres{} classes + mass (LP) & 61.8, 67.9\% & \textbf{49.7, 52.2\%} & 54.3, 55.1\% \\
+\Kcoarse{} classes + mass (LP) & 66.7, 65.4\% & \textbf{49.0, 49.6\%} & 50.8, 51.1\% \\
+random partition 1 (LP), seed 1 & 66.5\% & \textbf{51.6\%} & 56.3\% \\
+random partition 2 (LP), seed 2 & 69.5\% & \textbf{52.4\%} & 56.3\% \\
+random partition 3 (LP), seed 1 & 63.7\% & \textbf{52.8\%} & 57.8\% \\
+random partition 4 (LP), seed 2 & 72.9\% & \textbf{53.4\%} & 55.5\% \\
+random partition 5 (LP), seed 2 & 69.5\% & \textbf{53.9\%} & 56.3\% \\
+no flavor boundary (LP) & 62.7, 62.2\% & \textbf{51.9, 51.3\%} & 53.9, 53.4\% \\
+$b$-quark boundary (LP) & 66.2, 62.8\% & \textbf{52.7, 52.8\%} & 55.6, 56.5\% \\
+random flavor boundary (LP) & 67.2, 69.0\% & \textbf{52.9, 51.8\%} & 57.2, 55.4\% \\
+random network, BatchNorm recomputed (LP) & \textbf{8.7\,$\pm$\,2.6\%} & 10.4\,$\pm$\,1.4\% & 11.4\,$\pm$\,2.1\% \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:fill}{tab:fill:3}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
- & \multicolumn{3}{c}{top, $R_{30}$} \\
-\cmidrule(lr){2-4}
- & zero & mean & draws \\
+ & \multicolumn{3}{c}{top, $R_{30}$} & \multicolumn{3}{c}{quark/gluon, $R_{30}$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+ & zero & mean & draws & zero & mean & draws \\
 \midrule
-\mbox{\Kfull{} classes (LP)} & 60\,$\pm$\,12 & 73\,$\pm$\,15 & \textbf{228\,$\pm$\,25} \\
-\mbox{\Kres{} classes (LP)} & 76\,$\pm$\,17 & 64\,$\pm$\,11 & \textbf{199\,$\pm$\,25} \\
-\mbox{\Kmid{} classes (LP)} & 57\,$\pm$\,13 & 58\,$\pm$\,14 & \textbf{231\,$\pm$\,8} \\
-\mbox{\Kcoarse{} classes (LP)} & 55\,$\pm$\,5 & 55\,$\pm$\,5 & \textbf{255\,$\pm$\,17} \\
-\mbox{\Kres{} classes + mass (LP)} & 77, 95 & 57, 79 & \textbf{260, 306} \\
-\mbox{\Kcoarse{} classes + mass (LP)} & 103, 69 & 55, 81 & \textbf{306, 378} \\
-\mbox{random partition 1 (LP),} \mbox{seed 1} & 44 & 55 & \textbf{174} \\
-\mbox{random partition 2 (LP),} \mbox{seed 2} & 60 & 54 & \textbf{151} \\
-\mbox{random partition 3 (LP),} \mbox{seed 1} & 50 & 43 & \textbf{164} \\
-\mbox{random partition 4 (LP),} \mbox{seed 2} & 30 & 56 & \textbf{152} \\
-\mbox{random partition 5 (LP),} \mbox{seed 2} & 74 & 45 & \textbf{173} \\
-\mbox{no flavor boundary (LP)} & 70, 69 & 44, 65 & \textbf{262, 243} \\
-\mbox{$b$-quark boundary (LP)} & 74, 81 & 45, 68 & \textbf{203, 212} \\
-\mbox{random flavor boundary (LP)} & 65, 41 & 41, 33 & \textbf{214, 233} \\
-\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & 58\,$\pm$\,13 & \textbf{60\,$\pm$\,2} & 49\,$\pm$\,3 \\
-\mbox{\Kfull{} classes,} \mbox{kinematic inputs only (LP)} & \multicolumn{3}{c}{231 (nothing missing)} \\
+\Kfull{} classes (LP) & 60\,$\pm$\,12 & 73\,$\pm$\,15 & \textbf{228\,$\pm$\,25} & 66\,$\pm$\,7 & \textbf{72.7\,$\pm$\,2.4} & 68.1\,$\pm$\,1.8 \\
+\Kres{} classes (LP) & 76\,$\pm$\,17 & 64\,$\pm$\,11 & \textbf{199\,$\pm$\,25} & 58\,$\pm$\,9 & \textbf{71.0\,$\pm$\,0.3} & 66.8\,$\pm$\,0.4 \\
+\Kmid{} classes (LP) & 57\,$\pm$\,13 & 58\,$\pm$\,14 & \textbf{231\,$\pm$\,8} & 61\,$\pm$\,9 & \textbf{70.8\,$\pm$\,1.8} & 69.0\,$\pm$\,1.1 \\
+\Kcoarse{} classes (LP) & 55\,$\pm$\,5 & 55\,$\pm$\,5 & \textbf{255\,$\pm$\,17} & 62\,$\pm$\,7 & \textbf{74.3\,$\pm$\,1.9} & 71.6\,$\pm$\,2.8 \\
+\Kres{} classes + mass (LP) & 77, 95 & 57, 79 & \textbf{260, 306} & 65, 61 & \textbf{73.9, 70.7} & 70.4, 72.1 \\
+\Kcoarse{} classes + mass (LP) & 103, 69 & 55, 81 & \textbf{306, 378} & 66, 66 & 68.4, 72.2 & \textbf{71.3, 75.3} \\
+random partition 1 (LP), seed 1 & 44 & 55 & \textbf{174} & 66 & \textbf{69.6} & 66.9 \\
+random partition 2 (LP), seed 2 & 60 & 54 & \textbf{151} & 59 & \textbf{69.3} & 64.6 \\
+random partition 3 (LP), seed 1 & 50 & 43 & \textbf{164} & 65 & \textbf{68.4} & 62.3 \\
+random partition 4 (LP), seed 2 & 30 & 56 & \textbf{152} & 51 & \textbf{64.7} & 61.6 \\
+random partition 5 (LP), seed 2 & 74 & 45 & \textbf{173} & 55 & \textbf{69.6} & 68.2 \\
+no flavor boundary (LP) & 70, 69 & 44, 65 & \textbf{262, 243} & 63, 66 & \textbf{73.9, 71.7} & 71.1, 71.5 \\
+$b$-quark boundary (LP) & 74, 81 & 45, 68 & \textbf{203, 212} & 55, 59 & \textbf{72.5, 72.2} & 70.9, 70.5 \\
+random flavor boundary (LP) & 65, 41 & 41, 33 & \textbf{214, 233} & 66, 54 & \textbf{71.2, 72.8} & 71.2, 69.8 \\
+random network, BatchNorm recomputed (LP) & 58\,$\pm$\,13 & \textbf{60\,$\pm$\,2} & 49\,$\pm$\,3 & \textbf{54\,$\pm$\,2} & 52.2\,$\pm$\,0.8 & 52.4\,$\pm$\,0.4 \\
+\Kfull{} classes, kinematic inputs only (LP) & \multicolumn{3}{c}{231 (nothing missing)} & -- & -- & -- \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:fill}{tab:fill:4}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
-\toprule
- & \multicolumn{3}{c}{quark/gluon, $R_{30}$} \\
-\cmidrule(lr){2-4}
- & zero & mean & draws \\
-\midrule
-\mbox{\Kfull{} classes (LP)} & 66\,$\pm$\,7 & \textbf{72.7\,$\pm$\,2.4} & 68.1\,$\pm$\,1.8 \\
-\mbox{\Kres{} classes (LP)} & 58\,$\pm$\,9 & \textbf{71.0\,$\pm$\,0.3} & 66.8\,$\pm$\,0.4 \\
-\mbox{\Kmid{} classes (LP)} & 61\,$\pm$\,9 & \textbf{70.8\,$\pm$\,1.8} & 69.0\,$\pm$\,1.1 \\
-\mbox{\Kcoarse{} classes (LP)} & 62\,$\pm$\,7 & \textbf{74.3\,$\pm$\,1.9} & 71.6\,$\pm$\,2.8 \\
-\mbox{\Kres{} classes + mass (LP)} & 65, 61 & \textbf{73.9, 70.7} & 70.4, 72.1 \\
-\mbox{\Kcoarse{} classes + mass (LP)} & 66, 66 & 68.4, 72.2 & \textbf{71.3, 75.3} \\
-\mbox{random partition 1 (LP),} \mbox{seed 1} & 66 & \textbf{69.6} & 66.9 \\
-\mbox{random partition 2 (LP),} \mbox{seed 2} & 59 & \textbf{69.3} & 64.6 \\
-\mbox{random partition 3 (LP),} \mbox{seed 1} & 65 & \textbf{68.4} & 62.3 \\
-\mbox{random partition 4 (LP),} \mbox{seed 2} & 51 & \textbf{64.7} & 61.6 \\
-\mbox{random partition 5 (LP),} \mbox{seed 2} & 55 & \textbf{69.6} & 68.2 \\
-\mbox{no flavor boundary (LP)} & 63, 66 & \textbf{73.9, 71.7} & 71.1, 71.5 \\
-\mbox{$b$-quark boundary (LP)} & 55, 59 & \textbf{72.5, 72.2} & 70.9, 70.5 \\
-\mbox{random flavor boundary (LP)} & 66, 54 & \textbf{71.2, 72.8} & 71.2, 69.8 \\
-\mbox{random network,} \mbox{BatchNorm recomputed (LP)} & \textbf{54\,$\pm$\,2} & 52.2\,$\pm$\,0.8 & 52.4\,$\pm$\,0.4 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \end{center}
+\end{landscape}

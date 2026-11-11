@@ -1,64 +1,32 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{landscape}
+\begin{table*}[t]
+\centering
 \small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Resonance tagging in the mass window: rejection $1/\epsB$ of QCD jets at 50\% and 30\% signal efficiency. Transfer: the classifier on frozen features; direct: Sophon's discriminant from the output scores; closest node: the pretrained $X\to bq$ output against QCD. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations.}
+\caption{Resonance tagging in the mass window: rejection $1/\epsB$ of QCD jets at 50\% and 30\% signal efficiency. Transfer: the classifier on frozen features; direct: Sophon's discriminant from the output scores; closest node: the pretrained $X\to bq$ output against QCD. A dash: the read-out cannot be formed. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}
 \label{tab:xbxrej}
-\par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{4.6cm}cccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccccc@{}}
 \toprule
- & \multicolumn{2}{c}{$X\to b\bar b$, transfer} & \multicolumn{2}{c}{$X\to b\bar b$, direct} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
- & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
+ & \multicolumn{2}{c}{$X\to b\bar b$, transfer} & \multicolumn{2}{c}{$X\to b\bar b$, direct} & \multicolumn{2}{c}{$X\to bs$, transfer} & \multicolumn{2}{c}{$X\to bs$, closest node} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
 \midrule
-\mbox{\Kfull{} classes} & 350\,$\pm$\,4 & 1{,}010\,$\pm$\,40 & 288.8\,$\pm$\,3.2 & 792\,$\pm$\,27 \\
-\mbox{\Kres{} classes} & 332\,$\pm$\,10 & 920\,$\pm$\,40 & 289.1\,$\pm$\,1.7 & 776\,$\pm$\,7 \\
-\mbox{\Kmid{} classes} & 321\,$\pm$\,10 & 890\,$\pm$\,50 & -- & -- \\
-\mbox{\Kcoarse{} classes} & 258\,$\pm$\,19 & 770\,$\pm$\,80 & -- & -- \\
-\mbox{\Kres{} classes + mass} & 333, 318 & 1{,}005, 865 & 291, 289 & 807, 786 \\
-\mbox{\Kcoarse{} classes + mass} & 266, 261 & 803, 740 & -- & -- \\
-\mbox{random partition 1,} \mbox{seed 1} & 272 & 732 & -- & -- \\
-\mbox{random partition 2,} \mbox{seed 2} & 289 & 812 & -- & -- \\
-\mbox{random partition 3,} \mbox{seed 1} & 285 & 784 & -- & -- \\
-\mbox{random partition 4,} \mbox{seed 2} & 320 & 826 & -- & -- \\
-\mbox{random partition 5,} \mbox{seed 2} & 286 & 784 & -- & -- \\
-\mbox{no flavor boundary} & 223, 212 & 689, 697 & -- & -- \\
-\mbox{$b$-quark boundary} & 262, 267 & 753, 742 & -- & -- \\
-\mbox{random flavor boundary} & 279, 275 & 788, 830 & -- & -- \\
-\mbox{random network} & 15.9\,$\pm$\,0.9 & 42.8\,$\pm$\,3.5 & -- & -- \\
+\Kfull{} classes & 350\,$\pm$\,4 & 1{,}010\,$\pm$\,40 & 288.8\,$\pm$\,3.2 & 792\,$\pm$\,27 & 435\,$\pm$\,27 & 2{,}070\,$\pm$\,150 & 144.1\,$\pm$\,3.5 & 377\,$\pm$\,19 \\
+\Kres{} classes & 332\,$\pm$\,10 & 920\,$\pm$\,40 & 289.1\,$\pm$\,1.7 & 776\,$\pm$\,7 & 425\,$\pm$\,4 & 2{,}020\,$\pm$\,170 & 142.0\,$\pm$\,2.8 & 366\,$\pm$\,10 \\
+\Kmid{} classes & 321\,$\pm$\,10 & 890\,$\pm$\,50 & -- & -- & 357\,$\pm$\,16 & 1{,}610\,$\pm$\,60 & 91.9\,$\pm$\,3.5 & 238\,$\pm$\,10 \\
+\Kcoarse{} classes & 258\,$\pm$\,19 & 770\,$\pm$\,80 & -- & -- & 191\,$\pm$\,26 & 690\,$\pm$\,90 & 38.0\,$\pm$\,0.8 & 112.2\,$\pm$\,3.1 \\
+\Kres{} classes + mass & 333, 318 & 1{,}005, 865 & 291, 289 & 807, 786 & 370, 375 & 1{,}713, 1{,}788 & 141, 138 & 369, 370 \\
+\Kcoarse{} classes + mass & 266, 261 & 803, 740 & -- & -- & 179, 211 & 713, 820 & 38.1, 39.5 & 116, 117 \\
+random partition 1, seed 1 & 272 & 732 & -- & -- & 258 & 959 & 44.6 & 111 \\
+random partition 2, seed 2 & 289 & 812 & -- & -- & 294 & 1{,}131 & 33.8 & 96.4 \\
+random partition 3, seed 1 & 285 & 784 & -- & -- & 334 & 1{,}447 & 26.5 & 80.2 \\
+random partition 4, seed 2 & 320 & 826 & -- & -- & 318 & 1{,}513 & 26.0 & 69.3 \\
+random partition 5, seed 2 & 286 & 784 & -- & -- & 358 & 1{,}743 & 39.0 & 112 \\
+no flavor boundary & 223, 212 & 689, 697 & -- & -- & 199, 188 & 760, 774 & 38.3, 40.0 & 112, 118 \\
+$b$-quark boundary & 262, 267 & 753, 742 & -- & -- & 224, 197 & 776, 665 & 39.8, 37.3 & 115, 106 \\
+random flavor boundary & 279, 275 & 788, 830 & -- & -- & 256, 258 & 983, 1{,}071 & 40.3, 38.7 & 119, 111 \\
+random network & 15.9\,$\pm$\,0.9 & 42.8\,$\pm$\,3.5 & -- & -- & 12.9\,$\pm$\,0.6 & 31.5\,$\pm$\,1.8 & -- & -- \\
+no pretraining & -- & -- & -- & -- & 146\,$\pm$\,11 & 610\,$\pm$\,40 & -- & -- \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:xbxrej}{tab:xbxrej:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{4.6cm}cccc}
-\toprule
- & \multicolumn{2}{c}{$X\to bs$, transfer} & \multicolumn{2}{c}{$X\to bs$, closest node} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
- & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
-\midrule
-\mbox{\Kfull{} classes} & 435\,$\pm$\,27 & 2{,}070\,$\pm$\,150 & 144.1\,$\pm$\,3.5 & 377\,$\pm$\,19 \\
-\mbox{\Kres{} classes} & 425\,$\pm$\,4 & 2{,}020\,$\pm$\,170 & 142.0\,$\pm$\,2.8 & 366\,$\pm$\,10 \\
-\mbox{\Kmid{} classes} & 357\,$\pm$\,16 & 1{,}610\,$\pm$\,60 & 91.9\,$\pm$\,3.5 & 238\,$\pm$\,10 \\
-\mbox{\Kcoarse{} classes} & 191\,$\pm$\,26 & 690\,$\pm$\,90 & 38.0\,$\pm$\,0.8 & 112.2\,$\pm$\,3.1 \\
-\mbox{\Kres{} classes + mass} & 370, 375 & 1{,}713, 1{,}788 & 141, 138 & 369, 370 \\
-\mbox{\Kcoarse{} classes + mass} & 179, 211 & 713, 820 & 38.1, 39.5 & 116, 117 \\
-\mbox{random partition 1,} \mbox{seed 1} & 258 & 959 & 44.6 & 111 \\
-\mbox{random partition 2,} \mbox{seed 2} & 294 & 1{,}131 & 33.8 & 96.4 \\
-\mbox{random partition 3,} \mbox{seed 1} & 334 & 1{,}447 & 26.5 & 80.2 \\
-\mbox{random partition 4,} \mbox{seed 2} & 318 & 1{,}513 & 26.0 & 69.3 \\
-\mbox{random partition 5,} \mbox{seed 2} & 358 & 1{,}743 & 39.0 & 112 \\
-\mbox{no flavor boundary} & 199, 188 & 760, 774 & 38.3, 40.0 & 112, 118 \\
-\mbox{$b$-quark boundary} & 224, 197 & 776, 665 & 39.8, 37.3 & 115, 106 \\
-\mbox{random flavor boundary} & 256, 258 & 983, 1{,}071 & 40.3, 38.7 & 119, 111 \\
-\mbox{random network} & 12.9\,$\pm$\,0.6 & 31.5\,$\pm$\,1.8 & -- & -- \\
-\mbox{no pretraining} & 146\,$\pm$\,11 & 610\,$\pm$\,40 & -- & -- \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\end{center}
+\end{tabular*}
+\end{table*}
+\end{landscape}

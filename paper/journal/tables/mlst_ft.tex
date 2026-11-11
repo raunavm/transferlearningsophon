@@ -1,7 +1,8 @@
-{\footnotesize
-\setlength{\tabcolsep}{1.2pt}
-\begin{longtable}{>{\raggedright\arraybackslash}p{4.6cm}cccc}
-\caption{Fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, and the network trained from scratch, on each task with the number of training jets in the column headers, in each task's metric: on class-balanced JetClass-II the AUC averaged over the classes (all classes and the QCD classes) and the accuracy over its \Kfull{} classes, accuracy on JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets; (f.t.): fine-tuned. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations. Each pretrained run is fine-tuned once; from scratch: \MlstFtRefSeedsWord{} training seeds on the same jets as the pretrained models. The last column of the JetClass-II block is $\rho$ of equation~(\ref{eq:ratio}) at $10^{6}$ training jets, $1-\mathrm{AUC}$ over that of the \Kfull-class run of the same seed. A dash: not run at that size (the random partitions are fine-tuned on JetClass-II at $10^{6}$ jets only). The \Kfull-class model with kinematic inputs only, a diagnostic of the missing inputs, has one run and no input missing, and is evaluated on top tagging only.}\label{tab:ft}\\
+\begin{landscape}
+{\small
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\caption{Fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, and the network trained from scratch, on each task with the number of training jets in the column headers: on class-balanced JetClass-II the AUC averaged over the classes (all and QCD classes) and the accuracy, the accuracy on JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets; (f.t.): fine-tuned. $\rho$: $1-\mathrm{AUC}$ at $10^{6}$ jets over that of the \Kfull-class run of the same seed. A dash: not run at that size. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}\label{tab:ft}\\
 \toprule
 \endfirsthead
 \multicolumn{5}{l}{\textit{continued}} \\
@@ -144,3 +145,4 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \mbox{no pretraining (f.t.)} & 27\,$\pm$\,1 & 31.3\,$\pm$\,6.8 & 36.7\,$\pm$\,0.9 & 35.5\,$\pm$\,1.2 \\
 \end{longtable}
 }
+\end{landscape}

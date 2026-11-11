@@ -1,45 +1,28 @@
+\begin{landscape}
 \begin{table}[t]
 \centering
 \small
 \caption{Resonance tagging in the soft-drop mass window, \XbxWindowLo--\XbxWindowHi~GeV: signal efficiency (\%) at the QCD efficiency given, mean $\pm$ standard deviation over the pretraining runs. Transfer: a classifier on the frozen features, its seeds averaged per run (the randomly initialized network: the linear probe). Direct: Sophon's discriminant from the output scores, where $X\to b\bar b$ is a class of its own.}
 \label{tab:xbx}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.0cm}c}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
-Pretraining & $X\to b\bar b$, transfer ($\epsilon_B=0.01$) \\
+ & \multicolumn{3}{c}{signal efficiency (\%) at $\varepsilon_B=0.01$} \\
+\cmidrule(lr){2-4}
+Pretraining & $X\to b\bar b$, transfer & $X\to b\bar b$, direct & $X\to bs$, transfer \\
 \midrule
-\mbox{\Kfull{} classes} & 71.79\,$\pm$\,0.14 \\
-\mbox{\Kres{} classes} & 71.69\,$\pm$\,0.27 \\
-\mbox{\Kmid{} classes} & 70.81\,$\pm$\,0.33 \\
-\mbox{\Kcoarse{} classes} & 65.9\,$\pm$\,1.0 \\
-\mbox{\Kres{} classes + mass} & 71.4, 70.7 \\
-\mbox{\Kcoarse{} classes + mass} & 66.6, 67.0 \\
-random partitions (all five) & 69.1\,$\pm$\,0.8 \\
-\mbox{no flavor boundary} & 63.1, 61.9 \\
-\mbox{$b$-quark boundary} & 66.9, 67.6 \\
-\mbox{random flavor boundary} & 67.1, 66.7 \\
-\mbox{random network} & 17.9\,$\pm$\,1.6 \\
+\Kfull{} classes & 71.79\,$\pm$\,0.14 & 69.84\,$\pm$\,0.05 & 69.22\,$\pm$\,0.19 \\
+\Kres{} classes & 71.69\,$\pm$\,0.27 & 69.95\,$\pm$\,0.19 & 68.90\,$\pm$\,0.06 \\
+\Kmid{} classes & 70.81\,$\pm$\,0.33 & -- & 67.14\,$\pm$\,0.07 \\
+\Kcoarse{} classes & 65.9\,$\pm$\,1.0 & -- & 59.4\,$\pm$\,1.6 \\
+\Kres{} classes + mass & 71.4, 70.7 & 69.6, 69.9 & 68.1, 68.0 \\
+\Kcoarse{} classes + mass & 66.6, 67.0 & -- & 59.1, 60.7 \\
+random partitions (all five) & 69.1\,$\pm$\,0.8 & -- & 65.1\,$\pm$\,1.2 \\
+no flavor boundary & 63.1, 61.9 & -- & 59.5, 59.1 \\
+$b$-quark boundary & 66.9, 67.6 & -- & 62.0, 61.2 \\
+random flavor boundary & 67.1, 66.7 & -- & 63.0, 63.4 \\
+random network & 17.9\,$\pm$\,1.6 & -- & 13.4\,$\pm$\,0.6 \\
+no pretraining & -- & -- & 55.4\,$\pm$\,1.0 \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
-\par\bigskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.0cm}cc}
-\toprule
-Pretraining & $X\to b\bar b$, direct ($\epsilon_B=0.01$) & $X\to bs$, transfer ($\epsilon_B=0.01$) \\
-\midrule
-\mbox{\Kfull{} classes} & 69.84\,$\pm$\,0.05 & 69.22\,$\pm$\,0.19 \\
-\mbox{\Kres{} classes} & 69.95\,$\pm$\,0.19 & 68.90\,$\pm$\,0.06 \\
-\mbox{\Kmid{} classes} & --- & 67.14\,$\pm$\,0.07 \\
-\mbox{\Kcoarse{} classes} & --- & 59.4\,$\pm$\,1.6 \\
-\mbox{\Kres{} classes + mass} & 69.6, 69.9 & 68.1, 68.0 \\
-\mbox{\Kcoarse{} classes + mass} & --- & 59.1, 60.7 \\
-random partitions (all five) & --- & 65.1\,$\pm$\,1.2 \\
-\mbox{no flavor boundary} & --- & 59.5, 59.1 \\
-\mbox{$b$-quark boundary} & --- & 62.0, 61.2 \\
-\mbox{random flavor boundary} & --- & 63.0, 63.4 \\
-\mbox{random network} & --- & 13.4\,$\pm$\,0.6 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{table}
+\end{landscape}

@@ -2,11 +2,10 @@
 \begin{center}
 \small
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not pretrained, fine-tuned on one million JetClass jets, in the form of ParT's Table~1: the number of trainable parameters, accuracy, AUC averaged over all pairs of classes (one against one, ParT's convention; on JetClass's equal class sizes it equals the one-against-rest average, checked), and for each signal class the rejection of QCD jets at 50\% signal efficiency (99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$) on $D_S = g_S/(g_S+g_{\mathrm{QCD}})$ of equation~(\ref{eq:discr}); (f.t.): fine-tuned. Published rows: trained from scratch on 2 million jets and scored on ParT's \LitPartJcTestMillion-million-jet test set (ParT on 100 million jets reaches an accuracy of 0.861 and an AUC of 0.9877); ours scored on two million (the AUC on 500{,}000 of them); parameters as in table~\ref{tab:benchtop}, ours \MlstNParamsJc{}. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs. From scratch: three seeds. Bold: the best value of each column, and every value within one standard deviation of it (the larger of the two values' standard deviations; a configuration with two runs is compared by their mean and standard deviation). $^\dagger$: fewer than $\nmin$ QCD jets pass in at least one run (equation~(\ref{eq:cut})), so that run's rejection has a counting uncertainty above 22\%; these values carry no claim and are never bold; the bold of such a column is chosen among its other values. $\pm\,0$: the three runs pass the same number of QCD jets.}
+\captionof{table}{JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not pretrained, fine-tuned on one million JetClass jets, in the form of ParT's Table 1: trainable parameters, accuracy, AUC averaged over all pairs of classes, and for each signal class the rejection of QCD jets at 50\% signal efficiency (99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$); (f.t.): fine-tuned. Published rows: trained from scratch on 2 million jets. Ours: mean $\pm$ standard deviation over the three pretraining runs. Bold: the best value of each column and every value within one standard deviation of it. $^\dagger$: fewer than \MlstMinBkgPass{} QCD jets pass in at least one run.}
 \label{tab:jetclass}
 \par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm}lccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
 \toprule
  & jets & \# params & accuracy & AUC \\
 \midrule
@@ -14,20 +13,18 @@ ParticleNet~\cite{part} & 2 M & 366\,k & 0.828 & 0.9820 \\
 ParT~\cite{part} & 2 M & 2.14\,M & 0.836 & 0.9834 \\
 \midrule
 \multicolumn{5}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 & 0.9818\,$\pm$\,0.0003 \\
-\mbox{\Kfull{} classes (f.t.)} & 1 M & 2.21\,M & \textbf{0.8468\,$\pm$\,0.0006} & 0.9854\,$\pm$\,0.0001 \\
-\mbox{\Kres{} classes (f.t.)} & 1 M & 2.21\,M & \textbf{0.8475\,$\pm$\,0.0009} & \textbf{0.9856\,$\pm$\,$<$0.0001} \\
-\mbox{\Kmid{} classes (f.t.)} & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 \\
-\mbox{\Kcoarse{} classes (f.t.)} & 1 M & 2.21\,M & 0.8422\,$\pm$\,0.0005 & 0.9847\,$\pm$\,0.0001 \\
+no pretraining (f.t.) & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 & 0.9818\,$\pm$\,0.0003 \\
+\Kfull{} classes (f.t.) & 1 M & 2.21\,M & \textbf{0.8468\,$\pm$\,0.0006} & 0.9854\,$\pm$\,0.0001 \\
+\Kres{} classes (f.t.) & 1 M & 2.21\,M & \textbf{0.8475\,$\pm$\,0.0009} & \textbf{0.9856\,$\pm$\,$<$0.0001} \\
+\Kmid{} classes (f.t.) & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 \\
+\Kcoarse{} classes (f.t.) & 1 M & 2.21\,M & 0.8422\,$\pm$\,0.0005 & 0.9847\,$\pm$\,0.0001 \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:jetclass}{tab:jetclass:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm}lccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
 \toprule
  &  & \multicolumn{3}{c}{rejection of QCD} \\
 \cmidrule(lr){3-5}
@@ -38,20 +35,18 @@ ParticleNet~\cite{part} & 2 M & 5{,}540 & 1{,}681 & 90 \\
 ParT~\cite{part} & 2 M & 5{,}587 & 1{,}982 & 93 \\
 \midrule
 \multicolumn{5}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 1 M & 4{,}800\,$\pm$\,70 & 1{,}570\,$\pm$\,50 & 86.4\,$\pm$\,3.2 \\
-\mbox{\Kfull{} classes (f.t.)} & 1 M & \textbf{6{,}600\,$\pm$\,330} & \textbf{2{,}650\,$\pm$\,260} & \textbf{103.6\,$\pm$\,3.8} \\
-\mbox{\Kres{} classes (f.t.)} & 1 M & 6{,}060\,$\pm$\,0 & \textbf{2{,}820\,$\pm$\,40} & \textbf{101.8\,$\pm$\,1.5} \\
-\mbox{\Kmid{} classes (f.t.)} & 1 M & \textbf{6{,}480\,$\pm$\,530} & 2{,}610\,$\pm$\,160 & \textbf{103.5\,$\pm$\,1.3} \\
-\mbox{\Kcoarse{} classes (f.t.)} & 1 M & \textbf{6{,}670\,$\pm$\,220} & 2{,}390\,$\pm$\,40 & \textbf{100.8\,$\pm$\,6.2} \\
+no pretraining (f.t.) & 1 M & 4{,}800\,$\pm$\,70 & 1{,}570\,$\pm$\,50 & 86.4\,$\pm$\,3.2 \\
+\Kfull{} classes (f.t.) & 1 M & \textbf{6{,}600\,$\pm$\,330} & \textbf{2{,}650\,$\pm$\,260} & \textbf{103.6\,$\pm$\,3.8} \\
+\Kres{} classes (f.t.) & 1 M & 6{,}060\,$\pm$\,0 & \textbf{2{,}820\,$\pm$\,40} & \textbf{101.8\,$\pm$\,1.5} \\
+\Kmid{} classes (f.t.) & 1 M & \textbf{6{,}480\,$\pm$\,530} & 2{,}610\,$\pm$\,160 & \textbf{103.5\,$\pm$\,1.3} \\
+\Kcoarse{} classes (f.t.) & 1 M & \textbf{6{,}670\,$\pm$\,220} & 2{,}390\,$\pm$\,40 & \textbf{100.8\,$\pm$\,6.2} \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:jetclass}{tab:jetclass:3}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm}lccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
 \toprule
  &  & \multicolumn{3}{c}{rejection of QCD} \\
 \cmidrule(lr){3-5}
@@ -62,20 +57,18 @@ ParticleNet~\cite{part} & 2 M & 662 & 1{,}654 & 4{,}049 \\
 ParT~\cite{part} & 2 M & 761 & 1{,}609 & 6{,}061 \\
 \midrule
 \multicolumn{5}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 1 M & 640\,$\pm$\,40 & 1{,}290\,$\pm$\,100 & \textbf{6{,}400\,$\pm$\,200} \\
-\mbox{\Kfull{} classes (f.t.)} & 1 M & \textbf{1{,}090\,$\pm$\,10} & \textbf{3{,}060\,$\pm$\,390} & 12{,}900\,$\pm$\,1{,}600$^\dagger$ \\
-\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{1{,}150\,$\pm$\,70} & \textbf{3{,}070\,$\pm$\,330} & 14{,}100\,$\pm$\,3{,}500$^\dagger$ \\
-\mbox{\Kmid{} classes (f.t.)} & 1 M & 1{,}030\,$\pm$\,40 & \textbf{3{,}160\,$\pm$\,280} & 14{,}200\,$\pm$\,2{,}100$^\dagger$ \\
-\mbox{\Kcoarse{} classes (f.t.)} & 1 M & 1{,}050\,$\pm$\,20 & 2{,}800\,$\pm$\,200 & 10{,}600\,$\pm$\,2{,}700$^\dagger$ \\
+no pretraining (f.t.) & 1 M & 640\,$\pm$\,40 & 1{,}290\,$\pm$\,100 & \textbf{6{,}400\,$\pm$\,200} \\
+\Kfull{} classes (f.t.) & 1 M & \textbf{1{,}090\,$\pm$\,10} & \textbf{3{,}060\,$\pm$\,390} & 12{,}900\,$\pm$\,1{,}600$^\dagger$ \\
+\Kres{} classes (f.t.) & 1 M & \textbf{1{,}150\,$\pm$\,70} & \textbf{3{,}070\,$\pm$\,330} & 14{,}100\,$\pm$\,3{,}500$^\dagger$ \\
+\Kmid{} classes (f.t.) & 1 M & 1{,}030\,$\pm$\,40 & \textbf{3{,}160\,$\pm$\,280} & 14{,}200\,$\pm$\,2{,}100$^\dagger$ \\
+\Kcoarse{} classes (f.t.) & 1 M & 1{,}050\,$\pm$\,20 & 2{,}800\,$\pm$\,200 & 10{,}600\,$\pm$\,2{,}700$^\dagger$ \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:jetclass}{tab:jetclass:4}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{3.7cm}lccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
 \toprule
  &  & \multicolumn{3}{c}{rejection of QCD} \\
 \cmidrule(lr){3-5}
@@ -86,13 +79,12 @@ ParticleNet~\cite{part} & 2 M & 4{,}673 & 260 & 215 \\
 ParT~\cite{part} & 2 M & 4{,}474 & 307 & 236 \\
 \midrule
 \multicolumn{5}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 1 M & 3{,}600\,$\pm$\,1{,}000 & 262\,$\pm$\,15 & 210\,$\pm$\,12 \\
-\mbox{\Kfull{} classes (f.t.)} & 1 M & 9{,}400\,$\pm$\,1{,}500$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
-\mbox{\Kres{} classes (f.t.)} & 1 M & \textbf{7{,}800\,$\pm$\,300} & \textbf{389\,$\pm$\,9} & \textbf{308\,$\pm$\,1} \\
-\mbox{\Kmid{} classes (f.t.)} & 1 M & \textbf{8{,}500\,$\pm$\,200} & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
-\mbox{\Kcoarse{} classes (f.t.)} & 1 M & \textbf{8{,}600\,$\pm$\,1{,}300} & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
+no pretraining (f.t.) & 1 M & 3{,}600\,$\pm$\,1{,}000 & 262\,$\pm$\,15 & 210\,$\pm$\,12 \\
+\Kfull{} classes (f.t.) & 1 M & 9{,}400\,$\pm$\,1{,}500$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
+\Kres{} classes (f.t.) & 1 M & \textbf{7{,}800\,$\pm$\,300} & \textbf{389\,$\pm$\,9} & \textbf{308\,$\pm$\,1} \\
+\Kmid{} classes (f.t.) & 1 M & \textbf{8{,}500\,$\pm$\,200} & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
+\Kcoarse{} classes (f.t.) & 1 M & \textbf{8{,}600\,$\pm$\,1{,}300} & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \end{center}

@@ -1,78 +1,27 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{landscape}
+\begin{table*}[t]
+\centering
 \small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with 162 and 17 classes plus a mass regression, and with the three 17-class partitions with no, a $b$-quark and a random flavor boundary, on the JetClass-II test jets: Jensen--Shannon distance (base 2) $\times10^{2}$ between the $m_{\mathrm{SD}}$ distributions (24 bins of 20~GeV from 20 to 500~GeV) of all QCD test jets and of those passing a cut on $1-g_{\mathrm{QCD}}$ at the QCD efficiency $\epsB$ given; lower is less sculpting. Beside each distance, $\varepsilon_S$ is the share of resonant test jets passing the same cut. The last two columns use the cut that keeps half of the resonant test jets: the QCD rejection there, $R_{50} = 1/\epsB$, and the distance at that cut. The last row is the distance expected for a random selection of as many of the QCD test jets (drawn without replacement). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given. The random network without pretraining: three initializations.}
+\caption{Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with 162 and 17 classes plus a mass regression, and with the three 17-class partitions with no, a $b$-quark and a random flavor boundary: Jensen--Shannon distance (base 2) $\times10^{2}$ between the $m_{\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on $1-g_{\mathrm{QCD}}$ at the QCD efficiency $\epsB$ given; lower is less sculpting. Last row: a random selection of as many QCD test jets. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}
 \label{tab:sculpt}
-\par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{6.7cm}cc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
- & \multicolumn{2}{c}{$\epsB = 10\%$} \\
-\cmidrule(lr){2-3}
- & distance & $\varepsilon_S$ \\
+ & \multicolumn{2}{c}{$\epsB = 10\%$} & \multicolumn{2}{c}{$\epsB = 1\%$} & \multicolumn{2}{c}{$\varepsilon_S = 50\%$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+ & distance & $\varepsilon_S$ & distance & $\varepsilon_S$ & $R_{50}$ & distance \\
 \midrule
-\mbox{\Kfull{} classes} & 5.24\,$\pm$\,0.34 & 0.8178\,$\pm$\,0.0011 \\
-\mbox{\Kres{} classes} & 5.32\,$\pm$\,0.09 & 0.8181\,$\pm$\,0.0009 \\
-\mbox{\Kmid{} classes} & 5.60\,$\pm$\,0.27 & 0.8179\,$\pm$\,0.0004 \\
-\mbox{\Kcoarse{} classes} & 5.43\,$\pm$\,0.10 & 0.8147\,$\pm$\,0.0005 \\
-\mbox{\Kres{} classes + mass} & 4.22, 4.64 & 0.8145, 0.8167 \\
-\mbox{\Kcoarse{} classes + mass} & 5.22, 4.23 & 0.8132, 0.8115 \\
-\mbox{no flavor boundary} & 5.49, 5.47 & 0.8165, 0.8160 \\
-\mbox{$b$-quark boundary} & 5.72, 5.09 & 0.8171, 0.8177 \\
-\mbox{random flavor boundary} & 5.38, 5.27 & 0.8160, 0.8174 \\
+\Kfull{} classes & 5.24\,$\pm$\,0.34 & 0.8178\,$\pm$\,0.0011 & 4.39\,$\pm$\,0.24 & 0.5483\,$\pm$\,0.0014 & 168.9\,$\pm$\,2.2 & 5.46\,$\pm$\,0.48 \\
+\Kres{} classes & 5.32\,$\pm$\,0.09 & 0.8181\,$\pm$\,0.0009 & 4.29\,$\pm$\,0.29 & 0.5490\,$\pm$\,0.0009 & 170.5\,$\pm$\,2.7 & 5.54\,$\pm$\,0.15 \\
+\Kmid{} classes & 5.60\,$\pm$\,0.27 & 0.8179\,$\pm$\,0.0004 & 5.05\,$\pm$\,0.74 & 0.5486\,$\pm$\,0.0007 & 169.2\,$\pm$\,1.7 & 6.37\,$\pm$\,0.23 \\
+\Kcoarse{} classes & 5.43\,$\pm$\,0.10 & 0.8147\,$\pm$\,0.0005 & 5.61\,$\pm$\,0.17 & 0.5437\,$\pm$\,0.0009 & 159.3\,$\pm$\,3.3 & 6.68\,$\pm$\,0.22 \\
+\Kres{} classes + mass & 4.22, 4.64 & 0.8145, 0.8167 & 4.24, 4.42 & 0.5439, 0.5455 & 157.9, 162.5 & 5.25, 5.71 \\
+\Kcoarse{} classes + mass & 5.22, 4.23 & 0.8132, 0.8115 & 4.05, 4.52 & 0.5396, 0.5377 & 152.9, 150.0 & 5.41, 4.82 \\
+no flavor boundary & 5.49, 5.47 & 0.8165, 0.8160 & 5.08, 5.10 & 0.5475, 0.5457 & 165.2, 162.8 & 6.30, 5.66 \\
+$b$-quark boundary & 5.72, 5.09 & 0.8171, 0.8177 & 5.16, 5.25 & 0.5464, 0.5480 & 163.7, 168.8 & 5.54, 6.31 \\
+random flavor boundary & 5.38, 5.27 & 0.8160, 0.8174 & 4.90, 4.81 & 0.5446, 0.5477 & 162.7, 169.3 & 5.76, 6.27 \\
 \midrule
-random selection of as many QCD jets & 0.94 & -- \\
+random selection of as many QCD jets & 0.94 & -- & 3.13 & -- & -- & -- \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:sculpt}{tab:sculpt:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{6.7cm}cc}
-\toprule
- & \multicolumn{2}{c}{$\epsB = 1\%$} \\
-\cmidrule(lr){2-3}
- & distance & $\varepsilon_S$ \\
-\midrule
-\mbox{\Kfull{} classes} & 4.39\,$\pm$\,0.24 & 0.5483\,$\pm$\,0.0014 \\
-\mbox{\Kres{} classes} & 4.29\,$\pm$\,0.29 & 0.5490\,$\pm$\,0.0009 \\
-\mbox{\Kmid{} classes} & 5.05\,$\pm$\,0.74 & 0.5486\,$\pm$\,0.0007 \\
-\mbox{\Kcoarse{} classes} & 5.61\,$\pm$\,0.17 & 0.5437\,$\pm$\,0.0009 \\
-\mbox{\Kres{} classes + mass} & 4.24, 4.42 & 0.5439, 0.5455 \\
-\mbox{\Kcoarse{} classes + mass} & 4.05, 4.52 & 0.5396, 0.5377 \\
-\mbox{no flavor boundary} & 5.08, 5.10 & 0.5475, 0.5457 \\
-\mbox{$b$-quark boundary} & 5.16, 5.25 & 0.5464, 0.5480 \\
-\mbox{random flavor boundary} & 4.90, 4.81 & 0.5446, 0.5477 \\
-\midrule
-random selection of as many QCD jets & 3.13 & -- \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:sculpt}{tab:sculpt:3}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{6.7cm}cc}
-\toprule
- & \multicolumn{2}{c}{$\varepsilon_S = 50\%$} \\
-\cmidrule(lr){2-3}
- & $R_{50}$ & distance \\
-\midrule
-\mbox{\Kfull{} classes} & 168.9\,$\pm$\,2.2 & 5.46\,$\pm$\,0.48 \\
-\mbox{\Kres{} classes} & 170.5\,$\pm$\,2.7 & 5.54\,$\pm$\,0.15 \\
-\mbox{\Kmid{} classes} & 169.2\,$\pm$\,1.7 & 6.37\,$\pm$\,0.23 \\
-\mbox{\Kcoarse{} classes} & 159.3\,$\pm$\,3.3 & 6.68\,$\pm$\,0.22 \\
-\mbox{\Kres{} classes + mass} & 157.9, 162.5 & 5.25, 5.71 \\
-\mbox{\Kcoarse{} classes + mass} & 152.9, 150.0 & 5.41, 4.82 \\
-\mbox{no flavor boundary} & 165.2, 162.8 & 6.30, 5.66 \\
-\mbox{$b$-quark boundary} & 163.7, 168.8 & 5.54, 6.31 \\
-\mbox{random flavor boundary} & 162.7, 169.3 & 5.76, 6.27 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\end{center}
+\end{tabular*}
+\end{table*}
+\end{landscape}

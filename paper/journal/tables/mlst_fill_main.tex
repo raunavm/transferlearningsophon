@@ -1,3 +1,4 @@
+\begin{landscape}
 \providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
 \small
@@ -5,74 +6,35 @@
 \captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with the inputs a data set lacks set to zero, to the training mean or to random draws of a real particle, trained at the largest training set; (LP): linear probe on the frozen features. Upper part: relative drop in JetClass-II accuracy (percent) when the slots the top or the quark/gluon data lack are substituted, against the same model with every input. Lower part: $R_{30}$ on top and quark/gluon tagging. Mean and standard deviation over three runs. The best substitution of each row and data set is in bold. The \Kfull-class model with kinematic inputs only has nothing missing (one run). The controls are in table~\ref{tab:fill}.}
 \label{tab:fill_main}
 \par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
- & \multicolumn{3}{c}{JetClass-II, top slots} \\
-\cmidrule(lr){2-4}
- & zero & mean & draws \\
+ & \multicolumn{3}{c}{JetClass-II, top slots} & \multicolumn{3}{c}{JetClass-II, quark/gluon slots} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+ & zero & mean & draws & zero & mean & draws \\
 \midrule
-\mbox{\Kfull{} classes (LP)} & 88.9\,$\pm$\,1.0\% & 87.9\,$\pm$\,1.1\% & \textbf{85.98\,$\pm$\,0.07\%} \\
-\mbox{\Kres{} classes (LP)} & 89.0\,$\pm$\,0.9\% & 87.8\,$\pm$\,0.7\% & \textbf{85.89\,$\pm$\,0.11\%} \\
-\mbox{\Kmid{} classes (LP)} & 87.8\,$\pm$\,0.3\% & 86.7\,$\pm$\,0.9\% & \textbf{83.17\,$\pm$\,0.29\%} \\
-\mbox{\Kcoarse{} classes (LP)} & 86.7\,$\pm$\,0.7\% & 86.1\,$\pm$\,0.8\% & \textbf{81.42\,$\pm$\,0.53\%} \\
+\Kfull{} classes (LP) & 88.9\,$\pm$\,1.0\% & 87.9\,$\pm$\,1.1\% & \textbf{85.98\,$\pm$\,0.07\%} & 61.2\,$\pm$\,3.0\% & \textbf{48.8\,$\pm$\,1.1\%} & 54.3\,$\pm$\,0.2\% \\
+\Kres{} classes (LP) & 89.0\,$\pm$\,0.9\% & 87.8\,$\pm$\,0.7\% & \textbf{85.89\,$\pm$\,0.11\%} & 64.1\,$\pm$\,5.2\% & \textbf{49.5\,$\pm$\,0.5\%} & 54.6\,$\pm$\,0.6\% \\
+\Kmid{} classes (LP) & 87.8\,$\pm$\,0.3\% & 86.7\,$\pm$\,0.9\% & \textbf{83.17\,$\pm$\,0.29\%} & 67.6\,$\pm$\,4.8\% & \textbf{47.6\,$\pm$\,1.6\%} & 53.5\,$\pm$\,1.4\% \\
+\Kcoarse{} classes (LP) & 86.7\,$\pm$\,0.7\% & 86.1\,$\pm$\,0.8\% & \textbf{81.42\,$\pm$\,0.53\%} & 70.9\,$\pm$\,2.3\% & \textbf{50.0\,$\pm$\,1.0\%} & 51.7\,$\pm$\,0.4\% \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:fill_main}{tab:fill_main:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
- & \multicolumn{3}{c}{JetClass-II, quark/gluon slots} \\
-\cmidrule(lr){2-4}
- & zero & mean & draws \\
+ & \multicolumn{3}{c}{top, $R_{30}$} & \multicolumn{3}{c}{quark/gluon, $R_{30}$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+ & zero & mean & draws & zero & mean & draws \\
 \midrule
-\mbox{\Kfull{} classes (LP)} & 61.2\,$\pm$\,3.0\% & \textbf{48.8\,$\pm$\,1.1\%} & 54.3\,$\pm$\,0.2\% \\
-\mbox{\Kres{} classes (LP)} & 64.1\,$\pm$\,5.2\% & \textbf{49.5\,$\pm$\,0.5\%} & 54.6\,$\pm$\,0.6\% \\
-\mbox{\Kmid{} classes (LP)} & 67.6\,$\pm$\,4.8\% & \textbf{47.6\,$\pm$\,1.6\%} & 53.5\,$\pm$\,1.4\% \\
-\mbox{\Kcoarse{} classes (LP)} & 70.9\,$\pm$\,2.3\% & \textbf{50.0\,$\pm$\,1.0\%} & 51.7\,$\pm$\,0.4\% \\
+\Kfull{} classes (LP) & 60\,$\pm$\,12 & 73\,$\pm$\,15 & \textbf{228\,$\pm$\,25} & 66\,$\pm$\,7 & \textbf{72.7\,$\pm$\,2.4} & 68.1\,$\pm$\,1.8 \\
+\Kres{} classes (LP) & 76\,$\pm$\,17 & 64\,$\pm$\,11 & \textbf{199\,$\pm$\,25} & 58\,$\pm$\,9 & \textbf{71.0\,$\pm$\,0.3} & 66.8\,$\pm$\,0.4 \\
+\Kmid{} classes (LP) & 57\,$\pm$\,13 & 58\,$\pm$\,14 & \textbf{231\,$\pm$\,8} & 61\,$\pm$\,9 & \textbf{70.8\,$\pm$\,1.8} & 69.0\,$\pm$\,1.1 \\
+\Kcoarse{} classes (LP) & 55\,$\pm$\,5 & 55\,$\pm$\,5 & \textbf{255\,$\pm$\,17} & 62\,$\pm$\,7 & \textbf{74.3\,$\pm$\,1.9} & 71.6\,$\pm$\,2.8 \\
+\Kfull{} classes, kinematic inputs only (LP) & \multicolumn{3}{c}{231 (nothing missing)} & -- & -- & -- \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:fill_main}{tab:fill_main:3}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
-\toprule
- & \multicolumn{3}{c}{top, $R_{30}$} \\
-\cmidrule(lr){2-4}
- & zero & mean & draws \\
-\midrule
-\mbox{\Kfull{} classes (LP)} & 60\,$\pm$\,12 & 73\,$\pm$\,15 & \textbf{228\,$\pm$\,25} \\
-\mbox{\Kres{} classes (LP)} & 76\,$\pm$\,17 & 64\,$\pm$\,11 & \textbf{199\,$\pm$\,25} \\
-\mbox{\Kmid{} classes (LP)} & 57\,$\pm$\,13 & 58\,$\pm$\,14 & \textbf{231\,$\pm$\,8} \\
-\mbox{\Kcoarse{} classes (LP)} & 55\,$\pm$\,5 & 55\,$\pm$\,5 & \textbf{255\,$\pm$\,17} \\
-\mbox{\Kfull{} classes,} \mbox{kinematic inputs only (LP)} & \multicolumn{3}{c}{231 (nothing missing)} \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:fill_main}{tab:fill_main:4}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.9cm}ccc}
-\toprule
- & \multicolumn{3}{c}{quark/gluon, $R_{30}$} \\
-\cmidrule(lr){2-4}
- & zero & mean & draws \\
-\midrule
-\mbox{\Kfull{} classes (LP)} & 66\,$\pm$\,7 & \textbf{72.7\,$\pm$\,2.4} & 68.1\,$\pm$\,1.8 \\
-\mbox{\Kres{} classes (LP)} & 58\,$\pm$\,9 & \textbf{71.0\,$\pm$\,0.3} & 66.8\,$\pm$\,0.4 \\
-\mbox{\Kmid{} classes (LP)} & 61\,$\pm$\,9 & \textbf{70.8\,$\pm$\,1.8} & 69.0\,$\pm$\,1.1 \\
-\mbox{\Kcoarse{} classes (LP)} & 62\,$\pm$\,7 & \textbf{74.3\,$\pm$\,1.9} & 71.6\,$\pm$\,2.8 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \end{center}
+\end{landscape}

@@ -121,9 +121,10 @@ def efficiencies(M, runs, fits: dict, signal: str, name: str | None = None) -> d
     return out
 
 
-def table(M, MT, runs, fits: dict) -> str:
+def table(M, MT, runs, fits: dict, scratch: dict | None = None) -> str:
     """Signal efficiency (%) at eps_B* per configuration and signal; the direct discriminant for
-    X->bb beside the transfer classifier where it can be formed."""
+    X->bb beside the transfer classifier where it can be formed. scratch: {signal: [from-scratch endpoints per
+    seed]}, set as a last row (a dash for a signal without one), as the rejection table has it."""
     have = [(s, t) for s, t in SIGNALS if any(s in v for v in fits.values())]
     if not have:
         return ""
@@ -134,17 +135,28 @@ def table(M, MT, runs, fits: dict) -> str:
         cols.append((s, None, f"{t}, transfer"))
         if s == "xbb":
             cols.append((s, "zero_shot_xbb", f"{t}, direct"))
-    head = " & ".join(rf"{lab} ($\epsilon_B={stars[s]:g}$)" for s, _, lab in cols)
-    lines = [r"\begin{tabular}{l" + "c" * len(cols) + "}", r"\toprule", rf"Pretraining & {head} \\", r"\midrule"]
+    if len(set(stars.values())) == 1:       # one working point: named once, across the columns
+        star = next(iter(stars.values()))
+        over = (rf" & \multicolumn{{{len(cols)}}}{{c}}{{signal efficiency (\%) at $\varepsilon_B={star:g}$}} \\"
+                + "\n" + rf"\cmidrule(lr){{2-{len(cols) + 1}}}")
+        head = " & ".join(lab for _, _, lab in cols)
+    else:
+        over, head = None, " & ".join(rf"{lab} ($\varepsilon_B={stars[s]:g}$)" for s, _, lab in cols)
+    lines = [r"\begin{tabular}{l" + "c" * len(cols) + "}", r"\toprule", *([over] if over else []),
+             rf"Pretraining & {head} \\", r"\midrule"]
     eff = {(s, n): efficiencies(M, runs, fits, s, n) for s, n, _ in cols}
     for row in ROWS:
         name = "random partitions (all five)" if row == "RAND" else M.LABEL[row]
         cells = []
         for s, n, _ in cols:
             v = eff[(s, n)][row]
-            cells.append(M._cell(v, len(v), MT.fmt_pm, 100.0) if v else "---")
-        if any(c != "---" for c in cells):
+            cells.append(M._cell(v, len(v), MT.fmt_pm, 100.0) if v else "--")
+        if any(c != "--" for c in cells):
             lines.append(f"{name} & " + " & ".join(cells) + r" \\")
+    if scratch and any(scratch.get(s) for s, _, _ in cols):
+        cells = [M._cell([x["eps_s_at_star"] for x in scratch[s]], len(scratch[s]), MT.fmt_pm, 100.0)
+                 if n is None and scratch.get(s) else "--" for s, n, _ in cols]
+        lines.append(f"{M.SCRATCH_LABEL} & " + " & ".join(cells) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines) + "\n"
 

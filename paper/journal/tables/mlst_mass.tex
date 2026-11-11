@@ -1,23 +1,21 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Jet mass from frozen features: a multilayer perceptron, trained on JetClass-II, regresses the mass from the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (two of them also with a mass regression) and of the random network without pretraining; the soft-drop mass is the reference; (MLP): multilayer-perceptron probe on the frozen features. Resolution: $\sigma_r$ of equation~(\ref{eq:resolution}), half the 15.9--84.1\% quantile range of the response $r = m/m_{\mathrm{gen}}$, a jet's mass over its generator-level soft-drop mass, divided by its median; and the median response, over all JetClass-II test jets with a generator match (resonant and QCD jets separately in table~\ref{tab:massdetail}); lower resolution is better. The regression target is centered on the training median of each of the \Kfull{} classes, a truth-label input the soft-drop-mass row does not have. A multilayer perceptron is used because the mass is not linear in the features (ridge regression in table~\ref{tab:massdetail}). The random network without pretraining shows what a network that never trained exposes. The mass regression in pretraining has the weight $\lambda = \MlstMassLambda{}$ at both label sets, a share of the training loss of \MlstMassLossShareResMass\% (\Kres{} classes) and \MlstMassLossShareCoarseMass\% (\Kcoarse{} classes). Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs; the models with the mass regression have \MlstMassNRunsWord{} runs, and both values are given. The random network without pretraining: three initializations.}
+\caption{Jet mass from frozen features: a multilayer perceptron regresses the mass from the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (two of them also with a mass regression) and of the random network without pretraining; the soft-drop mass is the reference; (MLP): multilayer-perceptron probe on the frozen features. Resolution $\sigma_r$, half the 15.9--84.1\% quantile range of the response $r = m/m_{\mathrm{gen}}$ over its median (lower is better), and the median response, over all JetClass-II test jets with a generator match. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}
 \label{tab:mass}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lcc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
 \toprule
  & resolution & median response \\
 \midrule
 soft-drop mass & 0.2448 & 0.929 \\
 \midrule
-\mbox{random network (MLP)} & 0.2421\,$\pm$\,0.0018 & 0.983\,$\pm$\,0.005 \\
-\mbox{\Kfull{} classes (MLP)} & 0.2200\,$\pm$\,0.0014 & 0.991\,$\pm$\,0.005 \\
-\mbox{\Kres{} classes (MLP)} & 0.2195\,$\pm$\,0.0017 & 0.988\,$\pm$\,0.001 \\
-\mbox{\Kmid{} classes (MLP)} & 0.2158\,$\pm$\,0.0029 & 0.991\,$\pm$\,0.005 \\
-\mbox{\Kcoarse{} classes (MLP)} & 0.2098\,$\pm$\,0.0031 & 0.991\,$\pm$\,0.004 \\
-\mbox{\Kres{} classes + mass (MLP)} & 0.1591, 0.1586 & 1.004, 1.006 \\
-\mbox{\Kcoarse{} classes + mass (MLP)} & 0.1583, 0.1588 & 1.009, 1.006 \\
+random network (MLP) & 0.2421\,$\pm$\,0.0018 & 0.983\,$\pm$\,0.005 \\
+\Kfull{} classes (MLP) & 0.2200\,$\pm$\,0.0014 & 0.991\,$\pm$\,0.005 \\
+\Kres{} classes (MLP) & 0.2195\,$\pm$\,0.0017 & 0.988\,$\pm$\,0.001 \\
+\Kmid{} classes (MLP) & 0.2158\,$\pm$\,0.0029 & 0.991\,$\pm$\,0.005 \\
+\Kcoarse{} classes (MLP) & 0.2098\,$\pm$\,0.0031 & 0.991\,$\pm$\,0.004 \\
+\Kres{} classes + mass (MLP) & 0.1591, 0.1586 & 1.004, 1.006 \\
+\Kcoarse{} classes + mass (MLP) & 0.1583, 0.1588 & 1.009, 1.006 \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{table}

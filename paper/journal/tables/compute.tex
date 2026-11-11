@@ -1,13 +1,18 @@
-\begin{table*}[t]
-\centering
-\small
-\caption{GPU types and GPU-hours of every pretraining run, summed over the training and validation passes of its epochs as each epoch recorded its device, and the GPU types its fine-tuning ran on.}
-\label{tab:compute}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{lllr}
+{\small
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}
+\begin{longtable}{@{\extracolsep{\fill}}l>{\raggedright\arraybackslash}p{4.3cm}r>{\raggedright\arraybackslash}p{4.3cm}@{}}
+\caption{GPU types and GPU-hours of every pretraining run, summed over the training and validation passes of its epochs as each epoch recorded its device, and the GPU types its fine-tuning ran on.}\label{tab:compute}\\
 \toprule
 run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\
 \midrule
+\endfirsthead
+\multicolumn{4}{l}{\textit{continued}} \\
+\toprule
+run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes, run 1 & V100 (135) & 135 & L4, L40, RTX 3090, V100 \\
 \Kfull{} classes, run 2 & V100 (145) & 145 & A100 80GB PCIe, L4, RTX 4090, RTX 5000 Ada Generation, TITAN RTX, V100 \\
 \Kfull{} classes, run 3 & RTX 3090 (116) & 116 & A100-SXM4-80GB, L4, L40, RTX 5000 Ada Generation, V100 \\
@@ -35,8 +40,6 @@ $b$-quark boundary, run 1 & V100 (98), RTX 3090 (24) & 122 & A100 80GB PCIe, A10
 $b$-quark boundary, run 2 & RTX 3090 (137) & 137 & A100 80GB PCIe, A100-SXM4-80GB, L4, L40, L40S, Quadro RTX 6000, TITAN RTX, V100 \\
 random flavor boundary, run 1 & RTX 3090 (125) & 125 & A100 80GB PCIe, L4, RTX 3090, V100 \\
 random flavor boundary, run 2 & V100 (135), RTX 3090 (7) & 142 & A100-SXM4-80GB, L40, Quadro RTX 6000, RTX 5000 Ada Generation, V100 \\
-\mbox{\Kfull{} classes,} \mbox{kinematic inputs only} & RTX 4090 (75) & 75 & A100-PCIE-40GB, L40, TITAN RTX, V100 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table*}
+\Kfull{} classes, kinematic inputs only & RTX 4090 (75) & 75 & A100-PCIE-40GB, L40, TITAN RTX, V100 \\
+\end{longtable}
+}

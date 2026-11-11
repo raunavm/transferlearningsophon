@@ -134,17 +134,17 @@ def _use(ax, x: float, fill: str, word: str, action: str, name: str, hidden: boo
 
 
 def draw_f1(path: pathlib.Path) -> None:
-    # inches: one data unit is one inch on the page, the figure exactly the text width (15 cm), saved at that size.
+    # one data unit is 1.03 in on the page (the 5.72 in of content across the 15 cm text width), saved at that size.
     # (a) is drawn RAISE inches above (b), which leaves the room each merge's words need under its own arrow
-    w, h, RAISE = S.FULL, 5.35, 0.45
+    w, h, RAISE, CONTENT_W = S.FULL, 5.35, 0.45, 5.72
     fig = plt.figure(figsize=(w, h))
     fig.exact_size = True
     low = fig.add_axes((0, 0, 1, 1))
-    low.set_xlim(-0.1, w - 0.1)
+    low.set_xlim(0, CONTENT_W)        # the content from the text block's left edge to its right edge
     low.set_ylim(0, h)
     low.set_axis_off()
     ax = fig.add_axes((0, RAISE / h, 1, (h - RAISE) / h))
-    ax.set_xlim(-0.1, w - 0.1)
+    ax.set_xlim(0, CONTENT_W)
     ax.set_ylim(0, h - RAISE)
     ax.set_axis_off()
     bold = dict(fontsize=S.LABEL_PT, fontweight="bold", va="center")
@@ -204,42 +204,43 @@ def _atlas() -> dict:
     return ATLAS_FINE or I["atlas"]
 
 
-GROOMED_LOOK = {"color": "#000000", "linestyle": "-", "linewidth": S.LW_THIN}    # solid black, thin: the reference
+GROOMED_LOOK = {"color": "#000000", "linestyle": "-", "linewidth": S.LW_CURVE}    # solid black: the reference
 
 
-def _response(ax, atlas: dict, group: str, title: str) -> list:
-    """The response histograms of the soft-drop mass and the two mass outputs (solid: nothing else shares the panel); returns the
-    bins drawn and the series' peak."""
+def _response_series(atlas: dict, group: str) -> tuple:
+    """(bin edges, [(values, look, label)]) of the response histograms of the soft-drop mass and the two mass outputs
+    (solid: nothing else shares the panel)."""
     g = P._groomed(atlas, group)["hist"]
     e = np.asarray(g["edges"], float)
-    gr = P._frac(g)
-    ax.stairs(gr, e, baseline=None, label=GROOMED, **GROOMED_LOOK)
-    shown = [gr]
+    out = [(P._frac(g), GROOMED_LOOK, GROOMED)]
     for row, _ in MASS_ROWS:
         hs = [P._frac(b["hist"]) for m in RUNS[row] if (b := P._block(atlas, m, "regressed", group))]
         if hs:
-            mean = np.mean(hs, axis=0)
-            ax.stairs(mean, e, baseline=None, **S.look(row), linewidth=S.LW_CURVE, label=S.LEGEND[row])
-            shown.append(mean)
-    on = np.flatnonzero(np.any([s >= SHOWN_FROM * s.max() for s in shown], axis=0))
-    ax.set_xlim(e[on[0]], e[on[-1] + 1])
-    S.title(ax, title)
-    S.labels(ax, xlabel=r"Response $r = m/m_{\mathrm{gen}}$")
-    S.fine_grid(ax)
-    return [max(s.max() for s in shown)]
+            out.append((np.mean(hs, axis=0), {**S.look(row), "linewidth": S.LW_CURVE}, S.LEGEND[row]))
+    return e, out
 
 
 def draw_f9a(path: pathlib.Path) -> None:
-    """Round 4: two panels side by side, no ratio sub-panels (a 2x1 stack with them exceeds the page); one y range."""
+    """Two panels side by side, no ratio sub-panels (a 2x1 stack with them exceeds the page); one y range and one
+    response range, the bins in which any series of either panel reaches SHOWN_FROM of its peak; only those bins are
+    drawn, so no histogram runs off the axes."""
     atlas = _atlas()
     fig, axes, _ = S.grid_cm(1, 2, w=6.65, aspect=0.85, top=1.6, left=1.2, wgap=0.3)
-    peak = _response(axes[0, 0], atlas, "resonant", "Resonant jets") + _response(axes[0, 1], atlas, "qcd", "QCD jets")
+    panels = [(_response_series(atlas, g), t) for g, t in (("resonant", "Resonant jets"), ("qcd", "QCD jets"))]
+    e = panels[0][0][0]
+    on = np.flatnonzero(np.any([v >= SHOWN_FROM * v.max() for (_, series), _ in panels for v, _, _ in series], axis=0))
+    i, j = on[0], on[-1] + 1
+    peak = 0.0
+    for ax, ((edges, series), title) in zip(axes[0], panels):
+        for v, look, label in series:
+            ax.stairs(v[i:j], edges[i:j + 1], baseline=None, label=label, **look)
+            peak = max(peak, float(v[i:j].max()))
+        ax.set_xlim(e[i], e[j])
+        S.title(ax, title)
+        S.labels(ax, xlabel=r"Response $r = m/m_{\mathrm{gen}}$")
+        S.fine_grid(ax)
     axes[0, 1].sharey(axes[0, 0])
-    x0 = min(ax.get_xlim()[0] for ax in axes[0])
-    x1 = max(ax.get_xlim()[1] for ax in axes[0])
-    for ax in axes[0]:
-        ax.set_xlim(x0, x1)                 # one response range: the two widths read against each other
-    axes[0, 0].set_ylim(0, 1.08 * max(peak))
+    axes[0, 0].set_ylim(0, 1.08 * peak)
     axes[0, 0].yaxis.set_major_locator(MaxNLocator(nbins=5, prune="lower"))     # no 0 in the corner
     axes[0, 1].tick_params(labelleft=False)
     S.labels(axes[0, 0], ylabel="Fraction of jets")
@@ -301,14 +302,12 @@ X_PT, X_MGEN = r"Jet $p_{\mathrm{T}}$ [GeV]", r"Generator mass ($m_{\mathrm{gen}
 
 
 def _share_row(row) -> None:
-    """One y range for the two panels of a row when each panel's own range covers at least half of their union (the
-    tick labels then once, on the left); otherwise each keeps its own range and labels, so neither is flattened."""
+    """One y range for the two panels of a row, the union of theirs, with the tick labels once, on the left: matching
+    axes carry the same labels (PI 2026-11-11)."""
     (a0, a1), (b0, b1) = row[0].get_ylim(), row[1].get_ylim()
-    lo, hi = min(a0, b0), max(a1, b1)
-    if min(a1 - a0, b1 - b0) >= 0.5 * (hi - lo):
-        for ax in row:
-            ax.set_ylim(lo, hi)
-        row[1].tick_params(labelleft=False)
+    for ax in row:
+        ax.set_ylim(min(a0, b0), max(a1, b1))
+    row[1].tick_params(labelleft=False)
 
 
 def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol: int) -> None:
@@ -318,8 +317,8 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
     atlas = _atlas()
     rows = math.ceil((len(series) + 1) / ncol)
     refs = np.empty((2, 2), object)
-    fig, axes, raxes = S.grid_cm(2, 2, aspect=0.72, ratio=RATIO_ATLAS, top=0.95 + 0.45 * rows + 0.5, left=1.25,
-                                 wgap=0.75, hgap=1.0)
+    fig, axes, raxes = S.grid_cm(2, 2, w=6.3, aspect=0.72, ratio=RATIO_ATLAS, top=0.95 + 0.45 * rows + 0.5, left=1.6,
+                                 wgap=0.6, hgap=1.0)
     for i, which in enumerate(("median", "resolution")):
         for j, (axis, xlabel) in enumerate((("vs_pt", X_PT), ("vs_mgen", X_MGEN))):
             refs[i, j] = _quantity(axes[i, j], raxes[i, j], atlas, group, axis, series, which)
@@ -333,7 +332,7 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
         S.labels(axes[i, 0], ylabel=r"Median response ($r$)" if which == "median" else r"Resolution ($\sigma_r$)")
         S.labels(raxes[i, 0], ylabel="Ratio")
         for j in range(2):
-            raxes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=3, steps=[1, 2, 5, 10], prune="upper"))
+            raxes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=3, steps=[1, 2, 5, 10], prune="both"))
             if which == "median":
                 axes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=5, steps=[1, 2, 5, 10], prune="lower"))
             else:
@@ -381,7 +380,7 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
         raise Absent("no mass sculpting curve of the models shown")
     ncols = 3 if len(shown) == 3 else 2         # three panels in one row (PI 2026-11-11: no empty slot)
     nrows = math.ceil(len(shown) / ncols)
-    fig, axes, raxes = S.grid_cm(nrows, ncols, w=4.3 if ncols == 3 else S.PANEL_W, aspect=0.75 if ncols == 2 else 0.95,
+    fig, axes, raxes = S.grid_cm(nrows, ncols, w=S.PANEL_3 if ncols == 3 else S.PANEL_W, aspect=0.75 if ncols == 2 else 0.95,
                                  ratio=RATIO_CMS, top=1.6, left=1.3, wgap=0.35, hgap=1.0)
     panels = list(zip(axes.flat, raxes.flat))
     peak, ratios = 0.0, [[1.0]]
@@ -419,7 +418,7 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
             axes[i, j].tick_params(labelleft=False)
             raxes[i, j].tick_params(labelleft=False)
         axes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=5, prune="lower"))
-        raxes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=3, prune="upper"))
+        raxes[i, 0].yaxis.set_major_locator(MaxNLocator(nbins=3, prune="both"))
         for j in range(ncols - 1):         # a panel's last x label is left to the next panel's axis beside it
             hi = raxes[i, j].get_xlim()[1]
             raxes[i, j].xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=hi: "" if v >= hi - 1e-9 else f"{v:g}"))
@@ -581,7 +580,7 @@ def draw_f11(path: pathlib.Path) -> None:
         raise Absent(f"X→bb and X→bs fits on Sophon's samples ({P.DATA / 'xbx'}): not pulled")
     # two panels side by side at the text width, one legend above them (PI 2026-11-11: aligned with the text block,
     # one line width in the legend, the x range fitted to the curves)
-    fig, grid, _ = S.grid_cm(1, 2, aspect=0.85, top=2.3, left=1.2, wgap=0.35)
+    fig, grid, _ = S.grid_cm(1, 2, aspect=0.85, top=2.3, left=1.2, wgap=0.35, bottom=1.15)
     axes = list(grid[0])
     top, xs, handles = 0.0, [], {}
     for ax, (_, series) in zip(axes, panels):
@@ -600,6 +599,8 @@ def draw_f11(path: pathlib.Path) -> None:
         S.title(ax, what)
         S.labels(ax, xlabel=r"QCD efficiency ($\varepsilon_B$)")
     axes[1].tick_params(labelleft=False)
+    hi = axes[0].get_xlim()[1]        # (a)'s last x label is left to (b)'s axis, which starts beside it
+    axes[0].xaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if v >= hi * (1 - 1e-9) else S.pow10(v)))
     S.labels(axes[0], ylabel=r"Figure of merit ($\varepsilon_S/\varepsilon_B^{1/2}$)")
     S.letter_panels(axes)
     S.heading(fig, "Resonance tagging on Sophon's samples")

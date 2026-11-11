@@ -5,8 +5,7 @@
 \captionof{table}{The per-particle inputs: which the top and the quark/gluon data provide ($\bullet$), where a zero lies after the network's input normalization (in standard deviations of the training particles), and what the mean and random-draw substitutions put in a missing slot. A random draw is averaged over four draws.}
 \label{tab:inputs}
 \par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{3.9cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
 input & top & quark/gluon & zero after normalization \\
 \midrule
@@ -15,27 +14,25 @@ $\log E$, rescaled & $\bullet$ & $\bullet$ & -- \\
 $\log(p_{\mathrm{T}}/p_{\mathrm{T}}^{\mathrm{jet}})$ & $\bullet$ & $\bullet$ & -- \\
 $\log(E/E^{\mathrm{jet}})$ & $\bullet$ & $\bullet$ & -- \\
 $\Delta R$ & $\bullet$ & $\bullet$ & -- \\
-electric charge & --- & $\bullet$ & $0.00$ \\
-charged hadron & --- & $\bullet$ & $-0.96$ \\
-neutral hadron & --- & $\bullet$ & $-0.35$ \\
-photon & --- & $\bullet$ & $-0.81$ \\
-electron & --- & $\bullet$ & $-0.10$ \\
-muon & --- & $\bullet$ & $-0.08$ \\
-$d_0$ & --- & --- & $0.00$ \\
-$\sigma_{d_0}$ & --- & --- & $-0.50$ \\
-$d_z$ & --- & --- & $0.00$ \\
-$\sigma_{d_z}$ & --- & --- & $-0.44$ \\
+electric charge & -- & $\bullet$ & $0.00$ \\
+charged hadron & -- & $\bullet$ & $-0.96$ \\
+neutral hadron & -- & $\bullet$ & $-0.35$ \\
+photon & -- & $\bullet$ & $-0.81$ \\
+electron & -- & $\bullet$ & $-0.10$ \\
+muon & -- & $\bullet$ & $-0.08$ \\
+$d_0$ & -- & -- & $0.00$ \\
+$\sigma_{d_0}$ & -- & -- & $-0.50$ \\
+$d_z$ & -- & -- & $0.00$ \\
+$\sigma_{d_z}$ & -- & -- & $-0.44$ \\
 $\Delta\eta$ & $\bullet$ & $\bullet$ & -- \\
 $\Delta\phi$ & $\bullet$ & $\bullet$ & -- \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:inputs}{tab:inputs:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{3.9cm}c}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lc@{}}
 \toprule
 input & mean \\
 \midrule
@@ -50,14 +47,12 @@ $\sigma_{d_0}$ & running mean of the input normalization \\
 $d_z$ & running mean of the input normalization \\
 $\sigma_{d_z}$ & running mean of the input normalization \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:inputs}{tab:inputs:3}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{3.9cm}c}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lc@{}}
 \toprule
 input & random draws \\
 \midrule
@@ -72,7 +67,6 @@ $\sigma_{d_0}$ & a JetClass-II particle of the same species \\
 $d_z$ & a JetClass-II particle of the same species \\
 $\sigma_{d_z}$ & a JetClass-II particle of the same species \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \end{center}

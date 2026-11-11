@@ -1,12 +1,9 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{table}[t]
+\centering
 \small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Mass sculpting by the pretraining heads, differences between label sets: $\Delta$, the Jensen--Shannon distance of table~\ref{tab:sculpt} ($\times10^{2}$) of the configuration minus that of the reference, paired by pretraining seed and averaged over the seeds both have; the standard deviation of the paired differences over the seeds (run SD); the standard deviation of $\Delta$ over 200 bootstrap replicas of the test jets, the QCD and the resonant jets each resampled with replacement, the same jets for every network (bootstrap SD); and $\Delta/\sigma$, $\sigma^{2}$ the sum of the two squares. Bold: $|\Delta| > 3\sigma$, a difference that stands. At the QCD efficiencies $\epsB$ of table~\ref{tab:sculpt} and at the cut keeping half of the resonant jets ($\epsS = 50\%$).}
+\caption{Mass sculpting by the pretraining heads, differences between label sets: $\Delta$, the Jensen--Shannon distance of table~\ref{tab:sculpt} ($\times10^{2}$) of the configuration minus that of the reference, paired by pretraining seed; its standard deviation over the seeds (run SD) and over 200 bootstrap replicas of the test jets (bootstrap SD); and $\Delta/\sigma$, $\sigma^{2}$ the sum of the two squares. Bold: $|\Delta| > 3\sigma$.}
 \label{tab:sculptboot}
-\par\medskip
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.55\textheight}
-\begin{tabular}{lcccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
  & $\Delta$ & run SD & bootstrap SD & $\Delta/\sigma$ \\
 \midrule
@@ -37,7 +34,5 @@ no flavor boundary $-$ \Kfull{} classes & 0.41 & 0.18 & 0.61 & 0.65 \\
 $b$-quark boundary $-$ \Kfull{} classes & 0.36 & 1.18 & 0.57 & 0.28 \\
 random flavor boundary $-$ \Kfull{} classes & 0.45 & 0.98 & 0.56 & 0.40 \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{minipage}
-\end{center}
+\end{tabular*}
+\end{table}

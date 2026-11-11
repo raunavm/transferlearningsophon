@@ -2,11 +2,10 @@
 \begin{center}
 \small
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not pretrained, fine-tuned on the full training set (\LitQgTrainMillion{} million Pythia jets) with the particle type as five flags and the charge (ParT's exp inputs), and scored on Pythia and on Herwig jets: accuracy, AUC and $1/\epsB$ at 50\% and 30\% quark efficiency, and the number of trainable parameters; (f.t.): fine-tuned. Our models see the \FillQgNZero{} displacement inputs set to zero. Published rows (exp inputs) from the tables cited, the parameters from each model's paper as in table~\ref{tab:benchtop}; constituent multiplicity and linear EFP (a linear classifier on energy flow polynomials) use no particle type; PFN-Ex's uncertainty is half the interquartile range of ten trainings, the others as in table~\ref{tab:benchtop}, with nine trainings for OmniLearned. Bold as in table~\ref{tab:benchtop}.}
+\captionof{table}{Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes, or not pretrained, fine-tuned on the full training set (\LitQgTrainMillion{} million Pythia jets; particle type as five flags and the charge) and scored on Pythia and on Herwig jets, beside published models: accuracy, AUC, $1/\epsB$ at 50\% and 30\% quark efficiency and the number of trainable parameters; (f.t.): fine-tuned. Uncertainties and bold as in table~\ref{tab:benchtop}.}
 \label{tab:benchqg}
 \par\medskip
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
  &  & \multicolumn{2}{c}{Pythia} \\
 \cmidrule(lr){3-4}
@@ -22,20 +21,18 @@ ParT-f.t.~\cite{part} & 2.14\,M & 0.843 & 0.9151 \\
 OmniLearned-m~\cite{omnilearned} & 58\,M & \textbf{0.845} & \textbf{0.9162} \\
 \midrule
 \multicolumn{4}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 2.21\,M & 0.8397\,$\pm$\,0.0007 & 0.9121\,$\pm$\,0.0002 \\
-\mbox{\Kfull{} classes (f.t.)} & 2.21\,M & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 \\
-\mbox{\Kres{} classes (f.t.)} & 2.21\,M & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 \\
-\mbox{\Kmid{} classes (f.t.)} & 2.21\,M & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 \\
-\mbox{\Kcoarse{} classes (f.t.)} & 2.21\,M & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 \\
+no pretraining (f.t.) & 2.21\,M & 0.8397\,$\pm$\,0.0007 & 0.9121\,$\pm$\,0.0002 \\
+\Kfull{} classes (f.t.) & 2.21\,M & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 \\
+\Kres{} classes (f.t.) & 2.21\,M & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 \\
+\Kmid{} classes (f.t.) & 2.21\,M & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 \\
+\Kcoarse{} classes (f.t.) & 2.21\,M & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:benchqg}{tab:benchqg:2}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
  & \multicolumn{2}{c}{Pythia} & \multicolumn{1}{c}{Herwig} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-4}
@@ -51,33 +48,30 @@ ParT-f.t.~\cite{part} & 42.4\,$\pm$\,0.2 & 107.9\,$\pm$\,0.5 & -- \\
 OmniLearned-m~\cite{omnilearned} & \textbf{43.2\,$\pm$\,0.1} & \textbf{111.2\,$\pm$\,1.5} & -- \\
 \midrule
 \multicolumn{4}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 & \textbf{0.7153\,$\pm$\,0.0024} \\
-\mbox{\Kfull{} classes (f.t.)} & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 & 0.7123\,$\pm$\,0.0050 \\
-\mbox{\Kres{} classes (f.t.)} & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 & 0.7100\,$\pm$\,0.0017 \\
-\mbox{\Kmid{} classes (f.t.)} & 42.25\,$\pm$\,0.77 & 108.3\,$\pm$\,1.0 & \textbf{0.7134\,$\pm$\,0.0058} \\
-\mbox{\Kcoarse{} classes (f.t.)} & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 & \textbf{0.7175\,$\pm$\,0.0033} \\
+no pretraining (f.t.) & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 & \textbf{0.7153\,$\pm$\,0.0024} \\
+\Kfull{} classes (f.t.) & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 & 0.7123\,$\pm$\,0.0050 \\
+\Kres{} classes (f.t.) & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 & 0.7100\,$\pm$\,0.0017 \\
+\Kmid{} classes (f.t.) & 42.25\,$\pm$\,0.77 & 108.3\,$\pm$\,1.0 & \textbf{0.7134\,$\pm$\,0.0058} \\
+\Kcoarse{} classes (f.t.) & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 & \textbf{0.7175\,$\pm$\,0.0033} \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \par\bigskip
 \begin{minipage}{\linewidth}\centering
 \TableContinued{tab:benchqg}{tab:benchqg:3}
-\begin{adjustbox}{max width=\linewidth, max totalheight=0.92\textheight}
-\begin{tabular}{>{\raggedright\arraybackslash}p{5.1cm}ccc}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
  & \multicolumn{3}{c}{Herwig} \\
 \cmidrule(lr){2-4}
  & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
 \multicolumn{4}{l}{\textit{this work}} \\
-\mbox{no pretraining (f.t.)} & 0.8061\,$\pm$\,0.0007 & 12.18\,$\pm$\,0.11 & 35.5\,$\pm$\,1.2 \\
-\mbox{\Kfull{} classes (f.t.)} & 0.8078\,$\pm$\,0.0023 & 12.31\,$\pm$\,0.39 & \textbf{35.2\,$\pm$\,2.1} \\
-\mbox{\Kres{} classes (f.t.)} & 0.8074\,$\pm$\,0.0010 & 12.33\,$\pm$\,0.28 & 34.6\,$\pm$\,2.0 \\
-\mbox{\Kmid{} classes (f.t.)} & \textbf{0.8087\,$\pm$\,0.0046} & \textbf{12.53\,$\pm$\,0.61} & \textbf{36.1\,$\pm$\,2.7} \\
-\mbox{\Kcoarse{} classes (f.t.)} & \textbf{0.8103\,$\pm$\,0.0018} & \textbf{12.79\,$\pm$\,0.20} & \textbf{36.9\,$\pm$\,0.9} \\
+no pretraining (f.t.) & 0.8061\,$\pm$\,0.0007 & 12.18\,$\pm$\,0.11 & 35.5\,$\pm$\,1.2 \\
+\Kfull{} classes (f.t.) & 0.8078\,$\pm$\,0.0023 & 12.31\,$\pm$\,0.39 & \textbf{35.2\,$\pm$\,2.1} \\
+\Kres{} classes (f.t.) & 0.8074\,$\pm$\,0.0010 & 12.33\,$\pm$\,0.28 & 34.6\,$\pm$\,2.0 \\
+\Kmid{} classes (f.t.) & \textbf{0.8087\,$\pm$\,0.0046} & \textbf{12.53\,$\pm$\,0.61} & \textbf{36.1\,$\pm$\,2.7} \\
+\Kcoarse{} classes (f.t.) & \textbf{0.8103\,$\pm$\,0.0018} & \textbf{12.79\,$\pm$\,0.20} & \textbf{36.9\,$\pm$\,0.9} \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabular*}
 \end{minipage}
 \end{center}
