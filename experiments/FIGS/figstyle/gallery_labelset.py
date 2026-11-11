@@ -666,12 +666,12 @@ PAGES = [
                   f"from scratch is probably still improving there. {SUBST_NOTE}"),
     C.Page(
         id="F8-auc",
-        title="Pretraining against the number of training jets, AUC",
+        title="Pretraining against the number of training jets, AUC (appendix)",
         precedent=["2401.13537/fig3.png"],
         precedent_label="Golling Fig. 3",
         caption="The network pretrained on JetClass-II with 188 classes, fine-tuned (f.t.) and as a linear probe "
                 "on its frozen features (LP), and a network trained from scratch: "
-                "the AUC averaged over the classes (one against the rest) on class-balanced JetClass-II and JetClass "
+                "the AUC averaged over the classes on class-balanced JetClass-II and JetClass "
                 "and the AUC of top and quark/gluon tagging, "
                 "against the number of training jets. Points are means, bands the SD over three pretraining runs (from "
                 "scratch: three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; "
@@ -700,7 +700,7 @@ PAGES = [
         precedent_label="Golling Fig. 3",
         caption="Fine-tuned networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, and (dashed) a "
                 "network trained from scratch: "
-                "the AUC averaged over the classes (one against the rest) on class-balanced JetClass-II and JetClass "
+                "the AUC averaged over the classes on class-balanced JetClass-II and JetClass "
                 "and the AUC of top and quark/gluon tagging, "
                 "against the number of training jets. Points are means, bands the SD over three pretraining runs (from "
                 "scratch: three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; "
@@ -731,7 +731,7 @@ PAGES = [
         precedent_label="Golling Fig. 3",
         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and "
                 "17 classes, and (dashed) a network trained from scratch: "
-                "the AUC averaged over the classes (one against the rest) on class-balanced JetClass-II and JetClass "
+                "the AUC averaged over the classes on class-balanced JetClass-II and JetClass "
                 "and the AUC of top and quark/gluon tagging, "
                 "against the number of training jets. Points are means, bands the SD over three pretraining runs (from "
                 "scratch: three trainings). Stars: published ParT (JetClass: same inputs; top: kinematic; "

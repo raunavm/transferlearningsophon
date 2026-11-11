@@ -1690,3 +1690,5 @@ render-gallery-dab5a28-raunav,2026-11-11T21:45:43Z,complete,"Round 17: no measur
 mtx2-tests-bookfull-dab5a28-raunav,2026-11-11T21:45:43Z,launched,"Full suite at the book pass's final commit; supersedes the one at 43dcbb1.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-bookfull-dab5a28-raunav.yaml
 render-gallery-74dcee0-raunav,2026-11-11T21:57:39Z,complete,"'from scratch' replaces 'no pretraining (f.t.)' (PI 2026-11-11): no figcheck finding; both books rebuilt and restamped.",experiments/FIGS/k8s/job-render-gallery-74dcee0-raunav.yaml
 mtx2-tests-book-74dcee0-raunav,2026-11-11T21:57:39Z,complete,"120 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-74dcee0-raunav.yaml
+render-gallery-2093036-raunav,2026-11-11T22:11:18Z,launched,"Scaling figures in AUC (PI 2026-11-11): F8-auc, A8-auc, A10-auc.",experiments/FIGS/k8s/job-render-gallery-2093036-raunav.yaml
+mtx2-tests-book-2093036-raunav,2026-11-11T22:11:18Z,launched,"Table and figure tests at 2093036.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-2093036-raunav.yaml

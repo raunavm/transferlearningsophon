@@ -82,7 +82,7 @@ def test_numbers_count_within_each_tier_and_kind():
     assert G.number("F1") == "Fig. 1" and G.number("F3-main") == "Fig. 4" and G.number("FJ") == "Fig. A1"
     assert G.number("tab:jetclass") == "Table 1" and G.number("tab:probes") == "Table A1"
     assert G.number("FJ-ctrl") == "Fig. S1" and G.number("tab:perrun") == "Table S1"
-    assert G.place("F10b") == "Appendix, Fig. A10" and G.place("F11") == "Main text, Fig. 9"
+    assert G.place("F10b") == "Appendix, Fig. A13" and G.place("F11") == "Main text, Fig. 9"
     assert G.number("tab:sculptboot") == "Table A14" and G.number("tab:boot") == "Table A15"
 
 
@@ -182,3 +182,11 @@ def test_the_sculpting_sentence_names_exactly_the_differences_beyond_three_sigma
                   "flavor boundaries"):
         assert words in sentence
     assert "sit with" not in sentence and not G.f10b_main(doc)
+
+
+def test_the_scaling_figures_in_auc_sit_in_the_appendix_after_a10_as_one_row():
+    """PI 2026-11-11: the scaling figures need AUC too; placed beside A10, the main text's list unchanged."""
+    app = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
+    i = app.index("A10")
+    assert app[i + 1:i + 4] == ["F8-auc", "A8-auc", "A10-auc"]
+    assert len({s for k, _, s in G.FIGURES if k.endswith("-auc")}) == 1
