@@ -1,15 +1,19 @@
 \begin{landscape}
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
-\small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and the controls, trained on one million JetClass jets: the AUC of each JetClass class against the other nine, fine-tuned (upper part, beside the network trained from scratch) and from linear probes on the frozen features (lower part, beside the random network); (f.t.): fine-tuned; (LP): linear probe on the frozen features. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}
-\label{tab:jc1_class_auc}
-\par\medskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+{\small
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2: }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\caption{The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and the controls, trained on one million JetClass jets: the AUC of each JetClass class against the other nine, fine-tuned (upper part, beside the network trained from scratch) and from linear probes on the frozen features (lower part, beside the random network); (f.t.): fine-tuned; (LP): linear probe on the frozen features. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}\label{tab:jc1_class_auc}\\
 \toprule
- & QCD & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
+& QCD & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
 \midrule
+\endfirsthead
+\multicolumn{6}{l}{\textit{Table~\ref{tab:jc1_class_auc} (continued)}} \\
+\toprule
+& QCD & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (f.t.) & 0.9753\,$\pm$\,0.0001 & 0.9964\,$\pm$\,$<$0.0001 & 0.9853\,$\pm$\,0.0001 & 0.9774\,$\pm$\,0.0001 & 0.9865\,$\pm$\,0.0001 \\
 \Kres{} classes (f.t.) & 0.9753\,$\pm$\,$<$0.0001 & 0.9964\,$\pm$\,0.0001 & 0.9855\,$\pm$\,0.0002 & 0.9776\,$\pm$\,0.0001 & 0.9867\,$\pm$\,0.0001 \\
 \Kmid{} classes (f.t.) & 0.9752\,$\pm$\,$<$0.0001 & 0.9962\,$\pm$\,0.0001 & 0.9850\,$\pm$\,0.0001 & 0.9773\,$\pm$\,0.0001 & 0.9863\,$\pm$\,0.0001 \\
@@ -25,16 +29,21 @@ no flavor boundary (f.t.) & 0.9749, 0.9751 & 0.9957, 0.9957 & 0.9835, 0.9835 & 0
 $b$-quark boundary (f.t.) & 0.9750, 0.9752 & 0.9959, 0.9961 & 0.9840, 0.9842 & 0.9770, 0.9769 & 0.9861, 0.9863 \\
 random flavor boundary (f.t.) & 0.9750, 0.9746 & 0.9957, 0.9957 & 0.9837, 0.9836 & 0.9768, 0.9766 & 0.9861, 0.9860 \\
 no pretraining (f.t.) & 0.9711\,$\pm$\,0.0005 & 0.9938\,$\pm$\,0.0002 & 0.9779\,$\pm$\,0.0002 & 0.9724\,$\pm$\,0.0004 & 0.9820\,$\pm$\,0.0005 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jc1_class_auc}{tab:jc1_class_auc:2}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{l}{\textit{Table~\ref{tab:jc1_class_auc} (continued)}} \\
 \toprule
- & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+& $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
 \midrule
+\endfirsthead
+\multicolumn{6}{l}{\textit{Table~\ref{tab:jc1_class_auc} (continued)}} \\
+\toprule
+& $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (f.t.) & 0.9993\,$\pm$\,$<$0.0001 & 0.9977\,$\pm$\,$<$0.0001 & 0.9998\,$\pm$\,$<$0.0001 & 0.9762\,$\pm$\,0.0003 & 0.9603\,$\pm$\,0.0003 \\
 \Kres{} classes (f.t.) & 0.9993\,$\pm$\,$<$0.0001 & 0.9978\,$\pm$\,$<$0.0001 & 0.9998\,$\pm$\,$<$0.0001 & 0.9766\,$\pm$\,$<$0.0001 & 0.9610\,$\pm$\,0.0002 \\
 \Kmid{} classes (f.t.) & 0.9993\,$\pm$\,$<$0.0001 & 0.9977\,$\pm$\,$<$0.0001 & 0.9998\,$\pm$\,$<$0.0001 & 0.9762\,$\pm$\,0.0002 & 0.9604\,$\pm$\,0.0002 \\
@@ -50,16 +59,21 @@ no flavor boundary (f.t.) & 0.9992, 0.9993 & 0.9975, 0.9976 & 0.9997, 0.9997 & 0
 $b$-quark boundary (f.t.) & 0.9993, 0.9993 & 0.9976, 0.9977 & 0.9998, 0.9998 & 0.9756, 0.9756 & 0.9591, 0.9592 \\
 random flavor boundary (f.t.) & 0.9992, 0.9992 & 0.9974, 0.9975 & 0.9998, 0.9998 & 0.9758, 0.9761 & 0.9600, 0.9602 \\
 no pretraining (f.t.) & 0.9990\,$\pm$\,0.0001 & 0.9965\,$\pm$\,0.0002 & 0.9996\,$\pm$\,$<$0.0001 & 0.9725\,$\pm$\,0.0005 & 0.9538\,$\pm$\,0.0009 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jc1_class_auc}{tab:jc1_class_auc:3}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{l}{\textit{Table~\ref{tab:jc1_class_auc} (continued)}} \\
 \toprule
- & QCD & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
+& QCD & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
 \midrule
+\endfirsthead
+\multicolumn{6}{l}{\textit{Table~\ref{tab:jc1_class_auc} (continued)}} \\
+\toprule
+& QCD & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (LP) & 0.9474\,$\pm$\,0.0005 & 0.9912\,$\pm$\,0.0003 & 0.9719\,$\pm$\,0.0006 & 0.9640\,$\pm$\,0.0003 & 0.9776\,$\pm$\,0.0002 \\
 \Kres{} classes (LP) & 0.9482\,$\pm$\,0.0010 & 0.9912\,$\pm$\,0.0001 & 0.9720\,$\pm$\,0.0005 & 0.9642\,$\pm$\,0.0002 & 0.9775\,$\pm$\,0.0002 \\
 \Kmid{} classes (LP) & 0.9484\,$\pm$\,0.0004 & 0.9909\,$\pm$\,0.0002 & 0.9719\,$\pm$\,0.0003 & 0.9632\,$\pm$\,0.0004 & 0.9769\,$\pm$\,0.0002 \\
@@ -75,16 +89,21 @@ no flavor boundary (LP) & 0.9462, 0.9453 & 0.9850, 0.9812 & 0.9564, 0.9495 & 0.9
 $b$-quark boundary (LP) & 0.9476, 0.9445 & 0.9889, 0.9898 & 0.9649, 0.9657 & 0.9633, 0.9635 & 0.9766, 0.9771 \\
 random flavor boundary (LP) & 0.9450, 0.9448 & 0.9882, 0.9876 & 0.9644, 0.9630 & 0.9629, 0.9626 & 0.9755, 0.9749 \\
 random network, BatchNorm recomputed (LP) & 0.8495\,$\pm$\,0.0074 & 0.8555\,$\pm$\,0.0094 & 0.7793\,$\pm$\,0.0018 & 0.8828\,$\pm$\,0.0039 & 0.8373\,$\pm$\,0.0048 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jc1_class_auc}{tab:jc1_class_auc:4}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{l}{\textit{Table~\ref{tab:jc1_class_auc} (continued)}} \\
 \toprule
- & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+& $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
 \midrule
+\endfirsthead
+\multicolumn{6}{l}{\textit{Table~\ref{tab:jc1_class_auc} (continued)}} \\
+\toprule
+& $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (LP) & 0.9988\,$\pm$\,0.0001 & 0.9925\,$\pm$\,0.0003 & 0.9995\,$\pm$\,$<$0.0001 & 0.9428\,$\pm$\,0.0012 & 0.8958\,$\pm$\,0.0029 \\
 \Kres{} classes (LP) & 0.9988\,$\pm$\,$<$0.0001 & 0.9925\,$\pm$\,0.0001 & 0.9995\,$\pm$\,$<$0.0001 & 0.9431\,$\pm$\,0.0005 & 0.8962\,$\pm$\,0.0002 \\
 \Kmid{} classes (LP) & 0.9988\,$\pm$\,$<$0.0001 & 0.9924\,$\pm$\,0.0002 & 0.9995\,$\pm$\,$<$0.0001 & 0.9424\,$\pm$\,0.0014 & 0.8959\,$\pm$\,0.0023 \\
@@ -100,8 +119,6 @@ no flavor boundary (LP) & 0.9982, 0.9981 & 0.9894, 0.9896 & 0.9991, 0.9990 & 0.9
 $b$-quark boundary (LP) & 0.9985, 0.9985 & 0.9907, 0.9914 & 0.9993, 0.9993 & 0.9403, 0.9404 & 0.8907, 0.8948 \\
 random flavor boundary (LP) & 0.9983, 0.9981 & 0.9901, 0.9897 & 0.9992, 0.9992 & 0.9386, 0.9366 & 0.8918, 0.8884 \\
 random network, BatchNorm recomputed (LP) & 0.9063\,$\pm$\,0.0170 & 0.9298\,$\pm$\,0.0009 & 0.9537\,$\pm$\,0.0064 & 0.8703\,$\pm$\,0.0031 & 0.7906\,$\pm$\,0.0083 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\end{longtable}
+}
 \end{landscape}

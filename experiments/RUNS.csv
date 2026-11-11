@@ -1654,3 +1654,4 @@ render-gallery-c2d4ac6-raunav,2026-11-11T18:37:57Z,launched,"Book pass (PI brief
 render-gallery-b3b73ed-raunav,2026-11-11T18:47:09Z,launched,"Book pass round 2: render and figcheck at b3b73ed.",experiments/FIGS/k8s/job-render-gallery-b3b73ed-raunav.yaml
 render-gallery-83d7c7a-raunav,2026-11-11T18:53:08Z,launched,"Book pass round 3: render and figcheck at 83d7c7a.",experiments/FIGS/k8s/job-render-gallery-83d7c7a-raunav.yaml
 render-gallery-f56aceb-raunav,2026-11-11T19:02:51Z,launched,"Book pass round 4: render and figcheck at f56aceb; tests job mtx2-tests-book-f56aceb-raunav beside it.",experiments/FIGS/k8s/job-render-gallery-f56aceb-raunav.yaml
+render-gallery-20dcbd5-raunav,2026-11-11T19:09:19Z,launched,"Book pass round 5: render, figcheck and tests at 20dcbd5.",experiments/FIGS/k8s/job-render-gallery-20dcbd5-raunav.yaml

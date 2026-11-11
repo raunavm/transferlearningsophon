@@ -1,17 +1,23 @@
 \begin{landscape}
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
-\small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained on $10^{6}$ JetClass-II jets and scored on the natural-composition test set and on the class-balanced one: AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run of the same seed; (LP): linear probe on the frozen features. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations.}
-\label{tab:balance}
-\par\medskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+{\small
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2: }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained on $10^{6}$ JetClass-II jets and scored on the natural-composition test set and on the class-balanced one: AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$, equation~(\ref{eq:ratio}), to the \Kfull-class run of the same seed; (LP): linear probe on the frozen features. Mean $\pm$ standard deviation over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs give both values. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations.}\label{tab:balance}\\
 \toprule
- & \multicolumn{2}{c}{natural composition} & \multicolumn{2}{c}{class-balanced} \\
+& \multicolumn{2}{c}{natural composition} & \multicolumn{2}{c}{class-balanced} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
+\endfirsthead
+\multicolumn{5}{l}{\textit{Table~\ref{tab:balance} (continued)}} \\
+\toprule
+& \multicolumn{2}{c}{natural composition} & \multicolumn{2}{c}{class-balanced} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & AUC & $\rho$ & AUC & $\rho$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (LP) & 0.9760\,$\pm$\,$<$0.0001 & 1.000 & 0.9801\,$\pm$\,$<$0.0001 & 1.000 \\
 \Kres{} classes (LP) & 0.9748\,$\pm$\,0.0003 & 1.049\,$\pm$\,0.014 & 0.9796\,$\pm$\,0.0001 & 1.026\,$\pm$\,0.005 \\
 \Kmid{} classes (LP) & 0.9719\,$\pm$\,0.0006 & 1.171\,$\pm$\,0.024 & 0.9756\,$\pm$\,0.0002 & 1.227\,$\pm$\,0.009 \\
@@ -27,8 +33,6 @@ no flavor boundary (LP) & 0.9657, 0.9645 & 1.432, 1.477 & 0.9717, 0.9710 & 1.424
 $b$-quark boundary (LP) & 0.9698, 0.9701 & 1.260, 1.245 & 0.9758, 0.9759 & 1.218, 1.212 \\
 random flavor boundary (LP) & 0.9698, 0.9698 & 1.259, 1.254 & 0.9760, 0.9760 & 1.206, 1.208 \\
 random network, BatchNorm recomputed (LP) & 0.8525\,$\pm$\,0.0019 & -- & 0.8664\,$\pm$\,0.0036 & -- \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\end{longtable}
+}
 \end{landscape}

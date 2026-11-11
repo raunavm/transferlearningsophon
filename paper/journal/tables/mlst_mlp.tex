@@ -1,17 +1,23 @@
 \begin{landscape}
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax{\footnotesize\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
-\small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Nonlinear probes (a multilayer perceptron with one hidden layer of \LpMlpHidden{} units) on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, at the largest training set of each task: the quantities of table~\ref{tab:probes} and the class pairs of table~\ref{tab:pairs}; then the models scored on the natural-composition test set only, and the linear probe on the hidden layer of the pretraining head beside the one on the class token; (MLP): multilayer-perceptron probe on the frozen features. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}
-\label{tab:mlp}
-\par\medskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+{\small
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2: }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\caption{Nonlinear probes (a multilayer perceptron with one hidden layer of \LpMlpHidden{} units) on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, at the largest training set of each task: the quantities of table~\ref{tab:probes} and the class pairs of table~\ref{tab:pairs}; then the models scored on the natural-composition test set only, and the linear probe on the hidden layer of the pretraining head beside the one on the class token; (MLP): multilayer-perceptron probe on the frozen features. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}\label{tab:mlp}\\
 \toprule
- & \multicolumn{4}{c}{JetClass-II} & JetClass \\
+& \multicolumn{4}{c}{JetClass-II} & JetClass \\
 \cmidrule(lr){2-5}
  & AUC & $\rho$ & AUC, resonant & AUC, QCD & AUC \\
 \midrule
+\endfirsthead
+\multicolumn{6}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
+\toprule
+& \multicolumn{4}{c}{JetClass-II} & JetClass \\
+\cmidrule(lr){2-5}
+ & AUC & $\rho$ & AUC, resonant & AUC, QCD & AUC \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (MLP) & 0.9806\,$\pm$\,$<$0.0001 & 1.000 & 0.9834\,$\pm$\,$<$0.0001 & 0.9643\,$\pm$\,0.0001 & 0.9786\,$\pm$\,0.0004 \\
 \Kres{} classes (MLP) & 0.9802\,$\pm$\,0.0001 & 1.019\,$\pm$\,0.007 & 0.9833\,$\pm$\,0.0001 & 0.9618\,$\pm$\,0.0003 & 0.9786\,$\pm$\,0.0002 \\
 \Kmid{} classes (MLP) & 0.9773\,$\pm$\,0.0001 & 1.170\,$\pm$\,0.006 & 0.9802\,$\pm$\,0.0002 & 0.9605\,$\pm$\,0.0001 & 0.9782\,$\pm$\,0.0003 \\
@@ -28,18 +34,25 @@ $b$-quark boundary (MLP) & 0.9774, 0.9775 & 1.168, 1.159 & 0.9806, 0.9807 & 0.95
 random flavor boundary (MLP) & 0.9776, 0.9777 & 1.158, 1.150 & 0.9810, 0.9811 & 0.9571, 0.9576 & 0.9767, 0.9763 \\
 random network (MLP) & 0.8648\,$\pm$\,0.0014 & -- & 0.8694\,$\pm$\,0.0017 & 0.8372\,$\pm$\,0.0015 & 0.8859\,$\pm$\,0.0021 \\
 random network, BatchNorm recomputed (MLP) & 0.8974\,$\pm$\,0.0018 & -- & 0.9035\,$\pm$\,0.0020 & 0.8610\,$\pm$\,0.0008 & 0.9146\,$\pm$\,0.0012 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:mlp}{tab:mlp:2}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcccccc@{}}
+\multicolumn{7}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
 \toprule
- & \multicolumn{2}{c}{top} & \multicolumn{2}{c}{quark/gluon} & \multicolumn{2}{c}{Herwig} \\
+& \multicolumn{2}{c}{top} & \multicolumn{2}{c}{quark/gluon} & \multicolumn{2}{c}{Herwig} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
  & AUC & $R_{30}$ & AUC & $R_{30}$ & AUC & $R_{30}$ \\
 \midrule
+\endfirsthead
+\multicolumn{7}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
+\toprule
+& \multicolumn{2}{c}{top} & \multicolumn{2}{c}{quark/gluon} & \multicolumn{2}{c}{Herwig} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+ & AUC & $R_{30}$ & AUC & $R_{30}$ & AUC & $R_{30}$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (MLP) & 0.9713\,$\pm$\,0.0034 & 290\,$\pm$\,60 & 0.8937\,$\pm$\,0.0043 & 82.6\,$\pm$\,3.5 & 0.8077\,$\pm$\,0.0006 & 36.6\,$\pm$\,0.3 \\
 \Kres{} classes (MLP) & 0.9711\,$\pm$\,0.0042 & 280\,$\pm$\,90 & 0.8889\,$\pm$\,0.0048 & 77.0\,$\pm$\,2.2 & 0.8060\,$\pm$\,0.0014 & 35.6\,$\pm$\,0.6 \\
 \Kmid{} classes (MLP) & 0.9688\,$\pm$\,0.0029 & 250\,$\pm$\,60 & 0.8904\,$\pm$\,0.0031 & 80.9\,$\pm$\,4.3 & 0.8071\,$\pm$\,0.0007 & 35.7\,$\pm$\,0.3 \\
@@ -57,18 +70,25 @@ random flavor boundary (MLP) & 0.9670, 0.9626 & 220, 160 & 0.8906, 0.8870 & 80.6
 random network (MLP) & 0.9667\,$\pm$\,0.0006 & 210\,$\pm$\,$<$10 & 0.8844\,$\pm$\,0.0001 & 76.6\,$\pm$\,0.8 & 0.8074\,$\pm$\,0.0007 & 38.2\,$\pm$\,0.4 \\
 random network, BatchNorm recomputed (MLP) & 0.9712\,$\pm$\,0.0024 & 300\,$\pm$\,50 & 0.8831\,$\pm$\,0.0003 & 76.3\,$\pm$\,1.9 & 0.8087\,$\pm$\,0.0009 & 37.8\,$\pm$\,1.5 \\
 \Kfull{} classes, kinematic inputs only (MLP) & 0.9811 & 720 & -- & -- & -- & -- \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:mlp}{tab:mlp:3}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\multicolumn{5}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
 \toprule
- & \multicolumn{2}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{2}{c}{$X\to b\bar b$ vs $c\bar c$} \\
+& \multicolumn{2}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{2}{c}{$X\to b\bar b$ vs $c\bar c$} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
+\endfirsthead
+\multicolumn{5}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
+\toprule
+& \multicolumn{2}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{2}{c}{$X\to b\bar b$ vs $c\bar c$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & AUC & $\rho$ & AUC & $\rho$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (MLP) & 0.9434\,$\pm$\,0.0001 & 1.000 & 0.9978\,$\pm$\,$<$0.0001 & 1.000 \\
 \Kres{} classes (MLP) & 0.9432\,$\pm$\,0.0002 & 1.002\,$\pm$\,0.006 & 0.9977\,$\pm$\,$<$0.0001 & 1.023\,$\pm$\,0.021 \\
 \Kmid{} classes (MLP) & 0.9375\,$\pm$\,0.0008 & 1.104\,$\pm$\,0.017 & 0.9975\,$\pm$\,$<$0.0001 & 1.125\,$\pm$\,0.011 \\
@@ -78,18 +98,25 @@ $b$-quark boundary (MLP) & 0.9216, 0.9227 & 1.385, 1.360 & 0.9961, 0.9963 & 1.74
 random flavor boundary (MLP) & 0.9231, 0.9242 & 1.359, 1.335 & 0.9951, 0.9946 & 2.207, 2.375 \\
 random network (MLP) & 0.6304\,$\pm$\,0.0038 & -- & 0.7592\,$\pm$\,0.0091 & -- \\
 random network, BatchNorm recomputed (MLP) & 0.6865\,$\pm$\,0.0030 & -- & 0.8655\,$\pm$\,0.0075 & -- \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:mlp}{tab:mlp:4}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcc@{}}
+\multicolumn{3}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
 \toprule
- & \multicolumn{2}{c}{$X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$} \\
+& \multicolumn{2}{c}{$X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$} \\
 \cmidrule(lr){2-3}
  & AUC & $\rho$ \\
 \midrule
+\endfirsthead
+\multicolumn{3}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
+\toprule
+& \multicolumn{2}{c}{$X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$} \\
+\cmidrule(lr){2-3}
+ & AUC & $\rho$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (MLP) & 0.9941\,$\pm$\,0.0001 & 1.000 \\
 \Kres{} classes (MLP) & 0.9941\,$\pm$\,0.0001 & 1.011\,$\pm$\,0.030 \\
 \Kmid{} classes (MLP) & 0.9935\,$\pm$\,$<$0.0001 & 1.112\,$\pm$\,0.006 \\
@@ -99,18 +126,25 @@ $b$-quark boundary (MLP) & 0.9916, 0.9919 & 1.442, 1.372 \\
 random flavor boundary (MLP) & 0.9889, 0.9891 & 1.890, 1.843 \\
 random network (MLP) & 0.7472\,$\pm$\,0.0056 & -- \\
 random network, BatchNorm recomputed (MLP) & 0.8373\,$\pm$\,0.0061 & -- \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:mlp}{tab:mlp:5}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcc@{}}
+\multicolumn{3}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
 \toprule
- & \multicolumn{2}{c}{QCD $b\bar{b}$ vs $c\bar{c}$} \\
+& \multicolumn{2}{c}{QCD $b\bar{b}$ vs $c\bar{c}$} \\
 \cmidrule(lr){2-3}
  & AUC & $\rho$ \\
 \midrule
+\endfirsthead
+\multicolumn{3}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
+\toprule
+& \multicolumn{2}{c}{QCD $b\bar{b}$ vs $c\bar{c}$} \\
+\cmidrule(lr){2-3}
+ & AUC & $\rho$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (MLP) & 0.9871\,$\pm$\,0.0001 & 1.000 \\
 \Kres{} classes (MLP) & 0.9860\,$\pm$\,0.0003 & 1.085\,$\pm$\,0.030 \\
 \Kmid{} classes (MLP) & 0.9855\,$\pm$\,0.0001 & 1.121\,$\pm$\,0.017 \\
@@ -120,18 +154,25 @@ $b$-quark boundary (MLP) & 0.9817, 0.9821 & 1.432, 1.372 \\
 random flavor boundary (MLP) & 0.9776, 0.9775 & 1.745, 1.725 \\
 random network (MLP) & 0.7228\,$\pm$\,0.0031 & -- \\
 random network, BatchNorm recomputed (MLP) & 0.8222\,$\pm$\,0.0049 & -- \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:mlp}{tab:mlp:6}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\multicolumn{5}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
 \toprule
- & \multicolumn{2}{c}{QCD with $b$ vs light} & \multicolumn{2}{c}{QCD with $c$, no $b$, vs light} \\
+& \multicolumn{2}{c}{QCD with $b$ vs light} & \multicolumn{2}{c}{QCD with $c$, no $b$, vs light} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
+\endfirsthead
+\multicolumn{5}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
+\toprule
+& \multicolumn{2}{c}{QCD with $b$ vs light} & \multicolumn{2}{c}{QCD with $c$, no $b$, vs light} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & AUC & $\rho$ & AUC & $\rho$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (MLP) & 0.9882\,$\pm$\,$<$0.0001 & 1.000 & 0.9329\,$\pm$\,0.0001 & 1.000 \\
 \Kres{} classes (MLP) & 0.9876\,$\pm$\,0.0001 & 1.050\,$\pm$\,0.004 & 0.9303\,$\pm$\,0.0002 & 1.039\,$\pm$\,0.005 \\
 \Kmid{} classes (MLP) & 0.9875\,$\pm$\,0.0001 & 1.055\,$\pm$\,0.005 & 0.9292\,$\pm$\,0.0003 & 1.055\,$\pm$\,0.006 \\
@@ -141,18 +182,25 @@ $b$-quark boundary (MLP) & 0.9863, 0.9865 & 1.158, 1.140 & 0.9224, 0.9229 & 1.15
 random flavor boundary (MLP) & 0.9858, 0.9859 & 1.201, 1.187 & 0.9236, 0.9247 & 1.141, 1.120 \\
 random network (MLP) & 0.8185\,$\pm$\,0.0019 & -- & 0.6823\,$\pm$\,0.0051 & -- \\
 random network, BatchNorm recomputed (MLP) & 0.8879\,$\pm$\,0.0033 & -- & 0.7143\,$\pm$\,0.0013 & -- \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:mlp}{tab:mlp:7}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
 \toprule
 natural-composition & \multicolumn{2}{c}{JetClass-II} & \multicolumn{3}{c}{$\rho$ on the class pairs} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-6}
 test set & AUC & $\rho$ & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$ \\
 \midrule
+\endfirsthead
+\multicolumn{6}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
+\toprule
+natural-composition & \multicolumn{2}{c}{JetClass-II} & \multicolumn{3}{c}{$\rho$ on the class pairs} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-6}
+test set & AUC & $\rho$ & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (MLP) & 0.9767\,$\pm$\,0.0002 & 1.000 & 1.000 & 1.00 & 1.00 \\
 \Kres{} classes (MLP) & 0.9759\,$\pm$\,0.0004 & 1.033\,$\pm$\,0.016 & 1.003\,$\pm$\,0.004 & 1.00\,$\pm$\,0.09 & 0.97\,$\pm$\,0.08 \\
 \Kmid{} classes (MLP) & 0.9736\,$\pm$\,0.0005 & 1.135\,$\pm$\,0.018 & 1.135\,$\pm$\,0.017 & 1.11\,$\pm$\,0.01 & 1.02\,$\pm$\,0.06 \\
@@ -164,18 +212,25 @@ random partition 2 (MLP), seed 2 & 0.9736 & 1.144 & 1.170 & 1.35 & 1.30 \\
 random partition 3 (MLP), seed 1 & 0.9737 & 1.124 & 1.096 & 1.44 & 1.32 \\
 random partition 4 (MLP), seed 2 & 0.9738 & 1.135 & 1.093 & 1.25 & 1.25 \\
 random partition 5 (MLP), seed 2 & 0.9735 & 1.147 & 1.212 & 1.56 & 1.30 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:mlp}{tab:mlp:8}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccc@{}}
+\multicolumn{4}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
 \toprule
 natural-composition & \multicolumn{3}{c}{$\rho$ on the class pairs} \\
 \cmidrule(lr){2-4}
 test set & QCD $b\bar{b}$ vs $c\bar{c}$ & QCD with $b$ vs light & QCD with $c$, no $b$, vs light \\
 \midrule
+\endfirsthead
+\multicolumn{4}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
+\toprule
+natural-composition & \multicolumn{3}{c}{$\rho$ on the class pairs} \\
+\cmidrule(lr){2-4}
+test set & QCD $b\bar{b}$ vs $c\bar{c}$ & QCD with $b$ vs light & QCD with $c$, no $b$, vs light \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (MLP) & 1.00 & 1.00 & 1.000 \\
 \Kres{} classes (MLP) & 1.08\,$\pm$\,0.09 & 1.06\,$\pm$\,0.06 & 1.041\,$\pm$\,0.021 \\
 \Kmid{} classes (MLP) & 1.13\,$\pm$\,0.05 & 1.05\,$\pm$\,0.09 & 1.057\,$\pm$\,0.016 \\
@@ -187,20 +242,23 @@ random partition 2 (MLP), seed 2 & 1.47 & 1.00 & 1.101 \\
 random partition 3 (MLP), seed 1 & 1.45 & 1.16 & 1.116 \\
 random partition 4 (MLP), seed 2 & 1.37 & 1.16 & 1.069 \\
 random partition 5 (MLP), seed 2 & 1.53 & 1.16 & 1.100 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:mlp}{tab:mlp:9}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\end{longtable}
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccc@{}}
+\multicolumn{4}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
 \toprule
- & JetClass-II AUC & quark/gluon AUC & quark/gluon $R_{30}$ \\
+& JetClass-II AUC & quark/gluon AUC & quark/gluon $R_{30}$ \\
 \midrule
+\endfirsthead
+\multicolumn{4}{l}{\textit{Table~\ref{tab:mlp} (continued)}} \\
+\toprule
+& JetClass-II AUC & quark/gluon AUC & quark/gluon $R_{30}$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \Kfull{} classes (LP), class token & 0.9801\,$\pm$\,$<$0.0001 & 0.8780\,$\pm$\,0.0059 & 66\,$\pm$\,7 \\
 \Kfull{} classes (LP), 512-unit hidden layer & 0.9802\,$\pm$\,$<$0.0001 & 0.8802\,$\pm$\,0.0070 & 70\,$\pm$\,6 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\end{longtable}
+}
 \end{landscape}

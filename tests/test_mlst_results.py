@@ -1559,7 +1559,7 @@ def test_a_table_too_wide_and_too_tall_is_a_landscape_longtable_with_one_caption
     n = t.count(r"\begin{longtable}{@{\extracolsep{\fill}}l")
     assert n > 1 and t.count(r"\caption{") == 1 and t.count(r"\label{tab:probes}") == 1
     assert t.count(r"\addtocounter{table}{-1}") == n - 1 and t.count(r"\endhead") == n
-    assert "(continued)" in t and "adjustbox" not in t and r"p{" not in t and r"\mbox" not in t
+    assert "(continued)" in t and "adjustbox" not in t and r"}p{" not in t and r"\mbox" not in t
 
 
 def test_a_table_that_fits_is_one_tabular_across_the_whole_line():

@@ -1,6 +1,7 @@
+\begin{landscape}
 {\small
-\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}
-\begin{longtable}{@{\extracolsep{\fill}}l>{\raggedright\arraybackslash}p{3.0cm}r>{\raggedright\arraybackslash}p{3.0cm}@{}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2: }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{longtable}{@{\extracolsep{\fill}}l>{\raggedright\arraybackslash}p{6.5cm}r>{\raggedright\arraybackslash}p{9.0cm}@{}}
 \caption{GPU types and GPU-hours of every pretraining run, summed over the training and validation passes of its epochs as each epoch recorded its device, and the GPU types its fine-tuning ran on.}\label{tab:compute}\\
 \toprule
 run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\
@@ -43,3 +44,4 @@ random flavor boundary, run 2 & V100 (135), RTX 3090 (7) & 142 & A100-SXM4-80GB,
 \Kfull{} classes, kinematic inputs only & RTX 4090 (75) & 75 & A100-PCIE-40GB, L40, TITAN RTX, V100 \\
 \end{longtable}
 }
+\end{landscape}

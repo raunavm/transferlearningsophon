@@ -719,6 +719,13 @@ def table_probes_n(fits, runs, fmt_pm, rows, fill=None, chosen=None, kin=False) 
     return _task_longtable(blocks, "tab:probesn")
 
 
+# a longtable across the whole line, its caption as wide and at the size of every other table's caption (a longtable
+# sets its caption at the body's size, here \\small)
+LT_SETUP = (r"\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}"
+            r"\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{"
+            r"\normalsize #1{#2: }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother")
+
+
 # the rule between two task blocks of a longtable (_task_longtable)
 BLOCK_SEP = r"\midrule[\heavyrulewidth]"
 
@@ -750,7 +757,7 @@ def _task_longtable(blocks: list, label: str) -> str:
             rows[-2] += "*"         # a block's last row never sits alone on a page
         body += ([BLOCK_SEP] if k else []) + [r"\multicolumn{" + str(ncol + 1) + "}{l}{" + title + r"} \\*",
                                               row(head) + "*", _head_rule(ncol + 1)] + rows
-    return "\n".join([r"\begin{landscape}", "{\\small", r"\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}",
+    return "\n".join([r"\begin{landscape}", "{\\small", LT_SETUP,
                       r"\begin{longtable}{@{\extracolsep{\fill}}l" + "c" * ncol + "@{}}",
                       rf"\caption{{__CAPTION__}}\label{{{label}}}\\", r"\toprule", r"\endfirsthead",
                       r"\multicolumn{" + str(ncol + 1) + r"}{l}{\textit{continued}} \\", r"\toprule", r"\endhead",
@@ -3488,12 +3495,12 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
     as each epoch recorded its device), their sum, and the GPU types its fine-tuning cells ran on
     (their manifests record the device, not the hours), with a marker counting its cells whose
     read-out records no device (ft_nodev). extra: (label, model) rows beside the grid."""
-    # a longtable at the text width whose two lists of GPU types wrap inside their columns and which breaks across
+    # a longtable in landscape whose two lists of GPU types wrap inside their columns and which breaks across
     # pages (PI 2026-11-11: it was one wide tabular shrunk to fit); the caption is the placeholder __CAPTION__
     head = r"run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\"
-    wrap = r">{\raggedright\arraybackslash}p{3.0cm}"
-    lines = ["{\\small", r"\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}",
-             r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap + "r" + wrap + "@{}}",
+    wrap = lambda cm: r">{\raggedright\arraybackslash}p{" + cm + "cm}"      # noqa: E731
+    lines = [r"\begin{landscape}", "{\\small", LT_SETUP,
+             r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap("6.5") + "r" + wrap("9.0") + "@{}}",
              r"\caption{__CAPTION__}\label{tab:compute}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
              r"\multicolumn{4}{l}{\textit{continued}} \\", r"\toprule", head, r"\midrule", r"\endhead",
              r"\bottomrule", r"\endlastfoot"]
@@ -3514,7 +3521,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
             hours.setdefault(arm, collections.Counter()).update(h)
         types = ", ".join(f"{g} ({h[g]:.0f})" for g in sorted(h, key=lambda g: -h[g]))
         lines.append(rf"{name} & {types} & {fmt_int(round(sum(h.values())))} & {ftg} \\")
-    return "\n".join(lines + [r"\end{longtable}", "}", ""]), hours
+    return "\n".join(lines + [r"\end{longtable}", "}", r"\end{landscape}", ""]), hours
 
 
 def compute_macros(em, comp, runs, hours, index, fmt_int) -> None:
@@ -4377,7 +4384,7 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list) -> str:
     """Blocks of a table too wide for the upright page and too tall for the turned one, as longtables in landscape:
     each across the whole line, its rows breaking across pages under its repeated heading; the caption above the
     first, "continued" above every later page and block."""
-    out = [r"\begin{landscape}", "{\\small", r"\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}"]
+    out = [r"\begin{landscape}", "{\\small", LT_SETUP]
     for k, b in enumerate(blocks):
         m = re.match(r"\s*\\begin\{tabular\}\{([lc]+)\}(.*)\\end\{tabular\}\s*$", b, re.S)
         if not m or r"\midrule" not in m.group(2):
@@ -4416,13 +4423,13 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     cut = {o: [t.strip() for b in parts for t in split_wide(b, w, NO_WRAP)]
            for o, w in (("upright", PORTRAIT_CM), ("turned", LANDSCAPE_CM))}
     # upright when nothing is cut; turned when that keeps the table whole; a table cut either way takes the
-    # orientation with fewer pages (upright on a tie: an upright page stacks more blocks)
-    fits_turned = (_height_cm(cut["turned"][:1], "") + 0.45 * (len(cap) / 150 + 1) <= LAND_FULL_CM
-                   and all(_height_cm([b], "") <= LAND_FULL_CM for b in cut["turned"][1:]))    # no block taller than the page
+    # orientation with fewer pages (upright on a tie)
+    one_turned_page = len(cut["turned"]) == len(parts) and _height_cm(cut["turned"], cap) <= LAND_PAGE_CM
+    # turned blocks flow as longtables, their rows breaking across pages; upright blocks stay whole, packed on pages
+    flow = math.ceil((sum(_height_cm([b], "") - 0.45 for b in cut["turned"]) + 0.45 * (len(cap) / 150 + 1)) / LAND_FULL_CM)
     upright = len(cut["upright"]) == len(parts) or (
-        len(cut["turned"]) > len(parts) and _pages(cut["upright"], cap, PAGE_FULL_CM, 90)
-        <= _pages(cut["turned"], cap, LAND_FULL_CM, 150))
-    if not upright and not fits_turned:     # wide and taller than a turned page: its rows break across turned pages
+        len(cut["turned"]) > len(parts) and _pages(cut["upright"], cap, PAGE_FULL_CM, 90) <= flow)
+    if not upright and not one_turned_page:     # wide, and more than a turned page: longtables in landscape
         return _turned_long(cut["turned"], cap, label, tail)
     boxes = [_stretch(t) for t in cut["upright" if upright else "turned"]]
     turn = ([r"\begin{landscape}"], [r"\end{landscape}"]) if not upright else ([], [])
