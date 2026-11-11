@@ -41,11 +41,12 @@ def _log_y(ax, which: str = "y") -> None:
     """R30 on a log axis labelled 10^n, or linear where its range is under a decade (style_v5.log_axis), the same rule
     in every panel. which="x": the same on x (F10c). The limits are taken on a log scale, where a band reaching zero or
     below does not set them."""
-    if min(getattr(ax, f"get_{which}lim")()) <= 0:
-        getattr(ax, f"set_{which}scale")("log")
-        ax.relim()
-        ax.autoscale_view()
+    if which == "y":
+        ax.set_yscale("log")
+        S.data_ylim(ax)             # lines and bands, on a log scale
     S.log_axis(ax, which)
+    if which == "y" and ax.get_yscale() == "linear":
+        S.data_ylim(ax)             # under a decade: linear, and the bands inside as well
 
 
 def _empty_panel(ax) -> None:
@@ -113,7 +114,7 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch_label: s
     values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
     if not any(values):
         raise C.Absent(absent)
-    fig, axes, _ = S.grid_cm(2, 2, w=6.35, aspect=0.85, top=2.6, left=1.4, wgap=0.8)     # room for the widest tick labels
+    fig, axes, _ = S.grid_cm(2, 2, w=6.25, aspect=0.85, top=2.6, left=1.65, wgap=0.75)     # room for the widest tick labels
     for k, (ax, value, (key, _, _, met, *_)) in enumerate(zip(axes.flat, values, P.F2_PANELS)):
         S.title(ax, TITLES[key])
         S.labels(ax, X_CLASSES if k >= 2 else None, (Y_R30 if met == "r30" else Y_ACC) if k % 2 == 0 else None)
@@ -140,7 +141,7 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch_label: s
             ys.append(value)
         ax.set_ylim(*_range(ax, ys, log))
         if log:
-            _log_y(ax)
+            S.log_axis(ax)          # the limits above hold the bars and the from-scratch line
         else:
             ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))     # round steps, few decimals
         _classes_axis(ax)
@@ -489,14 +490,14 @@ def _umap_page(page: str) -> C.Page:
         data_note="From umap_v2 (scripts/build_umap_jobs.py --out-name umap_v2).")
 
 
-VAL_W = 10.5         # cm: one panel needs no more; the paper includes it at this width
 
 
 def draw_val(path) -> None:
-    """Round 4: exact size, 10.5 cm wide (\\paperfig{10.5cm}), the panel 8.6 cm wide with the legend inside."""
+    """Exact size, one panel across the text width (PI 2026-11-11), the legend inside."""
     docs = M._load(P.DATA / "compute")
-    fig = S.figure_cm(VAL_W, 8.6)
-    ax = S.axes_cm(fig, 1.5, 0.7, 8.6, 6.9)
+    w = S.PRINT_W - 1.5 - 0.2
+    fig = S.figure_cm(S.PRINT_W, 0.7 + 0.7 * w + 1.0)
+    ax = S.axes_cm(fig, 1.5, 0.7, w, 0.7 * w)
     S.fine_grid(ax)
     for level in S.LEVELS:
         have = [[e["val_acc"] for e in docs[m]["epochs"]] for m in RUNS[level] if m in docs and "val_acc" in docs[m]["epochs"][0]]

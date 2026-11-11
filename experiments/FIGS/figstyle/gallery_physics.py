@@ -17,7 +17,6 @@ from matplotlib.patches import Circle, FancyBboxPatch, Polygon, Rectangle
 
 from gallery_bands import spread_band
 from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
-from gallery_labelset import _log_y
 
 GROOMED = "Soft-drop mass"
 MASS_ROWS = (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))     # a mass model and its label set's name
@@ -283,7 +282,7 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     if which == "resolution":
         v = np.concatenate([np.ravel(x) for x in (*vals, ref)])
         v = v[np.isfinite(v)]
-        ax.set_ylim(v.min() / 1.15, v.max() * 1.15)
+        ax.set_ylim(v.min() / 1.3, v.max() * 1.15)
     else:
         _fit_y(ax, [*vals, ref])
     _fit_y(rx, lows)
@@ -337,6 +336,8 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
                 axes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=5, steps=[1, 2, 5, 10], prune="lower"))
             else:
                 S.log_axis(axes[i, j], force=True)
+            S.clear_edge_labels(axes[i, j], low=True)       # clear of the ratio panel below
+            S.clear_edge_labels(raxes[i, j], high=True)
     fig.align_ylabels([axes[0, 0], raxes[0, 0], axes[1, 0], raxes[1, 0]])
     for rx in raxes[:, 1]:      # the right column's label at its last tick would run off the page
         hi = rx.get_xlim()[1]
@@ -422,6 +423,7 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
         for j in range(ncols - 1):         # a panel's last x label is left to the next panel's axis beside it
             hi = raxes[i, j].get_xlim()[1]
             raxes[i, j].xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=hi: "" if v >= hi - 1e-9 else f"{v:g}"))
+        S.clear_edge_labels(raxes[i, 0], high=True)     # clear of the panel above
         S.labels(axes[i, 0], ylabel="Fraction of jets")
         S.labels(raxes[i, 0], ylabel="Ratio to\ninclusive")
     S.letter_panels([ax for ax, _ in panels[:len(shown)]])
@@ -456,7 +458,7 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs
     (mode "mass"); the floor black dashed; both axes logarithmic, labelled 10^n. runs: {row: models}, RUNS by default."""
     runs = RUNS if runs is None else runs
     legend_rows = math.ceil((sum(any(m in sc for m in runs[r]) for r in rows) + 1) / 3)
-    top, w = 0.95 + 0.45 * legend_rows, S.PRINT_W - 1.5 - 0.2
+    top, w = 0.8 + 0.42 * legend_rows, S.PRINT_W - 1.5 - 0.2
     h = 0.7 * w
     fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
     ax = S.axes_cm(fig, 1.5, top, w, h)
@@ -530,7 +532,7 @@ def draw_f10c(path: pathlib.Path) -> None:
     """One point per model: the mean over runs of R50 (x) and 1/JSD50 (y), with the spread over pretraining runs on
     both axes (mlst_figures._spread: SD for three runs, range for two); DisCo Fig. 3's axes, both logarithmic."""
     sc = I["sculpt"]
-    top, w = 0.95 + 0.45 * 3, S.PRINT_W - 1.5 - 0.2      # one panel across the text width, the legend just above it
+    top, w = 0.8 + 0.42 * 3, S.PRINT_W - 1.5 - 0.2      # one panel across the text width, the legend just above it
     fig = S.figure_cm(S.PRINT_W, top + 0.7 * w + 1.0)
     ax = S.axes_cm(fig, 1.5, top, w, 0.7 * w)
     S.fine_grid(ax)
@@ -547,8 +549,8 @@ def draw_f10c(path: pathlib.Path) -> None:
         drawn += 1
     if not drawn:
         raise Absent(f"no {F10C_KEY} in the sculpting files (head/sculpting_v3/*_sculpting.json)")
-    _log_y(ax, "x")
-    _log_y(ax)
+    S.log_axis(ax, "x")         # the autoscaled limits hold the bars
+    S.log_axis(ax)
     S.heading(fig, "Cuts on the pretraining head: mass sculpting against rejection at 50% signal efficiency")
     S.labels(ax, r"QCD rejection at 50% resonant efficiency ($R_{50}$)", r"$1/\mathrm{JSD}_{50}$")
     S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=3)      # three rows, clear of the panel

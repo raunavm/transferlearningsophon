@@ -90,8 +90,15 @@ def height_cm(pdf: pathlib.Path) -> float:
 
 
 def size(pdf: pathlib.Path) -> str:
-    """Printed size (the figures are saved at it), or the height cap for a figure too tall for a page."""
-    return f"[height={MAX_H_CM}cm]" if height_cm(pdf) > MAX_H_CM else ""
+    """Every figure across the text block (PI 2026-11-11), which is the size the figures are drawn at; the height cap
+    for a figure that would then be too tall for a page."""
+    import fitz
+    with fitz.open(pdf) as d:
+        r = d[0].rect
+    return f"[height={MAX_H_CM}cm]" if r.height / r.width * TEXT_W_CM > MAX_H_CM else "[width=\\linewidth]"
+
+
+TEXT_W_CM = 15.0        # the paper's text width
 
 
 def figure(pid: str, rec: dict, src: pathlib.Path) -> str:

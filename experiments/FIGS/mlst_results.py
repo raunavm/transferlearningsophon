@@ -3491,7 +3491,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
     # a longtable at the text width whose two lists of GPU types wrap inside their columns and which breaks across
     # pages (PI 2026-11-11: it was one wide tabular shrunk to fit); the caption is the placeholder __CAPTION__
     head = r"run & GPU types (hours) & GPU-hours & fine-tuning GPU types \\"
-    wrap = r">{\raggedright\arraybackslash}p{4.3cm}"
+    wrap = r">{\raggedright\arraybackslash}p{3.0cm}"
     lines = ["{\\small", r"\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}",
              r"\begin{longtable}{@{\extracolsep{\fill}}l" + wrap + "r" + wrap + "@{}}",
              r"\caption{__CAPTION__}\label{tab:compute}\\", r"\toprule", head, r"\midrule", r"\endfirsthead",
@@ -3979,7 +3979,7 @@ CAPTION_SHORT = {
              "on the frozen features (LP) and of the network fine-tuned on $10^{6}$ class-balanced JetClass-II jets "
              "(f.t.), and " + RHO_SHORT + " in the same mode; the two modes are scored on different test jets. "
              "$^{\\dagger}$: the label set merges the two sides into one class; $^{\\ddagger}$: it merges the first "
-             "side with part of the second. " + SD_SHORT,
+             "side with part of the second. " + SD_SHORT + "__ZERO__",
     "mlp": "Nonlinear probes (a multilayer perceptron with one hidden layer of \\LpMlpHidden{} units) on the frozen "
            f"features of {NETS} and of the controls, at the largest training set of each task: the quantities of "
            "table~\\ref{tab:probes} and the class pairs of table~\\ref{tab:pairs}; then the models scored on the "
@@ -4394,9 +4394,11 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
            for o, w in (("upright", PORTRAIT_CM), ("turned", LANDSCAPE_CM))}
     # upright when nothing is cut; turned when that keeps the table whole; a table cut either way takes the
     # orientation with fewer pages (upright on a tie: an upright page stacks more blocks)
-    upright = len(cut["upright"]) == len(parts) or (len(cut["turned"]) > len(parts)
-                                                    and _pages(cut["upright"], cap, PAGE_FULL_CM, 90)
-                                                    <= _pages(cut["turned"], cap, LAND_FULL_CM, 150))
+    fits_turned = (_height_cm(cut["turned"][:1], "") + 0.45 * (len(cap) / 150 + 1) <= LAND_FULL_CM
+                   and all(_height_cm([b], "") <= LAND_FULL_CM for b in cut["turned"][1:]))    # no block taller than the page
+    upright = len(cut["upright"]) == len(parts) or not fits_turned or (
+        len(cut["turned"]) > len(parts) and _pages(cut["upright"], cap, PAGE_FULL_CM, 90)
+        <= _pages(cut["turned"], cap, LAND_FULL_CM, 150))
     boxes = [_stretch(t) for t in cut["upright" if upright else "turned"]]
     tail = [rf"\par\smallskip{{\footnotesize {n}}}" for n in notes or []]
     turn = ([r"\begin{landscape}"], [r"\end{landscape}"]) if not upright else ([], [])
@@ -4414,7 +4416,7 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     return "\n".join(out + [*tail, r"\end{center}", *turn[1], ""])
 
 
-PAGE_FULL_CM, LAND_FULL_CM = 23.0, 13.5     # what a page holds of a table's blocks, upright and turned (estimated)
+PAGE_FULL_CM, LAND_FULL_CM = 23.0, 13.0     # what a page holds of a table's blocks, upright and turned (estimated)
 
 
 def _pages(boxes: list, cap: str, page_cm: float, cap_chars: int) -> int:

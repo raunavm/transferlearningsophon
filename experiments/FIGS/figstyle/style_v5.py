@@ -112,6 +112,43 @@ def log_axis(ax, which: str = "y", force: bool = False) -> None:
     axis.set_minor_formatter(ticker.NullFormatter())
 
 
+def clear_edge_labels(ax, low: bool = False, high: bool = False, share: float = 0.07) -> None:
+    """No y tick label within share of the axis's lower (low) or upper (high) end, where it would touch the panel
+    stacked against that end; the ticks stay. Call once the limits and the formatter are final."""
+    from matplotlib import ticker
+    lo, hi = ax.get_ylim()
+    inner = ax.yaxis.get_major_formatter()
+    log = ax.get_yscale() == "log"
+    pos = (lambda v: (np.log(v) - np.log(lo)) / (np.log(hi) - np.log(lo))) if log else (lambda v: (v - lo) / (hi - lo))
+
+    def fmt(v, i):
+        if (log and v <= 0) or (low and pos(v) < share) or (high and pos(v) > 1 - share):
+            return ""
+        return inner(v, i)
+    ax.yaxis.set_major_formatter(ticker.FuncFormatter(fmt))
+
+
+def data_ylim(ax, pad: float = 0.08) -> None:
+    """y limits from everything drawn in data coordinates (lines and bands), padded by pad of the span, in log space
+    on a log axis, where values at or below zero do not count."""
+    from matplotlib.collections import PolyCollection
+    ys = [np.asarray(ln.get_ydata(), float) for ln in ax.lines if ln.get_transform() == ax.transData and len(ln.get_ydata())]
+    ys += [p.vertices[:, 1] for c in ax.collections if isinstance(c, PolyCollection) for p in c.get_paths()]
+    v = np.concatenate([np.ravel(y) for y in ys]) if ys else np.array([])
+    v = v[np.isfinite(v)]
+    if ax.get_yscale() == "log":
+        v = v[v > 0]
+    if not v.size:
+        return
+    if ax.get_yscale() == "log":
+        a, b = np.log10(v.min()), np.log10(v.max())
+        d = max(b - a, 0.05) * pad
+        ax.set_ylim(10 ** (a - d), 10 ** (b + d))
+    else:
+        d = max(v.max() - v.min(), 1e-9) * pad
+        ax.set_ylim(v.min() - d, v.max() + d)
+
+
 def mode_of(key: str, mode: str) -> str:
     """From scratch is always dashed; every other model takes the mode the figure gives it. A figure passes "probe" or
     "mass" only where that mode shares a panel with the same model fine-tuned (PI, 2026-11-07): otherwise solid."""

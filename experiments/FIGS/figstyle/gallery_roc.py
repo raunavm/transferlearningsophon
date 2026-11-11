@@ -354,7 +354,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
     sets (and the kinematic-inputs model); from scratch is drawn and may leave it. From scratch always from the
     fine-tuned families."""
     top_ft, qg_ft = _family("top_ft"), _family("qg_ft")
-    left, own, gap, top_cm, rgap, bottom = ROC_LEFT, 0.95, ROC_WGAP, 2.0, 0.1, 0.95    # own: (b)'s tick labels
+    left, own, gap, top_cm, rgap, bottom = ROC_LEFT, 0.95, ROC_WGAP, 2.2, 0.1, 0.95    # own: (b)'s tick labels
     w = (S.PRINT_W - left - own - gap - 0.2) / 3
     h = w
     fig = S.figure_cm(S.PRINT_W, top_cm + h * (1 + RATIO_HEIGHT) + rgap + bottom)
@@ -370,7 +370,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
     ratios[2].sharey(ratios[1])
     axes[2].tick_params(labelleft=False)
     ratios[2].tick_params(labelleft=False)
-    panels = ((top, top_ft, "top", "Top tagging"), (qg, qg_ft, "qg", "Quark/gluon tagging, Pythia"), (qg, qg_ft, "qg_herwig", "Quark/gluon tagging, Herwig"))
+    panels = ((top, top_ft, "top", "Top tagging"), (qg, qg_ft, "qg", "Quark/gluon, Pythia"), (qg, qg_ft, "qg_herwig", "Quark/gluon, Herwig"))
     for k, (ax, rx, (docs, ft, key, name)) in enumerate(zip(axes, ratios, panels)):
         _roc_axes(ax)
         S.fine_grid(rx)
@@ -396,8 +396,6 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
             shown += _ratio(rx, s, ref, _rel_error(docs, [M.KIN_MODEL], key), band=True, **S.look("KIN"),
                             linewidth=S.LW_CURVE)
         _y_range([ax] if k == 0 else axes[1:])
-        top_ax = ax if k == 0 else axes[1]
-        top_ax.set_ylim(1, 10.0 ** np.ceil(np.log10(top_ax.get_ylim()[1])))     # from 10^0 to a labelled decade
         ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: "" if abs(v - 1) < 1e-9 else S.pow10(v)))
         rx.yaxis.set_major_locator(MaxNLocator(nbins=4, steps=[1, 2, 5, 10], prune="upper"))   # 1.0 a tick; none at the top edge
         rx.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.2f}"))        # one format in every ratio panel
