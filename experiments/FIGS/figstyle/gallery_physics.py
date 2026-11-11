@@ -17,6 +17,7 @@ from matplotlib.patches import Circle, FancyBboxPatch, Polygon, Rectangle
 
 from gallery_bands import spread_band
 from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
+import lines_v6 as L
 
 GROOMED = "Soft-drop mass"
 MASS_ROWS = (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))     # a mass model and its label set's name
@@ -632,10 +633,16 @@ def _bb_cc(doc: dict) -> np.ndarray:
     return np.array([np.nan if b["bb_vs_cc"] is None else b["bb_vs_cc"]["auc"] for b in doc["bins"]])
 
 
-def _pt_series(ax, c, values: list, key: str, label: str, band: bool = True) -> None:
-    """Mean over runs at the bin centres, joined, the series' marker; band the SD (range for two runs), as F8."""
+def _pt_series(ax, c, values: list, key: str, label: str, band: bool = True, style: str = "A", probe: bool = False,
+               k: int = 0, n: int = 1, step: float = 0.0) -> None:
+    """Mean over runs at the bin centres, joined, the series' marker; band the SD (range for two runs), as F8. Styles
+    B and C: binned points with +-1 SD bars and no line (lines_v6.binned), the k-th of n series step apart in its bin."""
     st = [P.F._spread(list(v)) for v in np.asarray(values).T]
     mean = np.array([s[0] for s in st])
+    if style != "A":
+        L.binned(ax, c, mean, np.array([s[1] or 0.0 for s in st]), np.array([s[2] or 0.0 for s in st]),
+                 color=S.SERIES[key], probe=probe, label=label, k=k, n=n, step=step)
+        return
     style = S.look(key, linewidth=S.LW_CURVE)
     ax.plot(c, mean, **style, **S.marker(key, size=PT_MARKER), label=label)
     if band and len(values) > 1:
@@ -643,21 +650,22 @@ def _pt_series(ax, c, values: list, key: str, label: str, band: bool = True) -> 
                         color=style["color"], alpha=0.2, linewidth=0)
 
 
-def _pt_panel(ax, docs: dict, rows: tuple, value, ylabel: str) -> None:
+def _pt_panel(ax, docs: dict, rows: tuple, value, ylabel: str, style: str = "A", probe: bool = False) -> None:
     """value(doc) per pT bin for each row's runs, absolute (round 4: accuracy as F2, AUC for X->bb vs X->cc)."""
     e = _edges(docs)
     c = 0.5 * (e[1:] + e[:-1])
-    for row in rows:
+    step = 0.12 * float(np.min(np.diff(e)))       # B, C: neighbouring series this far apart within a bin
+    for k, row in enumerate(rows):
         r = [value(d) for d in _by_seed(docs, row).values()]
         if r:
-            _pt_series(ax, c, r, row, S.LEGEND[row])
+            _pt_series(ax, c, r, row, S.LEGEND[row], style=style, probe=probe, k=k, n=len(rows), step=step)
     ax.set_xlim(e[0], e[-1])
     ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 2.5, 5, 10]))
     if ylabel:
         S.labels(ax, ylabel=ylabel)
 
 
-def draw_pt(path: pathlib.Path) -> None:
+def draw_pt(path: pathlib.Path, style: str = "A") -> None:
     """Round 4 (ROUND4_BRIEF Part 4): absolute values per pT bin, no ratio. Upper row JetClass-II accuracy of the
     linear probes, (a) per label set and (b) for the controlled partitions with the 188- and 17-class models for
     reference, on one y axis; lower row (c) JetClass accuracy after fine-tuning and (d) the probes' AUC of X->bb
@@ -674,7 +682,7 @@ def draw_pt(path: pathlib.Path) -> None:
     for k, (ax, docs, rows, value, ylabel, text) in enumerate(panels):
         S.title(ax, text)
         S.fine_grid(ax)
-        _pt_panel(ax, docs, rows, value, ylabel)
+        _pt_panel(ax, docs, rows, value, ylabel, style, probe="inear probes" in text)
         S.labels(ax, xlabel=X_PT)          # (c) is JetClass, 500-1000 GeV: every panel its own
     lo, hi = min(a.get_ylim()[0], b.get_ylim()[0]), max(a.get_ylim()[1], b.get_ylim()[1])
     for ax in (a, b):

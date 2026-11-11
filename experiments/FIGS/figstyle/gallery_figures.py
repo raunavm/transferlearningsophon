@@ -17,9 +17,10 @@ import gallery_placement
 import gallery_review
 import gallery_roc
 import gallery_inventory
+import gallery_compare
 import style_v5 as S
 
-MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_roc, gallery_inventory)
+MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_roc, gallery_inventory, gallery_compare)
 ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement): main text,
          "F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11",
          # appendix
@@ -28,7 +29,9 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
          # supplement
          "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "CONF", "F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2", "A3R",
          "A3R-ft", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "A17-res", "A17-qcd", "A17-probe", "F10a-mass",
-         "SOPHON-FIG2", "PALETTE")      # gallery only
+         "SOPHON-FIG2", "PALETTE",      # gallery only
+         # the PI's line-graph style comparison (2026-11-11), gallery only
+         "CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-F2-B", "CMP-F2-C", "CMP-FONT-T", "CMP-FONT-LM")
 
 
 # the figures the PI approved page by page (2026-11-05), drawn into the paper by the render job (--paper);

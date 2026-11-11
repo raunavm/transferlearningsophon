@@ -13,6 +13,7 @@ from matplotlib import ticker
 
 import gallery_common as C
 from gallery_roc import FAMILIES, family_of
+import lines_v6 as L
 import style_v5 as S
 
 P, M, RUNS, I = C.P, C.M, C.RUNS, C.I
@@ -155,6 +156,98 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch_label: s
     S.save(fig, path)
 
 
+# ------------------------------------------------------------------ F2, categorical (PI 2026-11-11, styles B and C)
+# The label set is a category, not a quantity: no line joins the label sets. Slots in centimetres across the panel:
+# 188, 162, 43, 17 classes, a divider, then the 17-class controls in their own labelled slots under a "17 classes"
+# bracket. Each slot is the mean with its +-1 SD bar; from scratch a dashed line across the panel.
+CAT_W, CAT_H, CAT_LEFT = 13.2, 3.3, 1.6
+CAT_SLOT = {"L188": 0.7, "L162": 1.9, "R42_Q1": 3.1, "R16_Q1": 4.3}
+CAT_DIVIDER = 5.3
+CAT_CONTROL = {"RAND": 6.3, "FLAV_F0": 8.25, "FLAV_F1": 10.2, "FLAV_F1R": 12.15}
+CAT_TICKS = {"RAND": "random\npartitions", "FLAV_F0": "no flavor\nboundary", "FLAV_F1": "$b$-quark\nboundary",
+             "FLAV_F1R": "random flavor\nboundary"}
+CAT_RAND_SPREAD = 0.2       # cm between the five random partitions in their slot
+X_LABEL_SET = "Pretraining label set"
+
+
+def _cat_axis(ax, bottom: bool) -> None:
+    ax.set_xlim(0, CAT_W)
+    ticks = [CAT_SLOT[r] for r in S.LEVELS] + list(CAT_CONTROL.values())
+    names = [str(n) for n in (188, 162, 43, 17)] + [CAT_TICKS[k] for k in CAT_CONTROL]
+    ax.xaxis.set_major_locator(ticker.FixedLocator(ticks))
+    ax.xaxis.set_major_formatter(ticker.FixedFormatter(names if bottom else [""] * len(names)))
+    ax.xaxis.set_minor_locator(ticker.NullLocator())
+    ax.axvline(CAT_DIVIDER, color=S.GREY_MID, linewidth=S.LW_THIN, zorder=0.5)
+
+
+def _cat_bracket(ax) -> None:
+    """ "17 classes" under the control slots' tick labels, a bracket across them."""
+    from matplotlib.transforms import blended_transform_factory
+    tr = blended_transform_factory(ax.transData, ax.transAxes)
+    a, b = min(CAT_CONTROL.values()) - 0.8, max(CAT_CONTROL.values()) + 0.8
+    y = -0.30
+    ax.plot([a, a, b, b], [y + 0.04, y, y, y + 0.04], transform=tr, color="#000000", linewidth=S.LW_THIN, clip_on=False)
+    ax.text((a + b) / 2, y - 0.03, "17 classes", transform=tr, ha="center", va="top", fontsize=S.TICK_PT5)
+
+
+def _draw_f2_cat(path, value_of, groups, absent: str, heading: str, probe: bool) -> None:
+    """F2 in the categorical form: four panels in one column, one shared slot axis labelled under the last."""
+    from matplotlib.lines import Line2D
+    values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
+    if not any(values):
+        raise C.Absent(absent)
+    top, gap, bottom = 2.0, 0.75, 2.3
+    fig = S.figure_cm(S.PRINT_W, top + 4 * CAT_H + 3 * gap + bottom)
+    axes = [S.axes_cm(fig, CAT_LEFT, top + i * (CAT_H + gap), CAT_W, CAT_H) for i in range(4)]
+    for k, (ax, value, (key, _, ds, met, *_)) in enumerate(zip(axes, values, P.F2_PANELS)):
+        S.title(ax, TITLES[key])
+        S.labels(ax, None, Y_R30 if met == "r30" else Y_ACC)
+        _cat_axis(ax, k == 3)
+        if value is None:
+            _empty_panel(ax)
+            continue
+        S.fine_grid(ax)
+        ys = []
+        for row in S.LEVELS:
+            if v := P._vals(RUNS, row, value):
+                mean, lo, hi = P.F._spread(v)
+                ys += L.category(ax, CAT_SLOT[row], mean, lo, hi, color=S.SERIES[row], probe=probe)
+        for _, key_, rows in groups:
+            for i, row in enumerate(rows):
+                if v := P._vals(RUNS, row, value):
+                    x = CAT_CONTROL[key_] + CAT_RAND_SPREAD * (i - (len(rows) - 1) / 2)
+                    mean, lo, hi = P.F._spread(v)
+                    ys += L.category(ax, x, mean, lo, hi, color=S.SERIES[key_], probe=probe)
+        scratch = P.scratch_series(M, I["per"], key, met)
+        if scratch:     # the reference stays a dashed line across the panel, inside the y range (PI, 2026-11-07)
+            ref = float(np.mean(scratch[max(scratch)]))
+            ax.axhline(ref, **S.look("SCRATCH", linewidth=S.LW_CURVE), zorder=1.5)
+            ys.append(ref)
+        log = met == "r30"
+        ax.set_ylim(*_range(ax, ys, log))
+        if log:
+            S.log_axis(ax)
+        else:
+            ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))
+    _cat_bracket(axes[-1])
+    axes[-1].set_xlabel(X_LABEL_SET, labelpad=24)
+    S.letter_panels(axes)
+    S.heading(fig, heading)
+    handles = [Line2D([], [], linestyle="none", **L.dot("#000000", probe),
+                      label=("linear probe" if probe else "fine-tuned") + ": mean and SD over pretraining runs"),
+               Line2D([], [], **S.look("SCRATCH", linewidth=S.LW_CURVE), label=S.LEGEND["SCRATCH"])]
+    S.fig_legend(fig, handles, top_cm=0.6, ncol=2)
+    S.save(fig, path)
+
+
+def draw_f2a(path, style: str = "A") -> None:
+    if style != "A":
+        return _draw_f2_cat(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
+                            "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features", probe=True)
+    _draw_f2(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
+             "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
+
+
 def _probe_value(key, n, ds, met):
     return P._f2_probe(M, I["fits"], I["fill"], _chosen(), ds, met)
 
@@ -165,11 +258,6 @@ def _ft_value(key, n, ds, met):
 
 def _controlled():
     return [(S.LEGEND[a], a, [a]) for a in S.CONTROLS]
-
-
-def draw_f2a(path) -> None:
-    _draw_f2(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
-             "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
 
 
 def draw_f2b(path) -> None:
@@ -295,11 +383,16 @@ def draw_f3_ft2(path) -> None:
 
 
 # ------------------------------------------------------------------ F8, A10: metric against the number of jets
-def _curve(ax, series: dict, line: dict, mark: dict, label: str, band: bool) -> None:
+def _curve(ax, series: dict, line: dict, mark: dict, label: str, band: bool, style: str = "A", k: int = 0,
+           n: int = 1) -> None:
     """Mean over runs; line the colour and line style, mark the marker and its fill (style_v5.marker); with band,
-    Golling's: the SD (range for two runs), same colour, no edge."""
+    Golling's: the SD (range for two runs), same colour, no edge. style B or C: lines_v6.scan, the k-th of n series."""
     xs = sorted(series)
     if not xs:
+        return
+    if style != "A":
+        L.scan(ax, *L.stats(series, P.F._spread), color=line["color"], linestyle=line.get("linestyle", "-"),
+               probe=mark.get("markerfacecolor") == "white", label=label, style=style, k=k, n=n)
         return
     st = [P.F._spread(series[n]) for n in xs]
     mean = np.array([s[0] for s in st])
@@ -316,7 +409,8 @@ def _model(series: dict, key: str, mode: str, label: str) -> tuple:
 SIZE_PAD = 1.7              # a panel's x axis runs from its smallest training set over SIZE_PAD to its largest times it
 
 
-def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int = 3, auc: bool = False) -> None:
+def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int = 3, auc: bool = False,
+               style: str = "A") -> None:
     """series_of(key, ds, met): [(series, line, mark, label)] of a panel. Round 4: four 6.5 cm panels, the legend above
     in ncol columns. auc: the same four tasks in AUC (P.SIZE_PANELS_AUC) with ParT's published AUCs."""
     spec, published = (P.SIZE_PANELS_AUC, PUBLISHED_AUC) if auc else (P.SIZE_PANELS, PUBLISHED)
@@ -338,8 +432,8 @@ def _draw_size(path, series_of, band: bool, absent: str, heading: str, ncol: int
             _empty_panel(ax)
             continue
         S.fine_grid(ax)
-        for series, line, mark, label in panel:
-            _curve(ax, series, line, mark, label, band)
+        for i, (series, line, mark, label) in enumerate(panel):
+            _curve(ax, series, line, mark, label, band, style, i, len(panel))
         if key in published:
             ax.plot(*published[key], color="#000000", marker="*", markersize=11, markeredgecolor="white", markeredgewidth=0.7,
                     linestyle="none", label="ParT, published", zorder=10)    # on top of every marker, large enough to see
@@ -382,12 +476,13 @@ def draw_a10(path, auc: bool = False) -> None:
                + (", AUC" if auc else ""), auc=auc)
 
 
-def draw_a8(path, auc: bool = False) -> None:
+def draw_a8(path, auc: bool = False, style: str = "A") -> None:
     """A10's form after fine-tuning: the four label sets and from scratch."""
     series = lambda key, ds, met: [_model(P.ft_series(M, I["per"], RUNS, key, met, row), row, "ft", S.LEGEND[row])
                                    for row in S.LEVELS] + [_model(P.scratch_series(M, I["per"], key, met), "SCRATCH", "ft",
                                                                   S.LEGEND["SCRATCH"])]
-    _draw_size(path, series, True, "no fine-tuning read-outs", "Fine-tuned" + (", AUC" if auc else ""), auc=auc)
+    _draw_size(path, series, True, "no fine-tuning read-outs", "Fine-tuned" + (", AUC" if auc else ""), auc=auc,
+               style=style)
 
 
 # ------------------------------------------------------------------ the UMAP and the pretraining curve

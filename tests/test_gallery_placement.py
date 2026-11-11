@@ -35,8 +35,8 @@ def _page_ids() -> set:
 
 def test_the_gallery_order_is_the_placement_tier_by_tier():
     order = _assigned(FIG / "gallery_figures.py", "ORDER")
-    assert list(order) == ["INVENTORY", *(k for k, _, _ in G.FIGURES), "SOPHON-FIG2", "PALETTE"]
-    assert G.GALLERY_ONLY == ("INVENTORY", "SOPHON-FIG2", "PALETTE")
+    assert list(order) == ["INVENTORY", *(k for k, _, _ in G.FIGURES), "SOPHON-FIG2", "PALETTE", *G.COMPARE]
+    assert G.GALLERY_ONLY == ("INVENTORY", "SOPHON-FIG2", "PALETTE", *G.COMPARE)
     assert set(order) == _page_ids()
     for items in (G.FIGURES, G.TABLES):
         tiers = [G.TIERS.index(t) for _, t, _ in items]
