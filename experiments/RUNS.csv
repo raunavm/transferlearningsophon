@@ -1665,3 +1665,7 @@ render-gallery-6254778-raunav,2026-11-11T20:28:56Z,launched,"Book pass round 9 (
 render-gallery-6254778-raunav,2026-11-11T20:35:38Z,complete,"Round 9 rendered: one figcheck overlap (probe ratio ticks); found by eye: compute table 1.3 cm over the margin, a two-row block alone on a page; fixed in round 10.",experiments/FIGS/k8s/job-render-gallery-6254778-raunav.yaml
 render-gallery-4e06789-raunav,2026-11-11T20:35:38Z,launched,"Book pass round 10 at 4e06789.",experiments/FIGS/k8s/job-render-gallery-4e06789-raunav.yaml
 mtx2-tests-book-4e06789-raunav,2026-11-11T20:35:38Z,launched,"Table and figure tests at 4e06789.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-4e06789-raunav.yaml
+render-gallery-4e06789-raunav,2026-11-11T20:51:48Z,complete,"Round 10: table fixes in place; probe ratio ticks still six (MaxNLocator), fixed in round 11.",experiments/FIGS/k8s/job-render-gallery-4e06789-raunav.yaml
+mtx2-tests-book-4e06789-raunav,2026-11-11T20:51:48Z,complete,"119 passed, 1 failed (orientation test expected landscape; updated in round 11).",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-4e06789-raunav.yaml
+render-gallery-f931989-raunav,2026-11-11T20:51:48Z,launched,"Book pass round 11 at f931989.",experiments/FIGS/k8s/job-render-gallery-f931989-raunav.yaml
+mtx2-tests-book-f931989-raunav,2026-11-11T20:51:48Z,launched,"Table and figure tests at f931989.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-f931989-raunav.yaml

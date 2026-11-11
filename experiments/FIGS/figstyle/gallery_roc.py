@@ -5,6 +5,8 @@ gallery_common.mean_over_runs, on style_v4's grid, with the y axis stopping wher
 they come in from the top of the frame, and the legend in the free lower left."""
 from __future__ import annotations
 
+import collections
+import math
 import pathlib
 import re
 
@@ -403,8 +405,9 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         if k == 2:                          # the shared ratio range holds both quark/gluon panels
             lo, hi = min(lo, ratios[1].get_ylim()[0] + pad), max(hi, ratios[1].get_ylim()[1] - pad)
         rx.set_ylim(lo - pad, hi + pad)
-        # three or four labels in a short panel, 1.0 among them (MaxNLocator's nbins gave six)
-        step = next(q for q in (0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0) if (hi - lo + 2 * pad) / q <= 3.5)
+        # the widest step that still puts three labels in the panel, 1.0 among them (MaxNLocator's nbins gave six)
+        inside = lambda q: math.floor((hi + pad) / q + 1e-9) - math.ceil((lo - pad) / q - 1e-9) + 1     # noqa: E731
+        step = max(q for q in (0.005, 0.01, 0.02, 0.025, 0.05, 0.1, 0.2, 0.25, 0.5, 1.0) if inside(q) >= 3)
         rx.yaxis.set_major_locator(MultipleLocator(step))
         rx.set_xlim(0, 1)
         S.title(ax, f"({'abc'[k]}) {name}")
@@ -438,7 +441,9 @@ def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
     fig, axes = _axes_2x2(sharey=True, wspace=0.1, heading=heading, top=2.35)
     for ax, level in zip(axes.flat, S.LEVELS):
         aucs = []
-        for label in names:
+        size = collections.Counter(colour.values())
+        # the largest families first, underneath, so that the small ones stay visible on top
+        for label in sorted(names, key=lambda k: -size[colour[k]]):
             s = mean_over_runs(docs, RUNS[level], label)
             aucs.append(s[2])
             _plot(ax, s, color=colour[label], linewidth=EVERY_CLASS_LW)

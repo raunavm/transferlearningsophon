@@ -451,6 +451,9 @@ def _draw_embeddings(path, grid: list, heading: str, colours=None, legend_rows=N
     if colours is None:         # QCD black, as in every class figure; the other classes take the colours after it
         rest = iter(S.TAB10[1:])
         colours = [S.TAB10[0] if name == "QCD" else next(rest) for name in groups]
+        if len(groups) == 2:    # black and rose, which stand apart in small translucent dots where indigo does not
+            first = "QCD" if "QCD" in groups else groups[0]
+            colours = [S.TAB10[0] if name == first else S.TAB10[5] for name in groups]
     for r, (row, drow) in enumerate(zip(grid, docs)):
         for ax, (_, title), d in zip(axes[r], row, drow):
             _embedding(ax, d, colours)
