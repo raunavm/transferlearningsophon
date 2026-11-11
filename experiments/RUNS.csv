@@ -1706,3 +1706,8 @@ render-gallery-94672d6-raunav,2026-11-11T22:39:09Z,complete,"51 of 51 drawn: the
 mtx2-tests-book-94672d6-raunav,2026-11-11T22:39:09Z,complete,"121 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-94672d6-raunav.yaml
 render-gallery-376f855-raunav,2026-11-11T22:39:09Z,launched,"PI line-graph brief step 1: styles B and C of Figs. 7, A4, 2; Fig. A4 (a) in Latin Modern.",experiments/FIGS/k8s/job-render-gallery-376f855-raunav.yaml
 mtx2-tests-book-376f855-raunav,2026-11-11T22:39:09Z,launched,"Tests at 376f855.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-376f855-raunav.yaml
+render-gallery-376f855-raunav,2026-11-11T22:48:07Z,complete,"Comparison pages drawn; a style-B error bar ran past the frame (y range ignored bars), font legend on a band, an order test missed the new module; fixed at 7a7076b.",experiments/FIGS/k8s/job-render-gallery-376f855-raunav.yaml
+render-gallery-7a7076b-raunav,2026-11-11T22:48:07Z,launched,"Comparison round 2.",experiments/FIGS/k8s/job-render-gallery-7a7076b-raunav.yaml
+mtx2-tests-book-7a7076b-raunav,2026-11-11T22:48:07Z,launched,"Tests at 7a7076b.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-7a7076b-raunav.yaml
+render-gallery-7a7076b-raunav,2026-11-11T22:56:43Z,complete,"Comparison round 2 clean by eye (Fig. 2 B/C panels 0.25 high by design); style_comparison.pdf built; books rebuilt with F8-auc, A8-auc, A10-auc (72 + 36 pages) and restamped.",experiments/FIGS/k8s/job-render-gallery-7a7076b-raunav.yaml
+mtx2-tests-book-7a7076b-raunav,2026-11-11T22:56:43Z,complete,"127 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-7a7076b-raunav.yaml
