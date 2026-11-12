@@ -573,20 +573,17 @@ SUBST_NOTE = ("Top-tagging linear probes fill the missing inputs with random dra
               "training mean: the substitution chosen for each task on validation, over all 30 models.")
 TWO_RUNS = "The three controlled partitions have two runs each, the four label sets three."
 
-REL_CAPTION = ("the relative change from the network pretrained with 188 classes and the same seed, in percent, in "
-               "accuracy on class-balanced JetClass-II and JetClass and in rejection R30 (at 30% signal efficiency) "
-               "on top and quark/gluon tagging. Markers are means, bars the SD over three pretraining runs (the "
-               "range over two for the flavor-boundary partitions); the vertical line is 188 classes. ")
+REL_CAPTION = ('relative change from the 188-class network of the same seed, in accuracy on class-balanced JetClass-II and '
+               'JetClass and in rejection R30 on top and quark/gluon tagging. Markers are means, bars the SD over '
+               'pretraining runs (range over two). Last row: trained from scratch, against '
+               'the mean 188-class network; an arrow marks a value outside the axis.')
 PAGES = [
     C.Page(
         id="F2a",
         title="Label granularity, linear probes",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 162, 43 and 17 "
-                "classes and with 17-class partitions (rows): " + REL_CAPTION +
-                "Each random partition has one run. Last row: trained from scratch, against the mean 188-class "
-                "network; an arrow gives its value where it lies outside the axis.",
+        caption='Linear probes on frozen features of networks pretrained on JetClass-II with 162, 43 and 17 classes and with 17-class partitions, one run per random partition: ' + REL_CAPTION,
         differs="Hong plots accuracy against the number of classes; here the label set is a category (PI 2026-11-11), "
                 "one row a network, and the x axis the change from 188 classes, the relative gain the field's papers "
                 "quote. The absolute values are in the tables.",
@@ -597,10 +594,7 @@ PAGES = [
         title="Label granularity, after fine-tuning",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption="Networks pretrained on JetClass-II with 162, 43 and 17 classes and with three 17-class partitions "
-                "with controlled flavor boundaries (rows), fine-tuned: " + REL_CAPTION +
-                "Last row: trained from scratch, against the mean 188-class network; an arrow gives its value "
-                "where it lies outside the axis.",
+        caption='Fine-tuned networks pretrained on JetClass-II with 162, 43 and 17 classes and with three 17-class partitions with controlled flavor boundaries: ' + REL_CAPTION,
         differs="As F2a.",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets. JetClass at 1,000,000 jets, top at 1,200,000, quark/gluon at 1,600,000. "

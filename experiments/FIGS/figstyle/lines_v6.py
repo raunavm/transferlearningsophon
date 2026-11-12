@@ -17,7 +17,8 @@ import style_v5 as S
 
 STYLES = ("A", "B", "C")
 DOT = 3.0               # pt, the one marker of B and C
-OPEN_EDGE = 0.8         # pt, the outline of an open (linear-probe) circle
+OPEN_EDGE = 0.7         # pt, the outline of an open (linear-probe) circle
+OPEN = 2.6              # pt, an open circle without its outline: with it, as large as a filled one
 BAR = 1.0               # pt, error bars
 BAND = 0.15             # opacity of C's bands
 SCAN = "C"              # the chosen style of every scan
@@ -28,7 +29,7 @@ OFFSET_TEXT = "Series are offset horizontally by a few per cent so that their er
 
 def dot(color: str, probe: bool) -> dict:
     """B and C's marker: a small filled circle with no outline, open for a linear probe."""
-    return {"marker": "o", "markersize": DOT, "markerfacecolor": "white" if probe else color,
+    return {"marker": "o", "markersize": OPEN if probe else DOT, "markerfacecolor": "white" if probe else color,
             "markeredgecolor": color, "markeredgewidth": OPEN_EDGE if probe else 0.0}
 
 

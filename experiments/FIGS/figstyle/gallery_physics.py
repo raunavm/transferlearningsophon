@@ -848,11 +848,11 @@ F10_FT_CAPTION = (
     "distance between QCD soft-drop mass before and after a cut on 1 - g_QCD, against QCD efficiency eps_B. Bands: "
     "SD, range over two. Black dashed: random selection of as many QCD jets.")
 F10C_CAPTION = (
-    "Cuts on the pretraining head of networks pretrained on JetClass-II, used without further training, in the "
-    "plane of the DisCo paper's Fig. 3: the inverse Jensen-Shannon divergence (the square of the distance) between the soft-drop mass of all "
-    "QCD test jets and of those passing a cut on 1 - g_QCD (y), against the QCD rejection (x), both at the cut "
-    "that keeps 50% of resonant test jets. Points are means (open: with mass regression), bars the SD over "
-    "pretraining runs (range over two).")
+    'Cuts on the pretraining head of networks pretrained on JetClass-II, used without further training, '
+    "as in the DisCo paper's Fig. 3: the inverse Jensen-Shannon divergence (the squared distance) between "
+    'the soft-drop mass of all QCD test jets and of those passing a cut on 1 - g_QCD, against the QCD '
+    'rejection, both at the cut that keeps 50% of resonant test jets. Points are means (open: with mass '
+    'regression), bars the SD over pretraining runs (range over two).')
 F11_CAPTION = (
     "Networks pretrained on JetClass-II, on Sophon's (a) X→bb̄ and (b) X→bs samples against QCD jets in the "
     "soft-drop mass window: signal efficiency over the square root of the background efficiency against QCD "

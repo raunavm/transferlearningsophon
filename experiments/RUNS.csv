@@ -1725,3 +1725,7 @@ render-gallery-c2c437b-raunav,2026-11-11T23:39:06Z,complete,"Step 3 look: double
 render-gallery-f84798b-raunav,2026-11-11T23:39:06Z,launched,"Step 3 round 2.",experiments/FIGS/k8s/job-render-gallery-f84798b-raunav.yaml
 render-gallery-f84798b-raunav,2026-11-11T23:48:01Z,complete,"Step 3 round 2: no measured finding; every figure page of both books looked at, fixes confirmed.",experiments/FIGS/k8s/job-render-gallery-f84798b-raunav.yaml
 mtx2-tests-bookfull-8437190-raunav,2026-11-11T23:48:03Z,launched,"Full suite at the line-graph restyle (figures f84798b).",experiments/MTX/k8s/v2/tests/job-mtx2-tests-bookfull-8437190-raunav.yaml
+render-gallery-46c6947-raunav,2026-11-11T23:53:12Z,launched,"Figs. 2 and 3 alternatives for the PI: relative to 188 classes (dot plot) and a table of changes.",experiments/FIGS/k8s/job-render-gallery-46c6947-raunav.yaml
+render-gallery-46c6947-raunav,2026-11-12T00:28:15Z,complete,"Alternatives looked at; the PI delegated the choice: relative to 188 classes.",experiments/FIGS/k8s/job-render-gallery-46c6947-raunav.yaml
+render-gallery-c65a9be-raunav,2026-11-12T00:28:15Z,launched,"Figs. 2 and 3 as the change from 188 classes; audit fixes (log labels, binned offsets, star, legend case).",experiments/FIGS/k8s/job-render-gallery-c65a9be-raunav.yaml
+mtx2-tests-book-c65a9be-raunav,2026-11-12T00:28:15Z,launched,"Targeted tests at the audit fixes.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-c65a9be-raunav.yaml
