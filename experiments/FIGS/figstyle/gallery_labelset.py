@@ -583,7 +583,7 @@ PAGES = [
         title="Label granularity, linear probes",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption='Linear probes on frozen features of networks pretrained on JetClass-II with 162, 43 and 17 classes and with 17-class partitions, one run per random partition: ' + REL_CAPTION,
+        caption='Linear probes on frozen features of networks pretrained on JetClass-II with 162, 43 and 17 classes and 17-class partitions (one run per random partition): ' + REL_CAPTION,
         differs="Hong plots accuracy against the number of classes; here the label set is a category (PI 2026-11-11), "
                 "one row a network, and the x axis the change from 188 classes, the relative gain the field's papers "
                 "quote. The absolute values are in the tables.",

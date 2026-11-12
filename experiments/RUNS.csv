@@ -1729,3 +1729,7 @@ render-gallery-46c6947-raunav,2026-11-11T23:53:12Z,launched,"Figs. 2 and 3 alter
 render-gallery-46c6947-raunav,2026-11-12T00:28:15Z,complete,"Alternatives looked at; the PI delegated the choice: relative to 188 classes.",experiments/FIGS/k8s/job-render-gallery-46c6947-raunav.yaml
 render-gallery-c65a9be-raunav,2026-11-12T00:28:15Z,launched,"Figs. 2 and 3 as the change from 188 classes; audit fixes (log labels, binned offsets, star, legend case).",experiments/FIGS/k8s/job-render-gallery-c65a9be-raunav.yaml
 mtx2-tests-book-c65a9be-raunav,2026-11-12T00:28:15Z,launched,"Targeted tests at the audit fixes.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-c65a9be-raunav.yaml
+render-gallery-c65a9be-raunav,2026-11-12T00:33:37Z,complete,"Looked at: Figs. 2 and 3 clean; three captions too long, log labels under ratio panels, open markers larger than filled.",experiments/FIGS/k8s/job-render-gallery-c65a9be-raunav.yaml
+mtx2-tests-book-c65a9be-raunav,2026-11-12T00:33:37Z,complete,"127 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-c65a9be-raunav.yaml
+render-gallery-8b1c609-raunav,2026-11-12T00:33:37Z,launched,"Audit round 2: captions, log labels, open markers.",experiments/FIGS/k8s/job-render-gallery-8b1c609-raunav.yaml
+render-gallery-8b1c609-raunav,2026-11-12T00:40:05Z,complete,"Every changed page looked at and clean; one caption a word over, shortened in the next commit (figures unchanged).",experiments/FIGS/k8s/job-render-gallery-8b1c609-raunav.yaml
