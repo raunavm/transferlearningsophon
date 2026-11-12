@@ -19,7 +19,7 @@ from gallery_bands import spread_band
 from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
 import lines_v6 as L
 
-GROOMED = "Soft-drop mass"
+GROOMED = "soft-drop mass"
 MASS_ROWS = (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))     # a mass model and its label set's name
 NAMES = {**S.NAME, **{row: S.LEGEND[row] for row, _ in MASS_ROWS}}      # "162 classes + mass", as every legend and table
 RATIO_ATLAS, RATIO_CMS = 0.44, 0.33     # lower axes over main axes: ATLAS 2024-015 Figs. 7-8, CMS Fig. 8 (catalogue)
@@ -269,11 +269,11 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     g = P._groomed(atlas, group)[axis]
     e = np.asarray(g["edges"], float)
     c = 0.5 * (e[1:] + e[:-1])
-    step = 0.12 * float(np.min(np.diff(e)))
     ref = P._arr(g[which])
     drawn = [(runs, est, line, label) for runs, est, line, mark, label in series
              if any(P._block(atlas, m, est, group) for m in runs)]
     n = len(drawn) + 1
+    step = L.bin_step(e, n)
     # a probe beside a network's own output (A17-probe, the same colours) is open; one mode a panel stays filled
     mixed = len({est in PROBE_ESTS for _, est, _, _ in drawn}) > 1
     zero = np.zeros_like(ref)
@@ -299,7 +299,7 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     else:
         _fit_y(ax, ends)
     _fit_y(rx, lows, pad=0.18)       # the reference at 1 clear of the frame, its tick labelled
-    ax.set_xlim(e[0], e[-1])
+    L.bin_xlim(ax, e)
     for a_ in (ax, rx):
         S.fine_grid(a_)
     return ref, e
@@ -393,7 +393,7 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple, heading: str) -> None:
         before = np.asarray(sc[ms[0]]["hist_before"], float)
         before = before / before.sum()
         # step histograms over the whole mass range, no markers (PI 2026-11-11)
-        ax.stairs(before, e, baseline=None, color="#000000", linewidth=S.LW_CURVE, label="Inclusive", zorder=2.1)
+        ax.stairs(before, e, baseline=None, color="#000000", linewidth=S.LW_CURVE, label="inclusive", zorder=2.1)
         peak = max(peak, before.max())
         rx.axhline(1.0, color="#000000", linewidth=S.LW_CURVE, zorder=1)
         for k_wp, (wp, _) in enumerate(P.WPS, start=1):
@@ -661,12 +661,12 @@ def _pt_panel(ax, docs: dict, rows: tuple, value, ylabel: str, style: str = "A",
     """value(doc) per pT bin for each row's runs, absolute (round 4: accuracy as F2, AUC for X->bb vs X->cc)."""
     e = _edges(docs)
     c = 0.5 * (e[1:] + e[:-1])
-    step = 0.12 * float(np.min(np.diff(e)))       # B, C: neighbouring series this far apart within a bin
+    step = L.bin_step(e, len(rows))               # B, C: neighbouring series this far apart within a bin
     for k, row in enumerate(rows):
         r = [value(d) for d in _by_seed(docs, row).values()]
         if r:
             _pt_series(ax, c, r, row, S.LEGEND[row], style=style, probe=probe, k=k, n=len(rows), step=step)
-    ax.set_xlim(e[0], e[-1])
+    L.bin_xlim(ax, e)
     ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 2.5, 5, 10]))
     if ylabel:
         S.labels(ax, ylabel=ylabel)
@@ -700,7 +700,7 @@ def draw_pt(path: pathlib.Path, style: str = "B") -> None:
     cx.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10]))    # three decimals, as (a)
     fig.align_ylabels([a, cx])
     for ax in (a, b, d):        # the last label at 2500 would run off the page or into the next panel
-        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=ax.get_xlim()[1]: "" if v >= hi - 1e-9 else f"{v:g}"))
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=_edges(jc2)[-1]: "" if v >= hi - 1e-9 else f"{v:g}"))
     handles = {}
     for ax in axes.flat:
         for h_, l_ in zip(*ax.get_legend_handles_labels()):
@@ -849,7 +849,7 @@ F10_FT_CAPTION = (
     "SD, range over two. Black dashed: random selection of as many QCD jets.")
 F10C_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II, used without further training, in the "
-    "plane of the DisCo paper's Fig. 3: the inverse Jensen-Shannon divergence between the soft-drop mass of all "
+    "plane of the DisCo paper's Fig. 3: the inverse Jensen-Shannon divergence (the square of the distance) between the soft-drop mass of all "
     "QCD test jets and of those passing a cut on 1 - g_QCD (y), against the QCD rejection (x), both at the cut "
     "that keeps 50% of resonant test jets. Points are means (open: with mass regression), bars the SD over "
     "pretraining runs (range over two).")

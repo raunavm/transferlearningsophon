@@ -7,8 +7,8 @@ A, the current style: each model's own marker shape, filled or hollow, 4-5 pt wi
 B, error bars: 1.3 pt lines; one marker shape (a 3 pt circle, no outline; open for a linear probe); +-1 SD as vertical
    bars, 1 pt, no caps, in the series colour; no bands; in a size scan a small horizontal offset between series.
 C, light bands: 1.3 pt lines; 3 pt circles at the measured points; +-1 SD bands at 15% opacity, no edge, under every line.
-Binned measurements (jet pT) are points with error bars and no lines in B and C; categorical axes (the pretraining
-label set) have no lines at all. Colour is the model and line style the mode, as before (style_v5)."""
+Binned measurements (jet pT) are points with error bars and no lines in B and C; the pretraining label set is a
+category: one row a network (row). Colour is the model and line style the mode, as before (style_v5)."""
 from __future__ import annotations
 
 import numpy as np
@@ -69,12 +69,17 @@ def binned(ax, centres, mean, lo, hi, *, color: str, probe: bool, label: str, k:
     ax.plot(x, mean, linestyle="none", **dot(color, probe), label=label, zorder=2.6)
 
 
-def category(ax, x: float, mean: float, lo, hi, *, color: str, probe: bool, label: str | None = None) -> list:
-    """One slot of a categorical axis: the mean marker with its +-1 SD bar (none for one run); the bar's ends."""
-    ax.errorbar([x], [mean], yerr=None if lo is None else [[lo], [hi]], fmt="none", ecolor=color, elinewidth=BAR,
-                capsize=0, zorder=2.4)
-    ax.plot([x], [mean], linestyle="none", **dot(color, probe), label=label, zorder=2.6)
-    return [mean - (lo or 0.0), mean + (hi or 0.0)]
+def bin_step(edges, n: int) -> float:
+    """The distance between neighbouring series within a bin: 2% of the axis, markers side by side, or less where the
+    n series would leave the narrowest bin."""
+    e = np.asarray(edges, float)
+    return min(0.02 * (e[-1] - e[0]), 0.8 * float(np.min(np.diff(e))) / n)
+
+
+def bin_xlim(ax, edges) -> None:
+    """The binned axis with 2% of its span either side, so no marker sits on the frame."""
+    pad = 0.02 * (edges[-1] - edges[0])
+    ax.set_xlim(edges[0] - pad, edges[-1] + pad)
 
 
 def row(ax, y: float, mean: float, lo, hi, *, color: str, probe: bool, label: str | None = None) -> list:

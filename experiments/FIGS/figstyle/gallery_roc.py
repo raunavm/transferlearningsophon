@@ -28,6 +28,11 @@ FAMILIES = ("QCD", "Two-prong quarks and gluons", "Two-prong leptons", "Three-pr
             "Lepton-containing")
 
 
+def family_label(f: str) -> str:
+    """A family as a legend entry: lower case, as every legend of the paper (QCD stays)."""
+    return f if f == "QCD" else f[0].lower() + f[1:]
+
+
 def family_of(class_name: str) -> str:
     """The topology family of a JetClass-II class (configs/labelmaps/rung_label_maps.v1.csv)."""
     name = class_name.removeprefix("label_")
@@ -455,7 +460,7 @@ def _jc2_every_class(path: pathlib.Path, family: str, heading: str) -> None:
         S.title(ax, f"{S.NAME[level]}, mean AUC {np.mean(aucs):.3f}")
     _y_range(list(axes.flat))
     _right_labels_off(axes)
-    S.fig_legend(fig, [Line2D([], [], color=S.TAB10[i], linewidth=EVERY_CLASS_LW, label=f) for i, f in enumerate(FAMILIES)],
+    S.fig_legend(fig, [Line2D([], [], color=S.TAB10[i], linewidth=EVERY_CLASS_LW, label=family_label(f)) for i, f in enumerate(FAMILIES)],
                  top_cm=0.6, ncol=3)        # above the panels, off the curves (PI, 2026-11-07)
     S.letter_panels(axes.flat)
     S.save(fig, path)

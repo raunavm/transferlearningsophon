@@ -31,7 +31,7 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
          "A3R-ft", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "A17-res", "A17-qcd", "A17-probe", "F10a-mass",
          "SOPHON-FIG2", "PALETTE",      # gallery only
          # the PI's line-graph style comparison (2026-11-11), gallery only
-         "CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-F2-B", "CMP-F2-C", "CMP-F2-DOT", "CMP-F3-DOT", "CMP-F2-REL", "CMP-F3-REL", "CMP-F2-HEAT", "CMP-F3-HEAT", "CMP-FONT-T", "CMP-FONT-LM")
+         "CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-FONT-T", "CMP-FONT-LM")
 
 
 # the figures the PI approved page by page (2026-11-05), drawn into the paper by the render job (--paper);

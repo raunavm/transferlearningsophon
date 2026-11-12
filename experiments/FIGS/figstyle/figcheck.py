@@ -49,7 +49,7 @@ PRINT_CM = {"INVENTORY": 27.7}     # \paperfig widths other than \linewidth (15 
 MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.1, {"F3-app": 5.0, "F3-ft": 5.0, "F3-app2": 4.0, "F3-ft2": 4.0, "F4-other": 4.0,
                                      "F6": 4.0, "F6-app": 4.0, "F10a-flav": 4.0,
                                      # Figs. 2 and 3 as dot plots: the row labels take the left 4 cm (PI 2026-11-11)
-                                     "CMP-F2-DOT": 5.0, "CMP-F3-DOT": 5.0, "CMP-F2-REL": 5.0, "CMP-F3-REL": 5.0}
+                                     "F2a": 5.0, "F2b": 5.0}
 MIN_PT, ASPECT, PAD_IN, DPI = 8.0, (0.7, 1.3), 0.1, 300
 BANNED = [(re.compile(p), why) for p, why in (
     (r"\bto\s+(ee|mu|mumu|bb|cc|qq|bs|bc|b\b)", "plain 'to' for an arrow"), (r"\bmu\b", "plain 'mu'"),
