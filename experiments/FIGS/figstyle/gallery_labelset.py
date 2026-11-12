@@ -73,7 +73,8 @@ REL_NAMES = {"L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classe
              "SCRATCH": S.LEGEND["SCRATCH"]}
 REL_RAND_SPREAD = 0.12      # rows between the five random partitions within their row
 REL_LEFT, REL_W, REL_H, REL_WGAP, REL_HGAP = 4.2, 5.0, 5.0, 0.45, 1.35
-X_REL = {"accuracy": "Change in accuracy (%)", "r30": "Change in $R_{30}$ (%)"}
+X_REL = {"accuracy": "Relative change in accuracy (%)", "r30": "Relative change in $R_{30}$ (%)"}
+REL_EDGE = 0.28             # the share of a panel's width an off-axis arrow and its value take, clear of the zero line
 
 
 def _range(ax, ys: list, log: bool, pad: float = 0.12) -> tuple:
@@ -127,12 +128,12 @@ def _rel_scratch(ax, y: float, v: list, xs: list) -> list:
     if min(xs) - span <= mean <= max(xs) + span:
         return L.row(ax, y, mean, lo, hi, color=grey, probe=False)
     tr = blended_transform_factory(ax.transAxes, ax.transData)
-    tip, tail, text, ha = (0.97, 0.80, 0.77, "right") if mean > 0 else (0.03, 0.20, 0.23, "left")
+    tip, tail, text, ha = (0.97, 0.87, 0.85, "right") if mean > 0 else (0.03, 0.13, 0.15, "left")
     ax.annotate("", xy=(tip, y), xytext=(tail, y), xycoords=tr, textcoords=tr,
                 arrowprops={"arrowstyle": "-|>", "color": grey, "linewidth": L.BAR, "shrinkA": 0, "shrinkB": 0})
     ax.text(text, y, f"{mean:+.0f}%".replace("-", "\N{MINUS SIGN}"), transform=tr, ha=ha, va="center", color=grey,
             fontsize=S.TICK_PT5)
-    return []
+    return [math.copysign(math.inf, mean)]
 
 
 def _draw_f2(path, value_of, groups, absent: str, heading: str) -> None:
@@ -176,13 +177,20 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str) -> None:
         ref = P._vals(RUNS, "L188", value)
         if scratch and ref:
             xs += _rel_scratch(ax, rows["SCRATCH"], [100.0 * (s / float(np.mean(ref)) - 1) for s in scratch[max(scratch)]], xs)
-        ax.set_xlim(*_range(ax, xs, False))
-        ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10]))
+        off = [x for x in xs if math.isinf(x)]          # an off-axis arrow: its side
+        lo, hi = _range(ax, [x for x in xs if not math.isinf(x)], False)
+        if off and off[0] > 0:
+            hi = max(hi, lo + (0.0 - lo) / (1 - REL_EDGE))
+        elif off:
+            lo = min(lo, hi - (hi - 0.0) / (1 - REL_EDGE))
+        ax.set_xlim(lo, hi)
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]))
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}".replace("-", "\N{MINUS SIGN}")))
     for i in (0, 2):
         _rel_bracket(fig, axes[i], controls)
     S.letter_panels(axes)
     S.heading(fig, heading)
-    handles = [Line2D([], [], linestyle="none", **L.dot("#000000", False), label="mean and SD over pretraining runs"),
+    handles = [Line2D([], [], color="#000000", linewidth=L.BAR, **L.dot("#000000", False), label="mean and SD over pretraining runs"),
                Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_CURVE, label=S.LEGEND["L188"])]
     S.fig_legend(fig, handles, top_cm=0.6, ncol=2)
     S.save(fig, path)
@@ -436,7 +444,7 @@ def draw_a8(path, auc: bool = False, style: str = L.SCAN) -> None:
 
 # ------------------------------------------------------------------ the UMAP and the pretraining curve
 EMBED_NAMES = {"bb": r"$X\to b\bar{b}$", "cc": r"$X\to c\bar{c}$", "qq": r"$X\to q\bar{q}$", "QCD": "QCD",
-               "ee": r"$X\to ee$", "mm": r"$X\to \mu\mu$", "top": "Top", "gluon": "Gluon", "quark": "Quark",
+               "ee": r"$X\to ee$", "mm": r"$X\to \mu\mu$", "top": "top", "gluon": "gluon", "quark": "quark",
                **{c.removeprefix("label_"): S.JC1_TEX[c] for c in S.JC1_CLASSES if c != "label_QCD"}}
 EMBED_MODELS = (("mtx-l188-s1", "L188"), ("mtx-r16q1-s1", "R16_Q1"))
 
@@ -574,16 +582,16 @@ SUBST_NOTE = ("Top-tagging linear probes fill the missing inputs with random dra
 TWO_RUNS = "The three controlled partitions have two runs each, the four label sets three."
 
 REL_CAPTION = ('relative change from the 188-class network of the same seed, in accuracy on class-balanced JetClass-II and '
-               'JetClass and in rejection R30 on top and quark/gluon tagging. Markers are means, bars the SD over '
-               'pretraining runs (range over two). Last row: trained from scratch, against '
-               'the mean 188-class network; an arrow marks a value outside the axis.')
+               'JetClass and in rejection R30 on top and quark/gluon tagging. Markers are means, bars the SD over three '
+               'runs (the range over two for flavor-boundary partitions). Last row: trained from scratch, against '
+               'the mean 188-class network; arrows mark values off the axis.')
 PAGES = [
     C.Page(
         id="F2a",
         title="Label granularity, linear probes",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption='Linear probes on frozen features of networks pretrained on JetClass-II with 162, 43 and 17 classes and 17-class partitions (one run per random partition): ' + REL_CAPTION,
+        caption='Linear probes on networks pretrained on JetClass-II with 162, 43 and 17 classes and 17-class partitions (one run per random partition): ' + REL_CAPTION,
         differs="Hong plots accuracy against the number of classes; here the label set is a category (PI 2026-11-11), "
                 "one row a network, and the x axis the change from 188 classes, the relative gain the field's papers "
                 "quote. The absolute values are in the tables.",

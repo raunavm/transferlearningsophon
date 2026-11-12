@@ -552,7 +552,7 @@ def draw_f10c(path: pathlib.Path) -> None:
         raise Absent(f"no {F10C_KEY} in the sculpting files (head/sculpting_v3/*_sculpting.json)")
     S.log_axis(ax, "x")         # the autoscaled limits hold the bars
     S.log_axis(ax)
-    S.heading(fig, "Cuts on the pretraining head: mass sculpting against rejection at 50% signal efficiency")
+    S.heading(fig, "Cuts on the pretraining head: mass sculpting against rejection at 50% resonant efficiency")
     S.labels(ax, r"QCD rejection at 50% resonant efficiency ($R_{50}$)", r"$1/\mathrm{JSD}_{50}$")
     S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=3)      # three rows, clear of the panel
     S.save(fig, path)
@@ -806,13 +806,13 @@ F9B_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs): median response r = m/m_gen (a, b) and resolution sigma_r, half the 15.9-84.1% "
     "quantile range of r over its median (c, d), against pT (a, c) and generator mass (b, d), with the soft-drop "
-    "mass (black). Points at bin centres, set apart within a bin; bars: range over runs. Lower panels: ratio to "
+    "mass (black). Points at bin centers, set apart within a bin; bars: range over runs. Lower panels: ratio to "
     "the soft-drop mass.")
 A17_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs), on {group} test jets: median response r (a, b) and resolution sigma_r (c, d), as in "
     "the main-text figure, against pT (a, c) and generator mass (b, d; 20-500 GeV), with the soft-drop mass "
-    "(black); points at bin centres, bars the range over runs, set slightly apart within a bin. Lower panels: ratio "
+    "(black); points at bin centers, bars the range over runs, set slightly apart within a bin. Lower panels: ratio "
     "to the soft-drop mass.")
 F10A_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, used "
@@ -863,7 +863,7 @@ PT_CAPTION = (
     "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on "
     "class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining classes; (b) the same for 17-class partitions with controlled flavor boundaries, with 188 and 17 classes for "
     "reference; (c) accuracy on JetClass after fine-tuning on one million jets; (d) the probes' AUC of X→bb̄ "
-    "against X→cc̄. Points: means at bin centres, set apart within a bin; bars: SD over pretraining runs.")
+    "against X→cc̄. Points: means at bin centers, set apart within a bin; bars: SD over pretraining runs.")
 CONF_CAPTION = (
     "Networks pretrained on JetClass-II, fine-tuned on one million JetClass jets: (a) the percentage of each true "
     "class assigned to each predicted class with 188 pretraining classes; (b)-(d) the change in that percentage "
@@ -941,7 +941,7 @@ PAGES = [
          "The jet mass from networks pretrained on JetClass-II: an MLP probe (MLP) regressing it from the frozen "
          "features with 188, 162, 43 and 17 classes (open, three runs), and the mass output with 162 and 17 classes "
          "and a mass regression (filled, two runs): median response r (a, b) and resolution sigma_r (c, d) against "
-         "pT (a, c) and generator mass (b, d). Points at bin centres, set apart within a bin; bars: spread over runs.",
+         "pT (a, c) and generator mass (b, d). Points at bin centers, set apart within a bin; bars: range over runs. Lower panels: ratio to the soft-drop mass.",
          "As F9b, with six series and the soft-drop mass (PI): the four probes in the label sets' colours, the two mass "
          "outputs in the 162- and 17-class colours as F10b, one marker shape per series at the bin centres and in the legend, "
          "since each mass output shares its label set's colour. Round 4: the 2x2 of F9b, legend above the panels. "
