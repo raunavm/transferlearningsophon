@@ -13,6 +13,7 @@ from matplotlib import ticker
 from matplotlib.lines import Line2D
 
 import gallery_common as C
+import gallery_placement as G
 from gallery_roc import FAMILIES, family_label, family_of
 import lines_v6 as L
 import style_v5 as S
@@ -583,15 +584,15 @@ TWO_RUNS = "The three controlled partitions have two runs each, the four label s
 
 REL_CAPTION = ('relative change from the 188-class network of the same seed, in accuracy on class-balanced JetClass-II and '
                'JetClass and in rejection R30 on top and quark/gluon tagging. Markers are means, bars the SD over three '
-               'runs (the range over two for flavor-boundary partitions). Last row: trained from scratch, against '
-               'the mean 188-class network; arrows mark values off the axis.')
+               'runs (the range over two for flavor-boundary partitions). Last row: from scratch, against '
+               'the mean 188-class network (arrows: off the axis). Absolute values: ')
 PAGES = [
     C.Page(
         id="F2a",
         title="Label granularity, linear probes",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption='Linear probes on networks pretrained on JetClass-II with 162, 43 and 17 classes and 17-class partitions (one run per random partition): ' + REL_CAPTION,
+        caption='Linear probes on networks pretrained on JetClass-II with 162, 43 and 17 classes and 17-class partitions (one run per random partition): ' + REL_CAPTION + G.number('tab:probes') + '.',
         differs="Hong plots accuracy against the number of classes; here the label set is a category (PI 2026-11-11), "
                 "one row a network, and the x axis the change from 188 classes, the relative gain the field's papers "
                 "quote. The absolute values are in the tables.",
@@ -602,7 +603,7 @@ PAGES = [
         title="Label granularity, after fine-tuning",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption='Fine-tuned networks pretrained on JetClass-II with 162, 43 and 17 classes and with three 17-class partitions with controlled flavor boundaries: ' + REL_CAPTION,
+        caption='Fine-tuned networks pretrained on JetClass-II with 162, 43 and 17 classes and with three 17-class partitions with controlled flavor boundaries: ' + REL_CAPTION + f"{G.number('tab:jetclass')}, {G.number('tab:benchtop + tab:benchqg')[6:]} and {G.number('tab:ft')[6:]}.".replace('Table', 'Tables'),
         differs="As F2a.",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets. JetClass at 1,000,000 jets, top at 1,200,000, quark/gluon at 1,600,000. "

@@ -941,7 +941,7 @@ PAGES = [
          "The jet mass from networks pretrained on JetClass-II: an MLP probe (MLP) regressing it from the frozen "
          "features with 188, 162, 43 and 17 classes (open, three runs), and the mass output with 162 and 17 classes "
          "and a mass regression (filled, two runs): median response r (a, b) and resolution sigma_r (c, d) against "
-         "pT (a, c) and generator mass (b, d). Points at bin centers, set apart within a bin; bars: range over runs. Lower panels: ratio to the soft-drop mass.",
+         "pT (a, c) and generator mass (b, d). Points set apart within a bin; bars: range over runs. Below: ratio to the soft-drop mass.",
          "As F9b, with six series and the soft-drop mass (PI): the four probes in the label sets' colours, the two mass "
          "outputs in the 162- and 17-class colours as F10b, one marker shape per series at the bin centres and in the legend, "
          "since each mass output shares its label set's colour. Round 4: the 2x2 of F9b, legend above the panels. "
