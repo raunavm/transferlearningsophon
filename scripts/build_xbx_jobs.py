@@ -37,7 +37,7 @@ explicitly (Sophon's 150-230 GeV at mX = 200, scaled by mX/200; 93.75-143.75 GeV
                          on unscaled inputs: 50 epochs of the whole pair (50 x 2.5 M examples at
                          1.25 M jets per class), ranger, weaver's flat+decay; resumable
                          (cell_resume.py); scored by fit_xbx.py scratch with the examples it saw.
-                         A5: X->bs only, three seeds.
+                         A5: X->bs, three seeds; X->bb the same (PI 2026-11-12).
   xbx-report-dryrun, xbx-ihep-report
                          CPU, at PIN_REPORT: experiments/XBS/xbx_report.py, the section's figure, table
                          and macros, on the stand-in fits (as X->bb) and on the real ones.
@@ -173,6 +173,8 @@ SCRATCH_GPU = "Tesla-V100-SXM2-32GB"
 # (2026-10-30: every V100 in use): any of these, which the fine-tunes do not use
 DRYRUN_GPUS = ("NVIDIA-A10", "NVIDIA-L40", "NVIDIA-RTX-A6000", "NVIDIA-A100-SXM4-80GB", "NVIDIA-L40S")
 SCRATCH_SIGNALS = ("xbs",)
+# PI 2026-11-12: X->bb from scratch with the X->bs recipe too (three seeds), for Fig. 9 (a) and the X->bb tables
+IHEP_SCRATCH_SIGNALS = ("xbs", "xbb")
 SCRATCH_SEEDS = (1, 2, 3)
 B3 = {"lr": "5e-4", "epochs": 50, "weight_decay": "0.01"}     # Sophon App. B.3
 SELF_TESTS = ("tests/test_xbx.py", "tests/test_xbx_stage.py", "tests/test_xbx_fit.py")
@@ -515,7 +517,7 @@ def build(signals=SIGNALS, mx=MX) -> dict[str, str]:
             specs[f"job-{pre}-fit-{stem}-raunav.yaml"] = fit_spec(model, ckpt, (sig,), prefix=pre, pin=PIN_IHEP,
                                                                   out=f"{FITS_IHEP}/{sig}",
                                                                   window=f" {window_arg(mx)} --mx {mx:g}")
-    for s in SCRATCH_SIGNALS:
+    for s in IHEP_SCRATCH_SIGNALS:
         for seed in SCRATCH_SEEDS:
             specs[f"job-xbx-ihep-scratch-{s}-s{seed}-raunav.yaml"] = scratch_spec(
                 s, seed, name=f"xbx-ihep-scratch-{s}-s{seed}-raunav", pin=PIN_IHEP, out_root=SCRATCH_ROOT_IHEP, mx=mx,
