@@ -55,16 +55,16 @@ F7 = ("Fine-tuned networks pretrained on JetClass-II with 188, 162, 43 and 17 cl
       "against the number of training jets. Points are means over three pretraining runs; ")
 A4 = ("Networks pretrained on JetClass-II, in bins of jet transverse momentum: linear-probe accuracy on JetClass-II for "
       "the label sets (a) and the controls (b), JetClass accuracy after fine-tuning (c), and the probes' X→bb̄ "
-      "against X→cc̄ AUC (d). Points are means at the bin centres, bars the SD over pretraining runs, no lines.")
+      "against X→cc̄ AUC (d). Points are means at the bin centres, horizontal bars the bin, vertical the SD over pretraining runs, no lines.")
 DIFFERS = "The PI's style comparison (2026-11-11); gallery only."
 PAGES = [
     Page(id="CMP-F7-B", title="Fig. 7, style B (error bars)", precedent=[], precedent_label="", differs=DIFFERS, caption=F7 + "bars the SD." + B_NOTE,
           draw=lambda path: LS.draw_a8(path, style="B")),
     Page(id="CMP-F7-C", title="Fig. 7, style C (light bands)", precedent=[], precedent_label="", differs=DIFFERS, caption=F7 + "bands the SD at 15% opacity.",
           draw=lambda path: LS.draw_a8(path, style="C")),
-    Page(id="CMP-A4-B", title="Fig. A4, style B", precedent=[], precedent_label="", differs=DIFFERS, caption=A4 + " Within a bin the series are set slightly apart.",
+    Page(id="CMP-A4-B", title="Fig. A4, style B", precedent=[], precedent_label="", differs=DIFFERS, caption=A4,
           draw=lambda path: PH.draw_pt(path, style="B")),
-    Page(id="CMP-A4-C", title="Fig. A4, style C (binned: as B)", precedent=[], precedent_label="", differs=DIFFERS, caption=A4 + " Within a bin the series are set slightly apart.",
+    Page(id="CMP-A4-C", title="Fig. A4, style C (binned: as B)", precedent=[], precedent_label="", differs=DIFFERS, caption=A4,
           draw=lambda path: PH.draw_pt(path, style="C")),
     Page(id="CMP-FONT-T", title="Fig. A4 (a), current font", precedent=[], precedent_label="", differs=DIFFERS, caption="Panel (a) of Fig. A4 in the current Times-like font (STIX), at "
           "its printed size, for comparison with the same panel in Latin Modern, the body font of the book. Accuracy of "

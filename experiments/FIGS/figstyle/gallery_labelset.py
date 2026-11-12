@@ -61,18 +61,18 @@ def _empty_panel(ax) -> None:
 
 
 # ------------------------------------------------------------------ F2: metric against the number of classes
-# Figs. 2 and 3 (PI 2026-11-11: "decide"): the label set is a category, so a horizontal dot plot, one row a network,
-# of the relative change from the 188-class network of the same pretraining seed (run names end in -sK), in percent:
-# the mean over seeds with its +-1 SD bar. 188 classes is the zero line. The field quotes such gains as relative
+# Figs. 2 and 3 (PI 2026-11-11: "decide"; 2026-11-12: bars): the label set is a category, so a horizontal bar chart,
+# one row a network, of the relative change from the 188-class network of the same pretraining seed (run names end in
+# -sK), in percent: the bar the mean over seeds, with its +-1 SD bar. A bar needs a true zero, which a change has. 188 classes is the zero line. The field quotes such gains as relative
 # changes (ParT, ParticleNet; J-JEPA Fig. 2 draws them); the absolute values are in the tables. From scratch is the
-# last row, against the mean 188-class network; where it lies far outside the other rows an arrow at the panel's edge
-# carries its value, as in a forest plot.
+# last row, against the mean 188-class network; where it lies far outside the other rows its bar runs to the panel's
+# frame with the value printed on it.
 REL_ROWS = {"L162": 0.0, "R42_Q1": 1.0, "R16_Q1": 2.0}
 REL_CONTROLS = ("RAND", "FLAV_F0", "FLAV_F1", "FLAV_F1R")      # rows below the first divider, those the figure shows
 REL_NAMES = {"L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes", "RAND": "random partitions",
              "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary", "FLAV_F1R": "random flavor boundary",
              "SCRATCH": S.LEGEND["SCRATCH"]}
-REL_RAND_SPREAD = 0.12      # rows between the five random partitions within their row
+REL_RAND_SPREAD = 0.1       # rows between the five random partitions' dots within their bar
 REL_LEFT, REL_W, REL_H, REL_WGAP, REL_HGAP = 4.2, 5.0, 5.0, 0.45, 1.35
 X_REL = {"accuracy": "Relative change in accuracy (%)", "r30": "Relative change in $R_{30}$ (%)"}
 REL_EDGE = 0.28             # the share of a panel's width an off-axis arrow and its value take, clear of the zero line
@@ -120,20 +120,19 @@ def _rel_bracket(fig, ax, ys: list) -> None:
 
 
 def _rel_scratch(ax, y: float, v: list, xs: list) -> list:
-    """From scratch in its row: its point and bar where it lies within one span of the other rows, else an arrow at
-    the panel's edge on its side with the value beside it. Returns what the x range must hold."""
+    """From scratch in its row: its bar where it lies within one span of the other rows; else the bar runs to the
+    panel's frame on its side with the value printed on it. Returns what the x range must hold (an infinity: the side)."""
     from matplotlib.transforms import blended_transform_factory
     grey = S.look("SCRATCH")["color"]
     mean, lo, hi = P.F._spread(v)
     span = max(xs) - min(xs)
     if min(xs) - span <= mean <= max(xs) + span:
-        return L.row(ax, y, mean, lo, hi, color=grey, probe=False)
+        return L.row(ax, y, mean, lo, hi, color=grey)
+    far = math.copysign(1e6, mean)
+    ax.barh(y, far, height=L.ROW, color=grey, linewidth=0, zorder=2.0)       # clipped at the frame
     tr = blended_transform_factory(ax.transAxes, ax.transData)
-    tip, tail, text, ha = (0.97, 0.87, 0.85, "right") if mean > 0 else (0.03, 0.13, 0.15, "left")
-    ax.annotate("", xy=(tip, y), xytext=(tail, y), xycoords=tr, textcoords=tr,
-                arrowprops={"arrowstyle": "-|>", "color": grey, "linewidth": L.BAR, "shrinkA": 0, "shrinkB": 0})
-    ax.text(text, y, f"{mean:+.0f}%".replace("-", "\N{MINUS SIGN}"), transform=tr, ha=ha, va="center", color=grey,
-            fontsize=S.TICK_PT5)
+    ax.text(0.975 if mean > 0 else 0.025, y, f"{mean:+.0f}%".replace("-", "\N{MINUS SIGN}"), transform=tr,
+            ha="right" if mean > 0 else "left", va="center_baseline", color="white", fontsize=S.TICK_PT5, zorder=3)
     return [math.copysign(math.inf, mean)]
 
 
@@ -168,12 +167,15 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str) -> None:
         xs = [0.0]
         for r, y in REL_ROWS.items():
             if v := _paired(r, value):
-                xs += L.row(ax, y, *P.F._spread(v), color=S.SERIES[r], probe=False)
+                xs += L.row(ax, y, *P.F._spread(v), color=S.SERIES[r])
         for _, key_, rws in groups:
-            for i, r in enumerate(rws):
-                if v := _paired(r, value):
-                    y = rows[key_] + REL_RAND_SPREAD * (i - (len(rws) - 1) / 2)
-                    xs += L.row(ax, y, *P.F._spread(v), color=S.SERIES[key_], probe=False)
+            v = [x for r in rws for x in _paired(r, value)]
+            if len(rws) == 1 and v:
+                xs += L.row(ax, rows[key_], *P.F._spread(v), color=S.SERIES[key_])
+            elif v:             # the random partitions, one run each: the bar their mean, a dot each run
+                xs += L.row(ax, rows[key_], float(np.mean(v)), None, None, color=S.SERIES[key_]) + v
+                ax.plot(v, rows[key_] + REL_RAND_SPREAD * (np.arange(len(v)) - (len(v) - 1) / 2), linestyle="none",
+                        **L.dot("#000000", False), zorder=2.6)
         scratch = P.scratch_series(M, I["per"], key, met)
         ref = P._vals(RUNS, "L188", value)
         if scratch and ref:
@@ -191,9 +193,13 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str) -> None:
         _rel_bracket(fig, axes[i], controls)
     S.letter_panels(axes)
     S.heading(fig, heading)
-    handles = [Line2D([], [], color="#000000", linewidth=L.BAR, **L.dot("#000000", False), label="mean and SD over pretraining runs"),
+    from matplotlib.patches import Patch
+    handles = [Patch(facecolor=S.GREY_MID, linewidth=0, label="mean over pretraining runs"),
+               Line2D([], [], color="#000000", linewidth=L.BAR, label="SD"),
                Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_CURVE, label=S.LEGEND["L188"])]
-    S.fig_legend(fig, handles, top_cm=0.6, ncol=2)
+    if any(len(rws) > 1 for _, _, rws in groups):
+        handles.insert(2, Line2D([], [], linestyle="none", **L.dot("#000000", False), label="one random partition"))
+    S.fig_legend(fig, handles, top_cm=0.6, ncol=len(handles))
     S.save(fig, path)
 
 
@@ -583,18 +589,18 @@ SUBST_NOTE = ("Top-tagging linear probes fill the missing inputs with random dra
 TWO_RUNS = "The three controlled partitions have two runs each, the four label sets three."
 
 REL_CAPTION = ('relative change from the 188-class network of the same seed, in accuracy on class-balanced JetClass-II and '
-               'JetClass and in rejection R30 on top and quark/gluon tagging. Markers are means, bars the SD over three '
+               'JetClass and in rejection R30 on top and quark/gluon tagging. Bars are means, black lines the SD over three '
                'runs (the range over two for flavor-boundary partitions). Last row: from scratch, against '
-               'the mean 188-class network (arrows: off the axis). Absolute values: ')
+               'the mean 188-class network (value printed where off the axis). Absolute values: ')
 PAGES = [
     C.Page(
         id="F2a",
         title="Label granularity, linear probes",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption='Linear probes on networks pretrained on JetClass-II with 162, 43 and 17 classes and 17-class partitions (one run per random partition): ' + REL_CAPTION + G.number('tab:probes') + '.',
+        caption='Linear probes on networks pretrained on JetClass-II with 162, 43 and 17 classes and 17-class partitions (dots: each random partition, one run): ' + REL_CAPTION + G.number('tab:probes') + '.',
         differs="Hong plots accuracy against the number of classes; here the label set is a category (PI 2026-11-11), "
-                "one row a network, and the x axis the change from 188 classes, the relative gain the field's papers "
+                "one row a network as in the field's bar charts of model comparisons, and the x axis the change from 188 classes, the relative gain its papers "
                 "quote. The absolute values are in the tables.",
         draw=draw_f2a,
         data_note=f"{TWO_RUNS} Each plain random partition has one run. {SUBST_NOTE}"),

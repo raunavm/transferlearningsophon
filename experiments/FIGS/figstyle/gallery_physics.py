@@ -264,32 +264,28 @@ PROBE_ESTS = ("mlp", "ridge")      # regressions on frozen features, against the
 def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     """One column of one row: the median (which="median") or the resolution against axis, binned, so points at the bin
     centres with +-1 SD bars over runs and no lines (PI 2026-11-11), the soft-drop mass first in black, the series
-    offset within a bin (lines_v6.binned); below, the ratio to the soft-drop mass. The y range holds every point and
+    with a bar across the bin (lines_v6.binned); below, the ratio to the soft-drop mass. The y range holds every point and
     bar (PI 2026-11-11: nothing off the axes); the resolution is on a log axis. Returns (soft-drop values, bin edges)."""
     g = P._groomed(atlas, group)[axis]
     e = np.asarray(g["edges"], float)
-    c = 0.5 * (e[1:] + e[:-1])
     ref = P._arr(g[which])
     drawn = [(runs, est, line, label) for runs, est, line, mark, label in series
              if any(P._block(atlas, m, est, group) for m in runs)]
-    n = len(drawn) + 1
-    step = L.bin_step(e, n)
     # a probe beside a network's own output (A17-probe, the same colours) is open; one mode a panel stays filled
     mixed = len({est in PROBE_ESTS for _, est, _, _ in drawn}) > 1
     zero = np.zeros_like(ref)
-    L.binned(ax, c, ref, zero, zero, color=GROOMED_LOOK["color"], probe=False, label=GROOMED, k=0, n=n, step=step)
+    L.binned(ax, e, ref, zero, zero, color=GROOMED_LOOK["color"], probe=False, label=GROOMED)
     rx.axhline(1.0, **GROOMED_LOOK, zorder=1.5)
     ends, lows = [ref], [np.array([1.0])]
-    for k, (runs, est, line, label) in enumerate(drawn, 1):
+    for runs, est, line, label in drawn:
         per = np.array([P._arr(b[axis][which]) for m in runs if (b := P._block(atlas, m, est, group))], float)
         st = [P.F._spread(list(per[:, i])) for i in range(per.shape[1])]
         mean = np.array([s_[0] for s_ in st])
         lo = np.array([s_[1] or 0.0 for s_ in st])
         hi = np.array([s_[2] or 0.0 for s_ in st])
         probe = mixed and est in PROBE_ESTS
-        L.binned(ax, c, mean, lo, hi, color=line["color"], probe=probe, label=label, k=k, n=n, step=step)
-        L.binned(rx, c, mean / ref, lo / ref, hi / ref, color=line["color"], probe=probe, label="_nolegend_", k=k, n=n,
-                 step=step)
+        L.binned(ax, e, mean, lo, hi, color=line["color"], probe=probe, label=label)
+        L.binned(rx, e, mean / ref, lo / ref, hi / ref, color=line["color"], probe=probe, label="_nolegend_")
         ends += [mean - lo, mean + hi]
         lows += [(mean - lo) / ref, (mean + hi) / ref]
     if which == "resolution":
@@ -299,7 +295,7 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     else:
         _fit_y(ax, ends)
     _fit_y(rx, lows, pad=0.18)       # the reference at 1 clear of the frame, its tick labelled
-    L.bin_xlim(ax, e)
+    ax.set_xlim(e[0], e[-1])
     for a_ in (ax, rx):
         S.fine_grid(a_)
     return ref, e
@@ -640,16 +636,16 @@ def _bb_cc(doc: dict) -> np.ndarray:
     return np.array([np.nan if b["bb_vs_cc"] is None else b["bb_vs_cc"]["auc"] for b in doc["bins"]])
 
 
-def _pt_series(ax, c, values: list, key: str, label: str, band: bool = True, style: str = "A", probe: bool = False,
-               k: int = 0, n: int = 1, step: float = 0.0) -> None:
-    """Mean over runs at the bin centres, joined, the series' marker; band the SD (range for two runs), as F8. Styles
-    B and C: binned points with +-1 SD bars and no line (lines_v6.binned), the k-th of n series step apart in its bin."""
+def _pt_series(ax, e, values: list, key: str, label: str, band: bool = True, style: str = "A", probe: bool = False) -> None:
+    """Mean over runs per bin of edges e. Style A: joined at the bin centres, the series' marker, band the SD (range
+    for two runs), as F8. Styles B and C: binned points (lines_v6.binned)."""
     st = [P.F._spread(list(v)) for v in np.asarray(values).T]
     mean = np.array([s[0] for s in st])
     if style != "A":
-        L.binned(ax, c, mean, np.array([s[1] or 0.0 for s in st]), np.array([s[2] or 0.0 for s in st]),
-                 color=S.SERIES[key], probe=probe, label=label, k=k, n=n, step=step)
+        L.binned(ax, e, mean, np.array([s[1] or 0.0 for s in st]), np.array([s[2] or 0.0 for s in st]),
+                 color=S.SERIES[key], probe=probe, label=label)
         return
+    c = 0.5 * (e[1:] + e[:-1])
     style = S.look(key, linewidth=S.LW_CURVE)
     ax.plot(c, mean, **style, **S.marker(key, size=PT_MARKER), label=label)
     if band and len(values) > 1:
@@ -660,13 +656,11 @@ def _pt_series(ax, c, values: list, key: str, label: str, band: bool = True, sty
 def _pt_panel(ax, docs: dict, rows: tuple, value, ylabel: str, style: str = "A", probe: bool = False) -> None:
     """value(doc) per pT bin for each row's runs, absolute (round 4: accuracy as F2, AUC for X->bb vs X->cc)."""
     e = _edges(docs)
-    c = 0.5 * (e[1:] + e[:-1])
-    step = L.bin_step(e, len(rows))               # B, C: neighbouring series this far apart within a bin
-    for k, row in enumerate(rows):
+    for row in rows:
         r = [value(d) for d in _by_seed(docs, row).values()]
         if r:
-            _pt_series(ax, c, r, row, S.LEGEND[row], style=style, probe=probe, k=k, n=len(rows), step=step)
-    L.bin_xlim(ax, e)
+            _pt_series(ax, e, r, row, S.LEGEND[row], style=style, probe=probe)
+    ax.set_xlim(e[0], e[-1])
     ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 2.5, 5, 10]))
     if ylabel:
         S.labels(ax, ylabel=ylabel)
@@ -806,13 +800,13 @@ F9B_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs): median response r = m/m_gen (a, b) and resolution sigma_r, half the 15.9-84.1% "
     "quantile range of r over its median (c, d), against pT (a, c) and generator mass (b, d), with the soft-drop "
-    "mass (black). Points at bin centers, set apart within a bin; bars: range over runs. Lower panels: ratio to "
+    "mass (black). Points at bin centers; horizontal bars: the bin, vertical: range over runs. Lower panels: ratio to "
     "the soft-drop mass.")
 A17_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs), on {group} test jets: median response r (a, b) and resolution sigma_r (c, d), as in "
     "the main-text figure, against pT (a, c) and generator mass (b, d; 20-500 GeV), with the soft-drop mass "
-    "(black); points at bin centers, bars the range over runs, set slightly apart within a bin. Lower panels: ratio "
+    "(black); points at bin centers; horizontal bars: the bin, vertical: range over runs. Lower panels: ratio "
     "to the soft-drop mass.")
 F10A_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, used "
@@ -863,7 +857,7 @@ PT_CAPTION = (
     "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on "
     "class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining classes; (b) the same for 17-class partitions with controlled flavor boundaries, with 188 and 17 classes for "
     "reference; (c) accuracy on JetClass after fine-tuning on one million jets; (d) the probes' AUC of X→bb̄ "
-    "against X→cc̄. Points: means at bin centers, set apart within a bin; bars: SD over pretraining runs.")
+    "against X→cc̄. Points: means at bin centers; horizontal bars: the bin, vertical: SD over pretraining runs.")
 CONF_CAPTION = (
     "Networks pretrained on JetClass-II, fine-tuned on one million JetClass jets: (a) the percentage of each true "
     "class assigned to each predicted class with 188 pretraining classes; (b)-(d) the change in that percentage "
@@ -941,7 +935,7 @@ PAGES = [
          "The jet mass from networks pretrained on JetClass-II: an MLP probe (MLP) regressing it from the frozen "
          "features with 188, 162, 43 and 17 classes (open, three runs), and the mass output with 162 and 17 classes "
          "and a mass regression (filled, two runs): median response r (a, b) and resolution sigma_r (c, d) against "
-         "pT (a, c) and generator mass (b, d). Points set apart within a bin; bars: range over runs. Below: ratio to the soft-drop mass.",
+         "pT (a, c) and generator mass (b, d). Horizontal bars: the bin, vertical: range over runs. Below: ratio to the soft-drop mass.",
          "As F9b, with six series and the soft-drop mass (PI): the four probes in the label sets' colours, the two mass "
          "outputs in the 162- and 17-class colours as F10b, one marker shape per series at the bin centres and in the legend, "
          "since each mass output shares its label set's colour. Round 4: the 2x2 of F9b, legend above the panels. "

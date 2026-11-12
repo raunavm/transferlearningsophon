@@ -1,6 +1,7 @@
 """Line graphs against a scanned quantity: the styles of the PI's comparison (2026-11-11). The PI chose (2026-11-11):
 scans (training-set size, a cut's efficiency) in C, no error bars and no offsets; binned measurements (jet pT, generator
-mass) as points with +-1 SD bars and no lines, offset within a bin, said in the caption; markers filled everywhere,
+mass) as points with +-1 SD bars and no lines, with a horizontal bar across the bin and no offset (PI 2026-11-12: as the
+precedents); markers filled everywhere,
 open circles only where linear probes and fine-tuned networks share a panel. B stays for the comparison page.
 
 A, the current style: each model's own marker shape, filled or hollow, 4-5 pt with an outline; SD bands at 20%.
@@ -22,7 +23,6 @@ OPEN = 2.6              # pt, an open circle without its outline: with it, as la
 BAR = 1.0               # pt, error bars
 BAND = 0.15             # opacity of C's bands
 SCAN = "C"              # the chosen style of every scan
-BIN_TEXT = "Within a bin the series are set slightly apart so that their bars do not overlap."
 OFFSET_DEX = 0.022      # B: log10 offset between neighbouring series in a size scan (about 5%)
 OFFSET_TEXT = "Series are offset horizontally by a few per cent so that their error bars do not overlap."
 
@@ -61,31 +61,22 @@ def scan(ax, xs, mean, lo, hi, *, color: str, linestyle: str, probe: bool, label
         raise ValueError(f"scan: style {style!r} is not B or C (A is each figure's own code)")
 
 
-def binned(ax, centres, mean, lo, hi, *, color: str, probe: bool, label: str, k: int = 0, n: int = 1,
-           step: float = 0.0) -> None:
-    """Binned measurements (B and C alike): the mean at the bin centre with +-1 SD bars, no line; k of n series sit
-    step apart within the bin so their bars do not overlap."""
-    x = np.asarray(centres, float) + step * (k - (n - 1) / 2)
-    ax.errorbar(x, mean, yerr=[lo, hi], fmt="none", ecolor=color, elinewidth=BAR, capsize=0, zorder=2.4)
-    ax.plot(x, mean, linestyle="none", **dot(color, probe), label=label, zorder=2.6)
-
-
-def bin_step(edges, n: int) -> float:
-    """The distance between neighbouring series within a bin: 2% of the axis, markers side by side, or less where the
-    n series would leave the narrowest bin."""
+def binned(ax, edges, mean, lo, hi, *, color: str, probe: bool, label: str) -> None:
+    """Binned measurements, as the experiments draw them (ATLAS PUB-2024-015 Fig. 8, CMS JME-25-001 Fig. 9): the mean
+    at the bin centre, a horizontal bar across the bin and a vertical +-1 SD bar; no line and no offset."""
     e = np.asarray(edges, float)
-    return min(0.02 * (e[-1] - e[0]), 0.8 * float(np.min(np.diff(e))) / n)
+    ax.errorbar(0.5 * (e[1:] + e[:-1]), mean, xerr=0.5 * np.diff(e), yerr=[lo, hi], fmt="none", ecolor=color,
+                elinewidth=BAR, capsize=0, zorder=2.4)
+    ax.plot(0.5 * (e[1:] + e[:-1]), mean, linestyle="none", **dot(color, probe), label=label, zorder=2.6)
 
 
-def bin_xlim(ax, edges) -> None:
-    """The binned axis with 2% of its span either side, so no marker sits on the frame."""
-    pad = 0.02 * (edges[-1] - edges[0])
-    ax.set_xlim(edges[0] - pad, edges[-1] + pad)
+ROW = 0.62              # a bar's height, in rows
 
 
-def row(ax, y: float, mean: float, lo, hi, *, color: str, probe: bool, label: str | None = None) -> list:
-    """One row of a horizontal dot plot (the pretraining label set on y): the mean with its +-1 SD bar along x."""
-    ax.errorbar([mean], [y], xerr=None if lo is None else [[lo], [hi]], fmt="none", ecolor=color, elinewidth=BAR,
-                capsize=0, zorder=2.4)
-    ax.plot([mean], [y], linestyle="none", **dot(color, probe), label=label, zorder=2.6)
+def row(ax, y: float, mean: float, lo, hi, *, color: str, label: str | None = None) -> list:
+    """One row of a horizontal bar chart (a pretraining label set, a category): the bar from zero to the mean, its
+    +-1 SD bar in black (none for one run), as the field's bar charts of model comparisons (MIParT Figs. 5-6)."""
+    ax.barh(y, mean, height=ROW, color=color, linewidth=0, label=label, zorder=2.0)
+    if lo is not None:
+        ax.errorbar([mean], [y], xerr=[[lo], [hi]], fmt="none", ecolor="#000000", elinewidth=BAR, capsize=0, zorder=2.6)
     return [mean - (lo or 0.0), mean + (hi or 0.0)]
