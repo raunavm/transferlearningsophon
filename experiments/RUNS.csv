@@ -1745,3 +1745,9 @@ mtx2-tests-book-a152b67-raunav,2026-11-12T00:56:28Z,launched,"Targeted tests at 
 render-gallery-a152b67-raunav,2026-11-12T01:04:46Z,complete,"Final books built from it: results_book (72 p), results_supplement (36 p), CHANGED copies.",experiments/FIGS/k8s/job-render-gallery-a152b67-raunav.yaml
 render-gallery-ab1803a-raunav,2026-11-12T01:14:04Z,launched,"PI questions 2026-11-12: Figs. 2 and 3 as bars from zero; binned figures with a bar across the bin and no offset, as the precedents.",experiments/FIGS/k8s/job-render-gallery-ab1803a-raunav.yaml
 pull-host-raunav,2026-11-12T01:22:02Z,launched,"Expired at the end of its sleep; recreated for the book renders and the full-suite read-out, deleted when they end.",experiments/FIGS/k8s/job-pull-host-raunav.yaml
+render-gallery-ab1803a-raunav,2026-11-12T01:23:22Z,complete,"Looked at: bars and bin-width bars clean; Fig. 2 and 3 captions over 80 words, shortened.",experiments/FIGS/k8s/job-render-gallery-ab1803a-raunav.yaml
+render-gallery-bb65f4c-raunav,2026-11-12T01:23:22Z,launched,"Final book render (bars, bin-width bars).",experiments/FIGS/k8s/job-render-gallery-bb65f4c-raunav.yaml
+mtx2-tests-bookfull-bb65f4c-raunav,2026-11-12T01:23:22Z,launched,"Full suite at the final book commit; supersedes a152b67.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-bookfull-bb65f4c-raunav.yaml
+mtx2-tests-book-bb65f4c-raunav,2026-11-12T01:23:22Z,launched,"Targeted tests at the final book commit.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-bb65f4c-raunav.yaml
+render-gallery-bb65f4c-raunav,2026-11-12T01:31:55Z,complete,"Final books built from it (results_book 72 p, results_supplement 36 p, CHANGED copies).",experiments/FIGS/k8s/job-render-gallery-bb65f4c-raunav.yaml
+mtx2-tests-book-bb65f4c-raunav,2026-11-12T01:31:55Z,complete,"127 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-bb65f4c-raunav.yaml
