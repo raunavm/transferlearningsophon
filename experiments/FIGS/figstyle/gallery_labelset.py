@@ -589,9 +589,9 @@ SUBST_NOTE = ("Top-tagging linear probes fill the missing inputs with random dra
 TWO_RUNS = "The three controlled partitions have two runs each, the four label sets three."
 
 REL_CAPTION = ('relative change from the 188-class network of the same seed, in accuracy on class-balanced JetClass-II and '
-               'JetClass and in rejection R30 on top and quark/gluon tagging. Bars are means, black lines the SD over three '
-               'runs (the range over two for flavor-boundary partitions). Last row: from scratch, against '
-               'the mean 188-class network (value printed where off the axis). Absolute values: ')
+               'JetClass and in R30 on top and quark/gluon tagging. Bars are means, lines the SD over three '
+               'runs (range over two for flavor-boundary partitions). Last row: from scratch, against '
+               'the mean 188-class network (value printed if off the axis). Values: ')
 PAGES = [
     C.Page(
         id="F2a",
@@ -609,7 +609,7 @@ PAGES = [
         title="Label granularity, after fine-tuning",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption='Fine-tuned networks pretrained on JetClass-II with 162, 43 and 17 classes and with three 17-class partitions with controlled flavor boundaries: ' + REL_CAPTION + f"{G.number('tab:jetclass')}, {G.number('tab:benchtop + tab:benchqg')[6:]} and {G.number('tab:ft')[6:]}.".replace('Table', 'Tables'),
+        caption='Fine-tuned networks pretrained on JetClass-II with 162, 43 and 17 classes and three 17-class flavor-boundary partitions: ' + REL_CAPTION + f"{G.number('tab:jetclass')}, {G.number('tab:benchtop + tab:benchqg')[6:]} and {G.number('tab:ft')[6:]}.".replace('Table', 'Tables'),
         differs="As F2a.",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets. JetClass at 1,000,000 jets, top at 1,200,000, quark/gluon at 1,600,000. "
