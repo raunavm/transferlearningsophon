@@ -62,9 +62,8 @@ def _empty_panel(ax) -> None:
 
 # ------------------------------------------------------------------ F2: metric against the number of classes
 # Figs. 2 and 3 (PI 2026-11-12: actual values only): the label set is a category, so a horizontal dot plot, one row a
-# network, on the metric itself. Each row: every pretraining run a small dot, the mean a larger filled circle in the
-# network's colour, a horizontal bar its SD over its runs (the five random
-# partitions: five dots, mean and SD over the five). The 188-class mean is a vertical line with a light band of its SD
+# network, on the metric itself. Each row: the mean over its runs a filled circle in the network's colour, a horizontal
+# bar its SD (PI 2026-11-12: no dots for single runs; the five random partitions: mean and SD over the five). The 188-class mean is a vertical line with a light band of its SD
 # down the panel, and the first row. From scratch is the last row of Fig. 3 only. Nothing printed, nothing clipped.
 F2_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1")
 F2_CONTROLS = ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")      # rows below the first divider, those the figure shows
@@ -73,8 +72,7 @@ F2_NAMES = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes"
             "FLAV_F1R": "random flavor boundary", "SCRATCH": S.LEGEND["SCRATCH"]}
 F2_LEFT, F2_W, F2_H, F2_WGAP, F2_HGAP = 4.2, 5.0, 5.0, 0.45, 1.35
 X_F2 = {"accuracy": "Accuracy", "r30": "Rejection ($R_{30}$)"}
-RUN_DOT, MEAN_DOT = 2.2, 4.6     # pt: one pretraining run; the mean over runs
-RUN_DROP = 0.3                   # rows a run's dots sit below its row's mean, clear of the mean's circle
+MEAN_DOT = 4.6                   # pt: the mean over runs
 
 
 def _range(ax, ys: list, log: bool, pad: float = 0.12) -> tuple:
@@ -109,11 +107,9 @@ def _f2_bracket(fig, ax, ys: list) -> None:
 
 
 def _f2_row(ax, y: float, v: list, color: str) -> list:
-    """One network's row: each run a small dot just below the row, the mean a filled circle on it with its SD bar
-    (two or more runs). Returns the plotted values."""
+    """One network's row: the mean a filled circle with its SD bar (two or more runs). Returns the values that set
+    the axis range: the runs (not drawn) and the bar's ends."""
     mean = float(np.mean(v))
-    ax.plot(v, [y + RUN_DROP] * len(v), linestyle="none", marker="o", markersize=RUN_DOT, markerfacecolor=color,
-            markeredgewidth=0, alpha=0.75, zorder=2.4)
     out = list(v) + [mean]
     if len(v) > 1:
         sd = float(np.std(v, ddof=1))
@@ -137,6 +133,7 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch: bool) -
     fig = S.figure_cm(S.PRINT_W, top + 2 * F2_H + F2_HGAP + bottom)
     axes = [S.axes_cm(fig, F2_LEFT + j * (F2_W + F2_WGAP), top + i * (F2_H + F2_HGAP), F2_W, F2_H)
             for i in range(2) for j in range(2)]
+    hidden = bars = 0
     for k, (ax, value, (key, _, ds, met, *_)) in enumerate(zip(axes, values, P.F2_PANELS)):
         S.title(ax, TITLES[key])
         ax.set_ylim(max(rows.values()) + 0.6, -0.6)
@@ -167,19 +164,22 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch: bool) -
             xs += _f2_row(ax, rows["SCRATCH"], sc[max(sc)], S.look("SCRATCH")["color"])
         ax.set_xlim(*_range(ax, xs, False, pad=0.08))
         ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10]))
+        per_pt = F2_W / 2.54 * 72 / abs(np.diff(ax.get_xlim())[0])          # points per data unit
+        hidden += sum(c.get_segments()[0][1][0] - c.get_segments()[0][0][0] <= (MEAN_DOT + 0.5) / per_pt
+                      for c in ax.collections if hasattr(c, "get_segments"))
+        bars += sum(hasattr(c, "get_segments") for c in ax.collections)
     for i in (0, 2):
         _f2_bracket(fig, axes[i], controls)
     S.letter_panels(axes)
     S.heading(fig, heading)
     grey = "#000000"
-    handles = [Line2D([], [], linestyle="none", marker="o", markersize=RUN_DOT, markerfacecolor=grey,
-                      markeredgewidth=0, alpha=0.75, label="one pretraining run"),
-               Line2D([], [], color=grey, linewidth=L.BAR, marker="o", markersize=MEAN_DOT, markerfacecolor=grey,
-                      markeredgecolor="white", markeredgewidth=0.5, label="mean and SD"),
+    handles = [Line2D([], [], color=grey, linewidth=L.BAR, marker="o", markersize=MEAN_DOT, markerfacecolor=grey,
+                      markeredgecolor="white", markeredgewidth=0.5),
                (Patch(facecolor=S.SERIES["L188"], alpha=L.BAND, linewidth=0),
                 Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_THIN))]
-    labels = ["one pretraining run", "mean and SD", "188 classes, mean and SD"]
-    S.fig_legend(fig, handles, top_cm=0.6, ncol=3, labels=labels)
+    labels = ["mean and SD over pretraining runs", "188 classes, mean and SD"]
+    S.fig_legend(fig, handles, top_cm=0.6, ncol=2, labels=labels)
+    print(f"{heading}: {hidden} of {bars} SD bars are shorter than the mean's circle")
     S.save(fig, path)
 
 
@@ -571,7 +571,8 @@ SUBST_NOTE = ("Top-tagging linear probes fill the missing inputs with random dra
               "training mean: the substitution chosen for each task on validation, over all 30 models.")
 TWO_RUNS = "The three controlled partitions have two runs each, the four label sets three."
 
-F2_KEY = ("Small dots: pretraining runs; circles: their mean; bars: SD over runs. "
+F2_KEY = ("Circles: mean; bars: ±1 SD, hidden where shorter than the circle; three pretraining runs per network; "
+          "two for the flavor-boundary partitions; five partitions for random partitions. "
           "Line and band: the 188-class mean and SD. ")
 PAGES = [
     C.Page(
@@ -582,9 +583,9 @@ PAGES = [
         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 "
                 "classes and with 17-class partitions, at each task's largest training set: accuracy on class-balanced "
                 "JetClass-II and on JetClass, R30 on top and quark/gluon tagging. " + F2_KEY
-                + "Random partitions: five, one run each, mean and SD over the five. Values: " + G.number("tab:summary") + ".",
+                + "Values: " + G.number("tab:summary") + ".",
         differs="Hong plots accuracy against the number of classes; here the label set is a category (PI 2026-11-11), "
-                "one row a network, on the metric itself (PI 2026-11-12: actual values only), every run shown.",
+                "one row a network, on the metric itself (PI 2026-11-12: actual values only), mean and SD.",
         draw=draw_f2a,
         data_note=f"{TWO_RUNS} Each plain random partition has one run. {SUBST_NOTE}"),
     C.Page(
@@ -595,7 +596,7 @@ PAGES = [
         caption="Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and with 17-class "
                 "partitions, fine-tuned, and a network trained from scratch, on a million class-balanced "
                 "JetClass-II and a million JetClass jets (accuracy) and the full top and quark/gluon sets "
-                "(R30). " + F2_KEY + "Random partitions: five, one run each, mean and SD over the five. Values: "
+                "(R30). " + F2_KEY + "Values: "
                 + G.number("tab:summary") + ".",
         differs="As F2a.",
         draw=draw_f2b,
