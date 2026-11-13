@@ -229,6 +229,13 @@ def main() -> int:
               (EVAL / "perf_vs_pt_v2" / "jc2", "perf_vs_pt/jc2", "*.json"),   # v2: accuracy per bin (round 4)
               (EVAL / "perf_vs_pt_v2" / "jc1", "perf_vs_pt/jc1", "*.json"),
               (EVAL / "confusion_jc1", "confusion_jc1", "*.json"),
+              # final figures (2026-11-13): fine-tuned JetClass-II and linear-probe JetClass per pT bin, from-scratch
+              # JetClass on its full-schedule cells, and the UMAP grids per task (scripts/build_perf_pt_jobs.py, build_umap_jobs.py)
+              (EVAL / "perf_vs_pt_v3" / "jc2_ft", "perf_vs_pt/jc2_ft", "*.json"),
+              (EVAL / "perf_vs_pt_v3" / "jc1_probe", "perf_vs_pt/jc1_probe", "*.json"),
+              (EVAL / "perf_vs_pt_v3" / "jc1_fulldecay", "perf_vs_pt/jc1_fulldecay", "*.json"),
+              (EVAL / "confusion_jc1_fulldecay", "confusion_jc1_fulldecay", "*.json"),
+              (EVAL / "umap_v3", "umap_v3", "*.json"),
               # plan 2026-11-08 step 2: the sculpting bootstrap (the fine-tuned sculpting below, once DONE)
               (EVAL / "v2_head", "head", "sculpting_boot.json"))
         for d, name, pattern in v4:
