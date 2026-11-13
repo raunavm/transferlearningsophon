@@ -15,6 +15,13 @@ G = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(G)
 
 
+def _load_results():
+    spec = importlib.util.spec_from_file_location("mlst_results_placement_t", ROOT / "experiments/FIGS/mlst_results.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
 def _assigned(path: pathlib.Path, name: str):
     tree = ast.parse(path.read_text())
     return next(ast.literal_eval(n.value) for n in tree.body
@@ -22,11 +29,13 @@ def _assigned(path: pathlib.Path, name: str):
 
 
 def _page_ids() -> set:
-    """Every page id the gallery modules define: Page(id="...") or Page("...", ...), and the UMAP pages."""
+    """Every page id the gallery modules define: Page(id="...") or Page("...", ...), the per-class family's
+    _page("...", ...), and the UMAP pages."""
     ids = set(_assigned(FIG / "gallery_labelset.py", "UMAP_PAGES"))
-    for name in ("gallery_labelset", "gallery_roc", "gallery_physics", "gallery_palette", "gallery_inventory", "gallery_compare"):
+    for name in ("gallery_labelset", "gallery_roc", "gallery_physics", "gallery_perclass", "gallery_palette",
+                 "gallery_inventory", "gallery_compare"):
         for n in ast.walk(ast.parse((FIG / f"{name}.py").read_text())):
-            if isinstance(n, ast.Call) and getattr(n.func, "attr", getattr(n.func, "id", None)) == "Page":
+            if isinstance(n, ast.Call) and getattr(n.func, "attr", getattr(n.func, "id", None)) in ("Page", "_page"):
                 first = n.args[0] if n.args else next((k.value for k in n.keywords if k.arg == "id"), None)
                 if isinstance(first, ast.Constant):
                     ids.add(first.value)
@@ -45,32 +54,41 @@ def test_the_gallery_order_is_the_placement_tier_by_tier():
 
 def test_the_main_text_is_the_pis_list_in_order():
     main = [k for k, t, _ in G.FIGURES if t == G.MAIN]
-    assert main == ["F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11"]
+    # PI 2026-11-13 (L1, L9, L13): at most one figure a family in the main text, the slice with the approved story
+    assert main == ["F1", "F2", "PC-jc2", "F4-mech", "A8", "F11"]
     # PI 2026-11-12: one table beside the published models (tab:published) in place of the JetClass, top and
     # quark/gluon tables; the other label sets' fine-tuned rows in one appendix table (tab:labelsets), which also takes
     # in the Herwig table
     assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:summary", "tab:published", "tab:mass", "tab:xbx"]
+    # PI 2026-11-13 (L2, L13): the AUC of the headline family first; the training-size points and the mass-effect
+    # summary in; the coarse targets and the b-tagging discriminant in the supplement (no sentence cites them)
     assert [k for k, t, _ in G.TABLES if t == G.APPENDIX] == [
-        "tab:probes", "tab:coarse", "tab:qcdhf", "tab:fill", "tab:inputs", "tab:partrepro", "tab:lrsweep", "tab:jetclassrej",
-        "tab:labelsets", "tab:pairs", "tab:sculpt", "tab:sculptboot", "tab:xbxrej"]
+        "tab:summaryauc", "tab:probes", "tab:probesn", "tab:fill", "tab:inputs", "tab:partrepro", "tab:lrsweep",
+        "tab:jetclassrej", "tab:jc1_class_auc", "tab:labelsets", "tab:ft", "tab:pairs", "tab:sculpt", "tab:sculptboot",
+        "tab:masseffect", "tab:xbxrej"]
     assert not {"tab:jetclass", "tab:benchtop", "tab:benchqg", "tab:benchqgherwig"} & set(G.TIER)
     # the fine-tuned read-out (2026-11-09) and X->bb/X->bs on Sophon's samples (2026-11-11) are in: nothing waits
     assert G.PROVISIONAL == {}
     assert set(G.PROVISIONAL) <= set(G.TIER) and all(v.isascii() for v in G.PROVISIONAL.values())    # the book's boxes
-    # PI 2026-11-12: the appendix keeps these figures, everything else is in the supplement
+    # PI 2026-11-13: the appendix holds the rest of a family where it supports a main-text claim, everything else is
+    # in the supplement
     appendix = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
-    assert appendix == ["F4-other", "F4-mech-ft", "PT", "F6", "A10", "F10b", "UMAP-jc2-had", "VAL"]
+    assert appendix == ["F2a", "F2b", "PC-jc1", "F4-mech-ft", "F4-other", "F4-other-ft", "A10", "F6", "PT", "F9b", "F10b",
+                        "F11-part", "UMAP-jc2-had", "VAL"]
     assert G.TIER["tab:sculpt"] == G.APPENDIX and G.TIER["tab:compute"] == G.TIER["tab:massdetail"] == G.SUPPLEMENT
     # the bootstrap's table right after the sculpting table, and what the sculpting sentences rest on
     tables = [k for k, t, _ in G.TABLES if t == G.APPENDIX]
     assert tables[tables.index("tab:sculpt") + 1] == "tab:sculptboot"
-    assert G.BACKS["tab:sculptboot"] == (f"The sculpting differences and their combined uncertainties that decide "
-                                         f"{G.number('F10b')}'s tier.")
+    assert G.BACKS["tab:sculptboot"] == (f"{G.number('tab:sculptboot')} gives the sculpting differences behind "
+                                         f"{G.number('F10b')} with their uncertainties over runs and test jets.")
     for k in ("F10b", "F10b-flav", "F10c", "F10a-flav"):
         assert G.evidence(k) == (k, "tab:sculpt", "tab:sculptboot")
-    # the trimmed appendix tables whole in the supplement; tab:boot nowhere
-    for k in ("tab:probes", "tab:coarse", "tab:qcdhf", "tab:pairs", "tab:fill"):
+    # the trimmed appendix tables whole in the supplement; the coarse targets and the b-tagging discriminant in the
+    # supplement with their whole copies (L13); tab:boot nowhere
+    for k in ("tab:probes", "tab:pairs", "tab:fill"):
         assert G.TIER[k] == G.APPENDIX and G.TIER[k + "full"] == G.SUPPLEMENT
+    for k in ("tab:coarse", "tab:qcdhf"):
+        assert G.TIER[k] == G.TIER[k + "full"] == G.SUPPLEMENT
     assert "tab:boot" not in G.TIER and "tab:boot" in G.DROPPED_TABLES
 
 
@@ -85,20 +103,26 @@ def test_the_dropped_pages_are_gone():
     assert not set(G.DROPPED) & (set(order) | set(paper) | set(G.TIER)) and set(paper) <= set(order)
     # the tables the plan places nowhere; its "missing inputs (fill)" and "fine-tuning vs size" are placed
     # and the task tables whose rows are now in tab:published and tab:labelsets (PI 2026-11-12)
-    assert G.DROPPED_TABLES == ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:perclass", "tab:probesn", "tab:boot",
-                                "tab:jetclass", "tab:benchtop", "tab:benchqg", "tab:benchqgherwig")
-    assert not set(G.DROPPED_TABLES) & set(G.TIER) and G.TIER["tab:fill"] == G.APPENDIX and G.TIER["tab:ft"] == G.SUPPLEMENT
+    # (2026-11-13: tab:perclass restored to the supplement, tab:probesn and tab:ft to the appendix)
+    assert G.DROPPED_TABLES == ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:boot", "tab:jetclass", "tab:benchtop",
+                                "tab:benchqg", "tab:benchqgherwig")
+    assert not set(G.DROPPED_TABLES) & set(G.TIER) and G.TIER["tab:fill"] == G.APPENDIX and G.TIER["tab:ft"] == G.APPENDIX
+    assert G.TIER["tab:perclass"] == G.TIER["tab:ftfull"] == G.TIER["tab:probesnfull"] == G.SUPPLEMENT
+    # a page a family replaced (delete nothing, L13): dropped, and its successor placed
+    assert set(G.SUPERSEDED) <= set(G.DROPPED) and set(G.SUPERSEDED.values()) <= set(G.TIER)
+    assert G.SUPERSEDED["F3-main"] == "PC-jc2" and G.SUPERSEDED["CONF"] == "PC-conf" and G.SUPERSEDED["F6-app"] == "F6"
 
 
 def test_numbers_count_within_each_tier_and_kind():
-    assert G.number("F1") == "Fig. 1" and G.number("F3-main") == "Fig. 4" and G.number("F4-other") == "Fig. A1"
-    assert G.number("tab:summary") == "Table 1" and G.number("tab:probes") == "Table A1"
-    assert G.number("FJ") == "Fig. S1" and G.number("tab:perrun") == "Table S1"
-    assert G.place("F10b") == "Appendix, Fig. A6" and G.place("F11") == "Main text, Fig. 9"
-    assert G.number("tab:sculptboot") == "Table A12" and G.number("tab:xbxrej") == "Table A13"
-    # four main-text tables (PI 2026-11-12); tab:labelsets has the appendix number the Herwig table had
+    assert G.number("F1") == "Fig. 1" and G.number("PC-jc2") == "Fig. 3" and G.number("F4-other") == "Fig. A5"
+    assert G.number("tab:summary") == "Table 1" and G.number("tab:summaryauc") == "Table A1" and G.number("tab:probes") == "Table A2"
+    assert G.number("FJ") == "Fig. S18" and G.number("tab:perrun") == "Table S1"
+    assert G.place("F10b") == "Appendix, Fig. A11" and G.place("F11") == "Main text, Fig. 6"
+    assert G.number("tab:sculptboot") == "Table A14" and G.number("tab:masseffect") == "Table A15"
+    assert G.number("tab:xbxrej") == "Table A16"
+    # four main-text tables (PI 2026-11-12)
     assert [G.number(k) for k in ("tab:published", "tab:mass", "tab:xbx")] == ["Table 2", "Table 3", "Table 4"]
-    assert G.number("tab:labelsets") == "Table A9" and G.number("tab:jetclassrej") == "Table A8" and G.number("tab:pairs") == "Table A10"
+    assert G.number("tab:labelsets") == "Table A10" and G.number("tab:jetclassrej") == "Table A8" and G.number("tab:pairs") == "Table A12"
 
 
 def test_f10b_goes_to_the_main_text_only_with_the_signs_of_the_rule():
@@ -124,30 +148,41 @@ def test_every_number_in_a_sentence_comes_from_number():
         assert set(refs) <= set(G.TIER), key
         filled = G.BACKS[key]
         assert "[[" not in filled and re.findall(r"(?:Fig\.|Table) [AS]?\d+", filled) == [G.number(r) for r in refs]
-    assert G.BACKS["FJ"] == f"Cited beside {G.number('tab:jetclassrej')}: the per-class ROC curves its rejections come from."
-    assert G.BACKS["F3-app"] == f"Cited from {G.number('F3-main')}: the other scatter panels."
+    # plain sentences that name their items (2026-11-13: no "Cited beside ...:" form, no colon)
+    assert G.BACKS["FJ"] == (f"The rejections of {G.number('tab:jetclassrej')} are read from the class-against-rest ROC "
+                             f"curves of {G.number('FJ')}.")
+    assert G.BACKS["PC-conf"] == (f"The JetClass confusion matrices of every pretrained network are in {G.number('PC-conf')}, "
+                                  f"{G.number('PC-conf-part')} and {G.number('PC-conf-mass')}.")
+    assert not any(s.startswith("Cited") or ": " in s for s in G.BACKS.values())
 
 
 def test_every_sentence_names_its_evidence():
     assert all(set(v) <= set(G.TIER) and k in G.TIER for k, v in G.EVIDENCE.items())
-    assert G.evidence("F2a") == ("F2a", "tab:summary", "tab:probes") and G.evidence("F1") == ("F1",)
-    # the fine-tuned values of Figs. 3 and A4 are in the comparison table and the label-set table (PI 2026-11-12)
-    assert G.evidence("F2b") == ("F2b", "tab:summary", "tab:published", "tab:labelsets")
-    assert G.evidence("F6") == ("F6", "tab:published", "tab:labelsets")
+    # the headline family (L2): Table 1 holds the main figure's values, tab:summaryauc the AUC of the full versions
+    assert G.evidence("F2") == ("F2", "tab:summary") and G.evidence("F1") == ("F1",)
+    assert G.evidence("F2a") == ("F2a", "tab:summary", "tab:summaryauc")
+    assert G.evidence("F2b") == ("F2b", "tab:summary", "tab:summaryauc")
+    # the ROC family: R30 and AUC in Table 1 and tab:summaryauc, accuracy and R50 in tab:probes and tab:labelsets
+    assert G.evidence("F6") == ("F6", "tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets")
     # the binned mass figure's quantity has a table over all jets (tab:mass's head block), the bins in the supplement
     assert G.evidence("F9b") == ("F9b", "tab:mass", "tab:massdetail") and "[[F9b]]" in dict((k, s) for k, _, s in G._TABLES)["tab:mass"]
     # the two tables that rest on the comparison table: the 188-class and from-scratch rows, ParT's published row
-    assert G.evidence("tab:labelsets") == ("tab:labelsets", "tab:published")
+    assert G.evidence("tab:labelsets") == ("tab:labelsets", "tab:summary", "tab:summaryauc")
     assert G.evidence("tab:partrepro") == ("tab:partrepro", "tab:published")
-    assert G.BACKS["CONF"] == f"Cited beside {G.number('tab:jetclassrej')}: JetClass confusion matrices."
+    # the per-class and training-size families point at their tables
+    assert G.evidence("PC-jc2") == ("PC-jc2", "tab:summaryauc", "tab:perclass")
+    assert G.evidence("A8") == ("A8", "tab:ft", "tab:summary") and G.evidence("A10") == ("A10", "tab:probesn", "tab:summary")
 
 
 def test_the_new_pages_are_marked_new():
     spec = importlib.util.spec_from_file_location("gallery_review", FIG / "gallery_review.py")
     review = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(review)
-    for page in ("F3-main", "F4-mech", "F4-mech-ft", "F4-other", "F10b-flav", "F10-ft"):
-        assert review.CHANGES[page].startswith("NEW: ")
+    for page in ("F2", "PC-jc2", "PC-jc1", "F4-other-ft", "F4-ee", "F4-rand", "F6-part", "A8-part", "A10-part", "F10-ft",
+                 "F11-part", "F11-probe", "A17-ridge", "F10-ft-part", "VAL-part"):
+        assert review.CHANGES[page].startswith("NEW: "), page
+    for page in ("F2a", "F2b", "PC-conf", "F4-mech", "F4-mech-ft", "F4-other", "F6", "A8", "A10", "F10b-flav", "F11", "VAL"):
+        assert review.CHANGES[page].startswith("CHANGED: "), page
     assert not set(G.DROPPED) & set(review.CHANGES) and not set(G.DROPPED) & set(review.REVIEW)
 
 
@@ -188,24 +223,41 @@ def test_the_book_boxes_only_a_provisional_figure_the_render_lacks(monkeypatch, 
     book.build(tmp_path, "main")
     doc = (tmp_path / "main_only.tex").read_text()
     assert "\\label{fig:F11}" in doc and "fbox" in doc and all(f"FIGURE {k}\n" in doc for k in main if k != "F11")
-    pages[1]["drawn"] = False                                         # F2a: not provisional
+    pages[1]["drawn"] = False                                         # F2: not provisional
     (tmp_path / "pages.json").write_text(json.dumps(pages))
-    with pytest.raises(SystemExit, match="F2a was not drawn"):
+    with pytest.raises(SystemExit, match="F2 was not drawn"):
         book.build(tmp_path, "main")
 
 
 def test_the_sculpting_sentence_names_exactly_the_differences_beyond_three_sigma():
-    """PI 2026-11-09: the main text reports the sculpting differences that pass |delta| > 3 sigma and nothing else."""
-    import json
-    doc = json.loads((ROOT / "experiments/FIGS/data/v2/head/sculpting_boot.json").read_text())["differences"]
-    passing = {(name, wp) for name, d in doc.items() for wp, v in d.items()
-               if isinstance(v, dict) and v.get("distance", {}).get("pass")}
-    assert passing == set(G.F10B_STATED)
+    """PI 2026-11-09, 2026-11-13 (L3): the text reports a sculpting difference only where |delta| > 3 sigma with
+    sigma^2 the SD^2 over the runs of each network plus the bootstrap SD^2 over test jets (the paired-by-run verdict
+    of the bootstrap file is never the sole basis). On the pulled distances no difference passes, so F10b's sentence
+    states none and quotes the two closest at one decimal."""
+    import math
+    import statistics
+    M = _load_results()
+    data = ROOT / "experiments/FIGS/data/v2/head"
+    if not (data / "sculpting_boot.json").exists() or not (data / "sculpting_v3").is_dir():
+        pytest.skip("the sculpting files are not pulled")
+    doc = json.loads((data / "sculpting_boot.json").read_text())["differences"]
+    sculpt = {k.removesuffix("_sculpting"): v for k, v in M._load(data / "sculpting_v3").items()}
+    runs = M._paper(ROOT)
+    arm = {m.removeprefix("mtx-").rsplit("-s", 1)[0]: a for a, ms in runs.items() for m in ms}
+    z = {}
+    for name, d in doc.items():
+        for wp, _ in M.SCULPT_BOOT_WPS:
+            a, b = ([M._sculpt_distance(sculpt, m, wp) for m in runs[arm[d[side]]]] for side in ("configuration", "reference"))
+            sigma = math.sqrt(statistics.stdev(a) ** 2 + statistics.stdev(b) ** 2 + d[wp]["distance"]["boot_sd"] ** 2)
+            z[name, wp] = (statistics.mean(a) - statistics.mean(b)) / sigma
+    assert {k for k, v in z.items() if abs(v) > 3} == set(G.F10B_STATED) == set()
     sentence = G.BACKS["F10b"]
-    for words in ("17 classes", "1% QCD", "43 at 10%", "162 classes at 10%", "every other difference", "17 + mass",
-                  "flavor boundaries"):
-        assert words in sentence
-    assert "sit with" not in sentence and not G.f10b_main(doc)
+    assert sentence.startswith("Used directly, no label set or mass network sculpts the QCD mass differently")
+    assert "by more than three standard deviations" in sentence and not G.f10b_main(doc)
+    # the two closest, each quoted at one decimal of its |delta| / sigma
+    assert f"162 classes + mass below 162 classes at 10% ({abs(z['162mass-162', 'eps_b=0.1']):.1f} standard deviations)" in sentence
+    assert f"17 classes above 188 at 1% ({abs(z['17-188', 'eps_b=0.01']):.1f})" in sentence
+    assert max(abs(v) for v in z.values()) == abs(z["162mass-162", "eps_b=0.1"])
 
 
 def test_the_scaling_figures_in_auc_sit_in_the_supplement_as_one_row():

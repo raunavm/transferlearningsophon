@@ -2,35 +2,41 @@
 """The figure style of the paper, round 4 (PI, 2026-11-07; docs/figstyle/ROUND4_BRIEF.md): style_v4 with a new palette
 and the mode encoding. Background, spines, ticks, fonts and widths are round 3's (style_v4), unchanged.
 
-Colour encodes the model, line style and marker fill encode the mode, in every figure:
+The line and colour rule (PI, 2026-11-13, binding decision L6): colour identifies the network, line style the use.
 
-  model                               colour                     (PI, 2026-11-07: Tol muted)
+  network                             colour
   188 classes                         #332288 Tol muted indigo   L* 22
   162 classes                         #AA4499 Tol muted purple   L* 46
+  162 classes + mass                  #CC8FC2 the 162 colour 40% towards white (tint)
   43 classes                          #999933 Tol muted olive    L* 62
-  17 classes                          #44AA99 Tol muted teal     L* 64   (olive and teal nearly equal; line style covers)
+  17 classes                          #44AA99 Tol muted teal     L* 64
+  17 classes + mass                   #8FCCC2 the 17 colour 40% towards white
   no flavor boundary                  #CC6677 Tol muted rose
   b-quark boundary                    #117733 Tol muted green
   random flavor boundary              #88CCEE Tol muted cyan     (sand #DDCC77 swapped out: 16 CIEDE2000 from olive)
   random partitions                   #BBBBBB Tol grey (mid)
-  randomly initialized network        #DDDDDD light grey
-  from scratch                        #555555 dark grey, dashed
-  188 classes, kinematic inputs only  the 188 colour, dotted
-  162 and 17 classes, mass regression the 162 and 17 colours, as a mode: dashed, hollow, own marker shapes
+  188 classes, kinematic inputs only  #DDCC77 Tol muted sand
+  released Sophon checkpoint          #CC3311 Tol vibrant red
+  random network                      #333333 dark grey
+  from scratch                        #555555 grey
 
-  mode           line     marker
-  fine-tuned     solid    filled
-  linear probe   dashed   hollow     only where a probe and a fine-tuned model share a panel; otherwise solid, filled
-  mass output    dashed   hollow (v, P)   only beside the same label set's other output (A17-probe, F10b)
-  from scratch   dashed   dark grey cross
+  use                                                    line       marker
+  fine-tuned, or the figure's only mode                  solid      filled
+  linear probe beside fine-tuned networks                dashed     hollow
+  direct discriminant (the network's own output scores)  dash-dot
+  from scratch                                           solid, grey
+  reference lines (y = x, random selection, unity)       dotted, black (REFERENCE); never a network
+A mass network is a network of its own, in the lighter shade of its label set, solid and filled like any other.
 
-Every ROC figure: solid lines, no markers (from scratch dashed, kinematic inputs dotted, as round 3).
-Pairwise CIEDE2000 of the four label-set colours: smallest 24.8 (188 and 162) in normal vision, 22.0 under deuteranopia
-and 13.5 under protanopia (Machado 2009); every control at least 19.8 from every label set (rose and purple), at least
-14.0 under either simulation (palette_check.pi_palette). The JetClass classes and the JetClass-II families share CLASS10
-(Tol muted and black), a separate set. Two exceptions to colour = model: F8 draws one model in three modes, the linear probe in
-TINT_188 (the 188 colour 40% towards white), and F10a draws working points in black and greys (WORKING_POINT), the panel
-naming the model.
+Every pair of networks that can share a panel (palette_check.networks, its GROUPS: CIEDE2000 in normal vision and
+under deuteranopia and protanopia, Machado 2009, and the L* difference in greyscale) is at least 10 apart in every view
+but one pair the PI chose on 2026-11-07, 17 classes and the random partitions (8.6 under protanopia, 12 L* apart in
+greyscale). The closest new pairs: 17 + mass and 17 (12.3 normal, 10.4 simulated, 14 L* lighter) and 162 + mass and 162
+(21.0, 18.6), close by design; kinematic inputs only and 43 (16.1, 15.5); the Sophon checkpoint and 43 (10.6 under
+deuteranopia); the random network and black (13.4) and from scratch (11.3, never in one figure). The headline dot
+plots show every network but name each row: there 17 + mass nears the random partitions under colour-vision deficiency
+(3.1). CLASS10 (the JetClass classes, the JetClass-II decay families, the UMAP groups) reuses no network colour: each of
+its colours is at least 10.9 CIEDE2000 from every network colour, its first six (the families) at least 15.1 apart.
 """
 from __future__ import annotations
 
@@ -41,25 +47,28 @@ import numpy as np
 
 from style_v4 import (CM, FULL, FOUR_PANELS, HEIGHT, JC1_CLASSES, JC1_COLOUR, JC1_TEX, LABEL_PT, LEGEND_PT,  # noqa: F401
                       LEVELS, CONTROLS, LW, LW_CURVE, LW_THIN, ONE_PANEL, STACKED, TAB10, TITLE_PAD, TITLE_PT,
-                      WIDTH, X_EPS, X_EPS_B, Y_REJ, Y_Z, heading, labels, letter_panels, save, title,
+                      WIDTH, X_EPS, X_EPS_B, Y_REJ, Y_Z, labels, letter_panels, save, title,
                       use_style, grid, fine_grid, legend, NAME, REFERENCE)
 
 GREY_DARK, GREY_MID, GREY_LIGHT = "#555555", "#BBBBBB", "#DDDDDD"
 LW_CURVE = 1.3                                   # a curve and its legend handle, wide enough to tell the colours apart
 HANDLE = 2.6                                     # legend handle length (em): a dashed handle shows two dashes
-# One colourblind-safe qualitative set for everything that is not a model: the ten JetClass classes, the JetClass-II
-# decay families and the UMAP groups (PI 2026-11-11; was matplotlib's tab10). Tol muted and black, ordered so that
-# the first six (the families) are the furthest apart.
-CLASS10 = ["#000000", "#332288", "#88CCEE", "#117733", "#DDCC77", "#CC6677", "#882255", "#44AA99", "#999933", "#AA4499"]
+# One qualitative set for everything that is not a network: the ten JetClass classes, the JetClass-II decay families
+# and the UMAP groups (PI 2026-11-11; was matplotlib's tab10). PI 2026-11-13 (L6): no colour that means a network, so
+# not Tol muted any more: black and nine colours each at least 10.9 CIEDE2000 from every network colour (palette_check),
+# the first six (the families) at least 15.1 apart (deuteranopia and protanopia counted at 2.5 times), the three after
+# black (the UMAP groups) light or saturated enough to stand apart from black in small translucent dots: pear,
+# vermillion, plum, dark teal, light orange; then maroon, chocolate, wine and orange.
+CLASS10 = ["#000000", "#BBCC33", "#D55E00", "#762A83", "#00555A", "#EE8866", "#67001F", "#7F3B08", "#882255", "#E69F00"]
 TAB10 = CLASS10                                  # the name the pages use
 JC1_COLOUR = dict(zip(JC1_CLASSES, CLASS10))
-# PI 2026-11-12: grey dashed means from scratch in every figure, so reference and guide lines (the diagonal, the
-# random-selection floor, the soft-drop mass) are black dotted
+# reference and guide lines (the diagonal, the random-selection floor, a ratio's unity line) are black dotted, the one
+# use of dotted lines (PI 2026-11-13, L6)
 REFERENCE = {**REFERENCE, "linestyle": ":"}
 
 
 def grid(ax) -> None:
-    """The faint grid at major y ticks (2603.04084 Figs. 4, 6), solid: dashed grey is from scratch's line."""
+    """The faint grid at major y ticks (2603.04084 Figs. 4, 6), solid, so it reads as no line style of a network."""
     ax.grid(False)
     ax.yaxis.grid(True, which="major", linestyle="-", linewidth=0.35, color="#b0b0b0", alpha=0.3)
     ax.set_axisbelow(True)
@@ -69,26 +78,35 @@ fine_grid = grid
 NAME = {**NAME, "FLAV_F1": "$b$-quark boundary"}          # quark flavours in italic, as everywhere in the paper
 # a prime as a glyph beside the q (mathtext's q' raises it like a second superscript)
 JC1_TEX = {k: v.replace("qq'", r"qq^{\prime}") for k, v in JC1_TEX.items()}     # Computer Modern: a raised prime
+
+
+def tint(colour: str, share: float = 0.4) -> str:
+    """colour moved share of the way towards white: the lighter shade of a label set that its mass network takes."""
+    return "#" + "".join(f"{round(int(colour[i:i + 2], 16) + share * (255 - int(colour[i:i + 2], 16))):02X}" for i in (1, 3, 5))
+
+
+# colour identifies the network (L6; the table in the docstring)
 SERIES = {"L188": "#332288", "L162": "#AA4499", "R42_Q1": "#999933", "R16_Q1": "#44AA99",
-          "FLAV_F0": "#CC6677", "FLAV_F1": "#117733", "FLAV_F1R": "#88CCEE",
-          "RAND": GREY_MID, "INIT_BN": GREY_LIGHT, "SCRATCH": GREY_DARK}
-SERIES.update({"KIN": SERIES["L188"], "L162_MASS": SERIES["L162"], "R16_Q1_MASS": SERIES["R16_Q1"]})
+          "FLAV_F0": "#CC6677", "FLAV_F1": "#117733", "FLAV_F1R": "#88CCEE", "RAND": GREY_MID,
+          "KIN": "#DDCC77", "SOPHON": "#CC3311", "INIT_BN": "#333333", "SCRATCH": GREY_DARK}
+SERIES.update({"L162_MASS": tint(SERIES["L162"]), "R16_Q1_MASS": tint(SERIES["R16_Q1"])})
 MARKERS = {"L188": "o", "L162": "s", "R42_Q1": "^", "R16_Q1": "D", "L162_MASS": "v", "R16_Q1_MASS": "P", "SCRATCH": "X",
-           "FLAV_F0": "p", "FLAV_F1": "*", "FLAV_F1R": "h", "RAND": "v", "INIT_BN": "x", "KIN": "o"}
+           "FLAV_F0": "p", "FLAV_F1": "*", "FLAV_F1R": "h", "RAND": "v", "INIT_BN": "x", "KIN": "o", "SOPHON": "d"}
 # the controls' shapes differ from every label set's, so no control shares a label set's shape in greyscale
 STAR_SCALE = 1.4                                 # "*" draws smaller than the other shapes at one markersize
-MODE_LINE = {"ft": "-", "probe": "--", "mass": "--", "scratch": "--"}
+# the line of a use: "probe" only where linear probes share a panel with fine-tuned networks (L6), "direct" the direct
+# discriminant; from scratch, the mass networks and a figure's only mode are "ft", solid
+MODE_LINE = {"ft": "-", "probe": "--", "direct": "-."}
 MASS = ("L162_MASS", "R16_Q1_MASS")
-# legend names (PI, 2026-11-07, final): short, in ParT's "-f.t." style, the paper's shortest names for the partitions; a
-# tag after the name gives the mode, (LP) linear probe, (MLP) MLP probe, (f.t.) fine-tuned, and is dropped where the panel
-# title or the heading gives one mode for every curve. A figure that mixes modes tags every entry (F8, A17-probe).
+# legend names (PI, 2026-11-07, final; the row names of every table): the paper's shortest names for the partitions; a
+# tag after the name gives the use in words, never abbreviated (PI 2026-11-13, L7), and is dropped where the panel title
+# or the caption gives one use for every curve. A figure that mixes uses tags every entry (F8, A17-probe).
 LEGEND = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes",
           "RAND": "random partitions", "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary",
           "FLAV_F1R": "random flavor boundary", "L162_MASS": "162 classes + mass", "R16_Q1_MASS": "17 classes + mass",
-          "KIN": "188 classes, kinematic inputs only", "SCRATCH": "from scratch", "INIT_BN": "random network"}
-PROBE, MLP_PROBE, FINE_TUNED = "(LP)", "(MLP)", "(f.t.)"
-TINT_188 = "#" + "".join(f"{round(int(SERIES['L188'][i:i + 2], 16) + 0.4 * (255 - int(SERIES['L188'][i:i + 2], 16))):02X}"
-                         for i in (1, 3, 5))
+          "KIN": "188 classes, kinematic inputs only", "SCRATCH": "from scratch", "INIT_BN": "random network",
+          "SOPHON": "released Sophon checkpoint"}
+PROBE, MLP_PROBE, FINE_TUNED = "(linear probe)", "(MLP probe)", "(fine-tuned)"
 WORKING_POINT = {"inclusive": {"color": "#000000", "marker": "o", "fillstyle": "full"},
                  "10%": {"color": GREY_DARK, "marker": "s", "fillstyle": "none"},
                  "1%": {"color": "#999999", "marker": "x", "fillstyle": "full"}}
@@ -174,22 +192,21 @@ def data_ylim(ax, pad: float = 0.08) -> None:
 
 
 def mode_of(key: str, mode: str) -> str:
-    """From scratch is always dashed; every other model takes the mode the figure gives it. A figure passes "probe" or
-    "mass" only where that mode shares a panel with the same model fine-tuned (PI, 2026-11-07): otherwise solid."""
-    return "scratch" if key == "SCRATCH" else mode
+    """From scratch is always solid ("ft"); every other network takes the use the figure gives it. A figure passes
+    "probe" only where linear probes share a panel with fine-tuned networks (L6): otherwise solid."""
+    return "ft" if key == "SCRATCH" else mode
 
 
 def look(key: str, mode: str = "ft", **kw) -> dict:
-    """color and linestyle of a model in a mode (ft, probe), for ax.plot(**look(...)); the kinematic-inputs model dotted."""
-    m = mode_of(key, mode)
-    return {"color": SERIES[key], "linestyle": ":" if key == "KIN" else MODE_LINE[m], **kw}
+    """color and linestyle of a network in a use (ft, probe, direct), for ax.plot(**look(...))."""
+    return {"color": SERIES[key], "linestyle": MODE_LINE[mode_of(key, mode)], **kw}
 
 
 def marker(key: str, mode: str = "ft", size: float | None = None) -> dict:
-    """marker, fill and edge of a model in a mode: filled when fine-tuned, hollow (white face) for a probe or mass output."""
-    m = mode_of(key, mode)
+    """marker, fill and edge of a network in a use: hollow (white face) for a linear probe beside fine-tuned networks,
+    filled otherwise."""
     out = {"marker": MARKERS[key], "markeredgecolor": SERIES[key],
-           "markerfacecolor": "white" if m in ("probe", "mass") else SERIES[key]}
+           "markerfacecolor": "white" if mode_of(key, mode) == "probe" else SERIES[key]}
     if size is not None:
         out["markersize"] = size * STAR_SCALE if MARKERS[key] == "*" else size
     return out
@@ -240,7 +257,7 @@ def grid_cm(rows: int, cols: int = 2, *, w: float = PANEL_W, aspect: float = 0.8
             left: float = 1.05, wgap: float = 0.75, top: float = 0.6, hgap: float = 1.15, bottom: float = 0.95,
             ratio_gap: float = 0.1, width: float = PRINT_W):
     """(fig, axes[rows][cols], ratio axes[rows][cols] or None): panels w cm wide and aspect*w tall, each with a ratio
-    sub-panel ratio*height tall under it when ratio > 0, sharing its x axis; top leaves room for a heading or a
+    sub-panel ratio*height tall under it when ratio > 0, sharing its x axis; top leaves room for the
     figure legend, hgap for the x tick labels and the next row's titles."""
     h = aspect * w
     rh = ratio * h
@@ -270,9 +287,9 @@ def letter_panels(axes) -> None:
         ax.set_title(f"({chr(97 + i)}) {ax.get_title()}".rstrip(), fontsize=TITLE_PT5, pad=4.0)
 
 
-def heading(fig, text: str, top_cm: float = 0.15) -> None:
-    """One heading per figure, top_cm below the top edge."""
-    fig.text(0.5, 1 - top_cm / (fig.get_figheight() / CM), text, ha="center", va="top", fontsize=TITLE_PT5 + 0.5)
+# PI 2026-11-13 (L7): no figure title above the legend (the caption does that job), so the figure legend's top edge
+# sits LEGEND_TOP cm below the figure's top (0.6 cm under a heading before, every top margin 0.45 cm smaller now)
+LEGEND_TOP = 0.15
 
 
 def legend(ax, **kw):

@@ -10,6 +10,7 @@ A family passes when one choice meets every rule; otherwise the luminance rule i
 and the report says what the relaxation buys.
 
     python3 -I experiments/FIGS/figstyle/palette_check.py            # the report
+    python3 experiments/FIGS/figstyle/palette_check.py --networks    # every network colour of style_v5 (L6)
 """
 from __future__ import annotations
 
@@ -204,6 +205,54 @@ def pi_palette() -> dict:
     return {"levels": PI_LEVELS, "controls": controls, "swaps": swaps, "pairs": pairs, "still_below_rule": left}
 
 
+# ------------------------------------------------------------------ every network colour (PI 2026-11-13, L6)
+# the networks whose curves can share one panel, by figure family (style_v5.SERIES keys): the label sets with the mass
+# networks and the mode's references, and the 17-class partitions with 188 and 17 classes as references. The headline
+# dot plots show every network but name each row, so they are not a group.
+GROUPS = {
+    "label sets, fine-tuned": ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS", "KIN", "SCRATCH"),
+    "label sets, linear probes": ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS", "KIN", "SOPHON",
+                                  "INIT_BN"),
+    "partitions, fine-tuned": ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND", "SCRATCH"),
+    "partitions, linear probes": ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND", "INIT_BN"),
+    # the headline dot plots (F2, F2a, F2b): every network of a mode in one panel, each row named beside it
+    "headline, linear probes": ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS", "FLAV_F0", "FLAV_F1",
+                                "FLAV_F1R", "RAND", "INIT_BN", "SOPHON"),
+    "headline, fine-tuned": ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS", "FLAV_F0", "FLAV_F1",
+                             "FLAV_F1R", "RAND", "SCRATCH"),
+}
+REFERENCE_BLACK = "#000000"     # the soft-drop mass and the dotted reference lines share panels with the networks
+SEPARABLE = DE_CVD              # a pair is told apart when CIEDE2000 reaches this in every view
+
+
+def greyscale_l(hexcode: str) -> float:
+    """L* of the colour printed in greyscale (the luminance, as gallery_palette's greyscale view)."""
+    g = to_srgb(to_linear(rgb(hexcode)) @ np.array([0.2126, 0.7152, 0.0722]))
+    return float(lab(np.array([g, g, g]))[0])
+
+
+def networks() -> dict:
+    """Every pair of network colours (style_v5.SERIES) that can share a panel (GROUPS), and each network against black:
+    CIEDE2000 in normal vision and under the two simulations, and the L* difference in greyscale; the pairs below
+    SEPARABLE in a view; and CLASS10 (the classes, families and UMAP groups) against every network colour."""
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+    import style_v5 as S
+    pairs, low = {}, []
+    for group, keys in GROUPS.items():
+        for a, b in itertools.combinations(keys + ("black",), 2):
+            ca, cb = (S.SERIES.get(k, REFERENCE_BLACK) for k in (a, b))
+            d = {**separation(ca, cb), "greyscale_dL": round(abs(greyscale_l(ca) - greyscale_l(cb)), 1)}
+            pairs[f"{a} / {b}"] = d
+            if min(d["normal"], d["deuteranopia"], d["protanopia"]) < SEPARABLE:
+                low.append({"pair": f"{a} / {b}", "group": group, **d})
+    low = list({x["pair"]: x for x in low}.values())
+    classes = {c: round(min(separation(c, h)["normal"] for h in S.SERIES.values()), 1) for c in S.CLASS10}
+    return {"colours": dict(S.SERIES), "pairs": pairs, "below_separable_in_a_view": low,
+            "class10_reuses_a_network_colour": sorted(set(S.CLASS10) & set(S.SERIES.values())),
+            "class10_least_CIEDE2000_to_a_network": classes}
+
+
 if __name__ == "__main__":
-    json.dump(pi_palette() if "--pi" in sys.argv else report(), sys.stdout, indent=1)
+    json.dump(networks() if "--networks" in sys.argv else pi_palette() if "--pi" in sys.argv else report(), sys.stdout,
+              indent=1)
     print()

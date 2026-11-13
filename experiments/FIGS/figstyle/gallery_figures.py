@@ -12,6 +12,7 @@ import traceback
 import gallery_common as C
 import gallery_labelset
 import gallery_palette
+import gallery_perclass
 import gallery_physics
 import gallery_placement
 import gallery_review
@@ -20,26 +21,34 @@ import gallery_inventory
 import gallery_compare
 import style_v5 as S
 
-MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_roc, gallery_inventory, gallery_compare)
+MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_perclass, gallery_roc, gallery_inventory,
+           gallery_compare)
 ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement): main text,
-         "F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11",
+         "F1", "F2", "PC-jc2", "F4-mech", "A8", "F11",
          # appendix
-         "F4-other", "F4-mech-ft", "PT", "F6", "A10", "F10b", "UMAP-jc2-had", "VAL",
+         "F2a", "F2b", "PC-jc1", "F4-mech-ft", "F4-other", "F4-other-ft", "A10", "F6", "PT", "F9b", "F10b", "F11-part",
+         "UMAP-jc2-had", "VAL",
          # supplement
-         "FJ", "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "CONF", "F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2",
-         "A3R", "A3R-ft", "F6-app", "F8-auc", "A8-auc", "A10-auc", "F9a", "A17-res", "A17-qcd", "A17-probe", "F10a",
-         "F10b-flav", "F10c", "F10a-flav", "F10-ft", "F10a-mass", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg",
+         "PC-jc2-part", "PC-jc1-part", "PC-jc2-mass", "PC-jc1-mass", "PC-conf", "PC-conf-part", "PC-conf-mass",
+         "F4-ee", "F4-rand", "F4-rand-ft", "F8", "F8-auc", "A8-auc", "A10-auc", "A8-part", "A10-part", "F6-part",
+         "FJ", "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "A3R", "A3R-ft", "F9a", "A17-res", "A17-qcd", "A17-probe",
+         "A17-ridge", "F10a", "F10b-flav", "F10c", "F10a-flav", "F10-ft", "F10-ft-part", "F10a-mass", "F11-probe",
+         "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "VAL-part",
          "SOPHON-FIG2", "PALETTE",      # gallery only
          # the PI's line-graph style comparison (2026-11-11), gallery only
          "CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-FONT-T", "CMP-FONT-LM")
 
 
 # the figures the PI approved page by page (2026-11-05), drawn into the paper by the render job (--paper);
-# F11 waits for its samples, and the pages still coming back through the gallery are not here; F3, F3-scatter, F4 and
-# F4-app were dropped (gallery_placement.DROPPED, PI 2026-11-08)
-PAPER = ("F1", "F2a", "F2b", "F3-app", "F3-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F6", "F6-app", "F8",
-         "F8-auc", "A8", "A8-auc", "A10", "A10-auc", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",
-         "A3R", "A3R-ft", "VAL")      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
+# the pages still coming back through the gallery are not here (the resonance, mass, sculpting and pretraining-curve
+# families are, PI 2026-11-13); F3, F3-scatter, F4 and
+# F4-app were dropped (gallery_placement.DROPPED, PI 2026-11-08); the per-class family replaced F3-main, F3-app,
+# F3-app2, F3-app3, F3-ft, F3-ft2 and CONF, and F6 took in F6-app (gallery_placement.SUPERSEDED, PI 2026-11-13)
+PAPER = ("F1", "F2", "F2a", "F2b", "PC-jc2", "PC-jc1", "PC-jc2-part", "PC-jc1-part", "PC-jc2-mass", "PC-jc1-mass",
+         "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-mech", "F4-mech-ft", "F4-other", "F4-other-ft", "F4-ee", "F4-rand",
+         "F4-rand-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F6", "F6-part", "F8",
+         "F8-auc", "A8", "A8-auc", "A8-part", "A10", "A10-auc", "A10-part", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge", "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",
+         "F10-ft", "F10-ft-part", "F10a-mass", "F11", "F11-part", "F11-probe", "A3R", "A3R-ft", "VAL", "VAL-part")      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
 
 
 def main() -> int:

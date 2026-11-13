@@ -1,106 +1,38 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\begin{landscape}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\setlength{\tabcolsep}{6pt}
 \begin{center}
-\setlength{\tabcolsep}{4pt}
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes and of the control networks, compared on five test sets at each task's largest training set. On JetClass-II and JetClass, AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. $R_{50}$ and $R_{30}$ are the inverse background efficiencies at 50\% and 30\% signal efficiency. The inputs that the top and quark/gluon data lack are replaced by \LpSubstitutionTop{} for top and by \LpSubstitutionQg{} for quark/gluon, as chosen on validation. The network with kinematic inputs is pretrained on those inputs only and lacks none, and the released Sophon checkpoint has the missing inputs set to zero. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions and three initializations of the random network. Bold marks the best value of each block of a column and every value within three standard deviations of it. $^{\S}$ marks a value from a single run.}
+\setlength{\abovecaptionskip}{0pt}
+\captionof{table}{Linear probes on the frozen features of the networks of table~\ref{tab:summary}, compared on accuracy and on $R_{50}$, the inverse background efficiency at 50\% signal efficiency with quarks as the signal in quark/gluon tagging, in top tagging and in quark/gluon tagging scored on Pythia and on Herwig jets, at each task's largest training set. Their $R_{30}$ and AUC are in tables~\ref{tab:summary} and~\ref{tab:summaryauc}. The missing top and quark/gluon inputs are replaced by \LpSubstitutionTop{} for top and by \LpSubstitutionQg{} for quark/gluon, as chosen on validation, and set to zero for the released Sophon checkpoint. The network with kinematic inputs is pretrained on those inputs only. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions and three initializations of the random network. Bold marks the best value of a column and every value within three standard deviations of it. $^{\S}$ marks a value from a single run.}
 \label{tab:probes}
 \par\medskip
-\small
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
- & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+ & \multicolumn{2}{c}{top tagging} & \multicolumn{2}{c}{quark/gluon, Pythia jets} & \multicolumn{2}{c}{quark/gluon, Herwig jets} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+ & accuracy & $R_{50}$ & accuracy & $R_{50}$ & accuracy & $R_{50}$ \\
 \midrule
-\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features, JetClass-II}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 0.4348\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.98014\,$\pm$\,0.00001} & -- & -- \\
-\Kres{} classes & {\fontseries{b}\selectfont 0.4328\,$\pm$\,0.0008} & 0.97963\,$\pm$\,0.00010 & -- & -- \\
-\Kmid{} classes & 0.3609\,$\pm$\,0.0046 & 0.97562\,$\pm$\,0.00016 & -- & -- \\
-\Kcoarse{} classes & 0.3341\,$\pm$\,0.0067 & 0.96908\,$\pm$\,0.00038 & -- & -- \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.3746\,$\pm$\,0.0033 & 0.97134\,$\pm$\,0.00053 & -- & -- \\
-\quad $b$-quark boundary & 0.3954\,$\pm$\,0.0013 & 0.97586\,$\pm$\,0.00010 & -- & -- \\
-\quad random flavor boundary & 0.4080\,$\pm$\,0.0013 & 0.97602\,$\pm$\,0.00002 & -- & -- \\
-\quad random partitions & 0.4216\,$\pm$\,0.0014 & 0.97766\,$\pm$\,0.00016 & -- & -- \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 0.4288\,$\pm$\,0.0024} & 0.97924\,$\pm$\,0.00023 & -- & -- \\
-\Kcoarse{} classes + mass & 0.3311\,$\pm$\,0.0264 & 0.96875\,$\pm$\,0.00126 & -- & -- \\
-random network & 0.0724\,$\pm$\,0.0015 & 0.81212\,$\pm$\,0.00190 & -- & -- \\
+\multicolumn{7}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.9112\,$\pm$\,0.0015 & 87\,$\pm$\,4 & {\fontseries{b}\selectfont 0.8076\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 26.17\,$\pm$\,0.35} & {\fontseries{b}\selectfont 0.7229\,$\pm$\,0.0033} & {\fontseries{b}\selectfont 11.81\,$\pm$\,0.10} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.9098\,$\pm$\,0.0031} & 79\,$\pm$\,9 & {\fontseries{b}\selectfont 0.8051\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 25.59\,$\pm$\,0.41} & {\fontseries{b}\selectfont 0.7234\,$\pm$\,0.0022} & {\fontseries{b}\selectfont 11.63\,$\pm$\,0.43} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.9145\,$\pm$\,0.0030} & {\fontseries{b}\selectfont 100\,$\pm$\,5} & {\fontseries{b}\selectfont 0.8074\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 25.61\,$\pm$\,0.11} & {\fontseries{b}\selectfont 0.7223\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 11.83\,$\pm$\,0.17} \\
+\Kmid{} classes & 0.9101\,$\pm$\,0.0019 & 88\,$\pm$\,3 & {\fontseries{b}\selectfont 0.8055\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 25.68\,$\pm$\,0.64} & 0.7206\,$\pm$\,0.0005 & {\fontseries{b}\selectfont 11.52\,$\pm$\,0.23} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 0.9152\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 97\,$\pm$\,4} & {\fontseries{b}\selectfont 0.8064\,$\pm$\,0.0014} & {\fontseries{b}\selectfont 25.79\,$\pm$\,0.73} & {\fontseries{b}\selectfont 0.7201\,$\pm$\,0.0028} & {\fontseries{b}\selectfont 11.50\,$\pm$\,0.16} \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.9196\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 118\,$\pm$\,9} & {\fontseries{b}\selectfont 0.8051\,$\pm$\,0.0016} & {\fontseries{b}\selectfont 25.84\,$\pm$\,0.02} & {\fontseries{b}\selectfont 0.7248\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 11.92\,$\pm$\,0.01} \\
+\multicolumn{7}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 0.9124\,$\pm$\,0.0029} & {\fontseries{b}\selectfont 93\,$\pm$\,8} & {\fontseries{b}\selectfont 0.8031\,$\pm$\,0.0036} & {\fontseries{b}\selectfont 25.09\,$\pm$\,0.65} & {\fontseries{b}\selectfont 0.7206\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 11.47\,$\pm$\,0.16} \\
+\quad $b$-quark boundary & 0.9075\,$\pm$\,0.0017 & 80\,$\pm$\,6 & 0.8034\,$\pm$\,0.0013 & 24.77\,$\pm$\,0.28 & {\fontseries{b}\selectfont 0.7214\,$\pm$\,0.0007} & {\fontseries{b}\selectfont 11.56\,$\pm$\,0.13} \\
+\quad random flavor boundary & 0.9088\,$\pm$\,0.0004 & 84\,$\pm$\,1 & {\fontseries{b}\selectfont 0.8050\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 25.34\,$\pm$\,0.22} & {\fontseries{b}\selectfont 0.7216\,$\pm$\,0.0022} & 11.66\,$\pm$\,0.08 \\
+\quad random partitions & 0.9029\,$\pm$\,0.0035 & 64\,$\pm$\,4 & {\fontseries{b}\selectfont 0.8027\,$\pm$\,0.0031} & {\fontseries{b}\selectfont 24.08\,$\pm$\,0.80} & {\fontseries{b}\selectfont 0.7212\,$\pm$\,0.0034} & {\fontseries{b}\selectfont 11.34\,$\pm$\,0.35} \\
+\Kfull{} classes, kinematic inputs & {\fontseries{b}\selectfont 0.9163}$^{\S}$ & {\fontseries{b}\selectfont 94}$^{\S}$ & -- & -- & -- & -- \\
+random network & 0.8867\,$\pm$\,0.0013 & 25\,$\pm$\,1 & 0.7851\,$\pm$\,0.0018 & 19.40\,$\pm$\,0.28 & 0.7205\,$\pm$\,0.0021 & 10.58\,$\pm$\,0.11 \\
 \midrule
-released Sophon checkpoint & 0.4340$^{\S}$ & 0.97990$^{\S}$ & -- & -- \\
-\midrule
-\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features, JetClass}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 0.771\,$\pm$\,0.002} & {\fontseries{b}\selectfont 0.9682\,$\pm$\,0.0006} & -- & -- \\
-\Kres{} classes & {\fontseries{b}\selectfont 0.771\,$\pm$\,0.001} & {\fontseries{b}\selectfont 0.9683\,$\pm$\,0.0002} & -- & -- \\
-\Kmid{} classes & {\fontseries{b}\selectfont 0.770\,$\pm$\,0.001} & {\fontseries{b}\selectfont 0.9680\,$\pm$\,0.0004} & -- & -- \\
-\Kcoarse{} classes & 0.761\,$\pm$\,0.003 & 0.9650\,$\pm$\,0.0008 & -- & -- \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.751\,$\pm$\,0.003 & 0.9628\,$\pm$\,0.0008 & -- & -- \\
-\quad $b$-quark boundary & 0.763\,$\pm$\,0.002 & {\fontseries{b}\selectfont 0.9663\,$\pm$\,0.0003} & -- & -- \\
-\quad random flavor boundary & 0.758\,$\pm$\,0.002 & 0.9649\,$\pm$\,0.0006 & -- & -- \\
-\quad random partitions & 0.754\,$\pm$\,0.001 & 0.9638\,$\pm$\,0.0002 & -- & -- \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 0.774\,$\pm$\,0.003} & {\fontseries{b}\selectfont 0.9690\,$\pm$\,0.0009} & -- & -- \\
-\Kcoarse{} classes + mass & 0.762\,$\pm$\,0.001 & 0.9653\,$\pm$\,0.0003 & -- & -- \\
-random network & 0.408\,$\pm$\,0.001 & 0.8280\,$\pm$\,0.0011 & -- & -- \\
-\midrule
-released Sophon checkpoint & 0.768$^{\S}$ & 0.9675$^{\S}$ & -- & -- \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:probes}{tab:probes:2}
-\small
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
-\toprule
- & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features, top tagging}} \\
-\Kfull{} classes & 0.9112\,$\pm$\,0.0015 & 0.9686\,$\pm$\,0.0007 & 87\,$\pm$\,4 & {\fontseries{b}\selectfont 228\,$\pm$\,25} \\
-\Kres{} classes & {\fontseries{b}\selectfont 0.9098\,$\pm$\,0.0031} & 0.9671\,$\pm$\,0.0020 & 79\,$\pm$\,9 & {\fontseries{b}\selectfont 199\,$\pm$\,25} \\
-\Kmid{} classes & 0.9101\,$\pm$\,0.0019 & 0.9681\,$\pm$\,0.0013 & 88\,$\pm$\,3 & {\fontseries{b}\selectfont 231\,$\pm$\,8} \\
-\Kcoarse{} classes & {\fontseries{b}\selectfont 0.9152\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 0.9710\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 97\,$\pm$\,4} & {\fontseries{b}\selectfont 255\,$\pm$\,17} \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & {\fontseries{b}\selectfont 0.9124\,$\pm$\,0.0029} & {\fontseries{b}\selectfont 0.9696\,$\pm$\,0.0018} & {\fontseries{b}\selectfont 93\,$\pm$\,8} & {\fontseries{b}\selectfont 253\,$\pm$\,13} \\
-\quad $b$-quark boundary & 0.9075\,$\pm$\,0.0017 & 0.9665\,$\pm$\,0.0011 & 80\,$\pm$\,6 & {\fontseries{b}\selectfont 207\,$\pm$\,6} \\
-\quad random flavor boundary & 0.9088\,$\pm$\,0.0004 & 0.9672\,$\pm$\,0.0002 & 84\,$\pm$\,1 & {\fontseries{b}\selectfont 224\,$\pm$\,13} \\
-\quad random partitions & 0.9029\,$\pm$\,0.0035 & 0.9626\,$\pm$\,0.0019 & 64\,$\pm$\,4 & 163\,$\pm$\,11 \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 0.9145\,$\pm$\,0.0030} & {\fontseries{b}\selectfont 0.9709\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 100\,$\pm$\,5} & {\fontseries{b}\selectfont 283\,$\pm$\,33} \\
-\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.9196\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 0.9741\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 118\,$\pm$\,9} & {\fontseries{b}\selectfont 342\,$\pm$\,51} \\
-\Kfull{} classes, kinematic inputs & {\fontseries{b}\selectfont 0.9163}$^{\S}$ & {\fontseries{b}\selectfont 0.9713}$^{\S}$ & {\fontseries{b}\selectfont 94}$^{\S}$ & {\fontseries{b}\selectfont 231}$^{\S}$ \\
-random network & 0.8867\,$\pm$\,0.0013 & 0.9408\,$\pm$\,0.0012 & 25\,$\pm$\,1 & 57\,$\pm$\,3 \\
-\midrule
-released Sophon checkpoint & 0.8882$^{\S}$ & 0.9509$^{\S}$ & 39$^{\S}$ & 97$^{\S}$ \\
-\midrule
-\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features, quark/gluon tagging}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 0.8076\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 0.8835\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 26.17\,$\pm$\,0.35} & {\fontseries{b}\selectfont 72.7\,$\pm$\,2.4} \\
-\Kres{} classes & {\fontseries{b}\selectfont 0.8051\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 0.8818\,$\pm$\,0.0018} & {\fontseries{b}\selectfont 25.59\,$\pm$\,0.41} & {\fontseries{b}\selectfont 71.0\,$\pm$\,0.3} \\
-\Kmid{} classes & {\fontseries{b}\selectfont 0.8055\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 0.8821\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 25.68\,$\pm$\,0.64} & {\fontseries{b}\selectfont 70.8\,$\pm$\,1.8} \\
-\Kcoarse{} classes & {\fontseries{b}\selectfont 0.8064\,$\pm$\,0.0014} & {\fontseries{b}\selectfont 0.8821\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 25.79\,$\pm$\,0.73} & {\fontseries{b}\selectfont 74.3\,$\pm$\,1.9} \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & {\fontseries{b}\selectfont 0.8031\,$\pm$\,0.0036} & {\fontseries{b}\selectfont 0.8798\,$\pm$\,0.0035} & {\fontseries{b}\selectfont 25.09\,$\pm$\,0.65} & {\fontseries{b}\selectfont 72.8\,$\pm$\,1.5} \\
-\quad $b$-quark boundary & 0.8034\,$\pm$\,0.0013 & {\fontseries{b}\selectfont 0.8805\,$\pm$\,0.0012} & 24.77\,$\pm$\,0.28 & {\fontseries{b}\selectfont 72.4\,$\pm$\,0.2} \\
-\quad random flavor boundary & {\fontseries{b}\selectfont 0.8050\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 0.8818\,$\pm$\,0.0016} & {\fontseries{b}\selectfont 25.34\,$\pm$\,0.22} & {\fontseries{b}\selectfont 72.0\,$\pm$\,1.2} \\
-\quad random partitions & {\fontseries{b}\selectfont 0.8027\,$\pm$\,0.0031} & {\fontseries{b}\selectfont 0.8788\,$\pm$\,0.0024} & {\fontseries{b}\selectfont 24.08\,$\pm$\,0.80} & {\fontseries{b}\selectfont 68.3\,$\pm$\,2.1} \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 0.8074\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 0.8834\,$\pm$\,0.0005} & {\fontseries{b}\selectfont 25.61\,$\pm$\,0.11} & {\fontseries{b}\selectfont 72.3\,$\pm$\,2.3} \\
-\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.8051\,$\pm$\,0.0016} & 0.8801\,$\pm$\,0.0006 & {\fontseries{b}\selectfont 25.84\,$\pm$\,0.02} & {\fontseries{b}\selectfont 70.3\,$\pm$\,2.7} \\
-random network & 0.7851\,$\pm$\,0.0018 & 0.8612\,$\pm$\,0.0016 & 19.40\,$\pm$\,0.28 & 56.4\,$\pm$\,1.0 \\
-\midrule
-released Sophon checkpoint & 0.7917$^{\S}$ & 0.8656$^{\S}$ & 19.30$^{\S}$ & 54.3$^{\S}$ \\
-\midrule
-\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features, quark/gluon tagging, scored on Herwig jets}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 0.7229\,$\pm$\,0.0033} & {\fontseries{b}\selectfont 0.8075\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 11.81\,$\pm$\,0.10} & {\fontseries{b}\selectfont 35.0\,$\pm$\,2.6} \\
-\Kres{} classes & {\fontseries{b}\selectfont 0.7234\,$\pm$\,0.0022} & {\fontseries{b}\selectfont 0.8068\,$\pm$\,0.0022} & {\fontseries{b}\selectfont 11.63\,$\pm$\,0.43} & {\fontseries{b}\selectfont 35.9\,$\pm$\,1.7} \\
-\Kmid{} classes & 0.7206\,$\pm$\,0.0005 & {\fontseries{b}\selectfont 0.8058\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 11.52\,$\pm$\,0.23} & {\fontseries{b}\selectfont 34.4\,$\pm$\,1.7} \\
-\Kcoarse{} classes & {\fontseries{b}\selectfont 0.7201\,$\pm$\,0.0028} & {\fontseries{b}\selectfont 0.8053\,$\pm$\,0.0020} & {\fontseries{b}\selectfont 11.50\,$\pm$\,0.16} & {\fontseries{b}\selectfont 35.5\,$\pm$\,1.0} \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & {\fontseries{b}\selectfont 0.7206\,$\pm$\,0.0009} & 0.8057\,$\pm$\,0.0002 & {\fontseries{b}\selectfont 11.47\,$\pm$\,0.16} & {\fontseries{b}\selectfont 34.6\,$\pm$\,0.4} \\
-\quad $b$-quark boundary & {\fontseries{b}\selectfont 0.7214\,$\pm$\,0.0007} & 0.8058\,$\pm$\,0.0002 & {\fontseries{b}\selectfont 11.56\,$\pm$\,0.13} & {\fontseries{b}\selectfont 34.9\,$\pm$\,0.5} \\
-\quad random flavor boundary & {\fontseries{b}\selectfont 0.7216\,$\pm$\,0.0022} & 0.8062\,$\pm$\,0.0003 & 11.66\,$\pm$\,0.08 & {\fontseries{b}\selectfont 35.3\,$\pm$\,0.4} \\
-\quad random partitions & {\fontseries{b}\selectfont 0.7212\,$\pm$\,0.0034} & {\fontseries{b}\selectfont 0.8046\,$\pm$\,0.0025} & {\fontseries{b}\selectfont 11.34\,$\pm$\,0.35} & {\fontseries{b}\selectfont 34.0\,$\pm$\,1.4} \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 0.7223\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 0.8071\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 11.83\,$\pm$\,0.17} & {\fontseries{b}\selectfont 35.3\,$\pm$\,0.5} \\
-\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.7248\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 0.8079\,$\pm$\,0.0001} & {\fontseries{b}\selectfont 11.92\,$\pm$\,0.01} & {\fontseries{b}\selectfont 35.5\,$\pm$\,1.1} \\
-random network & 0.7205\,$\pm$\,0.0021 & 0.7965\,$\pm$\,0.0009 & 10.58\,$\pm$\,0.11 & 31.6\,$\pm$\,0.8 \\
-\midrule
-released Sophon checkpoint & 0.7153$^{\S}$ & 0.7964$^{\S}$ & 10.32$^{\S}$ & 29.9$^{\S}$ \\
+released Sophon checkpoint & 0.8882$^{\S}$ & 39$^{\S}$ & 0.7917$^{\S}$ & 19.30$^{\S}$ & 0.7153$^{\S}$ & 10.32$^{\S}$ \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
 \end{center}
+}
+\end{landscape}

@@ -213,9 +213,11 @@ def test_the_fine_tuning_tables_read_one_seed_per_run_and_the_scratch_seeds(tmp_
     assert per["top"]["l188-s2"][1000][0]["auc"] == 0.91 and per["qg_herwig"]["l188-s1"][1000][0]["auc"] == 0.9
     runs = {"L188": ["mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"]}
     t = M.table_ft(per, runs, MT.fmt_pm, ("L188",))
-    # one block per task, and the JetClass-II accuracy beside its AUC (2026-11-07)
-    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS) and r"\pending{2 of 3}" in t and M.SCRATCH_LABEL in t
-    assert r"\begin{longtable}" in t and r"\label{tab:ft}" in t and "%SPLIT%" not in t
+    # one block per task, and the JetClass-II accuracy beside its AUC (2026-11-07); the supplement's copy
+    # (tab:ftfull, 2026-11-13) adds the AUC blocks of the training-size figures' AUC versions
+    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS) + len(M.FT_FULL_AUC) and r"\pending{2 of 3}" in t and M.SCRATCH_LABEL in t
+    assert r"\begin{longtable}" in t and r"\label{tab:ftfull}" in t and "%SPLIT%" not in t
+    assert [k for k, *_ in M.FT_FULL_AUC] == ["jc1", "top", "qg", "qg_herwig"]
     assert "1{,}200{,}000" in t and "1{,}600{,}000" in t
     # each task in its own metric (PI 2026-11-02, no 1 - AUC outside JetClass-II): JetClass-II the AUC
     # (0.90 and 0.91: two runs, mean +- SD), top/q-g R30 (300 x AUC: 270 and 273), never R50 (90 and 91)
@@ -327,7 +329,7 @@ def test_a_task_not_yet_read_out_prints_a_marker_and_the_others_print(tmp_path):
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
     jc1 = t.split(M.BLOCK_SEP)[3]
     assert "{JetClass} \\\\" in jc1 and r"training jets & \pending{not yet read out}" in jc1
-    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS)
+    assert t.count(M.BLOCK_SEP) == len(M.FT_TASKS) + len(M.FT_FULL_AUC)
     assert M.SCRATCH_LABEL in t
 
 
@@ -658,7 +660,8 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
     assert [ln.split(" & ")[0] for ln in lines[head + 1:mlp - 1]] == [M.LABEL[a] for a in M.MASS]
     assert lines[head + 1] == M.LABEL["L162_MASS"] + r" & 0.1170\,$\pm$\,0.0014 & 0.995 \\"
     assert [ln.split(" & ")[0] for ln in lines[mlp + 1:-2]] == [M.LABEL[a] for a in M.MASS_ROWS]
-    assert M.MASS_ROWS == M.MAIN + M.MASS + (M.INIT,) and "mass" not in M.MODES
+    # each mass network directly under its own label set (L5)
+    assert M.MASS_ROWS == M.SETS + (M.INIT,) and "mass" not in M.MODES
     assert M.LABEL["L162_MASS"] + " & 0.150 & 1.00 \\\\" in lines[mlp:]        # equal runs: fmt_pm's common value
     em = _PEm()
     M.mass_macros(em, atlas, runs, None, MT.fmt_pm)
@@ -670,11 +673,19 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
     assert em.m["MlstMassUncorrectedQcd"] == "0.300" and em.m["MlstMassHeadResMassResponse"] == "0.995 and 0.995"
     assert em.m["MlstMassHeadResMassOverUncorrResonant"] == "0.3867 and 0.3933"      # 0.116 / 0.3, 0.118 / 0.3
     d = M.table_mass_detail(atlas, runs, MT.fmt_pm)
-    assert "200--400 & 400--2500" in d and r"\textit{QCD jets}" in d and "\nsoft-drop mass & " in d
-    assert "jets & all & resonant & QCD & all & resonant & QCD" in d
+    assert "200--400 & 400--2500" in d and "\nsoft-drop mass & " in d
+    # the upper parts (2026-11-13): resonant and QCD jets for the mass output and the perceptron (all jets are
+    # tab:mass's), the ridge regression over all three groups
+    assert "jets & resonant & QCD & resonant & QCD" in d and "jets & all & resonant & QCD & all & resonant & QCD" in d
+    # the binned blocks of the binned mass figures, upright section rows (a turned longtable runs on through them)
+    for est, group, _ in M.MASS_DETAIL_BINNED:
+        word = {"regressed": M.HEADING["head"], "mlp": M.HEADING["mlp"], "ridge": M.RIDGE}[est]
+        assert M._full_row(3, f"{word}, {dict((g, h) for g, _, h in M.MASS_GROUPS)[group]} jets") in d, (est, group)
+    assert r"\textit{QCD jets}" not in d
     # the supplement's detail table names its estimators as the main-text table's headings do
-    assert all(rf"\textit{{{M.HEADING[k]}}}" in d for k in ("head", "mlp")) and "regression output of the pretrained network" not in d
-    assert d.index(M.HEADING["head"]) < d.index("ridge regression on the frozen features") < d.index(M.HEADING["mlp"])
+    assert all(rf"\textit{{{h}}}" in d for h in (M.HEADING["head"], M.HEADING["mlp"], M.RIDGE))
+    assert "regression output of the pretrained network" not in d
+    assert d.index(M.HEADING["head"]) < d.index(M.HEADING["mlp"]) < d.index(M.RIDGE)
     atlas["mtx-l162-s1"] = _atlas(groomed=0.3, mlp=0.2)
     with pytest.raises(SystemExit, match="groomed"):
         M.table_mass(atlas, runs, MT.fmt_pm)
@@ -1447,10 +1458,11 @@ def test_the_long_budget_jetclass_table_replaces_both_old_trees_only_when_it_hol
 
 
 def test_the_probes_against_size_pool_the_random_partitions_and_add_the_controls_and_the_kinematic_model():
-    """tab:probesn (2026-11-07): the flavour-controlled partitions (two runs, mean +- SD), the five random
-    partitions pooled into one row (mean +- SD over their runs) and the kinematic-only model on top only, in one
-    longtable with a block per task."""
-    rec = lambda a, r: {"macro_auc_ovr": a, "accuracy": a, "r30": r, "r30_is_bound": False, "converged": True}
+    """tab:probesnfull (2026-11-07; the supplement's copy since 2026-11-13): the flavour-controlled partitions (two
+    runs, mean +- SD), the five random partitions pooled into one row (mean +- SD over their runs) and the
+    kinematic-only model on top only, in one longtable with a block per task and metric of the training-size figures
+    and their AUC versions (PROBES_N_FULL)."""
+    rec = lambda a, r: {"macro_auc_ovr": a, "accuracy": a, "auc": a, "r30": r, "r30_is_bound": False, "converged": True}
     runs = {"L188": [f"mtx-l188-s{k}" for k in (1, 2, 3)], "FLAV_F0": ["mtx-flavf0-s1", "mtx-flavf0-s2"],
             **{a: [f"mtx-{a.lower().replace('_', '')}-s1"] for a in M.RAND}}
     v = {m: 0.90 + 0.01 * i for i, m in enumerate(m for ms in runs.values() for m in ms)}
@@ -1458,16 +1470,19 @@ def test_the_probes_against_size_pool_the_random_partitions_and_add_the_controls
             for m, x in v.items()}
     fits[M.KIN_MODEL] = {"cells": {"best70": {"top": {"1000": rec(0.9, 133.2)}}}}
     t = M.table_probes_n(fits, M._pooled(runs), MT.fmt_pm, ("L188", "FLAV_F0", M.RAND_POOLED), kin=True)
-    assert r"\begin{longtable}" in t and r"\label{tab:probesn}" in t and "%SPLIT%" not in t
+    assert r"\begin{longtable}" in t and r"\label{tab:probesnfull}" in t and "%SPLIT%" not in t
+    # the blocks with fits: JetClass-II accuracy and AUC, top R30 and AUC (the other tasks have none here)
+    assert [ds for ds, *_ in M.PROBES_N_FULL] == ["jc2_188"] * 2 + ["jc1"] * 2 + ["top"] * 2 + ["qg"] * 2 + ["qg_herwig"] * 2
     rows = [ln for ln in t.splitlines() if ln.startswith(M.LABEL["FLAV_F0"])]
     assert [r.split(" & ")[1].removesuffix("*").removesuffix(r" \\") for r in rows] == [
-        M._cell([f(v["mtx-flavf0-s1"]), f(v["mtx-flavf0-s2"])], 2, MT.fmt_pm) for f in (lambda x: x, lambda x: 100 * x)]
+        M._cell([f(v["mtx-flavf0-s1"]), f(v["mtx-flavf0-s2"])], 2, MT.fmt_pm) for f in (lambda x: x, lambda x: x, lambda x: 100 * x,
+                                                                                      lambda x: x)]
     pooled = [v[runs[a][0]] for a in M.RAND]
     jc2 = next(ln for ln in t.splitlines() if ln.startswith(M.LABEL[M.RAND_POOLED]))
     assert jc2.split(" & ")[1].removesuffix("*").removesuffix(r" \\") == M._cell(pooled, 5, MT.fmt_pm)
     assert not any(ln.startswith(M.LABEL["RAND2_p1"]) for ln in t.splitlines())     # pooled, not one by one
     kin = [ln for ln in t.splitlines() if ln.startswith(M.LABEL["KIN"])]
-    assert kin == [M.LABEL["KIN"] + " & 133 \\\\"]                                     # top only, three figures
+    assert kin == [M.LABEL["KIN"] + " & 133 \\\\", M.LABEL["KIN"] + " & 0.9000 \\\\"]     # top only: R30, AUC
     assert M.table_probes_n(fits, M._pooled(runs), MT.fmt_pm, ("L188",)).count(M.LABEL["KIN"]) == 0
 
 
@@ -1498,7 +1513,8 @@ def test_the_kinematic_model_joins_the_top_rows_of_the_probe_mlp_and_fine_tuning
     # fine-tuning: a row before from scratch (the last row of a fine-tuning table) in the task where it has cells, top
     _ft_tree(tmp_path / "ft", ["l188-s1"])
     _, per, _ = M.load_ft(tmp_path / "ft")
-    per["top"][M.KIN_INIT] = {1000: [{"r30": 92.4, "r30_is_bound": False}], 1200000: [{"r30": 1802.8, "r30_is_bound": False}]}
+    per["top"][M.KIN_INIT] = {1000: [{"r30": 92.4, "r30_is_bound": False, "auc": 0.95}],
+                              1200000: [{"r30": 1802.8, "r30_is_bound": False, "auc": 0.97}]}
     blocks = M.table_ft(per, runs, MT.fmt_pm, ("L188",)).split(M.BLOCK_SEP)
     topb = next(b for b in blocks if "top, " in b)
     lines = topb.splitlines()
@@ -1506,7 +1522,8 @@ def test_the_kinematic_model_joins_the_top_rows_of_the_probe_mlp_and_fine_tuning
         lines.index(next(ln for ln in lines if ln.startswith(M.SCRATCH_LABEL))) - 1
     assert lines[-1].startswith(M.SCRATCH_LABEL + " & ")
     assert M.LABEL["KIN"] + " & 92.4 & 1{,}803 \\\\" in topb       # from 100 on four significant figures
-    assert sum(b.count(M.LABEL["KIN"]) for b in blocks) == 1
+    # in the two top blocks (R30, and the AUC of the supplement's copy), nowhere else
+    assert [b.count(M.LABEL["KIN"]) for b in blocks] == [int("{top, " in b) for b in blocks] and sum("{top, " in b for b in blocks) == 2
 
 
 def test_the_pair_table_gives_the_random_network_both_ways_without_a_ratio():
@@ -1529,8 +1546,9 @@ def test_the_pair_table_gives_the_random_network_both_ways_without_a_ratio():
 
 
 def test_the_task_longtables_keep_each_heading_with_its_first_row(tmp_path):
-    """tab:ft and tab:probesn (2026-11-07) are longtables: a block per task, its title and heading unbreakable
-    from its first row (\\* and a rule with no break around it), the rule spanning every column."""
+    """tab:ftfull and tab:probesnfull (2026-11-07; the supplement's copies since 2026-11-13) are longtables: a block
+    per task, its title and heading unbreakable from its first row (\\* and a rule with no break around it), the rule
+    spanning every column."""
     _ft_tree(tmp_path, ["l188-s1"])
     _, per, _ = M.load_ft(tmp_path)
     t = M.table_ft(per, {"L188": ["mtx-l188-s1"]}, MT.fmt_pm, ("L188",))
@@ -1540,12 +1558,12 @@ def test_the_task_longtables_keep_each_heading_with_its_first_row(tmp_path):
     assert r"\begin{longtable}{@{\extracolsep{\fill}}l" + "c" * (ncol - 1) + "@{}}" in lines
     assert lines[0] == r"\begin{landscape}" and r"\end{landscape}" in lines and "{\\small" in lines
     titles = [i for i, ln in enumerate(lines) if ln.startswith(r"\multicolumn") and "continued" not in ln]
-    assert len(titles) == len(M.FT_TASKS) + 1                  # JetClass-II: AUC and accuracy
+    assert len(titles) == len(M.FT_TASKS) + 1 + len(M.FT_FULL_AUC)      # JetClass-II: AUC and accuracy; the AUC blocks
     for i in titles:
         assert lines[i].endswith(r"\\*") and lines[i + 1].startswith("training jets") and lines[i + 1].endswith(r"\\*")
         assert lines[i + 2] == M._head_rule(ncol) and r"\multispan{" + str(ncol) + "}" in lines[i + 2]
     assert r"\noalign{\nobreak\vskip\belowrulesep\nobreak}" in M._head_rule(3) and r"\midrule" not in M._head_rule(3)
-    assert M._longtable("ft", t).count(r"\caption{") == 1 and "__CAPTION__" not in M._longtable("ft", t)
+    assert M._longtable("ft_full", t).count(r"\caption{") == 1 and "__CAPTION__" not in M._longtable("ft_full", t)
 
 
 def test_a_table_wider_than_the_text_is_split_into_stacked_blocks_that_keep_the_row_labels():
@@ -1764,12 +1782,14 @@ def test_the_rows_are_named_as_the_figure_legends_in_one_order():
     assert M.LABEL[M.SOPHON] == "released Sophon checkpoint"
     # the kinematic-only run: the table's label is the legend's without its last word (PI 2026-11-12: no wrapped label)
     assert plain(M.LABEL["KIN"]) == "188 classes, kinematic inputs" and legend["KIN"] == plain(M.LABEL["KIN"]) + " only"
-    # the order: the label sets, the 17-class partitions (flavor boundaries, then the random ones), the networks with a
-    # mass output; a table adds the random network (probes) or from scratch (fine-tuning) after them
-    assert M.ALL_ROWS == M.MAIN + M.FLAV + M.RAND + M.MASS
-    assert M._paper_rows(M.ALL_ROWS + (M.INIT,)) == M.MAIN + M.FLAV + (M.RAND_POOLED,) + M.MASS + (M.INIT,) == M.XBX_ROWS
-    assert M.MASS_ROWS == M.MAIN + M.MASS + (M.INIT,) and M.SUMMARY_CONTROLS == M.FLAV + (M.RAND_POOLED,)
-    assert M.LABELSET_ROWS == M.MAIN[1:] + M.FLAV + (M.RAND_POOLED,)
+    # the order (PI 2026-11-13, L5): the label sets, each network with a mass output directly under its own, then the
+    # 17-class partitions (flavor boundaries, then the random ones); a table adds the random network (probes) or from
+    # scratch (fine-tuning) after them
+    assert M.SETS == ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")
+    assert M.ALL_ROWS == M.SETS + M.FLAV + M.RAND
+    assert M._paper_rows(M.ALL_ROWS + (M.INIT,)) == M.SETS + M.FLAV + (M.RAND_POOLED,) + (M.INIT,) == M.XBX_ROWS
+    assert M.MASS_ROWS == M.SETS + (M.INIT,) and M.SUMMARY_CONTROLS == M.FLAV + (M.RAND_POOLED,)
+    assert M.SIZE_ROWS == M.SETS + M.FLAV + (M.RAND_POOLED,) and M.MASS_EFFECT == ("L162", "L162_MASS", "R16_Q1", "R16_Q1_MASS")
 
 
 def test_the_mode_is_an_italic_heading_over_the_rows_and_the_partitions_sit_under_a_subheading():
@@ -1803,7 +1823,9 @@ def test_the_mode_is_an_italic_heading_over_the_rows_and_the_partitions_sit_unde
     # which tables get a heading from _float: one mode a table; the builders of the others write their own
     assert M.MODES["coarse"] == M.MODES["qcdhf"] == M.MODES["fill"] == "lp" and M.MODES["lrsweep"] == M.MODES["jetclass_rej"] == "ft"
     assert M.MODES["mlp"] == "mlp" and M._mode("jc1_class_auc", 0) == "ft" and M._mode("jc1_class_auc", 1) == "lp"
-    assert not {"probes", "mass", "pairs", "summary", "published", "labelsets", "xbx", "xbx_rej", "sculpt_boot"} & set(M.MODES)
+    assert not {"probes", "mass", "pairs", "summary", "summary_auc", "published", "labelsets", "xbx", "xbx_rej", "sculpt_boot",
+                "probes_n", "ft", "masseffect"} & set(M.MODES)
+    assert M.MODES["probes_n_full"] == "lp" and M.MODES["ft_full"] == "ft"
 
 
 def test_a_table_too_wide_and_too_tall_is_a_landscape_longtable_with_one_caption():
@@ -1915,7 +1937,7 @@ def test_the_released_sophon_checkpoint_is_a_reference_row_below_a_rule():
     assert "fetch-by-files" not in f and "kinematics at the head" not in f
     assert rf"\textit{{{M.HEADING['lp']}}}" in f and M.MARK_NOTES[0][1] in f and M.V4.TOK_OPEN not in f
     # the paper's tab:probes says in its caption that the checkpoint's missing inputs are zeros
-    assert "the released Sophon checkpoint has the missing inputs set to zero" in M.printed_caption("probes")
+    assert "set to zero for the released Sophon checkpoint" in M.printed_caption("probes")
     co = {M.SOPHON_MODEL: {"cells": {"released": {"jc2bal_coarse": {t: {"1000000": {"accuracy": 0.5, "macro_auc_ovr": 0.9}}
                                                                     for t, _ in M.COARSE_TARGETS}}}}}
     c = M.table_coarse(co, runs, MT.fmt_pm, ("L188", M.SOPHON)).splitlines()
@@ -2076,8 +2098,8 @@ def test_the_results_book_is_the_gallery_placement_and_boxes_only_provisional_it
     supp = (tmp_path / "results_supplement.tex").read_text()
     assert supp.index(r"\usepackage{xr-hyper}") < supp.index("{hyperref}") < supp.index(r"\externaldocument{results_book}")
     assert "% figure FJ-ctrl" in supp and "% figure F1\n" not in supp
-    write([i for i in figs if i not in ("F11", "F8")])
-    with pytest.raises(SystemExit, match="F8 was not drawn"):
+    write([i for i in figs if i not in ("F11", "F2")])               # F2: a main-text figure, not provisional
+    with pytest.raises(SystemExit, match="F2 was not drawn"):
         B.build(pages, "paper")
 
 
@@ -2196,9 +2218,9 @@ def test_the_hidden_layer_rows_sit_at_the_foot_of_the_nonlinear_table_first_bloc
 
 # ------------------------------------------------------------------ PI 2026-11-12: the paper's tables
 def test_the_paper_tables_pool_the_random_partitions_where_the_first_of_them_stood():
-    # in the tables' order (ALL_ROWS) that is after the flavor-boundary partitions and before the mass networks
-    assert M._paper_rows(M.ALL_ROWS + (M.INIT,)) == M.MAIN + M.FLAV + (M.RAND_POOLED,) + M.MASS + (M.INIT,)
-    assert M._paper_rows(M.ALL_ROWS + (M.INIT, M.SOPHON)) == M.MAIN + M.FLAV + (M.RAND_POOLED,) + M.MASS + (M.INIT, M.SOPHON)
+    # in the tables' order (ALL_ROWS, L5) that is after the flavor-boundary partitions, before the references
+    assert M._paper_rows(M.ALL_ROWS + (M.INIT,)) == M.SETS + M.FLAV + (M.RAND_POOLED,) + (M.INIT,)
+    assert M._paper_rows(M.ALL_ROWS + (M.INIT, M.SOPHON)) == M.SETS + M.FLAV + (M.RAND_POOLED,) + (M.INIT, M.SOPHON)
     assert M._paper_rows(M.MAIN + M.MASS + M.RAND + M.FLAV + (M.INIT,)) == M.MAIN + M.MASS + (M.RAND_POOLED,) + M.FLAV + (M.INIT,)
     assert M._paper_rows(M.MAIN + M.RAND + (M.INIT,)) == M.MAIN + (M.RAND_POOLED, M.INIT)
     assert M._paper_rows(M.MAIN) == M.MAIN
@@ -2211,11 +2233,12 @@ def test_the_probe_and_pair_tables_of_the_paper_print_no_ratio_column():
     fits, _ = M.V4.load_fits(DATA)
     t = M.table_probes(fits, runs, MT.fmt_pm, ("L188", M.RAND_POOLED), rho=False)
     assert r"\rho" not in t and r"\multicolumn{5}{c}{JetClass-II}" in t and M.LABEL[M.RAND_POOLED] + " & " in t
-    # the paper's tab:probes is the task-block builder: four columns, no ratio, no JetClass-II average but the one
-    # over all classes
-    pt = M.table_probes_tasks(fits, runs, M.TAB, ("L188", M.RAND_POOLED))
+    # the paper's tab:probes (2026-11-13): what Table 1 and its AUC table lack, accuracy and R50 on top and
+    # quark/gluon (Pythia, Herwig); no ratio, no JetClass-II or JetClass column
+    pt = M.table_probes_bench(fits, runs, M.TAB, ("L188", M.RAND_POOLED))
     assert r"\rho" not in pt and "full count" not in pt and "resonant" not in pt and M.V4.TOK_OPEN not in pt
-    assert all(pg.splitlines()[2] == r" & accuracy & AUC & $R_{50}$ & $R_{30}$ \\" for pg in pt.split("%SPLIT%"))
+    assert "%SPLIT%" not in pt and "JetClass" not in pt
+    assert pt.splitlines()[4] == " & " + " & ".join(["accuracy & $R_{50}$"] * 3) + r" \\"
     p = M.table_pairs({}, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", M.RAND_POOLED), rho=False)
     assert r"\rho" not in p
     pooled = next(ln for ln in p.splitlines() if ln.startswith(M.LABEL[M.RAND_POOLED] + " & ")).split(" & ")
@@ -2227,81 +2250,97 @@ def test_the_probe_and_pair_tables_of_the_paper_print_no_ratio_column():
 
 
 def test_both_resonance_tables_have_the_same_rows_and_the_rejection_table_shows_both_from_scratch_signals():
+    """tab:xbx and tab:xbxrej (PI 2026-11-13): one page per signal with the read-outs of tab:xbx (the classifier on the
+    frozen features, the linear probe, X->bb's direct discriminant), the rows in the one order (L5), from scratch in
+    the classifier's columns; the X->bs closest-class output is the supplement's tab:xbxnode."""
     runs = M._paper(ROOT)
     end = lambda r30: {"r50": r30 / 3, "r30": r30}      # noqa: E731
     scr = {"xbb": [end(900.0), end(950.0), end(1000.0)], "xbs": [end(600.0), end(610.0), end(620.0)]}
+    assert M.XBX_REJ_PAGES == (("xbb", ("head", "linear", "zero_shot_xbb")), ("xbs", ("head", "linear")))
+    assert M.XBX_NODE_PAGES == (("xbs", ("zero_shot_xbq",)),)
     t = M.table_xbx_rej({}, scr, runs, M.TAB)
-    names = [ln.split(" & ")[0] for ln in t.splitlines() if " & " in ln and not ln.startswith((" ", "&"))]
+    pages = t.split("%SPLIT%")
+    assert len(pages) == 2
     XR = _load("xbx_report_rows_t", "experiments/XBS/xbx_report.py")
-    assert names == [M.LABEL[r] for r in XR.ROWS] + [M.SCRATCH_LABEL] and tuple(XR.ROWS) == M.XBX_ROWS
-    assert M.XBX_ROWS == M.MAIN + M.FLAV + (M.RAND_POOLED,) + M.MASS + (M.INIT,)      # the tables' one order
-    row = next(ln for ln in t.splitlines() if ln.startswith(M.SCRATCH_LABEL)).rstrip(r" \\").split(" & ")
-    assert row[3:5] == ["--", "--"] and row[7:9] == ["--", "--"]          # direct and closest node: none
-    assert "--" not in row[1:3] and "--" not in row[5:7]                     # transfer: both signals
-    assert "--" not in M.table_xbx_rej({}, {"xbs": scr["xbs"]}, runs, M.TAB).splitlines()[-3].split(" & ")[5]
-    assert all(c == "--" for c in M.table_xbx_rej({}, {"xbs": scr["xbs"]}, runs, M.TAB).splitlines()[-3]
-               .rstrip(r" \\").split(" & ")[1:3])                           # no X->bb from scratch yet: dashes
-    # one X->bb seed from scratch beside three X->bs seeds (PI 2026-11-12): the single run's values carry the mark
-    one = M.uniform_columns(M.table_xbx_rej({}, {"xbb": scr["xbb"][:1], "xbs": scr["xbs"]}, runs, M.TAB))
-    assert one.splitlines()[-3].rstrip(r" \\").split(" & ")[1:] == [
-        "300" + M.SINGLE, "900" + M.SINGLE, "--", "--", r"203\,$\pm$\,3", r"610\,$\pm$\,10", "--", "--"]
-    assert M.SINGLE not in M.uniform_columns(t)                              # three seeds each: no mark
+    assert tuple(XR.ROWS) == M.XBX_ROWS == M.SETS + M.FLAV + (M.RAND_POOLED,) + (M.INIT,)      # the tables' one order
+    for page, (sig, names) in zip(pages, M.XBX_REJ_PAGES):
+        lines = page.splitlines()
+        assert lines[2] == rf" & \multicolumn{{{2 * len(names)}}}{{c}}{{{M.XBX_SIGNAL[sig]}}} \\"
+        assert lines[4] == " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{M.XBX_READOUT[n]}}}" for n in names) + r" \\"
+        assert lines[6] == " & " + " & ".join([r"$R_{50}$ & $R_{30}$"] * len(names)) + r" \\"
+        rows = [ln.split(" & ")[0] for ln in lines if " & " in ln and not ln.startswith((" ", "&"))]
+        assert rows == [M.LABEL[r] for r in XR.ROWS] + [M.SCRATCH_LABEL], sig
+        row = lines[-3].rstrip(r" \\").split(" & ")
+        assert row[0] == M.SCRATCH_LABEL and "--" not in row[1:3] and row[3:] == ["--"] * (2 * len(names) - 2)
+    assert [M.XBX_READOUT[n] for n in ("head", "linear", "zero_shot_xbb")] == ["classifier", "linear probe", "direct"]
+    # no X->bb from scratch: no from-scratch row on its page
+    only = M.table_xbx_rej({}, {"xbs": scr["xbs"]}, runs, M.TAB).split("%SPLIT%")
+    assert M.SCRATCH_LABEL not in only[0] and only[1].splitlines()[-3].startswith(M.SCRATCH_LABEL + " & ")
+    # one X->bb seed from scratch beside three X->bs seeds: the single run's values carry the mark
+    one = [M.uniform_columns(pg) for pg in M.table_xbx_rej({}, {"xbb": scr["xbb"][:1], "xbs": scr["xbs"]}, runs, M.TAB).split("%SPLIT%")]
+    assert one[0].splitlines()[-3].rstrip(r" \\").split(" & ")[1:] == ["300" + M.SINGLE, "900" + M.SINGLE] + ["--"] * 4
+    assert one[1].splitlines()[-3].rstrip(r" \\").split(" & ")[1:] == [r"203\,$\pm$\,3", r"610\,$\pm$\,10", "--", "--"]
+    assert not any(M.SINGLE in M.uniform_columns(pg) for pg in pages)       # three seeds each: no mark
+    # the closest-class output on its own (supplement) table, without from scratch
+    node = M.table_xbx_rej({}, scr, runs, M.TAB, M.XBX_NODE_PAGES)
+    assert "%SPLIT%" not in node and M.XBX_READOUT["zero_shot_xbq"] in node and M.SCRATCH_LABEL not in node
 
 
 @pytest.mark.skipif(not (DATA / "index.json").exists(), reason="no pulled data")
 def test_the_summary_table_holds_exactly_the_values_of_figs_2_and_3():
-    """tab:summary reads every run's value as Figs. 2 and 3 do (paper_figures._f2_probe, _f2_ft, scratch_series), on
-    both panels of each task: its headline metric and its AUC (SUMMARY_GRID, PI 2026-11-12). The gallery's own value
-    functions and the printed cells: tests/test_gallery_pages.py."""
+    """tab:summary and tab:summaryauc (PI 2026-11-13, L1, L2) read every run's value as the headline figures do: the
+    accessors summary_probe, summary_ft and summary_scratch agree with paper_figures' readers (_f2_probe, _f2_ft,
+    scratch_series) on the four tasks those draw, and the tables hold, per mode, the label sets with each mass network
+    under its own, the 17-class partitions under their subheading, then the mode's reference. The gallery's own value
+    functions and the printed cells, Herwig included: tests/test_gallery_pages.py."""
     P = _load("paper_figures_summary_t", "experiments/FIGS/paper_figures.py")
     I = P.inputs(M)
     runs = M._pooled(M._paper(ROOT))
     chosen, _ = M.chosen_substitutions(I["fill"], runs)
-    assert tuple((k, n, ds, met) for k, n, ds, met, *_ in P.F2_PANELS) == M.SUMMARY_PANELS
-    assert M.SUMMARY_GRID == tuple((k, n, ds, m) for k, n, ds, met, *_ in P.F2_PANELS for m in (met, M.SUMMARY_AUC[k]))
-    for key, n, ds, met in M.SUMMARY_GRID:
-        a, b = P._f2_probe(M, I["fits"], I["fill"], chosen, ds, met), M.summary_probe(I["fits"], I["fill"], chosen, ds, met)
-        c, d = P._f2_ft(M, I["per"], key, n, met), M.summary_ft(I["per"], key, n, met)
-        for arm in M.MAIN + M.FLAV + (M.RAND_POOLED, M.INIT):
-            assert [a(m) for m in runs[arm]] == [b(m) for m in runs[arm]]
-            if arm != M.INIT:
-                assert [c(m) for m in runs[arm]] == [d(m) for m in runs[arm]]
-        assert P.scratch_series(M, I["per"], key, met)[n] == [r[met] for r in I["per"][key][M.SCRATCH][n] if r.get(met) is not None]
-    t = M.table_summary(I["fits"], I["fill"], chosen, I["per"], M._paper(ROOT), M.TAB)
-    # one part for each mode and pair of tasks (SUMMARY_PAGES): the eight columns of a mode are wider than a turned
-    # page at the body size
-    parts = t.split("%SPLIT%")
-    order = [(mode, tasks) for mode in ("lp", "ft") for tasks in M.SUMMARY_PAGES]
-    assert len(parts) == len(order) == 4
-    assert t.count(M.LABEL[M.RAND_POOLED]) == 4 and t.count(M.SCRATCH_LABEL + " & ") == t.count(M.LABEL[M.INIT] + " & ") == 2
-    assert r"\rho" not in t and r"\textbf" not in t
+    assert tuple((k, n, ds, met) for k, n, ds, met, *_ in P.F2_PANELS) == M.SUMMARY_PANELS[:4]
+    tasks = {k for k, *_ in P.F2_PANELS}
+    for key, n, ds, met in M.SUMMARY_GRID + M.SUMMARY_AUC_GRID:
+        if key in tasks:
+            a, b = P._f2_probe(M, I["fits"], I["fill"], chosen, ds, met), M.summary_probe(I["fits"], I["fill"], chosen, ds, met)
+            c, d = P._f2_ft(M, I["per"], key, n, met), M.summary_ft(I["per"], key, n, met)
+            for arm in M.SETS + M.FLAV + (M.RAND_POOLED, M.INIT):
+                assert [a(m) for m in runs[arm]] == [b(m) for m in runs[arm]]
+                if arm != M.INIT:
+                    assert [c(m) for m in runs[arm]] == [d(m) for m in runs[arm]]
+        assert P.scratch_series(M, I["per"], key, met)[n] == M.summary_scratch(I["per"], key, n, met)
     ctl = [r"\quad " + M.LABEL[a] for a in M.SUMMARY_CONTROLS]
-    for part, (mode, tasks) in zip(parts, order):
-        lines = part.splitlines()
-        grid = [g for g in M.SUMMARY_GRID if g[0] in tasks]
-        # two header rows: the task over its two columns, then the task's metric and its AUC
-        assert lines[:6] == [r"\begin{tabular}{lcccc}", r"\toprule",
-                             " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{M.SUMMARY_TASKS[k]}}}" for k in tasks) + r" \\",
-                             r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}",
-                             " & " + " & ".join(M.SUMMARY_HEAD[met] for *_, met in grid) + r" \\", r"\midrule"]
-        assert [M.SUMMARY_HEAD[met] for *_, met in grid][1::2] == ["AUC", "AUC"]
-        # under the italic heading of the mode: the label sets, then the partitions indented under their subheading;
-        # the random network closes the probes, from scratch the fine-tuned rows
-        assert lines[6] == M._full_row(5, M.HEADING[mode], italic=True)
-        assert [ln.split(" & ")[0] for ln in lines[7:11]] == [M.LABEL[a] for a in M.MAIN]
-        assert lines[11] == M._full_row(5, M.PARTITIONS) and part.count(M._full_row(5, M.PARTITIONS)) == 1
-        assert [ln.split(" & ")[0] for ln in lines[12:-2]] == ctl + [M.LABEL[M.INIT] if mode == "lp" else M.SCRATCH_LABEL]
-        assert lines[-2:] == [r"\bottomrule", r"\end{tabular}"]
-        rows = [ln.removesuffix(r" \\").split(" & ") for ln in lines[7:11] + lines[12:-2]]
-        assert all(len(r) == 5 and "--" not in r for r in rows)
-        # bold (PI 2026-11-12): every column of a part has its best value; the random network is a reference row,
-        # never bold and never the best; from scratch takes part
-        best = rows[:-1] if mode == "lp" else rows
-        assert all(any(M.BOLD_ON in r[j] for r in best) for j in range(1, 5)), (mode, tasks)
-        assert mode == "ft" or M.BOLD_ON not in lines[-3]
-    # printed: one precision per column and part, no "<", no "+- 0", no bare token; a mark stays outside the bold
-    assert M.V4.TOK_OPEN not in t and "$<$" not in t and not re.search(r"\\pm\$\\,0(\.0+)? ", _unbold(t))
-    assert all(M.PLAIN.fullmatch(x) for x in _bold_spans(t))
+    for grid, key in ((M.SUMMARY_GRID, "summary"), (M.SUMMARY_AUC_GRID, "summary_auc")):
+        t = M.table_summary(I["fits"], I["fill"], chosen, I["per"], M._paper(ROOT), M.TAB, grid, key)
+        # one part (a turned page) a mode, five columns each
+        parts = t.split("%SPLIT%")
+        assert len(parts) == 2 and t.count(M.LABEL[M.RAND_POOLED]) == 2
+        assert t.count(M.SCRATCH_LABEL + " & ") == t.count(M.LABEL[M.INIT] + " & ") == 1
+        assert r"\rho" not in t and r"\textbf" not in t and M.LABEL[M.SOPHON] not in t       # these fits: no Sophon
+        for part, mode in zip(parts, ("lp", "ft")):
+            lines = part.splitlines()
+            assert lines[:6] == [r"\begin{tabular}{lccccc}", r"\toprule",
+                                 r" & JetClass-II & JetClass & top tagging & \multicolumn{2}{c}{quark/gluon tagging} \\",
+                                 r"\cmidrule(lr){5-6}",
+                                 " & " + " & ".join(M.SUMMARY_HEAD[met] + {"qg": ", Pythia", "qg_herwig": ", Herwig"}.get(k, "")
+                                                    for k, _, _, met in grid) + r" \\", r"\midrule"]
+            # under the italic heading of the mode: the label sets, each mass network under its own, then the
+            # partitions indented under their subheading; the random network closes the probes, from scratch the
+            # fine-tuned rows
+            assert lines[6] == M._full_row(6, M.HEADING[mode], italic=True)
+            assert [ln.split(" & ")[0] for ln in lines[7:13]] == [M.LABEL[a] for a in M.SETS]
+            assert lines[13] == M._full_row(6, M.PARTITIONS) and part.count(M._full_row(6, M.PARTITIONS)) == 1
+            assert [ln.split(" & ")[0] for ln in lines[14:-2]] == ctl + [M.LABEL[M.INIT] if mode == "lp" else M.SCRATCH_LABEL]
+            assert lines[-2:] == [r"\bottomrule", r"\end{tabular}"]
+            rows = [ln.removesuffix(r" \\").split(" & ") for ln in lines[7:13] + lines[14:-2]]
+            assert all(len(r) == 6 and "--" not in r for r in rows)
+            # bold (PI 2026-11-12): every column of a part has its best value; the random network is a reference row,
+            # never bold and never the best; from scratch takes part
+            best = rows[:-1] if mode == "lp" else rows
+            assert all(any(M.BOLD_ON in r[j] for r in best) for j in range(1, 6)), (key, mode)
+            assert mode == "ft" or M.BOLD_ON not in lines[-3]
+        # printed: one precision per column and part, no "<", no "+- 0", no bare token; a mark stays outside the bold
+        assert M.V4.TOK_OPEN not in t and "$<$" not in t and not re.search(r"\\pm\$\\,0(\.0+)? ", _unbold(t))
+        assert all(M.PLAIN.fullmatch(x) for x in _bold_spans(t))
 
 
 # ------------------------------------------------------------------ PI 2026-11-12: the table fix (published models, label sets, tasks as blocks)
@@ -2424,60 +2463,57 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     assert r"\textbf" not in f and f.count(M.BOLD_ON) == t.count(M.BOLD_ON) > 0
 
 
+def _ft_full(runs: dict, arms) -> dict:
+    """per of fine-tuning on the full top and quark/gluon training sets (FULL_N): run i of an arm accuracy 0.94 and
+    R50 450 + 10 i, R30 1800 + 10 i; from scratch three seeds, R50 50 +- 10 and R30 1400 +- 10."""
+    rec = lambda i: {"accuracy": 0.94, "auc": 0.986, "r50": 450.0 + 10 * i, "r30": 1800.0 + 10 * i,    # noqa: E731
+                     "r50_is_bound": False, "r30_is_bound": False}
+    per = {}
+    for task in ("top", "qg", "qg_herwig"):
+        n = M.FULL_N[task]
+        by = {m[len("mtx-"):]: {n: [rec(i)]} for a in arms for i, m in enumerate(runs[a])}
+        by[M.SCRATCH] = {n: [{**rec(0), "r50": 50.0 + d, "r30": 1400.0 + d} for d in (-10, 0, 10)]}
+        per[task] = by
+    return per
+
+
 def test_the_label_set_table_holds_the_fine_tuned_rows_the_comparison_table_does_not():
-    """tab:labelsets (PI 2026-11-12: the other label sets' rows in one appendix table; apart from Table 1 a number
-    has one table): 162, 43 and 17 classes and the 17-class partitions fine-tuned on JetClass, top and quark/gluon
-    tagging, without the 188-class and from-scratch rows that tab:published prints; scored on Herwig jets, which no
-    other table has, every row. Accuracy, AUC, R50, R30; a block a task under "fine-tuned on <task>"."""
+    """tab:labelsets (PI 2026-11-13, plan "tables"): what Table 1 and tab:summaryauc lack of the fine-tuned top and
+    quark/gluon networks, the accuracy and R50 (their R30 and AUC are there), read as Table 1 reads them (summary_ft,
+    summary_scratch) on the full training sets; one column group a task (top; quark/gluon scored on Pythia and on
+    Herwig jets), the family's rows in the one order (L5) under "fine-tuned", the partitions under their subheading,
+    from scratch last; one turned page."""
     runs = M._paper(ROOT)
-    arms = M.MAIN + M.FLAV + M.RAND
-    pre, ref = _jc1_trees(runs, arms)
-    by = _bench_all(runs, arms)
-    per = {"top": by, "qg": by, "qg_herwig": by}
-    t = M.table_labelsets(per, runs, pre, ref, M.TAB)
-    pages = t.split("%SPLIT%")
-    assert M.LABELSET_PAGES == (("jc1", "top"), ("qg", "qg_herwig")) and len(pages) == 2 and M.V4.TOK_OPEN not in t
-    assert all(pg.splitlines()[:4] == [r"\begin{tabular}{lcccc}", r"\toprule", r" & accuracy & AUC & $R_{50}$ & $R_{30}$ \\",
-                                       r"\midrule"] for pg in pages)
-    blocks = {**_blocks(pages[0], 5), **_blocks(pages[1], 5)}
-    tasks = [f"{M.HEADING['ft']} on {dict(M.TASK_BLOCKS)[k]}" for k in ("jc1", "top", "qg", "qg_herwig")]
-    assert list(blocks) == tasks == ["fine-tuned on JetClass", "fine-tuned on top tagging", "fine-tuned on quark/gluon tagging",
-                                     "fine-tuned on quark/gluon tagging, scored on Herwig jets"]
-    assert all(M._full_row(5, h, italic=True) in t for h in tasks)
-    names = {k: [ln.split(" & ")[0] for ln in v] for k, v in blocks.items()}
-    rest = [M.LABEL[a] for a in M.LABELSET_ROWS]
-    assert rest == [M.LABEL[a] for a in ("L162", "R42_Q1", "R16_Q1")] + [M.LABEL[a] for a in M.FLAV] + [M.LABEL[M.RAND_POOLED]]
-    assert names[tasks[0]] == names[tasks[1]] == names[tasks[2]] == rest          # no 188 classes, no from scratch
-    assert names[tasks[3]] == [M.LABEL["L188"]] + rest + [M.SCRATCH_LABEL]          # Herwig: every row, from scratch last
-    assert all(ln.count(" & ") == 4 for v in blocks.values() for ln in v)
-    assert all(ln.endswith(r" & -- & -- \\") for ln in blocks[tasks[0]])
-    assert not any(ln.endswith(r" & -- & -- \\") for k in tasks[1:] for ln in blocks[k])
-    # the pooled random partitions: mean and SD over the five, one run each (R30 1800 each in the fixture)
-    pooled = next(ln for ln in blocks[tasks[1]] if ln.startswith(M.LABEL[M.RAND_POOLED] + " & "))
-    # bold (PI 2026-11-12): the best of each block's column and every value within three standard deviations of it,
-    # the mark outside. On top tagging that is every row of the fixture (R30 1,810 +- 10, 1,805 +- 7 and 1,800)
-    assert pooled.removesuffix(r" \\").split(" & ")[4] == M._b("1{,}800") + M.AGREE
-    assert next(ln for ln in blocks[tasks[1]] if ln.startswith(M.LABEL["L162"] + " & ")).removesuffix(r" \\").split(" & ")[3:] == [
-        M._b(r"460\,$\pm$\,10"), M._b(r"1{,}810\,$\pm$\,10")]
-    assert all(M.BOLD_ON in c for ln in blocks[tasks[1]] for c in ln.removesuffix(r" \\").split(" & ")[3:])
-    # on Herwig jets from scratch (R50 50 +- 10, R30 1,400 +- 10) is far from the fine-tuned rows: not bold
-    assert next(ln for ln in blocks[tasks[3]] if ln.startswith(M.SCRATCH_LABEL + " & ")).removesuffix(r" \\").split(" & ")[3:] == [
-        r"50\,$\pm$\,10", r"1{,}400\,$\pm$\,10"]
-    assert M.BOLD_ON not in "".join(c for k in tasks for ln in blocks[k] for c in ln.split(" & ")[:1]) and r"\textbf" not in t
-    # no row of ours is in both tables: tab:published has the 188-class and from-scratch rows of the first three tasks
-    pub_pre, pub_ref = _jc1_trees(runs, ("L188",))
-    pub = M.table_published({"top": by, "qg": by}, runs, pub_pre, pub_ref, M.TAB)
-    ours = {ln.split(" & ")[0] for ln in pub.splitlines() if " & " in ln and r"\cite{" not in ln and ln.split(" & ")[0].strip()}
-    assert ours == {M.SCRATCH_LABEL + M.THIS_WORK, f"fine-tuned from {M.LABEL['L188']}{M.THIS_WORK}", M.LABEL["KIN"]}
-    assert not ours & {n for k in tasks for n in names[k]}
-    # set: the partitions indented under their subheading in every block (_headings), two whole turned pages
+    per = _ft_full(runs, M.SETS + M.FLAV + M.RAND)
+    t = M.table_labelsets(per, runs, M.TAB)
+    lines = t.splitlines()
+    assert "%SPLIT%" not in t and M.V4.TOK_OPEN not in t and "JetClass" not in t
+    assert M.BENCH_GROUPS == (("top", "top tagging"), ("qg", "quark/gluon, Pythia jets"), ("qg_herwig", "quark/gluon, Herwig jets"))
+    assert lines[:6] == [r"\begin{tabular}{lcccccc}", r"\toprule",
+                         " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{h}}}" for _, h in M.BENCH_GROUPS) + r" \\",
+                         r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}",
+                         " & " + " & ".join(["accuracy & $R_{50}$"] * 3) + r" \\", r"\midrule"]
+    assert lines[6] == M._full_row(7, M.HEADING["ft"], italic=True)
+    names = [ln.split(" & ")[0] for ln in lines if " & " in ln and not ln.startswith(" & ")]
+    assert names == [M.LABEL[a] for a in M.SETS] + [r"\quad " + M.LABEL[a] for a in M.FLAV + (M.RAND_POOLED,)] + [M.SCRATCH_LABEL]
+    assert lines.count(M._full_row(7, M.PARTITIONS)) == 1 and lines[lines.index(M._full_row(7, M.PARTITIONS)) + 1].startswith(r"\quad ")
+    row = lambda lab: _unbold(next(ln for ln in lines if ln.startswith(lab + " & "))).removesuffix(r" \\").split(" & ")   # noqa: E731
+    # every task's column group has values (quark/gluon at its own training set, 1.6 million)
+    assert all(len(row(M.LABEL[a])) == 7 and "--" not in row(M.LABEL[a]) for a in M.SETS)
+    # the pooled random partitions: mean and SD over the five, one run each (R50 450 each in the fixture)
+    assert row(r"\quad " + M.LABEL[M.RAND_POOLED])[2] == "450" + M.AGREE
+    assert row(M.LABEL["L188"])[2:3] == [r"460\,$\pm$\,10"] and row(M.SCRATCH_LABEL)[1:3] == ["0.9400" + M.AGREE, r"50\,$\pm$\,10"]
+    # bold (one block, BOLD["labelsets"]): from scratch, far below in R50, is not bold there
+    assert M.BOLD["labelsets"] == {} and M.BOLD_ON not in next(ln for ln in lines if ln.startswith(M.SCRATCH_LABEL)).split(" & ")[2]
+    assert r"\textbf" not in t
+    # a row with no value on any task is left out
+    assert M.LABEL["FLAV_F0"] not in M.table_labelsets(_ft_full(runs, M.SETS), runs, M.TAB)
+    # set: one turned page at the body size, the bold sentence of a table without blocks
     f = M._float("labelsets", t, True, pages=True, whole="turned", colsep_pt=6)
-    assert f.count(M._full_row(5, M.PARTITIONS)) == 4 and f.count(r"\quad " + M.LABEL["FLAV_F0"] + " & ") == 4
-    assert f.count(r"\quad " + M.LABEL[M.RAND_POOLED] + " & ") == 4 and r"\quad " + M.LABEL["L162"] not in f
-    assert f.count(rf"\textit{{{M.HEADING['ft']}") == 4 and f.count(r"\begin{minipage}{\linewidth}") == 2
-    assert f.count(r"\textit{Table~\ref{tab:labelsets} (continued)}") == 1 and f.count(r"\label{tab:labelsets}") == 1
-    assert M.CAPTIONS["labelsets"][0] == "tab:labelsets" and "labelsets" not in M.MODES and not _sizes_in(f)
-    assert f.count(M.BOLD_NOTE.format("each block of a column")) == 1 and f.count(r"\newpage") == 1
+    assert f.count(r"\label{tab:labelsets}") == 1 and f.count(rf"\textit{{{M.HEADING['ft']}}}") == 1 and not _sizes_in(f)
+    assert M.CAPTIONS["labelsets"][0] == "tab:labelsets" and "labelsets" not in M.MODES
+    assert f.count(M.BOLD_NOTE.format("a column")) == 1 and M.BOLD_NOTE.format("each block of a column") not in f
+    assert "tables~\\ref{tab:summary} and~\\ref{tab:summaryauc}" in M.printed_caption("labelsets")
 
 
 def test_the_benchmark_and_jetclass_rows_are_shared_by_the_task_tables_and_the_new_ones():
@@ -2529,59 +2565,47 @@ def _probe_fits() -> tuple:
     return fits, runs
 
 
-def test_the_probe_table_of_the_paper_has_the_tasks_as_row_blocks_under_four_columns():
-    """tab:probes (PI 2026-11-12, Table A1): the tasks as row blocks (JetClass-II, JetClass, top, quark/gluon on
-    Pythia and scored on Herwig jets) with the same columns in each, accuracy, AUC, R50 and R30, a dash where a
-    metric does not apply; the full-count, resonant and QCD averages are the supplement's; the kinematic-only
-    network in the top block, after the pretrained rows; the released checkpoint last in every block, below a rule;
-    upright on two pages."""
+def test_the_probe_table_of_the_paper_holds_what_table_one_lacks_of_top_and_quark_gluon():
+    """tab:probes (PI 2026-11-13, plan "tables"): what Table 1 and tab:summaryauc lack of the linear probes, the
+    accuracy and R50 on top and quark/gluon (Pythia, Herwig) at each task's largest training set, one column group a
+    task, the networks under the italic mode heading, then the kinematic-only network (top only), the random network
+    and, below a rule, the released checkpoint; one turned page at the body size."""
     fits, runs = _probe_fits()
-    t = M.table_probes_tasks(fits, runs, M.TAB, ("L188", M.INIT, M.SOPHON), kin=True)
-    pages = t.split("%SPLIT%")
-    assert M.PROBE_PAGES == (("jc2", "jc1"), ("top", "qg", "qg_herwig")) and len(pages) == 2
-    assert all(pg.splitlines()[:4] == [r"\begin{tabular}{lcccc}", r"\toprule", r" & accuracy & AUC & $R_{50}$ & $R_{30}$ \\",
-                                       r"\midrule"] for pg in pages)
-    assert M.V4.TOK_OPEN not in t and r"\rho" not in t and "0.11" not in t and "0.22" not in t and "probes" not in M.MODES
-    blocks = [_blocks(pg, 5) for pg in pages]
-    tasks = ["JetClass-II", "JetClass", "top tagging", "quark/gluon tagging", "quark/gluon tagging, scored on Herwig jets"]
-    assert [list(b) for b in blocks] == [[f"{M.HEADING['lp']}, {x}" for x in tasks[:2]], [f"{M.HEADING['lp']}, {x}" for x in tasks[2:]]]
-    assert all(M._full_row(5, f"{M.HEADING['lp']}, {x}", italic=True) in t for x in tasks)
-    rows = {x: b[f"{M.HEADING['lp']}, {x}"] for b in blocks for x in tasks if f"{M.HEADING['lp']}, {x}" in b}
+    t = M.table_probes_bench(fits, runs, M.TAB, ("L188", M.INIT, M.SOPHON), kin=True)
+    lines = t.splitlines()
+    assert "%SPLIT%" not in t and M.V4.TOK_OPEN not in t and r"\rho" not in t and "JetClass" not in t and "probes" not in M.MODES
+    assert "0.11" not in t and "0.22" not in t and "0.98" not in t.replace("0.9800", "")      # no JetClass-II or AUC column
+    assert lines[:6] == [r"\begin{tabular}{lcccccc}", r"\toprule",
+                         " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{h}}}" for _, h in M.BENCH_GROUPS) + r" \\",
+                         r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}",
+                         " & " + " & ".join(["accuracy & $R_{50}$"] * 3) + r" \\", r"\midrule"]
+    assert lines[6] == M._full_row(7, M.HEADING["lp"], italic=True)
     full, init, sophon, kin = M.LABEL["L188"], M.LABEL[M.INIT], M.LABEL[M.SOPHON], M.LABEL["KIN"]
-    for x in tasks:
-        names = [ln.split(" & ")[0] for ln in rows[x]]
-        assert names == [full] + [kin] * (x == "top tagging") + [init, r"\midrule", sophon], x
-        assert all(ln.count(" & ") == 4 for ln in rows[x] if ln != r"\midrule")
-    S, A = M.SINGLE, M.AGREE
-    # a dash where the task has no single rejection; single runs marked; three identical runs: the agreement mark
-    assert rows["JetClass-II"] == [rf"{full} & 0.4000{S} & 0.9800{S} & -- & -- \\", rf"{init} & 0.4000{A} & 0.6000{A} & -- & -- \\",
-                                   r"\midrule", rf"{sophon} & 0.4000{S} & 0.9700{S} & -- & -- \\"]
-    assert rows["JetClass"][0] == rf"{full} & 0.7000{S} & 0.9700{S} & -- & -- \\"
-    # each block at its own precision per column: the one SD of the R50 column is 1.0 (two figures), of R30 2 (one).
-    # Bold (PI 2026-11-12) among the rows that are neither the random network nor the released checkpoint: the
-    # 188-class run, and the kinematic-only run where it ties it (accuracy, AUC); the mark outside the bold
-    B = M._b
-    assert rows["top tagging"] == [rf"{full} & {B('0.9000')}{S} & {B('0.9800')}{S} & {B('100.0')}{S} & {B('200')}{S} \\",
-                                   rf"{kin} & {B('0.9000')}{S} & {B('0.9800')}{S} & 40.0{S} & 80{S} \\",
-                                   rf"{init} & 0.9000{A} & 0.9800{A} & 11.0\,$\pm$\,1.0 & 22\,$\pm$\,2 \\", r"\midrule",
-                                   rf"{sophon} & 0.9000{S} & 0.9800{S} & 50.0{S} & 100{S} \\"]
-    # a block whose column holds one value that can be bold has no bold: the 188-class run alone
-    assert rows["quark/gluon tagging"] == [_unbold(ln) for ln in rows["top tagging"] if not ln.startswith(kin)]
-    assert not any(M.BOLD_ON in ln for x in tasks if x != "top tagging" for ln in rows[x])
+    S, A, B = M.SINGLE, M.AGREE, M._b
+    # each column at its own precision: the one SD of the R50 columns is 1.0 (two figures). Bold (one block,
+    # BOLD["probes"]) among the rows that are neither the random network nor the released checkpoint: the 188-class
+    # run and the kinematic-only run where it ties it (top accuracy), the 188-class run's top R50; a quark/gluon
+    # column holds one value that can be bold, so none
+    assert lines[7:-2] == [rf"{full} & {B('0.9000')}{S} & {B('100.0')}{S} & 0.9000{S} & 100.0{S} & 0.9000{S} & 100.0{S} \\",
+                           rf"{kin} & {B('0.9000')}{S} & 40.0{S} & -- & -- & -- & -- \\",
+                           rf"{init} & 0.9000{A} & 11.0\,$\pm$\,1.0 & 0.9000{A} & 11.0\,$\pm$\,1.0 & 0.9000{A} & 11.0\,$\pm$\,1.0 \\",
+                           r"\midrule", rf"{sophon} & 0.9000{S} & 50.0{S} & 0.9000{S} & 50.0{S} & 0.9000{S} & 50.0{S} \\"]
+    assert M.BOLD["probes"] == {} and t.count(M.BOLD_ON) == 3
     # the substitution chosen on validation for our rows; the released checkpoint keeps its missing inputs zero
     fill = {"mtx-l188-s1": {"cells": {"best70": {"top.ntop": {"1200000": {"accuracy": 0.9, "auc": 0.98, "r50": 150.0, "r30": 300.0}}}}}}
-    c = _blocks(M.table_probes_tasks(fits, {k: v for k, v in runs.items() if k != M.INIT}, M.TAB, ("L188", M.SOPHON), fill,
-                                     {"top": "mean"}).split("%SPLIT%")[1], 5)[f"{M.HEADING['lp']}, top tagging"]
-    assert c == [rf"{full} & 0.9000{S} & 0.9800{S} & 150{S} & 300{S} \\", r"\midrule", rf"{sophon} & 0.9000{S} & 0.9800{S} & 50{S} & 100{S} \\"]
-    # set as the build sets it: upright, nothing cut, 4 pt between the columns, a size below the body's (the one
-    # table set so), both mark sentences and the bold sentence in the caption
-    f = M._float("probes", t, True, whole="upright", size=r"\small")
-    assert "landscape" not in f and f.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}") == 2
-    assert r"\setlength{\tabcolsep}{4pt}" in f and set(_sizes_in(f)) == {r"\small"} and f.count(r"\label{tab:probes}") == 1
-    assert f.index("caption") < re.search(r"\\small(?![a-zA-Z])", f).start() and all(note in f for _, note in M.MARK_NOTES)
-    assert not _sizes_in(M._float("probes", t, True, whole="upright"))
-    assert f.count(sophon + " & ") == 5 and "(LP)" not in f and M.KEY_MARKS["probes"][0][1] not in f
-    assert f.count(M.BOLD_NOTE.format("each block of a column")) == 1 and f.count(M.BOLD_ON) == 6
+    c = M.table_probes_bench(fits, {k: v for k, v in runs.items() if k != M.INIT}, M.TAB, ("L188", M.SOPHON), fill,
+                             {"top": "mean"}).splitlines()
+    assert c[7:-2] == [rf"{full} & 0.9000{S} & 150{S} & 0.9000{S} & 100{S} & 0.9000{S} & 100{S} \\", r"\midrule",
+                       rf"{sophon} & 0.9000{S} & 50{S} & 0.9000{S} & 50{S} & 0.9000{S} & 50{S} \\"]
+    # set as the build sets it: one turned page at the body size, the mark sentences and the bold sentence of a table
+    # without blocks in the caption
+    f = M._float("probes", t, True, pages=True, whole="turned", colsep_pt=6)
+    assert "landscape" in f and f.count(r"\label{tab:probes}") == 1 and not _sizes_in(f)
+    assert all(note in f for _, note in M.MARK_NOTES) and f.count(sophon + " & ") == 1 and "(LP)" not in f
+    assert M.KEY_MARKS["probes"][0][1] not in f
+    assert f.count(M.BOLD_NOTE.format("a column")) == 1 and M.BOLD_NOTE.format("each block of a column") not in f
+    assert f.count(M.BOLD_ON) == 3
+    assert "tables~\\ref{tab:summary} and~\\ref{tab:summaryauc}" in M.printed_caption("probes")
 
 
 def test_the_missing_input_table_of_the_paper_leaves_out_what_the_probe_table_prints():
@@ -2639,10 +2663,12 @@ def test_the_mass_table_head_block_reads_the_regression_output_over_all_jets_inc
     # one network with a value in each block: nothing to compare, no bold and no bold sentence
     assert M.BOLD_ON not in f and "Bold marks" not in f
     assert f.count(rf"\textit{{{M.HEADING['head']}}}") == f.count(rf"\textit{{{M.HEADING['mlp']}}}") == 1 and "landscape" not in f
-    # the supplement's detail table reads the same estimator in its first section
+    # the supplement's detail table reads the same estimator in its first section, over the resonant and the QCD jets;
+    # the values over all jets are this table's alone (one home per number, 2026-11-13)
     d = M.table_mass_detail(atlas, runs, M.TAB).splitlines()
     k = next(i for i, ln in enumerate(d) if M.HEADING["head"] in ln)
-    assert d[k + 1].startswith(M.LABEL["L162_MASS"] + " & " + M._cell([0.1461, 0.1473], 2, M.TAB) + " & ")
+    assert d[k + 1] == M.LABEL["L162_MASS"] + " & " + " & ".join(M._cell([x, x], 2, M.TAB) for x in (0.51, 0.61, 1.51, 1.61)) + r" \\"
+    assert M._cell([0.1461, 0.1473], 2, M.TAB) not in "\n".join(d)
 
 
 def _paper_tables() -> dict:
@@ -2663,11 +2689,13 @@ def _caption_and_body(tex: str) -> tuple:
     return tex[m.end():i - 1], tex[:m.start()] + tex[i:]
 
 
-def test_the_paper_has_seventeen_tables_and_the_task_tables_are_placed_nowhere():
+def test_the_paper_has_twenty_tables_and_the_task_tables_are_placed_nowhere():
     tables = _paper_tables()
-    assert list(tables) == ["tab:summary", "tab:published", "tab:mass", "tab:xbx", "tab:probes", "tab:coarse", "tab:qcdhf",
-                            "tab:fill", "tab:inputs", "tab:partrepro", "tab:lrsweep", "tab:jetclassrej", "tab:labelsets",
-                            "tab:pairs", "tab:sculpt", "tab:sculptboot", "tab:xbxrej"]
+    assert list(tables) == ["tab:summary", "tab:published", "tab:mass", "tab:xbx", "tab:summaryauc", "tab:probes",
+                            "tab:probesn", "tab:fill", "tab:inputs", "tab:partrepro", "tab:lrsweep", "tab:jetclassrej",
+                            "tab:jc1_class_auc", "tab:labelsets", "tab:ft", "tab:pairs", "tab:sculpt", "tab:sculptboot",
+                            "tab:masseffect", "tab:xbxrej"]
+    assert tables["tab:summaryauc"][1].name == "mlst_summary_auc.tex" and tables["tab:masseffect"][1].name == "mlst_masseffect.tex"
     assert tables["tab:published"][1].name == "mlst_published.tex" and tables["tab:labelsets"][1].name == "mlst_labelsets.tex"
     assert all(k in M.CAPTION_SHORT for k, _ in tables.values())                   # each prints its short caption
 
@@ -2684,8 +2712,10 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
         assert not re.search(r"\bSD\b", cap) or key == "sculpt_boot", label       # "standard deviation", but for the column names there
         assert cap.rstrip().endswith(".") or cap.rstrip().endswith("__"), label
     assert M.PNETS == "the networks pretrained with 188, 162, 43 and 17 classes"
-    assert all(M.PNETS in M.printed_caption(k) for k in ("summary", "probes", "coarse", "qcdhf", "fill", "pairs", "sculpt", "xbx",
-                                                         "jetclass_rej"))
+    assert all(M.PNETS in M.printed_caption(k) for k in ("summary", "coarse", "qcdhf", "fill", "pairs", "sculpt", "jetclass_rej",
+                                                         "jc1_class_auc", "per_class", "mass_detail"))
+    # a table that holds the rest of Table 1's networks names them by that table
+    assert all("networks of table~\\ref{tab:summary}" in M.printed_caption(k) for k in ("probes", "probes_n", "ft", "labelsets"))
     # the run counts in one sentence, an item per kind of row
     assert M._runs("set", "flav") == (r" Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per "
                                       r"label set and \RandFlavRuns{} per flavor-boundary partition.")
@@ -2695,7 +2725,8 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
     # one definition and wording of a multi-class AUC; on JetClass the sentence on ParT's average over class pairs
     assert M.AUC_OVR == ("AUC is the area under the receiver operating characteristic curve, averaged over the classes, each "
                          "against the rest.")
-    assert M.AUC_OVR in M.printed_caption("probes") and "averaged over class pairs" not in M.printed_caption("published")
+    assert "On JetClass-II and JetClass the AUC is averaged over the classes, each against the rest." in M.printed_caption("summary_auc")
+    assert "averaged over class pairs" not in M.printed_caption("published")
     assert "equals the average over class pairs that ParT reports" in M.printed_caption("published")
     assert "area under the receiver operating characteristic curve" in M.printed_caption("pairs")
     assert "averaged over" not in M.printed_caption("pairs") and "averaged over the target's groups, each against the rest" in M.printed_caption("coarse")
@@ -2708,11 +2739,11 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
 
 
 def test_the_generated_paper_tables_follow_the_table_rules():
-    """The 17 tables as make_tables.py wrote them (paper/journal/tables, committed): every mark of a table has its
+    """The 20 tables as make_tables.py wrote them (paper/journal/tables, committed): every mark of a table has its
     sentence in the caption and no caption explains a mark the table lacks; never "<" or "+- 0"; no mode tag on a
     row; thousands separators; "parameters"; the full text width, no wrapped row label, nothing scaled, and the body
-    size everywhere but tab:probes (PI 2026-11-12: the reported exception; tab:summary is at the body size on four
-    turned pages). A bold value is read without its wrapper."""
+    size everywhere (2026-11-13: tab:probes, the one exception before, is one turned page at the body size). A bold
+    value is read without its wrapper."""
     marks = {M.SINGLE: M.MARK_NOTES[0][1].strip(), M.AGREE: M.MARK_NOTES[1][1].strip()}
     own = (r"\dagger", r"\ddagger", r"\parallel", "^{*}", r"^{\ast}")
     small, tables = set(), _paper_tables()
@@ -2725,8 +2756,8 @@ def test_the_generated_paper_tables_follow_the_table_rules():
         notes = dict(M.KEY_MARKS.get(key, ()))
         for mark in own:
             assert (mark in body) == (mark in cap), (label, mark)
-            if mark in body:
-                assert mark in notes and notes[mark].strip() in cap, (label, mark)
+            if mark in body:       # a KEY_MARKS sentence, or the caption's own (tab:sculptboot's dagger)
+                assert notes.get(mark, f"$^{{{mark}}}$ marks").strip() in cap, (label, mark)
         assert ": " not in cap and ";" not in cap and "Sophon's network" not in tex, label
         assert "$<$" not in tex and not re.search(r"\\pm\$\\,0(\.0+)?\s*(&|\\\\)", _unbold(body)), label
         assert not re.search(r"\((LP|MLP|f\.t\.)\)", tex) and "# params" not in tex and "params" not in body, label
@@ -2737,29 +2768,32 @@ def test_the_generated_paper_tables_follow_the_table_rules():
         assert not re.search(r"adjustbox|resizebox|scalebox|\\(footnotesize|scriptsize|tiny)(?![a-zA-Z])", tex), label
         if _sizes_in(tex):
             small.add(label)
-    assert small == {"tab:probes"}
+    assert small == set()
     read = lambda label: tables[label][1].read_text()      # noqa: E731
-    # where the single-run mark is: the kinematic-only and Sophon rows, the reproduction runs, the learning-rate
-    # sweep. From scratch on X->bb has its three seeds since 2026-11-13 (eb6c87e; it was one seed, marked), so the
-    # resonance tables carry no mark: mean +- SD for both signals
-    assert {lab for lab in tables if M.SINGLE in read(lab)} == {"tab:published", "tab:probes", "tab:partrepro", "tab:lrsweep"}
-    scratch = next(ln for ln in read("tab:xbx").splitlines() if ln.startswith(M.SCRATCH_LABEL + " & "))
-    assert r"\pm" in scratch.split(" & ")[1] and r"\pm" in scratch.split(" & ")[3] and M.SINGLE not in scratch
+    # where the single-run mark is: the kinematic-only and Sophon rows (Sophon in Table 1 and its AUC table too), the
+    # reproduction runs, the learning-rate sweep. From scratch on X->bb has its three seeds since 2026-11-13 (eb6c87e;
+    # it was one seed, marked), so the resonance tables carry no mark: mean +- SD for both signals, in the classifier
+    # columns (X->bb: classifier, linear probe, direct; X->bs: classifier, linear probe)
+    assert {lab for lab in tables if M.SINGLE in read(lab)} == {"tab:summary", "tab:summaryauc", "tab:published", "tab:probes",
+                                                                 "tab:partrepro", "tab:lrsweep"}
+    scratch = next(ln for ln in read("tab:xbx").splitlines() if ln.startswith(M.SCRATCH_LABEL + " & ")).removesuffix(r" \\").split(" & ")
+    assert r"\pm" in scratch[1] and r"\pm" in scratch[4] and scratch[2:4] + scratch[5:] == ["--"] * 3 and M.SINGLE not in "".join(scratch)
     # Table A10: "> 0.9999" for an AUC that rounds to 1.0000, AUC once in each header, the pooled-partition mark
     pairs = read("tab:pairs")
     assert M.NEAR_ONE in pairs and "1.0000" not in _caption_and_body(pairs)[1] and r"{c}{AUC} \\" in pairs and r"\rho" not in pairs
     # (a longtable writes its header twice, for its first page and for the pages after it)
     assert pairs.count("AUC") - _caption_and_body(pairs)[0].count("AUC") == 2 * pairs.count(r"\endhead")
-    # the rows the brief moved out: BatchNorm recomputed only in tab:fill and tab:pairs, Sophon only in tab:probes
+    # the rows the brief moved out: BatchNorm recomputed only in tab:fill and tab:pairs; Sophon in the headline
+    # tables (on JetClass-II and JetClass) and in tab:probes
     bn, sophon = M.LABEL[M.INIT_BN] + " & ", M.LABEL[M.SOPHON] + " & "
     assert {lab for lab in tables if bn in read(lab)} == {"tab:fill", "tab:pairs"}
-    assert {lab for lab in tables if sophon in read(lab)} == {"tab:probes"}
+    assert {lab for lab in tables if sophon in read(lab)} == {"tab:summary", "tab:summaryauc", "tab:probes"}
     # tab:mass: the soft-drop mass, the head block (two networks), the perceptron block (seven)
     mass = read("tab:mass").splitlines()
     head, mlp = (mass.index(M._full_row(3, M.HEADING[k], italic=True)) for k in ("head", "mlp"))
     assert mass[head - 2].startswith("soft-drop mass & ") and mlp - head == 4 and mass[mlp + 8] == r"\bottomrule"
-    # tab:coarse: one table, three column groups
-    assert read("tab:coarse").count(r"\begin{tabular*}") == 1 and read("tab:coarse").count(r"\multicolumn{2}{c}{") == 3
+    # the coarse targets and the b-tagging discriminant left the paper for the supplement (L13)
+    assert not {"tab:coarse", "tab:qcdhf"} & set(tables)
     # the retired task tables are still written but placed nowhere
     assert not {"tab:jetclass", "tab:benchtop", "tab:benchqg", "tab:benchqgherwig"} & set(tables)
 
@@ -2926,9 +2960,13 @@ def test_bold_is_decided_in_each_block_of_a_column_and_the_partitions_subheading
     # 0.51 is the best (published: no SD, zero); x is 0.01 from it, within 3 * 0.01; column 1 (training jets) is skipped
     assert _chosen_bold("jetclass_rej", _frame(whole, 2)) == {(r"ParT~\cite{part}", 2), ("x", 2)}
     # a table of blocks in its caption's words: these keys
-    assert {k for k, v in M.BOLD.items() if v.get("blocks")} == {"summary", "published", "labelsets", "probes", "pairs", "mass"}
-    assert set(M.BOLD) == {"summary", "published", "labelsets", "probes", "pairs", "mass", "sculpt", "jetclass_rej", "xbx",
-                           "xbx_rej", "coarse", "qcdhf", "fill"}
+    assert {k for k, v in M.BOLD.items() if v.get("blocks")} == {"summary", "summary_auc", "published", "pairs", "probes_n",
+                                                                 "ft", "jc1_class_auc", "mass"}
+    assert set(M.BOLD) == {"summary", "summary_auc", "published", "labelsets", "probes", "pairs", "probes_n", "ft",
+                           "jc1_class_auc", "mass", "sculpt", "jetclass_rej", "xbx", "xbx_rej", "coarse", "qcdhf", "fill",
+                           "masseffect"}
+    # tab:masseffect is built transposed, so the rule applies along its rows, and its caption says so
+    assert M.BOLD["masseffect"] == {"of": "a row"}
     # no bold in the tables of inputs, recipes and differences
     assert not {"inputs", "partrepro", "lrsweep", "sculpt_boot"} & set(M.BOLD)
 
@@ -3002,68 +3040,73 @@ def test_the_caption_says_what_bold_marks_once_and_only_where_a_cell_is_bold():
     assert M.BOLD_ON not in other and "Bold marks" not in other and lab["L188"] + r" & 100.0\,$\pm$\,2.0 \\" in other
 
 
-def test_table_one_sets_each_tasks_auc_beside_its_metric_in_eight_columns_a_mode():
-    """tab:summary (PI 2026-11-12): JetClass-II accuracy, AUC; JetClass accuracy, AUC; top R30, AUC; quark/gluon R30,
-    AUC, for the linear probes and for fine-tuning, as the two panels of a task in Figs. 2 and 3. The AUC is the
-    average over the classes, each against the rest, on JetClass-II and JetClass and the binary AUC on top and
-    quark/gluon. The eight columns of a mode are wider than a turned page at the body size: two tasks a page."""
-    assert M.SUMMARY_AUC == {"jc2": "macro_auc_ovr", "jc1": "macro_auc_ovr", "top": "auc", "qg": "auc"}
-    assert [(k, m) for k, _, _, m in M.SUMMARY_GRID] == [("jc2", "accuracy"), ("jc2", "macro_auc_ovr"), ("jc1", "accuracy"),
-                                                         ("jc1", "macro_auc_ovr"), ("top", "r30"), ("top", "auc"),
-                                                         ("qg", "r30"), ("qg", "auc")]
-    # an AUC column is its task's panel (training set, probe data set) with the other metric
-    panel = {k: (n, ds) for k, n, ds, _ in M.SUMMARY_PANELS}
-    assert all((n, ds) == panel[k] for k, n, ds, _ in M.SUMMARY_GRID)
-    assert M.SUMMARY_GRID[0::2] == M.SUMMARY_PANELS and len(M.SUMMARY_GRID) == 8
-    assert M.SUMMARY_PAGES == (("jc2", "jc1"), ("top", "qg")) and [k for pg in M.SUMMARY_PAGES for k in pg] == [k for k, *_ in M.SUMMARY_PANELS]
-    assert M.SUMMARY_TASKS == {"jc2": "JetClass-II", "jc1": "JetClass", "top": "top tagging", "qg": "quark/gluon tagging"}
+def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the_auc():
+    """tab:summary and tab:summaryauc (PI 2026-11-13, L1, L2): Table 1 is the main-text headline figure's table, the
+    headline metric of five tasks (JetClass-II and JetClass accuracy, R30 on top tagging and on quark/gluon tagging
+    scored on Pythia and on Herwig jets) for the linear probes and for fine-tuning; the appendix table holds the AUC
+    beside each, in the same rows. The released Sophon checkpoint below a rule on JetClass-II and JetClass only."""
+    assert M.SUMMARY_PANELS == (("jc2", 1_000_000, "jc2_188", "accuracy"), ("jc1", 1_000_000, "jc1", "accuracy"),
+                                ("top", 1_200_000, "top", "r30"), ("qg", 1_600_000, "qg", "r30"),
+                                ("qg_herwig", 1_600_000, "qg_herwig", "r30")) == M.SUMMARY_GRID
+    assert M.SUMMARY_AUC == {"jc2": "macro_auc_ovr", "jc1": "macro_auc_ovr", "top": "auc", "qg": "auc", "qg_herwig": "auc"}
+    assert M.SUMMARY_AUC_GRID == tuple((k, n, ds, M.SUMMARY_AUC[k]) for k, n, ds, _ in M.SUMMARY_PANELS)
     assert M.SUMMARY_HEAD == {"accuracy": "accuracy", "r30": "$R_{30}$", "macro_auc_ovr": "AUC", "auc": "AUC"}
-    assert [M.SUMMARY_HEAD[m] for *_, m in M.SUMMARY_GRID] == ["accuracy", "AUC", "accuracy", "AUC", "$R_{30}$", "AUC", "$R_{30}$", "AUC"]
+    assert M.SUMMARY_NO_SOPHON == ("top", "qg", "qg_herwig") and M.SUMMARY_CONTROLS == M.FLAV + (M.RAND_POOLED,)
     assert not hasattr(M, "SUMMARY_LABEL_CM")                  # the row labels never wrap: no label width
-    # the caption: the multi-class AUC in the one wording of every table, once, for the two tasks it applies to
-    cap = M.printed_caption("summary")
-    assert cap.count(M.AUC_OVR) == 1 and "On JetClass-II and JetClass, " + M.AUC_OVR in cap and "class pairs" not in cap
-    assert "$R_{30}$ is the inverse background efficiency at 30\\% signal efficiency." in cap
-    assert M.BOLD["summary"] == {"blocks": True} and "summary" not in M.MODES
-    # the generated table: four whole turned pages at the body size under one caption, each later page starting a
-    # page under "Table 1 (continued)"; the probes' two pages, then the fine-tuned ones
-    tex = (ROOT / "paper/journal/tables/mlst_summary.tex").read_text()
-    tabs = re.findall(r"\\begin\{tabular\*\}.*?\\end\{tabular\*\}", tex, re.S)
-    assert tex.startswith(r"\begin{landscape}") and len(tabs) == 4 and r"\begin{longtable}" not in tex and not _sizes_in(tex)
-    assert tex.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}") == 4 and r"\setlength{\tabcolsep}{6pt}" in tex
-    assert tex.count(r"\captionof{table}{") == tex.count(r"\label{tab:summary}") == 1
-    assert tex.count(r"\textit{Table~\ref{tab:summary} (continued)}") == tex.count(r"\newpage") == 3
-    assert tex.count(M.AUC_OVR) == 1 and tex.count(M.BOLD_NOTE.format("each block of a column").strip()) == 1
-    heads = []
-    for tab, (mode, tasks) in zip(tabs, [(mode, tasks) for mode in ("lp", "ft") for tasks in M.SUMMARY_PAGES], strict=True):
-        lines = tab.splitlines()
-        assert lines[2] == " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{M.SUMMARY_TASKS[k]}}}" for k in tasks) + r" \\"
-        assert lines[4] == " & " + " & ".join(M.SUMMARY_HEAD[m] for k, _, _, m in M.SUMMARY_GRID if k in tasks) + r" \\"
-        assert lines[6] == M._full_row(5, M.HEADING[mode], italic=True) and tab.count(r"\textit{") == 1
-        last = lines[-3].split(" & ")
-        assert last[0] == (M.LABEL[M.INIT] if mode == "lp" else M.SCRATCH_LABEL) and len(last) == 5
-        assert mode == "ft" or M.BOLD_ON not in lines[-3]                  # the random network: a reference row
-        heads += lines[4].removesuffix(r" \\").split(" & ")[1:]
-    assert len(heads) == 16 and heads[1::2] == ["AUC"] * 8             # eight value columns a mode, every second an AUC
+    # the captions: what each compares, the AUC defined once in the table that prints it, no class pairs
+    cap, auc = M.printed_caption("summary"), M.printed_caption("summary_auc")
+    assert "$R_{30}$, the inverse background efficiency at 30\\% signal efficiency" in cap and "class pairs" not in cap
+    assert "table~\\ref{tab:summaryauc}" in cap and "released Sophon checkpoint is shown on JetClass-II and JetClass only" in cap
+    assert auc.count("On JetClass-II and JetClass the AUC is averaged over the classes, each against the rest.") == 1
+    assert "table~\\ref{tab:summary}" in auc and "class pairs" not in auc
+    assert M.BOLD["summary"] == M.BOLD["summary_auc"] == {"blocks": True} and not {"summary", "summary_auc"} & set(M.MODES)
+    # the generated tables: two whole turned pages at the body size under one caption, the second starting a page
+    # under "(continued)"; the probes' page, then the fine-tuned one
+    head = {"summary": " & accuracy & accuracy & $R_{30}$ & $R_{30}$, Pythia & $R_{30}$, Herwig \\\\",
+            "summaryauc": " & AUC & AUC & AUC & AUC, Pythia & AUC, Herwig \\\\"}
+    for name, label in (("mlst_summary.tex", "summary"), ("mlst_summary_auc.tex", "summaryauc")):
+        tex = (ROOT / "paper/journal/tables" / name).read_text()
+        tabs = re.findall(r"\\begin\{tabular\*\}.*?\\end\{tabular\*\}", tex, re.S)
+        assert tex.startswith(r"\begin{landscape}") and len(tabs) == 2 and r"\begin{longtable}" not in tex and not _sizes_in(tex)
+        assert tex.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}") == 2 and r"\setlength{\tabcolsep}{6pt}" in tex
+        assert tex.count(r"\captionof{table}{") == tex.count(rf"\label{{tab:{label}}}") == 1
+        assert tex.count(rf"\textit{{Table~\ref{{tab:{label}}} (continued)}}") == tex.count(r"\newpage") == 1
+        assert tex.count(M.BOLD_NOTE.format("each block of a column").strip()) == 1
+        for tab, mode in zip(tabs, ("lp", "ft"), strict=True):
+            lines = tab.splitlines()
+            assert lines[2] == r" & JetClass-II & JetClass & top tagging & \multicolumn{2}{c}{quark/gluon tagging} \\"
+            assert lines[3] == r"\cmidrule(lr){5-6}" and lines[4] == head[label]
+            assert lines[6] == M._full_row(6, M.HEADING[mode], italic=True) and tab.count(r"\textit{") == 1
+            names = [ln.split(" & ")[0] for ln in lines if " & " in ln and not ln.startswith(" & ")]
+            refs = [M.LABEL[M.INIT], M.LABEL[M.SOPHON]] if mode == "lp" else [M.SCRATCH_LABEL]
+            assert names == [M.LABEL[a] for a in M.SETS] + [r"\quad " + M.LABEL[a] for a in M.SUMMARY_CONTROLS] + refs
+            assert lines.count(M._full_row(6, M.PARTITIONS)) == 1
+            last = lines[-3].removesuffix(r" \\").split(" & ")
+            assert last[0] == refs[-1] and len(last) == 6
+            if mode == "lp":       # Sophon below a rule, one run, on JetClass-II and JetClass only; references never bold
+                assert lines[-4] == r"\midrule" and last[3:] == ["--"] * 3 and all(c.endswith(M.SINGLE) for c in last[1:3])
+                assert M.BOLD_ON not in lines[-3] + lines[-5]
 
 
 def test_the_generated_tables_are_bold_where_the_rule_applies_and_say_so_once():
-    """The 17 tables as make_tables.py wrote them (PI 2026-11-12): bold in the tables that compare networks and in no
+    """The 20 tables as make_tables.py wrote them (PI 2026-11-12): bold in the tables that compare networks and in no
     table of inputs, recipes or differences; the caption's sentence once, in the words for a table with blocks or
     without; a bold wrapper holds a value and its standard deviation and nothing else (no mark, no dash, no bound);
     never \\textbf; no bold in a reference row or a count column; the columns where lower or closest to 1 is best are
     the ones their headers name."""
     tables = _paper_tables()
     plain = {"tab:inputs", "tab:partrepro", "tab:lrsweep", "tab:sculptboot"}
-    notes = [M.BOLD_NOTE.format(x).strip() for x in ("a column", "each block of a column")]
+    # the words of the bold sentence: a table, a table of blocks, tab:masseffect (built transposed: along its rows)
+    words = ("a column", "each block of a column", "a row")
+    notes = [M.BOLD_NOTE.format(x).strip() for x in words]
     refs = M.NEVER_BOLD + ("soft-drop mass", "random selection")
     for label, (key, path) in tables.items():
         tex = path.read_text()
         cap, body = _caption_and_body(tex)
         assert r"\textbf" not in tex and M.BOLD_ON not in cap, label
         assert (M.BOLD_ON in body) == (key in M.BOLD) == (label not in plain), label
-        want = notes[bool(M.BOLD[key].get("blocks"))] if key in M.BOLD else None
-        assert [cap.count(n) for n in notes] == [int(n == want) for n in notes], label
+        want = (M.BOLD[key].get("of") or words[bool(M.BOLD[key].get("blocks"))]) if key in M.BOLD else None
+        assert [cap.count(n) for n in notes] == [int(x == want) for x in words], label
         spans = _bold_spans(body)
         assert all(M.PLAIN.fullmatch(x) for x in spans), label
         for ln in body.splitlines():
@@ -3087,3 +3130,136 @@ def test_the_generated_tables_are_bold_where_the_rule_applies_and_say_so_once():
     header = next(r for r in cut if ee in r)
     column = [r[header.index(ee)] for r in cut if len(r) == len(header) and r[0].strip() and ee not in r]
     assert len(column) > 10 and any(c.startswith(M.NEAR_ONE) for c in column) and not any(M.BOLD_ON in c for c in column)
+
+
+# ------------------------------------------------------------------ PI 2026-11-13: the mass-effect table (brief B) and one JetClass source (L2)
+def test_the_mass_effect_table_has_a_row_per_task_metric_and_mode_and_the_four_networks_as_columns():
+    """tab:masseffect (brief B): one summary of the mass-regression head as values, not differences. Rows are the tasks
+    and metrics, for linear probe and fine-tuned where both exist (mass resolution and response, JetClass-II, JetClass,
+    top, quark/gluon on Pythia and on Herwig jets, X->bb and X->bs, sculpting); columns 162, 162 + mass, 17, 17 + mass
+    with their run counts; one turned page a group of blocks (MASS_EFFECT_PAGES)."""
+    XR = _load("xbx_report_masseffect_t", "experiments/XBS/xbx_report.py")
+    runs = M._paper(ROOT)
+    rows = M.masseffect_rows({}, {}, {}, {}, {}, {}, XR, {}, {}, {}, runs)
+    lp, mlp, ft = "linear probe", "multilayer-perceptron probe", "fine-tuned"
+
+    def task(metrics, probes=(lp,), extra=()):
+        return [f"{w}, {how}" for how in probes for w in metrics] + list(extra) + [f"{w}, {ft}" for w in metrics]
+    eff = "signal efficiency (\\%), "
+    want = {"mass": [f"{w}, {how}" for how in ("mass output of the pretraining head", mlp, "ridge probe")
+                     for w in ("resolution", "median response")],
+            "jc2": task(("accuracy", "AUC")),
+            "jc1": task(("accuracy", "AUC"), (lp, mlp)),
+            "top": task(("$R_{30}$", "AUC"), extra=[f"$R_{{30}}$, {mlp}"]),
+            "qg": task(("$R_{30}$", "AUC")), "qg_herwig": task(("$R_{30}$", "AUC")),
+            "xbb": [eff + w for w in ("frozen-feature classifier", "linear probe", "direct discriminant")],
+            "xbs": [eff + w for w in ("frozen-feature classifier", "linear probe")],
+            "sculpt": [f"at {at}, {how}" for how in ("network output used directly", ft)
+                       for at in ("10\\% QCD efficiency", "1\\% QCD efficiency", "50\\% signal efficiency")]}
+    assert list(want) == list(M.MASS_EFFECT_BLOCKS) == [b for page in M.MASS_EFFECT_PAGES for b in page]
+    assert [(b, lab) for b, lab, _, _ in rows] == [(b, lab) for b, labs in want.items() for lab in labs]
+    # the bold direction of each row: the resolution and the Jensen-Shannon distance lower, the response closest to 1
+    assert all(d == ("lower" if lab.startswith(("resolution", "at ")) else "unity" if lab.startswith("median") else "higher")
+               for _, lab, _, d in rows)
+    # the generated table: these rows, under the four networks with their run counts on every page
+    tex = (ROOT / "paper/journal/tables/mlst_masseffect.tex").read_text()
+    head = [" & " + " & ".join(M.LABEL[a] for a in M.MASS_EFFECT) + r" \\",
+            " & " + " & ".join(f"{len(runs[a])} runs" for a in M.MASS_EFFECT) + r" \\"]
+    lines = tex.splitlines()
+    assert all(lines.count(h) == len(M.MASS_EFFECT_PAGES) for h in head) and head[1] == r" & 3 runs & 2 runs & 3 runs & 2 runs \\"
+    printed = [ln.split(" & ") for ln in lines if " & " in ln and not ln.startswith(" & ")]
+    assert [p[0] for p in printed] == [lab for _, lab, _, _ in rows] and all(len(p) == 5 for p in printed)
+    assert [M._full_row(5, M.MASS_EFFECT_BLOCKS[b]) for b in want] == [ln for ln in lines if ln.startswith(r"\multicolumn{5}{@{}l}{")
+                                                                       and "continued" not in ln]
+
+
+def test_the_mass_effect_table_prints_each_row_at_one_place_and_bolds_along_the_row():
+    """table_masseffect builds the table transposed, so that one precision and the bold rule (D1, D19) apply to each
+    row: the best value of a row by its direction and every value within three standard deviations of it."""
+    runs = {"L162": [f"mtx-l162-s{k}" for k in (1, 2, 3)], "L162_MASS": ["mtx-l162mass-s1", "mtx-l162mass-s2"],
+            "R16_Q1": [f"mtx-r16q1-s{k}" for k in (1, 2, 3)], "R16_Q1_MASS": ["mtx-r16q1mass-s1", "mtx-r16q1mass-s2"]}
+    arm = {m: a for a, ms in runs.items() for m in ms}
+
+    def value(means: dict, sd: float):
+        """Each run's value: the network's mean, and offsets whose sample SD is sd."""
+        off = {3: (-sd, 0.0, sd), 2: (-sd / math.sqrt(2), sd / math.sqrt(2))}
+        return lambda m: means[arm[m]] + off[len(runs[arm[m]])][runs[arm[m]].index(m)]
+    rows = [("mass", "resolution, x", value({"L162": 0.20, "L162_MASS": 0.10, "R16_Q1": 0.21, "R16_Q1_MASS": 0.12}, 0.01), "lower"),
+            ("mass", "median response, x", value({"L162": 1.10, "L162_MASS": 0.99, "R16_Q1": 1.05, "R16_Q1_MASS": 1.20}, 0.01), "unity"),
+            ("jc2", "accuracy, linear probe", value({"L162": 0.410, "L162_MASS": 0.409, "R16_Q1": 0.30, "R16_Q1_MASS": 0.35}, 0.001), "higher"),
+            ("xbb", "signal efficiency, direct", None, "higher")]
+    t = M.table_masseffect(rows, runs, M.TAB)
+    parts = t.split("%SPLIT%")
+    assert len(parts) == len(M.MASS_EFFECT_PAGES) and M.V4.TOK_OPEN not in t
+    body = {ln.split(" & ")[0]: ln.removesuffix(r" \\").split(" & ")[1:] for ln in t.splitlines()
+            if " & " in ln and not ln.startswith(" & ")}
+    bold = {lab: [M.MASS_EFFECT[j] for j, c in enumerate(cells) if M.BOLD_ON in c] for lab, cells in body.items()}
+    assert bold == {"resolution, x": ["L162_MASS", "R16_Q1_MASS"], "median response, x": ["L162_MASS"],
+                    "accuracy, linear probe": ["L162", "L162_MASS"], "signal efficiency, direct": []}
+    assert body["signal efficiency, direct"] == ["--"] * 4
+    # one place a row (its standard deviations), each value the mean of its network's runs
+    res = [M.PLAIN.fullmatch(_unbold(c)).groups() for c in body["resolution, x"]]
+    assert [float(m) for m, _ in res] == [0.20, 0.10, 0.21, 0.12] and {len(m.split(".")[1]) for m, _ in res} == {3}
+    # the rows sit under their blocks' headings, on the page of their block
+    first = parts[0].splitlines()
+    k = first.index(M._full_row(5, M.MASS_EFFECT_BLOCKS["mass"]))
+    assert [ln.split(" & ")[0] for ln in first[k + 1:k + 3]] == ["resolution, x", "median response, x"]
+    assert "signal efficiency, direct" in parts[[i for i, pg in enumerate(M.MASS_EFFECT_PAGES) if "xbb" in pg][0]]
+
+
+def test_one_source_for_the_fine_tuned_jetclass_accuracy_and_auc():
+    """L2 (PI 2026-11-13): every table that prints the fine-tuned JetClass accuracy or AUC reads it where Table 1 and
+    the figures do, the fine-tuning read-out on one million jets (jc1_values: summary_ft, summary_scratch;
+    budget_long_metrics.json, the AUC on every test jet); the curves' blocks keep the per-class rejections."""
+    import numpy as np
+    runs = M._paper(ROOT)
+    pre, ref = _jc1_trees(runs, ("L188",))              # the blocks: accuracy 0.800.., AUC 0.980..
+    rec = lambda acc, auc: {"accuracy": acc, "macro_auc_ovr": auc}       # noqa: E731
+    acc, auc = [0.8466, 0.8468, 0.8471], [0.98548, 0.98535, 0.98544]
+    per = {"jc1": {**{m[len("mtx-"):]: {1_000_000: [rec(a, u)]} for m, a, u in zip(runs["L188"], acc, auc)},
+                   M.SCRATCH: {1_000_000: [rec(0.8267, 0.9818), rec(0.8255, 0.9821), rec(0.8279, 0.9817)]}}}
+    vals = M.jc1_values(per, runs)
+    assert vals("L188", "accuracy") == acc and vals("L188", "macro_auc_ovr") == auc
+    assert vals(None, "macro_auc_ovr") == [0.9818, 0.9821, 0.9817] and vals("R16_Q1", "accuracy") is None
+    tok = lambda v: M.V4.tok("p", float(np.mean(v)), float(np.std(v, ddof=1)))      # noqa: E731
+    _, ours = M.V4.jetclass_rows(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, M.TAB, M.TAB.two, vals=vals)
+    _, blocks = M.V4.jetclass_rows(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, M.TAB, M.TAB.two)
+    assert ours[0][1][:2] == [tok(acc), tok(auc)] and ours[-1][1][:2] == [tok([0.8267, 0.8255, 0.8279]), tok([0.9818, 0.9821, 0.9817])]
+    assert ours[0][1][:2] != blocks[0][1][:2] and [r[1][2:] for r in ours] == [r[1][2:] for r in blocks]
+    # Table 1 and its AUC table print the mean of the same runs on JetClass
+    for grid, values in ((M.SUMMARY_GRID, acc), (M.SUMMARY_AUC_GRID, auc)):
+        ft = M.table_summary({}, {}, {}, per, runs, M.TAB, grid).split("%SPLIT%")[1]
+        row = next(ln for ln in ft.splitlines() if ln.startswith(M.LABEL["L188"] + " & ")).split(" & ")
+        printed = M.PLAIN.fullmatch(_unbold(row[2])).group(1)
+        assert float(printed) == round(float(np.mean(values)), len(printed.split(".")[1]))
+
+
+def test_every_table_prints_one_fine_tuned_jetclass_value_for_one_quantity():
+    """L2 on the generated tables: the fine-tuned 188-class network and from scratch on JetClass print the same
+    accuracy and AUC in Table 1, its AUC table, the comparison with published models and the supplement's JetClass
+    tables, and the 188-class AUC is the mean of budget_long_metrics.json's macro_auc_ovr over its three runs."""
+    tables = ROOT / "paper/journal/tables"
+    budget = DATA / "budget/budget_long_metrics.json"
+    if not (tables / "mlst_summary_auc.tex").exists():
+        pytest.skip("the generated tables are not there")
+
+    def cell(name: str, label: str, col: int, after: str | None = None) -> tuple:
+        lines = (tables / name).read_text().splitlines()
+        if after:
+            lines = lines[next(i for i, ln in enumerate(lines) if after in ln):]
+        row = next(ln for ln in lines if ln.startswith(label + " & ")).removesuffix(r" \\").split(" & ")
+        return M.PLAIN.fullmatch(_unbold(row[col]).strip()).groups()
+    ft = rf"\textit{{{M.HEADING['ft']}}}"
+    full, scr = M.LABEL["L188"], M.SCRATCH_LABEL
+    pub = {full: f"fine-tuned from {full}{M.THIS_WORK}", scr: scr + M.THIS_WORK}
+    for label in (full, scr):
+        accs = {cell("mlst_summary.tex", label, 2, ft), cell("mlst_published.tex", pub[label], 3),
+                cell("mlst_jetclass.tex", label, 3), cell("mlst_jetclass_all.tex", label, 3)}
+        aucs = {cell("mlst_summary_auc.tex", label, 2, ft), cell("mlst_published.tex", pub[label], 4),
+                cell("mlst_jetclass.tex", label, 4), cell("mlst_jetclass_all.tex", label, 2, " & training jets & AUC")}
+        assert len(accs) == len(aucs) == 1, (label, accs, aucs)
+    if budget.exists():
+        cells = json.loads(budget.read_text())["cells"]
+        v = [cells[f"leg2/{m.removeprefix('mtx-')}/N1000000/s1"]["macro_auc_ovr"] for m in M._paper(ROOT)["L188"]]
+        printed = cell("mlst_summary_auc.tex", full, 2, ft)[0]
+        assert len(v) == 3 and float(printed) == round(statistics.mean(v), len(printed.split(".")[1]))

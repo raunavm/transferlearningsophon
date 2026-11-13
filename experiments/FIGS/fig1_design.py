@@ -29,12 +29,11 @@ FONTS = HERE / "figstyle" / "fonts"
 C = {188: "#332288", 162: "#AA4499", 43: "#999933", 17: "#44AA99"}
 COLUMN = {188: "L188", 162: "L162", 43: "R42_Q1", 17: "R16_Q1"}      # the map's column of each label set
 GREY, INK, LG = "#6B6B6B", "#4A4A4A", "#C9C9C9"
-# the one accent (PI 2026-11-12: "a pop of colour that goes with the theme"): the wine of the Tol muted palette our
-# other figures use, which no label set has; it marks the pretrained network and what is taken from it
-ACC, ACC_TINT = "#882255", "#F3E6EC"
-# the jets, colour-coded by detector region (PI 2026-11-12), in Tol muted colours that no label set uses:
-# tracks in the tracker, deposits in the inner (electromagnetic) and the outer (hadronic) calorimeter band
-TRK, ECAL, HCAL = "#117733", "#CC6677", "#4C9FCB"
+# PI 2026-11-13 (L8): colour only for the four label sets; the jets, features and task markers in grey or slate.
+# SLATE marks the features and the task markers, SLATE_TINT fills the features; the jets keep their detector regions
+# apart by lightness: tracks in the tracker, deposits in the inner (electromagnetic) and the outer (hadronic) band
+SLATE, SLATE_TINT = "#4F5B6B", "#E4E8ED"
+TRK, ECAL, HCAL = "#56606E", "#7D8896", "#AAB3BE"
 BAND = "#F3F3F3"                                   # the calorimeter bands themselves stay neutral
 W, H = 13.0, 13.1
 FS, FS_T = 8, 9
@@ -203,11 +202,11 @@ def build():
     ax.text(1.35, y0 + 1.13, "JetClass-II jet", ha="center", va="center", fontsize=FS)
     arrow((2.65, y0), (3.3, y0))
     xb0, wb = 3.35, 1.0                      # the network that is reused
-    block(xb0, y0 - 1.0, wb, 2.0, "Sophon's\nnetwork", rot=90)      # the tables' name for it
+    block(xb0, y0 - 1.0, wb, 2.0, "Particle\nTransformer", rot=90)      # the architecture (L8); the caption names Sophon's head
     arrow((xb0 + wb + 0.2, y0), (5.3, y0))
     xf = 5.52
     for k in range(6):
-        ax.add_patch(Circle((xf, y0 - 0.5 + 0.2 * k), 0.065, fc=ACC_TINT, ec=ACC, lw=0.8, zorder=3))
+        ax.add_patch(Circle((xf, y0 - 0.5 + 0.2 * k), 0.065, fc=SLATE_TINT, ec=SLATE, lw=0.8, zorder=3))
     ax.text(xf, y0 + 0.8, "Features", ha="center", va="center", fontsize=FS)
     arrow((xf + 0.22, y0), (xf + 0.92, y0))
     # the head: a shape of its own, tapering toward the outputs
@@ -273,9 +272,9 @@ def build():
     line([BX + BW, max(c for c, t in zip(cx, TASKS) if t[2])], [yT, yT], lw=0.6)
     for c, (nm, toks, ft) in zip(cx, TASKS):
         ax.text(c, ynam, nm, ha="center", va="center", fontsize=FS)
-        ax.add_patch(Rectangle((c - MS / 2, yF - MS / 2), MS, MS, fc="white", ec=ACC, lw=0.9, zorder=4))     # frozen: open
+        ax.add_patch(Rectangle((c - MS / 2, yF - MS / 2), MS, MS, fc="white", ec=SLATE, lw=0.9, zorder=4))     # frozen: open
         if ft:
-            ax.add_patch(Rectangle((c - MS / 2, yT - MS / 2), MS, MS, fc=ACC, ec=ACC, lw=0.9, zorder=4))     # fine-tuned: filled
+            ax.add_patch(Rectangle((c - MS / 2, yT - MS / 2), MS, MS, fc=SLATE, ec=SLATE, lw=0.9, zorder=4))     # fine-tuned: filled
     return fig
 
 

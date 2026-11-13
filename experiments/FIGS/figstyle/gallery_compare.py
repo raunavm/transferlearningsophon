@@ -51,7 +51,7 @@ def draw_font_lm(path) -> None:
 
 
 F7 = ("Fine-tuned networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, and a network trained from "
-      "scratch (dashed), on class-balanced JetClass-II and JetClass (accuracy) and top and quark/gluon tagging (R30), "
+      "scratch (grey), on class-balanced JetClass-II and JetClass (accuracy) and top and quark/gluon tagging (R30), "
       "against the number of training jets. Points are means over three pretraining runs; ")
 A4 = ("Networks pretrained on JetClass-II, in bins of jet transverse momentum: linear-probe accuracy on JetClass-II for "
       "the label sets (a) and the controls (b), JetClass accuracy after fine-tuning (c), and the probes' X→bb̄ "

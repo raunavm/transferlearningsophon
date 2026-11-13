@@ -1,31 +1,64 @@
 \begin{landscape}
 {
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\setlength{\tabcolsep}{6pt}
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \setlength{\abovecaptionskip}{0pt}
-\captionof{table}{Rejection of QCD jets when tagging $X\to b\bar b$ and $X\to bs$ jets in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV, for the networks of table~\ref{tab:xbx}. $R_{50}$ and $R_{30}$ are the inverse QCD efficiencies at 50\% and 30\% signal efficiency. Transfer is a classifier trained on the frozen features, direct is the pretrained $X\to b\bar b$ output against the QCD outputs, and closest node is the pretrained output of the class that contains $X\to bq$ against the QCD outputs. A dash marks a score that cannot be formed. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions, three initializations of the random network and three training seeds from scratch on $X\to bs$. Bold marks the best value of a column and every value within three standard deviations of it.}
+\captionof{table}{Rejection of QCD jets when tagging $X\to b\bar b$ and $X\to bs$ jets in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV, for the networks and read-outs of table~\ref{tab:xbx}. $R_{50}$ and $R_{30}$ are the inverse QCD efficiencies at 50\% and 30\% signal efficiency. A dash marks a read-out that the network does not have. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions, three initializations of the random network and three training seeds from scratch. Bold marks the best value of a column and every value within three standard deviations of it.}
 \label{tab:xbxrej}
 \par\medskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
- & \multicolumn{2}{c}{$X\to b\bar b$, transfer} & \multicolumn{2}{c}{$X\to b\bar b$, direct} & \multicolumn{2}{c}{$X\to bs$, transfer} & \multicolumn{2}{c}{$X\to bs$, closest node} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
- & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
+ & \multicolumn{6}{c}{$X\to b\bar b$ against QCD jets} \\
+\cmidrule(lr){2-7}
+ & \multicolumn{2}{c}{classifier} & \multicolumn{2}{c}{linear probe} & \multicolumn{2}{c}{direct} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
 \midrule
-\Kfull{} classes & {\fontseries{b}\selectfont 350\,$\pm$\,4} & {\fontseries{b}\selectfont 1{,}011\,$\pm$\,37} & {\fontseries{b}\selectfont 288.8\,$\pm$\,3.2} & {\fontseries{b}\selectfont 792\,$\pm$\,27} & {\fontseries{b}\selectfont 435\,$\pm$\,27} & {\fontseries{b}\selectfont 2{,}068\,$\pm$\,154} & {\fontseries{b}\selectfont 144.1\,$\pm$\,3.5} & {\fontseries{b}\selectfont 377.0\,$\pm$\,18.5} \\
-\Kres{} classes & {\fontseries{b}\selectfont 332\,$\pm$\,10} & {\fontseries{b}\selectfont 920\,$\pm$\,39} & {\fontseries{b}\selectfont 289.1\,$\pm$\,1.7} & {\fontseries{b}\selectfont 776\,$\pm$\,7} & {\fontseries{b}\selectfont 425\,$\pm$\,4} & {\fontseries{b}\selectfont 2{,}021\,$\pm$\,172} & {\fontseries{b}\selectfont 142.0\,$\pm$\,2.8} & {\fontseries{b}\selectfont 365.5\,$\pm$\,10.1} \\
-\Kmid{} classes & {\fontseries{b}\selectfont 321\,$\pm$\,10} & {\fontseries{b}\selectfont 891\,$\pm$\,51} & -- & -- & {\fontseries{b}\selectfont 357\,$\pm$\,16} & {\fontseries{b}\selectfont 1{,}615\,$\pm$\,59} & 91.9\,$\pm$\,3.5 & 238.0\,$\pm$\,9.5 \\
-\Kcoarse{} classes & 258\,$\pm$\,19 & {\fontseries{b}\selectfont 772\,$\pm$\,83} & -- & -- & 191\,$\pm$\,26 & 691\,$\pm$\,87 & 38.0\,$\pm$\,0.8 & 112.2\,$\pm$\,3.1 \\
-\multicolumn{9}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 218\,$\pm$\,7 & 693\,$\pm$\,6 & -- & -- & 194\,$\pm$\,8 & 767\,$\pm$\,10 & 39.1\,$\pm$\,1.2 & 115.0\,$\pm$\,4.0 \\
-\quad $b$-quark boundary & 264\,$\pm$\,3 & 747\,$\pm$\,8 & -- & -- & 211\,$\pm$\,19 & 720\,$\pm$\,79 & 38.5\,$\pm$\,1.8 & 110.5\,$\pm$\,6.6 \\
-\quad random flavor boundary & 277\,$\pm$\,3 & 809\,$\pm$\,30 & -- & -- & 257\,$\pm$\,2 & 1{,}027\,$\pm$\,62 & 39.5\,$\pm$\,1.1 & 115.0\,$\pm$\,5.3 \\
-\quad random partitions & 290\,$\pm$\,18 & 788\,$\pm$\,36 & -- & -- & {\fontseries{b}\selectfont 312\,$\pm$\,38} & {\fontseries{b}\selectfont 1{,}359\,$\pm$\,313} & 34.0\,$\pm$\,8.0 & 93.9\,$\pm$\,19.0 \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 325\,$\pm$\,11} & {\fontseries{b}\selectfont 935\,$\pm$\,99} & {\fontseries{b}\selectfont 290.0\,$\pm$\,1.8} & {\fontseries{b}\selectfont 796\,$\pm$\,15} & {\fontseries{b}\selectfont 372\,$\pm$\,3} & {\fontseries{b}\selectfont 1{,}751\,$\pm$\,53} & {\fontseries{b}\selectfont 139.5\,$\pm$\,1.8} & {\fontseries{b}\selectfont 369.3\,$\pm$\,1.0} \\
-\Kcoarse{} classes + mass & 263\,$\pm$\,3 & 771\,$\pm$\,44 & -- & -- & 195\,$\pm$\,23 & 766\,$\pm$\,76 & 38.8\,$\pm$\,1.0 & 116.8\,$\pm$\,0.5 \\
-random network & 16\,$\pm$\,1 & 43\,$\pm$\,3 & -- & -- & 13\,$\pm$\,1 & 31\,$\pm$\,2 & -- & -- \\
-from scratch & 153\,$\pm$\,53 & 398\,$\pm$\,180 & -- & -- & 146\,$\pm$\,11 & 608\,$\pm$\,38 & -- & -- \\
+\Kfull{} classes & {\fontseries{b}\selectfont 350\,$\pm$\,4} & {\fontseries{b}\selectfont 1{,}010\,$\pm$\,40} & {\fontseries{b}\selectfont 310\,$\pm$\,5} & {\fontseries{b}\selectfont 870\,$\pm$\,42} & {\fontseries{b}\selectfont 288.8\,$\pm$\,3.2} & {\fontseries{b}\selectfont 792\,$\pm$\,27} \\
+\Kres{} classes & {\fontseries{b}\selectfont 332\,$\pm$\,10} & {\fontseries{b}\selectfont 920\,$\pm$\,40} & {\fontseries{b}\selectfont 272\,$\pm$\,25} & {\fontseries{b}\selectfont 691\,$\pm$\,99} & {\fontseries{b}\selectfont 289.1\,$\pm$\,1.7} & {\fontseries{b}\selectfont 776\,$\pm$\,7} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 325\,$\pm$\,11} & {\fontseries{b}\selectfont 940\,$\pm$\,100} & {\fontseries{b}\selectfont 284\,$\pm$\,33} & {\fontseries{b}\selectfont 776\,$\pm$\,130} & {\fontseries{b}\selectfont 290.0\,$\pm$\,1.8} & {\fontseries{b}\selectfont 796\,$\pm$\,15} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 321\,$\pm$\,10} & {\fontseries{b}\selectfont 890\,$\pm$\,50} & {\fontseries{b}\selectfont 269\,$\pm$\,15} & {\fontseries{b}\selectfont 718\,$\pm$\,36} & -- & -- \\
+\Kcoarse{} classes & 258\,$\pm$\,19 & {\fontseries{b}\selectfont 770\,$\pm$\,80} & 244\,$\pm$\,19 & 618\,$\pm$\,52 & -- & -- \\
+\Kcoarse{} classes + mass & 263\,$\pm$\,3 & 770\,$\pm$\,40 & {\fontseries{b}\selectfont 264\,$\pm$\,19} & {\fontseries{b}\selectfont 748\,$\pm$\,66} & -- & -- \\
+\multicolumn{7}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 218\,$\pm$\,7 & 690\,$\pm$\,10 & 208\,$\pm$\,2 & 607\,$\pm$\,31 & -- & -- \\
+\quad $b$-quark boundary & 264\,$\pm$\,3 & 750\,$\pm$\,10 & 248\,$\pm$\,11 & 658\,$\pm$\,28 & -- & -- \\
+\quad random flavor boundary & 277\,$\pm$\,3 & 810\,$\pm$\,30 & 217\,$\pm$\,21 & 555\,$\pm$\,15 & -- & -- \\
+\quad random partitions & 290\,$\pm$\,18 & 790\,$\pm$\,40 & {\fontseries{b}\selectfont 264\,$\pm$\,29} & {\fontseries{b}\selectfont 723\,$\pm$\,58} & -- & -- \\
+random network & -- & -- & 16\,$\pm$\,1 & 43\,$\pm$\,3 & -- & -- \\
+from scratch & 153\,$\pm$\,53 & 400\,$\pm$\,180 & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\newpage
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:xbxrej} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\toprule
+ & \multicolumn{4}{c}{$X\to bs$ against QCD jets} \\
+\cmidrule(lr){2-5}
+ & \multicolumn{2}{c}{classifier} & \multicolumn{2}{c}{linear probe} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
+\midrule
+\Kfull{} classes & {\fontseries{b}\selectfont 435\,$\pm$\,27} & {\fontseries{b}\selectfont 2{,}070\,$\pm$\,150} & {\fontseries{b}\selectfont 316\,$\pm$\,11} & {\fontseries{b}\selectfont 1{,}313\,$\pm$\,97} \\
+\Kres{} classes & {\fontseries{b}\selectfont 425\,$\pm$\,4} & {\fontseries{b}\selectfont 2{,}020\,$\pm$\,170} & {\fontseries{b}\selectfont 286\,$\pm$\,26} & {\fontseries{b}\selectfont 1{,}117\,$\pm$\,142} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 372\,$\pm$\,3} & {\fontseries{b}\selectfont 1{,}750\,$\pm$\,50} & {\fontseries{b}\selectfont 250\,$\pm$\,25} & 968\,$\pm$\,53 \\
+\Kmid{} classes & {\fontseries{b}\selectfont 357\,$\pm$\,16} & {\fontseries{b}\selectfont 1{,}610\,$\pm$\,60} & 265\,$\pm$\,9 & 1{,}013\,$\pm$\,12 \\
+\Kcoarse{} classes & 191\,$\pm$\,26 & 690\,$\pm$\,90 & 183\,$\pm$\,28 & 642\,$\pm$\,165 \\
+\Kcoarse{} classes + mass & 195\,$\pm$\,23 & 770\,$\pm$\,80 & 195\,$\pm$\,13 & 768\,$\pm$\,87 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 194\,$\pm$\,8 & 770\,$\pm$\,10 & 182\,$\pm$\,20 & 698\,$\pm$\,79 \\
+\quad $b$-quark boundary & 211\,$\pm$\,19 & 720\,$\pm$\,80 & 190\,$\pm$\,7 & 676\,$\pm$\,71 \\
+\quad random flavor boundary & 257\,$\pm$\,2 & 1{,}030\,$\pm$\,60 & 209\,$\pm$\,15 & 737\,$\pm$\,60 \\
+\quad random partitions & {\fontseries{b}\selectfont 312\,$\pm$\,38} & {\fontseries{b}\selectfont 1{,}360\,$\pm$\,310} & {\fontseries{b}\selectfont 265\,$\pm$\,37} & {\fontseries{b}\selectfont 1{,}102\,$\pm$\,233} \\
+random network & -- & -- & 13\,$\pm$\,1 & 31\,$\pm$\,2 \\
+from scratch & 146\,$\pm$\,11 & 610\,$\pm$\,40 & -- & -- \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

@@ -1,162 +1,92 @@
-\begin{landscape}
-{\small
-\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
-\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\caption{Fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, and the network trained from scratch, on each task with the number of training jets in the column headers: on class-balanced JetClass-II the AUC (over all classes and over the QCD classes) and the accuracy, the accuracy on JetClass, and $R_{30}$ on top, quark/gluon and Herwig jets. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. $\rho$: $1-\mathrm{AUC}$ at $10^{6}$ jets over that of the \Kfull-class run of the same seed. A dash: not run at that size. Mean $\pm$ SD over the pretraining runs of each configuration. $^{\S}$ marks a value from a single run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}\label{tab:ft}\\
+\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\begin{center}
+\setlength{\tabcolsep}{4pt}
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{Fine-tuning of the networks of table~\ref{tab:summary}, and training from scratch, at the training-set sizes in the column headers, in the quantities of the training-size figures, accuracy on class-balanced JetClass-II and on JetClass and $R_{30}$, the inverse background efficiency at 30\% signal efficiency, in top tagging and in quark/gluon tagging on Pythia and on Herwig jets. The values at the full training sets are in table~\ref{tab:summary}, the 17-class partitions are fine-tuned on JetClass-II at one million jets only, and the missing top and quark/gluon inputs are set to zero. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions and three training seeds from scratch. Bold marks the best value of each block of a column and every value within three standard deviations of it. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
+\label{tab:ft}
+\par\medskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
 \toprule
-\endfirsthead
-\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:ft} (continued)}} \\
-\toprule
-\endhead
+ & \multicolumn{2}{c}{training jets} \\
+\cmidrule(lr){2-3}
+ & 10{,}000 & 100{,}000 \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{fine-tuned, JetClass-II, accuracy}} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.3914\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 0.4164\,$\pm$\,0.0015} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.3934\,$\pm$\,0.0018} & {\fontseries{b}\selectfont 0.4161\,$\pm$\,0.0015} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.3868\,$\pm$\,0.0078} & {\fontseries{b}\selectfont 0.4104\,$\pm$\,0.0016} \\
+\Kmid{} classes & 0.3563\,$\pm$\,0.0025 & 0.4007\,$\pm$\,0.0013 \\
+\Kcoarse{} classes & 0.3219\,$\pm$\,0.0011 & 0.3833\,$\pm$\,0.0020 \\
+\Kcoarse{} classes + mass & 0.3171\,$\pm$\,0.0022 & 0.3770\,$\pm$\,0.0016 \\
+from scratch & 0.1492\,$\pm$\,0.0011 & 0.2921\,$\pm$\,0.0040 \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{fine-tuned, JetClass, accuracy}} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.8117\,$\pm$\,0.0031} & {\fontseries{b}\selectfont 0.8343\,$\pm$\,0.0035} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.8117\,$\pm$\,0.0013} & {\fontseries{b}\selectfont 0.8328\,$\pm$\,0.0005} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.8103\,$\pm$\,0.0007} & {\fontseries{b}\selectfont 0.8337\,$\pm$\,0.0016} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 0.8086\,$\pm$\,0.0031} & {\fontseries{b}\selectfont 0.8324\,$\pm$\,0.0004} \\
+\Kcoarse{} classes & 0.7982\,$\pm$\,0.0023 & {\fontseries{b}\selectfont 0.8288\,$\pm$\,0.0005} \\
+\Kcoarse{} classes + mass & 0.7967\,$\pm$\,0.0033 & {\fontseries{b}\selectfont 0.8257\,$\pm$\,0.0007} \\
+\multicolumn{3}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.7997\,$\pm$\,0.0005 & {\fontseries{b}\selectfont 0.8289\,$\pm$\,0.0007} \\
+\quad $b$-quark boundary & 0.8045\,$\pm$\,0.0018 & {\fontseries{b}\selectfont 0.8309\,$\pm$\,0.0011} \\
+\quad random flavor boundary & 0.8018\,$\pm$\,0.0004 & {\fontseries{b}\selectfont 0.8310\,$\pm$\,0.0014} \\
+\quad random partitions & 0.8016\,$\pm$\,0.0024 & {\fontseries{b}\selectfont 0.8306\,$\pm$\,0.0009} \\
+from scratch & 0.6773\,$\pm$\,0.0038 & 0.7773\,$\pm$\,0.0050 \\
 \bottomrule
-\endlastfoot
-\multicolumn{5}{@{}l}{JetClass-II, AUC} \\*
-training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 & $\rho$ \\*
-\noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
-\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\*
-\mbox{\Kfull{} classes} & 0.9722\,$\pm$\,0.0002 & 0.97776\,$\pm$\,0.00017 & 0.97966\,$\pm$\,0.00009 & 1.000 \\*
-\mbox{\Kres{} classes} & 0.9725\,$\pm$\,0.0001 & 0.97750\,$\pm$\,0.00011 & 0.97937\,$\pm$\,0.00017 & 1.014\,$\pm$\,0.011 \\*
-\mbox{\Kmid{} classes} & 0.9669\,$\pm$\,0.0006 & 0.97633\,$\pm$\,0.00007 & 0.97878\,$\pm$\,0.00010 & 1.043\,$\pm$\,0.002 \\*
-\mbox{\Kcoarse{} classes} & 0.9623\,$\pm$\,0.0003 & 0.97427\,$\pm$\,0.00018 & 0.97716\,$\pm$\,0.00009 & 1.123\,$\pm$\,0.003 \\*
-\multicolumn{5}{@{}l}{17-class partitions} \\*
-\quad no flavor boundary & -- & -- & 0.97755\,$\pm$\,0.00009 & 1.106\,$\pm$\,0.002 \\*
-\quad $b$-quark boundary & -- & -- & 0.97803\,$\pm$\,0.00027 & 1.083\,$\pm$\,0.015 \\*
-\quad random flavor boundary & -- & -- & 0.97803\,$\pm$\,0.00014 & 1.083\,$\pm$\,0.009 \\*
-\quad random partition 1, seed 1 & -- & -- & 0.97826$^{\S}$ & 1.073$^{\S}$ \\*
-\quad random partition 2, seed 2 & -- & -- & 0.97835$^{\S}$ & 1.066$^{\S}$ \\*
-\quad random partition 3, seed 1 & -- & -- & 0.97855$^{\S}$ & 1.058$^{\S}$ \\*
-\quad random partition 4, seed 2 & -- & -- & 0.97862$^{\S}$ & 1.052$^{\S}$ \\*
-\quad random partition 5, seed 2 & -- & -- & 0.97827$^{\S}$ & 1.069$^{\S}$ \\*
-\mbox{\Kres{} classes + mass} & 0.9723\,$\pm$\,0.0002 & 0.97703\,$\pm$\,0.00011 & 0.97910\,$\pm$\,0.00013 & 1.030\,$\pm$\,0.009 \\*
-\mbox{\Kcoarse{} classes + mass} & 0.9626\,$\pm$\,0.0001 & 0.97371$^{\P}$ & 0.97675\,$\pm$\,0.00015 & 1.146\,$\pm$\,0.009 \\*
-\mbox{from scratch} & 0.9202\,$\pm$\,0.0013 & 0.96133\,$\pm$\,0.00134 & 0.97341\,$\pm$\,0.00032 & -- \\
-\midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{JetClass-II, accuracy} \\*
-training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\*
-\noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\*
-\mbox{\Kfull{} classes} & 0.3914\,$\pm$\,0.0011 & 0.4164\,$\pm$\,0.0015 & 0.4263\,$\pm$\,0.0005 \\*
-\mbox{\Kres{} classes} & 0.3934\,$\pm$\,0.0018 & 0.4161\,$\pm$\,0.0015 & 0.4249\,$\pm$\,0.0021 \\*
-\mbox{\Kmid{} classes} & 0.3563\,$\pm$\,0.0025 & 0.4007\,$\pm$\,0.0013 & 0.4166\,$\pm$\,0.0011 \\*
-\mbox{\Kcoarse{} classes} & 0.3219\,$\pm$\,0.0011 & 0.3833\,$\pm$\,0.0020 & 0.4054\,$\pm$\,0.0020 \\*
-\multicolumn{4}{@{}l}{17-class partitions} \\*
-\quad no flavor boundary & -- & -- & 0.4078\,$\pm$\,0.0005 \\*
-\quad $b$-quark boundary & -- & -- & 0.4101\,$\pm$\,0.0013 \\*
-\quad random flavor boundary & -- & -- & 0.4128\,$\pm$\,0.0021 \\*
-\quad random partition 1, seed 1 & -- & -- & 0.4151$^{\S}$ \\*
-\quad random partition 2, seed 2 & -- & -- & 0.4159$^{\S}$ \\*
-\quad random partition 3, seed 1 & -- & -- & 0.4160$^{\S}$ \\*
-\quad random partition 4, seed 2 & -- & -- & 0.4189$^{\S}$ \\*
-\quad random partition 5, seed 2 & -- & -- & 0.4163$^{\S}$ \\*
-\mbox{\Kres{} classes + mass} & 0.3868\,$\pm$\,0.0078 & 0.4104\,$\pm$\,0.0016 & 0.4206\,$\pm$\,0.0011 \\*
-\mbox{\Kcoarse{} classes + mass} & 0.3171\,$\pm$\,0.0022 & 0.3770\,$\pm$\,0.0016 & 0.4006\,$\pm$\,0.0008 \\*
-\mbox{from scratch} & 0.1492\,$\pm$\,0.0011 & 0.2921\,$\pm$\,0.0040 & 0.3677\,$\pm$\,0.0012 \\
-\midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{JetClass-II, QCD classes, AUC over the QCD classes} \\*
-training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\*
-\noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\*
-\mbox{\Kfull{} classes} & 0.9498\,$\pm$\,0.0003 & 0.9598\,$\pm$\,0.0002 & 0.96309\,$\pm$\,0.00004 \\*
-\mbox{\Kres{} classes} & 0.9479\,$\pm$\,0.0001 & 0.9574\,$\pm$\,0.0002 & 0.96182\,$\pm$\,0.00037 \\*
-\mbox{\Kmid{} classes} & 0.9416\,$\pm$\,0.0011 & 0.9573\,$\pm$\,0.0001 & 0.96125\,$\pm$\,0.00016 \\*
-\mbox{\Kcoarse{} classes} & 0.9368\,$\pm$\,0.0014 & 0.9543\,$\pm$\,0.0003 & 0.95858\,$\pm$\,0.00012 \\*
-\multicolumn{4}{@{}l}{17-class partitions} \\*
-\quad no flavor boundary & -- & -- & 0.95906\,$\pm$\,0.00018 \\*
-\quad $b$-quark boundary & -- & -- & 0.96003\,$\pm$\,0.00102 \\*
-\quad random flavor boundary & -- & -- & 0.95986\,$\pm$\,0.00057 \\*
-\quad random partition 1, seed 1 & -- & -- & 0.95984$^{\S}$ \\*
-\quad random partition 2, seed 2 & -- & -- & 0.95980$^{\S}$ \\*
-\quad random partition 3, seed 1 & -- & -- & 0.96086$^{\S}$ \\*
-\quad random partition 4, seed 2 & -- & -- & 0.96083$^{\S}$ \\*
-\quad random partition 5, seed 2 & -- & -- & 0.96018$^{\S}$ \\*
-\mbox{\Kres{} classes + mass} & 0.9472\,$\pm$\,0.0012 & 0.9569\,$\pm$\,0.0004 & 0.96113\,$\pm$\,0.00017 \\*
-\mbox{\Kcoarse{} classes + mass} & 0.9342\,$\pm$\,0.0010 & 0.9532\,$\pm$\,0.0002 & 0.95802\,$\pm$\,0.00008 \\*
-\mbox{from scratch} & 0.8885\,$\pm$\,0.0008 & 0.9359\,$\pm$\,0.0024 & 0.95363\,$\pm$\,0.00084 \\
-\midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{JetClass, accuracy} \\*
-training jets & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\*
-\noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\*
-\mbox{\Kfull{} classes} & 0.8117\,$\pm$\,0.0031 & 0.8343\,$\pm$\,0.0035 & 0.8468\,$\pm$\,0.0006 \\*
-\mbox{\Kres{} classes} & 0.8117\,$\pm$\,0.0013 & 0.8328\,$\pm$\,0.0005 & 0.8475\,$\pm$\,0.0009 \\*
-\mbox{\Kmid{} classes} & 0.8086\,$\pm$\,0.0031 & 0.8324\,$\pm$\,0.0004 & 0.8459\,$\pm$\,0.0002 \\*
-\mbox{\Kcoarse{} classes} & 0.7982\,$\pm$\,0.0023 & 0.8288\,$\pm$\,0.0005 & 0.8422\,$\pm$\,0.0005 \\*
-\multicolumn{4}{@{}l}{17-class partitions} \\*
-\quad no flavor boundary & 0.7997\,$\pm$\,0.0005 & 0.8289\,$\pm$\,0.0007 & 0.8433\,$\pm$\,0.0002 \\*
-\quad $b$-quark boundary & 0.8045\,$\pm$\,0.0018 & 0.8309\,$\pm$\,0.0011 & 0.8439\,$\pm$\,0.0007 \\*
-\quad random flavor boundary & 0.8018\,$\pm$\,0.0004 & 0.8310\,$\pm$\,0.0014 & 0.8434\,$\pm$\,0.0003 \\*
-\quad random partition 1, seed 1 & 0.8015$^{\S}$ & 0.8304$^{\S}$ & 0.8435$^{\S}$ \\*
-\quad random partition 2, seed 2 & 0.8055$^{\S}$ & 0.8311$^{\S}$ & 0.8436$^{\S}$ \\*
-\quad random partition 3, seed 1 & 0.7991$^{\S}$ & 0.8309$^{\S}$ & 0.8448$^{\S}$ \\*
-\quad random partition 4, seed 2 & 0.8016$^{\S}$ & 0.8291$^{\S}$ & 0.8449$^{\S}$ \\*
-\quad random partition 5, seed 2 & 0.8004$^{\S}$ & 0.8313$^{\S}$ & 0.8448$^{\S}$ \\*
-\mbox{\Kres{} classes + mass} & 0.8103\,$\pm$\,0.0007 & 0.8337\,$\pm$\,0.0016 & 0.8465\,$\pm$\,0.0009 \\*
-\mbox{\Kcoarse{} classes + mass} & 0.7967\,$\pm$\,0.0033 & 0.8257\,$\pm$\,0.0007 & 0.8399\,$\pm$\,0.0002 \\*
-\mbox{from scratch} & 0.6773\,$\pm$\,0.0038 & 0.7773\,$\pm$\,0.0050 & 0.8267\,$\pm$\,0.0011 \\
-\midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{top, $R_{30}$} \\*
-training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\*
-\noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
-\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\*
-\mbox{\Kfull{} classes} & 127\,$\pm$\,21 & 410\,$\pm$\,30 & 850\,$\pm$\,90 & 1{,}800\,$\pm$\,60 \\*
-\mbox{\Kres{} classes} & 154\,$\pm$\,19 & 440\,$\pm$\,50 & 810\,$\pm$\,60 & 1{,}790\,$\pm$\,60 \\*
-\mbox{\Kmid{} classes} & 134\,$\pm$\,25 & 450\,$\pm$\,40 & 850\,$\pm$\,80 & 1{,}780\,$\pm$\,150 \\*
-\mbox{\Kcoarse{} classes} & 137\,$\pm$\,15 & 370\,$\pm$\,20 & 830\,$\pm$\,60 & 1{,}740\,$\pm$\,140 \\*
-\multicolumn{5}{@{}l}{17-class partitions} \\*
-\quad no flavor boundary & 84\,$\pm$\,20 & 370\,$\pm$\,10 & 810\,$\pm$\,50 & 1{,}790\,$\pm$\,90 \\*
-\quad $b$-quark boundary & 136\,$\pm$\,29 & 380\,$\pm$\,70 & 900\,$\pm$\,30 & 1{,}830\,$\pm$\,330 \\*
-\quad random flavor boundary & 104\,$\pm$\,31 & 350\,$\pm$\,20 & 770\,$\pm$\,20 & 1{,}610\,$\pm$\,60 \\*
-\quad random partition 1, seed 1 & 101$^{\S}$ & 370$^{\S}$ & 710$^{\S}$ & 1{,}660$^{\S}$ \\*
-\quad random partition 2, seed 2 & 104$^{\S}$ & 400$^{\S}$ & 930$^{\S}$ & 1{,}900$^{\S}$ \\*
-\quad random partition 3, seed 1 & 99$^{\S}$ & 380$^{\S}$ & 790$^{\S}$ & 1{,}640$^{\S}$ \\*
-\quad random partition 4, seed 2 & 186$^{\S}$ & 370$^{\S}$ & 740$^{\S}$ & 1{,}820$^{\S}$ \\*
-\quad random partition 5, seed 2 & 109$^{\S}$ & 320$^{\S}$ & 950$^{\S}$ & 1{,}740$^{\S}$ \\*
-\mbox{\Kres{} classes + mass} & 140\,$\pm$\,16 & 390\,$\pm$\,20 & 850$^{\P}$ & 1{,}770\,$\pm$\,250 \\*
-\mbox{\Kcoarse{} classes + mass} & 88\,$\pm$\,23 & 360\,$\pm$\,10 & 810\,$\pm$\,60 & 1{,}660\,$\pm$\,40 \\*
-\mbox{\Kfull{} classes,} \mbox{kinematic inputs} & 94$^{\S}$ & 370$^{\S}$ & 1{,}070$^{\S}$ & 1{,}800$^{\S}$ \\*
-\mbox{from scratch} & 49\,$\pm$\,12 & 340\,$\pm$\,50 & 560\,$\pm$\,90 & 1{,}410\,$\pm$\,20 \\
-\midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{quark/gluon, $R_{30}$} \\*
-training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
-\noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
-\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\*
-\mbox{\Kfull{} classes} & 46\,$\pm$\,10 & 75\,$\pm$\,7 & 99.3\,$\pm$\,1.4 & 107.3\,$\pm$\,2.2 \\*
-\mbox{\Kres{} classes} & 49\,$\pm$\,5 & 76\,$\pm$\,1 & 97.9\,$\pm$\,3.3 & 108.0\,$\pm$\,1.4 \\*
-\mbox{\Kmid{} classes} & 43\,$\pm$\,12 & 74\,$\pm$\,5 & 96.1\,$\pm$\,1.8 & 108.3\,$\pm$\,1.0 \\*
-\mbox{\Kcoarse{} classes} & 50\,$\pm$\,3 & 80\,$\pm$\,1 & 96.4\,$\pm$\,1.0 & 106.5\,$\pm$\,0.8 \\*
-\multicolumn{5}{@{}l}{17-class partitions} \\*
-\quad no flavor boundary & 55\,$\pm$\,5 & 83\,$\pm$\,5 & 99.4\,$\pm$\,0.7 & 109.1\,$\pm$\,0.2 \\*
-\quad $b$-quark boundary & 42\,$\pm$\,6 & 83\,$\pm$\,2 & 98.4\,$\pm$\,2.3 & 106.7\,$\pm$\,0.2 \\*
-\quad random flavor boundary & 40\,$\pm$\,3 & 74\,$\pm$\,8 & 98.0\,$\pm$\,1.0 & 106.3\,$\pm$\,2.7 \\*
-\quad random partition 1, seed 1 & 46$^{\S}$ & 80$^{\S}$ & 98.9$^{\S}$ & 107.3$^{\S}$ \\*
-\quad random partition 2, seed 2 & 47$^{\S}$ & 81$^{\S}$ & 99.6$^{\S}$ & 108.6$^{\S}$ \\*
-\quad random partition 3, seed 1 & 34$^{\S}$ & 77$^{\S}$ & 96.5$^{\S}$ & 106.5$^{\S}$ \\*
-\quad random partition 4, seed 2 & 54$^{\S}$ & 79$^{\S}$ & 99.1$^{\S}$ & 106.6$^{\S}$ \\*
-\quad random partition 5, seed 2 & 66$^{\S}$ & 59$^{\S}$ & 95.2$^{\S}$ & 106.0$^{\S}$ \\*
-\mbox{\Kres{} classes + mass} & 51\,$\pm$\,14 & 76\,$\pm$\,5 & 96.6\,$\pm$\,1.4 & 106.8\,$\pm$\,0.2 \\*
-\mbox{\Kcoarse{} classes + mass} & 57\,$\pm$\,1 & 79\,$\pm$\,1 & 97.9\,$\pm$\,0.1 & 105.3\,$\pm$\,0.5 \\*
-\mbox{from scratch} & 50\,$\pm$\,2 & 66\,$\pm$\,9 & 88.4\,$\pm$\,0.8 & 104.0\,$\pm$\,1.0 \\
-\midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{quark/gluon, Herwig, $R_{30}$} \\*
-training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
-\noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
-\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\*
-\mbox{\Kfull{} classes} & 20\,$\pm$\,6 & 28\,$\pm$\,3 & 34.3\,$\pm$\,1.0 & 35\,$\pm$\,2 \\*
-\mbox{\Kres{} classes} & 24\,$\pm$\,5 & 27\,$\pm$\,1 & 35.5\,$\pm$\,0.5 & 35\,$\pm$\,2 \\*
-\mbox{\Kmid{} classes} & 19\,$\pm$\,8 & 28\,$\pm$\,2 & 35.5\,$\pm$\,2.1 & 36\,$\pm$\,3 \\*
-\mbox{\Kcoarse{} classes} & 20\,$\pm$\,2 & 33\,$\pm$\,2 & 34.9\,$\pm$\,1.1 & 37\,$\pm$\,1 \\*
-\multicolumn{5}{@{}l}{17-class partitions} \\*
-\quad no flavor boundary & 26\,$\pm$\,2 & 32\,$\pm$\,1 & 36.1\,$\pm$\,1.3 & 37\,$\pm$\,4 \\*
-\quad $b$-quark boundary & 17\,$\pm$\,3 & 34\,$\pm$\,1 & 36.0\,$\pm$\,1.5 & 36\,$\pm$\,2 \\*
-\quad random flavor boundary & 17\,$\pm$\,2 & 30\,$\pm$\,7 & 34.0\,$\pm$\,1.6 & 36\,$\pm$\,2 \\*
-\quad random partition 1, seed 1 & 24$^{\S}$ & 31$^{\S}$ & 34.2$^{\S}$ & 33$^{\S}$ \\*
-\quad random partition 2, seed 2 & 21$^{\S}$ & 34$^{\S}$ & 35.2$^{\S}$ & 35$^{\S}$ \\*
-\quad random partition 3, seed 1 & 13$^{\S}$ & 30$^{\S}$ & 34.0$^{\S}$ & 35$^{\S}$ \\*
-\quad random partition 4, seed 2 & 25$^{\S}$ & 34$^{\S}$ & 33.9$^{\S}$ & 37$^{\S}$ \\*
-\quad random partition 5, seed 2 & 35$^{\S}$ & 23$^{\S}$ & 36.3$^{\S}$ & 35$^{\S}$ \\*
-\mbox{\Kres{} classes + mass} & 24\,$\pm$\,8 & 31\,$\pm$\,4 & 35.2\,$\pm$\,1.8 & 36\,$\pm$\,2 \\*
-\mbox{\Kcoarse{} classes + mass} & 26\,$\pm$\,1 & 33\,$\pm$\,2 & 37.5\,$\pm$\,2.2 & 35\,$\pm$\,3 \\*
-\mbox{from scratch} & 27\,$\pm$\,1 & 31\,$\pm$\,7 & 36.7\,$\pm$\,0.9 & 35\,$\pm$\,1 \\
-\end{longtable}
-}
-\end{landscape}
+\end{tabular*}
+\end{minipage}
+\par\bigskip
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:ft}{tab:ft:2}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\toprule
+ & \multicolumn{3}{c}{training jets} \\
+\cmidrule(lr){2-4}
+ & 1{,}000 & 10{,}000 & 100{,}000 \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{fine-tuned, top tagging, $R_{30}$}} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 127\,$\pm$\,21} & {\fontseries{b}\selectfont 410\,$\pm$\,30} & {\fontseries{b}\selectfont 850\,$\pm$\,90} \\
+\Kres{} classes & {\fontseries{b}\selectfont 154\,$\pm$\,19} & {\fontseries{b}\selectfont 440\,$\pm$\,50} & {\fontseries{b}\selectfont 810\,$\pm$\,60} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 140\,$\pm$\,16} & {\fontseries{b}\selectfont 390\,$\pm$\,20} & {\fontseries{b}\selectfont 850}$^{\P}$ \\
+\Kmid{} classes & {\fontseries{b}\selectfont 134\,$\pm$\,25} & {\fontseries{b}\selectfont 450\,$\pm$\,40} & {\fontseries{b}\selectfont 850\,$\pm$\,80} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 137\,$\pm$\,15} & {\fontseries{b}\selectfont 370\,$\pm$\,20} & {\fontseries{b}\selectfont 830\,$\pm$\,60} \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 88\,$\pm$\,23} & {\fontseries{b}\selectfont 360\,$\pm$\,10} & {\fontseries{b}\selectfont 810\,$\pm$\,60} \\
+\multicolumn{4}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 84\,$\pm$\,20} & {\fontseries{b}\selectfont 370\,$\pm$\,10} & {\fontseries{b}\selectfont 810\,$\pm$\,50} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 136\,$\pm$\,29} & {\fontseries{b}\selectfont 380\,$\pm$\,70} & {\fontseries{b}\selectfont 900\,$\pm$\,30} \\
+\quad random flavor boundary & {\fontseries{b}\selectfont 104\,$\pm$\,31} & {\fontseries{b}\selectfont 350\,$\pm$\,20} & 770\,$\pm$\,20 \\
+\quad random partitions & {\fontseries{b}\selectfont 120\,$\pm$\,37} & {\fontseries{b}\selectfont 370\,$\pm$\,30} & {\fontseries{b}\selectfont 830\,$\pm$\,110} \\
+from scratch & 49\,$\pm$\,12 & {\fontseries{b}\selectfont 340\,$\pm$\,50} & 560\,$\pm$\,90 \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{fine-tuned, quark/gluon tagging, Pythia jets, $R_{30}$}} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 46\,$\pm$\,10} & {\fontseries{b}\selectfont 75\,$\pm$\,7} & {\fontseries{b}\selectfont 99.3\,$\pm$\,1.4} \\
+\Kres{} classes & {\fontseries{b}\selectfont 49\,$\pm$\,5} & 76\,$\pm$\,1 & {\fontseries{b}\selectfont 97.9\,$\pm$\,3.3} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 51\,$\pm$\,14} & {\fontseries{b}\selectfont 76\,$\pm$\,5} & {\fontseries{b}\selectfont 96.6\,$\pm$\,1.4} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 43\,$\pm$\,12} & {\fontseries{b}\selectfont 74\,$\pm$\,5} & {\fontseries{b}\selectfont 96.1\,$\pm$\,1.8} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 50\,$\pm$\,3} & {\fontseries{b}\selectfont 80\,$\pm$\,1} & {\fontseries{b}\selectfont 96.4\,$\pm$\,1.0} \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 57\,$\pm$\,1} & {\fontseries{b}\selectfont 79\,$\pm$\,1} & {\fontseries{b}\selectfont 97.9\,$\pm$\,0.1} \\
+\multicolumn{4}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 55\,$\pm$\,5} & {\fontseries{b}\selectfont 83\,$\pm$\,5} & {\fontseries{b}\selectfont 99.4\,$\pm$\,0.7} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 42\,$\pm$\,6} & {\fontseries{b}\selectfont 83\,$\pm$\,2} & {\fontseries{b}\selectfont 98.4\,$\pm$\,2.3} \\
+\quad random flavor boundary & 40\,$\pm$\,3 & {\fontseries{b}\selectfont 74\,$\pm$\,8} & {\fontseries{b}\selectfont 98.0\,$\pm$\,1.0} \\
+\quad random partitions & {\fontseries{b}\selectfont 49\,$\pm$\,12} & {\fontseries{b}\selectfont 75\,$\pm$\,10} & {\fontseries{b}\selectfont 97.9\,$\pm$\,1.9} \\
+from scratch & {\fontseries{b}\selectfont 50\,$\pm$\,2} & {\fontseries{b}\selectfont 66\,$\pm$\,9} & 88.4\,$\pm$\,0.8 \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{fine-tuned, quark/gluon tagging, Herwig jets, $R_{30}$}} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 20\,$\pm$\,6} & {\fontseries{b}\selectfont 28\,$\pm$\,3} & {\fontseries{b}\selectfont 34.3\,$\pm$\,1.0} \\
+\Kres{} classes & {\fontseries{b}\selectfont 24\,$\pm$\,5} & 27\,$\pm$\,1 & {\fontseries{b}\selectfont 35.5\,$\pm$\,0.5} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 24\,$\pm$\,8} & {\fontseries{b}\selectfont 31\,$\pm$\,4} & {\fontseries{b}\selectfont 35.2\,$\pm$\,1.8} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 19\,$\pm$\,8} & {\fontseries{b}\selectfont 28\,$\pm$\,2} & {\fontseries{b}\selectfont 35.5\,$\pm$\,2.1} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 20\,$\pm$\,2} & {\fontseries{b}\selectfont 33\,$\pm$\,2} & {\fontseries{b}\selectfont 34.9\,$\pm$\,1.1} \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 26\,$\pm$\,1} & {\fontseries{b}\selectfont 33\,$\pm$\,2} & {\fontseries{b}\selectfont 37.5\,$\pm$\,2.2} \\
+\multicolumn{4}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 26\,$\pm$\,2} & {\fontseries{b}\selectfont 32\,$\pm$\,1} & {\fontseries{b}\selectfont 36.1\,$\pm$\,1.3} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 17\,$\pm$\,3} & {\fontseries{b}\selectfont 34\,$\pm$\,1} & {\fontseries{b}\selectfont 36.0\,$\pm$\,1.5} \\
+\quad random flavor boundary & 17\,$\pm$\,2 & {\fontseries{b}\selectfont 30\,$\pm$\,7} & {\fontseries{b}\selectfont 34.0\,$\pm$\,1.6} \\
+\quad random partitions & {\fontseries{b}\selectfont 24\,$\pm$\,8} & {\fontseries{b}\selectfont 30\,$\pm$\,5} & {\fontseries{b}\selectfont 34.7\,$\pm$\,1.0} \\
+from scratch & {\fontseries{b}\selectfont 27\,$\pm$\,1} & {\fontseries{b}\selectfont 31\,$\pm$\,7} & {\fontseries{b}\selectfont 36.7\,$\pm$\,0.9} \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}

@@ -17,6 +17,8 @@ Per figure <id> in <dir>: <id>.pdf (the figure as the paper includes it), <id>_p
   letters    main panels whose titles do not start (a), (b), ... in reading order
   outside    a plotted point, curve vertex, band or step-histogram vertex beyond its axes' limits
   caption    outside 40-145 words (the paper's captions: two to five sentences, PI 2026-11-12)
+  title      (PI 2026-11-13, L7) a figure heading (a horizontal figure text above every panel and the figure legend), a
+             colon in a panel title, or a text inside a panel (an ax.text in a panel with axes)
 The print size is the paper's: \\linewidth = 15 cm, except PRINT_CM. The saved PDF is cut to its tight box
 (style_v3.save), so sizes are measured times print width / saved width.
 """
@@ -43,20 +45,31 @@ from matplotlib.transforms import Bbox  # noqa: E402
 
 import palette_check as PC  # noqa: E402
 
-PRINT_CM = {"INVENTORY": 27.7, "F1": 13.0, "F10b": 8.5, "F10b-flav": 8.5, "F10-ft": 8.5, "VAL": 8.5}     # \paperfig widths other than \linewidth (15 cm); the map: the gallery page; one-panel figures (style_v5.SINGLE_W)
+PRINT_CM = {"INVENTORY": 27.7, "F1": 13.0, "F10b": 8.5, "F10b-flav": 8.5, "F10-ft": 8.5, "F10-ft-part": 8.5, "VAL": 8.5, "VAL-part": 8.5, "F4-ee": 8.5}     # \paperfig widths other than \linewidth (15 cm); the map: the gallery page; one-panel figures (style_v5.SINGLE_W)
 # three panels in one row are 4.1 to 4.2 cm wide (PI 2026-11-11: no empty slot in a grid); two beside each other at
 # least 6.1 cm, which leaves the room wide tick labels (10^n) need
-MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.1, {"F3-app": 5.0, "F3-ft": 5.0, "F3-app2": 4.0, "F3-ft2": 4.0, "F4-other": 4.0,
-                                     "F6": 4.0, "F6-app": 4.0, "F10a-flav": 4.0,
-                                     # Figs. 2 and 3 as dot plots: the row labels take the left 4 cm (PI 2026-11-11)
-                                     "F2a": 5.0, "F2b": 5.0}
+MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.1, {
+                                     # the per-class family: three label sets in a row, four partitions beside the
+                                     # turned mode names (PI 2026-11-12)
+                                     "PC-jc2": 4.0, "PC-jc1": 4.0, "PC-jc2-part": 2.9, "PC-jc1-part": 2.9,
+                                     "F10a-flav": 4.0,
+                                     # the two-class ROC forms (PI 2026-11-13): three panels beside the turned row names,
+                                     # four class pairs a row
+                                     "F6": 3.6, "F6-part": 3.6, "F4-rand": 4.0, "F4-rand-ft": 4.0, "F4-other-ft": 2.9,
+                                     "F4-other": 2.9, "F4-ee": 6.1,
+                                     # the training-size family: three panels a row, the legend in the sixth slot
+                                     **{k: 3.8 for k in ("A8", "A10", "F8", "F8-auc", "A8-auc", "A10-auc", "A8-part",
+                                                         "A10-part")},
+                                     # the headline dot plots: five tasks beside the row names (PI 2026-11-13, L1)
+                                     "F2": 1.9, "F2a": 1.9, "F2b": 1.9}
 MIN_PT, ASPECT, PAD_IN, DPI = 8.0, (0.7, 1.3), 0.1, 300
-# Figs. 2 and 3: four task rows of two panels on one page (PI 2026-11-12), so each panel is wider than it is high
-ASPECT_OF = {"F2a": (0.55, 1.3), "F2b": (0.55, 1.3)}
+# the headline dot plots: a row per network, five narrow panels in a row, so each panel is higher than it is wide
+ASPECT_OF = {"F2": (1.0, 2.6), "F2a": (1.0, 2.6), "F2b": (1.0, 2.6)}
 BANNED = [(re.compile(p), why) for p, why in (
     (r"\bto\s+(ee|mu|mumu|bb|cc|qq|bs|bc|b\b)", "plain 'to' for an arrow"), (r"\bmu\b", "plain 'mu'"),
     (r"\b(bb|cc|qq|mumu)\b(?![\u0304\u2032])", "plain parton pair"), (r"->", "ASCII arrow"), (r"LOOK:", "internal note"),
-    (r"Data today", "internal note"), (r"\bPI\b", "internal note"), (r"(?i)macro[- ]AUC", "banned term: mean AUC over classes"))]
+    (r"Data today", "internal note"), (r"\bPI\b", "internal note"), (r"(?i)macro[- ]AUC", "banned term: mean AUC over classes"),
+    (r"\bLP\b", "abbreviation: write 'linear probe' (L7)"), (r"\bf\.\s?t\.", "abbreviation: write 'fine-tuned' (L7)"))]
 
 
 def plain(text: str) -> str:
@@ -200,7 +213,7 @@ def classify(fig, r) -> tuple[list, dict]:
         b = boxes[ax]
         if hasattr(ax, "_colorbar") or ax.get_label() == "<colorbar>":
             continue
-        if not ax.axison:
+        if not ax.axison or ax.get_label() == "<break>":     # the part of a panel beyond an axis break
             continue
         above = [o for o in axes if o is not ax and boxes[o].x0 < b.x1 - 1 and boxes[o].x1 > b.x0 + 1
                  and boxes[o].y0 >= b.y1 - 2 and b.height < 0.55 * boxes[o].height]
@@ -212,6 +225,15 @@ def classify(fig, r) -> tuple[list, dict]:
     return main, exempt
 
 
+def broken_parts(ax, axes, r) -> list:
+    """The parts beyond an axis break (labelled "<break>") of ax's panel: same height, at most 3 mm beside it."""
+    b = ax.get_window_extent(r)
+    gap = 0.3 / 2.54 * ax.figure.dpi
+    return [o for o in axes if o is not ax and o.get_label() == "<break>" and abs(o.get_window_extent(r).y0 - b.y0) < 1
+            and abs(o.get_window_extent(r).y1 - b.y1) < 1
+            and (0 <= b.x0 - o.get_window_extent(r).x1 < gap or 0 <= o.get_window_extent(r).x0 - b.x1 < gap)]
+
+
 def check(fig, name: str, print_cm: float, min_panel: float) -> dict:
     fig.canvas.draw()
     r = fig.canvas.get_renderer()
@@ -220,13 +242,13 @@ def check(fig, name: str, print_cm: float, min_panel: float) -> dict:
 
     scale = print_cm / 2.54 / saved_in
     px_per_cm = fig.dpi / scale / 2.54             # display pixels per printed centimetre
-    found = {k: [] for k in ("panel", "font", "overlap", "notation", "letters", "outside")}
+    found = {k: [] for k in ("panel", "font", "overlap", "notation", "letters", "outside", "title")}
     main, exempt = classify(fig, r)
     for ax in fig.axes:
         if ax.get_visible() and ax.axison:
             found["outside"] += outside(ax)
     for ax in main:
-        b = ax.get_window_extent(r)
+        b = Bbox.union([ax.get_window_extent(r)] + [o.get_window_extent(r) for o in broken_parts(ax, fig.axes, r)])
         w, h = b.width / px_per_cm, b.height / px_per_cm
         where = ax.get_title() or f"axes at ({b.x0:.0f}, {b.y0:.0f})"
         if w < min_panel - 0.05:
@@ -264,6 +286,8 @@ def check(fig, name: str, print_cm: float, min_panel: float) -> dict:
             for o in panels:
                 if o is ax or (ax is not None and (o in ax.child_axes or hasattr(o, "_colorbar"))):
                     continue
+                if ax is not None and (o in broken_parts(ax, panels, r) or ax in broken_parts(o, panels, r)):
+                    continue                        # two parts of one panel, either side of an axis break
                 ob = o.get_window_extent(r)
                 near = 0.1 * px_per_cm              # within 1 mm of another panel reads as touching it
                 i = Bbox.intersection(b, ob.expanded((ob.width + 2 * near) / ob.width, (ob.height + 2 * near) / ob.height))
@@ -282,6 +306,14 @@ def check(fig, name: str, print_cm: float, min_panel: float) -> dict:
             i = Bbox.intersection(lb, o.get_window_extent(r))
             if i is not None and i.width > 2 and i.height > 2:
                 found["overlap"].append(f"figure legend over the panel {o.get_title()[:30]!r}")
+    top = max((ax.get_window_extent(r).y1 for ax in panels), default=0.0)
+    for b, t, ax, kind in boxes:
+        if kind == "figtext" and t.get_rotation() == 0 and b.y0 >= top:
+            found["title"].append(f"figure heading {t.get_text()[:40]!r}")
+        if kind == "title" and ":" in plain(t.get_text()):
+            found["title"].append(f"colon in the panel title {t.get_text()[:40]!r}")
+        if kind == "text" and ax is not None and ax.axison:
+            found["title"].append(f"text inside the panel {ax.get_title()[:30]!r}: {t.get_text()[:30]!r}")
     if len(main) > 1:
         order = sorted(main, key=lambda a: (-round(a.get_window_extent(r).y1 / 20), a.get_window_extent(r).x0))
         first = re.match(r"\(([a-z])\)", order[0].get_title())

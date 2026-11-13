@@ -932,10 +932,10 @@ def scratch_series(M, per, key: str, met: str) -> dict:
 
 def probe_series(M, I, runs, ds: str, met: str, row: str, chosen: dict) -> dict:
     """{training jets: [linear-probe value of each run of row]}: JetClass-II and JetClass from the
-    v4 fits; top and quark/gluon (R30 or AUC) under the substitution chosen on validation (zero while it is
-    pending), as the tables (mlst_results._bench_rec, _bench_sizes)."""
+    v4 fits; top and quark/gluon (R30 or AUC; also scored on Herwig jets, ds "qg_herwig") under the substitution
+    chosen on validation (zero while it is pending), as the tables (mlst_results._bench_rec, _bench_sizes)."""
     fits, fill = I["fits"], I["fill"]
-    if ds in ("top", "qg"):
+    if ds in ("top", "qg", "qg_herwig"):
         sizes = M._bench_sizes(fits, fill, chosen, ds)
         get = lambda m, n: (lambda r: M._rej(r, met) if met.startswith("r") else None if r is None else r.get(met))(
             M._bench_rec(fits, fill, chosen, m, ds, n))

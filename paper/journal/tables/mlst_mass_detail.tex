@@ -1,150 +1,343 @@
 \begin{landscape}
 {
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
-\addtolength{\belowcaptionskip}{\medskipamount}
-\begin{longtable}{@{\extracolsep{\fill}}lcccccc@{}}
-\caption{Jet-mass regression on JetClass-II from networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, in detail, over all test jets and over resonant and QCD jets: resolution and median response of the regression output of the models pretrained with the mass regression and of ridge and multilayer-perceptron regressions on frozen features (upper part), and of the soft-drop mass and the regression output against jet $p_{\mathrm{T}}$ and the generator-level soft-drop mass (lower parts); every bin holds at least \MlstMassMinJets{} jets. Mean $\pm$ SD over the pretraining runs of each configuration. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}\label{tab:massdetail}\\
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\setlength{\abovecaptionskip}{0pt}
+\captionof{table}{Jet-mass resolution and median response on JetClass-II in detail, defined as in table~\ref{tab:mass}, for the soft-drop mass, the mass output of the pretraining head and the multilayer-perceptron and ridge regressions on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, of the networks with an added mass output and of the random network. The upper parts give the values over resonant and QCD jets, and for the ridge regression also over all jets, whose other values are in table~\ref{tab:mass}. The lower parts give the ten bins of jet $p_{\mathrm{T}}$ and five of generator-level soft-drop mass that the binned mass figures draw, and every bin holds at least \MlstMassMinJets{} jets. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \MlstMassNRunsWord{} per network with an added mass output and three initializations of the random network. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
+\label{tab:massdetail}
+\par\medskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
-& \multicolumn{3}{c}{resolution} & \multicolumn{3}{c}{median response} \\
+ & \multicolumn{2}{c}{resolution} & \multicolumn{2}{c}{median response} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+jets & resonant & QCD & resonant & QCD \\
+\midrule
+soft-drop mass & 0.2128 & 1.5245 & 0.9291 & 0.931 \\
+\multicolumn{5}{@{}l}{\textit{mass output of the pretraining head}} \\
+\Kres{} classes + mass & 0.1326\,$\pm$\,0.0008 & 0.2260\,$\pm$\,0.0006 & 1.0000\,$\pm$\,0.0052 & 0.995\,$\pm$\,0.007 \\
+\Kcoarse{} classes + mass & 0.1316\,$\pm$\,0.0006 & 0.2239$^{\P}$ & 1.0059\,$\pm$\,0.0001 & 1.001\,$\pm$\,0.001 \\
+\multicolumn{5}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\
+\Kfull{} classes & 0.1990\,$\pm$\,0.0016 & 0.3487\,$\pm$\,0.0029 & 0.9939\,$\pm$\,0.0045 & 0.975\,$\pm$\,0.007 \\
+\Kres{} classes & 0.1989\,$\pm$\,0.0020 & 0.3425\,$\pm$\,0.0031 & 0.9900\,$\pm$\,0.0024 & 0.974\,$\pm$\,0.006 \\
+\Kres{} classes + mass & 0.1433\,$\pm$\,0.0004 & 0.2462\,$\pm$\,0.0015 & 1.0073\,$\pm$\,0.0012 & 0.991\,$\pm$\,0.003 \\
+\Kmid{} classes & 0.1949\,$\pm$\,0.0023 & 0.3381\,$\pm$\,0.0067 & 0.9934\,$\pm$\,0.0040 & 0.976\,$\pm$\,0.010 \\
+\Kcoarse{} classes & 0.1894\,$\pm$\,0.0035 & 0.3273\,$\pm$\,0.0056 & 0.9932\,$\pm$\,0.0036 & 0.977\,$\pm$\,0.008 \\
+\Kcoarse{} classes + mass & 0.1426\,$\pm$\,0.0008 & 0.2464\,$\pm$\,0.0001 & 1.0101\,$\pm$\,0.0024 & 0.994\,$\pm$\,0.001 \\
+random network & 0.2214\,$\pm$\,0.0017 & 0.5020\,$\pm$\,0.0143 & 0.9840\,$\pm$\,0.0047 & 0.980\,$\pm$\,0.007 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:massdetail} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
+\toprule
+ & \multicolumn{3}{c}{resolution} & \multicolumn{3}{c}{median response} \\
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
 jets & all & resonant & QCD & all & resonant & QCD \\
 \midrule
-\endfirsthead
-\multicolumn{7}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
+\multicolumn{7}{@{}l}{\textit{ridge regression on the frozen features}} \\
+\Kfull{} classes & 0.321\,$\pm$\,0.003 & 0.292\,$\pm$\,0.003 & 0.559\,$\pm$\,0.013 & 0.96408\,$\pm$\,0.00117 & 0.97538\,$\pm$\,0.00065 & 0.9046\,$\pm$\,0.0061 \\
+\Kres{} classes & 0.316\,$\pm$\,0.009 & 0.288\,$\pm$\,0.008 & 0.548\,$\pm$\,0.021 & 0.96547\,$\pm$\,0.00049 & 0.97679\,$\pm$\,0.00078 & 0.9092\,$\pm$\,0.0065 \\
+\Kres{} classes + mass & 0.190\,$\pm$\,0.003 & 0.177\,$\pm$\,0.002 & 0.269\,$\pm$\,0.002 & 0.99978\,$\pm$\,0.00003 & 1.00309\,$\pm$\,0.00002 & 0.9828\,$\pm$\,0.0003 \\
+\Kmid{} classes & 0.304\,$\pm$\,0.016 & 0.280\,$\pm$\,0.013 & 0.487\,$\pm$\,0.062 & 0.96840\,$\pm$\,0.00545 & 0.97733\,$\pm$\,0.00431 & 0.9225\,$\pm$\,0.0118 \\
+\Kcoarse{} classes & 0.293\,$\pm$\,0.012 & 0.271\,$\pm$\,0.012 & 0.448\,$\pm$\,0.030 & 0.97314\,$\pm$\,0.00477 & 0.98008\,$\pm$\,0.00379 & 0.9373\,$\pm$\,0.0103 \\
+\Kcoarse{} classes + mass & 0.183\,$\pm$\,0.001 & 0.169\,$\pm$\,0.001 & 0.262\,$\pm$\,0.002 & 1.00199\,$\pm$\,0.00042 & 1.00411\,$\pm$\,0.00108 & 0.9911\,$\pm$\,0.0034 \\
+random network & 0.312\,$\pm$\,0.007 & 0.286\,$\pm$\,0.006 & 0.913\,$\pm$\,0.031 & 0.94059\,$\pm$\,0.00348 & 0.93598\,$\pm$\,0.00362 & 0.9649\,$\pm$\,0.0035 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
 \toprule
-& \multicolumn{3}{c}{resolution} & \multicolumn{3}{c}{median response} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}
-jets & all & resonant & QCD & all & resonant & QCD \\
+\textit{resolution} & \multicolumn{5}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){2-6}
+ & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
+\midrule
+\endfirsthead
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
+\toprule
+\textit{resolution} & \multicolumn{5}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){2-6}
+ & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
 \midrule
 \endhead
 \bottomrule
 \endlastfoot
-soft-drop mass & 0.2448 & 0.2128 & 1.5245 & 0.9294 & 0.9291 & 0.9309 \\
-\multicolumn{7}{@{}l}{\textit{mass output of the pretraining head}} \\
-\Kres{} classes + mass & 0.1467\,$\pm$\,0.0006 & 0.1326\,$\pm$\,0.0008 & 0.2260\,$\pm$\,0.0006 & 0.9992\,$\pm$\,0.0055 & 1.0000\,$\pm$\,0.0052 & 0.9947\,$\pm$\,0.0070 \\
-\Kcoarse{} classes + mass & 0.1455\,$\pm$\,0.0008 & 0.1316\,$\pm$\,0.0006 & 0.2239$^{\P}$ & 1.0052\,$\pm$\,0.0002 & 1.0059\,$\pm$\,0.0001 & 1.0007\,$\pm$\,0.0010 \\
-\newpage
-\multicolumn{7}{@{}l}{\textit{ridge regression on the frozen features}} \\
-\Kfull{} classes & 0.3211\,$\pm$\,0.0034 & 0.2921\,$\pm$\,0.0026 & 0.5592\,$\pm$\,0.0127 & 0.9641\,$\pm$\,0.0012 & 0.9754\,$\pm$\,0.0006 & 0.9046\,$\pm$\,0.0061 \\
-\Kres{} classes & 0.3156\,$\pm$\,0.0090 & 0.2876\,$\pm$\,0.0080 & 0.5478\,$\pm$\,0.0212 & 0.9655\,$\pm$\,0.0005 & 0.9768\,$\pm$\,0.0008 & 0.9092\,$\pm$\,0.0065 \\
-\Kmid{} classes & 0.3041\,$\pm$\,0.0158 & 0.2797\,$\pm$\,0.0125 & 0.4872\,$\pm$\,0.0625 & 0.9684\,$\pm$\,0.0054 & 0.9773\,$\pm$\,0.0043 & 0.9225\,$\pm$\,0.0118 \\
-\Kcoarse{} classes & 0.2929\,$\pm$\,0.0118 & 0.2708\,$\pm$\,0.0116 & 0.4481\,$\pm$\,0.0300 & 0.9731\,$\pm$\,0.0048 & 0.9801\,$\pm$\,0.0038 & 0.9373\,$\pm$\,0.0103 \\
-\Kres{} classes + mass & 0.1903\,$\pm$\,0.0026 & 0.1768\,$\pm$\,0.0023 & 0.2688\,$\pm$\,0.0019 & 0.9998$^{\P}$ & 1.0031$^{\P}$ & 0.9828\,$\pm$\,0.0003 \\
-\Kcoarse{} classes + mass & 0.1833\,$\pm$\,0.0013 & 0.1692\,$\pm$\,0.0007 & 0.2615\,$\pm$\,0.0021 & 1.0020\,$\pm$\,0.0004 & 1.0041\,$\pm$\,0.0011 & 0.9911\,$\pm$\,0.0034 \\
-random network & 0.3124\,$\pm$\,0.0072 & 0.2863\,$\pm$\,0.0063 & 0.9126\,$\pm$\,0.0314 & 0.9406\,$\pm$\,0.0035 & 0.9360\,$\pm$\,0.0036 & 0.9649\,$\pm$\,0.0035 \\
-\newpage
-\multicolumn{7}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\
-\Kfull{} classes & 0.2200\,$\pm$\,0.0014 & 0.1990\,$\pm$\,0.0016 & 0.3487\,$\pm$\,0.0029 & 0.9912\,$\pm$\,0.0047 & 0.9939\,$\pm$\,0.0045 & 0.9746\,$\pm$\,0.0068 \\
-\Kres{} classes & 0.2195\,$\pm$\,0.0017 & 0.1989\,$\pm$\,0.0020 & 0.3425\,$\pm$\,0.0031 & 0.9876\,$\pm$\,0.0014 & 0.9900\,$\pm$\,0.0024 & 0.9736\,$\pm$\,0.0062 \\
-\Kmid{} classes & 0.2158\,$\pm$\,0.0029 & 0.1949\,$\pm$\,0.0023 & 0.3381\,$\pm$\,0.0067 & 0.9908\,$\pm$\,0.0049 & 0.9934\,$\pm$\,0.0040 & 0.9755\,$\pm$\,0.0100 \\
-\Kcoarse{} classes & 0.2098\,$\pm$\,0.0031 & 0.1894\,$\pm$\,0.0035 & 0.3273\,$\pm$\,0.0056 & 0.9908\,$\pm$\,0.0041 & 0.9932\,$\pm$\,0.0036 & 0.9767\,$\pm$\,0.0078 \\
-\Kres{} classes + mass & 0.1589\,$\pm$\,0.0003 & 0.1433\,$\pm$\,0.0004 & 0.2462\,$\pm$\,0.0015 & 1.0049\,$\pm$\,0.0015 & 1.0073\,$\pm$\,0.0012 & 0.9906\,$\pm$\,0.0034 \\
-\Kcoarse{} classes + mass & 0.1585\,$\pm$\,0.0003 & 0.1426\,$\pm$\,0.0008 & 0.2464\,$\pm$\,0.0001 & 1.0077\,$\pm$\,0.0022 & 1.0101\,$\pm$\,0.0024 & 0.9937\,$\pm$\,0.0007 \\
-random network & 0.2421\,$\pm$\,0.0018 & 0.2214\,$\pm$\,0.0017 & 0.5020\,$\pm$\,0.0143 & 0.9833\,$\pm$\,0.0049 & 0.9840\,$\pm$\,0.0047 & 0.9797\,$\pm$\,0.0066 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, all jets} \\
+soft-drop mass & 0.2513 & 0.23279 & 0.22460 & 0.2258 & 0.2280 \\
+\Kres{} classes + mass & 0.1791\,$\pm$\,0.0004 & 0.16364\,$\pm$\,0.00138 & 0.15044\,$\pm$\,0.00183 & 0.1445\,$\pm$\,0.0005 & 0.1424\,$\pm$\,0.0016 \\
+\Kcoarse{} classes + mass & 0.1779\,$\pm$\,0.0006 & 0.16225\,$\pm$\,0.00072 & 0.14883\,$\pm$\,0.00071 & 0.1430\,$\pm$\,0.0014 & 0.1417\,$\pm$\,0.0007 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, resonant jets} \\
+soft-drop mass & 0.2364 & 0.22326 & 0.21422 & 0.2147 & 0.2152 \\
+\Kres{} classes + mass & 0.1701\,$\pm$\,0.0011 & 0.15748\,$\pm$\,0.00192 & 0.14467\,$\pm$\,0.00178 & 0.1362\,$\pm$\,0.0009 & 0.1343\,$\pm$\,0.0022 \\
+\Kcoarse{} classes + mass & 0.1685\,$\pm$\,0.0002 & 0.15583\,$\pm$\,0.00105 & 0.14281\,$\pm$\,0.00096 & 0.1351\,$\pm$\,0.0010 & 0.1336\,$\pm$\,0.0010 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, QCD jets} \\
+soft-drop mass & 0.2810 & 0.27406 & 0.29015 & 0.4403 & 0.8535 \\
+\Kres{} classes + mass & 0.2001\,$\pm$\,0.0011 & 0.18614\,$\pm$\,0.00200 & 0.17775\,$\pm$\,0.00029 & 0.1944\,$\pm$\,0.0011 & 0.2020\,$\pm$\,0.0014 \\
+\Kcoarse{} classes + mass & 0.1994\,$\pm$\,0.0021 & 0.18535\,$\pm$\,0.00249 & 0.17650\,$\pm$\,0.00022 & 0.1897\,$\pm$\,0.0002 & 0.1985\,$\pm$\,0.0009 \\
+\multicolumn{6}{@{}l}{multilayer-perceptron probe on the frozen features, all jets} \\
+\Kfull{} classes & 0.2292\,$\pm$\,0.0007 & 0.21278\,$\pm$\,0.00076 & 0.20491\,$\pm$\,0.00049 & 0.2034\,$\pm$\,0.0013 & 0.2079\,$\pm$\,0.0017 \\
+\Kres{} classes & 0.2274\,$\pm$\,0.0021 & 0.21162\,$\pm$\,0.00218 & 0.20462\,$\pm$\,0.00294 & 0.2030\,$\pm$\,0.0028 & 0.2070\,$\pm$\,0.0028 \\
+\Kres{} classes + mass & 0.1885\,$\pm$\,0.0016 & 0.17458\,$\pm$\,0.00003 & 0.16237\,$\pm$\,0.00061 & 0.1567\,$\pm$\,0.0002 & 0.1542\,$\pm$\,0.0009 \\
+\Kmid{} classes & 0.2282\,$\pm$\,0.0046 & 0.21184\,$\pm$\,0.00159 & 0.20346\,$\pm$\,0.00176 & 0.2005\,$\pm$\,0.0015 & 0.2035\,$\pm$\,0.0012 \\
+\Kcoarse{} classes & 0.2263\,$\pm$\,0.0030 & 0.20945\,$\pm$\,0.00304 & 0.19992\,$\pm$\,0.00365 & 0.1977\,$\pm$\,0.0043 & 0.1989\,$\pm$\,0.0030 \\
+\Kcoarse{} classes + mass & 0.1885\,$\pm$\,0.0019 & 0.17335\,$\pm$\,0.00009 & 0.16203$^{\P}$ & 0.1566\,$\pm$\,0.0006 & 0.1547\,$\pm$\,0.0003 \\
+random network & 0.2294\,$\pm$\,0.0016 & 0.21701\,$\pm$\,0.00090 & 0.21472\,$\pm$\,0.00183 & 0.2178\,$\pm$\,0.0024 & 0.2224\,$\pm$\,0.0019 \\
+\multicolumn{6}{@{}l}{ridge regression on the frozen features, all jets} \\
+\Kfull{} classes & 0.3067\,$\pm$\,0.0078 & 0.29383\,$\pm$\,0.00717 & 0.28778\,$\pm$\,0.00594 & 0.2918\,$\pm$\,0.0048 & 0.2971\,$\pm$\,0.0049 \\
+\Kres{} classes & 0.2991\,$\pm$\,0.0033 & 0.28698\,$\pm$\,0.00064 & 0.28207\,$\pm$\,0.00324 & 0.2865\,$\pm$\,0.0073 & 0.2917\,$\pm$\,0.0066 \\
+\Kres{} classes + mass & 0.2092\,$\pm$\,0.0027 & 0.19859\,$\pm$\,0.00103 & 0.18841\,$\pm$\,0.00205 & 0.1858\,$\pm$\,0.0011 & 0.1839\,$\pm$\,0.0013 \\
+\Kmid{} classes & 0.2848\,$\pm$\,0.0186 & 0.27214\,$\pm$\,0.01608 & 0.27054\,$\pm$\,0.01543 & 0.2754\,$\pm$\,0.0126 & 0.2822\,$\pm$\,0.0125 \\
+\Kcoarse{} classes & 0.2750\,$\pm$\,0.0165 & 0.26399\,$\pm$\,0.01476 & 0.26004\,$\pm$\,0.01517 & 0.2650\,$\pm$\,0.0138 & 0.2709\,$\pm$\,0.0108 \\
+\Kcoarse{} classes + mass & 0.2049\,$\pm$\,0.0014 & 0.19153\,$\pm$\,0.00143 & 0.18169\,$\pm$\,0.00236 & 0.1795\,$\pm$\,0.0020 & 0.1781\,$\pm$\,0.0020 \\
+random network & 0.2940\,$\pm$\,0.0023 & 0.27265\,$\pm$\,0.00350 & 0.26940\,$\pm$\,0.00564 & 0.2756\,$\pm$\,0.0057 & 0.2857\,$\pm$\,0.0067 \\
 \end{longtable}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\textit{Table~\ref{tab:massdetail} (continued)}}
-\par\smallskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
 \toprule
-\textit{resolution} & \multicolumn{4}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
-\cmidrule(lr){2-5}
-estimator & 200--400 & 400--700 & 700--1000 & 1000--2500 \\
+\textit{resolution} & \multicolumn{5}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){2-6}
+ & 850--1000 & 1000--1250 & 1250--1500 & 1500--2000 & 2000--2500 \\
 \midrule
-\multicolumn{5}{@{}l}{\textit{all jets}} \\
-soft-drop mass & 0.2421 & 0.2252 & 0.2312 & 0.32741 \\
-\Kres{} classes + mass & 0.1712\,$\pm$\,0.0012 & 0.1476\,$\pm$\,0.0010 & 0.1418\,$\pm$\,0.0010 & 0.13956\,$\pm$\,0.00005 \\
-\Kcoarse{} classes + mass & 0.1697\,$\pm$\,0.0008 & 0.1462\,$\pm$\,0.0010 & 0.1408\,$\pm$\,0.0007 & 0.13870\,$\pm$\,0.00061 \\
-\multicolumn{5}{@{}l}{\textit{resonant jets}} \\
-soft-drop mass & 0.2287 & 0.2146 & 0.2162 & 0.21143 \\
-\Kres{} classes + mass & 0.1631\,$\pm$\,0.0015 & 0.1403\,$\pm$\,0.0013 & 0.1326\,$\pm$\,0.0016 & 0.12012\,$\pm$\,0.00003 \\
-\Kcoarse{} classes + mass & 0.1615\,$\pm$\,0.0007 & 0.1389\,$\pm$\,0.0010 & 0.1317\,$\pm$\,0.0005 & 0.11943\,$\pm$\,0.00086 \\
-\multicolumn{5}{@{}l}{\textit{QCD jets}} \\
-soft-drop mass & 0.2786 & 0.3329 & 1.0962 & 3.60708 \\
-\Kres{} classes + mass & 0.1936\,$\pm$\,0.0013 & 0.1850\,$\pm$\,0.0006 & 0.2128\,$\pm$\,0.0026 & 0.28161\,$\pm$\,0.00207 \\
-\Kcoarse{} classes + mass & 0.1932\,$\pm$\,0.0021 & 0.1823\,$\pm$\,0.0010 & 0.2089\,$\pm$\,0.0001 & 0.27876\,$\pm$\,0.00177 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\textit{Table~\ref{tab:massdetail} (continued)}}
-\par\smallskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\endfirsthead
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
 \toprule
-\textit{median response} & \multicolumn{4}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
-\cmidrule(lr){2-5}
-estimator & 200--400 & 400--700 & 700--1000 & 1000--2500 \\
+\textit{resolution} & \multicolumn{5}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){2-6}
+ & 850--1000 & 1000--1250 & 1250--1500 & 1500--2000 & 2000--2500 \\
 \midrule
-\multicolumn{5}{@{}l}{\textit{all jets}} \\
-soft-drop mass & 0.893 & 0.914 & 0.9170 & 0.953 \\
-\Kres{} classes + mass & 0.992\,$\pm$\,0.008 & 0.998\,$\pm$\,0.007 & 1.0009\,$\pm$\,0.0053 & 1.001\,$\pm$\,0.005 \\
-\Kcoarse{} classes + mass & 0.995\,$\pm$\,0.003 & 1.002\,$\pm$\,0.001 & 1.0063\,$\pm$\,0.0004 & 1.008\,$\pm$\,0.002 \\
-\multicolumn{5}{@{}l}{\textit{resonant jets}} \\
-soft-drop mass & 0.904 & 0.917 & 0.9151 & 0.947 \\
-\Kres{} classes + mass & 0.992\,$\pm$\,0.008 & 1.000\,$\pm$\,0.006 & 1.0013\,$\pm$\,0.0052 & 1.001\,$\pm$\,0.004 \\
-\Kcoarse{} classes + mass & 0.996\,$\pm$\,0.003 & 1.003\,$\pm$\,0.001 & 1.0066\,$\pm$\,0.0004 & 1.009\,$\pm$\,0.002 \\
-\multicolumn{5}{@{}l}{\textit{QCD jets}} \\
-soft-drop mass & 0.863 & 0.895 & 0.9313 & 1.020 \\
-\Kres{} classes + mass & 0.990\,$\pm$\,0.007 & 0.992\,$\pm$\,0.008 & 0.9986\,$\pm$\,0.0066 & 0.997\,$\pm$\,0.006 \\
-\Kcoarse{} classes + mass & 0.994\,$\pm$\,0.002 & 0.997\,$\pm$\,0.001 & 1.0041$^{\P}$ & 1.005\,$\pm$\,0.004 \\
+\endhead
 \bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\textit{Table~\ref{tab:massdetail} (continued)}}
-\par\smallskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\endlastfoot
+\multicolumn{6}{@{}l}{mass output of the pretraining head, all jets} \\
+soft-drop mass & 0.23555 & 0.2402 & 0.2719 & 0.3797 & 0.9431 \\
+\Kres{} classes + mass & 0.14118\,$\pm$\,0.00036 & 0.1382\,$\pm$\,0.0003 & 0.1387\,$\pm$\,0.0010 & 0.1383\,$\pm$\,0.0005 & 0.1472\,$\pm$\,0.0013 \\
+\Kcoarse{} classes + mass & 0.13988\,$\pm$\,0.00063 & 0.1374\,$\pm$\,0.0006 & 0.1384\,$\pm$\,0.0019 & 0.1377\,$\pm$\,0.0003 & 0.1452\,$\pm$\,0.0004 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, resonant jets} \\
+soft-drop mass & 0.21737 & 0.2167 & 0.2177 & 0.2114 & 0.2532 \\
+\Kres{} classes + mass & 0.13094\,$\pm$\,0.00082 & 0.1263\,$\pm$\,0.0004 & 0.1237\,$\pm$\,0.0001 & 0.1174\,$\pm$\,0.0007 & 0.1082\,$\pm$\,0.0003 \\
+\Kcoarse{} classes + mass & 0.12973\,$\pm$\,0.00016 & 0.1255\,$\pm$\,0.0013 & 0.1235\,$\pm$\,0.0012 & 0.1166\,$\pm$\,0.0004 & 0.1072\,$\pm$\,0.0002 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, QCD jets} \\
+soft-drop mass & 1.46274 & 2.1015 & 2.9337 & 3.8007 & 4.7851 \\
+\Kres{} classes + mass & 0.22429\,$\pm$\,0.00198 & 0.2412\,$\pm$\,0.0015 & 0.2660\,$\pm$\,0.0049 & 0.2983\,$\pm$\,0.0073 & 0.3145\,$\pm$\,0.0003 \\
+\Kcoarse{} classes + mass & 0.22283\,$\pm$\,0.00004 & 0.2383\,$\pm$\,0.0036 & 0.2633\,$\pm$\,0.0003 & 0.2961\,$\pm$\,0.0028 & 0.3075\,$\pm$\,0.0059 \\
+\multicolumn{6}{@{}l}{multilayer-perceptron probe on the frozen features, all jets} \\
+\Kfull{} classes & 0.20967\,$\pm$\,0.00266 & 0.2144\,$\pm$\,0.0016 & 0.2242\,$\pm$\,0.0018 & 0.2390\,$\pm$\,0.0030 & 0.2939\,$\pm$\,0.0026 \\
+\Kres{} classes & 0.20935\,$\pm$\,0.00345 & 0.2146\,$\pm$\,0.0016 & 0.2241\,$\pm$\,0.0014 & 0.2391\,$\pm$\,0.0019 & 0.2927\,$\pm$\,0.0029 \\
+\Kres{} classes + mass & 0.15252\,$\pm$\,0.00003 & 0.1510\,$\pm$\,0.0003 & 0.1516\,$\pm$\,0.0003 & 0.1520$^{\P}$ & 0.1610\,$\pm$\,0.0009 \\
+\Kmid{} classes & 0.20606\,$\pm$\,0.00159 & 0.2098\,$\pm$\,0.0021 & 0.2169\,$\pm$\,0.0031 & 0.2331\,$\pm$\,0.0058 & 0.2820\,$\pm$\,0.0139 \\
+\Kcoarse{} classes & 0.19998\,$\pm$\,0.00309 & 0.2025\,$\pm$\,0.0030 & 0.2086\,$\pm$\,0.0036 & 0.2210\,$\pm$\,0.0034 & 0.2668\,$\pm$\,0.0058 \\
+\Kcoarse{} classes + mass & 0.15273\,$\pm$\,0.00003 & 0.1508\,$\pm$\,0.0003 & 0.1517\,$\pm$\,0.0008 & 0.1512\,$\pm$\,0.0003 & 0.1603\,$\pm$\,0.0003 \\
+random network & 0.22685\,$\pm$\,0.00167 & 0.2364\,$\pm$\,0.0019 & 0.2561\,$\pm$\,0.0032 & 0.2884\,$\pm$\,0.0019 & 0.3844\,$\pm$\,0.0056 \\
+\multicolumn{6}{@{}l}{ridge regression on the frozen features, all jets} \\
+\Kfull{} classes & 0.30447\,$\pm$\,0.00498 & 0.3168\,$\pm$\,0.0032 & 0.3370\,$\pm$\,0.0015 & 0.3738\,$\pm$\,0.0024 & 0.5012\,$\pm$\,0.0065 \\
+\Kres{} classes & 0.30073\,$\pm$\,0.00959 & 0.3113\,$\pm$\,0.0117 & 0.3311\,$\pm$\,0.0129 & 0.3710\,$\pm$\,0.0155 & 0.5065\,$\pm$\,0.0179 \\
+\Kres{} classes + mass & 0.18185\,$\pm$\,0.00088 & 0.1822\,$\pm$\,0.0021 & 0.1864\,$\pm$\,0.0030 & 0.1919\,$\pm$\,0.0045 & 0.2116\,$\pm$\,0.0059 \\
+\Kmid{} classes & 0.28980\,$\pm$\,0.01205 & 0.3020\,$\pm$\,0.0133 & 0.3217\,$\pm$\,0.0168 & 0.3587\,$\pm$\,0.0241 & 0.4656\,$\pm$\,0.0480 \\
+\Kcoarse{} classes & 0.27888\,$\pm$\,0.01034 & 0.2911\,$\pm$\,0.0115 & 0.3096\,$\pm$\,0.0123 & 0.3445\,$\pm$\,0.0145 & 0.4345\,$\pm$\,0.0283 \\
+\Kcoarse{} classes + mass & 0.17766\,$\pm$\,0.00149 & 0.1772\,$\pm$\,0.0023 & 0.1796\,$\pm$\,0.0006 & 0.1817\,$\pm$\,0.0004 & 0.1957\,$\pm$\,0.0012 \\
+random network & 0.29724\,$\pm$\,0.00824 & 0.3113\,$\pm$\,0.0101 & 0.3354\,$\pm$\,0.0124 & 0.3798\,$\pm$\,0.0122 & 0.6758\,$\pm$\,0.0144 \\
+\end{longtable}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
+\toprule
+\textit{median response} & \multicolumn{5}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){2-6}
+ & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
+\midrule
+\endfirsthead
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
+\toprule
+\textit{median response} & \multicolumn{5}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){2-6}
+ & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\multicolumn{6}{@{}l}{mass output of the pretraining head, all jets} \\
+soft-drop mass & 0.8806 & 0.9039 & 0.9134 & 0.914 & 0.9158 \\
+\Kres{} classes + mass & 0.9894\,$\pm$\,0.0083 & 0.9933\,$\pm$\,0.0071 & 0.9965\,$\pm$\,0.0066 & 1.001\,$\pm$\,0.006 & 1.0008\,$\pm$\,0.0054 \\
+\Kcoarse{} classes + mass & 0.9935\,$\pm$\,0.0042 & 0.9967\,$\pm$\,0.0019 & 0.9999\,$\pm$\,0.0020 & 1.005\,$\pm$\,0.001 & 1.0059\,$\pm$\,0.0007 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, resonant jets} \\
+soft-drop mass & 0.8946 & 0.9109 & 0.9192 & 0.915 & 0.9148 \\
+\Kres{} classes + mass & 0.9897\,$\pm$\,0.0085 & 0.9939\,$\pm$\,0.0073 & 0.9985\,$\pm$\,0.0066 & 1.001\,$\pm$\,0.006 & 1.0015\,$\pm$\,0.0053 \\
+\Kcoarse{} classes + mass & 0.9935\,$\pm$\,0.0042 & 0.9971\,$\pm$\,0.0023 & 1.0014\,$\pm$\,0.0018 & 1.005\,$\pm$\,0.001 & 1.0064\,$\pm$\,0.0007 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, QCD jets} \\
+soft-drop mass & 0.8519 & 0.8792 & 0.8839 & 0.908 & 0.9255 \\
+\Kres{} classes + mass & 0.9886\,$\pm$\,0.0076 & 0.9915\,$\pm$\,0.0068 & 0.9877\,$\pm$\,0.0081 & 0.998\,$\pm$\,0.008 & 0.9963\,$\pm$\,0.0069 \\
+\Kcoarse{} classes + mass & 0.9932\,$\pm$\,0.0040 & 0.9947\,$\pm$\,0.0001 & 0.9926\,$\pm$\,0.0016 & 1.003\,$\pm$\,0.001 & 1.0016\,$\pm$\,0.0001 \\
+\multicolumn{6}{@{}l}{multilayer-perceptron probe on the frozen features, all jets} \\
+\Kfull{} classes & 0.9633\,$\pm$\,0.0081 & 0.9803\,$\pm$\,0.0049 & 0.9875\,$\pm$\,0.0040 & 0.990\,$\pm$\,0.003 & 0.9908\,$\pm$\,0.0043 \\
+\Kres{} classes & 0.9655\,$\pm$\,0.0039 & 0.9805\,$\pm$\,0.0008 & 0.9871\,$\pm$\,0.0011 & 0.988\,$\pm$\,0.002 & 0.9882\,$\pm$\,0.0020 \\
+\Kres{} classes + mass & 0.9977\,$\pm$\,0.0001 & 0.9994\,$\pm$\,0.0006 & 1.0021\,$\pm$\,0.0006 & 1.005\,$\pm$\,0.003 & 1.0059\,$\pm$\,0.0018 \\
+\Kmid{} classes & 0.9746\,$\pm$\,0.0035 & 0.9852\,$\pm$\,0.0052 & 0.9889\,$\pm$\,0.0045 & 0.989\,$\pm$\,0.006 & 0.9888\,$\pm$\,0.0056 \\
+\Kcoarse{} classes & 0.9740\,$\pm$\,0.0065 & 0.9838\,$\pm$\,0.0063 & 0.9871\,$\pm$\,0.0062 & 0.988\,$\pm$\,0.005 & 0.9885\,$\pm$\,0.0030 \\
+\Kcoarse{} classes + mass & 1.0026\,$\pm$\,0.0046 & 1.0019\,$\pm$\,0.0031 & 1.0038\,$\pm$\,0.0020 & 1.007\,$\pm$\,0.002 & 1.0076\,$\pm$\,0.0019 \\
+random network & 0.9591\,$\pm$\,0.0007 & 0.9719\,$\pm$\,0.0027 & 0.9765\,$\pm$\,0.0026 & 0.974\,$\pm$\,0.003 & 0.9770\,$\pm$\,0.0028 \\
+\multicolumn{6}{@{}l}{ridge regression on the frozen features, all jets} \\
+\Kfull{} classes & 0.8875\,$\pm$\,0.0116 & 0.9447\,$\pm$\,0.0119 & 0.9726\,$\pm$\,0.0067 & 0.981\,$\pm$\,0.003 & 0.9833\,$\pm$\,0.0017 \\
+\Kres{} classes & 0.8994\,$\pm$\,0.0108 & 0.9496\,$\pm$\,0.0071 & 0.9726\,$\pm$\,0.0047 & 0.978\,$\pm$\,0.003 & 0.9793\,$\pm$\,0.0025 \\
+\Kres{} classes + mass & 0.9780\,$\pm$\,0.0090 & 0.9876\,$\pm$\,0.0036 & 0.9971\,$\pm$\,0.0002 & 1.005\,$\pm$\,0.003 & 1.0071\,$\pm$\,0.0031 \\
+\Kmid{} classes & 0.9187\,$\pm$\,0.0267 & 0.9591\,$\pm$\,0.0132 & 0.9743\,$\pm$\,0.0052 & 0.977\,$\pm$\,0.002 & 0.9769\,$\pm$\,0.0015 \\
+\Kcoarse{} classes & 0.9471\,$\pm$\,0.0097 & 0.9736\,$\pm$\,0.0069 & 0.9820\,$\pm$\,0.0052 & 0.979\,$\pm$\,0.002 & 0.9761\,$\pm$\,0.0026 \\
+\Kcoarse{} classes + mass & 0.9954\,$\pm$\,0.0039 & 0.9937\,$\pm$\,0.0025 & 0.9964\,$\pm$\,0.0023 & 1.000\,$\pm$\,0.002 & 1.0019\,$\pm$\,0.0010 \\
+random network & 0.9401\,$\pm$\,0.0070 & 0.9574\,$\pm$\,0.0035 & 0.9676\,$\pm$\,0.0053 & 0.964\,$\pm$\,0.001 & 0.9609\,$\pm$\,0.0021 \\
+\end{longtable}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
+\toprule
+\textit{median response} & \multicolumn{5}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){2-6}
+ & 850--1000 & 1000--1250 & 1250--1500 & 1500--2000 & 2000--2500 \\
+\midrule
+\endfirsthead
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
+\toprule
+\textit{median response} & \multicolumn{5}{c}{jet $p_{\mathrm{T}}$ [GeV]} \\
+\cmidrule(lr){2-6}
+ & 850--1000 & 1000--1250 & 1250--1500 & 1500--2000 & 2000--2500 \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\multicolumn{6}{@{}l}{mass output of the pretraining head, all jets} \\
+soft-drop mass & 0.9182 & 0.923 & 0.936 & 0.959 & 0.997 \\
+\Kres{} classes + mass & 1.0011\,$\pm$\,0.0052 & 1.000\,$\pm$\,0.005 & 1.001\,$\pm$\,0.005 & 1.001\,$\pm$\,0.005 & 1.001\,$\pm$\,0.004 \\
+\Kcoarse{} classes + mass & 1.0067\,$\pm$\,0.0001 & 1.006\,$\pm$\,0.001 & 1.008\,$\pm$\,0.001 & 1.009\,$\pm$\,0.002 & 1.010\,$\pm$\,0.004 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, resonant jets} \\
+soft-drop mass & 0.9153 & 0.920 & 0.930 & 0.952 & 0.990 \\
+\Kres{} classes + mass & 1.0011\,$\pm$\,0.0051 & 1.000\,$\pm$\,0.005 & 1.001\,$\pm$\,0.004 & 1.002\,$\pm$\,0.004 & 1.002\,$\pm$\,0.003 \\
+\Kcoarse{} classes + mass & 1.0067\,$\pm$\,0.0002 & 1.007\,$\pm$\,0.001 & 1.008\,$\pm$\,0.001 & 1.010\,$\pm$\,0.002 & 1.011\,$\pm$\,0.003 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, QCD jets} \\
+soft-drop mass & 0.9383 & 0.955 & 0.992 & 1.057 & 1.183 \\
+\Kres{} classes + mass & 1.0009\,$\pm$\,0.0065 & 0.999\,$\pm$\,0.006 & 1.000\,$\pm$\,0.007 & 0.995\,$\pm$\,0.005 & 0.994\,$\pm$\,0.008 \\
+\Kcoarse{} classes + mass & 1.0072\,$\pm$\,0.0008 & 1.006\,$\pm$\,0.002 & 1.009\,$\pm$\,0.003 & 1.004\,$\pm$\,0.004 & 1.002\,$\pm$\,0.007 \\
+\multicolumn{6}{@{}l}{multilayer-perceptron probe on the frozen features, all jets} \\
+\Kfull{} classes & 0.9905\,$\pm$\,0.0024 & 0.990\,$\pm$\,0.003 & 0.994\,$\pm$\,0.004 & 1.000\,$\pm$\,0.006 & 1.017\,$\pm$\,0.010 \\
+\Kres{} classes & 0.9876\,$\pm$\,0.0027 & 0.985\,$\pm$\,0.002 & 0.988\,$\pm$\,0.002 & 0.992\,$\pm$\,0.002 & 1.009\,$\pm$\,0.004 \\
+\Kres{} classes + mass & 1.0068\,$\pm$\,0.0025 & 1.006\,$\pm$\,0.002 & 1.007\,$\pm$\,0.002 & 1.008\,$\pm$\,0.001 & 1.006\,$\pm$\,0.002 \\
+\Kmid{} classes & 0.9878\,$\pm$\,0.0064 & 0.988\,$\pm$\,0.006 & 0.991\,$\pm$\,0.004 & 0.997\,$\pm$\,0.003 & 1.014\,$\pm$\,0.005 \\
+\Kcoarse{} classes & 0.9895\,$\pm$\,0.0035 & 0.989\,$\pm$\,0.004 & 0.993\,$\pm$\,0.003 & 0.997\,$\pm$\,0.003 & 1.010\,$\pm$\,0.006 \\
+\Kcoarse{} classes + mass & 1.0086\,$\pm$\,0.0010 & 1.008\,$\pm$\,0.001 & 1.009\,$\pm$\,0.001 & 1.011\,$\pm$\,0.003 & 1.013\,$\pm$\,0.004 \\
+random network & 0.9783\,$\pm$\,0.0040 & 0.984\,$\pm$\,0.006 & 0.993\,$\pm$\,0.008 & 1.003\,$\pm$\,0.013 & 1.018\,$\pm$\,0.015 \\
+\multicolumn{6}{@{}l}{ridge regression on the frozen features, all jets} \\
+\Kfull{} classes & 0.9763\,$\pm$\,0.0023 & 0.967\,$\pm$\,0.002 & 0.963\,$\pm$\,0.005 & 0.967\,$\pm$\,0.006 & 0.983\,$\pm$\,0.003 \\
+\Kres{} classes & 0.9748\,$\pm$\,0.0001 & 0.969\,$\pm$\,0.002 & 0.966\,$\pm$\,0.002 & 0.970\,$\pm$\,0.005 & 0.985\,$\pm$\,0.011 \\
+\Kres{} classes + mass & 1.0092\,$\pm$\,0.0038 & 1.006\,$\pm$\,0.003 & 1.005\,$\pm$\,0.001 & 1.002\,$\pm$\,0.001 & 0.989\,$\pm$\,0.005 \\
+\Kmid{} classes & 0.9732\,$\pm$\,0.0019 & 0.968\,$\pm$\,0.003 & 0.967\,$\pm$\,0.004 & 0.973\,$\pm$\,0.008 & 0.989\,$\pm$\,0.010 \\
+\Kcoarse{} classes & 0.9734\,$\pm$\,0.0029 & 0.969\,$\pm$\,0.008 & 0.970\,$\pm$\,0.011 & 0.974\,$\pm$\,0.013 & 0.984\,$\pm$\,0.014 \\
+\Kcoarse{} classes + mass & 1.0044\,$\pm$\,0.0016 & 1.004\,$\pm$\,0.001 & 1.008\,$\pm$\,0.003 & 1.008\,$\pm$\,0.001 & 1.002\,$\pm$\,0.001 \\
+random network & 0.9514\,$\pm$\,0.0074 & 0.939\,$\pm$\,0.008 & 0.920\,$\pm$\,0.008 & 0.903\,$\pm$\,0.007 & 0.903\,$\pm$\,0.008 \\
+\end{longtable}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
 \toprule
 \textit{resolution} & \multicolumn{5}{c}{generator-level soft-drop mass [GeV]} \\
 \cmidrule(lr){2-6}
-estimator & 20--50 & 50--100 & 100--150 & 150--250 & 250--500 \\
+ & 20--50 & 50--100 & 100--150 & 150--250 & 250--500 \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{all jets}} \\
-soft-drop mass & 0.2808 & 0.2064 & 0.2045 & 0.2102 & 0.2245 \\
-\Kres{} classes + mass & 0.1754\,$\pm$\,0.0003 & 0.1420\,$\pm$\,0.0006 & 0.1296\,$\pm$\,0.0008 & 0.1223\,$\pm$\,0.0014 & 0.1149\,$\pm$\,0.0020 \\
-\Kcoarse{} classes + mass & 0.1747\,$\pm$\,0.0010 & 0.1414\,$\pm$\,0.0005 & 0.1286\,$\pm$\,0.0003 & 0.1215\,$\pm$\,0.0007 & 0.1140\,$\pm$\,0.0007 \\
-\multicolumn{6}{@{}l}{\textit{resonant jets}} \\
-soft-drop mass & 0.2746 & 0.1939 & 0.1924 & 0.2010 & 0.2165 \\
-\Kres{} classes + mass & 0.1633\,$\pm$\,0.0002 & 0.1363\,$\pm$\,0.0005 & 0.1256\,$\pm$\,0.0006 & 0.1187\,$\pm$\,0.0016 & 0.1120\,$\pm$\,0.0018 \\
-\Kcoarse{} classes + mass & 0.1626\,$\pm$\,0.0007 & 0.1354\,$\pm$\,0.0004 & 0.1248\,$\pm$\,0.0002 & 0.1178\,$\pm$\,0.0007 & 0.1113\,$\pm$\,0.0008 \\
-\multicolumn{6}{@{}l}{\textit{QCD jets}} \\
-soft-drop mass & 0.2920 & 0.2393 & 0.2457 & 0.2646 & 0.2782 \\
-\Kres{} classes + mass & 0.2031\,$\pm$\,0.0002 & 0.1646\,$\pm$\,0.0010 & 0.1512\,$\pm$\,0.0005 & 0.1512\,$\pm$\,0.0005 & 0.1490\,$\pm$\,0.0029 \\
-\Kcoarse{} classes + mass & 0.2019\,$\pm$\,0.0018 & 0.1630\,$\pm$\,0.0001 & 0.1510\,$\pm$\,0.0007 & 0.1499\,$\pm$\,0.0023 & 0.1458\,$\pm$\,0.0034 \\
+\endfirsthead
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
+\toprule
+\textit{resolution} & \multicolumn{5}{c}{generator-level soft-drop mass [GeV]} \\
+\cmidrule(lr){2-6}
+ & 20--50 & 50--100 & 100--150 & 150--250 & 250--500 \\
+\midrule
+\endhead
 \bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\textit{Table~\ref{tab:massdetail} (continued)}}
-\par\smallskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\endlastfoot
+\multicolumn{6}{@{}l}{mass output of the pretraining head, all jets} \\
+soft-drop mass & 0.2808 & 0.20640 & 0.2045 & 0.2102 & 0.2245 \\
+\Kres{} classes + mass & 0.1754\,$\pm$\,0.0003 & 0.14204\,$\pm$\,0.00060 & 0.1296\,$\pm$\,0.0008 & 0.1223\,$\pm$\,0.0014 & 0.1149\,$\pm$\,0.0020 \\
+\Kcoarse{} classes + mass & 0.1747\,$\pm$\,0.0010 & 0.14144\,$\pm$\,0.00052 & 0.1286\,$\pm$\,0.0003 & 0.1215\,$\pm$\,0.0007 & 0.1140\,$\pm$\,0.0007 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, resonant jets} \\
+soft-drop mass & 0.2746 & 0.19390 & 0.1924 & 0.2010 & 0.2165 \\
+\Kres{} classes + mass & 0.1633\,$\pm$\,0.0002 & 0.13626\,$\pm$\,0.00051 & 0.1256\,$\pm$\,0.0006 & 0.1187\,$\pm$\,0.0016 & 0.1120\,$\pm$\,0.0018 \\
+\Kcoarse{} classes + mass & 0.1626\,$\pm$\,0.0007 & 0.13541\,$\pm$\,0.00041 & 0.1248\,$\pm$\,0.0002 & 0.1178\,$\pm$\,0.0007 & 0.1113\,$\pm$\,0.0008 \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, QCD jets} \\
+soft-drop mass & 0.2920 & 0.23930 & 0.2457 & 0.2646 & 0.2782 \\
+\Kres{} classes + mass & 0.2031\,$\pm$\,0.0002 & 0.16458\,$\pm$\,0.00095 & 0.1512\,$\pm$\,0.0005 & 0.1512\,$\pm$\,0.0005 & 0.1490\,$\pm$\,0.0029 \\
+\Kcoarse{} classes + mass & 0.2019\,$\pm$\,0.0018 & 0.16300\,$\pm$\,0.00007 & 0.1510\,$\pm$\,0.0007 & 0.1499\,$\pm$\,0.0023 & 0.1458\,$\pm$\,0.0034 \\
+\multicolumn{6}{@{}l}{multilayer-perceptron probe on the frozen features, all jets} \\
+\Kfull{} classes & 0.2866\,$\pm$\,0.0041 & 0.21468\,$\pm$\,0.00170 & 0.1896\,$\pm$\,0.0023 & 0.1782\,$\pm$\,0.0013 & 0.1744\,$\pm$\,0.0013 \\
+\Kres{} classes & 0.2872\,$\pm$\,0.0003 & 0.21363\,$\pm$\,0.00081 & 0.1885\,$\pm$\,0.0019 & 0.1778\,$\pm$\,0.0024 & 0.1736\,$\pm$\,0.0025 \\
+\Kres{} classes + mass & 0.1879\,$\pm$\,0.0010 & 0.15428\,$\pm$\,0.00004 & 0.1412\,$\pm$\,0.0002 & 0.1352\,$\pm$\,0.0005 & 0.1294\,$\pm$\,0.0005 \\
+\Kmid{} classes & 0.2874\,$\pm$\,0.0050 & 0.21058\,$\pm$\,0.00284 & 0.1839\,$\pm$\,0.0022 & 0.1736\,$\pm$\,0.0022 & 0.1706\,$\pm$\,0.0030 \\
+\Kcoarse{} classes & 0.2753\,$\pm$\,0.0020 & 0.20560\,$\pm$\,0.00180 & 0.1804\,$\pm$\,0.0027 & 0.1688\,$\pm$\,0.0038 & 0.1659\,$\pm$\,0.0047 \\
+\Kcoarse{} classes + mass & 0.1875\,$\pm$\,0.0015 & 0.15405\,$\pm$\,0.00015 & 0.1413\,$\pm$\,0.0006 & 0.1353\,$\pm$\,0.0010 & 0.1283\,$\pm$\,0.0005 \\
+random network & 0.3061\,$\pm$\,0.0022 & 0.24242\,$\pm$\,0.00074 & 0.2121\,$\pm$\,0.0013 & 0.1986\,$\pm$\,0.0023 & 0.1911\,$\pm$\,0.0028 \\
+\multicolumn{6}{@{}l}{ridge regression on the frozen features, all jets} \\
+\Kfull{} classes & 0.3493\,$\pm$\,0.0032 & 0.29606\,$\pm$\,0.00289 & 0.2778\,$\pm$\,0.0038 & 0.2712\,$\pm$\,0.0054 & 0.2759\,$\pm$\,0.0032 \\
+\Kres{} classes & 0.3543\,$\pm$\,0.0028 & 0.29042\,$\pm$\,0.00477 & 0.2686\,$\pm$\,0.0067 & 0.2634\,$\pm$\,0.0098 & 0.2711\,$\pm$\,0.0141 \\
+\Kres{} classes + mass & 0.2124\,$\pm$\,0.0006 & 0.18608\,$\pm$\,0.00278 & 0.1726\,$\pm$\,0.0040 & 0.1671\,$\pm$\,0.0023 & 0.1630\,$\pm$\,0.0028 \\
+\Kmid{} classes & 0.3428\,$\pm$\,0.0090 & 0.27831\,$\pm$\,0.01599 & 0.2576\,$\pm$\,0.0156 & 0.2532\,$\pm$\,0.0129 & 0.2673\,$\pm$\,0.0118 \\
+\Kcoarse{} classes & 0.3235\,$\pm$\,0.0098 & 0.27151\,$\pm$\,0.00954 & 0.2491\,$\pm$\,0.0100 & 0.2421\,$\pm$\,0.0102 & 0.2625\,$\pm$\,0.0108 \\
+\Kcoarse{} classes + mass & 0.2054\,$\pm$\,0.0031 & 0.17653\,$\pm$\,0.00087 & 0.1654\,$\pm$\,0.0011 & 0.1603\,$\pm$\,0.0016 & 0.1566\,$\pm$\,0.0003 \\
+random network & 0.3236\,$\pm$\,0.0023 & 0.28951\,$\pm$\,0.00343 & 0.2735\,$\pm$\,0.0050 & 0.2677\,$\pm$\,0.0082 & 0.2558\,$\pm$\,0.0118 \\
+\end{longtable}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
 \toprule
 \textit{median response} & \multicolumn{5}{c}{generator-level soft-drop mass [GeV]} \\
 \cmidrule(lr){2-6}
-estimator & 20--50 & 50--100 & 100--150 & 150--250 & 250--500 \\
+ & 20--50 & 50--100 & 100--150 & 150--250 & 250--500 \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{all jets}} \\
+\endfirsthead
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:massdetail} (continued)}} \\[\smallskipamount]
+\toprule
+\textit{median response} & \multicolumn{5}{c}{generator-level soft-drop mass [GeV]} \\
+\cmidrule(lr){2-6}
+ & 20--50 & 50--100 & 100--150 & 150--250 & 250--500 \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\multicolumn{6}{@{}l}{mass output of the pretraining head, all jets} \\
 soft-drop mass & 1.001 & 0.9362 & 0.9081 & 0.890 & 0.852 \\
 \Kres{} classes + mass & 1.031\,$\pm$\,0.008 & 1.0102\,$\pm$\,0.0054 & 0.9969\,$\pm$\,0.0056 & 0.992\,$\pm$\,0.005 & 0.974\,$\pm$\,0.004 \\
 \Kcoarse{} classes + mass & 1.036\,$\pm$\,0.006 & 1.0152\,$\pm$\,0.0015 & 1.0022\,$\pm$\,0.0004 & 0.998\,$\pm$\,0.001 & 0.981\,$\pm$\,0.003 \\
-\multicolumn{6}{@{}l}{\textit{resonant jets}} \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, resonant jets} \\
 soft-drop mass & 1.011 & 0.9532 & 0.9223 & 0.902 & 0.862 \\
 \Kres{} classes + mass & 1.037\,$\pm$\,0.008 & 1.0158\,$\pm$\,0.0052 & 1.0007\,$\pm$\,0.0052 & 0.994\,$\pm$\,0.005 & 0.975\,$\pm$\,0.004 \\
 \Kcoarse{} classes + mass & 1.043\,$\pm$\,0.006 & 1.0203\,$\pm$\,0.0012 & 1.0057\,$\pm$\,0.0001 & 1.000\,$\pm$\,0.001 & 0.983\,$\pm$\,0.003 \\
-\multicolumn{6}{@{}l}{\textit{QCD jets}} \\
+\multicolumn{6}{@{}l}{mass output of the pretraining head, QCD jets} \\
 soft-drop mass & 0.971 & 0.8641 & 0.8160 & 0.781 & 0.738 \\
 \Kres{} classes + mass & 1.013\,$\pm$\,0.009 & 0.9851\,$\pm$\,0.0069 & 0.9718\,$\pm$\,0.0067 & 0.968\,$\pm$\,0.005 & 0.960\,$\pm$\,0.005 \\
 \Kcoarse{} classes + mass & 1.018\,$\pm$\,0.004 & 0.9903\,$\pm$\,0.0003 & 0.9775\,$\pm$\,0.0023 & 0.977\,$\pm$\,0.003 & 0.967\,$\pm$\,0.004 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\multicolumn{6}{@{}l}{multilayer-perceptron probe on the frozen features, all jets} \\
+\Kfull{} classes & 0.991\,$\pm$\,0.008 & 0.9994\,$\pm$\,0.0057 & 0.9927\,$\pm$\,0.0056 & 0.987\,$\pm$\,0.005 & 0.960\,$\pm$\,0.002 \\
+\Kres{} classes & 0.987\,$\pm$\,0.005 & 0.9965\,$\pm$\,0.0018 & 0.9891\,$\pm$\,0.0006 & 0.982\,$\pm$\,0.003 & 0.958\,$\pm$\,0.005 \\
+\Kres{} classes + mass & 1.029\,$\pm$\,0.002 & 1.0134\,$\pm$\,0.0007 & 1.0020\,$\pm$\,0.0010 & 0.997\,$\pm$\,0.003 & 0.981\,$\pm$\,0.004 \\
+\Kmid{} classes & 0.992\,$\pm$\,0.009 & 1.0025\,$\pm$\,0.0074 & 0.9928\,$\pm$\,0.0039 & 0.984\,$\pm$\,0.003 & 0.962\,$\pm$\,0.004 \\
+\Kcoarse{} classes & 1.000\,$\pm$\,0.007 & 1.0030\,$\pm$\,0.0058 & 0.9919\,$\pm$\,0.0044 & 0.982\,$\pm$\,0.004 & 0.961\,$\pm$\,0.001 \\
+\Kcoarse{} classes + mass & 1.032\,$\pm$\,0.001 & 1.0153\,$\pm$\,0.0023 & 1.0048\,$\pm$\,0.0033 & 1.000\,$\pm$\,0.003 & 0.985\,$\pm$\,0.002 \\
+random network & 0.945\,$\pm$\,0.005 & 0.9620\,$\pm$\,0.0051 & 0.9721\,$\pm$\,0.0037 & 0.978\,$\pm$\,0.004 & 0.975\,$\pm$\,0.006 \\
+\multicolumn{6}{@{}l}{ridge regression on the frozen features, all jets} \\
+\Kfull{} classes & 0.893\,$\pm$\,0.005 & 0.9413\,$\pm$\,0.0073 & 0.9672\,$\pm$\,0.0044 & 0.973\,$\pm$\,0.002 & 0.936\,$\pm$\,0.006 \\
+\Kres{} classes & 0.887\,$\pm$\,0.018 & 0.9382\,$\pm$\,0.0081 & 0.9677\,$\pm$\,0.0018 & 0.976\,$\pm$\,0.007 & 0.944\,$\pm$\,0.009 \\
+\Kres{} classes + mass & 1.003\,$\pm$\,0.005 & 1.0009\,$\pm$\,0.0001 & 0.9957\,$\pm$\,0.0031 & 0.995\,$\pm$\,0.002 & 0.978\,$\pm$\,0.002 \\
+\Kmid{} classes & 0.897\,$\pm$\,0.015 & 0.9567\,$\pm$\,0.0183 & 0.9724\,$\pm$\,0.0103 & 0.973\,$\pm$\,0.007 & 0.943\,$\pm$\,0.003 \\
+\Kcoarse{} classes & 0.918\,$\pm$\,0.007 & 0.9633\,$\pm$\,0.0110 & 0.9768\,$\pm$\,0.0072 & 0.972\,$\pm$\,0.003 & 0.946\,$\pm$\,0.009 \\
+\Kcoarse{} classes + mass & 1.025\,$\pm$\,0.001 & 1.0096\,$\pm$\,0.0017 & 0.9959\,$\pm$\,0.0006 & 0.990\,$\pm$\,0.002 & 0.977\,$\pm$\,0.002 \\
+random network & 0.924\,$\pm$\,0.006 & 0.9040\,$\pm$\,0.0048 & 0.9086\,$\pm$\,0.0062 & 0.921\,$\pm$\,0.002 & 0.929\,$\pm$\,0.015 \\
+\end{longtable}
 }
 \end{landscape}

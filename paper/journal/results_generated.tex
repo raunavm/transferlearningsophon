@@ -1614,9 +1614,9 @@
 \newcommand{\FtLrPre}{\ensuremath{10^{-3}}}  % experiments/FIGS/data/v2/budget/lrsweep_metrics.json :: argmax of the summed validation metric, pretrained :: sha256 7cdc148054ca902c
 \newcommand{\FtLrScratchTop}{\ensuremath{10^{-3}}}  % experiments/FIGS/data/v2/budget/lrsweep_metrics.json :: argmax of the validation metric on top, from scratch :: sha256 7cdc148054ca902c :: agrees with LR of the launched job-ft-budget-bench, -jc1, -jc2b, -scratch-full and -long-scratch-full from-scratch cells
 \newcommand{\FtLrScratchQg}{\ensuremath{3\times10^{-3}}}  % experiments/FIGS/data/v2/budget/lrsweep_metrics.json :: argmax of the validation metric on quark/gluon, from scratch :: sha256 7cdc148054ca902c :: agrees with LR of the launched job-ft-budget-bench and -scratch-full from-scratch cells
-\newcommand{\MlstNParamsFt}{2{,}209{,}270}  % experiments/FIGS/mlst_v4.py :: our_params(2, 17) :: sha256 7d5d4d78a8dfab53 :: trainable parameters of our fine-tuned network, two outputs (top, quark/gluon)
-\newcommand{\MlstNParamsFtKin}{2{,}207{,}950}  % experiments/FIGS/mlst_v4.py :: our_params(2, 7) :: sha256 7d5d4d78a8dfab53 :: trainable parameters of our fine-tuned network, two outputs, the 7 kinematic inputs
-\newcommand{\MlstNParamsJc}{2{,}213{,}374}  % experiments/FIGS/mlst_v4.py :: our_params(10, 17) :: sha256 7d5d4d78a8dfab53 :: trainable parameters of our fine-tuned network, the ten JetClass classes
+\newcommand{\MlstNParamsFt}{2{,}209{,}270}  % experiments/FIGS/mlst_v4.py :: our_params(2, 17) :: sha256 79af4ba7b88e8387 :: trainable parameters of our fine-tuned network, two outputs (top, quark/gluon)
+\newcommand{\MlstNParamsFtKin}{2{,}207{,}950}  % experiments/FIGS/mlst_v4.py :: our_params(2, 7) :: sha256 79af4ba7b88e8387 :: trainable parameters of our fine-tuned network, two outputs, the 7 kinematic inputs
+\newcommand{\MlstNParamsJc}{2{,}213{,}374}  % experiments/FIGS/mlst_v4.py :: our_params(10, 17) :: sha256 79af4ba7b88e8387 :: trainable parameters of our fine-tuned network, the ten JetClass classes
 \newcommand{\MlstProbeRunsDone}{27}  % experiments/FIGS/data/v2/index.json :: runs with a linear-probe fit (count) :: sha256 812e292814eb5595 :: of the paper's runs
 \newcommand{\MlstPaperRuns}{27}  % configs/arms/v2_paper_runs.txt :: runs (count) :: sha256 b04562b14ea8cbc7
 \newcommand{\MlstSdRelUnc}{50\%}  % configs/arms/v2_paper_runs.txt :: relative standard error of a standard deviation from the runs of a hierarchy level, 1/sqrt(2(n-1)) :: sha256 b04562b14ea8cbc7
@@ -2209,7 +2209,7 @@
 \newcommand{\MlstRocJcTwoHurtMaxDrop}{2.8}  % experiments/FIGS/data/v2/index.json :: jc2_roc_classes on the class-balanced probes; candidates with at least 1000 test jets :: sha256 812e292814eb5595 :: largest AUC loss at 17 classes of the hurt, pp
 \newcommand{\MlstRocJcTwoStableMaxChange}{15}  % experiments/FIGS/data/v2/index.json :: jc2_roc_classes on the class-balanced probes; candidates with at least 1000 test jets :: sha256 812e292814eb5595 :: largest change of 1 - AUC at any label set of the stable classes, per cent of the 188-class value
 \newcommand{\MlstJcBalNThin}{4}  % experiments/FIGS/data/v2/jc2bal/census.json :: counts.ft_test :: sha256 a4379ee0817254cf :: classes with fewer than 1000 class-balanced test jets (F3 hatching)
-\newcommand{\MlstMinBkgPass}{20}  % experiments/FIGS/mlst_v4.py :: JC1_MIN_BKG :: sha256 7d5d4d78a8dfab53 :: fewest background jets behind a drawn ROC point or a quoted rejection
+\newcommand{\MlstMinBkgPass}{20}  % experiments/FIGS/mlst_v4.py :: JC1_MIN_BKG :: sha256 79af4ba7b88e8387 :: fewest background jets behind a drawn ROC point or a quoted rejection
 \newcommand{\MlstMassMinJets}{100}  % experiments/EVAL/atlas_resolution.py :: MIN_JETS :: sha256 b82cc219f79f0f14 :: jets below which a mass bin is null
 \newcommand{\MlstRocCutBbFull}{0.79}  % experiments/FIGS/data/v2/index.json :: curves_v2/pairs curve bb_vs_cc: largest cut.eps_s over the L188 runs ('not reached' when a run's cut is null or leaves fewer than 2 grid points) :: sha256 812e292814eb5595
 \newcommand{\MlstRocCutBbRes}{0.77}  % experiments/FIGS/data/v2/index.json :: curves_v2/pairs curve bb_vs_cc: largest cut.eps_s over the L162 runs ('not reached' when a run's cut is null or leaves fewer than 2 grid points) :: sha256 812e292814eb5595
@@ -2865,9 +2865,9 @@
 \newcommand{\MlstMassHeadCoarseMassOverMlpCoarsePrMax}{down to 0.69 times the resolution}  % experiments/FIGS/data/v2/index.json :: resolution of the regression output of R16_Q1_MASS over the frozen-feature MLP of R16_Q1, run by run, all jets :: sha256 812e292814eb5595 :: prose twin of the run farther from 1
 \newcommand{\MlstMassMlpFull}{0.2200\,\ensuremath{\pm}\,0.0014}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L188, all jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpRes}{0.2195\,\ensuremath{\pm}\,0.0017}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L162, all jets, ATLAS resolution :: sha256 812e292814eb5595
+\newcommand{\MlstMassMlpResMass}{0.1591 and 0.1586}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L162_MASS, all jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpMid}{0.2158\,\ensuremath{\pm}\,0.0029}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of R42_Q1, all jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpCoarse}{0.2098\,\ensuremath{\pm}\,0.0031}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of R16_Q1, all jets, ATLAS resolution :: sha256 812e292814eb5595
-\newcommand{\MlstMassMlpResMass}{0.1591 and 0.1586}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L162_MASS, all jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpCoarseMass}{0.1583 and 0.1588}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of R16_Q1_MASS, all jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpInit}{0.2421\,\ensuremath{\pm}\,0.0018}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of INIT, all jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstCmpMlpResOverFull}{0.998\,\ensuremath{\pm}\,0.006}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP resolution of L162 over L188, run by run, all jets :: sha256 812e292814eb5595
@@ -2902,9 +2902,9 @@
 \newcommand{\MlstMassHeadCoarseMassOverMlpCoarseResonantPrMax}{down to 0.69 times the resolution}  % experiments/FIGS/data/v2/index.json :: resolution of the regression output of R16_Q1_MASS over the frozen-feature MLP of R16_Q1, run by run, resonant jets :: sha256 812e292814eb5595 :: prose twin of the run farther from 1
 \newcommand{\MlstMassMlpFullResonant}{0.1990\,\ensuremath{\pm}\,0.0016}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L188, resonant jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpResResonant}{0.1989\,\ensuremath{\pm}\,0.0020}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L162, resonant jets, ATLAS resolution :: sha256 812e292814eb5595
+\newcommand{\MlstMassMlpResMassResonant}{0.1436 and 0.1430}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L162_MASS, resonant jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpMidResonant}{0.1949\,\ensuremath{\pm}\,0.0023}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of R42_Q1, resonant jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpCoarseResonant}{0.1894\,\ensuremath{\pm}\,0.0035}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of R16_Q1, resonant jets, ATLAS resolution :: sha256 812e292814eb5595
-\newcommand{\MlstMassMlpResMassResonant}{0.1436 and 0.1430}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L162_MASS, resonant jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpCoarseMassResonant}{0.1420 and 0.1431}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of R16_Q1_MASS, resonant jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpInitResonant}{0.2214\,\ensuremath{\pm}\,0.0017}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of INIT, resonant jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstCmpMlpResOverFullResonant}{1.000\,\ensuremath{\pm}\,0.005}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP resolution of L162 over L188, run by run, resonant jets :: sha256 812e292814eb5595
@@ -2939,9 +2939,9 @@
 \newcommand{\MlstMassHeadCoarseMassOverMlpCoarseQcdPrMax}{down to 0.68 times the resolution}  % experiments/FIGS/data/v2/index.json :: resolution of the regression output of R16_Q1_MASS over the frozen-feature MLP of R16_Q1, run by run, qcd jets :: sha256 812e292814eb5595 :: prose twin of the run farther from 1
 \newcommand{\MlstMassMlpFullQcd}{0.3487\,\ensuremath{\pm}\,0.0029}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L188, qcd jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpResQcd}{0.3425\,\ensuremath{\pm}\,0.0031}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L162, qcd jets, ATLAS resolution :: sha256 812e292814eb5595
+\newcommand{\MlstMassMlpResMassQcd}{0.2473 and 0.2452}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L162_MASS, qcd jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpMidQcd}{0.338\,\ensuremath{\pm}\,0.007}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of R42_Q1, qcd jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpCoarseQcd}{0.327\,\ensuremath{\pm}\,0.006}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of R16_Q1, qcd jets, ATLAS resolution :: sha256 812e292814eb5595
-\newcommand{\MlstMassMlpResMassQcd}{0.2473 and 0.2452}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of L162_MASS, qcd jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpCoarseMassQcd}{0.2465 and 0.2463}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of R16_Q1_MASS, qcd jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstMassMlpInitQcd}{0.502\,\ensuremath{\pm}\,0.014}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP of INIT, qcd jets, ATLAS resolution :: sha256 812e292814eb5595
 \newcommand{\MlstCmpMlpResOverFullQcd}{0.982\,\ensuremath{\pm}\,0.017}  % experiments/FIGS/data/v2/index.json :: frozen-feature MLP resolution of L162 over L188, run by run, qcd jets :: sha256 812e292814eb5595

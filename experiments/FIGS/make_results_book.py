@@ -52,7 +52,7 @@ PREFIX = {G.MAIN: "", G.APPENDIX: "A", G.SUPPLEMENT: "S"}
 # the gallery captions are plain text; typeset their physics notation
 TEX = [("X→YY→bb̄qq", r"$X\to YY\to b\bar bqq$"), ("cc̄qq", r"$c\bar cqq$"), ("X→bc", r"$X\to bc$"),
        ("Jensen-Shannon", "Jensen--Shannon"), ("X→bb̄", r"$X\to b\bar b$"), ("X→cc̄", r"$X\to c\bar c$"), ("X→qq̄", r"$X\to q\bar q$"),
-       ("H→bb̄", r"$H\to b\bar b$"), ("Z→qq̄", r"$Z\to q\bar q$"), ("W→qq′", r"$W\to qq'$"), ("X→bs", r"$X\to bs$"),
+       ("H→bb̄", r"$H\to b\bar b$"), ("H→cc̄", r"$H\to c\bar c$"), ("Z→qq̄", r"$Z\to q\bar q$"), ("W→qq′", r"$W\to qq'$"), ("X→bs", r"$X\to bs$"),
        ("X→ee", r"$X\to ee$"), ("X→μμ", r"$X\to\mu\mu$"), ("μμ", r"$\mu\mu$"), ("X→bb", r"$X\to b\bar b$"),
        ("cc̄", r"$c\bar c$"), ("bb̄", r"$b\bar b$"), ("qq̄", r"$q\bar q$"), ("±", r"$\pm$"),
        ("r = m/m_gen", r"$r = m/m_{\mathrm{gen}}$"), (" pT ", r" $p_{\mathrm{T}}$ "), ("sigma_r", r"$\sigma_r$"), ("eps_B", r"$\varepsilon_B$"),

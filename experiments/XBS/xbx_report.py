@@ -33,10 +33,10 @@ import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 SIGNALS = (("xbb", r"$X\to b\bar b$"), ("xbs", r"$X\to bs$"))
-# the rows of the efficiency table, in mlst_results.XBX_ROWS's order (the rejection table's; PI 2026-11-12): the label
-# sets, the flavor-boundary partitions, the five random partitions as one row, the mass-regression models, the random
-# network; from scratch follows
-ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND", "L162_MASS", "R16_Q1_MASS",
+# the rows of the efficiency table, in mlst_results.XBX_ROWS's order (the rejection table's; PI 2026-11-13, L5): the label
+# sets, each mass-regression network under its own, the flavor-boundary partitions, the five random partitions as one
+# row, the random network; from scratch follows
+ROWS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND",
         "INIT")
 CURVE_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "INIT")
 WORD = {"xbb": "Xbb", "xbs": "Xbs"}
@@ -125,17 +125,18 @@ def efficiencies(M, runs, fits: dict, signal: str, name: str | None = None) -> d
 
 
 def table(M, MT, runs, fits: dict, scratch: dict | None = None) -> str:
-    """Signal efficiency (%) at eps_B* per configuration and signal; the direct discriminant for
-    X->bb beside the transfer classifier where it can be formed. scratch: {signal: [from-scratch endpoints per
-    seed]}, set as a last row (a dash for a signal without one), as the rejection table has it."""
+    """Signal efficiency (%) at eps_B* per configuration and signal: the classifier on the frozen features ("head"),
+    the linear probe on them ("linear"; the random network has only this one) and, for X->bb, the direct
+    discriminant where it can be formed. scratch: {signal: [from-scratch endpoints per seed]}, set as a last row in
+    the classifier's column (a dash for a signal without one), as the rejection table has it."""
     have = [(s, t) for s, t in SIGNALS if any(s in v for v in fits.values())]
     if not have:
         return ""
     stars = {s: next(model_readout(fits, m, s)["eps_b_star"] for m in fits if model_readout(fits, m, s))
              for s, _ in have}
-    cols = []
+    cols = []          # per signal: the classifier on the frozen features, the linear probe on them, the direct output
     for s, t in have:
-        cols.append((s, None, f"{t}, transfer"))
+        cols += [(s, "head", f"{t}, classifier"), (s, "linear", f"{t}, linear probe")]
         if s == "xbb":
             cols.append((s, "zero_shot_xbb", f"{t}, direct"))
     words = {s: t for s, t in have}
@@ -166,7 +167,7 @@ def table(M, MT, runs, fits: dict, scratch: dict | None = None) -> str:
             lines.append(f"{name} & " + " & ".join(cells) + r" \\")
     if scratch and any(scratch.get(s) for s, _, _ in cols):
         cells = [M._cell([x["eps_s_at_star"] for x in scratch[s]], len(scratch[s]), MT.fmt_pm, 100.0)
-                 if n is None and scratch.get(s) else "--" for s, n, _ in cols]
+                 if n == "head" and scratch.get(s) else "--" for s, n, _ in cols]
         lines.append(f"{M.SCRATCH_LABEL} & " + " & ".join(cells) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines) + "\n"

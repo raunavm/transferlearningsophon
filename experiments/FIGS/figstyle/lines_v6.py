@@ -26,8 +26,11 @@ OFFSET_DEX = 0.022      # B: log10 offset between neighbouring series in a size 
 OFFSET_TEXT = "Series are offset horizontally by a few per cent so that their error bars do not overlap."
 
 
-def dot(color: str, probe: bool) -> dict:
-    """B and C's marker: a small filled circle with no outline, open for a linear probe."""
+def dot(color: str, probe: bool, shape: str = "o") -> dict:
+    """B and C's marker: a small filled circle with no outline, open for a linear probe; shape "x" for a series that
+    shares a panel with a black reference of near its colour (the random network beside the soft-drop mass)."""
+    if shape == "x":
+        return {"marker": "x", "markersize": DOT + 0.5, "markeredgecolor": color, "markeredgewidth": OPEN_EDGE + 0.3}
     return {"marker": "o", "markersize": OPEN if probe else DOT, "markerfacecolor": "white" if probe else color,
             "markeredgecolor": color, "markeredgewidth": OPEN_EDGE if probe else 0.0}
 
@@ -60,10 +63,10 @@ def scan(ax, xs, mean, lo, hi, *, color: str, linestyle: str, probe: bool, label
         raise ValueError(f"scan: style {style!r} is not B or C (A is each figure's own code)")
 
 
-def binned(ax, edges, mean, lo, hi, *, color: str, probe: bool, label: str) -> None:
+def binned(ax, edges, mean, lo, hi, *, color: str, probe: bool, label: str, shape: str = "o") -> None:
     """Binned measurements, as the experiments draw them (ATLAS PUB-2024-015 Fig. 8, CMS JME-25-001 Fig. 9): the mean
     at the bin centre, a horizontal bar across the bin and a vertical +-1 SD bar; no line and no offset."""
     e = np.asarray(edges, float)
     ax.errorbar(0.5 * (e[1:] + e[:-1]), mean, xerr=0.5 * np.diff(e), yerr=[lo, hi], fmt="none", ecolor=color,
                 elinewidth=BAR, capsize=0, zorder=2.4)
-    ax.plot(0.5 * (e[1:] + e[:-1]), mean, linestyle="none", **dot(color, probe), label=label, zorder=2.6)
+    ax.plot(0.5 * (e[1:] + e[:-1]), mean, linestyle="none", **dot(color, probe, shape), label=label, zorder=2.6)

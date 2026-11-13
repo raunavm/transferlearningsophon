@@ -69,6 +69,10 @@ GENERATED = {"results_generated.tex",
              "tables/mlst_qcdhf_full.tex", "tables/mlst_fill_full.tex",
              # 2026-11-12 (PI, the table fix): the comparison with published models and the other label sets' rows
              "tables/mlst_published.tex", "tables/mlst_labelsets.tex",
+             # 2026-11-13 (PI, the final figures and tables): the AUC of the headline family, the mass-effect summary,
+             # the supplement's whole training-size tables and the X->bs closest-class table
+             "tables/mlst_summary_auc.tex", "tables/mlst_masseffect.tex", "tables/mlst_probes_n_full.tex",
+             "tables/mlst_ft_full.tex", "tables/mlst_xbx_node.tex",
              # the review books (experiments/FIGS/make_results_book.py writes them): the gallery's figures with
              # its captions and the generated tables above, for review; not the manuscript, which main.tex inputs
              "results_book.tex", "results_supplement.tex", "results_book_all.tex"}

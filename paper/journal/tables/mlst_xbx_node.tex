@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\caption{Rejection of QCD jets when tagging $X\to bs$ jets with the pretrained output of the class that contains $X\to bq$ against the QCD outputs, nothing trained, in the soft-drop mass window of table~\ref{tab:xbx}. $R_{50}$ and $R_{30}$ are the inverse QCD efficiencies at 50\% and 30\% signal efficiency. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output and one for each of five random partitions.}
+\label{tab:xbxnode}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
+\toprule
+ & \multicolumn{2}{c}{$X\to bs$ against QCD jets} \\
+\cmidrule(lr){2-3}
+ & \multicolumn{2}{c}{closest class} \\
+\cmidrule(lr){2-3}
+ & $R_{50}$ & $R_{30}$ \\
+\midrule
+\Kfull{} classes & 144.1\,$\pm$\,3.5 & 377.0\,$\pm$\,18.5 \\
+\Kres{} classes & 142.0\,$\pm$\,2.8 & 365.5\,$\pm$\,10.1 \\
+\Kres{} classes + mass & 139.5\,$\pm$\,1.8 & 369.3\,$\pm$\,1.0 \\
+\Kmid{} classes & 91.9\,$\pm$\,3.5 & 238.0\,$\pm$\,9.5 \\
+\Kcoarse{} classes & 38.0\,$\pm$\,0.8 & 112.2\,$\pm$\,3.1 \\
+\Kcoarse{} classes + mass & 38.8\,$\pm$\,1.0 & 116.8\,$\pm$\,0.5 \\
+\multicolumn{3}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 39.1\,$\pm$\,1.2 & 115.0\,$\pm$\,4.0 \\
+\quad $b$-quark boundary & 38.5\,$\pm$\,1.8 & 110.5\,$\pm$\,6.6 \\
+\quad random flavor boundary & 39.5\,$\pm$\,1.1 & 115.0\,$\pm$\,5.3 \\
+\quad random partitions & 34.0\,$\pm$\,8.0 & 93.9\,$\pm$\,19.0 \\
+\bottomrule
+\end{tabular*}
+\end{table}

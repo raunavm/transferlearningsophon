@@ -540,10 +540,13 @@ def _jc_cell(vals, place, fmt_pm, two):
 
 
 def jetclass_rows(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
-                  fmt_pm, two, literature: bool = True) -> tuple[list, list]:
+                  fmt_pm, two, literature: bool = True, vals=None) -> tuple[list, list]:
     """The rows of the JetClass tables, each (label & training jets & parameters, the cells accuracy, AUC and
     the JC1_COLS rejections, the mark after each cell): the published rows trained on 2 M jets, and ours
-    fine-tuned on nmax jets, from scratch last (table_jetclass)."""
+    fine-tuned on nmax jets, from scratch last (table_jetclass). vals(arm, metric) (arm None: from scratch), when
+    given, is the source of the accuracy and AUC columns, each run's value: the fine-tuning read-out the figures and
+    Table 1 read (budget_long_metrics.json, AUC on every test jet; PI 2026-11-13, L2); the curves' blocks keep the
+    rejections and the check that the averages over class pairs and over the classes agree."""
     n = f"N{nmax}"
     ncol = 2 + len(JC1_COLS)
     lit = []                                   # (row prefix, value cells, marks after the values)
@@ -555,13 +558,14 @@ def jetclass_rows(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, sc
             lit.append((rf"{name}~\cite{{{r['cite']}}} & {r['n_train']} & {r.get('params') or '--'}",
                         [r["acc"], r["auc_ovo"]] + [_sep_int(x) for x in r["rej"]], [""] * ncol))
 
-    def row(name, blocks):
+    def row(name, blocks, arm):
         for b in blocks:
             if abs(b["macro_auc_ovo"] - b["macro_auc_ovr"]) > 1e-9:
                 raise SystemExit("FATAL: JetClass one-vs-one and one-vs-rest macro AUCs differ; the test "
                                  "set's classes are not of equal size and the table must show both")
-        cols = [_jc_cell([b["accuracy"] for b in blocks], 3, fmt_pm, two),
-                _jc_cell([b["macro_auc_ovo"] for b in blocks], 4, fmt_pm, two)]
+        acc, auc = (vals(arm, "accuracy"), vals(arm, "macro_auc_ovr")) if vals else (None, None)
+        cols = [_jc_cell(acc if acc else [b["accuracy"] for b in blocks], 3, fmt_pm, two),
+                _jc_cell(auc if auc else [b["macro_auc_ovo"] for b in blocks], 4, fmt_pm, two)]
         marks = ["", ""]
         for c, _ in JC1_COLS:
             wp = [b["per_class"][c]["rejection"] for b in blocks]
@@ -572,16 +576,16 @@ def jetclass_rows(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, sc
     for arm in rows:
         blocks = [b for m in runs[arm] for b in _jc1_cells(pre, m[len("mtx-"):], n, ["s1"])]
         if blocks:
-            ours.append(row(label[arm], blocks))
+            ours.append(row(label[arm], blocks, arm))
     seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
     blocks = _jc1_cells(ref, scratch, n, seeds)
     if blocks:          # from scratch last, as in every fine-tuning table
-        ours.append(row(SCRATCH_LABEL, blocks))
+        ours.append(row(SCRATCH_LABEL, blocks, None))
     return lit, ours
 
 
 def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
-                   fmt_pm, two, literature: bool = True, part: str = "all") -> str:
+                   fmt_pm, two, literature: bool = True, part: str = "all", vals=None) -> str:
     """JetClass in the form of ParT's Table 1 (T2): accuracy, AUC averaged over class pairs (one-vs-one,
     ParT's convention, which equals the one-vs-rest average on JetClass's equal class sizes, checked
     here), and each signal class's rejection of QCD at ParT's working point, marked where fewer than
@@ -609,7 +613,7 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
                 r"\midrule")
     lines = list(head)
     ncol = 2 + len(JC1_COLS)
-    lit, ours = jetclass_rows(pre, ref, runs, rows, label, scratch, nmax, fmt_pm, two, literature)
+    lit, ours = jetclass_rows(pre, ref, runs, rows, label, scratch, nmax, fmt_pm, two, literature, vals)
     keep = (list(range(2)) if part == "summary" else list(range(2, ncol)) if part == "rej" else list(range(ncol)))
     for i, (prefix, cells, marks) in enumerate(lit + ours):
         if part == "rej":          # jets only: the parameters belong to the main-text table

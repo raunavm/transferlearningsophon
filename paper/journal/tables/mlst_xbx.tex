@@ -1,28 +1,41 @@
-\begin{table}[t]
-\centering
-\caption{Signal efficiency in percent for $X\to b\bar b$ and $X\to bs$ jets against QCD jets in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV, at the QCD efficiency $\varepsilon_B$ in the header, compared across the networks pretrained with 188, 162, 43 and 17 classes and the control networks. Transfer is a classifier trained on the frozen features, and direct is the pretrained $X\to b\bar b$ output against the QCD outputs with nothing trained. A dash marks a network without an $X\to b\bar b$ output of its own. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions, three initializations of the random network and three training seeds from scratch on $X\to bs$. Bold marks the best value of a column and every value within three standard deviations of it.}
-\label{tab:xbx}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\begin{landscape}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\addtolength{\belowcaptionskip}{\medskipamount}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\caption{Signal efficiency in percent for $X\to b\bar b$ and $X\to bs$ jets against QCD jets in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV, at the QCD efficiency $\varepsilon_B$ in the header. The pretrained networks are not fine-tuned. A classifier or a linear probe is trained on their frozen features, and direct is the pretrained $X\to b\bar b$ output against the QCD outputs with nothing trained. From scratch is the same architecture trained on these samples, and a dash marks a read-out that a network does not have. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions, three initializations of the random network and three training seeds from scratch. Bold marks the best value of a column and every value within three standard deviations of it.}\label{tab:xbx}\\
 \toprule
- & \multicolumn{3}{c}{signal efficiency (\%) at $\varepsilon_B=0.01$} \\
-\cmidrule(lr){2-4}
- & \multicolumn{2}{c}{$X\to b\bar b$} & \multicolumn{1}{c}{$X\to bs$} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-4}
-pretraining & transfer & direct & transfer \\
+& \multicolumn{5}{c}{signal efficiency (\%) at $\varepsilon_B=0.01$} \\
+\cmidrule(lr){2-6}
+ & \multicolumn{3}{c}{$X\to b\bar b$} & \multicolumn{2}{c}{$X\to bs$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-6}
+pretraining & classifier & linear probe & direct & classifier & linear probe \\
 \midrule
-\Kfull{} classes & {\fontseries{b}\selectfont 71.8\,$\pm$\,0.1} & {\fontseries{b}\selectfont 69.84\,$\pm$\,0.05} & {\fontseries{b}\selectfont 69.22\,$\pm$\,0.19} \\
-\Kres{} classes & {\fontseries{b}\selectfont 71.7\,$\pm$\,0.3} & {\fontseries{b}\selectfont 69.95\,$\pm$\,0.19} & {\fontseries{b}\selectfont 68.90\,$\pm$\,0.06} \\
-\Kmid{} classes & {\fontseries{b}\selectfont 70.8\,$\pm$\,0.3} & -- & 67.14\,$\pm$\,0.07 \\
-\Kcoarse{} classes & 65.9\,$\pm$\,1.0 & -- & 59.37\,$\pm$\,1.56 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 62.5\,$\pm$\,0.8 & -- & 59.30\,$\pm$\,0.29 \\
-\quad $b$-quark boundary & 67.3\,$\pm$\,0.5 & -- & 61.60\,$\pm$\,0.53 \\
-\quad random flavor boundary & 66.9\,$\pm$\,0.3 & -- & 63.20\,$\pm$\,0.27 \\
-\quad random partitions & 69.1\,$\pm$\,0.8 & -- & 65.08\,$\pm$\,1.17 \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 71.1\,$\pm$\,0.5} & {\fontseries{b}\selectfont 69.71\,$\pm$\,0.21} & 68.03\,$\pm$\,0.05 \\
-\Kcoarse{} classes + mass & 66.8\,$\pm$\,0.3 & -- & 59.89\,$\pm$\,1.16 \\
-random network & 17.9\,$\pm$\,1.6 & -- & 13.43\,$\pm$\,0.61 \\
-from scratch & {\fontseries{b}\selectfont 57.2\,$\pm$\,8.4} & -- & 55.38\,$\pm$\,0.98 \\
+\endfirsthead
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:xbx} (continued)}} \\[\smallskipamount]
+\toprule
+& \multicolumn{5}{c}{signal efficiency (\%) at $\varepsilon_B=0.01$} \\
+\cmidrule(lr){2-6}
+ & \multicolumn{3}{c}{$X\to b\bar b$} & \multicolumn{2}{c}{$X\to bs$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-6}
+pretraining & classifier & linear probe & direct & classifier & linear probe \\
+\midrule
+\endhead
 \bottomrule
-\end{tabular*}
-\end{table}
+\endlastfoot
+\Kfull{} classes & {\fontseries{b}\selectfont 71.8\,$\pm$\,0.1} & {\fontseries{b}\selectfont 70.9\,$\pm$\,0.5} & {\fontseries{b}\selectfont 69.84\,$\pm$\,0.05} & {\fontseries{b}\selectfont 69.22\,$\pm$\,0.19} & {\fontseries{b}\selectfont 66.56\,$\pm$\,0.10} \\
+\Kres{} classes & {\fontseries{b}\selectfont 71.7\,$\pm$\,0.3} & {\fontseries{b}\selectfont 69.7\,$\pm$\,0.4} & {\fontseries{b}\selectfont 69.95\,$\pm$\,0.19} & {\fontseries{b}\selectfont 68.90\,$\pm$\,0.06} & {\fontseries{b}\selectfont 65.43\,$\pm$\,0.90} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 71.1\,$\pm$\,0.5} & {\fontseries{b}\selectfont 70.1\,$\pm$\,1.2} & {\fontseries{b}\selectfont 69.71\,$\pm$\,0.21} & 68.03\,$\pm$\,0.05 & {\fontseries{b}\selectfont 64.58\,$\pm$\,0.68} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 70.8\,$\pm$\,0.3} & {\fontseries{b}\selectfont 69.2\,$\pm$\,0.6} & -- & 67.14\,$\pm$\,0.07 & 64.59\,$\pm$\,0.18 \\
+\Kcoarse{} classes & 65.9\,$\pm$\,1.0 & 67.0\,$\pm$\,1.1 & -- & 59.37\,$\pm$\,1.56 & 58.57\,$\pm$\,1.97 \\
+\Kcoarse{} classes + mass & 66.8\,$\pm$\,0.3 & {\fontseries{b}\selectfont 68.3\,$\pm$\,1.8} & -- & 59.89\,$\pm$\,1.16 & 59.63\,$\pm$\,0.96 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 62.5\,$\pm$\,0.8 & 63.3\,$\pm$\,0.4 & -- & 59.30\,$\pm$\,0.29 & 58.69\,$\pm$\,1.61 \\
+\quad $b$-quark boundary & 67.3\,$\pm$\,0.5 & 67.3\,$\pm$\,0.9 & -- & 61.60\,$\pm$\,0.53 & 60.08\,$\pm$\,0.02 \\
+\quad random flavor boundary & 66.9\,$\pm$\,0.3 & {\fontseries{b}\selectfont 65.8\,$\pm$\,2.2} & -- & 63.20\,$\pm$\,0.27 & 60.71\,$\pm$\,0.74 \\
+\quad random partitions & 69.1\,$\pm$\,0.8 & {\fontseries{b}\selectfont 68.3\,$\pm$\,1.8} & -- & 65.08\,$\pm$\,1.17 & {\fontseries{b}\selectfont 63.20\,$\pm$\,1.20} \\
+random network & -- & 17.9\,$\pm$\,1.6 & -- & -- & 13.43\,$\pm$\,0.61 \\
+from scratch & {\fontseries{b}\selectfont 57.2\,$\pm$\,8.4} & -- & -- & 55.38\,$\pm$\,0.98 & -- \\
+\end{longtable}
+}
+\end{landscape}

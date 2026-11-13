@@ -4,7 +4,7 @@
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \setlength{\abovecaptionskip}{0pt}
-\captionof{table}{The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and the controls, trained on one million JetClass jets: the AUC of each JetClass class against the other nine, fine-tuned (upper part, beside the network trained from scratch) and from linear probes on the frozen features (lower part, beside the random network with BatchNorm recomputed). Mean $\pm$ SD over the pretraining runs of each configuration. $^{\S}$ marks a value from a single run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
+\captionof{table}{The area under the receiver operating characteristic curve (AUC) of each JetClass class against the other nine, for the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with the 17-class partitions, fine-tuned on one million JetClass jets beside the same architecture trained from scratch, and as linear probes on the frozen features, trained on as many jets, beside the random network. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions, three initializations of the random network and three training seeds from scratch. Bold marks the best value of each block of a column and every value within three standard deviations of it. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
 \label{tab:jc1_class_auc}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
@@ -12,21 +12,17 @@
  & QCD & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 0.97529\,$\pm$\,0.00009 & 0.99637\,$\pm$\,0.00005 & 0.98530\,$\pm$\,0.00012 & 0.97741\,$\pm$\,0.00008 & 0.98647\,$\pm$\,0.00010 \\
-\Kres{} classes & 0.97533\,$\pm$\,0.00002 & 0.99635\,$\pm$\,0.00009 & 0.98545\,$\pm$\,0.00017 & 0.97762\,$\pm$\,0.00010 & 0.98669\,$\pm$\,0.00013 \\
-\Kmid{} classes & 0.97522\,$\pm$\,0.00002 & 0.99624\,$\pm$\,0.00011 & 0.98497\,$\pm$\,0.00006 & 0.97727\,$\pm$\,0.00011 & 0.98631\,$\pm$\,0.00015 \\
-\Kcoarse{} classes & 0.97455\,$\pm$\,0.00042 & 0.99551\,$\pm$\,0.00013 & 0.98306\,$\pm$\,0.00007 & 0.97645\,$\pm$\,0.00024 & 0.98586$^{\P}$ \\
-\multicolumn{6}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.97496\,$\pm$\,0.00014 & 0.99572\,$\pm$\,0.00002 & 0.98352\,$\pm$\,0.00002 & 0.97702\,$\pm$\,0.00026 & 0.98611\,$\pm$\,0.00028 \\
-\quad $b$-quark boundary & 0.97508\,$\pm$\,0.00014 & 0.99601\,$\pm$\,0.00010 & 0.98410\,$\pm$\,0.00019 & 0.97695\,$\pm$\,0.00009 & 0.98620\,$\pm$\,0.00018 \\
-\quad random flavor boundary & 0.97483\,$\pm$\,0.00027 & 0.99571\,$\pm$\,0.00002 & 0.98365\,$\pm$\,0.00013 & 0.97672\,$\pm$\,0.00018 & 0.98601\,$\pm$\,0.00006 \\
-\quad random partition 1, seed 1 & 0.97490$^{\S}$ & 0.99584$^{\S}$ & 0.98376$^{\S}$ & 0.97694$^{\S}$ & 0.98602$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.97488$^{\S}$ & 0.99583$^{\S}$ & 0.98422$^{\S}$ & 0.97711$^{\S}$ & 0.98621$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.97509$^{\S}$ & 0.99611$^{\S}$ & 0.98447$^{\S}$ & 0.97685$^{\S}$ & 0.98607$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.97480$^{\S}$ & 0.99599$^{\S}$ & 0.98411$^{\S}$ & 0.97697$^{\S}$ & 0.98605$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.97484$^{\S}$ & 0.99587$^{\S}$ & 0.98420$^{\S}$ & 0.97700$^{\S}$ & 0.98623$^{\S}$ \\
-\Kres{} classes + mass & 0.97518\,$\pm$\,0.00012 & 0.99622\,$\pm$\,0.00016 & 0.98475\,$\pm$\,0.00042 & 0.97742\,$\pm$\,0.00019 & 0.98645\,$\pm$\,0.00021 \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.97529\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 0.99637\,$\pm$\,0.00005} & {\fontseries{b}\selectfont 0.98530\,$\pm$\,0.00012} & {\fontseries{b}\selectfont 0.97741\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 0.98647\,$\pm$\,0.00010} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.97533\,$\pm$\,0.00002} & {\fontseries{b}\selectfont 0.99635\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 0.98545\,$\pm$\,0.00017} & {\fontseries{b}\selectfont 0.97762\,$\pm$\,0.00010} & {\fontseries{b}\selectfont 0.98669\,$\pm$\,0.00013} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.97518\,$\pm$\,0.00012} & {\fontseries{b}\selectfont 0.99622\,$\pm$\,0.00016} & {\fontseries{b}\selectfont 0.98475\,$\pm$\,0.00042} & {\fontseries{b}\selectfont 0.97742\,$\pm$\,0.00019} & {\fontseries{b}\selectfont 0.98645\,$\pm$\,0.00021} \\
+\Kmid{} classes & 0.97522\,$\pm$\,0.00002 & {\fontseries{b}\selectfont 0.99624\,$\pm$\,0.00011} & {\fontseries{b}\selectfont 0.98497\,$\pm$\,0.00006} & {\fontseries{b}\selectfont 0.97727\,$\pm$\,0.00011} & {\fontseries{b}\selectfont 0.98631\,$\pm$\,0.00015} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 0.97455\,$\pm$\,0.00042} & 0.99551\,$\pm$\,0.00013 & 0.98306\,$\pm$\,0.00007 & 0.97645\,$\pm$\,0.00024 & 0.98586$^{\P}$ \\
 \Kcoarse{} classes + mass & 0.97446\,$\pm$\,0.00008 & 0.99526\,$\pm$\,0.00016 & 0.98249\,$\pm$\,0.00015 & 0.97601\,$\pm$\,0.00009 & 0.98540\,$\pm$\,0.00001 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 0.97496\,$\pm$\,0.00014} & 0.99572\,$\pm$\,0.00002 & 0.98352\,$\pm$\,0.00002 & {\fontseries{b}\selectfont 0.97702\,$\pm$\,0.00026} & {\fontseries{b}\selectfont 0.98611\,$\pm$\,0.00028} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 0.97508\,$\pm$\,0.00014} & 0.99601\,$\pm$\,0.00010 & 0.98410\,$\pm$\,0.00019 & 0.97695\,$\pm$\,0.00009 & {\fontseries{b}\selectfont 0.98620\,$\pm$\,0.00018} \\
+\quad random flavor boundary & {\fontseries{b}\selectfont 0.97483\,$\pm$\,0.00027} & 0.99571\,$\pm$\,0.00002 & 0.98365\,$\pm$\,0.00013 & 0.97672\,$\pm$\,0.00018 & 0.98601\,$\pm$\,0.00006 \\
+\quad random partitions & 0.97490\,$\pm$\,0.00011 & 0.99593\,$\pm$\,0.00012 & 0.98415\,$\pm$\,0.00026 & 0.97697\,$\pm$\,0.00009 & 0.98612\,$\pm$\,0.00010 \\
 from scratch & 0.97107\,$\pm$\,0.00050 & 0.99383\,$\pm$\,0.00019 & 0.97789\,$\pm$\,0.00016 & 0.97240\,$\pm$\,0.00041 & 0.98198\,$\pm$\,0.00048 \\
 \bottomrule
 \end{tabular*}
@@ -41,21 +37,17 @@ from scratch & 0.97107\,$\pm$\,0.00050 & 0.99383\,$\pm$\,0.00019 & 0.97789\,$\pm
  & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 0.99932\,$\pm$\,0.00002 & 0.99773\,$\pm$\,0.00005 & 0.99980\,$\pm$\,0.00001 & 0.97625\,$\pm$\,0.00030 & 0.9603\,$\pm$\,0.0003 \\
-\Kres{} classes & 0.99930\,$\pm$\,0.00003 & 0.99782\,$\pm$\,0.00004 & 0.99979\,$\pm$\,0.00001 & 0.97662\,$\pm$\,0.00005 & 0.9610\,$\pm$\,0.0002 \\
-\Kmid{} classes & 0.99933\,$\pm$\,0.00002 & 0.99769\,$\pm$\,0.00004 & 0.99978$^{\P}$ & 0.97618\,$\pm$\,0.00016 & 0.9604\,$\pm$\,0.0002 \\
-\Kcoarse{} classes & 0.99925\,$\pm$\,0.00001 & 0.99746\,$\pm$\,0.00004 & 0.99975\,$\pm$\,0.00001 & 0.97585\,$\pm$\,0.00022 & 0.9595\,$\pm$\,0.0005 \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.99932\,$\pm$\,0.00002} & {\fontseries{b}\selectfont 0.99773\,$\pm$\,0.00005} & {\fontseries{b}\selectfont 0.99980\,$\pm$\,0.00001} & {\fontseries{b}\selectfont 0.97625\,$\pm$\,0.00030} & {\fontseries{b}\selectfont 0.9603\,$\pm$\,0.0003} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.99930\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.99782\,$\pm$\,0.00004} & {\fontseries{b}\selectfont 0.99979\,$\pm$\,0.00001} & {\fontseries{b}\selectfont 0.97662\,$\pm$\,0.00005} & {\fontseries{b}\selectfont 0.9610\,$\pm$\,0.0002} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.99929\,$\pm$\,0.00005} & {\fontseries{b}\selectfont 0.99775\,$\pm$\,0.00007} & 0.99975$^{\P}$ & 0.97637\,$\pm$\,0.00002 & {\fontseries{b}\selectfont 0.9606\,$\pm$\,0.0003} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 0.99933\,$\pm$\,0.00002} & {\fontseries{b}\selectfont 0.99769\,$\pm$\,0.00004} & {\fontseries{b}\selectfont 0.99978}$^{\P}$ & {\fontseries{b}\selectfont 0.97618\,$\pm$\,0.00016} & {\fontseries{b}\selectfont 0.9604\,$\pm$\,0.0002} \\
+\Kcoarse{} classes & 0.99925\,$\pm$\,0.00001 & 0.99746\,$\pm$\,0.00004 & 0.99975\,$\pm$\,0.00001 & 0.97585\,$\pm$\,0.00022 & {\fontseries{b}\selectfont 0.9595\,$\pm$\,0.0005} \\
+\Kcoarse{} classes + mass & 0.99924$^{\P}$ & {\fontseries{b}\selectfont 0.99729\,$\pm$\,0.00018} & 0.99974\,$\pm$\,0.00001 & 0.97526\,$\pm$\,0.00023 & {\fontseries{b}\selectfont 0.9585\,$\pm$\,0.0010} \\
 \multicolumn{6}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.99923\,$\pm$\,0.00006 & 0.99755\,$\pm$\,0.00001 & 0.99974\,$\pm$\,0.00001 & 0.97549\,$\pm$\,0.00004 & 0.9593\,$\pm$\,0.0001 \\
-\quad $b$-quark boundary & 0.99927\,$\pm$\,0.00002 & 0.99762\,$\pm$\,0.00008 & 0.99976\,$\pm$\,0.00001 & 0.97562$^{\P}$ & 0.9592\,$\pm$\,0.0001 \\
-\quad random flavor boundary & 0.99923$^{\P}$ & 0.99742\,$\pm$\,0.00009 & 0.99976$^{\P}$ & 0.97594\,$\pm$\,0.00025 & 0.9601\,$\pm$\,0.0001 \\
-\quad random partition 1, seed 1 & 0.99927$^{\S}$ & 0.99749$^{\S}$ & 0.99977$^{\S}$ & 0.97606$^{\S}$ & 0.9600$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.99923$^{\S}$ & 0.99754$^{\S}$ & 0.99976$^{\S}$ & 0.97623$^{\S}$ & 0.9602$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.99927$^{\S}$ & 0.99759$^{\S}$ & 0.99976$^{\S}$ & 0.97577$^{\S}$ & 0.9594$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.99919$^{\S}$ & 0.99755$^{\S}$ & 0.99977$^{\S}$ & 0.97644$^{\S}$ & 0.9605$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.99922$^{\S}$ & 0.99755$^{\S}$ & 0.99977$^{\S}$ & 0.97626$^{\S}$ & 0.9604$^{\S}$ \\
-\Kres{} classes + mass & 0.99929\,$\pm$\,0.00005 & 0.99775\,$\pm$\,0.00007 & 0.99975$^{\P}$ & 0.97637\,$\pm$\,0.00002 & 0.9606\,$\pm$\,0.0003 \\
-\Kcoarse{} classes + mass & 0.99924$^{\P}$ & 0.99729\,$\pm$\,0.00018 & 0.99974\,$\pm$\,0.00001 & 0.97526\,$\pm$\,0.00023 & 0.9585\,$\pm$\,0.0010 \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 0.99923\,$\pm$\,0.00006} & 0.99755\,$\pm$\,0.00001 & 0.99974\,$\pm$\,0.00001 & 0.97549\,$\pm$\,0.00004 & 0.9593\,$\pm$\,0.0001 \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 0.99927\,$\pm$\,0.00002} & {\fontseries{b}\selectfont 0.99762\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 0.99976\,$\pm$\,0.00001} & 0.97562$^{\P}$ & 0.9592\,$\pm$\,0.0001 \\
+\quad random flavor boundary & 0.99923$^{\P}$ & 0.99742\,$\pm$\,0.00009 & 0.99976$^{\P}$ & {\fontseries{b}\selectfont 0.97594\,$\pm$\,0.00025} & 0.9601\,$\pm$\,0.0001 \\
+\quad random partitions & {\fontseries{b}\selectfont 0.99923\,$\pm$\,0.00004} & 0.99754\,$\pm$\,0.00004 & {\fontseries{b}\selectfont 0.99977\,$\pm$\,0.00001} & {\fontseries{b}\selectfont 0.97615\,$\pm$\,0.00025} & {\fontseries{b}\selectfont 0.9601\,$\pm$\,0.0004} \\
 from scratch & 0.99895\,$\pm$\,0.00006 & 0.99646\,$\pm$\,0.00018 & 0.99962\,$\pm$\,0.00002 & 0.97249\,$\pm$\,0.00046 & 0.9538\,$\pm$\,0.0009 \\
 \bottomrule
 \end{tabular*}
@@ -65,27 +57,23 @@ from scratch & 0.99895\,$\pm$\,0.00006 & 0.99646\,$\pm$\,0.00018 & 0.99962\,$\pm
 \begin{minipage}{\linewidth}\centering
 \makebox[\linewidth][l]{\textit{Table~\ref{tab:jc1_class_auc} (continued)}}
 \par\smallskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
 \toprule
- & QCD & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ \\
+ & QCD & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ \\
 \midrule
-\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & 0.9474\,$\pm$\,0.0005 & 0.9912\,$\pm$\,0.0003 & 0.9719\,$\pm$\,0.0006 & 0.9640\,$\pm$\,0.0003 \\
-\Kres{} classes & 0.9482\,$\pm$\,0.0010 & 0.9912\,$\pm$\,0.0001 & 0.9720\,$\pm$\,0.0005 & 0.9642\,$\pm$\,0.0002 \\
-\Kmid{} classes & 0.9484\,$\pm$\,0.0004 & 0.9909\,$\pm$\,0.0002 & 0.9719\,$\pm$\,0.0003 & 0.9632\,$\pm$\,0.0004 \\
-\Kcoarse{} classes & 0.9467\,$\pm$\,0.0010 & 0.9873\,$\pm$\,0.0003 & 0.9568\,$\pm$\,0.0020 & 0.9622\,$\pm$\,0.0007 \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.9457\,$\pm$\,0.0006 & 0.9831\,$\pm$\,0.0027 & 0.9530\,$\pm$\,0.0049 & 0.9621\,$\pm$\,0.0003 \\
-\quad $b$-quark boundary & 0.9460\,$\pm$\,0.0022 & 0.9894\,$\pm$\,0.0006 & 0.9653\,$\pm$\,0.0006 & 0.9634\,$\pm$\,0.0001 \\
-\quad random flavor boundary & 0.9449\,$\pm$\,0.0001 & 0.9879\,$\pm$\,0.0004 & 0.9637\,$\pm$\,0.0010 & 0.9627\,$\pm$\,0.0002 \\
-\quad random partition 1, seed 1 & 0.9449$^{\S}$ & 0.9890$^{\S}$ & 0.9653$^{\S}$ & 0.9606$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.9446$^{\S}$ & 0.9889$^{\S}$ & 0.9661$^{\S}$ & 0.9612$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.9456$^{\S}$ & 0.9889$^{\S}$ & 0.9671$^{\S}$ & 0.9599$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.9433$^{\S}$ & 0.9891$^{\S}$ & 0.9666$^{\S}$ & 0.9610$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.9432$^{\S}$ & 0.9890$^{\S}$ & 0.9656$^{\S}$ & 0.9611$^{\S}$ \\
-\Kres{} classes + mass & 0.9483\,$\pm$\,0.0014 & 0.9912\,$\pm$\,0.0001 & 0.9726\,$\pm$\,0.0008 & 0.9645\,$\pm$\,0.0010 \\
-\Kcoarse{} classes + mass & 0.9468\,$\pm$\,0.0011 & 0.9869\,$\pm$\,0.0006 & 0.9566\,$\pm$\,0.0010 & 0.9621\,$\pm$\,0.0001 \\
-random network, BatchNorm recomputed & 0.8495\,$\pm$\,0.0074 & 0.8555\,$\pm$\,0.0094 & 0.7793\,$\pm$\,0.0018 & 0.8828\,$\pm$\,0.0039 \\
+\multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.9474\,$\pm$\,0.0005} & {\fontseries{b}\selectfont 0.9912\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.9719\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 0.9640\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.9776\,$\pm$\,0.0002} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.9482\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 0.9912\,$\pm$\,0.0001} & {\fontseries{b}\selectfont 0.9720\,$\pm$\,0.0005} & {\fontseries{b}\selectfont 0.9642\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 0.9775\,$\pm$\,0.0002} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.9483\,$\pm$\,0.0014} & {\fontseries{b}\selectfont 0.9912\,$\pm$\,0.0001} & {\fontseries{b}\selectfont 0.9726\,$\pm$\,0.0008} & {\fontseries{b}\selectfont 0.9645\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 0.9779\,$\pm$\,0.0005} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 0.9484\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 0.9909\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 0.9719\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.9632\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 0.9769\,$\pm$\,0.0002} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 0.9467\,$\pm$\,0.0010} & 0.9873\,$\pm$\,0.0003 & 0.9568\,$\pm$\,0.0020 & {\fontseries{b}\selectfont 0.9622\,$\pm$\,0.0007} & 0.9746\,$\pm$\,0.0009 \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.9468\,$\pm$\,0.0011} & 0.9869\,$\pm$\,0.0006 & 0.9566\,$\pm$\,0.0010 & {\fontseries{b}\selectfont 0.9621\,$\pm$\,0.0001} & 0.9750\,$\pm$\,0.0005 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.9457\,$\pm$\,0.0006 & 0.9831\,$\pm$\,0.0027 & 0.9530\,$\pm$\,0.0049 & {\fontseries{b}\selectfont 0.9621\,$\pm$\,0.0003} & 0.9737\,$\pm$\,0.0002 \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 0.9460\,$\pm$\,0.0022} & {\fontseries{b}\selectfont 0.9894\,$\pm$\,0.0006} & 0.9653\,$\pm$\,0.0006 & {\fontseries{b}\selectfont 0.9634\,$\pm$\,0.0001} & {\fontseries{b}\selectfont 0.9769\,$\pm$\,0.0004} \\
+\quad random flavor boundary & 0.9449\,$\pm$\,0.0001 & 0.9879\,$\pm$\,0.0004 & 0.9637\,$\pm$\,0.0010 & {\fontseries{b}\selectfont 0.9627\,$\pm$\,0.0002} & 0.9752\,$\pm$\,0.0004 \\
+\quad random partitions & 0.9443\,$\pm$\,0.0010 & 0.9890\,$\pm$\,0.0001 & 0.9661\,$\pm$\,0.0007 & 0.9607\,$\pm$\,0.0005 & 0.9743\,$\pm$\,0.0006 \\
+random network & 0.8441\,$\pm$\,0.0031 & 0.7800\,$\pm$\,0.0062 & 0.7477\,$\pm$\,0.0005 & 0.8748\,$\pm$\,0.0023 & 0.8075\,$\pm$\,0.0017 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -94,56 +82,23 @@ random network, BatchNorm recomputed & 0.8495\,$\pm$\,0.0074 & 0.8555\,$\pm$\,0.
 \begin{minipage}{\linewidth}\centering
 \makebox[\linewidth][l]{\textit{Table~\ref{tab:jc1_class_auc} (continued)}}
 \par\smallskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
 \toprule
- & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ \\
+ & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
 \midrule
-\multicolumn{4}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & 0.9776\,$\pm$\,0.0002 & 0.99882\,$\pm$\,0.00005 & 0.9925\,$\pm$\,0.0003 \\
-\Kres{} classes & 0.9775\,$\pm$\,0.0002 & 0.99881\,$\pm$\,0.00003 & 0.9925\,$\pm$\,0.0001 \\
-\Kmid{} classes & 0.9769\,$\pm$\,0.0002 & 0.99879\,$\pm$\,0.00002 & 0.9924\,$\pm$\,0.0002 \\
-\Kcoarse{} classes & 0.9746\,$\pm$\,0.0009 & 0.99848\,$\pm$\,0.00003 & 0.9905\,$\pm$\,0.0008 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.9737\,$\pm$\,0.0002 & 0.99815\,$\pm$\,0.00005 & 0.9895\,$\pm$\,0.0001 \\
-\quad $b$-quark boundary & 0.9769\,$\pm$\,0.0004 & 0.99850\,$\pm$\,0.00002 & 0.9910\,$\pm$\,0.0005 \\
-\quad random flavor boundary & 0.9752\,$\pm$\,0.0004 & 0.99819\,$\pm$\,0.00012 & 0.9899\,$\pm$\,0.0003 \\
-\quad random partition 1, seed 1 & 0.9735$^{\S}$ & 0.99850$^{\S}$ & 0.9898$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.9741$^{\S}$ & 0.99845$^{\S}$ & 0.9899$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.9746$^{\S}$ & 0.99837$^{\S}$ & 0.9896$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.9743$^{\S}$ & 0.99855$^{\S}$ & 0.9905$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.9750$^{\S}$ & 0.99848$^{\S}$ & 0.9894$^{\S}$ \\
-\Kres{} classes + mass & 0.9779\,$\pm$\,0.0005 & 0.99879\,$\pm$\,0.00003 & 0.9927\,$\pm$\,0.0003 \\
-\Kcoarse{} classes + mass & 0.9750\,$\pm$\,0.0005 & 0.99835\,$\pm$\,0.00003 & 0.9904\,$\pm$\,0.0007 \\
-random network, BatchNorm recomputed & 0.8373\,$\pm$\,0.0048 & 0.90630\,$\pm$\,0.01698 & 0.9298\,$\pm$\,0.0009 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\textit{Table~\ref{tab:jc1_class_auc} (continued)}}
-\par\smallskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
-\toprule
- & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
-\midrule
-\multicolumn{4}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & 0.99952\,$\pm$\,0.00001 & 0.94281\,$\pm$\,0.00119 & 0.8958\,$\pm$\,0.0029 \\
-\Kres{} classes & 0.99952\,$\pm$\,0.00003 & 0.94309\,$\pm$\,0.00050 & 0.8962\,$\pm$\,0.0002 \\
-\Kmid{} classes & 0.99952\,$\pm$\,0.00001 & 0.94241\,$\pm$\,0.00139 & 0.8959\,$\pm$\,0.0023 \\
-\Kcoarse{} classes & 0.99929\,$\pm$\,0.00005 & 0.94090\,$\pm$\,0.00061 & 0.8937\,$\pm$\,0.0025 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.99904\,$\pm$\,0.00007 & 0.93654\,$\pm$\,0.00028 & 0.8867$^{\P}$ \\
-\quad $b$-quark boundary & 0.99932\,$\pm$\,0.00002 & 0.94034\,$\pm$\,0.00002 & 0.8928\,$\pm$\,0.0029 \\
-\quad random flavor boundary & 0.99916$^{\P}$ & 0.93756\,$\pm$\,0.00143 & 0.8901\,$\pm$\,0.0024 \\
-\quad random partition 1, seed 1 & 0.99927$^{\S}$ & 0.93345$^{\S}$ & 0.8818$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.99930$^{\S}$ & 0.93513$^{\S}$ & 0.8831$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.99927$^{\S}$ & 0.93450$^{\S}$ & 0.8804$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.99933$^{\S}$ & 0.93350$^{\S}$ & 0.8796$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.99925$^{\S}$ & 0.93476$^{\S}$ & 0.8831$^{\S}$ \\
-\Kres{} classes + mass & 0.99950\,$\pm$\,0.00001 & 0.94448\,$\pm$\,0.00232 & 0.9004\,$\pm$\,0.0024 \\
-\Kcoarse{} classes + mass & 0.99915\,$\pm$\,0.00002 & 0.94224\,$\pm$\,0.00015 & 0.8956\,$\pm$\,0.0003 \\
-random network, BatchNorm recomputed & 0.95372\,$\pm$\,0.00644 & 0.87030\,$\pm$\,0.00308 & 0.7906\,$\pm$\,0.0083 \\
+\multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.99882\,$\pm$\,0.00005} & {\fontseries{b}\selectfont 0.9925\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.99952\,$\pm$\,0.00001} & {\fontseries{b}\selectfont 0.94281\,$\pm$\,0.00119} & {\fontseries{b}\selectfont 0.8958\,$\pm$\,0.0029} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.99881\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.9925\,$\pm$\,0.0001} & {\fontseries{b}\selectfont 0.99952\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.94309\,$\pm$\,0.00050} & {\fontseries{b}\selectfont 0.8962\,$\pm$\,0.0002} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.99879\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.9927\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.99950\,$\pm$\,0.00001} & {\fontseries{b}\selectfont 0.94448\,$\pm$\,0.00232} & {\fontseries{b}\selectfont 0.9004\,$\pm$\,0.0024} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 0.99879\,$\pm$\,0.00002} & {\fontseries{b}\selectfont 0.9924\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 0.99952\,$\pm$\,0.00001} & {\fontseries{b}\selectfont 0.94241\,$\pm$\,0.00139} & {\fontseries{b}\selectfont 0.8959\,$\pm$\,0.0023} \\
+\Kcoarse{} classes & 0.99848\,$\pm$\,0.00003 & {\fontseries{b}\selectfont 0.9905\,$\pm$\,0.0008} & 0.99929\,$\pm$\,0.00005 & {\fontseries{b}\selectfont 0.94090\,$\pm$\,0.00061} & {\fontseries{b}\selectfont 0.8937\,$\pm$\,0.0025} \\
+\Kcoarse{} classes + mass & 0.99835\,$\pm$\,0.00003 & 0.9904\,$\pm$\,0.0007 & 0.99915\,$\pm$\,0.00002 & {\fontseries{b}\selectfont 0.94224\,$\pm$\,0.00015} & {\fontseries{b}\selectfont 0.8956\,$\pm$\,0.0003} \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.99815\,$\pm$\,0.00005 & 0.9895\,$\pm$\,0.0001 & 0.99904\,$\pm$\,0.00007 & 0.93654\,$\pm$\,0.00028 & 0.8867$^{\P}$ \\
+\quad $b$-quark boundary & 0.99850\,$\pm$\,0.00002 & {\fontseries{b}\selectfont 0.9910\,$\pm$\,0.0005} & 0.99932\,$\pm$\,0.00002 & {\fontseries{b}\selectfont 0.94034\,$\pm$\,0.00002} & {\fontseries{b}\selectfont 0.8928\,$\pm$\,0.0029} \\
+\quad random flavor boundary & 0.99819\,$\pm$\,0.00012 & 0.9899\,$\pm$\,0.0003 & 0.99916$^{\P}$ & {\fontseries{b}\selectfont 0.93756\,$\pm$\,0.00143} & 0.8901\,$\pm$\,0.0024 \\
+\quad random partitions & 0.99847\,$\pm$\,0.00007 & 0.9898\,$\pm$\,0.0004 & 0.99928\,$\pm$\,0.00003 & 0.93427\,$\pm$\,0.00076 & 0.8816\,$\pm$\,0.0016 \\
+random network & 0.81585\,$\pm$\,0.00778 & 0.9242\,$\pm$\,0.0007 & 0.88014\,$\pm$\,0.00408 & 0.83667\,$\pm$\,0.00261 & 0.7693\,$\pm$\,0.0035 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

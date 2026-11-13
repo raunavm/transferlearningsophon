@@ -70,8 +70,10 @@ def test_the_table_and_macros(fits_dir, tmp_path):
     runs = M._paper(REPO)
     fits = XR.load(fits_dir, {"xbb_jc2": "xbb"})
     tex = XR.table(M, MT, runs, fits)
-    # the signal over its two read-outs, the working point once across the columns (PI 2026-11-11)
-    assert r"\multicolumn{2}{c}{$X\to b\bar b$}" in tex and "pretraining & transfer & direct" in tex and "bs" not in tex
+    # the signal over its read-outs, the working point once across the columns (PI 2026-11-11); since 2026-11-13 the
+    # classifier on the frozen features, the linear probe on them and the direct discriminant
+    assert r"\multicolumn{3}{c}{$X\to b\bar b$}" in tex and "pretraining & classifier & linear probe & direct" in tex
+    assert "bs" not in tex and "transfer" not in tex
     row17 = next(line for line in tex.splitlines() if line.startswith(M.LABEL["R16_Q1"] + " &"))
     assert row17.endswith(r"-- \\")             # no direct discriminant at 17 classes
     em = MT.Emitter(pathlib.Path("/"))
@@ -101,21 +103,25 @@ def test_the_curve_stops_where_too_few_qcd_jets_pass():
 
 
 def test_the_rows_follow_the_tables_one_order_and_a_single_from_scratch_seed_is_marked(fits_dir):
-    """PI 2026-11-12: the efficiency table in the row order of every table (label sets, 17-class partitions, the
-    networks with a mass output, the random network, from scratch last); with the tables' formatter a from-scratch
-    signal with one seed is a single-run cell, printed with the single-run mark, and three seeds are not."""
+    """PI 2026-11-13 (L5): the efficiency table in the row order of every table (the label sets with each network with
+    a mass output under its own, the 17-class partitions, the random network, from scratch last, in the classifier's
+    column); with the tables' formatter a from-scratch signal with one seed is a single-run cell, printed with the
+    single-run mark, and three seeds are not."""
     import types
     runs = M._paper(REPO)
     fits = XR.load(fits_dir, {"xbb_jc2": "xbb"})
-    assert tuple(XR.ROWS) == M.XBX_ROWS == M.MAIN + M.FLAV + (M.RAND_POOLED,) + M.MASS + (M.INIT,)
+    assert tuple(XR.ROWS) == M.XBX_ROWS == M.SETS + M.FLAV + (M.RAND_POOLED,) + (M.INIT,)
     tab = types.SimpleNamespace(fmt_pm=M.TAB)
     tex = XR.table(M, tab, runs, fits, {"xbb": [_end(0.477)]})
     lines = tex.splitlines()
     assert [ln.split(" & ")[0] for ln in lines[lines.index(r"\midrule") + 1:-2]] == [M.LABEL[r] for r in XR.ROWS] + [M.SCRATCH_LABEL]
-    assert lines[-3] == f"{M.SCRATCH_LABEL} & " + M.V4.tok("s", 0.477 * 100.0) + r" & -- \\"
+    assert lines[-3] == f"{M.SCRATCH_LABEL} & " + M.V4.tok("s", 0.477 * 100.0) + r" & -- & -- \\"
     printed = M.uniform_columns(tex).splitlines()
     assert M.V4.TOK_OPEN not in "".join(printed) and printed[-3].split(" & ")[1].endswith(M.SINGLE)
     assert sum(M.SINGLE in ln for ln in printed) == 1 and "$<$" not in "".join(printed)
     three = M.uniform_columns(XR.table(M, tab, runs, fits, {"xbb": [_end(0.47), _end(0.48), _end(0.49)]}))
     assert M.SINGLE not in three and three.splitlines()[-3].startswith(M.SCRATCH_LABEL + r" & 48.")
-    assert "pretraining & transfer & direct" in tex                # the header is unchanged
+    assert "pretraining & classifier & linear probe & direct" in tex       # the header is unchanged
+    # the random network has only the linear probe: a dash in the classifier's and the direct column
+    init = next(ln for ln in printed if ln.startswith(M.LABEL[M.INIT] + " & ")).removesuffix(r" \\").split(" & ")
+    assert init[1] == init[3] == "--" and init[2] != "--"

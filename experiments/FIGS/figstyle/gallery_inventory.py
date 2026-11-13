@@ -24,9 +24,9 @@ import style_v5 as S
 W, H = 27.7, 15.7           # cm: the landscape gallery page's width; its height less the change, caption and notes
 COLUMNS = 3
 GAP = 0.4                   # cm between columns
-PT = 7.2                    # the map only (gallery, not the paper): the 2026-11-12 supplement fits one page
+PT = 6.1                    # the map only (gallery, not the paper): the 2026-11-13 families, tables and plain sentences fit one page
 SPACING = 1.25              # matplotlib linespacing: a line pitch of 0.293 cm (8.3 pt) for STIX at PT, measured
-LINE = 0.264                # cm per line (0.293 at 8 pt, scaled)
+LINE = 0.293 * PT / 8       # cm per line (0.293 at 8 pt, scaled)
 INDENT = 0.3                # cm: a row's continuation lines, so rows part without a gap
 BOOT = C.P.DATA / "head/sculpting_boot.json"     # experiments/EVAL/sculpting_boot.py
 # the bootstrap's differences (sculpting_boot.DIFFS) and working points, as the map names them

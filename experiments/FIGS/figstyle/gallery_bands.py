@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The gallery's uncertainty arithmetic, kept free of data loading so tests can import it: the relative uncertainty of a
-mean rejection curve (F6, F6-app ratio panels), the band of the spread over runs (F10b) and the soft-drop reference's
+mean rejection curve (the ratio panels of F6 and the class-pair figures), the band of the spread over runs (F10b) and the soft-drop reference's
 off-axis rule (F9b, A17)."""
 from __future__ import annotations
 
