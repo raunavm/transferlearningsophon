@@ -1782,3 +1782,5 @@ pull-host-raunav,2026-11-13T02:30:26Z,deleted,"Recreated for the render download
 xbx-ihep-scratch-xbb-a100-s1-raunav,2026-11-13T04:00:45Z,deleted,"Seeds 1 and 3 waited 3 h 25 min for an A100 in us-west and never started (no output); moved back to the general GPU pool (PI 2026-11-12).",experiments/XBS/k8s/job-xbx-ihep-scratch-xbb-a100-s1-raunav.yaml
 xbx-ihep-scratch-xbb-s1-raunav,2026-11-13T04:00:45Z,launched,"X->bb from scratch seed 1 on nvidia.com/gpu (any product that fits), mtx-s2.93; seed 3 75 s later.",experiments/XBS/k8s/job-xbx-ihep-scratch-xbb-s1-raunav.yaml
 xbx-ihep-scratch-xbb-s3-raunav,2026-11-13T04:00:45Z,launched,"As seed 1.",experiments/XBS/k8s/job-xbx-ihep-scratch-xbb-s3-raunav.yaml
+render-gallery-5195a84-raunav,2026-11-13T04:08:56Z,complete,"57 of 57 pages; interim review PDFs built from it (paper_figures_tables 42 p, supplement 79 p): final Fig. 1, X->bb from scratch with seed 2 only.",experiments/FIGS/k8s/job-render-gallery-5195a84-raunav.yaml
+pull-host-raunav,2026-11-13T04:08:56Z,deleted,"Recreated for the seed-2 pull and the render download, deleted when done.",experiments/FIGS/k8s/job-pull-host-raunav.yaml
