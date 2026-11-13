@@ -35,7 +35,7 @@ ACC, ACC_TINT = "#882255", "#F3E6EC"
 # the jets, colour-coded by detector region (PI 2026-11-12), in Tol muted colours that no label set uses:
 # tracks in the tracker, deposits in the inner (electromagnetic) and the outer (hadronic) calorimeter band
 TRK, ECAL, HCAL = "#117733", "#CC6677", "#4C9FCB"
-ECAL_BAND, HCAL_BAND = "#F8ECEE", "#E9F3FA"
+BAND = "#F3F3F3"                                   # the calorimeter bands themselves stay neutral
 W, H = 13.0, 12.55
 FS, FS_T = 8, 9
 
@@ -61,60 +61,60 @@ def build():
         ax.add_patch(Rectangle((x, y), w, h, fc="white", ec=ec, lw=lw, joinstyle="miter", zorder=2))
         ax.text(x + w / 2, y + h / 2, txt, ha="center", va="center", rotation=rot, fontsize=FS, zorder=4, linespacing=1.05)
 
-    def jet(ox, oy, R, prongs, half=26, seed=0, layers=4, hits=True, lw=0.32, sq=1.0, dep=0.035):
-        """Schematic jet in a detector wedge: tracker layers and two calorimeter bands.
-        prongs: (offset_rad, n_tracks, sigma, displaced_vertex_as_fraction_of_R[, kind]);
-        kind 'h' hadronic (default), 'e' electron (one track, compact inner deposit),
-        'm' muon (one track that leaves the detector)."""
+    def jet(ox, oy, R, prongs, half=26, seed=0, layers=4, lw=0.32, cells=(2, 3)):
+        """Schematic jet in a detector wedge: tracker layers and two calorimeter bands of cells.
+        prongs: (offset_rad, n_tracks, sigma, displaced_vertex_as_fraction_of_R). Each calorimeter band is a
+        polar grid of cells (cells = radial layers per band); a cell is drawn when the energy that the
+        particles leave in it passes a threshold, so deposits are contiguous clusters on the grid."""
         rng = np.random.default_rng(seed)
         a0, a1 = 90 - half, 90 + half
         rt = 0.60 * R
         ax.add_patch(Wedge((ox, oy), rt, a0, a1, fc="#FAFAFA", ec=LG, lw=0.5, zorder=0))
         for k in range(1, layers + 1):
             ax.add_patch(Wedge((ox, oy), rt * k / (layers + 0.6), a0, a1, fc="none", ec="#DCDCDC", lw=0.4, zorder=0))
-        ax.add_patch(Wedge((ox, oy), 0.78 * R, a0, a1, width=0.13 * R, fc=ECAL_BAND, ec=LG, lw=0.5, zorder=0))
-        ax.add_patch(Wedge((ox, oy), R, a0, a1, width=0.18 * R, fc=HCAL_BAND, ec=LG, lw=0.5, zorder=0))
+        # (inner radius, outer radius, layers, colour, energy share per layer, lateral width in cells)
+        bands = ((0.65 * R, 0.78 * R, cells[0], ECAL, np.linspace(1.0, 0.55, cells[0]), 0.4),
+                 (0.82 * R, 1.00 * R, cells[1], HCAL, np.array([0.6, 1.0, 0.6, 0.35])[:cells[1]], 0.55))
+        for r0, r1, *_ in bands:
+            ax.add_patch(Wedge((ox, oy), r1, a0, a1, width=r1 - r0, fc=BAND, ec=LG, lw=0.5, zorder=0))
         lim = np.radians(half) - 0.03
         clip = lambda v: float(np.clip(v, np.pi / 2 - lim, np.pi / 2 + lim))
-
-        def square(r, ang, size, colour):
-            ax.add_patch(Rectangle((ox + r * np.cos(ang) - size / 2, oy + r * np.sin(ang) - size / 2), size, size,
-                                   fc=colour, ec="none", zorder=2))
-
-        for pr in prongs:
-            off, n, sig, dv = pr[:4]; kind = pr[4] if len(pr) > 4 else "h"
+        inner, outer = [], []                        # (angle, energy) of what reaches each calorimeter band
+        for off, n, sig, dv in prongs:
             axis = np.pi / 2 + off
             vx, vy = ox + dv * R * np.cos(axis), oy + dv * R * np.sin(axis)
             if dv > 0:
                 ax.plot([ox, vx], [oy, vy], color=INK, lw=0.4, ls=(0, (1.2, 1.2)), zorder=1)
                 ax.add_patch(Circle((vx, vy), 0.014 * R + 0.012, fc=INK, ec="none", zorder=4))
-            for _ in range(n):
+            for _ in range(n):                       # charged hadrons: a track, then both calorimeters
                 d = float(np.clip(rng.normal(0, sig), -2.2 * sig, 2.2 * sig))
-                aend = clip(axis + d + (rng.normal(0, 0.03) if kind == "h" else 0.0))
+                aend = clip(axis + d + rng.normal(0, 0.03))
                 ex, ey = ox + rt * np.cos(aend), oy + rt * np.sin(aend)
                 t = np.linspace(0, 1, 40)
-                bend = rng.normal(0, 0.05) * R if kind == "h" else 0.0
+                bend = rng.normal(0, 0.05) * R
                 nx, ny = -(ey - vy), (ex - vx)
                 nn = np.hypot(nx, ny) + 1e-9
-                x = vx + (ex - vx) * t + bend * nx / nn * 2 * t * (1 - t)
-                y = vy + (ey - vy) * t + bend * ny / nn * 2 * t * (1 - t)
-                if kind == "m":                      # a muon crosses the calorimeters and leaves
-                    x = np.append(x, ox + 1.13 * R * np.cos(aend)); y = np.append(y, oy + 1.13 * R * np.sin(aend))
-                ax.plot(x, y, color=TRK, lw=lw * (1.6 if kind != "h" else 1.0), alpha=0.95, zorder=1, solid_capstyle="round")
-                if hits:
-                    r = np.hypot(x - ox, y - oy)
-                    for k in range(1, layers + 1):
-                        j = int(np.argmin(np.abs(r - rt * k / (layers + 0.6))))
-                        ax.add_patch(Circle((x[j], y[j]), 0.008 * R, fc=INK, ec="none", zorder=2))
-                if kind == "e":                      # an electron stops in the inner calorimeter
-                    for _ in range(6):
-                        square(R * rng.uniform(0.68, 0.75), clip(aend + rng.normal(0, 0.02)), R * 0.026 * sq, ECAL)
-                elif kind == "h":
-                    for (r0, r1), sizes, nmax, colour in (((0.665, 0.765), (0.016, 0.022), 3, ECAL),
-                                                          ((0.84, 0.98), (0.024, 0.034), 4, HCAL)):
-                        for _ in range(rng.integers(1, nmax)):
-                            square(R * rng.uniform(r0, r1), clip(aend + rng.normal(0, dep)), R * rng.choice(sizes) * sq,
-                                   colour)
+                ax.plot(vx + (ex - vx) * t + bend * nx / nn * 2 * t * (1 - t),
+                        vy + (ey - vy) * t + bend * ny / nn * 2 * t * (1 - t),
+                        color=TRK, lw=lw, alpha=0.95, zorder=1, solid_capstyle="round")
+                e = 0.35 + rng.exponential(0.6)
+                inner.append((aend, 0.35 * e)); outer.append((aend, e))
+            for _ in range(n // 2 + 1):              # photons: no track, inner calorimeter only
+                inner.append((clip(axis + rng.normal(0, sig)), 0.5 + rng.exponential(0.5)))
+        span = np.radians(a1 - a0)
+        for (r0, r1, nl, colour, share, width), ends in zip(bands, (inner, outer)):
+            dr = (r1 - r0) / nl
+            nphi = int(round(span * (r0 + r1) / 2 / dr))                 # cells square at the band's middle
+            dphi = span / nphi
+            phi = np.radians(a0) + dphi * (np.arange(nphi) + 0.5)
+            energy = sum(e * np.outer(share, np.exp(-0.5 * ((phi - a) / (width * dphi)) ** 2)) for a, e in ends)
+            g = 0.1                                                      # gap around a cell, in cells
+            for i, j in zip(*np.nonzero(energy > 0.8)):
+                ra, rb = r0 + dr * (i + g), r0 + dr * (i + 1 - g)
+                pa, pb = phi[j] - dphi * (0.5 - g), phi[j] + dphi * (0.5 - g)
+                ax.add_patch(Polygon([(ox + r * np.cos(p), oy + r * np.sin(p))
+                                      for r, p in ((ra, pa), (rb, pa), (rb, pb), (ra, pb))],
+                                     closed=True, fc=colour, ec="none", zorder=2))
         ax.add_patch(Circle((ox, oy), 0.018 * R + 0.012, fc=INK, ec="none", zorder=5))
 
     # ------------------------------------------------------------------ label map (the released label maps)
@@ -164,7 +164,7 @@ def build():
     yfine, ycoarse = H - 2.42, H - 3.12
     SQ = 0.15
     for k, (_, lab, x, prongs, half) in enumerate(EX):
-        jet(x, yjet, 1.08, prongs, half=half, seed=20 + k, layers=3, hits=False, lw=0.3, sq=1.3, dep=0.02)
+        jet(x, yjet, 1.08, prongs, half=half, seed=20 + k, layers=3, lw=0.3)
         ax.text(x, ylab, lab, ha="center", va="center", fontsize=FS)
         ax.add_patch(Rectangle((x - SQ / 2, yfine - SQ / 2), SQ, SQ, fc=C[188], ec="none", zorder=3))
     for s0, k in runs(gf):
@@ -199,7 +199,7 @@ def build():
     ax.text(0.2, yt, "(b) Pretraining and use", fontsize=FS_T, va="center")
     y0 = yt - 1.9
     # input: the particles of one jet (tracks and energy deposits; no detector hits)
-    jet(1.35, y0 - 1.0, 1.95, [(-0.23, 5, 0.045, 0.0), (0.23, 5, 0.045, 0.0)], half=27, seed=12, lw=0.3, hits=False)
+    jet(1.35, y0 - 1.0, 1.95, [(-0.23, 5, 0.045, 0.0), (0.23, 5, 0.045, 0.0)], half=27, seed=12, lw=0.3, cells=(3, 4))
     ax.text(1.35, y0 + 1.13, "JetClass-II jet", ha="center", va="center", fontsize=FS)
     arrow((2.65, y0), (3.3, y0))
     xb0, wb = 3.35, 1.0                      # the network that is reused
