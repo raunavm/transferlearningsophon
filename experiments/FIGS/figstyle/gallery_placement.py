@@ -27,11 +27,12 @@ F10B_STATED = (("17-188", "eps_b=0.01"), ("43-188", "eps_b=0.1"), ("162mass-162"
 # a placement that waits on a result; the two tables only while they hold pending cells (make_results_book sets a
 # PROVISIONAL table with its pending cells, and a box for a PROVISIONAL figure not drawn yet)
 PROVISIONAL = {}     # nothing waits: the fine-tuned read-out (2026-11-09) and X→bb/X→bs on Sophon's samples (2026-11-11) are in
-SCULPT_FLAV = "No flavor-boundary partition sculpts the QCD mass differently from 188 classes beyond 3σ."
 FJ_S = "Cited beside [[FJ]]: partitions, linear probes, from scratch."
 SCATTER_S = "Cited from [[F3-main]]: the other scatter panels."
 AUC_S = "[[F8]], [[A8]] and [[A10]] in AUC."
 XBX = "17 classes keep fewer X→bb̄ and X→bs signal jets than 188 on Sophon's samples."
+MASS_S = "Cited beside [[F9b]]: the response distributions, by jet group, and from frozen features."
+SCULPT_S = "Cited beside [[F10b]]: the histograms, flavor boundaries, rejection plane, fine-tuned and mass models."
 
 # (gallery id, tier, draft sentence), in paper order within each tier; items that share a sentence share a row on the map.
 # PI 2026-11-12: the paper keeps the main-text figures and, in the appendix, F4-other, F4-mech-ft, PT, F6, A10, F10b,
@@ -75,16 +76,10 @@ _FIGURES = (
     *((k, SUPPLEMENT, "Cited from [[F3-main]]: every class's ROC curve.") for k in ("A3R", "A3R-ft")),
     ("F6-app", SUPPLEMENT, "Cited beside [[F6]]: the linear probes' ROC curves on top and quark/gluon tagging."),
     *((k, SUPPLEMENT, AUC_S) for k in ("F8-auc", "A8-auc", "A10-auc")),
-    ("F9a", SUPPLEMENT, "Cited beside [[F9b]]: the mass output's response distributions."),
-    ("F10a", SUPPLEMENT, "Cited beside [[F10b]]: the QCD mass before and after the head cuts."),
-    ("F10b-flav", SUPPLEMENT, "Cited beside [[F10b]]: the flavor-boundary partitions."),
-    ("F10c", SUPPLEMENT, "Cited beside [[F10b]]: sculpting against rejection at 50% resonant efficiency."),
-    ("F10a-flav", SUPPLEMENT, "Cited beside [[F10b]]: the QCD mass of the flavor-boundary partitions."),
-    ("F10-ft", SUPPLEMENT, "Cited beside [[F10b]]: sculpting after fine-tuning on JetClass-II."),
+    *((k, SUPPLEMENT, MASS_S) for k in ("F9a", "A17-res", "A17-qcd", "A17-probe")),
+    *((k, SUPPLEMENT, SCULPT_S) for k in ("F10a", "F10b-flav", "F10c", "F10a-flav", "F10-ft", "F10a-mass")),
     *((k, SUPPLEMENT, "Cited from [[UMAP-jc2-had]]: the other tasks.")
       for k in ("UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg")),
-    *((k, SUPPLEMENT, "Cited from [[F9b]]: by jet group; from frozen features.") for k in ("A17-res", "A17-qcd", "A17-probe")),
-    ("F10a-mass", SUPPLEMENT, "Cited beside [[F10b]]: the mass-regression models."),
 )
 # (table label, tier, draft sentence). PI 2026-11-12: one main-text table holds every value of Figs. 2 and 3
 # (tab:summary); the JetClass table keeps jets, parameters, accuracy and AUC, its per-class rejections in the appendix

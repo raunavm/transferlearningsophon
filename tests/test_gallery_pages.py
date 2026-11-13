@@ -22,12 +22,13 @@ import gallery_roc as R  # noqa: E402
 def test_rows_merge_consecutive_items_of_one_sentence_and_carry_their_evidence():
     supp = [i for i in G.FIGURES if i[2] == G.BACKS["FJ-ctrl"]]
     assert V._rows(tuple(supp)) == [("Fig. S2–S5", "FJ-ctrl, FJ-app, FJ-ctrl-app, FJ-s", G.BACKS["FJ-ctrl"])]
-    # each with the tables it also rests on
+    # with the tables it also rests on
     flav = tuple(i for i in G.FIGURES if i[0] in ("F10b-flav", "F10c", "F10a-flav"))
     rows = V._rows(flav)
     also = f" [also {G.number('tab:sculpt')}, {G.number('tab:sculptboot')}]"
-    assert [r[0] for r in rows] == [G.number(k) for k in ("F10b-flav", "F10c", "F10a-flav")]
-    assert all(r[2].endswith(also) for r in rows)
+    # one sentence for the supplement's sculpting figures (PI 2026-11-12 cut): consecutive, so one row
+    assert [r[0] for r in rows] == [f"{G.number('F10b-flav')}–{G.number('F10a-flav').split()[-1]}"]
+    assert rows[0][2].endswith(also)
     assert V._rows(tuple(i for i in G.FIGURES if i[0] == "F10b"))[0][1] == "F10b"
 
 

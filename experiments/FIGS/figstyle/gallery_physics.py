@@ -522,7 +522,7 @@ def draw_f10_ft(path: pathlib.Path) -> None:
     scratch = [f"scratch-s{k}" for k in (1, 2, 3)]
     if not all(m in sc for m in scratch):
         raise Absent(f"the three from-scratch networks' sculpting files ({SCULPT_FT}/scratch-s<k>.json)")
-    _sculpt_curves(path, sc, SCULPT_ROWS + ("SCRATCH",), "Mass sculpting of QCD jets after fine-tuning on JetClass-II",
+    _sculpt_curves(path, sc, SCULPT_ROWS + ("SCRATCH",), "Sculpting after fine-tuning on JetClass-II",
                    {**RUNS, "SCRATCH": scratch})
 
 

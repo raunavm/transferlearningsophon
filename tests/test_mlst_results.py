@@ -585,7 +585,8 @@ def test_fine_tuning_cells_without_a_recorded_gpu_are_counted(tmp_path):
 def test_the_top_table_footnote_traces_the_gap_to_part():
     n = M.partrepro_note()
     assert all(rf"\MlstPartreproRthirty{v}{{}}" in n for v in ("Part", "Head", "Rescale"))
-    assert r"1{,}602\,$\pm$\,81" in n and r"\MlstFtTopRthirtyScratch{}" in n and r"\ref{tab:partrepro}" in n
+    # the from-scratch value is the table's own row, not a second print of it at another precision (2026-11-12)
+    assert r"1{,}602\,$\pm$\,81" in n and "from-scratch row" in n and r"\ref{tab:partrepro}" in n
 
 
 def _atlas(groomed=0.2, mlp=None, reg=None):
@@ -1260,7 +1261,7 @@ def test_the_new_paper_macros_wait_for_their_inputs_and_the_captions_use_the_met
     # the blank-bin sentence with \MlstMassMinJets fills __BLANK__ when the table is written (bc9ad07)
     assert r"\MlstMassMinJets" in (ROOT / "paper/journal/tables/mlst_mass_detail.tex").read_text()
     assert "__BLANK__" in cap["mass_detail"] and all(
-        r"$\nmin$" in cap[k] and "eq:cut" in cap[k] and "__MINBKG__ " not in cap[k] for k in ("jetclass", "rand_prong"))
+        r"$\nmin$" in cap[k] and "eq:cut" in cap[k] and "__MINBKG__ " not in cap[k] for k in ("jetclass_rej", "rand_prong"))
     assert "ee_vs_mm" not in M.MLP_JC2 and [k for k, *_ in M.PAIRS[:4]][-1] == "ee_vs_mm"
 
 
