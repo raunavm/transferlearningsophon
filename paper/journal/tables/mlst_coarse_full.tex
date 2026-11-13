@@ -1,7 +1,7 @@
 \begin{landscape}
 {
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
-\addtolength{\belowcaptionskip}{\abovecaptionskip}
+\addtolength{\belowcaptionskip}{\medskipamount}
 \begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
 \caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls (every random partition), trained on one million class-balanced JetClass-II jets, with the classes merged into coarser targets: the 43 and the 17 groups of the class hierarchy and the 17 groups of the partition with no flavor boundary. AUC is the area under the receiver operating characteristic curve, averaged over the target's groups, each against the rest. Mean $\pm$ SD over the pretraining runs of each configuration. $^{\S}$ marks a value from a single run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}\label{tab:coarsefull}\\
 \toprule

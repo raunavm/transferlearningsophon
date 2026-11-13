@@ -1,8 +1,8 @@
 \begin{landscape}
 \begin{table*}[t]
 \centering
-\setlength{\tabcolsep}{4.5pt}
-\caption{Rejection of QCD jets for each JetClass signal class by the networks pretrained with 188, 162, 43 and 17 classes and fine-tuned on one million JetClass jets, by the same architecture trained from scratch on those jets, and by published models trained from scratch on two million jets. The rejection is the inverse QCD efficiency at the signal efficiency in the subscript, 50\% except 99\% for $H\to\ell\nu qq'$ and 99.5\% for $t\to b\ell\nu$. Values of this work are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs and over three training seeds from scratch. Accuracy and AUC are in tables~\ref{tab:published} and~\ref{tab:labelsets}. $^\dagger$ marks a value for which fewer than \MlstMinBkgPass{} QCD jets pass in a run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
+\setlength{\tabcolsep}{4.25pt}
+\caption{Rejection of QCD jets for each JetClass signal class by the networks pretrained with 188, 162, 43 and 17 classes and fine-tuned on one million JetClass jets, by the same architecture trained from scratch on those jets, and by published models trained from scratch on two million jets. The rejection is the inverse QCD efficiency at the signal efficiency in the subscript, 50\% except 99\% for $H\to\ell\nu qq'$ and 99.5\% for $t\to b\ell\nu$. Values of this work are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs and over three training seeds from scratch. Accuracy and AUC are in tables~\ref{tab:published} and~\ref{tab:labelsets}. Bold marks the best value of a column and every value within three standard deviations of it. $^\dagger$ marks a value for which fewer than \MlstMinBkgPass{} QCD jets pass in a run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
 \label{tab:jetclassrej}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccccccccc@{}}
 \toprule
@@ -12,13 +12,13 @@
  & jets & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{99}$ & $R_{50}$ & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
 \midrule
 ParticleNet~\cite{part} & 2 M & 5{,}540 & 1{,}681 & 90 & 662 & 1{,}654 & 4{,}049 & 4{,}673 & 260 & 215 \\
-ParT~\cite{part} & 2 M & 5{,}587 & 1{,}982 & 93 & 761 & 1{,}609 & 6{,}061 & 4{,}474 & 307 & 236 \\
+ParT~\cite{part} & 2 M & 5{,}587 & 1{,}982 & {\fontseries{b}\selectfont 93} & 761 & 1{,}609 & 6{,}061 & 4{,}474 & 307 & 236 \\
 \midrule
 \multicolumn{11}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 1 M & 6{,}600\,$\pm$\,300 & 2{,}650\,$\pm$\,260 & 104\,$\pm$\,4 & 1{,}090\,$\pm$\,10 & 3{,}100\,$\pm$\,400 & 12{,}900\,$\pm$\,1{,}600$^\dagger$ & 9{,}400\,$\pm$\,1{,}500$^\dagger$ & 374\,$\pm$\,8 & 312\,$\pm$\,6 \\
-\Kres{} classes & 1 M & 6{,}100$^{\P}$ & 2{,}820\,$\pm$\,40 & 102\,$\pm$\,1 & 1{,}150\,$\pm$\,70 & 3{,}100\,$\pm$\,300 & 14{,}100\,$\pm$\,3{,}500$^\dagger$ & 7{,}800\,$\pm$\,300 & 389\,$\pm$\,9 & 308\,$\pm$\,1 \\
-\Kmid{} classes & 1 M & 6{,}500\,$\pm$\,500 & 2{,}610\,$\pm$\,160 & 104\,$\pm$\,1 & 1{,}030\,$\pm$\,40 & 3{,}200\,$\pm$\,300 & 14{,}200\,$\pm$\,2{,}100$^\dagger$ & 8{,}500\,$\pm$\,200 & 376\,$\pm$\,6 & 307\,$\pm$\,7 \\
-\Kcoarse{} classes & 1 M & 6{,}700\,$\pm$\,200 & 2{,}390\,$\pm$\,40 & 101\,$\pm$\,6 & 1{,}050\,$\pm$\,20 & 2{,}800\,$\pm$\,200 & 10{,}600\,$\pm$\,2{,}700$^\dagger$ & 8{,}600\,$\pm$\,1{,}300 & 378\,$\pm$\,22 & 285\,$\pm$\,11 \\
+\Kfull{} classes & 1 M & {\fontseries{b}\selectfont 6{,}600\,$\pm$\,300} & {\fontseries{b}\selectfont 2{,}650\,$\pm$\,260} & {\fontseries{b}\selectfont 104\,$\pm$\,4} & {\fontseries{b}\selectfont 1{,}090\,$\pm$\,10} & {\fontseries{b}\selectfont 3{,}100\,$\pm$\,400} & {\fontseries{b}\selectfont 12{,}900\,$\pm$\,1{,}600}$^\dagger$ & {\fontseries{b}\selectfont 9{,}400\,$\pm$\,1{,}500}$^\dagger$ & {\fontseries{b}\selectfont 374\,$\pm$\,8} & {\fontseries{b}\selectfont 312\,$\pm$\,6} \\
+\Kres{} classes & 1 M & {\fontseries{b}\selectfont 6{,}100}$^{\P}$ & {\fontseries{b}\selectfont 2{,}820\,$\pm$\,40} & {\fontseries{b}\selectfont 102\,$\pm$\,1} & {\fontseries{b}\selectfont 1{,}150\,$\pm$\,70} & {\fontseries{b}\selectfont 3{,}100\,$\pm$\,300} & {\fontseries{b}\selectfont 14{,}100\,$\pm$\,3{,}500}$^\dagger$ & {\fontseries{b}\selectfont 7{,}800\,$\pm$\,300} & {\fontseries{b}\selectfont 389\,$\pm$\,9} & {\fontseries{b}\selectfont 308\,$\pm$\,1} \\
+\Kmid{} classes & 1 M & {\fontseries{b}\selectfont 6{,}500\,$\pm$\,500} & {\fontseries{b}\selectfont 2{,}610\,$\pm$\,160} & {\fontseries{b}\selectfont 104\,$\pm$\,1} & {\fontseries{b}\selectfont 1{,}030\,$\pm$\,40} & {\fontseries{b}\selectfont 3{,}200\,$\pm$\,300} & {\fontseries{b}\selectfont 14{,}200\,$\pm$\,2{,}100}$^\dagger$ & {\fontseries{b}\selectfont 8{,}500\,$\pm$\,200} & {\fontseries{b}\selectfont 376\,$\pm$\,6} & {\fontseries{b}\selectfont 307\,$\pm$\,7} \\
+\Kcoarse{} classes & 1 M & {\fontseries{b}\selectfont 6{,}700\,$\pm$\,200} & 2{,}390\,$\pm$\,40 & {\fontseries{b}\selectfont 101\,$\pm$\,6} & {\fontseries{b}\selectfont 1{,}050\,$\pm$\,20} & {\fontseries{b}\selectfont 2{,}800\,$\pm$\,200} & {\fontseries{b}\selectfont 10{,}600\,$\pm$\,2{,}700}$^\dagger$ & {\fontseries{b}\selectfont 8{,}600\,$\pm$\,1{,}300} & {\fontseries{b}\selectfont 378\,$\pm$\,22} & {\fontseries{b}\selectfont 285\,$\pm$\,11} \\
 from scratch & 1 M & 4{,}800\,$\pm$\,100 & 1{,}570\,$\pm$\,50 & 86\,$\pm$\,3 & 640\,$\pm$\,40 & 1{,}300\,$\pm$\,100 & 6{,}400\,$\pm$\,200 & 3{,}600\,$\pm$\,1{,}000 & 262\,$\pm$\,15 & 210\,$\pm$\,12 \\
 \bottomrule
 \end{tabular*}

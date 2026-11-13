@@ -443,9 +443,9 @@ def test_the_jetclass_table_has_parts_rows_and_ours_in_its_column_order():
     tex = V4.table_jetclass(pre, ref, runs, ("L188", "R16_Q1"), M.LABEL, M.SCRATCH, 1_000_000,
                             MT.fmt_pm, M._two)
     # the 2 M published rows only (FIGURE_PLAN T2); the 100 M rows are caption context
-    # no bold (PI 2026-11-12: the 3-sigma rule does not support it)
+    # the builder writes no bold: bold is _bold's, on the tables of BOLD (PI 2026-11-12), and never \textbf
     assert r"ParT~\cite{part} & 2 M & 2.14\,M & 0.836 & 0.9834" in tex and "& 100 M &" not in tex
-    assert r"\textbf" not in tex
+    assert r"\textbf" not in tex and M.BOLD_ON not in tex and "jetclass" not in M.BOLD
     scratch = next(line for line in tex.splitlines() if line.startswith(M.SCRATCH_LABEL))
     assert MT.fmt_pm(0.802, 0.001) in scratch and " & 1 M & 2.21\\,M & " in scratch       # ten outputs: 2,213,374
     assert r"$R_{99}$" in tex and r"$R_{99.5}$" in tex
@@ -816,7 +816,8 @@ def test_the_benchmark_tables_show_the_planned_rows_and_no_bold():
     t = M.V4.table_bench("top", per, runs, M.MAIN, M.LABEL, M.SCRATCH, MT.fmt_pm, M._two,
                          kin=("kin (diagnostic)", M.KIN_INIT))
     assert "LorentzNet" not in t and "OmniLearned-s" not in t and r"ParT-f.t.~\cite{part}" in t
-    assert r"3{,}486\,$\pm$\,157" in t and r"1{,}615\,$\pm$\,93" in t and r"\textbf" not in t
+    assert r"3{,}486\,$\pm$\,157" in t and r"1{,}615\,$\pm$\,93" in t and r"\textbf" not in t and M.BOLD_ON not in t
+    assert not {"bench_top", "bench_qg", "bench_qg_herwig"} & set(M.BOLD)      # the task tables left the paper: no bold
     assert r"kin (diagnostic) & 2.21\,M & " in t and "inputs set to zero" not in t
     assert M.SCRATCH_LABEL + r" & 2.21\,M & 0." in t
     assert M.LABEL["R16_Q1"] + r" & 2.21\,M & --" in t        # no run read out: dashes
@@ -829,7 +830,7 @@ def test_the_benchmark_tables_show_the_planned_rows_and_no_bold():
     assert r"constituent multiplicity~\cite{efn} & -- & -- & 0.8401 & 19.0 & -- &" in q
     # PI 2026-11-12: quark/gluon in the main text on Pythia only, Herwig in its own table (ours only)
     p = M.V4.table_bench("qg", per, runs, M.MAIN, M.LABEL, M.SCRATCH, MT.fmt_pm, M._two)
-    assert "Herwig" not in p and r"\textbf" not in p
+    assert "Herwig" not in p and r"\textbf" not in p and M.BOLD_ON not in p
     h = M.V4.table_bench_herwig(per, runs, M.MAIN, M.LABEL, M.SCRATCH, MT.fmt_pm, M._two)
     assert r"\cite{" not in h and r" & accuracy & AUC & $R_{50}$ & $R_{30}$ \\" in h
     # the one row order (PI 2026-11-12): the label sets, from scratch last
@@ -1679,7 +1680,7 @@ def test_the_jetclass_table_marks_a_dagger_and_identical_runs_and_bolds_nothing(
     tex = V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two)
     col = 5 + [c for c, _ in V4.JC1_COLS].index("label_Tbqq")
     cell = lambda name: next(ln for ln in tex.splitlines() if ln.startswith(name)).split(" & ")[col]   # noqa: E731
-    assert r"$^\dagger$" in cell(M.LABEL["L188"]) and r"\textbf" not in tex
+    assert r"$^\dagger$" in cell(M.LABEL["L188"]) and r"\textbf" not in tex and M.BOLD_ON not in tex
     assert "6{,}061" in tex                                   # ParT's 2 M row, plain
     # three runs that pass the same QCD jets: the value once with the agreement mark of every table, never "+- 0"
     # (PI 2026-11-12); the dagger follows it
@@ -1844,8 +1845,8 @@ def _sizes_in(tex: str) -> list:
 
 
 def test_a_table_is_set_at_the_body_size_unless_its_call_names_a_size_and_whole_fixes_its_orientation():
-    """PI 2026-11-12: _float writes no type size of its own; size (tab:summary and tab:probes only) is set after the
-    caption, which stays at the body size. whole: that orientation with no cut whatever the width estimate, the
+    """PI 2026-11-12: _float writes no type size of its own; size (tab:probes only) is set after the caption, which
+    stays at the body size. whole: that orientation with no cut whatever the width estimate, the
     column padding at colsep_pt. pages: the %SPLIT% parts are pages, each whole under the caption or "(continued)"."""
     wide = "\n".join([r"\begin{tabular}{l" + "c" * 14 + "}", r"\toprule", " & " + " & ".join(f"c{i}" for i in range(14)) + r" \\",
                       r"\midrule", *(M.LABEL[a] + " & " + " & ".join([M.TAB(0.9, 0.001)] * 14) + r" \\" for a in M.MAIN),
@@ -1873,6 +1874,11 @@ def test_a_table_is_set_at_the_body_size_unless_its_call_names_a_size_and_whole_
     assert pages.count(r"\captionof{table}{") == 1 and pages.count(r"\label{tab:xbx}") == 1
     assert pages.count(r"\textit{Table~\ref{tab:xbx} (continued)}") == 1 and r"\setlength{\tabcolsep}{6pt}" in pages
     assert pages.index(r"\captionof{table}{") < pages.index(spec) < pages.index("(continued)") < pages.rindex(spec)
+    # a page its builder chose shares no page with the one before it: \newpage before the second and before no other;
+    # no skip above the caption that heads the first page
+    assert pages.count(r"\newpage") == 1 and pages.index(spec) < pages.index(r"\newpage") < pages.index("(continued)")
+    assert pages.index(r"\setlength{\abovecaptionskip}{0pt}") < pages.index(r"\captionof{table}{")
+    assert r"\newpage" not in turned and r"\newpage" not in up
     # the longtable caption label ends with a full stop, as a float's
     assert "#1{#2. }#3" in M.LT_SETUP and "#2: " not in M.LT_SETUP
 
@@ -2002,7 +2008,8 @@ def test_the_sculpting_bootstrap_table_reads_the_verdicts_and_refuses_another_si
     runs = {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"]}
     t = M.table_sculpt_boot(doc, runs).splitlines()
     rows = [ln for ln in t if ln.startswith(M.LABEL["R16_Q1"] + " $-$ " + M.LABEL["L188"] + " & ")]
-    assert len(rows) == len(M.SCULPT_BOOT_WPS) and not any(r"\textbf{" in r for r in rows)
+    assert len(rows) == len(M.SCULPT_BOOT_WPS) and not any(r"\textbf{" in r or M.BOLD_ON in r for r in rows)
+    assert "sculpt_boot" not in M.BOLD                 # a table of differences and their sigma: never bold
     assert rows[0].split(" & ")[1:4] == ["1.22", "0.30", "0.10"]
     # the differences in the tables' row order, a partition's indented under the subheading, in every block
     q = {wp: {"distance": x(0.001, 0.003, 0.001)} for wp, _ in M.SCULPT_BOOT_WPS}
@@ -2243,34 +2250,58 @@ def test_both_resonance_tables_have_the_same_rows_and_the_rejection_table_shows_
 
 @pytest.mark.skipif(not (DATA / "index.json").exists(), reason="no pulled data")
 def test_the_summary_table_holds_exactly_the_values_of_figs_2_and_3():
-    """tab:summary reads every run's value as Figs. 2 and 3 do (paper_figures._f2_probe, _f2_ft, scratch_series)."""
+    """tab:summary reads every run's value as Figs. 2 and 3 do (paper_figures._f2_probe, _f2_ft, scratch_series), on
+    both panels of each task: its headline metric and its AUC (SUMMARY_GRID, PI 2026-11-12). The gallery's own value
+    functions and the printed cells: tests/test_gallery_pages.py."""
     P = _load("paper_figures_summary_t", "experiments/FIGS/paper_figures.py")
     I = P.inputs(M)
     runs = M._pooled(M._paper(ROOT))
     chosen, _ = M.chosen_substitutions(I["fill"], runs)
     assert tuple((k, n, ds, met) for k, n, ds, met, *_ in P.F2_PANELS) == M.SUMMARY_PANELS
-    for key, n, ds, met in M.SUMMARY_PANELS:
+    assert M.SUMMARY_GRID == tuple((k, n, ds, m) for k, n, ds, met, *_ in P.F2_PANELS for m in (met, M.SUMMARY_AUC[k]))
+    for key, n, ds, met in M.SUMMARY_GRID:
         a, b = P._f2_probe(M, I["fits"], I["fill"], chosen, ds, met), M.summary_probe(I["fits"], I["fill"], chosen, ds, met)
         c, d = P._f2_ft(M, I["per"], key, n, met), M.summary_ft(I["per"], key, n, met)
         for arm in M.MAIN + M.FLAV + (M.RAND_POOLED, M.INIT):
             assert [a(m) for m in runs[arm]] == [b(m) for m in runs[arm]]
             if arm != M.INIT:
                 assert [c(m) for m in runs[arm]] == [d(m) for m in runs[arm]]
-        assert P.scratch_series(M, I["per"], key, met)[n] == [r[met] for r in I["per"][key][M.SCRATCH][n]]
+        assert P.scratch_series(M, I["per"], key, met)[n] == [r[met] for r in I["per"][key][M.SCRATCH][n] if r.get(met) is not None]
     t = M.table_summary(I["fits"], I["fill"], chosen, I["per"], M._paper(ROOT), M.TAB)
-    assert t.count(M.LABEL[M.RAND_POOLED]) == 2 and M.SCRATCH_LABEL in t and r"\rho" not in t and r"\textbf" not in t
-    # two blocks under the italic headings, in each the label sets, then the partitions indented under their
-    # subheading; the random network closes the probes, from scratch the fine-tuned block (the last row)
-    lines = t.splitlines()
-    lp, ft = (lines.index(M._full_row(5, M.HEADING[k], italic=True)) for k in ("lp", "ft"))
-    part = [i for i, ln in enumerate(lines) if ln == M._full_row(5, M.PARTITIONS)]
+    # one part for each mode and pair of tasks (SUMMARY_PAGES): the eight columns of a mode are wider than a turned
+    # page at the body size
+    parts = t.split("%SPLIT%")
+    order = [(mode, tasks) for mode in ("lp", "ft") for tasks in M.SUMMARY_PAGES]
+    assert len(parts) == len(order) == 4
+    assert t.count(M.LABEL[M.RAND_POOLED]) == 4 and t.count(M.SCRATCH_LABEL + " & ") == t.count(M.LABEL[M.INIT] + " & ") == 2
+    assert r"\rho" not in t and r"\textbf" not in t
     ctl = [r"\quad " + M.LABEL[a] for a in M.SUMMARY_CONTROLS]
-    for head, sub, last in ((lp, part[0], M.LABEL[M.INIT]), (ft, part[1], M.SCRATCH_LABEL)):
-        assert [ln.split(" & ")[0] for ln in lines[head + 1:sub]] == [M.LABEL[a] for a in M.MAIN]
-        assert [ln.split(" & ")[0] for ln in lines[sub + 1:sub + 2 + len(ctl)]] == ctl + [last]
-    assert len(part) == 2 and lines[ft - 1] == r"\midrule" and lines[-3].startswith(M.SCRATCH_LABEL + " & ")
-    # printed: one precision per column and block, no "<", no "+- 0", no bare token
-    assert M.V4.TOK_OPEN not in t and "$<$" not in t and not re.search(r"\\pm\$\\,0(\.0+)? ", t)
+    for part, (mode, tasks) in zip(parts, order):
+        lines = part.splitlines()
+        grid = [g for g in M.SUMMARY_GRID if g[0] in tasks]
+        # two header rows: the task over its two columns, then the task's metric and its AUC
+        assert lines[:6] == [r"\begin{tabular}{lcccc}", r"\toprule",
+                             " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{M.SUMMARY_TASKS[k]}}}" for k in tasks) + r" \\",
+                             r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}",
+                             " & " + " & ".join(M.SUMMARY_HEAD[met] for *_, met in grid) + r" \\", r"\midrule"]
+        assert [M.SUMMARY_HEAD[met] for *_, met in grid][1::2] == ["AUC", "AUC"]
+        # under the italic heading of the mode: the label sets, then the partitions indented under their subheading;
+        # the random network closes the probes, from scratch the fine-tuned rows
+        assert lines[6] == M._full_row(5, M.HEADING[mode], italic=True)
+        assert [ln.split(" & ")[0] for ln in lines[7:11]] == [M.LABEL[a] for a in M.MAIN]
+        assert lines[11] == M._full_row(5, M.PARTITIONS) and part.count(M._full_row(5, M.PARTITIONS)) == 1
+        assert [ln.split(" & ")[0] for ln in lines[12:-2]] == ctl + [M.LABEL[M.INIT] if mode == "lp" else M.SCRATCH_LABEL]
+        assert lines[-2:] == [r"\bottomrule", r"\end{tabular}"]
+        rows = [ln.removesuffix(r" \\").split(" & ") for ln in lines[7:11] + lines[12:-2]]
+        assert all(len(r) == 5 and "--" not in r for r in rows)
+        # bold (PI 2026-11-12): every column of a part has its best value; the random network is a reference row,
+        # never bold and never the best; from scratch takes part
+        best = rows[:-1] if mode == "lp" else rows
+        assert all(any(M.BOLD_ON in r[j] for r in best) for j in range(1, 5)), (mode, tasks)
+        assert mode == "ft" or M.BOLD_ON not in lines[-3]
+    # printed: one precision per column and part, no "<", no "+- 0", no bare token; a mark stays outside the bold
+    assert M.V4.TOK_OPEN not in t and "$<$" not in t and not re.search(r"\\pm\$\\,0(\.0+)? ", _unbold(t))
+    assert all(M.PLAIN.fullmatch(x) for x in _bold_spans(t))
 
 
 # ------------------------------------------------------------------ PI 2026-11-12: the table fix (published models, label sets, tasks as blocks)
@@ -2339,9 +2370,17 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     assert all(r"\cite{" in n for k, v in names.items() for n in v if n not in (scratch, ft, kin))
     assert all(ln.count(" & ") == 6 and r"\midrule" not in ln for v in blocks.values() for ln in v)     # six value columns, no rule
     row = lambda k, name: next(ln for ln in blocks[k] if ln.startswith(name + " & ")).removesuffix(r" \\").split(" & ")   # noqa: E731
+    B = M._b
     # JetClass: no R50 and R30 (the per-class rejections are tab:jetclassrej); training jets: the published 2 M, ours 1 M
     assert all(ln.endswith(r" & -- & -- \\") for ln in blocks["JetClass"])
-    assert row("JetClass", r"ParT~\cite{part}") == [r"ParT~\cite{part}", r"2.14\,M", r"2\,M", "0.836", "0.9834", "--", "--"]
+    # bold (PI 2026-11-12): in each block's column the best value and every value within three standard deviations of
+    # it, a published value with the SD it prints (none: zero). Accuracy: ParT's 0.836 alone (ours 0.802 and 0.801
+    # +- 0.001). AUC: ParT's 0.9834 and both of ours (0.982 and 0.981 +- 0.001), not ParticleNet's 0.9820
+    assert row("JetClass", r"ParT~\cite{part}") == [r"ParT~\cite{part}", r"2.14\,M", r"2\,M", B("0.836"), B("0.9834"), "--", "--"]
+    assert row("JetClass", scratch)[4] == B(r"0.9820\,$\pm$\,0.0010") and row("JetClass", ft)[4] == B(r"0.9810\,$\pm$\,0.0010")
+    assert M.BOLD_ON not in " & ".join(row("JetClass", r"ParticleNet~\cite{part}"))
+    # the parameters and the training jets are counts: never bold
+    assert not any(M.BOLD_ON in c for v in blocks.values() for ln in v for c in ln.split(" & ")[:3])
     assert row("JetClass", scratch)[1:3] == [r"2.21\,M", r"1\,M"] and row("JetClass", ft)[1:3] == [r"2.21\,M", r"1\,M"]
     assert row("JetClass", scratch)[3] == r"0.8020\,$\pm$\,0.0010" and row("JetClass", ft)[3] == r"0.8010\,$\pm$\,0.0010"
     # top and quark/gluon: the task's training set, a dash for an observable that is not trained; the published values
@@ -2355,8 +2394,21 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     assert row("top tagging", scratch) == [scratch, r"2.21\,M", r"1.2\,M", agree("0.9400"), agree("0.9860"),
                                            r"50\,$\pm$\,10", r"1{,}400\,$\pm$\,10"]
     assert row("top tagging", ft)[5:] == [r"460\,$\pm$\,10", r"1{,}810\,$\pm$\,10"]
-    # the kinematic-only network: one run, every value marked, at the column's place
-    assert row("top tagging", kin) == [kin, r"2.21\,M", r"1.2\,M"] + [x + M.SINGLE for x in ("0.9400", "0.9860", "950", "2{,}300")]
+    # the kinematic-only network: one run, every value marked, at the column's place. Its R50 of 950 is the block's
+    # best (a single run: SD zero, and no other value within reach), bold with the mark outside
+    assert row("top tagging", kin) == [kin, r"2.21\,M", r"1.2\,M", "0.9400" + M.SINGLE, "0.9860" + M.SINGLE,
+                                       B("950") + M.SINGLE, "2{,}300" + M.SINGLE]
+    # the other columns' best values are published ones: L-GATr's accuracy, OmniLearned-l's AUC and R30 (3,486 +- 157;
+    # 2,894 +- 84 is 592 away, more than three times 178)
+    assert row("top tagging", r"L-GATr-f.t.~\cite{lgatr}")[3:] == [B("0.9446"), "0.9879", r"651\,$\pm$\,11", r"2{,}894\,$\pm$\,84"]
+    assert row("top tagging", r"OmniLearned-l~\cite{omnilearned}")[3:] == ["0.944", B("0.9880"), r"688\,$\pm$\,9",
+                                                                          B(r"3{,}486\,$\pm$\,157")]
+    assert sum(M.BOLD_ON in c for ln in blocks["top tagging"] for c in ln.split(" & ")) == 4
+    # quark/gluon: the fixture's two rows of ours are above every published value and agree on accuracy and AUC
+    assert row("quark/gluon tagging", scratch)[3:5] == row("quark/gluon tagging", ft)[3:5] == [B("0.9400") + M.AGREE,
+                                                                                               B("0.9860") + M.AGREE]
+    assert row("quark/gluon tagging", ft)[5:] == [B(r"460\,$\pm$\,10"), B(r"1{,}810\,$\pm$\,10")]
+    assert row("quark/gluon tagging", scratch)[5:] == [r"50\,$\pm$\,10", r"1{,}400\,$\pm$\,10"]
     assert kin not in pages[1] and M.SINGLE not in pages[1] and M.SINGLE not in "".join(blocks["JetClass"])
     # set: two whole turned pages under one caption and number, the second "(continued)"; the single-run sentence
     f = M._float("published", t, True, pages=True, whole="turned", colsep_pt=6)
@@ -2366,6 +2418,10 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     assert f.index("top tagging} \\\\") < f.index("(continued)}") < f.index("quark/gluon tagging} \\\\")
     assert rf"\textit{{{M.HEADING['ft']}}}" not in f and M.PARTITIONS not in f and not _sizes_in(f)
     assert M.CAPTIONS["published"][0] == "tab:published" and "published" not in M.MODES
+    # the second page starts a page; the caption says what bold marks, once, in the words for a table of blocks
+    assert f.count(r"\newpage") == 1 and f.index("top tagging} \\\\") < f.index(r"\newpage") < f.index("(continued)}")
+    assert f.count(M.BOLD_NOTE.format("each block of a column")) == 1 and M.BOLD_NOTE.format("a column") not in f
+    assert r"\textbf" not in f and f.count(M.BOLD_ON) == t.count(M.BOLD_ON) > 0
 
 
 def test_the_label_set_table_holds_the_fine_tuned_rows_the_comparison_table_does_not():
@@ -2398,9 +2454,16 @@ def test_the_label_set_table_holds_the_fine_tuned_rows_the_comparison_table_does
     assert not any(ln.endswith(r" & -- & -- \\") for k in tasks[1:] for ln in blocks[k])
     # the pooled random partitions: mean and SD over the five, one run each (R30 1800 each in the fixture)
     pooled = next(ln for ln in blocks[tasks[1]] if ln.startswith(M.LABEL[M.RAND_POOLED] + " & "))
-    assert pooled.removesuffix(r" \\").split(" & ")[4] == "1{,}800" + M.AGREE
+    # bold (PI 2026-11-12): the best of each block's column and every value within three standard deviations of it,
+    # the mark outside. On top tagging that is every row of the fixture (R30 1,810 +- 10, 1,805 +- 7 and 1,800)
+    assert pooled.removesuffix(r" \\").split(" & ")[4] == M._b("1{,}800") + M.AGREE
     assert next(ln for ln in blocks[tasks[1]] if ln.startswith(M.LABEL["L162"] + " & ")).removesuffix(r" \\").split(" & ")[3:] == [
-        r"460\,$\pm$\,10", r"1{,}810\,$\pm$\,10"]
+        M._b(r"460\,$\pm$\,10"), M._b(r"1{,}810\,$\pm$\,10")]
+    assert all(M.BOLD_ON in c for ln in blocks[tasks[1]] for c in ln.removesuffix(r" \\").split(" & ")[3:])
+    # on Herwig jets from scratch (R50 50 +- 10, R30 1,400 +- 10) is far from the fine-tuned rows: not bold
+    assert next(ln for ln in blocks[tasks[3]] if ln.startswith(M.SCRATCH_LABEL + " & ")).removesuffix(r" \\").split(" & ")[3:] == [
+        r"50\,$\pm$\,10", r"1{,}400\,$\pm$\,10"]
+    assert M.BOLD_ON not in "".join(c for k in tasks for ln in blocks[k] for c in ln.split(" & ")[:1]) and r"\textbf" not in t
     # no row of ours is in both tables: tab:published has the 188-class and from-scratch rows of the first three tasks
     pub_pre, pub_ref = _jc1_trees(runs, ("L188",))
     pub = M.table_published({"top": by, "qg": by}, runs, pub_pre, pub_ref, M.TAB)
@@ -2414,6 +2477,7 @@ def test_the_label_set_table_holds_the_fine_tuned_rows_the_comparison_table_does
     assert f.count(rf"\textit{{{M.HEADING['ft']}") == 4 and f.count(r"\begin{minipage}{\linewidth}") == 2
     assert f.count(r"\textit{Table~\ref{tab:labelsets} (continued)}") == 1 and f.count(r"\label{tab:labelsets}") == 1
     assert M.CAPTIONS["labelsets"][0] == "tab:labelsets" and "labelsets" not in M.MODES and not _sizes_in(f)
+    assert f.count(M.BOLD_NOTE.format("each block of a column")) == 1 and f.count(r"\newpage") == 1
 
 
 def test_the_benchmark_and_jetclass_rows_are_shared_by_the_task_tables_and_the_new_ones():
@@ -2493,25 +2557,31 @@ def test_the_probe_table_of_the_paper_has_the_tasks_as_row_blocks_under_four_col
     assert rows["JetClass-II"] == [rf"{full} & 0.4000{S} & 0.9800{S} & -- & -- \\", rf"{init} & 0.4000{A} & 0.6000{A} & -- & -- \\",
                                    r"\midrule", rf"{sophon} & 0.4000{S} & 0.9700{S} & -- & -- \\"]
     assert rows["JetClass"][0] == rf"{full} & 0.7000{S} & 0.9700{S} & -- & -- \\"
-    # each block at its own precision per column: the one SD of the R50 column is 1.0 (two figures), of R30 2 (one)
-    assert rows["top tagging"] == [rf"{full} & 0.9000{S} & 0.9800{S} & 100.0{S} & 200{S} \\",
-                                   rf"{kin} & 0.9000{S} & 0.9800{S} & 40.0{S} & 80{S} \\",
+    # each block at its own precision per column: the one SD of the R50 column is 1.0 (two figures), of R30 2 (one).
+    # Bold (PI 2026-11-12) among the rows that are neither the random network nor the released checkpoint: the
+    # 188-class run, and the kinematic-only run where it ties it (accuracy, AUC); the mark outside the bold
+    B = M._b
+    assert rows["top tagging"] == [rf"{full} & {B('0.9000')}{S} & {B('0.9800')}{S} & {B('100.0')}{S} & {B('200')}{S} \\",
+                                   rf"{kin} & {B('0.9000')}{S} & {B('0.9800')}{S} & 40.0{S} & 80{S} \\",
                                    rf"{init} & 0.9000{A} & 0.9800{A} & 11.0\,$\pm$\,1.0 & 22\,$\pm$\,2 \\", r"\midrule",
                                    rf"{sophon} & 0.9000{S} & 0.9800{S} & 50.0{S} & 100{S} \\"]
-    assert rows["quark/gluon tagging"] == [ln for ln in rows["top tagging"] if not ln.startswith(kin)]
+    # a block whose column holds one value that can be bold has no bold: the 188-class run alone
+    assert rows["quark/gluon tagging"] == [_unbold(ln) for ln in rows["top tagging"] if not ln.startswith(kin)]
+    assert not any(M.BOLD_ON in ln for x in tasks if x != "top tagging" for ln in rows[x])
     # the substitution chosen on validation for our rows; the released checkpoint keeps its missing inputs zero
     fill = {"mtx-l188-s1": {"cells": {"best70": {"top.ntop": {"1200000": {"accuracy": 0.9, "auc": 0.98, "r50": 150.0, "r30": 300.0}}}}}}
     c = _blocks(M.table_probes_tasks(fits, {k: v for k, v in runs.items() if k != M.INIT}, M.TAB, ("L188", M.SOPHON), fill,
                                      {"top": "mean"}).split("%SPLIT%")[1], 5)[f"{M.HEADING['lp']}, top tagging"]
     assert c == [rf"{full} & 0.9000{S} & 0.9800{S} & 150{S} & 300{S} \\", r"\midrule", rf"{sophon} & 0.9000{S} & 0.9800{S} & 50{S} & 100{S} \\"]
     # set as the build sets it: upright, nothing cut, 4 pt between the columns, a size below the body's (the one
-    # exception with tab:summary), both mark sentences in the caption
+    # table set so), both mark sentences and the bold sentence in the caption
     f = M._float("probes", t, True, whole="upright", size=r"\small")
     assert "landscape" not in f and f.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}") == 2
     assert r"\setlength{\tabcolsep}{4pt}" in f and set(_sizes_in(f)) == {r"\small"} and f.count(r"\label{tab:probes}") == 1
     assert f.index("caption") < re.search(r"\\small(?![a-zA-Z])", f).start() and all(note in f for _, note in M.MARK_NOTES)
     assert not _sizes_in(M._float("probes", t, True, whole="upright"))
     assert f.count(sophon + " & ") == 5 and "(LP)" not in f and M.KEY_MARKS["probes"][0][1] not in f
+    assert f.count(M.BOLD_NOTE.format("each block of a column")) == 1 and f.count(M.BOLD_ON) == 6
 
 
 def test_the_missing_input_table_of_the_paper_leaves_out_what_the_probe_table_prints():
@@ -2566,6 +2636,8 @@ def test_the_mass_table_head_block_reads_the_regression_output_over_all_jets_inc
     f = M._float("mass", "\n".join(lines))
     assert M.LABEL["L162_MASS"] + r" & 0.1467\,$\pm$\,0.0008 & 1.000\,$\pm$\,0.014 \\" in f
     assert r"soft-drop mass & 0.2448 & 0.929 \\" in f and M.SINGLE not in f
+    # one network with a value in each block: nothing to compare, no bold and no bold sentence
+    assert M.BOLD_ON not in f and "Bold marks" not in f
     assert f.count(rf"\textit{{{M.HEADING['head']}}}") == f.count(rf"\textit{{{M.HEADING['mlp']}}}") == 1 and "landscape" not in f
     # the supplement's detail table reads the same estimator in its first section
     d = M.table_mass_detail(atlas, runs, M.TAB).splitlines()
@@ -2639,7 +2711,8 @@ def test_the_generated_paper_tables_follow_the_table_rules():
     """The 17 tables as make_tables.py wrote them (paper/journal/tables, committed): every mark of a table has its
     sentence in the caption and no caption explains a mark the table lacks; never "<" or "+- 0"; no mode tag on a
     row; thousands separators; "parameters"; the full text width, no wrapped row label, nothing scaled, and the body
-    size everywhere but tab:summary and tab:probes (PI 2026-11-12: reported exceptions)."""
+    size everywhere but tab:probes (PI 2026-11-12: the reported exception; tab:summary is at the body size on four
+    turned pages). A bold value is read without its wrapper."""
     marks = {M.SINGLE: M.MARK_NOTES[0][1].strip(), M.AGREE: M.MARK_NOTES[1][1].strip()}
     own = (r"\dagger", r"\ddagger", r"\parallel", "^{*}", r"^{\ast}")
     small, tables = set(), _paper_tables()
@@ -2655,23 +2728,23 @@ def test_the_generated_paper_tables_follow_the_table_rules():
             if mark in body:
                 assert mark in notes and notes[mark].strip() in cap, (label, mark)
         assert ": " not in cap and ";" not in cap and "Sophon's network" not in tex, label
-        assert "$<$" not in tex and not re.search(r"\\pm\$\\,0(\.0+)?\s*(&|\\\\)", body), label
+        assert "$<$" not in tex and not re.search(r"\\pm\$\\,0(\.0+)?\s*(&|\\\\)", _unbold(body)), label
         assert not re.search(r"\((LP|MLP|f\.t\.)\)", tex) and "# params" not in tex and "params" not in body, label
-        assert not re.findall(r"(?<![\d.{,])\d{4,}(?![\d}])", body), label                  # 1{,}602, never 1602
+        assert not re.findall(r"(?<![\d.{,])\d{4,}(?![\d}])", _unbold(body)), label         # 1{,}602, never 1602
         assert r"\begin{tabular}" not in tex and r"arraybackslash}p{" not in tex, label      # tabular* or longtable, no p column
         assert tex.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}") + tex.count(
             r"\begin{longtable}{@{\extracolsep{\fill}}") >= 1, label
         assert not re.search(r"adjustbox|resizebox|scalebox|\\(footnotesize|scriptsize|tiny)(?![a-zA-Z])", tex), label
         if _sizes_in(tex):
             small.add(label)
-    assert small == {"tab:summary", "tab:probes"}
+    assert small == {"tab:probes"}
     read = lambda label: tables[label][1].read_text()      # noqa: E731
-    # where the single-run mark is: the from-scratch X->bb values (one seed), the kinematic-only and Sophon rows, the
-    # reproduction runs, the learning-rate sweep
-    assert {lab for lab in tables if M.SINGLE in read(lab)} == {"tab:published", "tab:xbx", "tab:probes", "tab:partrepro",
-                                                                        "tab:lrsweep", "tab:xbxrej"}
+    # where the single-run mark is: the kinematic-only and Sophon rows, the reproduction runs, the learning-rate
+    # sweep. From scratch on X->bb has its three seeds since 2026-11-13 (eb6c87e; it was one seed, marked), so the
+    # resonance tables carry no mark: mean +- SD for both signals
+    assert {lab for lab in tables if M.SINGLE in read(lab)} == {"tab:published", "tab:probes", "tab:partrepro", "tab:lrsweep"}
     scratch = next(ln for ln in read("tab:xbx").splitlines() if ln.startswith(M.SCRATCH_LABEL + " & "))
-    assert scratch.split(" & ")[1].endswith(M.SINGLE) and r"\pm" in scratch.split(" & ")[3]
+    assert r"\pm" in scratch.split(" & ")[1] and r"\pm" in scratch.split(" & ")[3] and M.SINGLE not in scratch
     # Table A10: "> 0.9999" for an AUC that rounds to 1.0000, AUC once in each header, the pooled-partition mark
     pairs = read("tab:pairs")
     assert M.NEAR_ONE in pairs and "1.0000" not in _caption_and_body(pairs)[1] and r"{c}{AUC} \\" in pairs and r"\rho" not in pairs
@@ -2689,3 +2762,328 @@ def test_the_generated_paper_tables_follow_the_table_rules():
     assert read("tab:coarse").count(r"\begin{tabular*}") == 1 and read("tab:coarse").count(r"\multicolumn{2}{c}{") == 3
     # the retired task tables are still written but placed nowhere
     assert not {"tab:jetclass", "tab:benchtop", "tab:benchqg", "tab:benchqgherwig"} & set(tables)
+
+
+# ------------------------------------------------------------------ PI 2026-11-12, evening: bold, and Table 1 with each task's AUC
+def _bold_spans(tex: str) -> list:
+    """What each bold wrapper of a printed table holds (M._b: BOLD_ON, the text, a closing brace)."""
+    out = []
+    while M.BOLD_ON in tex:
+        _, rest = tex.split(M.BOLD_ON, 1)
+        depth, i = 1, 0
+        while depth:
+            depth += (rest[i] == "{") - (rest[i] == "}")
+            i += 1
+        out.append(rest[:i - 1])
+        tex = rest[i:]
+    return out
+
+
+def _unbold(tex: str) -> str:
+    """A printed table with every bold value light."""
+    for x in _bold_spans(tex):
+        tex = tex.replace(M._b(x), x)
+    return tex
+
+
+def _frame(rows: list, ncol: int) -> str:
+    return "\n".join([r"\begin{tabular}{l" + "c" * ncol + "}", r"\toprule", " & " + " & ".join("abcdefgh"[:ncol]) + r" \\",
+                      r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
+
+
+def _chosen_bold(key: str, tab: str) -> set:
+    """{(row label, column)} of the cells M._bold marks: a token of an upper-case kind, or a published value it
+    wrapped. Every other line and cell must be as it was."""
+    out = M._bold(key, tab)
+    cells = set()
+    for a, b in zip(tab.split("\n"), out.split("\n"), strict=True):
+        if a == b:
+            continue
+        pa, pb = M._depth0_split(a, "&"), M._depth0_split(b, "&")
+        assert len(pa) == len(pb), a
+        for j, (ca, cb) in enumerate(zip(pa, pb)):
+            if ca == cb:
+                continue
+            m = M.TOKEN.search(ca)
+            want = (ca.replace(m.group(0), M.V4.TOK_OPEN + m.group(1).upper() + " " + m.group(2) + M.V4.TOK_CLOSE) if m
+                    else ca.replace(ca.strip().removesuffix(r"\\").strip(), M._b(ca.strip().removesuffix(r"\\").strip())))
+            assert cb == want, (ca, cb)
+            cells.add((pa[0].strip(), j))
+    return cells
+
+
+def test_a_bold_value_is_in_the_bold_series_that_is_not_extended_and_its_mark_stays_light():
+    """PI 2026-11-12: only the mean and its standard deviation are bold, not the marks. \\textbf's extended bold is
+    13% wider and put three tables off the page, so the wrapper is the plain bold series; the width model reads a
+    bold value as a light one, so no layout decision depends on which cells are bold."""
+    assert M.BOLD_ON == r"{\fontseries{b}\selectfont " and M._b("0.94") == r"{\fontseries{b}\selectfont 0.94}"
+    assert r"\textbf" not in M.BOLD_ON and M.BOLD_SIGMA == 3.0
+    # _render: an upper-case token kind is the lower-case one printed bold
+    pm = r"0.50\,$\pm$\,0.01"
+    assert M._render("p", [0.5, 0.01], 2) == pm and M._render("P", [0.5, 0.01], 2) == M._b(pm)
+    assert M._render("s", [0.94], 4) == "0.9400" + M.SINGLE and M._render("S", [0.94], 4) == M._b("0.9400") + M.SINGLE
+    assert M._render("p", [0.5, 0.0], 3) == "0.500" + M.AGREE and M._render("P", [0.5, 0.0], 3) == M._b("0.500") + M.AGREE
+    assert M._render("P", [0.91472, 0.000001], 5) == M._b("0.91472") + M.AGREE        # an SD that prints as zero
+    assert M._render("P", [1802.0, 60.0], -1) == M._b(r"1{,}800\,$\pm$\,60")
+    # uniform_columns: the kind's case does not move the column's place
+    tok, T = M.V4.tok, M.TAB
+    up = lambda t: t.replace(M.V4.TOK_OPEN + "p", M.V4.TOK_OPEN + "P").replace(M.V4.TOK_OPEN + "s", M.V4.TOK_OPEN + "S")   # noqa: E731
+    cells = (T(0.98560, 0.00004), T(0.9841, 0.0003), T(0.9838, 0.0002), tok("s", 0.98))
+    assert [_unbold(c) for c in _column(*map(up, cells))] == _column(*cells)
+    assert _column(up(cells[0]), cells[1], cells[2]) == [M._b(r"0.98560\,$\pm$\,0.00004"), r"0.98410\,$\pm$\,0.00030",
+                                                        r"0.98380\,$\pm$\,0.00020"]
+    # the estimated width of a cell
+    for x in (r"1{,}800\,$\pm$\,60", "0.9400" + M.SINGLE, r"0.98560\,$\pm$\,0.00004", "950"):
+        bold = M._b(x.removesuffix(M.SINGLE)) + (M.SINGLE if x.endswith(M.SINGLE) else "")
+        assert M._cell_cm(bold) == M._cell_cm(x), x
+    # the helpers of these tests
+    assert _bold_spans("a & " + M._b(r"1{,}800\,$\pm$\,60") + M.AGREE + " & " + M._b("2")) == [r"1{,}800\,$\pm$\,60", "2"]
+    assert _unbold("a & " + M._b(r"1{,}800\,$\pm$\,60") + M.AGREE + " & " + M._b("2")) == r"a & 1{,}800\,$\pm$\,60" + M.AGREE + " & 2"
+
+
+def test_bold_marks_the_best_value_of_a_column_and_every_value_within_three_standard_deviations():
+    """PI 2026-11-12 (the bold rule): in a column the best value is bold and so is every value with
+    |mean - best| <= 3 sqrt(SD^2 + SD_best^2), from the unrounded values of the tokens; a single run has SD zero.
+    Never bold: the random networks and the released checkpoint (reference rows, which are not the best either), a
+    number that is no run's, a plain number in a table without published rows, a dash."""
+    T, tok, lab = M.TAB, M.V4.tok, M.LABEL
+    assert M.NEVER_BOLD == (lab[M.INIT], lab[M.INIT_BN], lab[M.SOPHON])
+    rows = [f"{lab['L188']} & {T(100.0, 2.0)} & 7 & -- \\\\",                    # the best
+            f"{lab['L162']} & {T(95.0, 1.0)} & 9 & -- \\\\",                     # 5 <= 3 sqrt(1 + 4) = 6.7
+            f"{lab['R42_Q1']} & {T(93.0, 1.0)} & 8 & {T(5.0, 1.0)} \\\\",        # 7 > 6.7
+            f"{lab['R16_Q1']} & {tok('s', 94.0)} & 8 & -- \\\\",                 # one run: 6 <= 3 sqrt(0 + 4) = 6
+            r"\multicolumn{4}{@{}l}{" + M.PARTITIONS + r"} \\",
+            rf"\quad {lab['FLAV_F0']} & {tok('s', 93.9)} & 8 & -- \\",           # one run: 6.1 > 6
+            f"{lab[M.INIT]} & {T(200.0, 1.0)} & 8 & {T(9.0, 1.0)} \\\\",         # above the best: a reference row
+            rf"\quad {lab[M.INIT_BN]} & {T(101.0, 1.0)} & 8 & {T(9.0, 1.0)} \\",
+            r"\midrule",
+            f"{lab[M.SOPHON]} & {tok('s', 300.0)} & 8 & {tok('s', 9.0)} \\\\",
+            f"soft-drop mass & {tok('o', 300.0)} & 8 & {tok('o', 9.0)} \\\\"]
+    tab = _frame(rows, 3)
+    # column 1 as above; column 2 holds plain numbers (no published rows in this table); column 3 one value that
+    # could be bold, so none
+    assert _chosen_bold("xbx", tab) == {(lab["L188"], 1), (lab["L162"], 1), (lab["R16_Q1"], 1)}
+    printed = M.uniform_columns(M._bold("xbx", tab)).split("\n")
+    assert printed[4:8] == [rf"{lab['L188']} & " + M._b(r"100.0\,$\pm$\,2.0") + r" & 7 & -- \\",
+                            rf"{lab['L162']} & " + M._b(r"95.0\,$\pm$\,1.0") + r" & 9 & -- \\",
+                            rf"{lab['R42_Q1']} & 93.0\,$\pm$\,1.0 & 8 & 5.0\,$\pm$\,1.0 \\",
+                            rf"{lab['R16_Q1']} & " + M._b("94.0") + M.SINGLE + r" & 8 & -- \\"]
+    assert printed[9] == rf"\quad {lab['FLAV_F0']} & 93.9{M.SINGLE} & 8 & -- \\" and sum(M.BOLD_ON in ln for ln in printed) == 3
+    # each value with its own SD: b is close to the best in value and resolved from it (0.0008 > 3 sqrt(2) 0.0001), c
+    # is far in value and not resolved (0.0204 <= 3 * 0.0100)
+    close = _frame([f"a & {T(0.5004, 0.0001)} \\\\", f"b & {T(0.4996, 0.0001)} \\\\", f"c & {T(0.48, 0.01)} \\\\"], 1)
+    assert _chosen_bold("xbx", close) == {("a", 1), ("c", 1)}
+    # a column with fewer than two values that could be bold has none; the table is returned as it was
+    lone = _frame([f"a & {T(1.0, 0.1)} & -- \\\\", r"b & -- & -- \\", f"{lab[M.INIT]} & {T(2.0, 0.1)} & {T(2.0, 0.1)} \\\\"], 2)
+    assert M._bold("xbx", lone) == lone
+    # rows without a frame (a block of _task_pages) are read from the first line
+    block = "\n".join([f"a & {T(1.0, 0.1)} \\\\", f"b & {T(2.0, 0.1)} \\\\"])
+    assert _chosen_bold("probes", block) == {("b", 1)}
+
+
+def test_bold_takes_the_smallest_value_or_the_one_closest_to_one_in_the_columns_named_so():
+    """PI 2026-11-12: higher is better for accuracy, AUC, rejections, signal efficiency; lower for the mass resolution
+    and the Jensen-Shannon distance of the sculpting table; the median response is best where closest to 1, and the
+    test is on |mean - best| there too."""
+    T, tok = M.TAB, M.V4.tok
+    assert {k: {d: v[d] for d in ("lower", "unity") if d in v} for k, v in M.BOLD.items() if "lower" in v or "unity" in v} == {
+        "mass": {"lower": (1,), "unity": (2,)}, "sculpt": {"lower": (1, 3, 6)}}
+    # tab:sculpt: a distance column (1) and an efficiency column (2)
+    sculpt = _frame([f"x & {T(4.4, 0.3)} & {T(50.0, 1.0)} \\\\",        # the smallest distance, the largest efficiency
+                     f"y & {T(5.2, 0.3)} & {T(40.0, 1.0)} \\\\",        # 0.8 <= 3 sqrt(0.18) = 1.27;  10 > 4.2
+                     f"z & {T(6.0, 0.1)} & {T(49.0, 1.0)} \\\\",        # 1.6 > 3 sqrt(0.10) = 0.95;   1 <= 4.2
+                     "random selection & " + tok("o", 0.9) + r" & -- \\"], 2)       # no run's number: not the best
+    assert _chosen_bold("sculpt", sculpt) == {("x", 1), ("y", 1), ("x", 2), ("z", 2)}
+    # tab:mass: resolution (1, lower) and median response (2, closest to 1), a block under each italic heading
+    head, mlp = (M._full_row(3, M.HEADING[k], italic=True) for k in ("head", "mlp"))
+    mass = _frame(["soft-drop mass & " + tok("o", 0.05) + " & " + tok("o", 1.0) + r" \\", r"\midrule", head,
+                   f"a & {T(0.20, 0.01)} & {T(1.02, 0.01)} \\\\",       # response: |1.02 - 0.99| = 0.03 <= 3 sqrt(2) 0.01
+                   f"b & {T(0.10, 0.01)} & {T(0.99, 0.01)} \\\\",       # the best of both columns
+                   r"\midrule", mlp,
+                   f"c & {T(0.30, 0.01)} & {T(0.90, 0.01)} \\\\",       # the block's best resolution, above the other block's
+                   f"d & {T(0.31, 0.01)} & {T(1.05, 0.005)} \\\\",      # 1.05 is closer to 1 than 0.90: the best response
+                   f"{M.LABEL[M.INIT]} & {T(0.01, 0.001)} & {T(1.0, 0.001)} \\\\"], 2)
+    assert _chosen_bold("mass", mass) == {("b", 1), ("b", 2), ("a", 2), ("c", 1), ("d", 1), ("d", 2)}
+    # the same rows in a table where higher is better: the largest of column 1 is z, and y (0.8 <= 3 sqrt(0.10))
+    assert _chosen_bold("xbx", sculpt) == {("z", 1), ("y", 1), ("x", 2), ("z", 2)}
+
+
+def test_bold_is_decided_in_each_block_of_a_column_and_the_partitions_subheading_starts_no_block():
+    """PI 2026-11-12: a block is the rows under one italic mode heading within one task block. The subheading
+    "17-class partitions" does not start one; tab:jetclassrej is one block whatever its headings (its two published
+    rows above the heading take part)."""
+    T, lab = M.TAB, M.LABEL
+    lp, ft = (M._full_row(2, M.HEADING[k], italic=True) for k in ("lp", "ft"))
+    rows = [lp, f"x & {T(0.50, 0.01)} \\\\", M._full_row(2, M.PARTITIONS), rf"\quad y & {T(0.49, 0.01)} \\",
+            f"{lab[M.INIT]} & {T(0.10, 0.01)} \\\\", r"\midrule",
+            ft, f"z & {T(0.30, 0.01)} \\\\", f"w & {T(0.10, 0.01)} \\\\"]
+    assert _chosen_bold("summary", _frame(rows, 1)) == {("x", 1), (r"\quad y", 1), ("z", 1)}
+    # the same rows as one block: z is no longer a best value
+    whole = [r"ParT~\cite{part} & 100 & 0.51 \\", r"ParticleNet~\cite{part} & 200 & 0.45 \\", r"\midrule",
+             M._full_row(3, M.HEADING["ft"], italic=True),
+             f"x & 300 & {T(0.50, 0.01)} \\\\", f"z & 400 & {T(0.30, 0.01)} \\\\"]
+    assert M.BOLD["jetclass_rej"] == {"whole": True, "published": True, "skip": (1,)}
+    # 0.51 is the best (published: no SD, zero); x is 0.01 from it, within 3 * 0.01; column 1 (training jets) is skipped
+    assert _chosen_bold("jetclass_rej", _frame(whole, 2)) == {(r"ParT~\cite{part}", 2), ("x", 2)}
+    # a table of blocks in its caption's words: these keys
+    assert {k for k, v in M.BOLD.items() if v.get("blocks")} == {"summary", "published", "labelsets", "probes", "pairs", "mass"}
+    assert set(M.BOLD) == {"summary", "published", "labelsets", "probes", "pairs", "mass", "sculpt", "jetclass_rej", "xbx",
+                           "xbx_rej", "coarse", "qcdhf", "fill"}
+    # no bold in the tables of inputs, recipes and differences
+    assert not {"inputs", "partrepro", "lrsweep", "sculpt_boot"} & set(M.BOLD)
+
+
+def test_a_published_value_takes_part_in_bold_with_the_standard_deviation_it_prints_and_a_count_never():
+    """PI 2026-11-12: published rows take part by their printed value; where a published cell prints a standard
+    deviation that is its SD, where it prints none its SD is zero. The parameters and the training jets are
+    counts."""
+    T, tok = M.TAB, M.V4.tok
+    assert M.BOLD["published"] == {"blocks": True, "published": True, "skip": (1, 2)}
+    rows = [r"A~\cite{a} & 2.14\,M & 1.2\,M & 691\,$\pm$\,15 & 0.9877 \\",         # the best R50
+            r"B~\cite{b} & 2.38\,M & 1.2\,M & 640\,$\pm$\,10 & 0.9878 \\",         # 51 <= 3 sqrt(100 + 225) = 54.1; the best AUC
+            r"C~\cite{c} & 366\,k & 1.2\,M & 397\,$\pm$\,7 & -- \\",               # 294 > 49.7
+            r"D~\cite{d} & 1\,k & -- & 3{,}000 & 0.9877 \\",                       # see below
+            rf"from scratch (this work) & 2.21\,M & 1.2\,M & {T(461.0, 4.0)} & {tok('s', 0.9878)} \\"]
+    block = "\n".join(rows[:3] + rows[4:])
+    # R50: 691 +- 15 and 640 +- 10. AUC: the published 0.9878 and our single run at 0.9878 (both SD zero, equal), not
+    # 0.9877
+    assert _chosen_bold("published", block) == {(r"A~\cite{a}", 3), (r"B~\cite{b}", 3), (r"B~\cite{b}", 4),
+                                                ("from scratch (this work)", 4)}
+    out = M._bold("published", block).split("\n")
+    assert out[1] == r"B~\cite{b} & 2.38\,M & 1.2\,M & " + M._b(r"640\,$\pm$\,10") + " & " + M._b("0.9878") + r" \\"
+    assert out[2] == rows[2] and M.V4.tok("S", 0.9878) in out[3] and T(461.0, 4.0) in out[3]
+    # a published value without a printed SD has SD zero: 3,000 (thousands separator read) is the best alone
+    assert _chosen_bold("published", "\n".join(rows)) == {(r"D~\cite{d}", 3), (r"B~\cite{b}", 4), ("from scratch (this work)", 4)}
+    # plain numbers in the count columns are never bold, in the value columns they are
+    assert _chosen_bold("published", "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\") == {("x", 3)}
+    assert _chosen_bold("jetclass_rej", "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\") == {("x", 2), ("x", 3)}
+    # without published rows a table's plain numbers take no part
+    assert M._bold("xbx", "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\") == "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\"
+
+
+def test_a_column_whose_best_value_prints_as_a_bound_has_no_bold():
+    """Table A10: an AUC that rounds to 1.0000 prints "> 0.9999", so the best of its block's column is no printed
+    value and the column has no bold there; the other columns and the other block are untouched by that."""
+    T = M.TAB
+    lp, ft = (M._full_row(3, M.HEADING[k], italic=True) for k in ("lp", "ft"))
+    rows = [lp, f"a & {M.NEAR_ONE} & {T(0.90, 0.01)} \\\\", f"b & {T(0.99, 0.001)} & {T(0.80, 0.01)} \\\\",
+            f"e & {M.NEAR_ONE}{M.SINGLE} & {T(0.70, 0.01)} \\\\", r"\midrule",
+            ft, f"c & {T(0.95, 0.01)} & {T(0.70, 0.01)} \\\\", f"d & {T(0.90, 0.01)} & {T(0.90, 0.01)} \\\\"]
+    assert _chosen_bold("pairs", _frame(rows, 2)) == {("a", 2), ("c", 1), ("d", 2)}
+
+
+def test_the_caption_says_what_bold_marks_once_and_only_where_a_cell_is_bold():
+    """_float (PI 2026-11-12): bold from the tokens before the column is rounded; one sentence in the caption, "of a
+    column" or "of each block of a column"; none where no cell is bold or the table is not one of BOLD."""
+    T, lab = M.TAB, M.LABEL
+    col, blk = (M.BOLD_NOTE.format(x) for x in ("a column", "each block of a column"))
+    assert col == " Bold marks the best value of a column and every value within three standard deviations of it."
+    assert blk == " Bold marks the best value of each block of a column and every value within three standard deviations of it."
+    rows = [f"{lab['L188']} & {T(100.0, 2.0)} \\\\", f"{lab['L162']} & {T(95.0, 1.0)} \\\\", f"{lab['R42_Q1']} & {T(93.0, 1.0)} \\\\",
+            f"{lab[M.INIT]} & {T(200.0, 1.0)} \\\\"]
+    f = M._float("xbx", _frame(rows, 1))
+    assert f.count(col) == 1 and blk not in f and r"\textbf" not in f and M.V4.TOK_OPEN not in f
+    assert lab["L188"] + " & " + M._b(r"100.0\,$\pm$\,2.0") + r" \\" in f and lab["L162"] + " & " + M._b(r"95.0\,$\pm$\,1.0") + r" \\" in f
+    assert lab["R42_Q1"] + r" & 93.0\,$\pm$\,1.0 \\" in f and lab[M.INIT] + r" & 200.0\,$\pm$\,1.0 \\" in f
+    assert f.count(M.BOLD_ON) == 2 and f.index(col) < f.index(M.BOLD_ON)          # the sentence is the caption's
+    # a table of blocks; its soft-drop row is no run's
+    head, mlp = (M._full_row(2, M.HEADING[k], italic=True) for k in ("head", "mlp"))
+    mass = _frame([head, f"{lab['L162_MASS']} & {T(0.10, 0.01)} \\\\", f"{lab['R16_Q1_MASS']} & {T(0.20, 0.01)} \\\\", r"\midrule",
+                   mlp, f"{lab['L188']} & {T(0.30, 0.01)} \\\\", f"{lab['L162']} & {T(0.50, 0.01)} \\\\"], 1)
+    g = M._float("mass", mass)
+    assert g.count(blk) == 1 and col not in g and g.count(M.BOLD_ON) == 2
+    assert lab["L162_MASS"] + " & " + M._b(r"0.100\,$\pm$\,0.010") + r" \\" in g and lab["L188"] + " & " + M._b(r"0.300\,$\pm$\,0.010") + r" \\" in g
+    # nothing to compare: no bold cell, no sentence
+    lone = M._float("xbx", _frame(rows[:1] + rows[3:], 1))
+    assert M.BOLD_ON not in lone and "Bold marks" not in lone
+    # a table that is not one of BOLD (the supplement's copies, the recipe tables)
+    assert "probes_full" not in M.BOLD
+    other = M._float("probes_full", _frame(rows, 1))
+    assert M.BOLD_ON not in other and "Bold marks" not in other and lab["L188"] + r" & 100.0\,$\pm$\,2.0 \\" in other
+
+
+def test_table_one_sets_each_tasks_auc_beside_its_metric_in_eight_columns_a_mode():
+    """tab:summary (PI 2026-11-12): JetClass-II accuracy, AUC; JetClass accuracy, AUC; top R30, AUC; quark/gluon R30,
+    AUC, for the linear probes and for fine-tuning, as the two panels of a task in Figs. 2 and 3. The AUC is the
+    average over the classes, each against the rest, on JetClass-II and JetClass and the binary AUC on top and
+    quark/gluon. The eight columns of a mode are wider than a turned page at the body size: two tasks a page."""
+    assert M.SUMMARY_AUC == {"jc2": "macro_auc_ovr", "jc1": "macro_auc_ovr", "top": "auc", "qg": "auc"}
+    assert [(k, m) for k, _, _, m in M.SUMMARY_GRID] == [("jc2", "accuracy"), ("jc2", "macro_auc_ovr"), ("jc1", "accuracy"),
+                                                         ("jc1", "macro_auc_ovr"), ("top", "r30"), ("top", "auc"),
+                                                         ("qg", "r30"), ("qg", "auc")]
+    # an AUC column is its task's panel (training set, probe data set) with the other metric
+    panel = {k: (n, ds) for k, n, ds, _ in M.SUMMARY_PANELS}
+    assert all((n, ds) == panel[k] for k, n, ds, _ in M.SUMMARY_GRID)
+    assert M.SUMMARY_GRID[0::2] == M.SUMMARY_PANELS and len(M.SUMMARY_GRID) == 8
+    assert M.SUMMARY_PAGES == (("jc2", "jc1"), ("top", "qg")) and [k for pg in M.SUMMARY_PAGES for k in pg] == [k for k, *_ in M.SUMMARY_PANELS]
+    assert M.SUMMARY_TASKS == {"jc2": "JetClass-II", "jc1": "JetClass", "top": "top tagging", "qg": "quark/gluon tagging"}
+    assert M.SUMMARY_HEAD == {"accuracy": "accuracy", "r30": "$R_{30}$", "macro_auc_ovr": "AUC", "auc": "AUC"}
+    assert [M.SUMMARY_HEAD[m] for *_, m in M.SUMMARY_GRID] == ["accuracy", "AUC", "accuracy", "AUC", "$R_{30}$", "AUC", "$R_{30}$", "AUC"]
+    assert not hasattr(M, "SUMMARY_LABEL_CM")                  # the row labels never wrap: no label width
+    # the caption: the multi-class AUC in the one wording of every table, once, for the two tasks it applies to
+    cap = M.printed_caption("summary")
+    assert cap.count(M.AUC_OVR) == 1 and "On JetClass-II and JetClass, " + M.AUC_OVR in cap and "class pairs" not in cap
+    assert "$R_{30}$ is the inverse background efficiency at 30\\% signal efficiency." in cap
+    assert M.BOLD["summary"] == {"blocks": True} and "summary" not in M.MODES
+    # the generated table: four whole turned pages at the body size under one caption, each later page starting a
+    # page under "Table 1 (continued)"; the probes' two pages, then the fine-tuned ones
+    tex = (ROOT / "paper/journal/tables/mlst_summary.tex").read_text()
+    tabs = re.findall(r"\\begin\{tabular\*\}.*?\\end\{tabular\*\}", tex, re.S)
+    assert tex.startswith(r"\begin{landscape}") and len(tabs) == 4 and r"\begin{longtable}" not in tex and not _sizes_in(tex)
+    assert tex.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}") == 4 and r"\setlength{\tabcolsep}{6pt}" in tex
+    assert tex.count(r"\captionof{table}{") == tex.count(r"\label{tab:summary}") == 1
+    assert tex.count(r"\textit{Table~\ref{tab:summary} (continued)}") == tex.count(r"\newpage") == 3
+    assert tex.count(M.AUC_OVR) == 1 and tex.count(M.BOLD_NOTE.format("each block of a column").strip()) == 1
+    heads = []
+    for tab, (mode, tasks) in zip(tabs, [(mode, tasks) for mode in ("lp", "ft") for tasks in M.SUMMARY_PAGES], strict=True):
+        lines = tab.splitlines()
+        assert lines[2] == " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{M.SUMMARY_TASKS[k]}}}" for k in tasks) + r" \\"
+        assert lines[4] == " & " + " & ".join(M.SUMMARY_HEAD[m] for k, _, _, m in M.SUMMARY_GRID if k in tasks) + r" \\"
+        assert lines[6] == M._full_row(5, M.HEADING[mode], italic=True) and tab.count(r"\textit{") == 1
+        last = lines[-3].split(" & ")
+        assert last[0] == (M.LABEL[M.INIT] if mode == "lp" else M.SCRATCH_LABEL) and len(last) == 5
+        assert mode == "ft" or M.BOLD_ON not in lines[-3]                  # the random network: a reference row
+        heads += lines[4].removesuffix(r" \\").split(" & ")[1:]
+    assert len(heads) == 16 and heads[1::2] == ["AUC"] * 8             # eight value columns a mode, every second an AUC
+
+
+def test_the_generated_tables_are_bold_where_the_rule_applies_and_say_so_once():
+    """The 17 tables as make_tables.py wrote them (PI 2026-11-12): bold in the tables that compare networks and in no
+    table of inputs, recipes or differences; the caption's sentence once, in the words for a table with blocks or
+    without; a bold wrapper holds a value and its standard deviation and nothing else (no mark, no dash, no bound);
+    never \\textbf; no bold in a reference row or a count column; the columns where lower or closest to 1 is best are
+    the ones their headers name."""
+    tables = _paper_tables()
+    plain = {"tab:inputs", "tab:partrepro", "tab:lrsweep", "tab:sculptboot"}
+    notes = [M.BOLD_NOTE.format(x).strip() for x in ("a column", "each block of a column")]
+    refs = M.NEVER_BOLD + ("soft-drop mass", "random selection")
+    for label, (key, path) in tables.items():
+        tex = path.read_text()
+        cap, body = _caption_and_body(tex)
+        assert r"\textbf" not in tex and M.BOLD_ON not in cap, label
+        assert (M.BOLD_ON in body) == (key in M.BOLD) == (label not in plain), label
+        want = notes[bool(M.BOLD[key].get("blocks"))] if key in M.BOLD else None
+        assert [cap.count(n) for n in notes] == [int(n == want) for n in notes], label
+        spans = _bold_spans(body)
+        assert all(M.PLAIN.fullmatch(x) for x in spans), label
+        for ln in body.splitlines():
+            cells = ln.split(" & ")
+            if len(cells) > 1 and cells[0].removeprefix(r"\quad ").startswith(refs):
+                assert M.BOLD_ON not in ln, (label, cells[0])
+    read = lambda label: tables[label][1].read_text()      # noqa: E731
+    rows = lambda label, n: [c for ln in read(label).splitlines() if len(c := ln.removesuffix(r" \\").split(" & ")) == n]   # noqa: E731
+    # the parameters and training jets of tab:published, the training jets of tab:jetclassrej
+    assert len(rows("tab:published", 7)) > 20 and not any(M.BOLD_ON in c for r in rows("tab:published", 7) for c in r[:3])
+    assert len(rows("tab:jetclassrej", 11)) >= 7 and not any(M.BOLD_ON in c for r in rows("tab:jetclassrej", 11) for c in r[:2])
+    # tab:sculpt: the three distance columns are the lower-is-better ones; tab:mass: resolution lower, response to 1
+    head = lambda label: next(ln for ln in read(label).splitlines() if ln.startswith(" & ") and "multicolumn" not in ln   # noqa: E731
+                              ).removesuffix(r" \\").split(" & ")
+    assert tuple(j for j, h in enumerate(head("tab:sculpt")) if h == "distance") == M.BOLD["sculpt"]["lower"]
+    assert head("tab:mass") == ["", "resolution", "median response"]
+    assert (M.BOLD["mass"]["lower"], M.BOLD["mass"]["unity"]) == ((1,), (2,))
+    # Table A10: the X->ee against mumu column, whose best prints as a bound, has no bold (wherever the table is cut)
+    ee = next(h for k, h, *_ in M.PAIRS if k == "ee_vs_mm")
+    cut = [ln.removesuffix(r" \\").split(" & ") for ln in read("tab:pairs").splitlines() if " & " in ln]
+    header = next(r for r in cut if ee in r)
+    column = [r[header.index(ee)] for r in cut if len(r) == len(header) and r[0].strip() and ee not in r]
+    assert len(column) > 10 and any(c.startswith(M.NEAR_ONE) for c in column) and not any(M.BOLD_ON in c for c in column)

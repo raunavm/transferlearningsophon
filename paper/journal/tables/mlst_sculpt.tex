@@ -3,7 +3,8 @@
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \begin{center}
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Mass sculpting of QCD jets by the output scores of the networks pretrained with 188, 162, 43 and 17 classes and of the control networks. The distance is the Jensen--Shannon distance (base 2) $\times10^{2}$ between the soft-drop mass distributions of all QCD test jets and of those passing a cut on $1-g_{\mathrm{QCD}}$, one minus the summed output of the QCD classes. The cut keeps the fraction $\epsB$ of the QCD jets or half of the resonant test jets, the \LitJetClassTwoNResonantClasses{} resonant classes taken together ($\epsS = 50\%$), where $R_{50} = 1/\epsB$, and $\epsS$ beside a distance is the fraction of the resonant test jets that pass. The last row is the distance expected for a random selection of as many QCD test jets. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition and \MlstMassNRunsWord{} per network with an added mass output.}
+\setlength{\abovecaptionskip}{0pt}
+\captionof{table}{Mass sculpting of QCD jets by the output scores of the networks pretrained with 188, 162, 43 and 17 classes and of the control networks. The distance is the Jensen--Shannon distance (base 2) $\times10^{2}$ between the soft-drop mass distributions of all QCD test jets and of those passing a cut on $1-g_{\mathrm{QCD}}$, one minus the summed output of the QCD classes. The cut keeps the fraction $\epsB$ of the QCD jets or half of the resonant test jets, the \LitJetClassTwoNResonantClasses{} resonant classes taken together ($\epsS = 50\%$), where $R_{50} = 1/\epsB$, and $\epsS$ beside a distance is the fraction of the resonant test jets that pass. The last row is the distance expected for a random selection of as many QCD test jets. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition and \MlstMassNRunsWord{} per network with an added mass output. Bold marks the best value of a column and every value within three standard deviations of it.}
 \label{tab:sculpt}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
@@ -12,16 +13,16 @@
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
  & distance & $\varepsilon_S$ & distance & $\varepsilon_S$ & $R_{50}$ & distance \\
 \midrule
-\Kfull{} classes & 5.24\,$\pm$\,0.34 & 0.8178\,$\pm$\,0.0011 & 4.39\,$\pm$\,0.24 & 0.5483\,$\pm$\,0.0014 & 169\,$\pm$\,2 & 5.5\,$\pm$\,0.5 \\
-\Kres{} classes & 5.32\,$\pm$\,0.09 & 0.8181\,$\pm$\,0.0009 & 4.29\,$\pm$\,0.29 & 0.5490\,$\pm$\,0.0009 & 170\,$\pm$\,3 & 5.5\,$\pm$\,0.1 \\
-\Kmid{} classes & 5.60\,$\pm$\,0.27 & 0.8179\,$\pm$\,0.0004 & 5.05\,$\pm$\,0.74 & 0.5486\,$\pm$\,0.0007 & 169\,$\pm$\,2 & 6.4\,$\pm$\,0.2 \\
-\Kcoarse{} classes & 5.43\,$\pm$\,0.10 & 0.8147\,$\pm$\,0.0005 & 5.61\,$\pm$\,0.17 & 0.5437\,$\pm$\,0.0009 & 159\,$\pm$\,3 & 6.7\,$\pm$\,0.2 \\
+\Kfull{} classes & {\fontseries{b}\selectfont 5.24\,$\pm$\,0.34} & {\fontseries{b}\selectfont 0.8178\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 4.39\,$\pm$\,0.24} & {\fontseries{b}\selectfont 0.5483\,$\pm$\,0.0014} & {\fontseries{b}\selectfont 169\,$\pm$\,2} & {\fontseries{b}\selectfont 5.5\,$\pm$\,0.5} \\
+\Kres{} classes & {\fontseries{b}\selectfont 5.32\,$\pm$\,0.09} & {\fontseries{b}\selectfont 0.8181\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 4.29\,$\pm$\,0.29} & {\fontseries{b}\selectfont 0.5490\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 170\,$\pm$\,3} & {\fontseries{b}\selectfont 5.5\,$\pm$\,0.1} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 5.60\,$\pm$\,0.27} & {\fontseries{b}\selectfont 0.8179\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 5.05\,$\pm$\,0.74} & {\fontseries{b}\selectfont 0.5486\,$\pm$\,0.0007} & {\fontseries{b}\selectfont 169\,$\pm$\,2} & {\fontseries{b}\selectfont 6.4\,$\pm$\,0.2} \\
+\Kcoarse{} classes & 5.43\,$\pm$\,0.10 & 0.8147\,$\pm$\,0.0005 & 5.61\,$\pm$\,0.17 & 0.5437\,$\pm$\,0.0009 & {\fontseries{b}\selectfont 159\,$\pm$\,3} & 6.7\,$\pm$\,0.2 \\
 \multicolumn{7}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 5.48\,$\pm$\,0.02 & 0.8162\,$\pm$\,0.0004 & 5.09\,$\pm$\,0.01 & 0.5466\,$\pm$\,0.0013 & 164\,$\pm$\,2 & 6.0\,$\pm$\,0.4 \\
-\quad $b$-quark boundary & 5.41\,$\pm$\,0.44 & 0.8174\,$\pm$\,0.0004 & 5.21\,$\pm$\,0.07 & 0.5472\,$\pm$\,0.0011 & 166\,$\pm$\,4 & 5.9\,$\pm$\,0.5 \\
-\quad random flavor boundary & 5.33\,$\pm$\,0.08 & 0.8167\,$\pm$\,0.0010 & 4.86\,$\pm$\,0.06 & 0.5462\,$\pm$\,0.0022 & 166\,$\pm$\,5 & 6.0\,$\pm$\,0.4 \\
-\Kres{} classes + mass & 4.43\,$\pm$\,0.30 & 0.8156\,$\pm$\,0.0016 & 4.33\,$\pm$\,0.12 & 0.5447\,$\pm$\,0.0011 & 160\,$\pm$\,3 & 5.5\,$\pm$\,0.3 \\
-\Kcoarse{} classes + mass & 4.72\,$\pm$\,0.70 & 0.8124\,$\pm$\,0.0012 & 4.28\,$\pm$\,0.33 & 0.5387\,$\pm$\,0.0013 & 151\,$\pm$\,2 & 5.1\,$\pm$\,0.4 \\
+\quad no flavor boundary & 5.48\,$\pm$\,0.02 & {\fontseries{b}\selectfont 0.8162\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 5.09\,$\pm$\,0.01} & {\fontseries{b}\selectfont 0.5466\,$\pm$\,0.0013} & {\fontseries{b}\selectfont 164\,$\pm$\,2} & {\fontseries{b}\selectfont 6.0\,$\pm$\,0.4} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 5.41\,$\pm$\,0.44} & {\fontseries{b}\selectfont 0.8174\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 5.21\,$\pm$\,0.07} & {\fontseries{b}\selectfont 0.5472\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 166\,$\pm$\,4} & {\fontseries{b}\selectfont 5.9\,$\pm$\,0.5} \\
+\quad random flavor boundary & {\fontseries{b}\selectfont 5.33\,$\pm$\,0.08} & {\fontseries{b}\selectfont 0.8167\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 4.86\,$\pm$\,0.06} & {\fontseries{b}\selectfont 0.5462\,$\pm$\,0.0022} & {\fontseries{b}\selectfont 166\,$\pm$\,5} & {\fontseries{b}\selectfont 6.0\,$\pm$\,0.4} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 4.43\,$\pm$\,0.30} & {\fontseries{b}\selectfont 0.8156\,$\pm$\,0.0016} & {\fontseries{b}\selectfont 4.33\,$\pm$\,0.12} & 0.5447\,$\pm$\,0.0011 & {\fontseries{b}\selectfont 160\,$\pm$\,3} & {\fontseries{b}\selectfont 5.5\,$\pm$\,0.3} \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 4.72\,$\pm$\,0.70} & 0.8124\,$\pm$\,0.0012 & {\fontseries{b}\selectfont 4.28\,$\pm$\,0.33} & 0.5387\,$\pm$\,0.0013 & 151\,$\pm$\,2 & {\fontseries{b}\selectfont 5.1\,$\pm$\,0.4} \\
 \midrule
 random selection of as many QCD jets & 0.94 & -- & 3.13 & -- & -- & -- \\
 \bottomrule

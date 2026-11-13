@@ -3,7 +3,8 @@
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \begin{center}
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Rejection of QCD jets when tagging $X\to b\bar b$ and $X\to bs$ jets in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV, for the networks of table~\ref{tab:xbx}. $R_{50}$ and $R_{30}$ are the inverse QCD efficiencies at 50\% and 30\% signal efficiency. Transfer is a classifier trained on the frozen features, direct is the pretrained $X\to b\bar b$ output against the QCD outputs, and closest node is the pretrained output of the class that contains $X\to bq$ against the QCD outputs. A dash marks a score that cannot be formed. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions, three initializations of the random network and three training seeds from scratch on $X\to bs$. $^{\S}$ marks a value from a single run.}
+\setlength{\abovecaptionskip}{0pt}
+\captionof{table}{Rejection of QCD jets when tagging $X\to b\bar b$ and $X\to bs$ jets in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV, for the networks of table~\ref{tab:xbx}. $R_{50}$ and $R_{30}$ are the inverse QCD efficiencies at 50\% and 30\% signal efficiency. Transfer is a classifier trained on the frozen features, direct is the pretrained $X\to b\bar b$ output against the QCD outputs, and closest node is the pretrained output of the class that contains $X\to bq$ against the QCD outputs. A dash marks a score that cannot be formed. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions, three initializations of the random network and three training seeds from scratch on $X\to bs$. Bold marks the best value of a column and every value within three standard deviations of it.}
 \label{tab:xbxrej}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccccc@{}}
@@ -12,19 +13,19 @@
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
  & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
 \midrule
-\Kfull{} classes & 350\,$\pm$\,4 & 1{,}011\,$\pm$\,37 & 288.8\,$\pm$\,3.2 & 792\,$\pm$\,27 & 435\,$\pm$\,27 & 2{,}068\,$\pm$\,154 & 144.1\,$\pm$\,3.5 & 377.0\,$\pm$\,18.5 \\
-\Kres{} classes & 332\,$\pm$\,10 & 920\,$\pm$\,39 & 289.1\,$\pm$\,1.7 & 776\,$\pm$\,7 & 425\,$\pm$\,4 & 2{,}021\,$\pm$\,172 & 142.0\,$\pm$\,2.8 & 365.5\,$\pm$\,10.1 \\
-\Kmid{} classes & 321\,$\pm$\,10 & 891\,$\pm$\,51 & -- & -- & 357\,$\pm$\,16 & 1{,}615\,$\pm$\,59 & 91.9\,$\pm$\,3.5 & 238.0\,$\pm$\,9.5 \\
-\Kcoarse{} classes & 258\,$\pm$\,19 & 772\,$\pm$\,83 & -- & -- & 191\,$\pm$\,26 & 691\,$\pm$\,87 & 38.0\,$\pm$\,0.8 & 112.2\,$\pm$\,3.1 \\
+\Kfull{} classes & {\fontseries{b}\selectfont 350\,$\pm$\,4} & {\fontseries{b}\selectfont 1{,}011\,$\pm$\,37} & {\fontseries{b}\selectfont 288.8\,$\pm$\,3.2} & {\fontseries{b}\selectfont 792\,$\pm$\,27} & {\fontseries{b}\selectfont 435\,$\pm$\,27} & {\fontseries{b}\selectfont 2{,}068\,$\pm$\,154} & {\fontseries{b}\selectfont 144.1\,$\pm$\,3.5} & {\fontseries{b}\selectfont 377.0\,$\pm$\,18.5} \\
+\Kres{} classes & {\fontseries{b}\selectfont 332\,$\pm$\,10} & {\fontseries{b}\selectfont 920\,$\pm$\,39} & {\fontseries{b}\selectfont 289.1\,$\pm$\,1.7} & {\fontseries{b}\selectfont 776\,$\pm$\,7} & {\fontseries{b}\selectfont 425\,$\pm$\,4} & {\fontseries{b}\selectfont 2{,}021\,$\pm$\,172} & {\fontseries{b}\selectfont 142.0\,$\pm$\,2.8} & {\fontseries{b}\selectfont 365.5\,$\pm$\,10.1} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 321\,$\pm$\,10} & {\fontseries{b}\selectfont 891\,$\pm$\,51} & -- & -- & {\fontseries{b}\selectfont 357\,$\pm$\,16} & {\fontseries{b}\selectfont 1{,}615\,$\pm$\,59} & 91.9\,$\pm$\,3.5 & 238.0\,$\pm$\,9.5 \\
+\Kcoarse{} classes & 258\,$\pm$\,19 & {\fontseries{b}\selectfont 772\,$\pm$\,83} & -- & -- & 191\,$\pm$\,26 & 691\,$\pm$\,87 & 38.0\,$\pm$\,0.8 & 112.2\,$\pm$\,3.1 \\
 \multicolumn{9}{@{}l}{17-class partitions} \\
 \quad no flavor boundary & 218\,$\pm$\,7 & 693\,$\pm$\,6 & -- & -- & 194\,$\pm$\,8 & 767\,$\pm$\,10 & 39.1\,$\pm$\,1.2 & 115.0\,$\pm$\,4.0 \\
 \quad $b$-quark boundary & 264\,$\pm$\,3 & 747\,$\pm$\,8 & -- & -- & 211\,$\pm$\,19 & 720\,$\pm$\,79 & 38.5\,$\pm$\,1.8 & 110.5\,$\pm$\,6.6 \\
 \quad random flavor boundary & 277\,$\pm$\,3 & 809\,$\pm$\,30 & -- & -- & 257\,$\pm$\,2 & 1{,}027\,$\pm$\,62 & 39.5\,$\pm$\,1.1 & 115.0\,$\pm$\,5.3 \\
-\quad random partitions & 290\,$\pm$\,18 & 788\,$\pm$\,36 & -- & -- & 312\,$\pm$\,38 & 1{,}359\,$\pm$\,313 & 34.0\,$\pm$\,8.0 & 93.9\,$\pm$\,19.0 \\
-\Kres{} classes + mass & 325\,$\pm$\,11 & 935\,$\pm$\,99 & 290.0\,$\pm$\,1.8 & 796\,$\pm$\,15 & 372\,$\pm$\,3 & 1{,}751\,$\pm$\,53 & 139.5\,$\pm$\,1.8 & 369.3\,$\pm$\,1.0 \\
+\quad random partitions & 290\,$\pm$\,18 & 788\,$\pm$\,36 & -- & -- & {\fontseries{b}\selectfont 312\,$\pm$\,38} & {\fontseries{b}\selectfont 1{,}359\,$\pm$\,313} & 34.0\,$\pm$\,8.0 & 93.9\,$\pm$\,19.0 \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 325\,$\pm$\,11} & {\fontseries{b}\selectfont 935\,$\pm$\,99} & {\fontseries{b}\selectfont 290.0\,$\pm$\,1.8} & {\fontseries{b}\selectfont 796\,$\pm$\,15} & {\fontseries{b}\selectfont 372\,$\pm$\,3} & {\fontseries{b}\selectfont 1{,}751\,$\pm$\,53} & {\fontseries{b}\selectfont 139.5\,$\pm$\,1.8} & {\fontseries{b}\selectfont 369.3\,$\pm$\,1.0} \\
 \Kcoarse{} classes + mass & 263\,$\pm$\,3 & 771\,$\pm$\,44 & -- & -- & 195\,$\pm$\,23 & 766\,$\pm$\,76 & 38.8\,$\pm$\,1.0 & 116.8\,$\pm$\,0.5 \\
 random network & 16\,$\pm$\,1 & 43\,$\pm$\,3 & -- & -- & 13\,$\pm$\,1 & 31\,$\pm$\,2 & -- & -- \\
-from scratch & 92$^{\S}$ & 191$^{\S}$ & -- & -- & 146\,$\pm$\,11 & 608\,$\pm$\,38 & -- & -- \\
+from scratch & 153\,$\pm$\,53 & 398\,$\pm$\,180 & -- & -- & 146\,$\pm$\,11 & 608\,$\pm$\,38 & -- & -- \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

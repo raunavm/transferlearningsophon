@@ -3,6 +3,7 @@
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \begin{center}
 \begin{minipage}{\linewidth}\centering
+\setlength{\abovecaptionskip}{0pt}
 \captionof{table}{The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and the controls, trained on one million JetClass jets: the AUC of each JetClass class against the other nine, fine-tuned (upper part, beside the network trained from scratch) and from linear probes on the frozen features (lower part, beside the random network with BatchNorm recomputed). Mean $\pm$ SD over the pretraining runs of each configuration. $^{\S}$ marks a value from a single run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
 \label{tab:jc1_class_auc}
 \par\medskip

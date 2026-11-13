@@ -4,7 +4,8 @@
 \setlength{\tabcolsep}{6pt}
 \begin{center}
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Fine-tuning of the networks pretrained with \Kres{}, \Kmid{} and \Kcoarse{} classes and with the 17-class partitions, compared on JetClass, top tagging and quark/gluon tagging, and of every network trained on Pythia quark/gluon jets when it is scored on Herwig jets. The \Kfull-class and from-scratch rows of the first three tasks are in table~\ref{tab:published}. A flavor boundary is a class boundary between decays that differ only in quark flavor. AUC is the area under the receiver operating characteristic curve, on JetClass averaged over the classes, each against the rest. $R_{50}$ and $R_{30}$ are the inverse background efficiencies at 50\% and 30\% signal efficiency, with quarks as the signal. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, one for each of five random partitions and three training seeds from scratch. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
+\setlength{\abovecaptionskip}{0pt}
+\captionof{table}{Fine-tuning of the networks pretrained with \Kres{}, \Kmid{} and \Kcoarse{} classes and with the 17-class partitions, compared on JetClass, top tagging and quark/gluon tagging, and of every network trained on Pythia quark/gluon jets when it is scored on Herwig jets. The \Kfull-class and from-scratch rows of the first three tasks are in table~\ref{tab:published}. A flavor boundary is a class boundary between decays that differ only in quark flavor. AUC is the area under the receiver operating characteristic curve, on JetClass averaged over the classes, each against the rest. $R_{50}$ and $R_{30}$ are the inverse background efficiencies at 50\% and 30\% signal efficiency, with quarks as the signal. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, one for each of five random partitions and three training seeds from scratch. Bold marks the best value of each block of a column and every value within three standard deviations of it. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
 \label{tab:labelsets}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
@@ -12,28 +13,29 @@
  & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
 \multicolumn{5}{@{}l}{\textit{fine-tuned on JetClass}} \\
-\Kres{} classes & 0.8475\,$\pm$\,0.0009 & 0.98556\,$\pm$\,0.00001 & -- & -- \\
-\Kmid{} classes & 0.8459\,$\pm$\,0.0002 & 0.98531\,$\pm$\,0.00009 & -- & -- \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.8475\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 0.98556\,$\pm$\,0.00001} & -- & -- \\
+\Kmid{} classes & {\fontseries{b}\selectfont 0.8459\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 0.98531\,$\pm$\,0.00009} & -- & -- \\
 \Kcoarse{} classes & 0.8422\,$\pm$\,0.0005 & 0.98468\,$\pm$\,0.00011 & -- & -- \\
 \multicolumn{5}{@{}l}{17-class partitions} \\
 \quad no flavor boundary & 0.8433\,$\pm$\,0.0002 & 0.98483\,$\pm$\,0.00005 & -- & -- \\
 \quad $b$-quark boundary & 0.8439\,$\pm$\,0.0007 & 0.98493\,$\pm$\,0.00008 & -- & -- \\
 \quad random flavor boundary & 0.8434\,$\pm$\,0.0003 & 0.98494\,$\pm$\,0.00001 & -- & -- \\
-\quad random partitions & 0.8443\,$\pm$\,0.0007 & 0.98507\,$\pm$\,0.00008 & -- & -- \\
+\quad random partitions & {\fontseries{b}\selectfont 0.8443\,$\pm$\,0.0007} & 0.98507\,$\pm$\,0.00008 & -- & -- \\
 \midrule
 \multicolumn{5}{@{}l}{\textit{fine-tuned on top tagging}} \\
-\Kres{} classes & 0.9401\,$\pm$\,0.0002 & 0.98610\,$\pm$\,0.00008 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
-\Kmid{} classes & 0.9402\,$\pm$\,0.0004 & 0.98610\,$\pm$\,0.00005 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
-\Kcoarse{} classes & 0.9398\,$\pm$\,0.0001 & 0.98590\,$\pm$\,0.00006 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.9401\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 0.98610\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 443\,$\pm$\,17} & {\fontseries{b}\selectfont 1{,}790\,$\pm$\,60} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 0.9402\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 0.98610\,$\pm$\,0.00005} & {\fontseries{b}\selectfont 450\,$\pm$\,13} & {\fontseries{b}\selectfont 1{,}780\,$\pm$\,150} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 0.9398\,$\pm$\,0.0001} & {\fontseries{b}\selectfont 0.98590\,$\pm$\,0.00006} & {\fontseries{b}\selectfont 429\,$\pm$\,10} & {\fontseries{b}\selectfont 1{,}740\,$\pm$\,140} \\
 \multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.9401\,$\pm$\,0.0001 & 0.98604\,$\pm$\,0.00007 & 445\,$\pm$\,26 & 1{,}790\,$\pm$\,90 \\
-\quad $b$-quark boundary & 0.9403\,$\pm$\,0.0003 & 0.98604\,$\pm$\,0.00007 & 438\,$\pm$\,8 & 1{,}830\,$\pm$\,330 \\
-\quad random flavor boundary & 0.9402\,$\pm$\,0.0007 & 0.98597\,$\pm$\,0.00019 & 420\,$\pm$\,38 & 1{,}610\,$\pm$\,60 \\
-\quad random partitions & 0.9401\,$\pm$\,0.0003 & 0.98598\,$\pm$\,0.00009 & 434\,$\pm$\,14 & 1{,}750\,$\pm$\,110 \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 0.9401\,$\pm$\,0.0001} & {\fontseries{b}\selectfont 0.98604\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 445\,$\pm$\,26} & {\fontseries{b}\selectfont 1{,}790\,$\pm$\,90} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 0.9403\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.98604\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 438\,$\pm$\,8} & {\fontseries{b}\selectfont 1{,}830\,$\pm$\,330} \\
+\quad random flavor boundary & {\fontseries{b}\selectfont 0.9402\,$\pm$\,0.0007} & {\fontseries{b}\selectfont 0.98597\,$\pm$\,0.00019} & {\fontseries{b}\selectfont 420\,$\pm$\,38} & {\fontseries{b}\selectfont 1{,}610\,$\pm$\,60} \\
+\quad random partitions & {\fontseries{b}\selectfont 0.9401\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.98598\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 434\,$\pm$\,14} & {\fontseries{b}\selectfont 1{,}750\,$\pm$\,110} \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
 \end{center}
+\newpage
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \makebox[\linewidth][l]{\textit{Table~\ref{tab:labelsets} (continued)}}
@@ -43,26 +45,26 @@
  & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
 \multicolumn{5}{@{}l}{\textit{fine-tuned on quark/gluon tagging}} \\
-\Kres{} classes & 0.84318$^{\P}$ & 0.91478\,$\pm$\,0.00008 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 \\
-\Kmid{} classes & 0.84296\,$\pm$\,0.00055 & 0.91456\,$\pm$\,0.00032 & 42.25\,$\pm$\,0.77 & 108.3\,$\pm$\,1.0 \\
-\Kcoarse{} classes & 0.84265\,$\pm$\,0.00035 & 0.91440\,$\pm$\,0.00003 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.84318}$^{\P}$ & {\fontseries{b}\selectfont 0.91478\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 42.39\,$\pm$\,0.22} & {\fontseries{b}\selectfont 108.0\,$\pm$\,1.4} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 0.84296\,$\pm$\,0.00055} & {\fontseries{b}\selectfont 0.91456\,$\pm$\,0.00032} & {\fontseries{b}\selectfont 42.25\,$\pm$\,0.77} & {\fontseries{b}\selectfont 108.3\,$\pm$\,1.0} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 0.84265\,$\pm$\,0.00035} & 0.91440\,$\pm$\,0.00003 & {\fontseries{b}\selectfont 41.97\,$\pm$\,0.25} & 106.5\,$\pm$\,0.8 \\
 \multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.84284\,$\pm$\,0.00079 & 0.91446\,$\pm$\,0.00013 & 41.81\,$\pm$\,0.20 & 109.1\,$\pm$\,0.2 \\
-\quad $b$-quark boundary & 0.84308\,$\pm$\,0.00007 & 0.91472$^{\P}$ & 42.60\,$\pm$\,0.24 & 106.7\,$\pm$\,0.2 \\
-\quad random flavor boundary & 0.84272\,$\pm$\,0.00010 & 0.91460\,$\pm$\,0.00016 & 42.11\,$\pm$\,0.03 & 106.3\,$\pm$\,2.7 \\
-\quad random partitions & 0.84317\,$\pm$\,0.00028 & 0.91459\,$\pm$\,0.00009 & 42.15\,$\pm$\,0.22 & 107.0\,$\pm$\,1.0 \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 0.84284\,$\pm$\,0.00079} & {\fontseries{b}\selectfont 0.91446\,$\pm$\,0.00013} & {\fontseries{b}\selectfont 41.81\,$\pm$\,0.20} & {\fontseries{b}\selectfont 109.1\,$\pm$\,0.2} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 0.84308\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 0.91472}$^{\P}$ & {\fontseries{b}\selectfont 42.60\,$\pm$\,0.24} & 106.7\,$\pm$\,0.2 \\
+\quad random flavor boundary & 0.84272\,$\pm$\,0.00010 & {\fontseries{b}\selectfont 0.91460\,$\pm$\,0.00016} & {\fontseries{b}\selectfont 42.11\,$\pm$\,0.03} & {\fontseries{b}\selectfont 106.3\,$\pm$\,2.7} \\
+\quad random partitions & {\fontseries{b}\selectfont 0.84317\,$\pm$\,0.00028} & {\fontseries{b}\selectfont 0.91459\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 42.15\,$\pm$\,0.22} & {\fontseries{b}\selectfont 107.0\,$\pm$\,1.0} \\
 \midrule
 \multicolumn{5}{@{}l}{\textit{fine-tuned on quark/gluon tagging, scored on Herwig jets}} \\
-\Kfull{} classes & 0.712\,$\pm$\,0.005 & 0.808\,$\pm$\,0.002 & 12.3\,$\pm$\,0.4 & 35\,$\pm$\,2 \\
-\Kres{} classes & 0.710\,$\pm$\,0.002 & 0.807\,$\pm$\,0.001 & 12.3\,$\pm$\,0.3 & 35\,$\pm$\,2 \\
-\Kmid{} classes & 0.713\,$\pm$\,0.006 & 0.809\,$\pm$\,0.005 & 12.5\,$\pm$\,0.6 & 36\,$\pm$\,3 \\
-\Kcoarse{} classes & 0.718\,$\pm$\,0.003 & 0.810\,$\pm$\,0.002 & 12.8\,$\pm$\,0.2 & 37\,$\pm$\,1 \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.712\,$\pm$\,0.005} & {\fontseries{b}\selectfont 0.808\,$\pm$\,0.002} & {\fontseries{b}\selectfont 12.3\,$\pm$\,0.4} & {\fontseries{b}\selectfont 35\,$\pm$\,2} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.710\,$\pm$\,0.002} & {\fontseries{b}\selectfont 0.807\,$\pm$\,0.001} & {\fontseries{b}\selectfont 12.3\,$\pm$\,0.3} & {\fontseries{b}\selectfont 35\,$\pm$\,2} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 0.713\,$\pm$\,0.006} & {\fontseries{b}\selectfont 0.809\,$\pm$\,0.005} & {\fontseries{b}\selectfont 12.5\,$\pm$\,0.6} & {\fontseries{b}\selectfont 36\,$\pm$\,3} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 0.718\,$\pm$\,0.003} & {\fontseries{b}\selectfont 0.810\,$\pm$\,0.002} & {\fontseries{b}\selectfont 12.8\,$\pm$\,0.2} & {\fontseries{b}\selectfont 37\,$\pm$\,1} \\
 \multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.711\,$\pm$\,0.002 & 0.807\,$\pm$\,0.003 & 12.5\,$\pm$\,0.6 & 37\,$\pm$\,4 \\
-\quad $b$-quark boundary & 0.713\,$\pm$\,0.003 & 0.809\,$\pm$\,0.003 & 12.6\,$\pm$\,0.5 & 36\,$\pm$\,2 \\
-\quad random flavor boundary & 0.714\,$\pm$\,0.004 & 0.808\,$\pm$\,0.004 & 12.5\,$\pm$\,0.4 & 36\,$\pm$\,2 \\
-\quad random partitions & 0.712\,$\pm$\,0.001 & 0.808\,$\pm$\,0.001 & 12.3\,$\pm$\,0.2 & 35\,$\pm$\,1 \\
-from scratch & 0.715\,$\pm$\,0.002 & 0.806\,$\pm$\,0.001 & 12.2\,$\pm$\,0.1 & 35\,$\pm$\,1 \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 0.711\,$\pm$\,0.002} & {\fontseries{b}\selectfont 0.807\,$\pm$\,0.003} & {\fontseries{b}\selectfont 12.5\,$\pm$\,0.6} & {\fontseries{b}\selectfont 37\,$\pm$\,4} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 0.713\,$\pm$\,0.003} & {\fontseries{b}\selectfont 0.809\,$\pm$\,0.003} & {\fontseries{b}\selectfont 12.6\,$\pm$\,0.5} & {\fontseries{b}\selectfont 36\,$\pm$\,2} \\
+\quad random flavor boundary & {\fontseries{b}\selectfont 0.714\,$\pm$\,0.004} & {\fontseries{b}\selectfont 0.808\,$\pm$\,0.004} & {\fontseries{b}\selectfont 12.5\,$\pm$\,0.4} & {\fontseries{b}\selectfont 36\,$\pm$\,2} \\
+\quad random partitions & {\fontseries{b}\selectfont 0.712\,$\pm$\,0.001} & {\fontseries{b}\selectfont 0.808\,$\pm$\,0.001} & {\fontseries{b}\selectfont 12.3\,$\pm$\,0.2} & {\fontseries{b}\selectfont 35\,$\pm$\,1} \\
+from scratch & {\fontseries{b}\selectfont 0.715\,$\pm$\,0.002} & {\fontseries{b}\selectfont 0.806\,$\pm$\,0.001} & {\fontseries{b}\selectfont 12.2\,$\pm$\,0.1} & {\fontseries{b}\selectfont 35\,$\pm$\,1} \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

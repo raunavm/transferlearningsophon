@@ -207,3 +207,53 @@ def test_every_paper_caption_is_within_the_length_figcheck_allows():
     import gallery_captions as K
     words = {pid: len(K.text(pid).split()) for pid in K.CAPTIONS}
     assert {pid: n for pid, n in words.items() if not 40 <= n <= 145} == {}
+
+
+def _unbold(tex: str) -> str:
+    """A printed table with every bold value light (mlst_results._b: BOLD_ON, the text, a closing brace)."""
+    on, out = L.M.BOLD_ON, ""
+    while on in tex:
+        before, rest = tex.split(on, 1)
+        depth, i = 1, 0
+        while depth:
+            depth += (rest[i] == "{") - (rest[i] == "}")
+            i += 1
+        out, tex = out + before + rest[:i - 1], rest[i:]
+    return out + tex
+
+
+def test_table_one_prints_the_values_figs_2_and_3_draw_on_both_panels_of_each_task():
+    """tab:summary (PI 2026-11-12): beside each task's headline metric its AUC, the second panel of the task's row in
+    Figs. 2 and 3 (F2_GRID). Every cell is the figures' own value function (_probe_value, _ft_value; from scratch
+    scratch_series at its largest training set) over the row's runs, printed at the table's one precision per
+    column. The random network is the table's only row that the figures do not draw; it is read the same way."""
+    M, P, I = L.M, L.P, L.I
+    assert tuple(L.F2_GRID) == M.SUMMARY_GRID and L.F2_AUC == M.SUMMARY_AUC and len(L.F2_GRID) == 8
+    assert [met for *_, met in L.F2_GRID][1::2] == ["macro_auc_ovr", "macro_auc_ovr", "auc", "auc"]
+    assert [key for key, *_ in L.F2_GRID] == [k for pg in M.SUMMARY_PAGES for k in pg for _ in (0, 1)]
+    if any(f(*g) is None for f in (L._probe_value, L._ft_value) for g in L.F2_GRID):
+        pytest.skip("the linear probes or the fine-tuning read-outs are not pulled")
+    runs = M._pooled(L.RUNS)
+    parts = M.table_summary(I["fits"], I["fill"], L._chosen(), I["per"], L.RUNS, M.TAB).split("%SPLIT%")
+    order = [(value_of, tasks) for value_of in (L._probe_value, L._ft_value) for tasks in M.SUMMARY_PAGES]
+    assert len(parts) == len(order) == 4
+    for part, (value_of, tasks) in zip(parts, order):
+        probes = value_of is L._probe_value
+        grid = [g for g in L.F2_GRID if g[0] in tasks]
+        assert [met for *_, met in grid][1::2] == [L.F2_AUC[k] for k in tasks]
+        get = [value_of(*g) for g in grid]
+        rows = []
+        for arm in M.MAIN + M.SUMMARY_CONTROLS + ((M.INIT,) if probes else ()):
+            vals = [[x for m in runs[arm] if (x := g(m)) is not None] for g in get]
+            rows.append(((r"\quad " if arm in M.SUMMARY_CONTROLS else "") + M.LABEL[arm],
+                         [M._cell(v, len(runs[arm]), M.TAB, frac=met != "r30") for v, (*_, met) in zip(vals, grid)]))
+        if not probes:
+            series = [P.scratch_series(M, I["per"], key, met) for key, _, _, met in grid]         # drawn at max(sc)
+            rows.append((M.SCRATCH_LABEL, [M._cell(sc[max(sc)], len(sc[max(sc)]), M.TAB, frac=met != "r30")
+                                           for sc, (*_, met) in zip(series, grid)]))
+        want = M.uniform_columns("\n".join(f"{name} & " + " & ".join(cells) + r" \\" for name, cells in rows)).split("\n")
+        got = [_unbold(ln) for ln in part.splitlines() if " & " in ln and not ln.startswith(" & ")]
+        assert got == want, tasks
+        assert M.V4.TOK_OPEN not in part and r"\pending" not in part and all(ln.count(" & ") == 4 for ln in got)
+        # the header names each task once over its two columns, the second of them the AUC
+        assert part.splitlines()[4] == " & " + " & ".join(M.SUMMARY_HEAD[met] for *_, met in grid) + r" \\"

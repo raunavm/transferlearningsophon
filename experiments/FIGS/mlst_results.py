@@ -753,7 +753,7 @@ def table_probes_tasks(fits, runs, fmt_pm, rows, fill=None, chosen=None, kin=Fal
             blocks[t] = out
     head = [r"\begin{tabular}{lcccc}", r"\toprule", " & " + " & ".join(h for _, h in BENCH4) + r" \\", r"\midrule"]
     names = {"jc2": "JetClass-II", **dict(TASK_BLOCKS)}
-    return _task_pages(head, PROBE_PAGES, blocks, lambda t: f"{HEADING['lp']}, {names[t]}", italic=True)
+    return _task_pages("probes", head, PROBE_PAGES, blocks, lambda t: f"{HEADING['lp']}, {names[t]}", italic=True)
 
 
 def table_probes_n(fits, runs, fmt_pm, rows, fill=None, chosen=None, kin=False) -> str:
@@ -862,7 +862,6 @@ SEP_FLOOR = 1e-4    # below this 1 - AUC (AUC 1.0000 at four decimals) no ratio 
 # with g_a / (g_a + g_b) on the pair's jets among the first 2,000,000 TEST2M jets, natural composition (the jets of the
 # head sculpting, scripts/build_head_jobs.py --ft-head)
 PAIRS_FT = "curves_v2/pairs_ft"
-SUMMARY_LABEL_CM = 0       # tab:summary upright (PI 2026-11-12), its row labels on one line
 PAIRS_LABEL_CM = 4.6        # the pair table's row labels wrap at this width and its blocks may be shrunk by
                             # SHRINK_OK, so that two pairs fit a block
 FT_SCRATCH_MODELS = ("scratch-s1", "scratch-s2", "scratch-s3")
@@ -3616,6 +3615,14 @@ def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> N
 # metric): JetClass-II at 10^6 class-balanced jets, JetClass at 10^6, top at 1.2e6, quark/gluon at 1.6e6
 SUMMARY_PANELS = (("jc2", 1_000_000, "jc2_188", "accuracy"), ("jc1", 1_000_000, "jc1", "accuracy"),
                   ("top", 1_200_000, "top", "r30"), ("qg", 1_600_000, "qg", "r30"))
+# beside each panel's metric its AUC, as the figures' second panel of a task (gallery_labelset.F2_AUC, F2_GRID)
+SUMMARY_AUC = {"jc2": "macro_auc_ovr", "jc1": "macro_auc_ovr", "top": "auc", "qg": "auc"}
+SUMMARY_GRID = tuple((key, n, ds, m) for key, n, ds, met in SUMMARY_PANELS for m in (met, SUMMARY_AUC[key]))
+# the tasks of a turned page: the eight columns of a mode are 3.3 cm (probes) and 5.7 cm (fine-tuned) wider than
+# the turned text block at the body size (measured with LaTeX, 2026-11-12)
+SUMMARY_PAGES = (("jc2", "jc1"), ("top", "qg"))
+SUMMARY_TASKS = {"jc2": "JetClass-II", "jc1": "JetClass", "top": "top tagging", "qg": "quark/gluon tagging"}
+SUMMARY_HEAD = {"accuracy": "accuracy", "r30": "$R_{30}$", "macro_auc_ovr": "AUC", "auc": "AUC"}
 SUMMARY_CONTROLS = FLAV + (RAND_POOLED,)
 
 
@@ -3639,51 +3646,54 @@ def summary_ft(per, key: str, n: int, met: str):
 
 
 def table_summary(fits, fill, chosen, per, runs, fmt_pm) -> str:
-    """Every value of Figs. 2 and 3: linear probes (upper part) and fine-tuning (lower part) of the label sets and
-    the 17-class partitions (the five random partitions as one row), on JetClass-II and JetClass (accuracy) and top
-    and quark/gluon (R30, Pythia); the random network in the probe part, from scratch last in the fine-tuned part.
-    A row with no value for a task: a dash. A fine-tuned row with no value on any task is left out."""
+    """Every value of Figs. 2 and 3 (SUMMARY_GRID): linear probes and fine-tuning of the label sets and the 17-class
+    partitions (the five random partitions as one row), on JetClass-II and JetClass (accuracy) and top and
+    quark/gluon (R30, Pythia), each beside the task's AUC; the random network with the probes, from scratch last
+    with the fine-tuned rows. One part (%SPLIT%, a turned page) per mode and SUMMARY_PAGES entry: the eight columns
+    of a mode are wider than the turned page at the body size. A row with no value for a task: a dash. A fine-tuned
+    row with no value on any task is left out."""
     runs = _pooled(runs)
-    probe = [summary_probe(fits, fill, chosen, ds, met) for _, _, ds, met in SUMMARY_PANELS]
-    ft = [summary_ft(per, key, n, met) for key, n, _, met in SUMMARY_PANELS]
-    frac = [met == "accuracy" for *_, met in SUMMARY_PANELS]
-    nc = 1 + len(SUMMARY_PANELS)
 
-    def cells(arm, get):
+    def cells(arm, get, grid):
         ms = runs[arm]
         out = []
-        for g, f in zip(get, frac):
+        for g, (*_, met) in zip(get, grid):
             v = [g(m) for m in ms] if g else []
-            out.append(_cell(v, len(ms), fmt_pm, frac=f) if any(x is not None for x in v) else "--")
+            out.append(_cell(v, len(ms), fmt_pm, frac=met != "r30") if any(x is not None for x in v) else "--")
         return out
 
-    def block(get, head, tail):
-        rows = [(LABEL[a], cells(a, get)) for a in MAIN]
-        ctl = [(r"\quad " + LABEL[a], cells(a, get)) for a in SUMMARY_CONTROLS]
-        ctl = [(n, c) for n, c in ctl if any(x != "--" for x in c)]
-        lines = [_full_row(nc, head, italic=True)]
-        lines += [f"{n} & " + " & ".join(c) + r" \\" for n, c in rows]
-        if ctl:
-            lines += [_full_row(nc, PARTITIONS)]
-            lines += [f"{n} & " + " & ".join(c) + r" \\" for n, c in ctl]
-        return lines + tail
+    def scratch(grid):
+        out = []
+        for key, n, _, met in grid:
+            recs = per.get(key, {}).get(SCRATCH, {}).get(n, [])
+            v = [r.get(met) for r in recs if r.get(met) is not None]
+            out.append(_cell(v, len(v), fmt_pm, frac=met != "r30") if v else "--")
+        return out
 
-    scratch = []
-    for key, n, _, met in SUMMARY_PANELS:
-        recs = per.get(key, {}).get(SCRATCH, {}).get(n, [])
-        v = [r.get(met) for r in recs if r.get(met) is not None]
-        scratch.append(_cell(v, len(v), fmt_pm, frac=met == "accuracy") if v else "--")
-    out = [r"\begin{tabular}{l" + "c" * len(SUMMARY_PANELS) + "}", r"\toprule",
-           r" & \multicolumn{2}{c}{accuracy} & \multicolumn{2}{c}{$R_{30}$} \\",
-           r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}",
-           r" & JetClass-II & JetClass & top & quark/gluon \\", r"\midrule"]
-    # each block at its own precision per column (uniform_columns), so a fine-tuned value prints as in the task tables
-    # (tab:published, tab:labelsets) and not at the probes' finer place
-    out += uniform_columns("\n".join(block(probe, HEADING["lp"],
-                                           [f"{LABEL[INIT]} & " + " & ".join(cells(INIT, probe)) + r" \\"]))).split("\n")
-    out += [r"\midrule"] + uniform_columns("\n".join(block(ft, HEADING["ft"], [f"{SCRATCH_LABEL} & " + " & ".join(scratch)
-                                                                               + r" \\"]))).split("\n")
-    return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
+    parts = []
+    for mode in ("lp", "ft"):
+        for tasks in SUMMARY_PAGES:
+            grid = [g for g in SUMMARY_GRID if g[0] in tasks]
+            get = ([summary_probe(fits, fill, chosen, ds, met) for _, _, ds, met in grid] if mode == "lp"
+                   else [summary_ft(per, key, n, met) for key, n, _, met in grid])
+            nc = 1 + len(grid)
+            ctl = [(r"\quad " + LABEL[a], cells(a, get, grid)) for a in SUMMARY_CONTROLS]
+            ctl = [(n, c) for n, c in ctl if any(x != "--" for x in c)]
+            rows = [(LABEL[a], cells(a, get, grid)) for a in MAIN]
+            last = (LABEL[INIT], cells(INIT, get, grid)) if mode == "lp" else (SCRATCH_LABEL, scratch(grid))
+            body = [_full_row(nc, HEADING[mode], italic=True)] + [f"{n} & " + " & ".join(c) + r" \\" for n, c in rows]
+            if ctl:
+                body += [_full_row(nc, PARTITIONS)] + [f"{n} & " + " & ".join(c) + r" \\" for n, c in ctl]
+            body.append(f"{last[0]} & " + " & ".join(last[1]) + r" \\")
+            head = [r"\begin{tabular}{l" + "c" * len(grid) + "}", r"\toprule",
+                    " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{SUMMARY_TASKS[k]}}}" for k in tasks) + r" \\",
+                    "".join(rf"\cmidrule(lr){{{2 + 2 * i}-{3 + 2 * i}}}" for i in range(len(tasks))),
+                    " & " + " & ".join(SUMMARY_HEAD[met] for *_, met in grid) + r" \\", r"\midrule"]
+            # each part at its own precision per column (uniform_columns), so a fine-tuned value prints as in the
+            # task tables (tab:published, tab:labelsets) and not at the probes' finer place
+            parts.append("\n".join(head + uniform_columns(_bold("summary", "\n".join(body))).split("\n")
+                                   + [r"\bottomrule", r"\end{tabular}", ""]))
+    return "%SPLIT%".join(parts)
 
 
 # ------------------------------------------------------------------ published models (main text), the other label sets (appendix)
@@ -3704,7 +3714,7 @@ def _jets(n: float) -> str:
     return rf"{n / 1e6:g}\,M"
 
 
-def _task_pages(head: list, pages: tuple, blocks: dict, heading, italic: bool = False) -> str:
+def _task_pages(key: str, head: list, pages: tuple, blocks: dict, heading, italic: bool = False) -> str:
     """One tabular per page (%SPLIT% between them, which _float sets one after the other), the tasks of a page
     under heading(task) and between rules. Each task's columns are at one precision of their own (a top-tagging
     rejection and a quark/gluon one share a column and not a size)."""
@@ -3712,7 +3722,7 @@ def _task_pages(head: list, pages: tuple, blocks: dict, heading, italic: bool = 
     out = []
     for tasks in pages:
         body = [ln for k, t in enumerate(tasks) for ln in ([r"\midrule"] if k else []) + [_full_row(ncol, heading(t), italic)]
-                + uniform_columns("\n".join(blocks[t])).split("\n")]
+                + uniform_columns(_bold(key, "\n".join(blocks[t]))).split("\n")]
         out.append("\n".join(head + body + [r"\bottomrule", r"\end{tabular}", ""]))
     return "%SPLIT%".join(out)
 
@@ -3745,7 +3755,7 @@ def table_published(per: dict, runs: dict, pre: dict, ref: dict, fmt_pm) -> str:
         blocks[task] = rows
     head = [r"\begin{tabular}{lcccccc}", r"\toprule",
             rf" & {V4.PARAMS_HEAD} & training jets & accuracy & AUC & $R_{{50}}$ & $R_{{30}}$ \\", r"\midrule"]
-    return _task_pages(head, PUBLISHED_PAGES, blocks, dict(TASK_BLOCKS).get)
+    return _task_pages("published", head, PUBLISHED_PAGES, blocks, dict(TASK_BLOCKS).get)
 
 
 def table_labelsets(per: dict, runs: dict, pre: dict, ref: dict, fmt_pm) -> str:
@@ -3765,7 +3775,7 @@ def table_labelsets(per: dict, runs: dict, pre: dict, ref: dict, fmt_pm) -> str:
         blocks[task] = [f"{name} & " + " & ".join(cells) + r" \\" for name, cells, _ in ours
                         if here or name != SCRATCH_LABEL]
     head = [r"\begin{tabular}{lcccc}", r"\toprule", r" & accuracy & AUC & $R_{50}$ & $R_{30}$ \\", r"\midrule"]
-    return _task_pages(head, LABELSET_PAGES, blocks, lambda t: f"{HEADING['ft']} on {dict(TASK_BLOCKS)[t]}", italic=True)
+    return _task_pages("labelsets", head, LABELSET_PAGES, blocks, lambda t: f"{HEADING['ft']} on {dict(TASK_BLOCKS)[t]}", italic=True)
 
 
 # ------------------------------------------------------------------ compute (appendix, Data availability)
@@ -4540,7 +4550,8 @@ CAPTION_SHORT = {
                + _runs("set", "flav", "mass", "rand", "init", "three training seeds from scratch on $X\\to bs$"),
     "summary": "Linear probes on the frozen features and fine-tuning of " + PNETS + " and with the 17-class "
                "partitions, compared on class-balanced JetClass-II, JetClass, top tagging and quark/gluon tagging."
-               + PART_DEF + " $R_{30}$ is the inverse background efficiency at 30\\% signal efficiency. Linear probes "
+               + PART_DEF + " $R_{30}$ is the inverse background efficiency at 30\\% signal efficiency. On JetClass-II and "
+               "JetClass, " + AUC_OVR + " Linear probes "
                "use each task's largest training set, and fine-tuning uses one million JetClass-II jets, one million "
                "JetClass jets and the full top and quark/gluon training sets."
                + _runs("set", "flav", "rand", "init", "scratch"),
@@ -4612,6 +4623,7 @@ def _cell_cm(t: str) -> float:
     """Estimated printed width of a cell at the body size of the 12 pt paper (calibrated at \\small on the
     generated tables, measured with LaTeX, and scaled by BODY_SCALE)."""
     t = re.sub(r"\\multicolumn\{\d+\}\{(?:@\{\})?\w+\}", "", t)
+    t = t.replace(BOLD_ON, "")      # a bold value (_bold) is as wide as a light one to 2% (BOLD_ON): one width model
     bold = 1.1 if r"\textbf" in t else 1.0
     t = re.sub(r"~?\\cite\{[^}]*\}", " [00]", t.replace(r"\mbox", ""))
     for a, b in ((r"$\pm$", "xx"), (r"{,}", ","), (r"\,", ""), (r"$<$", "x"), (r"^\dagger", ""), (r"^{\dagger}", ""),
@@ -4810,6 +4822,16 @@ def _at(x: float, place: int) -> str:
     return t[1:] if t.startswith("-") and not any(c in "123456789" for c in t) else t
 
 
+# A bold value is set in the bold series that is not extended: in Latin Modern (the book) 2% wider than the light
+# value where \textbf's extended bold is 13% wider and pushes the widest tables off the page (measured with LaTeX);
+# in a Times class this is the ordinary bold. The mark after a value stays light.
+BOLD_ON = r"{\fontseries{b}\selectfont "
+
+
+def _b(t: str) -> str:
+    return BOLD_ON + t + "}"
+
+
 SINGLE = r"$^{\S}$"       # a value from a single run (PI 2026-11-12: never bare)
 AGREE = r"$^{\P}$"        # the runs agree to the digits shown: the value once, no "+- 0" and no "<"
 MARK_NOTES = ((SINGLE, r" $^{\S}$ marks a value from a single run."),
@@ -4859,11 +4881,14 @@ def _zero_sd(mean: float, sd: float) -> bool:
 def _render(kind: str, v: list, place: int) -> str:
     """A token at its column's place: p mean +- SD, or the mean with AGREE where the SD is zero or prints as zero;
     s a single run's value with SINGLE; o a number that is not a run's."""
-    if kind == "p":
-        if _zero_sd(*v) or not round(v[1], place):
-            return _at(v[0], place) + AGREE
-        return _at(v[0], place) + PM + _at(v[1], place)
-    return ", ".join(_at(x, place) for x in v) + (SINGLE if kind == "s" else "")
+    bold, kind = kind.isupper(), kind.lower()       # upper case: a cell _bold chose; the mark stays light
+    if kind == "p" and not (_zero_sd(*v) or not round(v[1], place)):
+        t, mark = _at(v[0], place) + PM + _at(v[1], place), ""
+    elif kind == "p":
+        t, mark = _at(v[0], place), AGREE
+    else:
+        t, mark = ", ".join(_at(x, place) for x in v), SINGLE if kind == "s" else ""
+    return (_b(t) if bold else t) + mark
 
 
 def uniform_columns(tab: str) -> str:
@@ -4879,7 +4904,7 @@ def uniform_columns(tab: str) -> str:
             m = TOKEN.search(c)
             if m:
                 where.append((i, j, col))
-                items[col].append((m.group(1), [float(x) for x in m.group(2).split()]))
+                items[col].append((m.group(1).lower(), [float(x) for x in m.group(2).split()]))
             mc = re.match(r"\s*\\multicolumn\{(\d+)\}", c)
             col += int(mc.group(1)) if mc else 1
     place = {c: _column_place(v) for c, v in items.items()}
@@ -4888,6 +4913,81 @@ def uniform_columns(tab: str) -> str:
         parts = cells.setdefault(i, _depth0_split(lines[i], "&"))
         parts[j] = TOKEN.sub(lambda m: _render(m.group(1), [float(x) for x in m.group(2).split()], place[col]), parts[j])
     for i, parts in cells.items():
+        lines[i] = "&".join(parts)
+    return "\n".join(lines)
+
+
+# Bold (PI 2026-11-12): in the tables that compare networks, per block and column the best value and every value not
+# resolved from it at three standard deviations. lower / unity: the columns (0 the row labels) where the smallest
+# value, or the one closest to 1, is best (else the largest); skip: columns never bold (counts); published: the
+# table has published rows, which take part by the value and the standard deviation they print (none: zero); whole:
+# the tabular is one block whatever its headings; blocks: the caption says "each block of a column".
+BOLD = {"summary": {"blocks": True}, "published": {"blocks": True, "published": True, "skip": (1, 2)},
+        "labelsets": {"blocks": True}, "probes": {"blocks": True}, "pairs": {"blocks": True},
+        "mass": {"blocks": True, "lower": (1,), "unity": (2,)}, "sculpt": {"lower": (1, 3, 6)},
+        "jetclass_rej": {"whole": True, "published": True, "skip": (1,)},
+        "xbx": {}, "xbx_rej": {}, "coarse": {}, "qcdhf": {}, "fill": {}}
+BOLD_NOTE = " Bold marks the best value of {} and every value within three standard deviations of it."
+NEVER_BOLD = (LABEL[INIT], LABEL[INIT_BN], LABEL[SOPHON])       # reference rows; so is a number that is no run's (token o)
+BOLD_SIGMA = 3.0
+_NUM = r"\d+(?:\{,\}\d{3})*(?:\.\d+)?"
+PLAIN = re.compile(rf"({_NUM})(?:{re.escape(PM)}({_NUM}))?")
+
+
+def _bold(key: str, tab: str) -> str:
+    """The rows of a table (a tabular, or the rows of one block of it) with the cells to print bold marked, from
+    the unrounded values of their tokens: an upper-case token kind, which _render prints bold (a published cell is
+    wrapped here). A block is the rows under one heading across the table (PARTITIONS is no such heading). Per
+    block and column, the best value and every value with |mean - best| <= BOLD_SIGMA * sqrt(SD^2 + SD_best^2); a
+    single run has SD 0. No bold in a block's column with fewer than two values, or with a value printed as a bound
+    (NEAR_ONE), whose best is not a printed value."""
+    spec = BOLD[key]
+    lines = tab.split("\n")
+    found, void = collections.defaultdict(list), set()      # (block, column) -> [(line, cell, mean, SD)]
+    block, body = 0, r"\toprule" not in tab
+    for i, ln in enumerate(lines):
+        t = ln.strip()
+        if not body:
+            body = t.startswith(r"\midrule")
+            continue
+        parts = _depth0_split(ln, "&")
+        if len(parts) == 1:
+            block += t.startswith(r"\multicolumn") and PARTITIONS not in t and not spec.get("whole")
+            continue
+        if parts[0].strip().removeprefix(r"\quad ").strip() in NEVER_BOLD:
+            continue
+        col = 0
+        for j, c in enumerate(parts):
+            toks = TOKEN.findall(c)
+            if col in spec.get("skip", ()):
+                pass
+            elif NEAR_ONE in c:
+                void.add((block, col))
+            elif len(toks) == 1 and toks[0][0] in "ps":
+                v = [float(x) for x in toks[0][1].split()]
+                found[block, col].append((i, j, v[0], v[1] if toks[0][0] == "p" else 0.0))
+            elif spec.get("published") and (m := PLAIN.fullmatch(c.strip().removesuffix(r"\\").strip())):
+                mean, sd = (float(x.replace("{,}", "")) if x else 0.0 for x in m.groups())
+                found[block, col].append((i, j, mean, sd))
+            mc = re.match(r"\s*\\multicolumn\{(\d+)\}", c)
+            col += int(mc.group(1)) if mc else 1
+    chosen = collections.defaultdict(set)
+    for (block, col), cells in found.items():
+        if (block, col) in void or len(cells) < 2:
+            continue
+        score = ((lambda x: abs(x - 1)) if col in spec.get("unity", ()) else (lambda x: x) if col in spec.get("lower", ())
+                 else (lambda x: -x))
+        *_, best, sd0 = min(cells, key=lambda c: score(c[2]))
+        for i, j, mean, sd in cells:
+            if abs(mean - best) <= BOLD_SIGMA * math.hypot(sd, sd0):
+                chosen[i].add(j)
+    for i, js in chosen.items():
+        parts = _depth0_split(lines[i], "&")
+        for j in js:
+            if TOKEN.search(parts[j]):
+                parts[j] = TOKEN.sub(lambda m: V4.TOK_OPEN + m.group(1).upper() + " " + m.group(2) + V4.TOK_CLOSE, parts[j])
+            else:
+                parts[j] = PLAIN.sub(lambda m: _b(m.group(0)), parts[j], count=1)
         lines[i] = "&".join(parts)
     return "\n".join(lines)
 
@@ -4963,7 +5063,11 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list, whole: bool = F
     for k, b in enumerate(blocks):
         fits = whole or _height_cm([b], "") + (0.45 * (len(cap) / 150 + 1) if k == 0 else 0.6) <= LAND_FULL_CM
         if fits:
-            head = ([rf"\captionof{{table}}{{{cap}}}", rf"\label{{{label}}}", r"\par\medskip"] if k == 0
+            if whole and k:         # a page its builder chose never shares one with the block before it
+                out.append(r"\newpage")
+            # no skip above a caption that heads the page (a longtable's has none either): ten points more for the
+            # rows of a page its builder chose (tab:labelsets' first page was 6 pt over with the bold sentence)
+            head = ([r"\setlength{\abovecaptionskip}{0pt}", rf"\captionof{{table}}{{{cap}}}", rf"\label{{{label}}}", r"\par\medskip"] if k == 0
                     else [cont, r"\par\smallskip"])
             out += [r"\begin{center}", r"\begin{minipage}{\linewidth}\centering",
                     *head, _stretch(b), r"\end{minipage}", r"\end{center}"]
@@ -4985,8 +5089,8 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list, whole: bool = F
             rows = "\n".join(lines)
         more = rf"\multicolumn{{{len(spec)}}}{{@{{}}l}}{{\textit{{Table~\ref{{{label}}} (continued)}}}} \\[\smallskipamount]"
         # a later block on a fresh page, so that its first heading is never left behind on the page before
-        # (the first block's caption as far above its table as a float's: the float's caption skip is added once)
-        out += ([r"\newpage", r"\addtocounter{table}{-1}"] if k else [r"\addtolength{\belowcaptionskip}{\abovecaptionskip}"]) + [      # a longtable steps the counter: one number a table
+        # (the first block's caption as far above its table as that of a block set whole: a medskip, added once)
+        out += ([r"\newpage", r"\addtocounter{table}{-1}"] if k else [r"\addtolength{\belowcaptionskip}{\medskipamount}"]) + [      # a longtable steps the counter: one number a table
                 r"\begin{longtable}{@{\extracolsep{\fill}}" + spec + "@{}}",
                 (rf"\caption{{{cap}}}\label{{{label}}}\\" if k == 0 else more), r"\toprule", head, r"\midrule", r"\endfirsthead",
                 more, r"\toprule", head, r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot", rows, r"\end{longtable}"]
@@ -5000,13 +5104,13 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     landscape rather than cut into narrow blocks or shrunk; a row label never wraps; nothing is scaled. Only a
     tabular wider than the landscape block is cut (split_wide), into blocks of that one width. label_cm and budget
     are kept for the callers that passed them and no longer narrow anything. portrait_label_cm: upright and whole
-    whatever the estimate, the row labels wrapping at that width, 0 never (PI 2026-11-12: top, quark/gluon, summary; one
-    block). pages: the body's %SPLIT% parts are the pages of a table that no single page holds (tab:published,
-    tab:labelsets), each set whole under the caption or "Table N (continued)". whole ("upright" or "turned"): that
+    whatever the estimate, the row labels wrapping at that width, 0 never (PI 2026-11-12: top, quark/gluon; one
+    block). pages: the body's %SPLIT% parts are the pages of a table that no single page holds (tab:summary,
+    tab:published, tab:labelsets), each set whole under the caption or "Table N (continued)". whole ("upright" or "turned"): that
     orientation with no part cut, whatever the width estimate says, with the column padding at colsep_pt: for the
     paper's tables whose width was measured with LaTeX at the body size (the text block is 15.0 cm upright and
     24.7 cm turned). size: a type size below the body's for a table that no orientation holds at the body size
-    without breaking another rule of the brief (tab:summary, tab:probes; PI 2026-11-12: nothing else is below the
+    without breaking another rule of the brief (tab:probes; PI 2026-11-12: nothing else is below the
     body size); the caption stays at the body size."""
     env = "table*" if wide else "table"
     label, cap = CAPTIONS[key][0], printed_caption(key)
@@ -5022,8 +5126,13 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
         cap = re.sub(r"; \$\^\{\\parallel\}\$: [^.]*\.", ".", cap)
     if "^{*}" not in body:
         cap = cap.replace(" $^{*}$: a probe that did not converge.", "")
-    parts = [_labels(_headings(uniform_columns(b.strip()), _mode(key, k))) for k, b in enumerate(body.split("%SPLIT%"))]
+    # bold needs the headings (its blocks) and the tokens (the unrounded values); a part its builder printed
+    # (tab:summary, tab:published, tab:labelsets, tab:probes) has no token left and was marked there
+    parts = [_labels(uniform_columns(_bold(key, _headings(b.strip(), _mode(key, k)))) if key in BOLD and V4.TOK_OPEN in b
+                     else _headings(uniform_columns(b.strip()), _mode(key, k))) for k, b in enumerate(body.split("%SPLIT%"))]
     parts = [re.sub(r"\\mbox\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", t) if "begin{tabular}" in t else t for t in parts]
+    if key in BOLD and any(BOLD_ON in t for t in parts):
+        cap += BOLD_NOTE.format("each block of a column" if BOLD[key].get("blocks") else "a column")
     cap += "".join(note for mark, note in KEY_MARKS.get(key, ()) if mark in body)
     cap = _mark_notes(cap, "\n".join(parts))
     tail = [rf"\par\smallskip{{{n}}}" for n in notes or []]
@@ -5202,7 +5311,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         co_s = {**co, SOPHON_MODEL: sophon} if sophon else co
         # one table, the three targets side by side (PI 2026-11-12): wider than the upright page, so turned
         out["tables/mlst_coarse.tex"] = _float("coarse", table_coarse(co_s, pooled_s, TAB,
-                                                                      _paper_rows(ALL_ROWS + (INIT,))), True, whole="turned", colsep_pt=3.5)
+                                                                      _paper_rows(ALL_ROWS + (INIT,))), True, whole="turned", colsep_pt=2.75)
         out["tables/mlst_coarse_full.tex"] = _float("coarse_full", table_coarse(co_s, runs_s, TAB,
                                                                                 ALL_ROWS + (INIT, INIT_BN, SOPHON)), True)
     else:
@@ -5338,8 +5447,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             "qg", per, runs, MAIN, LABEL, SCRATCH, TAB, TAB.two), True)
         out["tables/mlst_bench_qg_herwig.tex"] = _float("bench_qg_herwig", V4.table_bench_herwig(
             per, runs, MAIN, LABEL, SCRATCH, TAB, TAB.two))
-        out["tables/mlst_summary.tex"] = _float("summary", table_summary(fits, fill, chosen, per, runs, TAB),
-                                                portrait_label_cm=SUMMARY_LABEL_CM, size=r"\small")
+        out["tables/mlst_summary.tex"] = _float("summary", table_summary(fits, fill, chosen, per, runs, TAB), True,
+                                                pages=True, whole="turned", colsep_pt=6)
     gap_macros(em, fits, per if tag else {}, runs, index, fmt_pm)
     out["tables/mlst_per_run.tex"] = _longtable("per_run", table_per_run(fits, per if tag else {}, runs, TAB, fill,
                                                                          chosen))
@@ -5371,7 +5480,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         out["tables/mlst_jetclass.tex"] = _float("jetclass", V4.table_jetclass(
             pre, ref, pooled, MAIN, lab, SCRATCH, 1_000_000, TAB, TAB.two, part="summary"), True, fill=jfill)
         out["tables/mlst_jetclass_rej.tex"] = _float("jetclass_rej", V4.table_jetclass(
-            pre, ref, pooled, MAIN, lab, SCRATCH, 1_000_000, TAB, TAB.two, part="rej"), True, fill=jfill, whole="turned", colsep_pt=4.5)
+            pre, ref, pooled, MAIN, lab, SCRATCH, 1_000_000, TAB, TAB.two, part="rej"), True, fill=jfill, whole="turned", colsep_pt=4.25)
         out["tables/mlst_jetclass_all.tex"] = _float("jetclass_all", V4.table_jetclass(
             pre, ref, pooled, MAIN + FLAV + ("RAND",) + MASS, lab, SCRATCH, 1_000_000, TAB, TAB.two, literature=False), True)
         out["tables/mlst_jetclass_nbkg.tex"] = _float("jetclass_nbkg", V4.table_jetclass_nbkg(
