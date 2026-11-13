@@ -195,7 +195,7 @@ def build():
     ax.text(1.35, y0 + 1.13, "Jet", ha="center", va="center", fontsize=FS)
     arrow((2.65, y0), (3.3, y0))
     xb0, wb = 3.35, 1.0                      # the network that is reused
-    block(xb0, y0 - 1.0, wb, 2.0, "Particle\nTransformer", rot=90, stack=2)
+    block(xb0, y0 - 1.0, wb, 2.0, "Sophon's\nnetwork", rot=90, stack=2)      # the tables' name for it
     arrow((xb0 + wb + 0.2, y0), (5.3, y0))
     xf = 5.52
     for k in range(6):
