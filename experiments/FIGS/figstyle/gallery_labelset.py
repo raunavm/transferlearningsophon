@@ -789,3 +789,6 @@ PAGES = [
         differs="Accuracy, not loss; one curve per label set; no marker for 80 points; theme grid.",
         draw=draw_val),
 ]
+
+import gallery_captions  # noqa: E402  the paper's captions replace those above (PI 2026-11-12)
+PAGES = gallery_captions.apply(PAGES)

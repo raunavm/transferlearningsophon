@@ -929,3 +929,6 @@ PAGES = [
          draw_conf,
          "Means over three runs, each label set's run minus the 188-class run of the same seed."),
 ]
+
+import gallery_captions  # noqa: E402  the paper's captions replace those above (PI 2026-11-12)
+PAGES = gallery_captions.apply(PAGES)

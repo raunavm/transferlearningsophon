@@ -16,7 +16,7 @@ Per figure <id> in <dir>: <id>.pdf (the figure as the paper includes it), <id>_p
   notation   plain-text "to ee", "mu", "bb", "->", "LOOK:", "Data today", "PI" in any text or the caption
   letters    main panels whose titles do not start (a), (b), ... in reading order
   outside    a plotted point, curve vertex, band or step-histogram vertex beyond its axes' limits
-  caption    outside 40-80 words
+  caption    outside 40-145 words (the paper's captions: two to five sentences, PI 2026-11-12)
 The print size is the paper's: \\linewidth = 15 cm, except PRINT_CM. The saved PDF is cut to its tight box
 (style_v3.save), so sizes are measured times print width / saved width.
 """
@@ -317,7 +317,7 @@ def rasters(pdf: pathlib.Path, print_cm: float) -> list:
 
 def caption_findings(page) -> list:
     n = len(page.caption.split())
-    out = [] if 40 <= n <= 80 else [f"caption has {n} words (40-80)"]
+    out = [] if 40 <= n <= 145 else [f"caption has {n} words (40-145)"]
     return out + [f"caption: {x}" for x in notation(page.caption)]
 
 

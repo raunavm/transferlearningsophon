@@ -622,3 +622,6 @@ PAGES = [
          differs="As A3R, fine-tuned.",
          draw=draw_a3r_ft),
 ]
+
+import gallery_captions  # noqa: E402  the paper's captions replace those above (PI 2026-11-12)
+PAGES = gallery_captions.apply(PAGES)
