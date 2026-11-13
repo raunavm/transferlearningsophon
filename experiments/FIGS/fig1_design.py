@@ -32,7 +32,7 @@ GREY, INK, LG = "#6B6B6B", "#4A4A4A", "#C9C9C9"
 # the one accent (PI 2026-11-12: "a pop of colour that goes with the theme"): the wine of the Tol muted palette our
 # other figures use, which no label set has; it marks the pretrained network and what is taken from it
 ACC, ACC_TINT = "#882255", "#F3E6EC"
-W, H = 13.0, 11.75
+W, H = 13.0, 12.55
 FS, FS_T = 8, 9
 
 
@@ -189,9 +189,9 @@ def build():
     ybot = rowy[-1]
 
     # ------------------------------------------------------------------ (b) pretraining
-    yt = ybot - 0.62
+    yt = ybot - 0.85
     ax.text(0.2, yt, "(b) Pretraining and use", fontsize=FS_T, va="center")
-    y0 = yt - 1.5
+    y0 = yt - 1.9
     # input: the particles of one jet (tracks and energy deposits; no detector hits)
     jet(1.35, y0 - 1.0, 1.95, [(-0.23, 5, 0.045, 0.0), (0.23, 5, 0.045, 0.0)], half=27, seed=12, lw=0.3, hits=False)
     ax.text(1.35, y0 + 1.13, "JetClass-II jet", ha="center", va="center", fontsize=FS)
@@ -254,8 +254,8 @@ def build():
     for cw_ in colw:
         cx.append(x + cw_ / 2); x += cw_ + GAP
     yb_, ya_ = y0 - 1.28, y0 - 1.52                # feed lines: block (outer), features (inner)
-    ynam = ya_ - 0.5
-    yF = ynam - 0.62; yT = yF - 0.66
+    ynam = ya_ - 0.62
+    yF = ynam - 0.66; yT = yF - 0.72
     # fine-tuning starts from the pretrained network; frozen features come out of the Features column
     xbk = xb0 + wb / 2
     line([xbk, xbk, 0.14, 0.14], [y0 - 1.0, yb_, yb_, yT]); arrow((0.14, yT), (BX - 0.03, yT), ms=8)
