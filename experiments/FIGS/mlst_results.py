@@ -4659,7 +4659,8 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list) -> str:
                 lines.insert(i, r"\newpage")
             rows = "\n".join(lines)
         more = rf"\multicolumn{{{len(spec)}}}{{@{{}}l}}{{\textit{{Table~\ref{{{label}}} (continued)}}}} \\"
-        out += ([r"\addtocounter{table}{-1}"] if k else []) + [      # a longtable steps the counter: one number a table
+        # a later block on a fresh page, so that its first heading is never left behind on the page before
+        out += ([r"\newpage", r"\addtocounter{table}{-1}"] if k else []) + [      # a longtable steps the counter: one number a table
                 r"\begin{longtable}{@{\extracolsep{\fill}}" + spec + "@{}}",
                 (rf"\caption{{{cap}}}\label{{{label}}}\\" if k == 0 else more), r"\toprule", head, r"\midrule", r"\endfirsthead",
                 more, r"\toprule", head, r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot", rows, r"\end{longtable}"]
