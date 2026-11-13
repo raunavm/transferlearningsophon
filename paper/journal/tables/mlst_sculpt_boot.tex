@@ -1,14 +1,14 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Mass sculpting by the pretraining heads, differences between label sets: $\Delta$, the Jensen--Shannon distance of table~\ref{tab:sculpt} ($\times10^{2}$) of the configuration minus that of the reference, paired by pretraining seed; its standard deviation over the seeds (run SD) and over 200 bootstrap replicas of the test jets (bootstrap SD); and $\Delta/\sigma$, $\sigma^{2}$ the sum of the two squares. Bold: $|\Delta| > 3\sigma$.}
+\caption{Mass sculpting by the pretraining heads, differences between label sets: $\Delta$, the Jensen--Shannon distance of table~\ref{tab:sculpt} ($\times10^{2}$) of the configuration minus that of the reference, paired by pretraining seed; its SD over the seeds (run SD) and over 200 bootstrap replicas of the test jets (bootstrap SD); and $\Delta/\sigma$, $\sigma^{2}$ the sum of the two squares.}
 \label{tab:sculptboot}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
  & $\Delta$ & run SD & bootstrap SD & $\Delta/\sigma$ \\
 \midrule
 \multicolumn{5}{l}{\textit{$\epsB = 1\%$}} \\
-\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.13 & 0.38 & \textbf{3.07} \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.13 & 0.38 & 3.07 \\
 \Kmid{} classes $-$ \Kfull{} classes & 0.67 & 0.52 & 0.35 & 1.06 \\
 \Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.36 & 0.56 & 0.41 & $-$1.96 \\
 \Kres{} classes + mass $-$ \Kres{} classes & $-$0.12 & 0.06 & 0.43 & $-$0.28 \\
@@ -18,9 +18,9 @@ random flavor boundary $-$ \Kfull{} classes & 0.36 & 0.14 & 0.41 & 0.83 \\
 \midrule
 \multicolumn{5}{l}{\textit{$\epsB = 10\%$}} \\
 \Kcoarse{} classes $-$ \Kfull{} classes & 0.19 & 0.26 & 0.08 & 0.71 \\
-\Kmid{} classes $-$ \Kfull{} classes & 0.36 & 0.09 & 0.07 & \textbf{3.16} \\
+\Kmid{} classes $-$ \Kfull{} classes & 0.36 & 0.09 & 0.07 & 3.16 \\
 \Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$0.73 & 0.57 & 0.08 & $-$1.27 \\
-\Kres{} classes + mass $-$ \Kres{} classes & $-$0.94 & 0.26 & 0.09 & \textbf{$-$3.38} \\
+\Kres{} classes + mass $-$ \Kres{} classes & $-$0.94 & 0.26 & 0.09 & $-$3.38 \\
 no flavor boundary $-$ \Kfull{} classes & 0.09 & 0.31 & 0.09 & 0.29 \\
 $b$-quark boundary $-$ \Kfull{} classes & 0.02 & 0.12 & 0.08 & 0.12 \\
 random flavor boundary $-$ \Kfull{} classes & $-$0.06 & 0.25 & 0.09 & $-$0.23 \\

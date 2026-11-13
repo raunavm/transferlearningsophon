@@ -1,0 +1,26 @@
+\begin{landscape}
+\begin{table*}[t]
+\centering
+\small
+\caption{JetClass, the networks of table~\ref{tab:jetclass}: for each signal class the rejection of QCD jets at 50\% signal efficiency (99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$), beside published models (2 million jets, from scratch); (f.t.): fine-tuned. Ours: mean $\pm$ SD over three pretraining runs; from scratch: three seeds. $^\dagger$: fewer than \MlstMinBkgPass{} QCD jets pass in a run. $^{\ddagger}$: the same number of QCD jets pass in every run, so the three rejections are equal.}
+\label{tab:jetclassrej}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccccccccc@{}}
+\toprule
+ & & \multicolumn{9}{c}{rejection of QCD} \\
+\cmidrule(lr){3-11}
+ & jets & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+ & & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{50}$ & $R_{99}$ & $R_{50}$ & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
+\midrule
+ParticleNet~\cite{part} & 2 M & 5{,}540 & 1{,}681 & 90 & 662 & 1{,}654 & 4{,}049 & 4{,}673 & 260 & 215 \\
+ParT~\cite{part} & 2 M & 5{,}587 & 1{,}982 & 93 & 761 & 1{,}609 & 6{,}061 & 4{,}474 & 307 & 236 \\
+\midrule
+\multicolumn{11}{l}{\textit{this work}} \\
+from scratch & 1 M & 4{,}800\,$\pm$\,70 & 1{,}570\,$\pm$\,50 & 86.4\,$\pm$\,3.2 & 640\,$\pm$\,40 & 1{,}290\,$\pm$\,100 & 6{,}400\,$\pm$\,200 & 3{,}600\,$\pm$\,1{,}000 & 262\,$\pm$\,15 & 210\,$\pm$\,12 \\
+\Kfull{} classes (f.t.) & 1 M & 6{,}600\,$\pm$\,330 & 2{,}650\,$\pm$\,260 & 103.6\,$\pm$\,3.8 & 1{,}090\,$\pm$\,10 & 3{,}060\,$\pm$\,390 & 12{,}900\,$\pm$\,1{,}600$^\dagger$ & 9{,}400\,$\pm$\,1{,}500$^\dagger$ & 374\,$\pm$\,8 & 312\,$\pm$\,6 \\
+\Kres{} classes (f.t.) & 1 M & 6{,}060$^{\ddagger}$ & 2{,}820\,$\pm$\,40 & 101.8\,$\pm$\,1.5 & 1{,}150\,$\pm$\,70 & 3{,}070\,$\pm$\,330 & 14{,}100\,$\pm$\,3{,}500$^\dagger$ & 7{,}800\,$\pm$\,300 & 389\,$\pm$\,9 & 308\,$\pm$\,1 \\
+\Kmid{} classes (f.t.) & 1 M & 6{,}480\,$\pm$\,530 & 2{,}610\,$\pm$\,160 & 103.5\,$\pm$\,1.3 & 1{,}030\,$\pm$\,40 & 3{,}160\,$\pm$\,280 & 14{,}200\,$\pm$\,2{,}100$^\dagger$ & 8{,}500\,$\pm$\,200 & 376\,$\pm$\,6 & 307\,$\pm$\,7 \\
+\Kcoarse{} classes (f.t.) & 1 M & 6{,}670\,$\pm$\,220 & 2{,}390\,$\pm$\,40 & 100.8\,$\pm$\,6.2 & 1{,}050\,$\pm$\,20 & 2{,}800\,$\pm$\,200 & 10{,}600\,$\pm$\,2{,}700$^\dagger$ & 8{,}600\,$\pm$\,1{,}300 & 378\,$\pm$\,22 & 285\,$\pm$\,11 \\
+\bottomrule
+\end{tabular*}
+\end{table*}
+\end{landscape}

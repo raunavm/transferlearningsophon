@@ -1,77 +1,28 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\small\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{table*}[t]
+\centering
 \small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on the full training set (\LitQgTrainMillion{} million Pythia jets; particle type as five flags and the charge) and scored on Pythia and on Herwig jets, beside published models: accuracy, AUC, $1/\epsB$ at 50\% and 30\% quark efficiency and the number of trainable parameters; (f.t.): fine-tuned. Uncertainties and bold as in table~\ref{tab:benchtop}.}
+\setlength{\tabcolsep}{4pt}
+\caption{Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on the full training set (\LitQgTrainMillion{} million Pythia jets; particle type as five flags and the charge) and scored on Pythia jets, beside published models: accuracy, AUC, $1/\epsB$ at 50\% and 30\% quark efficiency and the number of trainable parameters; (f.t.): fine-tuned. Uncertainties as in table~\ref{tab:benchtop}; Herwig jets in table~\ref{tab:benchqgherwig}.}
 \label{tab:benchqg}
-\par\medskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}>{\raggedright\arraybackslash}p{2.4cm}ccccc@{}}
 \toprule
- &  & \multicolumn{2}{c}{Pythia} \\
-\cmidrule(lr){3-4}
- & \# params & accuracy & AUC \\
+ & \# params & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-constituent multiplicity~\cite{efn} & -- & -- & 0.8401 \\
-linear EFP~\cite{efn} & -- & -- & 0.8919 \\
-PFN-Ex~\cite{efn} & -- & -- & 0.9005 \\
-ParticleNet~\cite{particlenet} & 366\,k & 0.840 & 0.9116 \\
-ParT~\cite{part} & 2.14\,M & 0.840 & 0.9121 \\
-ParticleNet-f.t.~\cite{part} & 370\,k & 0.839 & 0.9115 \\
-ParT-f.t.~\cite{part} & 2.14\,M & 0.843 & 0.9151 \\
-OmniLearned-m~\cite{omnilearned} & 58\,M & \textbf{0.845} & \textbf{0.9162} \\
+constituent multiplicity~\cite{efn} & -- & -- & 0.8401 & 19.0 & -- \\
+linear EFP~\cite{efn} & -- & -- & 0.8919 & 29.7 & -- \\
+PFN-Ex~\cite{efn} & -- & -- & 0.9005 & 34.7\,$\pm$\,0.4 & -- \\
+ParticleNet~\cite{particlenet} & 366\,k & 0.840 & 0.9116 & 39.8\,$\pm$\,0.2 & 98.6\,$\pm$\,1.3 \\
+ParT~\cite{part} & 2.14\,M & 0.840 & 0.9121 & 41.3\,$\pm$\,0.3 & 101.2\,$\pm$\,1.1 \\
+ParticleNet-f.t.~\cite{part} & 370\,k & 0.839 & 0.9115 & 40.1\,$\pm$\,0.2 & 100.3\,$\pm$\,1.0 \\
+ParT-f.t.~\cite{part} & 2.14\,M & 0.843 & 0.9151 & 42.4\,$\pm$\,0.2 & 107.9\,$\pm$\,0.5 \\
+OmniLearned-m~\cite{omnilearned} & 58\,M & 0.845 & 0.9162 & 43.2\,$\pm$\,0.1 & 111.2\,$\pm$\,1.5 \\
 \midrule
-\multicolumn{4}{l}{\textit{this work}} \\
-from scratch & 2.21\,M & 0.8397\,$\pm$\,0.0007 & 0.9121\,$\pm$\,0.0002 \\
-\Kfull{} classes (f.t.) & 2.21\,M & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 \\
-\Kres{} classes (f.t.) & 2.21\,M & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 \\
-\Kmid{} classes (f.t.) & 2.21\,M & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 \\
-\Kcoarse{} classes (f.t.) & 2.21\,M & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 \\
+\multicolumn{6}{l}{\textit{this work}} \\
+from scratch & 2.21\,M & 0.8397\,$\pm$\,0.0007 & 0.9121\,$\pm$\,0.0002 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 \\
+\Kfull{} classes (f.t.) & 2.21\,M & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 \\
+\Kres{} classes (f.t.) & 2.21\,M & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 \\
+\Kmid{} classes (f.t.) & 2.21\,M & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 & 42.25\,$\pm$\,0.77 & 108.3\,$\pm$\,1.0 \\
+\Kcoarse{} classes (f.t.) & 2.21\,M & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 \\
 \bottomrule
 \end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:benchqg}{tab:benchqg:2}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
-\toprule
- & \multicolumn{2}{c}{Pythia} & \multicolumn{1}{c}{Herwig} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-4}
- & $R_{50}$ & $R_{30}$ & accuracy \\
-\midrule
-constituent multiplicity~\cite{efn} & 19.0 & -- & -- \\
-linear EFP~\cite{efn} & 29.7 & -- & -- \\
-PFN-Ex~\cite{efn} & 34.7\,$\pm$\,0.4 & -- & -- \\
-ParticleNet~\cite{particlenet} & 39.8\,$\pm$\,0.2 & 98.6\,$\pm$\,1.3 & -- \\
-ParT~\cite{part} & 41.3\,$\pm$\,0.3 & 101.2\,$\pm$\,1.1 & -- \\
-ParticleNet-f.t.~\cite{part} & 40.1\,$\pm$\,0.2 & 100.3\,$\pm$\,1.0 & -- \\
-ParT-f.t.~\cite{part} & 42.4\,$\pm$\,0.2 & 107.9\,$\pm$\,0.5 & -- \\
-OmniLearned-m~\cite{omnilearned} & \textbf{43.2\,$\pm$\,0.1} & \textbf{111.2\,$\pm$\,1.5} & -- \\
-\midrule
-\multicolumn{4}{l}{\textit{this work}} \\
-from scratch & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 & \textbf{0.7153\,$\pm$\,0.0024} \\
-\Kfull{} classes (f.t.) & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 & 0.7123\,$\pm$\,0.0050 \\
-\Kres{} classes (f.t.) & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 & 0.7100\,$\pm$\,0.0017 \\
-\Kmid{} classes (f.t.) & 42.25\,$\pm$\,0.77 & 108.3\,$\pm$\,1.0 & \textbf{0.7134\,$\pm$\,0.0058} \\
-\Kcoarse{} classes (f.t.) & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 & \textbf{0.7175\,$\pm$\,0.0033} \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:benchqg}{tab:benchqg:3}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
-\toprule
- & \multicolumn{3}{c}{Herwig} \\
-\cmidrule(lr){2-4}
- & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\multicolumn{4}{l}{\textit{this work}} \\
-from scratch & 0.8061\,$\pm$\,0.0007 & 12.18\,$\pm$\,0.11 & 35.5\,$\pm$\,1.2 \\
-\Kfull{} classes (f.t.) & 0.8078\,$\pm$\,0.0023 & 12.31\,$\pm$\,0.39 & \textbf{35.2\,$\pm$\,2.1} \\
-\Kres{} classes (f.t.) & 0.8074\,$\pm$\,0.0010 & 12.33\,$\pm$\,0.28 & 34.6\,$\pm$\,2.0 \\
-\Kmid{} classes (f.t.) & \textbf{0.8087\,$\pm$\,0.0046} & \textbf{12.53\,$\pm$\,0.61} & \textbf{36.1\,$\pm$\,2.7} \\
-\Kcoarse{} classes (f.t.) & \textbf{0.8103\,$\pm$\,0.0018} & \textbf{12.79\,$\pm$\,0.20} & \textbf{36.9\,$\pm$\,0.9} \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\end{table*}

@@ -201,7 +201,8 @@ def _controlled():
 
 
 def draw_f2b(path) -> None:
-    _draw_f2(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning",
+    _draw_f2(path, _ft_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
+             "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning",
              scratch=True)
 
 
@@ -592,9 +593,10 @@ PAGES = [
         precedent=HONG,
         precedent_label="Hong Fig. 2",
         caption="Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and with 17-class "
-                "flavor-boundary partitions, fine-tuned, and a network trained from scratch, on one million "
-                "class-balanced JetClass-II and one million JetClass jets (accuracy) and the full top and "
-                "quark/gluon training sets (R30). " + F2_KEY + "Values: " + G.number("tab:summary") + ".",
+                "partitions, fine-tuned, and a network trained from scratch, on a million class-balanced "
+                "JetClass-II and a million JetClass jets (accuracy) and the full top and quark/gluon sets "
+                "(R30). " + F2_KEY + "Random partitions: five, one run each, mean and SD over the five. Values: "
+                + G.number("tab:summary") + ".",
         differs="As F2a.",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets. JetClass at 1,000,000 jets, top at 1,200,000, quark/gluon at 1,600,000. "

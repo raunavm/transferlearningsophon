@@ -33,8 +33,11 @@ import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 SIGNALS = (("xbb", r"$X\to b\bar b$"), ("xbs", r"$X\to bs$"))
-ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS", "RAND", "FLAV_F0", "FLAV_F1",
-        "FLAV_F1R", "INIT")
+# the rows of the efficiency table, in mlst_results.XBX_ROWS's order (the rejection table's; PI 2026-11-12): the label
+# sets, the mass-regression models, the flavor-boundary partitions, the five random partitions as one row, the random
+# network; from scratch follows
+ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND",
+        "INIT")
 CURVE_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "INIT")
 WORD = {"xbb": "Xbb", "xbs": "Xbs"}
 # the figure stops where fewer QCD jets than this pass (a relative uncertainty of about 14 %)
@@ -154,7 +157,7 @@ def table(M, MT, runs, fits: dict, scratch: dict | None = None) -> str:
     lines = [r"\begin{tabular}{l" + "c" * len(cols) + "}", r"\toprule", *head, r"\midrule"]
     eff = {(s, n): efficiencies(M, runs, fits, s, n) for s, n, _ in cols}
     for row in ROWS:
-        name = "random partitions (all five)" if row == "RAND" else M.LABEL[row]
+        name = M.LABEL[row]
         cells = []
         for s, n, _ in cols:
             v = eff[(s, n)][row]

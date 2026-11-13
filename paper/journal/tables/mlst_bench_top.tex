@@ -1,20 +1,20 @@
-\begin{landscape}
 \begin{table*}[t]
 \centering
 \small
-\caption{Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on the full top training set (\LitPartTopNTrainMillion{} million jets), beside published models: accuracy, AUC, the background rejections $R_{50}$ and $R_{30}$ ($1/\epsB$ at 50\% and 30\% signal efficiency) and the number of trainable parameters; (f.t.): fine-tuned. Ours: mean $\pm$ standard deviation over the pretraining runs, three seeds from scratch; published uncertainties as given there. Bold: the best value of each column and every value within one standard deviation of it.}
+\setlength{\tabcolsep}{4pt}
+\caption{Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on the full top training set (\LitPartTopNTrainMillion{} million jets), beside published models: accuracy, AUC, the background rejections $R_{50}$ and $R_{30}$ ($1/\epsB$ at 50\% and 30\% signal efficiency) and the number of trainable parameters; (f.t.): fine-tuned. Ours: mean $\pm$ SD over the pretraining runs, three seeds from scratch; published uncertainties as given there.}
 \label{tab:benchtop}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}>{\raggedright\arraybackslash}p{2.8cm}ccccc@{}}
 \toprule
  & \# params & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
 linear EFP~\cite{toptag} & 1\,k & 0.932 & 0.980 & -- & 384 \\
 ParticleNet~\cite{particlenet} & 366\,k & 0.940 & 0.9858 & 397\,$\pm$\,7 & 1{,}615\,$\pm$\,93 \\
 ParT~\cite{part} & 2.14\,M & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1{,}602\,$\pm$\,81 \\
-ParT-f.t.~\cite{part} & 2.14\,M & 0.944 & 0.9877 & \textbf{691\,$\pm$\,15} & 2{,}766\,$\pm$\,130 \\
+ParT-f.t.~\cite{part} & 2.14\,M & 0.944 & 0.9877 & 691\,$\pm$\,15 & 2{,}766\,$\pm$\,130 \\
 MIParT-L-f.t.~\cite{mipart} & 2.38\,M & 0.944 & 0.9878 & 640\,$\pm$\,10 & 2{,}789\,$\pm$\,133 \\
-L-GATr-f.t.~\cite{lgatr} & 1.1\,M & \textbf{0.9446} & 0.9879 & 651\,$\pm$\,11 & 2{,}894\,$\pm$\,84 \\
-OmniLearned-l~\cite{omnilearned} & 423\,M & 0.944 & \textbf{0.9880} & \textbf{688\,$\pm$\,9} & \textbf{3{,}486\,$\pm$\,157} \\
+L-GATr-f.t.~\cite{lgatr} & 1.1\,M & 0.9446 & 0.9879 & 651\,$\pm$\,11 & 2{,}894\,$\pm$\,84 \\
+OmniLearned-l~\cite{omnilearned} & 423\,M & 0.944 & 0.9880 & 688\,$\pm$\,9 & 3{,}486\,$\pm$\,157 \\
 \midrule
 \multicolumn{6}{l}{\textit{this work}} \\
 from scratch & 2.21\,M & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 \\
@@ -27,4 +27,3 @@ from scratch & 2.21\,M & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\
 \end{tabular*}
 \par\smallskip{\footnotesize ParT's top-tagging training script, unchanged, on our cluster gives $R_{30}$ of \MlstPartreproRthirtyPart{} (published 1{,}602\,$\pm$\,81); with Sophon's output head, \MlstPartreproRthirtyHead{}; with the head and Sophon's jet-$p_{\mathrm{T}}$ rescaling, \MlstPartreproRthirtyRescale{} (one run each; our network from scratch, which uses the rescaling, \MlstFtTopRthirtyScratch{}); table~\ref{tab:partrepro}.}
 \end{table*}
-\end{landscape}

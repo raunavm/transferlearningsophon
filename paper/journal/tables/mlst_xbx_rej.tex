@@ -2,7 +2,7 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Resonance tagging in the mass window: rejection $1/\epsB$ of QCD jets at 50\% and 30\% signal efficiency. Transfer: the classifier on frozen features; direct: Sophon's discriminant from the output scores; closest node: the pretrained $X\to bq$ output against QCD. A dash: the read-out cannot be formed. Mean $\pm$ standard deviation over the pretraining runs; two values: the two runs of a configuration.}
+\caption{Resonance tagging in the mass window: rejection $1/\epsB$ of QCD jets at 50\% and 30\% signal efficiency. Transfer: the classifier on frozen features; direct: Sophon's discriminant from the output scores; closest node: the pretrained $X\to bq$ output against QCD; from scratch: the network trained on each signal, three seeds. A dash: the read-out cannot be formed. Mean $\pm$ SD over the pretraining runs; two values: the two runs of a configuration. Random partitions: mean $\pm$ SD over the five partitions into 17 classes, one run each.}
 \label{tab:xbxrej}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccccc@{}}
 \toprule
@@ -16,14 +16,10 @@
 \Kcoarse{} classes & 258\,$\pm$\,19 & 770\,$\pm$\,80 & -- & -- & 191\,$\pm$\,26 & 690\,$\pm$\,90 & 38.0\,$\pm$\,0.8 & 112.2\,$\pm$\,3.1 \\
 \Kres{} classes + mass & 333, 318 & 1{,}005, 865 & 291, 289 & 807, 786 & 370, 375 & 1{,}713, 1{,}788 & 141, 138 & 369, 370 \\
 \Kcoarse{} classes + mass & 266, 261 & 803, 740 & -- & -- & 179, 211 & 713, 820 & 38.1, 39.5 & 116, 117 \\
-random partition 1, seed 1 & 272 & 732 & -- & -- & 258 & 959 & 44.6 & 111 \\
-random partition 2, seed 2 & 289 & 812 & -- & -- & 294 & 1{,}131 & 33.8 & 96.4 \\
-random partition 3, seed 1 & 285 & 784 & -- & -- & 334 & 1{,}447 & 26.5 & 80.2 \\
-random partition 4, seed 2 & 320 & 826 & -- & -- & 318 & 1{,}513 & 26.0 & 69.3 \\
-random partition 5, seed 2 & 286 & 784 & -- & -- & 358 & 1{,}743 & 39.0 & 112 \\
 no flavor boundary & 223, 212 & 689, 697 & -- & -- & 199, 188 & 760, 774 & 38.3, 40.0 & 112, 118 \\
 $b$-quark boundary & 262, 267 & 753, 742 & -- & -- & 224, 197 & 776, 665 & 39.8, 37.3 & 115, 106 \\
 random flavor boundary & 279, 275 & 788, 830 & -- & -- & 256, 258 & 983, 1{,}071 & 40.3, 38.7 & 119, 111 \\
+random partitions & 290\,$\pm$\,18 & 790\,$\pm$\,40 & -- & -- & 310\,$\pm$\,40 & 1{,}360\,$\pm$\,310 & 34\,$\pm$\,8 & 94\,$\pm$\,19 \\
 random network & 15.9\,$\pm$\,0.9 & 42.8\,$\pm$\,3.5 & -- & -- & 12.9\,$\pm$\,0.6 & 31.5\,$\pm$\,1.8 & -- & -- \\
 from scratch & -- & -- & -- & -- & 146\,$\pm$\,11 & 610\,$\pm$\,40 & -- & -- \\
 \bottomrule

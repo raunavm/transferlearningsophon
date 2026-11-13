@@ -1,7 +1,7 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Resonance tagging in the soft-drop mass window, \XbxWindowLo--\XbxWindowHi~GeV: signal efficiency (\%) at the QCD efficiency given, mean $\pm$ standard deviation over the pretraining runs. Transfer: a classifier on the frozen features, its seeds averaged per run (the randomly initialized network: the linear probe). Direct: Sophon's discriminant from the output scores, where $X\to b\bar b$ is a class of its own.}
+\caption{Resonance tagging in the soft-drop mass window, \XbxWindowLo--\XbxWindowHi~GeV: signal efficiency (\%) at the QCD efficiency given, mean $\pm$ SD over the pretraining runs. Transfer: a classifier on the frozen features, its seeds averaged per run (the randomly initialized network: the linear probe). Direct: Sophon's discriminant from the output scores, where $X\to b\bar b$ is a class of its own. Random partitions: mean $\pm$ SD over the five partitions into 17 classes, one run each. From scratch: the network trained on each signal, three seeds.}
 \label{tab:xbx}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
@@ -17,10 +17,10 @@ pretraining & transfer & direct & transfer \\
 \Kcoarse{} classes & 65.9\,$\pm$\,1.0 & -- & 59.4\,$\pm$\,1.6 \\
 \Kres{} classes + mass & 71.4, 70.7 & 69.6, 69.9 & 68.1, 68.0 \\
 \Kcoarse{} classes + mass & 66.6, 67.0 & -- & 59.1, 60.7 \\
-random partitions (all five) & 69.1\,$\pm$\,0.8 & -- & 65.1\,$\pm$\,1.2 \\
 no flavor boundary & 63.1, 61.9 & -- & 59.5, 59.1 \\
 $b$-quark boundary & 66.9, 67.6 & -- & 62.0, 61.2 \\
 random flavor boundary & 67.1, 66.7 & -- & 63.0, 63.4 \\
+random partitions & 69.1\,$\pm$\,0.8 & -- & 65.1\,$\pm$\,1.2 \\
 random network & 17.9\,$\pm$\,1.6 & -- & 13.4\,$\pm$\,0.6 \\
 from scratch & -- & -- & 55.4\,$\pm$\,1.0 \\
 \bottomrule

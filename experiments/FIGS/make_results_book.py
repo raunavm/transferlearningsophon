@@ -54,7 +54,7 @@ TEX = [("X→YY→bb̄qq", r"$X\to YY\to b\bar bqq$"), ("cc̄qq", r"$c\bar cqq$"
        ("Jensen-Shannon", "Jensen--Shannon"), ("X→bb̄", r"$X\to b\bar b$"), ("X→cc̄", r"$X\to c\bar c$"), ("X→qq̄", r"$X\to q\bar q$"),
        ("H→bb̄", r"$H\to b\bar b$"), ("Z→qq̄", r"$Z\to q\bar q$"), ("W→qq′", r"$W\to qq'$"), ("X→bs", r"$X\to bs$"),
        ("X→ee", r"$X\to ee$"), ("X→μμ", r"$X\to\mu\mu$"), ("μμ", r"$\mu\mu$"), ("X→bb", r"$X\to b\bar b$"),
-       ("cc̄", r"$c\bar c$"), ("bb̄", r"$b\bar b$"),
+       ("cc̄", r"$c\bar c$"), ("bb̄", r"$b\bar b$"), ("qq̄", r"$q\bar q$"),
        ("r = m/m_gen", r"$r = m/m_{\mathrm{gen}}$"), (" pT ", r" $p_{\mathrm{T}}$ "), ("sigma_r", r"$\sigma_r$"), ("eps_B", r"$\varepsilon_B$"),
        ("1 - g_QCD", r"$1-g_{\mathrm{QCD}}$"), ("16-84%", r"16--84\%"), ("20-500 GeV", r"20--500~GeV"),
        ("R30", r"$R_{30}$"), ("10^4", r"$10^{4}$"), ("10^3", r"$10^{3}$"), ("10^6", r"$10^{6}$"),
@@ -238,12 +238,35 @@ def build(src: pathlib.Path, which: str) -> str:
     return name
 
 
+def item_list() -> str:
+    """The one-page list of the paper's items (PI 2026-11-12): number, main text or appendix, and the draft sentence
+    that cites it (gallery_placement.BACKS), figures then tables; written to paper_items_list.tex."""
+    rows = []
+    for items in (G.FIGURES, G.TABLES):
+        for key, tier, sentence in items:
+            if tier == G.SUPPLEMENT:
+                continue
+            rows.append(f"{G.number(key).replace('Fig.', 'Figure')} & {G.TIER_NAME[tier].lower()} & "
+                        f"{tex_caption(sentence)} \\\\")
+    doc = ("\\documentclass[9pt]{extarticle}\n\\usepackage[a4paper,margin=1.4cm]{geometry}\n\\usepackage{booktabs,longtable}\n"
+           "\\usepackage{lmodern}\n\\pagestyle{empty}\n\\begin{document}\n\\noindent\\textbf{The paper's figures and tables}"
+           " (main text and appendix; everything else is in the supplement)\n\n\\small\n"
+           "\\begin{longtable}{@{}p{1.6cm}p{1.6cm}p{14.2cm}@{}}\n\\toprule\nitem & where & the sentence that cites it \\\\\n"
+           "\\midrule\n" + "\n".join(rows) + "\n\\bottomrule\n\\end{longtable}\n\\end{document}\n")
+    (PAPER / "paper_items_list.tex").write_text(doc)
+    print(f"wrote {PAPER / 'paper_items_list.tex'}: {len(rows)} items")
+    return "paper_items_list"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("figures", type=pathlib.Path, help="the gallery render: a directory with pages.json")
-    ap.add_argument("--tier", choices=tuple(OUTPUTS), default="paper")
+    ap.add_argument("figures", type=pathlib.Path, nargs="?", help="the gallery render: a directory with pages.json")
+    ap.add_argument("--tier", choices=tuple(OUTPUTS) + ("list",), default="paper")
     a = ap.parse_args()
-    build(a.figures, a.tier)
+    if a.tier == "list":
+        item_list()
+    else:
+        build(a.figures, a.tier)
     return 0
 
 

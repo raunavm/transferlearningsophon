@@ -1,15 +1,15 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Learning-rate choice for training Sophon's network, pretrained on JetClass-II with \Kfull{} classes (run 1) or trained from scratch, on $10^{4}$ top and quark/gluon jets: the best validation accuracy of each rate and their sum; (f.t.): fine-tuned. Pretrained: the rate of the pretrained layers, the new output head at 50 times it. $^{\ast}$: the rate chosen.}
+\caption{Learning-rate choice for training Sophon's network, pretrained on JetClass-II with \Kfull{} classes (seed 1) or trained from scratch, on $10^{4}$ top and quark/gluon jets: the best validation accuracy of each rate and their sum; (f.t.): fine-tuned. Pretrained: the rate of the pretrained layers, the new output head at 50 times it. $^{\ast}$: the rate chosen.}
 \label{tab:lrsweep}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
 \toprule
  & learning rate & top & quark/gluon & sum \\
 \midrule
-\Kfull{} classes, run 1 & \ensuremath{10^{-4}} & 0.9204 & 0.8204 & 1.7408 \\
-\Kfull{} classes, run 1 & \ensuremath{3\times10^{-4}} & 0.9192 & 0.8202 & 1.7394 \\
-\Kfull{} classes, run 1 & \ensuremath{10^{-3}} & 0.9212 & 0.8211 & 1.7423$^{\ast}$ \\
+\Kfull{} classes (f.t.), seed 1 & \ensuremath{10^{-4}} & 0.9204 & 0.8204 & 1.7408 \\
+\Kfull{} classes (f.t.), seed 1 & \ensuremath{3\times10^{-4}} & 0.9192 & 0.8202 & 1.7394 \\
+\Kfull{} classes (f.t.), seed 1 & \ensuremath{10^{-3}} & 0.9212 & 0.8211 & 1.7423$^{\ast}$ \\
 from scratch & \ensuremath{3\times10^{-4}} & 0.9152 & 0.8052 & 1.7204 \\
 from scratch & \ensuremath{10^{-3}} & 0.9188$^{\ast}$ & 0.8029 & 1.7217 \\
 from scratch & \ensuremath{3\times10^{-3}} & 0.9177 & 0.8059$^{\ast}$ & 1.7236 \\

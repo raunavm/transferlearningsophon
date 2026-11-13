@@ -1,10 +1,8 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\small\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{table*}[t]
+\centering
 \small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{The per-particle inputs: which the top and the quark/gluon data provide ($\bullet$), where a zero lies after the network's input normalization (in standard deviations of the training particles), and what the mean and random-draw substitutions put in a missing slot. A random draw is averaged over four draws.}
+\caption{The per-particle inputs: which the top and the quark/gluon data provide ($\bullet$), and where a zero lies after the network's input normalization, in SDs of the training particles. The mean substitution puts the running mean of the input normalization in every missing slot; the random-draw substitution puts a species drawn from JetClass-II's frequencies in the type flags and a charge drawn given the species (top), and the displacement of a JetClass-II particle of the same species in the four displacement slots, averaged over four draws.}
 \label{tab:inputs}
-\par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
 input & top & quark/gluon & zero after normalization \\
@@ -28,45 +26,4 @@ $\Delta\eta$ & $\bullet$ & $\bullet$ & -- \\
 $\Delta\phi$ & $\bullet$ & $\bullet$ & -- \\
 \bottomrule
 \end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:inputs}{tab:inputs:2}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lc@{}}
-\toprule
-input & mean \\
-\midrule
-electric charge & running mean of the input normalization \\
-charged hadron & running mean of the input normalization \\
-neutral hadron & running mean of the input normalization \\
-photon & running mean of the input normalization \\
-electron & running mean of the input normalization \\
-muon & running mean of the input normalization \\
-$d_0$ & running mean of the input normalization \\
-$\sigma_{d_0}$ & running mean of the input normalization \\
-$d_z$ & running mean of the input normalization \\
-$\sigma_{d_z}$ & running mean of the input normalization \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:inputs}{tab:inputs:3}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lc@{}}
-\toprule
-input & random draws \\
-\midrule
-electric charge & drawn given the species (top) \\
-charged hadron & a species drawn from JetClass-II's frequencies (top) \\
-neutral hadron & a species drawn from JetClass-II's frequencies (top) \\
-photon & a species drawn from JetClass-II's frequencies (top) \\
-electron & a species drawn from JetClass-II's frequencies (top) \\
-muon & a species drawn from JetClass-II's frequencies (top) \\
-$d_0$ & a JetClass-II particle of the same species \\
-$\sigma_{d_0}$ & a JetClass-II particle of the same species \\
-$d_z$ & a JetClass-II particle of the same species \\
-$\sigma_{d_z}$ & a JetClass-II particle of the same species \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\end{table*}

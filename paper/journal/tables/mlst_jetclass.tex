@@ -1,10 +1,8 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\small\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{table*}[t]
+\centering
 \small
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on one million JetClass jets, beside published models (2 million jets, from scratch): accuracy, AUC averaged over class pairs, and QCD rejection at each signal class's efficiency; (f.t.): fine-tuned. Ours: mean $\pm$ SD over three runs ($\pm\,0$: the same QCD jets pass). Bold: within one SD of a column's best. $^\dagger$: fewer than \MlstMinBkgPass{} QCD jets pass in a run; never bold.}
+\caption{JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on one million JetClass jets, beside published models (2 million jets, from scratch): the number of trainable parameters, accuracy and AUC averaged over class pairs; (f.t.): fine-tuned. Ours: mean $\pm$ SD over three pretraining runs; from scratch: three seeds. Per-class rejections in table~\ref{tab:jetclassrej}.}
 \label{tab:jetclass}
-\par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
 \toprule
  & jets & \# params & accuracy & AUC \\
@@ -14,77 +12,10 @@ ParT~\cite{part} & 2 M & 2.14\,M & 0.836 & 0.9834 \\
 \midrule
 \multicolumn{5}{l}{\textit{this work}} \\
 from scratch & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 & 0.9818\,$\pm$\,0.0003 \\
-\Kfull{} classes (f.t.) & 1 M & 2.21\,M & \textbf{0.8468\,$\pm$\,0.0006} & 0.9854\,$\pm$\,0.0001 \\
-\Kres{} classes (f.t.) & 1 M & 2.21\,M & \textbf{0.8475\,$\pm$\,0.0009} & \textbf{0.9856\,$\pm$\,$<$0.0001} \\
+\Kfull{} classes (f.t.) & 1 M & 2.21\,M & 0.8468\,$\pm$\,0.0006 & 0.9854\,$\pm$\,0.0001 \\
+\Kres{} classes (f.t.) & 1 M & 2.21\,M & 0.8475\,$\pm$\,0.0009 & 0.9856\,$\pm$\,$<$0.0001 \\
 \Kmid{} classes (f.t.) & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 \\
 \Kcoarse{} classes (f.t.) & 1 M & 2.21\,M & 0.8422\,$\pm$\,0.0005 & 0.9847\,$\pm$\,0.0001 \\
 \bottomrule
 \end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclass}{tab:jetclass:2}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
-\toprule
- &  & \multicolumn{3}{c}{rejection of QCD} \\
-\cmidrule(lr){3-5}
- & jets & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ \\
- &  & $R_{50}$ & $R_{50}$ & $R_{50}$ \\
-\midrule
-ParticleNet~\cite{part} & 2 M & 5{,}540 & 1{,}681 & 90 \\
-ParT~\cite{part} & 2 M & 5{,}587 & 1{,}982 & 93 \\
-\midrule
-\multicolumn{5}{l}{\textit{this work}} \\
-from scratch & 1 M & 4{,}800\,$\pm$\,70 & 1{,}570\,$\pm$\,50 & 86.4\,$\pm$\,3.2 \\
-\Kfull{} classes (f.t.) & 1 M & \textbf{6{,}600\,$\pm$\,330} & \textbf{2{,}650\,$\pm$\,260} & \textbf{103.6\,$\pm$\,3.8} \\
-\Kres{} classes (f.t.) & 1 M & 6{,}060\,$\pm$\,0 & \textbf{2{,}820\,$\pm$\,40} & \textbf{101.8\,$\pm$\,1.5} \\
-\Kmid{} classes (f.t.) & 1 M & \textbf{6{,}480\,$\pm$\,530} & 2{,}610\,$\pm$\,160 & \textbf{103.5\,$\pm$\,1.3} \\
-\Kcoarse{} classes (f.t.) & 1 M & \textbf{6{,}670\,$\pm$\,220} & 2{,}390\,$\pm$\,40 & \textbf{100.8\,$\pm$\,6.2} \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclass}{tab:jetclass:3}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
-\toprule
- &  & \multicolumn{3}{c}{rejection of QCD} \\
-\cmidrule(lr){3-5}
- & jets & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ \\
- &  & $R_{50}$ & $R_{99}$ & $R_{50}$ \\
-\midrule
-ParticleNet~\cite{part} & 2 M & 662 & 1{,}654 & 4{,}049 \\
-ParT~\cite{part} & 2 M & 761 & 1{,}609 & 6{,}061 \\
-\midrule
-\multicolumn{5}{l}{\textit{this work}} \\
-from scratch & 1 M & 640\,$\pm$\,40 & 1{,}290\,$\pm$\,100 & \textbf{6{,}400\,$\pm$\,200} \\
-\Kfull{} classes (f.t.) & 1 M & \textbf{1{,}090\,$\pm$\,10} & \textbf{3{,}060\,$\pm$\,390} & 12{,}900\,$\pm$\,1{,}600$^\dagger$ \\
-\Kres{} classes (f.t.) & 1 M & \textbf{1{,}150\,$\pm$\,70} & \textbf{3{,}070\,$\pm$\,330} & 14{,}100\,$\pm$\,3{,}500$^\dagger$ \\
-\Kmid{} classes (f.t.) & 1 M & 1{,}030\,$\pm$\,40 & \textbf{3{,}160\,$\pm$\,280} & 14{,}200\,$\pm$\,2{,}100$^\dagger$ \\
-\Kcoarse{} classes (f.t.) & 1 M & 1{,}050\,$\pm$\,20 & 2{,}800\,$\pm$\,200 & 10{,}600\,$\pm$\,2{,}700$^\dagger$ \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclass}{tab:jetclass:4}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
-\toprule
- &  & \multicolumn{3}{c}{rejection of QCD} \\
-\cmidrule(lr){3-5}
- & jets & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
- &  & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
-\midrule
-ParticleNet~\cite{part} & 2 M & 4{,}673 & 260 & 215 \\
-ParT~\cite{part} & 2 M & 4{,}474 & 307 & 236 \\
-\midrule
-\multicolumn{5}{l}{\textit{this work}} \\
-from scratch & 1 M & 3{,}600\,$\pm$\,1{,}000 & 262\,$\pm$\,15 & 210\,$\pm$\,12 \\
-\Kfull{} classes (f.t.) & 1 M & 9{,}400\,$\pm$\,1{,}500$^\dagger$ & 374\,$\pm$\,8 & \textbf{312\,$\pm$\,6} \\
-\Kres{} classes (f.t.) & 1 M & \textbf{7{,}800\,$\pm$\,300} & \textbf{389\,$\pm$\,9} & \textbf{308\,$\pm$\,1} \\
-\Kmid{} classes (f.t.) & 1 M & \textbf{8{,}500\,$\pm$\,200} & 376\,$\pm$\,6 & \textbf{307\,$\pm$\,7} \\
-\Kcoarse{} classes (f.t.) & 1 M & \textbf{8{,}600\,$\pm$\,1{,}300} & \textbf{378\,$\pm$\,22} & 285\,$\pm$\,11 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\end{table*}

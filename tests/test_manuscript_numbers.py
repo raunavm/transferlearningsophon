@@ -62,6 +62,11 @@ GENERATED = {"results_generated.tex",
              "tables/mlst_rand_prong.tex",
              # 2026-11-07: the coarse targets, the QCD heavy-flavor subclasses, the sculpting bootstrap
              "tables/mlst_coarse.tex", "tables/mlst_qcdhf.tex", "tables/mlst_sculpt_boot.tex",
+             # 2026-11-12 (PI): every value of Figs. 2 and 3, the tables split out of JetClass and quark/gluon, and the
+             # supplement's whole copies of the trimmed appendix tables
+             "tables/mlst_summary.tex", "tables/mlst_jetclass_rej.tex", "tables/mlst_bench_qg_herwig.tex",
+             "tables/mlst_probes_full.tex", "tables/mlst_pairs_full.tex", "tables/mlst_coarse_full.tex",
+             "tables/mlst_qcdhf_full.tex", "tables/mlst_fill_full.tex",
              # the review books (experiments/FIGS/make_results_book.py writes them): the gallery's figures with
              # its captions and the generated tables above, for review; not the manuscript, which main.tex inputs
              "results_book.tex", "results_supplement.tex", "results_book_all.tex"}

@@ -411,8 +411,9 @@ def test_the_jetclass_table_has_parts_rows_and_ours_in_its_column_order():
     tex = V4.table_jetclass(pre, ref, runs, ("L188", "R16_Q1"), M.LABEL, M.SCRATCH, 1_000_000,
                             MT.fmt_pm, M._two)
     # the 2 M published rows only (FIGURE_PLAN T2); the 100 M rows are caption context
-    # bold: the best of each column (C1.14); here ParT's 2 M row has the best accuracy and AUC
-    assert r"ParT~\cite{part} & 2 M & 2.14\,M & \textbf{0.836} & \textbf{0.9834}" in tex and "& 100 M &" not in tex
+    # no bold (PI 2026-11-12: the 3-sigma rule does not support it)
+    assert r"ParT~\cite{part} & 2 M & 2.14\,M & 0.836 & 0.9834" in tex and "& 100 M &" not in tex
+    assert r"\textbf" not in tex
     scratch = next(line for line in tex.splitlines() if line.startswith(M.SCRATCH_LABEL))
     assert MT.fmt_pm(0.802, 0.001) in scratch and " & 1 M & 2.21\\,M & " in scratch       # ten outputs: 2,213,374
     assert r"$R_{99}$" in tex and r"$R_{99.5}$" in tex
@@ -423,6 +424,15 @@ def test_the_jetclass_table_has_parts_rows_and_ours_in_its_column_order():
     tex = V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two)
     row = next(line for line in tex.splitlines() if line.startswith(M.LABEL["L188"]))
     assert row.rstrip(" \\").endswith(r"$^\dagger$") and row.count(r"$^\dagger$") == 1
+    # PI 2026-11-12: the main text's part (jets, parameters, accuracy, AUC) and the appendix's (jets, rejections)
+    summ = V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two, part="summary")
+    assert r"\begin{tabular}{llccc}" in summ and r"$R_{50}$" not in summ
+    assert next(ln for ln in summ.splitlines() if ln.startswith(M.SCRATCH_LABEL)).count(" & ") == 4
+    rej = V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two, part="rej")
+    assert r"$R_{99.5}$" in rej and "accuracy" not in rej and r"\# params" not in rej
+    assert r"ParT~\cite{part} & 2 M & 5{,}587" in rej
+    srow = next(ln for ln in rej.splitlines() if ln.startswith(M.SCRATCH_LABEL))
+    assert srow.startswith(M.SCRATCH_LABEL + " & 1 M & ") and srow.count(" & ") == 1 + len(V4.JC1_COLS)
     ref[M.SCRATCH]["N1000000"]["s1"]["jc1"]["macro_auc_ovr"] = 0.5
     with pytest.raises(SystemExit, match="one-vs-rest"):
         V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two)
@@ -750,13 +760,13 @@ def _bench_per(runs):
     return by
 
 
-def test_the_benchmark_tables_show_the_planned_rows_and_bold_within_one_sd():
+def test_the_benchmark_tables_show_the_planned_rows_and_no_bold():
     runs = M._paper(ROOT)
     per = {"top": _bench_per(runs), "qg": _bench_per(runs), "qg_herwig": _bench_per(runs)}
     t = M.V4.table_bench("top", per, runs, M.MAIN, M.LABEL, M.SCRATCH, MT.fmt_pm, M._two,
                          kin=("kin (diagnostic)", M.KIN_INIT))
     assert "LorentzNet" not in t and "OmniLearned-s" not in t and r"ParT-f.t.~\cite{part}" in t
-    assert r"\textbf{3{,}486\,$\pm$\,157}" in t and r"1{,}615\,$\pm$\,93" in t
+    assert r"3{,}486\,$\pm$\,157" in t and r"1{,}615\,$\pm$\,93" in t and r"\textbf" not in t
     assert r"kin (diagnostic) & 2.21\,M & " in t and "inputs set to zero" not in t
     assert M.SCRATCH_LABEL + r" & 2.21\,M & 0." in t
     assert M.LABEL["R16_Q1"] + r" & 2.21\,M & --" in t        # no run read out: dashes
@@ -767,6 +777,12 @@ def test_the_benchmark_tables_show_the_planned_rows_and_bold_within_one_sd():
     assert r"\multicolumn{4}{c}{Herwig}" in q and "PFN-Ex" in q and q.count(r"\cite{") == 8
     assert r"linear EFP~\cite{efn} & -- & -- & 0.8919 & 29.7 & -- &" in q
     assert r"constituent multiplicity~\cite{efn} & -- & -- & 0.8401 & 19.0 & -- &" in q
+    # PI 2026-11-12: quark/gluon in the main text on Pythia only, Herwig in its own table (ours only)
+    p = M.V4.table_bench("qg", per, runs, M.MAIN, M.LABEL, M.SCRATCH, MT.fmt_pm, M._two)
+    assert "Herwig" not in p and r"\textbf" not in p
+    h = M.V4.table_bench_herwig(per, runs, M.MAIN, M.LABEL, M.SCRATCH, MT.fmt_pm, M._two)
+    assert r"\cite{" not in h and r" & accuracy & AUC & $R_{50}$ & $R_{30}$ \\" in h
+    assert h.splitlines()[4].startswith(M.SCRATCH_LABEL + " & ") and M.LABEL["L188"] + " & " in h
 
 
 def test_table_one_has_the_four_trained_label_sets_and_the_qcd_subclass_row():
@@ -937,7 +953,9 @@ def test_the_ee_mumu_auc_over_the_partitions_that_merge_the_pair():
 def test_the_inputs_table_reads_which_inputs_each_data_set_lacks():
     t = M.table_inputs(ROOT, None)
     assert r"electric charge & -- & $\bullet$" in t and r"$\sigma_{d_0}$ & -- & --" in t     # one dash everywhere (PI 2026-11-11)
-    assert r"$\Delta\eta$ & $\bullet$ & $\bullet$ & -- &" in t and r"\pending{offsets}" in t
+    assert r"$\Delta\eta$ & $\bullet$ & $\bullet$ & -- \\" in t and r"\pending{offsets}" in t
+    assert "running mean" not in t          # the substitutions are said once, in the caption (PI 2026-11-12)
+    assert "running mean" in M.CAPTIONS["inputs"][1]
     assert t.count(r" \\") == 17 + 1
 
 
@@ -1479,7 +1497,7 @@ def test_identical_runs_print_pm_0_through_float_noise():
     assert M.uniform_columns(r"z & " + tok("p", 0.7153, 1e-17) + r" \\") == r"z & 0.7153\,$\pm$\,0 \\"
 
 
-def test_the_jetclass_bold_is_chosen_among_the_values_without_a_dagger():
+def test_the_jetclass_table_marks_a_dagger_and_identical_runs_and_bolds_nothing():
     V4 = M.V4
     runs = M._paper(ROOT)
 
@@ -1493,8 +1511,14 @@ def test_the_jetclass_bold_is_chosen_among_the_values_without_a_dagger():
     tex = V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, MT.fmt_pm, M._two)
     col = 5 + [c for c, _ in V4.JC1_COLS].index("label_Tbqq")
     cell = lambda name: next(ln for ln in tex.splitlines() if ln.startswith(name)).split(" & ")[col]   # noqa: E731
-    assert r"$^\dagger$" in cell(M.LABEL["L188"]) and r"\textbf" not in cell(M.LABEL["L188"])
-    assert r"\textbf{6{,}061}" in tex                        # ParT's 2 M row, the best without a dagger
+    assert r"$^\dagger$" in cell(M.LABEL["L188"]) and r"\textbf" not in tex
+    assert "6{,}061" in tex                                   # ParT's 2 M row, plain
+    # three runs that pass the same QCD jets: the value once, marked, never "+- 0" (PI 2026-11-12)
+    for i, m in enumerate(runs["L188"]):
+        pre[m[len("mtx-"):]]["N1000000"]["s1"]["jc1"] = block(0, True)
+    tok = V4.table_jetclass(pre, ref, runs, ("L188",), M.LABEL, M.SCRATCH, 1_000_000, M.TAB, M.TAB.two, part="rej")
+    row = M.uniform_columns(next(ln for ln in tok.splitlines() if ln.startswith(M.LABEL["L188"])))
+    assert V4.SAME_PASS in row and r"\pm$\,0" not in row
 
 
 def test_our_parameter_count_is_the_instantiated_networks():
@@ -1645,7 +1669,7 @@ def test_the_pair_table_groups_the_rows_by_mode_with_the_mode_in_the_group_headi
 
 def test_the_sculpting_bootstrap_table_reads_the_verdicts_and_refuses_another_sigma():
     """Plan 2026-11-08: a sculpting difference stands when |delta| > 3 sigma, sigma^2 = run SD^2 + bootstrap SD^2
-    (head/sculpting_boot.json); one row group per working point, the passing ones bold."""
+    (head/sculpting_boot.json); one row group per working point; no bold (PI 2026-11-12)."""
     x = lambda d, run, boot: {"delta": d, "run_sd": run, "boot_sd": boot, "sigma": math.hypot(run, boot),
                               "z": d / math.hypot(run, boot), "pass": abs(d) > 3 * math.hypot(run, boot)}
     doc = {"replicas": 200, "differences": {"17-188": {"configuration": "r16q1", "reference": "l188", **{
@@ -1654,7 +1678,7 @@ def test_the_sculpting_bootstrap_table_reads_the_verdicts_and_refuses_another_si
     runs = {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"]}
     t = M.table_sculpt_boot(doc, runs).splitlines()
     rows = [ln for ln in t if ln.startswith(M.LABEL["R16_Q1"] + " $-$ " + M.LABEL["L188"] + " & ")]
-    assert len(rows) == len(M.SCULPT_BOOT_WPS) and r"\textbf{" in rows[0] and r"\textbf{" not in rows[1]
+    assert len(rows) == len(M.SCULPT_BOOT_WPS) and not any(r"\textbf{" in r for r in rows)
     assert rows[0].split(" & ")[1:4] == ["1.22", "0.30", "0.10"]
     doc["differences"]["17-188"]["eps_s=0.5"]["distance"]["sigma"] = 0.003 / math.sqrt(3)
     with pytest.raises(SystemExit, match="hypot"):
@@ -1698,7 +1722,7 @@ def test_the_results_book_is_the_gallery_placement_and_boxes_only_provisional_it
     assert r"\label{fig:F11}" in book and r"\label{tab:mass}" in book and "% figure FJ-ctrl" not in book
     assert r"\pending{x}" in book and book.count("fbox") == 1             # the table as it is, F11 a box
     assert book.index("% figure F1\n") < book.index("% tables/mlst_jetclass.tex") < book.index(r"{A\arabic{figure}}")
-    assert r"\renewcommand{\thetable}{\arabic{table}b}" in book and "externaldocument" not in book
+    assert r"\arabic{table}b}" not in book and "externaldocument" not in book     # no 2a/2b (PI 2026-11-12)
     with pytest.raises(SystemExit, match="results_book.aux"):
         B.build(pages, "supplement")
     (tmp_path / "results_book.aux").write_text("")
@@ -1822,3 +1846,61 @@ def test_the_hidden_layer_rows_sit_at_the_foot_of_the_nonlinear_table_first_bloc
     cells = row.rstrip(" \\").split(" & ")
     assert len(cells) == 12 and cells[2:8] == ["--"] * 6 and cells[10:] == ["--"] * 2
     assert "%SPLIT%" not in t.split("512-unit hidden layer")[0].split("class token")[-1]
+
+
+# ------------------------------------------------------------------ PI 2026-11-12: the paper's tables
+def test_the_paper_tables_pool_the_random_partitions_after_the_flavor_rows():
+    assert M._paper_rows(M.MAIN + M.MASS + M.RAND + M.FLAV + (M.INIT,)) == M.MAIN + M.MASS + M.FLAV + (M.RAND_POOLED, M.INIT)
+    assert M._paper_rows(M.MAIN + M.RAND + (M.INIT,)) == M.MAIN + (M.RAND_POOLED, M.INIT)
+    assert M._paper_rows(M.MAIN) == M.MAIN
+    assert M.LABEL[M.RAND_POOLED] == "random partitions"
+
+
+@pytest.mark.skipif(not (DATA / "index.json").exists(), reason="no pulled data")
+def test_the_probe_and_pair_tables_of_the_paper_print_no_ratio_column():
+    runs = M._pooled(M._paper(ROOT))
+    fits, _ = M.V4.load_fits(DATA)
+    t = M.table_probes(fits, runs, MT.fmt_pm, ("L188", M.RAND_POOLED), rho=False)
+    assert r"\rho" not in t and r"\multicolumn{5}{c}{JetClass-II}" in t and M.LABEL[M.RAND_POOLED] + " & " in t
+    p = M.table_pairs({}, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", M.RAND_POOLED), rho=False)
+    assert r"\rho" not in p
+    pooled = next(ln for ln in p.splitlines() if ln.startswith(M.LABEL[M.RAND_POOLED] + " & ")).split(" & ")
+    # X->ee vs mumu: random partitions 1, 2 and 4 merge it, 3 and 5 keep it apart; the QCD pairs: all five merge them
+    keys = [k for k, *_ in M.PAIRS]
+    assert M.POOL_MARK in pooled[1 + keys.index("ee_vs_mm")] and r"$^{\dagger}$" in pooled[1 + keys.index("qcd_bb_vs_cc")]
+
+
+def test_both_resonance_tables_have_the_same_rows_and_the_rejection_table_shows_both_from_scratch_signals():
+    runs = M._paper(ROOT)
+    end = lambda r30: {"r50": r30 / 3, "r30": r30}      # noqa: E731
+    scr = {"xbb": [end(900.0), end(950.0), end(1000.0)], "xbs": [end(600.0), end(610.0), end(620.0)]}
+    t = M.table_xbx_rej({}, scr, runs, M.TAB)
+    names = [ln.split(" & ")[0] for ln in t.splitlines() if " & " in ln and not ln.startswith((" ", "&"))]
+    XR = _load("xbx_report_rows_t", "experiments/XBS/xbx_report.py")
+    assert names == [M.LABEL[r] for r in XR.ROWS] + [M.SCRATCH_LABEL] and tuple(XR.ROWS) == M.XBX_ROWS
+    row = next(ln for ln in t.splitlines() if ln.startswith(M.SCRATCH_LABEL)).rstrip(r" \\").split(" & ")
+    assert row[3:5] == ["--", "--"] and row[7:9] == ["--", "--"]          # direct and closest node: none
+    assert "--" not in row[1:3] and "--" not in row[5:7]                     # transfer: both signals
+    assert "--" not in M.table_xbx_rej({}, {"xbs": scr["xbs"]}, runs, M.TAB).splitlines()[-3].split(" & ")[5]
+    assert all(c == "--" for c in M.table_xbx_rej({}, {"xbs": scr["xbs"]}, runs, M.TAB).splitlines()[-3]
+               .rstrip(r" \\").split(" & ")[1:3])                           # no X->bb from scratch yet: dashes
+
+
+@pytest.mark.skipif(not (DATA / "index.json").exists(), reason="no pulled data")
+def test_the_summary_table_holds_exactly_the_values_of_figs_2_and_3():
+    """tab:summary reads every run's value as Figs. 2 and 3 do (paper_figures._f2_probe, _f2_ft, scratch_series)."""
+    P = _load("paper_figures_summary_t", "experiments/FIGS/paper_figures.py")
+    I = P.inputs(M)
+    runs = M._pooled(M._paper(ROOT))
+    chosen, _ = M.chosen_substitutions(I["fill"], runs)
+    assert tuple((k, n, ds, met) for k, n, ds, met, *_ in P.F2_PANELS) == M.SUMMARY_PANELS
+    for key, n, ds, met in M.SUMMARY_PANELS:
+        a, b = P._f2_probe(M, I["fits"], I["fill"], chosen, ds, met), M.summary_probe(I["fits"], I["fill"], chosen, ds, met)
+        c, d = P._f2_ft(M, I["per"], key, n, met), M.summary_ft(I["per"], key, n, met)
+        for arm in M.MAIN + M.FLAV + (M.RAND_POOLED, M.INIT):
+            assert [a(m) for m in runs[arm]] == [b(m) for m in runs[arm]]
+            if arm != M.INIT:
+                assert [c(m) for m in runs[arm]] == [d(m) for m in runs[arm]]
+        assert P.scratch_series(M, I["per"], key, met)[n] == [r[met] for r in I["per"][key][M.SCRATCH][n]]
+    t = M.table_summary(I["fits"], I["fill"], chosen, I["per"], M._paper(ROOT), M.TAB)
+    assert t.count(M.LABEL[M.RAND_POOLED]) == 2 and M.SCRATCH_LABEL in t and r"\rho" not in t and r"\textbf" not in t
