@@ -194,7 +194,7 @@ def build():
     y0 = yt - 1.5
     # input: the particles of one jet (tracks and energy deposits; no detector hits)
     jet(1.35, y0 - 1.0, 1.95, [(-0.23, 5, 0.045, 0.0), (0.23, 5, 0.045, 0.0)], half=27, seed=12, lw=0.3, hits=False)
-    ax.text(1.35, y0 + 1.13, "Jet", ha="center", va="center", fontsize=FS)
+    ax.text(1.35, y0 + 1.13, "JetClass-II jet", ha="center", va="center", fontsize=FS)
     arrow((2.65, y0), (3.3, y0))
     xb0, wb = 3.35, 1.0                      # the network that is reused
     block(xb0, y0 - 1.0, wb, 2.0, "Sophon's\nnetwork", rot=90)      # the tables' name for it
