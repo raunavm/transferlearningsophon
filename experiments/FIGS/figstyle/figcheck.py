@@ -51,6 +51,8 @@ MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.1, {"F3-app": 5.0, "F3-ft": 5.0, "F3-app2": 4.
                                      # Figs. 2 and 3 as dot plots: the row labels take the left 4 cm (PI 2026-11-11)
                                      "F2a": 5.0, "F2b": 5.0}
 MIN_PT, ASPECT, PAD_IN, DPI = 8.0, (0.7, 1.3), 0.1, 300
+# Figs. 2 and 3: four task rows of two panels on one page (PI 2026-11-12), so each panel is wider than it is high
+ASPECT_OF = {"F2a": (0.55, 1.3), "F2b": (0.55, 1.3)}
 BANNED = [(re.compile(p), why) for p, why in (
     (r"\bto\s+(ee|mu|mumu|bb|cc|qq|bs|bc|b\b)", "plain 'to' for an arrow"), (r"\bmu\b", "plain 'mu'"),
     (r"\b(bb|cc|qq|mumu)\b(?![\u0304\u2032])", "plain parton pair"), (r"->", "ASCII arrow"), (r"LOOK:", "internal note"),
@@ -229,7 +231,8 @@ def check(fig, name: str, print_cm: float, min_panel: float) -> dict:
         where = ax.get_title() or f"axes at ({b.x0:.0f}, {b.y0:.0f})"
         if w < min_panel - 0.05:
             found["panel"].append(f"{where!r}: {w:.1f} cm wide (< {min_panel})")
-        if ax not in exempt and not ASPECT[0] <= h / w <= ASPECT[1]:
+        lo, hi = ASPECT_OF.get(name, ASPECT)
+        if ax not in exempt and not lo <= h / w <= hi:
             found["panel"].append(f"{where!r}: height/width {h / w:.2f} ({w:.1f} x {h:.1f} cm)")
     texts = drawn_texts(fig, r)
     found["page"] = []
