@@ -237,8 +237,8 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
     """panels: (models, pair key, title), up to four in a 2x2, each model a solid curve in its colour. X->ee vs X->mumu
     of the linear probes is read from every test jet of the pair (pairs_sib2) where that exists. Every panel has one
     y range, from 1 to above the highest curve (PI 2026-11-05, 2026-11-11), and one x range fitted to the curves; three
-    panels go in one row. A model whose runs keep fewer than 20 background jets at every efficiency is named in the panel
-    as complete separation. One legend above the panels, off the curves, for every model drawn as a curve."""
+    panels go in one row. A model whose runs keep fewer than 20 background jets at every efficiency has no curve
+    (its caption says so; no text in a panel, PI 2026-11-12). One legend above the panels, off the curves, for every model drawn as a curve."""
     docs = _family(family)
     order = [S.LEGEND[a] for a in S.LEVELS + tuple(S.CONTROLS)]
     shown = {a for rows, *_ in panels for a in rows}
@@ -256,20 +256,12 @@ def _pairs(path: pathlib.Path, family: str, panels: list, heading: str) -> None:
     handles = {}
     for ax, (rows, key, name) in zip(axes.flat, panels):
         d = ROC["pairs_sib2"] if family == "pairs" and key == "ee_vs_mm" and ROC.get("pairs_sib2") else docs
-        separated = []
         for a in rows:
             s = mean_over_runs(d, RUNS[a], key)
             _plot(ax, s, **S.look(a), linewidth=S.LW_CURVE, label=S.LEGEND[a])
-            if s is not None and len(s[0]) < 2:
-                separated.append(S.LEGEND[a])
-            elif s is not None:          # a legend entry only for a curve drawn in some panel
+            if s is not None and len(s[0]) >= 2:     # a legend entry only for a curve drawn in some panel; a network
+                # that separates a pair completely has no curve there, and the caption says so (PI 2026-11-12)
                 handles.setdefault(S.LEGEND[a], Line2D([], [], **S.look(a), linewidth=S.LW_CURVE, label=S.LEGEND[a]))
-        if separated:
-            separated.sort(key=order.index)
-            words = (" and ".join(w.removesuffix(" classes") for w in separated) + " classes"
-                     if all(w.endswith(" classes") for w in separated) else ", ".join(separated))
-            ax.text(0.93, 0.95, "Complete separation:\n" + words, transform=ax.transAxes, ha="right",
-                    va="top", fontsize=S.LEGEND_PT5)     # no frame, as the legends (style_v4)
         S.title(ax, name)
     drawn = [ax for ax in axes.flat if ax.lines]
     _y_range(drawn)
@@ -562,12 +554,12 @@ PAGES = [
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and "
                  "17 classes, trained and scored on three pairs of JetClass-II classes differing only in flavor "
                  "(signal first): (a) X→YY→bb̄qq vs cc̄qq, (b) X→ee vs μμ and (c) QCD bb̄ vs cc̄. Means over three "
-                 "pretraining runs. Curves end where fewer than 20 background jets remain; a network with no curve "
-                 "is named in its panel.",
+                 "pretraining runs. Curves end where fewer than 20 background jets remain; in (b) the networks "
+                 "pretrained with 188 and 162 classes separate the pair completely and have no curve.",
          differs="F4's (b) and (d) with QCD bb̄ vs cc̄ (PI, 2026-11-08); as F4-mech otherwise, the fourth cell empty.",
          data_note="X→ee vs X→μμ is read from every test jet of the pair (pairs_sib2), so a curve can reach a rejection "
                    "of 6,442; the 188- and 162-class models keep fewer than 20 X→μμ jets at every efficiency and are "
-                   "named as complete separation.",
+                   "said in the caption to separate completely.",
          draw=draw_f4_other),
     Page(id="F6", title="Benchmarks after fine-tuning",
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
