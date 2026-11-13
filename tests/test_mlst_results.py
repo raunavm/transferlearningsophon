@@ -1201,7 +1201,8 @@ def test_the_ee_mumu_probe_joins_the_v4_pairs_and_gives_its_macros(tmp_path):
     # no ratio to a perfect separation: the pair's group has no rho column
     assert r"\multicolumn{1}{c}{$X\to ee$ vs $\mu\mu$}" in t and t.count(r"\multicolumn{2}") == len(M.PAIRS) - 1
     assert r"\Kmid{} classes & " in t and r"0.9600$^{\dagger}$ & " in t
-    assert M.ZERO_NOTE and M.ZERO_NOTE in M._float("pairs", t, True, fill={"__ZERO__": M.zero_note(fits, runs)})
+    # the ratio column and its note live in the supplement's copy (PI 2026-11-12: no ratio column in the paper)
+    assert M.ZERO_NOTE and M.ZERO_NOTE in M._float("pairs_full", t, True, fill={"__ZERO__": M.zero_note(fits, runs)})
     # the comparisons the text quotes: a dash and words, never a division by zero
     em = _PEm()
     M.comparisons(em, fits, {**{a: [] for a in M.ALL_ROWS}, **runs, **{a: [m] for a, m in rand.items()}},
@@ -1254,7 +1255,8 @@ def test_the_new_paper_macros_wait_for_their_inputs_and_the_captions_use_the_met
     assert not any("epsilon" in cap for _, cap in M.CAPTIONS.values())
     assert "eq:resolution" in M.CAPTIONS["mass"][1] and r"m_{\mathrm{pred}}" not in M.CAPTIONS["mass"][1]
     cap = {k: c for k, (_, c) in M.CAPTIONS.items()}
-    assert "eq:discr" in cap["jetclass"] and "p_c" not in cap["jetclass"] and r"1-g_{\mathrm{QCD}}" in cap["sculpt"]
+    # the per-class rejections (and the discriminant they cut on) are in the appendix table (PI 2026-11-12)
+    assert "eq:discr" in cap["jetclass_rej"] and "p_c" not in cap["jetclass_rej"] and r"1-g_{\mathrm{QCD}}" in cap["sculpt"]
     # the blank-bin sentence with \MlstMassMinJets fills __BLANK__ when the table is written (bc9ad07)
     assert r"\MlstMassMinJets" in (ROOT / "paper/journal/tables/mlst_mass_detail.tex").read_text()
     assert "__BLANK__" in cap["mass_detail"] and all(
@@ -1423,7 +1425,7 @@ def test_the_pair_table_gives_the_random_network_both_ways_without_a_ratio():
         init = next(ln for ln in part.splitlines() if ln.startswith(M.LABEL[M.INIT] + " & "))
         bn = next(ln for ln in part.splitlines() if ln.startswith(M.LABEL[M.INIT_BN] + " & "))
         assert init.split(" & ")[1] == M._cell([0.6 + 0.01 * k for k in range(3)], 3, MT.fmt_pm)
-        assert bn.split(" & ")[1] == M._cell([0.7] * 3, 3, MT.fmt_pm)
+        assert bn.split(" & ")[1] == M.V4.tok("o", 0.7) + M.SAME_AUC      # identical runs: the value once, marked
         assert all(c.strip(" \\") == "--" for c in init.split(" & ")[2::2] + bn.split(" & ")[2::2])
 
 

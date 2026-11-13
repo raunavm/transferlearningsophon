@@ -805,9 +805,9 @@ SEP_FLOOR = 1e-4    # below this 1 - AUC (AUC 1.0000 at four decimals) no ratio 
 # head sculpting, scripts/build_head_jobs.py --ft-head)
 PAIRS_FT = "curves_v2/pairs_ft"
 SUMMARY_LABEL_CM = 0       # tab:summary upright (PI 2026-11-12), its row labels on one line
-BENCH_TOP_LABEL_CM = 2.8    # the top-tagging table's row labels wrap at this width (LaTeX: 2.9 cm is 2 pt too wide), so
+BENCH_TOP_LABEL_CM = 3.8    # the top-tagging table's row labels wrap at this width (LaTeX: 2.9 cm is 2 pt too wide), so
                             # that it stands upright in one block
-BENCH_QG_LABEL_CM = 2.4     # the same for quark/gluon on Pythia
+BENCH_QG_LABEL_CM = 2.9     # the same for quark/gluon on Pythia
 PAIRS_LABEL_CM = 4.6        # the pair table's row labels wrap at this width and its blocks may be shrunk by
                             # SHRINK_OK, so that two pairs fit a block
 FT_SCRATCH_MODELS = ("scratch-s1", "scratch-s2", "scratch-s3")
@@ -3355,7 +3355,7 @@ def partrepro_note() -> str:
     return (r"ParT's top-tagging training script, unchanged, on our cluster gives $R_{30}$ of \MlstPartreproRthirtyPart{} "
             "(published " + V4._lit_cell(lit["r30"]) + r"); with Sophon's output head, \MlstPartreproRthirtyHead{}; "
             r"with the head and Sophon's jet-$p_{\mathrm{T}}$ rescaling, \MlstPartreproRthirtyRescale{} (one run each; "
-            r"our network from scratch, which uses the rescaling, \MlstFtTopRthirtyScratch{}); "
+            r"our from-scratch row uses the rescaling); "
             r"table~\ref{tab:partrepro}.")
 
 
@@ -3596,8 +3596,12 @@ def table_summary(fits, fill, chosen, per, runs, fmt_pm) -> str:
            r" & \multicolumn{2}{c}{accuracy} & \multicolumn{2}{c}{$R_{30}$} \\",
            r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}",
            r" & JetClass-II & JetClass & top & quark/gluon \\", r"\midrule"]
-    out += block(probe, "linear probe on the frozen features", [f"{LABEL[INIT]} & " + " & ".join(cells(INIT, probe)) + r" \\"])
-    out += [r"\midrule"] + block(ft, "fine-tuned", [f"{SCRATCH_LABEL} & " + " & ".join(scratch) + r" \\"])
+    # each block at its own precision per column (uniform_columns), so a fine-tuned value prints as in the task tables
+    # (tab:jetclass, tab:benchtop, tab:benchqg) and not at the probes' finer place
+    out += uniform_columns("\n".join(block(probe, "linear probe on the frozen features",
+                                           [f"{LABEL[INIT]} & " + " & ".join(cells(INIT, probe)) + r" \\"]))).split("\n")
+    out += [r"\midrule"] + uniform_columns("\n".join(block(ft, "fine-tuned", [f"{SCRATCH_LABEL} & " + " & ".join(scratch)
+                                                                               + r" \\"]))).split("\n")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -4450,9 +4454,23 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
 MODES = {"probes": "lp", "bn": "lp", "balance": "lp", "fill": "lp", "fill_main": "lp",
          "jetclass_probe": "lp", "ft_rej": "ft", "jetclass_all": "ft", "jetclass_nbkg": "ft", "rand_prong": "ft",
          "lrsweep": "ft", "probes_n": "lp", "ft": "ft", "per_class": "lp", "mlp": "mlp", "mass": "mlp",
-         "bench_top": "ft", "bench_qg": "ft", "jetclass": "ft", "jc1_class_auc": ["ft", "lp"],
+         "jc1_class_auc": ["ft", "lp"],
          "qcdhf": "lp", "coarse": "lp", "probes_full": "lp", "fill_full": "lp", "qcdhf_full": "lp", "coarse_full": "lp",
-         "bench_qg_herwig": "ft", "jetclass_rej": "ft"}
+         }
+# the task tables (PI 2026-11-12 cut): rows name the network, an italic "fine-tuned" heading after the from-scratch row
+# names the mode (rows name the starting network, headings the downstream mode, PI 2026-11-07), so no row carries
+# "(f.t.)" and the row labels fit the upright tables
+FT_HEADED = ("jetclass", "jetclass_rej", "bench_top", "bench_qg", "bench_qg_herwig")
+
+
+def _ft_heading(tab: str) -> str:
+    """The italic "fine-tuned" heading under the from-scratch row of a task table."""
+    out = []
+    for ln in tab.split("\n"):
+        out.append(ln)
+        if ln.lstrip().startswith(SCRATCH_LABEL + " &"):
+            out.append(rf"\multicolumn{{{len(_depth0_split(ln, '&'))}}}{{l}}{{\textit{{fine-tuned}}}} \\")
+    return "\n".join(out)
 
 
 TOKEN = re.compile(re.escape(V4.TOK_OPEN) + r"(\w) ([^" + V4.TOK_CLOSE + r"]*)" + re.escape(V4.TOK_CLOSE))
@@ -4632,7 +4650,8 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list) -> str:
 
 
 def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, notes: list | None = None,
-           label_cm: float = NO_WRAP, budget: float = PORTRAIT_CM, portrait_label_cm: float | None = None) -> str:
+           label_cm: float = NO_WRAP, budget: float = PORTRAIT_CM, portrait_label_cm: float | None = None,
+           colsep_pt: float = 4.0) -> str:
     """A generated table (PI 2026-11-11): at the full text width; a tabular wider than the text block is set in
     landscape rather than cut into narrow blocks or shrunk; a row label never wraps; nothing is scaled. Only a
     tabular wider than the landscape block is cut (split_wide), into blocks of that one width. label_cm and budget
@@ -4657,13 +4676,15 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
         cap = cap.replace(" $^{*}$: a probe that did not converge.", "")
     parts = [_labels(uniform_columns(b.strip()), _mode_word(key, k)) for k, b in enumerate(body.split("%SPLIT%"))]
     parts = [re.sub(r"\\mbox\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", t) if "begin{tabular}" in t else t for t in parts]
+    if key in FT_HEADED:
+        parts = [_ft_heading(t) for t in parts]
     cap = _define_tags(cap, key)
     tail = [rf"\par\smallskip{{\footnotesize {n}}}" for n in notes or []]
     if portrait_label_cm is not None:
         lab = (r">{\raggedright\arraybackslash}p{" + f"{portrait_label_cm:.1f}" + "cm}") if portrait_label_cm else "l"
         boxes = [_stretch(re.sub(r"^(\s*\\begin\{tabular\}\{)l", lambda m: m.group(1) + lab, t, count=1)) for t in parts]
         # the column padding 4 pt (LaTeX's default 6 pt): the type stays at the tables' size, nothing is scaled
-        return "\n".join([rf"\begin{{{env}}}[t]", r"\centering", r"\small", r"\setlength{\tabcolsep}{4pt}",
+        return "\n".join([rf"\begin{{{env}}}[t]", r"\centering", r"\small", rf"\setlength{{\tabcolsep}}{{{colsep_pt:g}pt}}",
                           rf"\caption{{{cap}}}", rf"\label{{{label}}}",
                           "\n\\par\\bigskip\n".join(boxes), *tail, rf"\end{{{env}}}", ""])
     cut = {o: [t.strip() for b in parts for t in split_wide(b, w, NO_WRAP)]
@@ -4959,9 +4980,11 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         # PI 2026-11-12: top upright in one block (the long row labels wrap); quark/gluon on Pythia only, Herwig apart
         out["tables/mlst_bench_top.tex"] = _float("bench_top", V4.table_bench(
             "top", per, runs, MAIN, LABEL, SCRATCH, TAB, TAB.two, kin=(LABEL["KIN"], KIN_INIT)),
-            True, notes=[partrepro_note()], portrait_label_cm=BENCH_TOP_LABEL_CM)
+            True, notes=[partrepro_note()], portrait_label_cm=BENCH_TOP_LABEL_CM,
+            colsep_pt=3.0)
         out["tables/mlst_bench_qg.tex"] = _float("bench_qg", V4.table_bench(
-            "qg", per, runs, MAIN, LABEL, SCRATCH, TAB, TAB.two), True, portrait_label_cm=BENCH_QG_LABEL_CM)
+            "qg", per, runs, MAIN, LABEL, SCRATCH, TAB, TAB.two), True, portrait_label_cm=BENCH_QG_LABEL_CM,
+            colsep_pt=3.0)     # upright, type unchanged: the column padding 3 pt
         out["tables/mlst_bench_qg_herwig.tex"] = _float("bench_qg_herwig", V4.table_bench_herwig(
             per, runs, MAIN, LABEL, SCRATCH, TAB, TAB.two))
         out["tables/mlst_summary.tex"] = _float("summary", table_summary(fits, fill, chosen, per, runs, TAB),

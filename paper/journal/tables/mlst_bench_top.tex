@@ -1,10 +1,10 @@
 \begin{table*}[t]
 \centering
 \small
-\setlength{\tabcolsep}{4pt}
-\caption{Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on the full top training set (\LitPartTopNTrainMillion{} million jets), beside published models: accuracy, AUC, the background rejections $R_{50}$ and $R_{30}$ ($1/\epsB$ at 50\% and 30\% signal efficiency) and the number of trainable parameters; (f.t.): fine-tuned. Ours: mean $\pm$ SD over the pretraining runs, three seeds from scratch; published uncertainties as given there.}
+\setlength{\tabcolsep}{3pt}
+\caption{Top tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on the full top training set (\LitPartTopNTrainMillion{} million jets), beside published models: accuracy, AUC, the background rejections $R_{50}$ and $R_{30}$ ($1/\epsB$ at 50\% and 30\% signal efficiency) and the number of trainable parameters. Ours: mean $\pm$ SD over the pretraining runs, three seeds from scratch; published uncertainties as given there.}
 \label{tab:benchtop}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}>{\raggedright\arraybackslash}p{2.8cm}ccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}>{\raggedright\arraybackslash}p{3.8cm}ccccc@{}}
 \toprule
  & \# params & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
@@ -18,12 +18,13 @@ OmniLearned-l~\cite{omnilearned} & 423\,M & 0.944 & 0.9880 & 688\,$\pm$\,9 & 3{,
 \midrule
 \multicolumn{6}{l}{\textit{this work}} \\
 from scratch & 2.21\,M & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 \\
-\Kfull{} classes (f.t.) & 2.21\,M & 0.9400\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
-\Kres{} classes (f.t.) & 2.21\,M & 0.9401\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
-\Kmid{} classes (f.t.) & 2.21\,M & 0.9402\,$\pm$\,0.0004 & 0.9861\,$\pm$\,0.0001 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
-\Kcoarse{} classes (f.t.) & 2.21\,M & 0.9398\,$\pm$\,0.0001 & 0.9859\,$\pm$\,0.0001 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
-\Kfull{} classes, kinematic inputs only (f.t.) & 2.21\,M & 0.9407 & 0.9862 & 443 & 1{,}800 \\
+\multicolumn{6}{l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 2.21\,M & 0.9400\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
+\Kres{} classes & 2.21\,M & 0.9401\,$\pm$\,0.0002 & 0.9861\,$\pm$\,0.0001 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
+\Kmid{} classes & 2.21\,M & 0.9402\,$\pm$\,0.0004 & 0.9861\,$\pm$\,0.0001 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
+\Kcoarse{} classes & 2.21\,M & 0.9398\,$\pm$\,0.0001 & 0.9859\,$\pm$\,0.0001 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
+\Kfull{} classes, kinematic inputs only & 2.21\,M & 0.9407 & 0.9862 & 443 & 1{,}800 \\
 \bottomrule
 \end{tabular*}
-\par\smallskip{\footnotesize ParT's top-tagging training script, unchanged, on our cluster gives $R_{30}$ of \MlstPartreproRthirtyPart{} (published 1{,}602\,$\pm$\,81); with Sophon's output head, \MlstPartreproRthirtyHead{}; with the head and Sophon's jet-$p_{\mathrm{T}}$ rescaling, \MlstPartreproRthirtyRescale{} (one run each; our network from scratch, which uses the rescaling, \MlstFtTopRthirtyScratch{}); table~\ref{tab:partrepro}.}
+\par\smallskip{\footnotesize ParT's top-tagging training script, unchanged, on our cluster gives $R_{30}$ of \MlstPartreproRthirtyPart{} (published 1{,}602\,$\pm$\,81); with Sophon's output head, \MlstPartreproRthirtyHead{}; with the head and Sophon's jet-$p_{\mathrm{T}}$ rescaling, \MlstPartreproRthirtyRescale{} (one run each; our from-scratch row uses the rescaling); table~\ref{tab:partrepro}.}
 \end{table*}

@@ -1,10 +1,10 @@
 \begin{table*}[t]
 \centering
 \small
-\setlength{\tabcolsep}{4pt}
-\caption{Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on the full training set (\LitQgTrainMillion{} million Pythia jets; particle type as five flags and the charge) and scored on Pythia jets, beside published models: accuracy, AUC, $1/\epsB$ at 50\% and 30\% quark efficiency and the number of trainable parameters; (f.t.): fine-tuned. Uncertainties as in table~\ref{tab:benchtop}; Herwig jets in table~\ref{tab:benchqgherwig}.}
+\setlength{\tabcolsep}{3pt}
+\caption{Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on the full training set (\LitQgTrainMillion{} million Pythia jets; particle type as five flags and the charge) and scored on Pythia jets, beside published models: accuracy, AUC, $1/\epsB$ at 50\% and 30\% quark efficiency and the number of trainable parameters. Uncertainties as in table~\ref{tab:benchtop}; Herwig jets in table~\ref{tab:benchqgherwig}.}
 \label{tab:benchqg}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}>{\raggedright\arraybackslash}p{2.4cm}ccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}>{\raggedright\arraybackslash}p{2.9cm}ccccc@{}}
 \toprule
  & \# params & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
@@ -19,10 +19,11 @@ OmniLearned-m~\cite{omnilearned} & 58\,M & 0.845 & 0.9162 & 43.2\,$\pm$\,0.1 & 1
 \midrule
 \multicolumn{6}{l}{\textit{this work}} \\
 from scratch & 2.21\,M & 0.8397\,$\pm$\,0.0007 & 0.9121\,$\pm$\,0.0002 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 \\
-\Kfull{} classes (f.t.) & 2.21\,M & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 \\
-\Kres{} classes (f.t.) & 2.21\,M & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 \\
-\Kmid{} classes (f.t.) & 2.21\,M & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 & 42.25\,$\pm$\,0.77 & 108.3\,$\pm$\,1.0 \\
-\Kcoarse{} classes (f.t.) & 2.21\,M & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 \\
+\multicolumn{6}{l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 2.21\,M & 0.8433\,$\pm$\,0.0002 & 0.9148\,$\pm$\,0.0001 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 \\
+\Kres{} classes & 2.21\,M & 0.8432\,$\pm$\,$<$0.0001 & 0.9148\,$\pm$\,0.0001 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 \\
+\Kmid{} classes & 2.21\,M & 0.8430\,$\pm$\,0.0005 & 0.9146\,$\pm$\,0.0003 & 42.25\,$\pm$\,0.77 & 108.3\,$\pm$\,1.0 \\
+\Kcoarse{} classes & 2.21\,M & 0.8427\,$\pm$\,0.0003 & 0.9144\,$\pm$\,$<$0.0001 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 \\
 \bottomrule
 \end{tabular*}
 \end{table*}
