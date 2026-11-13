@@ -26,6 +26,19 @@
        confusion matrix: argmax of the ten outputs, rows the true class in linear_probe_v2.JC1_CLASSES
        order, counts and each row normalised to one.
 
+  jc2ft  JetClass-II, fine-tuned on 1e6 class-balanced jets (round 5, PI 2026-11-13): the cell the paper reports
+       (<long-tree>/<init>/N1000000/s1 where it is DONE, else <tree>/<init>/N1000000/s1; from scratch
+       <scratch-tree>/scratch/N1000000/s<S>), its 188 logits on every jet of the class-balanced test set
+       (ft_curves.cell_scores "jc2b") and jet pT from the same extraction's features/observers.npz, so no row
+       map is needed. jc2's bins and block. jets_sha256 is recorded beside the linear probe's (--probe-dir).
+  jc1probe  JetClass, the frozen linear probe at 1e6 (probe_bal.py's <probs-root>/<model>/<ckpt>/jc1_N1000000.npz:
+       rows, y, p; ckpt best70; the random network init-s<k> at init and initbn-s<k> at init_bn of the folder
+       init-s<k>) on the 20 JetClass test files the extraction read
+       (build_linprobe_jobs.LIST_TEST1: two per class, in the order given). extract_v2.py streamed them through
+       one loader worker, fetch by files, no shuffling and no selection at test time, so stream row i is the
+       i-th jet of the files read in order. The files' labels must equal the extraction's label188.npy, and
+       the probe's labels its rows' labels, or the script stops. jc1's bins and block.
+
 A rejection is ft_curves.working_point's (eps_B interpolated on the ROC, capped at the background
 count, is_bound when under one background jet passes) with rel_stat = 1/sqrt(eps_B N_B), the Poisson
 spread of the passing count. Jets outside the edges are counted (n_outside), not binned. Every
@@ -36,6 +49,9 @@ skipped.
     python3 experiments/EVAL/perf_vs_pt.py jc2 --out-dir /data/results/eval/perf_vs_pt/jc2
     python3 experiments/EVAL/perf_vs_pt.py jc1 --out-dir /data/results/eval/perf_vs_pt/jc1 \\
         --confusion-out /data/results/eval/confusion_jc1
+    python3 experiments/EVAL/perf_vs_pt.py jc2ft --out-dir /data/results/eval/perf_vs_pt_v3/jc2_ft
+    python3 experiments/EVAL/perf_vs_pt.py jc1probe --out-dir /data/results/eval/perf_vs_pt_v3/jc1_probe \\
+        --test-files <the 20 JetClass test files, in the extraction's order>
 """
 from __future__ import annotations
 
@@ -74,6 +90,15 @@ EXTRACT_ROOT = EVAL / "v2_linprobe_bal"
 TEST_PARQUET = pathlib.Path("/data/finetune/jc2_bal/test.parquet")
 PROBE_FILE, CKPT = "jc2bal_N1000000.npz", "best70"
 JC1_TREE, JC1_N = pathlib.Path("/data/results/ft_v2/budget_long/leg2"), 1_000_000
+FT = pathlib.Path("/data/results/ft_v2")
+JC2FT_TREES = (FT / "budget_long" / "leg_jc2b", FT / "budget" / "leg_jc2b")   # the long budget where it ran
+JC2FT_SCRATCH = FT / "budget_long_fulldecay" / "leg_jc2b"                    # from scratch, the full schedule
+SCRATCH_SEEDS = (1, 2, 3)
+JC1_PROBE_FILE, JC1_EXTRACT_ROOT = "jc1_N1000000.npz", EVAL / "v2_linprobe"
+INIT_MODELS = ("init-s1", "init-s2", "init-s3")                             # the random network, checkpoint init
+# the random network with its BatchNorm statistics recomputed (checkpoint init_bn of the same folders), which the
+# figures draw as "random network" (mlst_results.INIT_BN_MODELS); both are binned
+INIT_BN_MODELS = ("initbn-s1", "initbn-s2", "initbn-s3")
 PREDICT_BATCH = 512          # weaver --predict --batch-size of the fine-tuning jobs (build_ft_budget_jobs.py)
 LABEL_MAP = REPO / "configs" / "labelmaps" / "rung_label_maps.v1.csv"
 BB_CC = ("label_X_bb", "label_X_cc")                        # signal, background
@@ -377,6 +402,127 @@ def run_jc1(a) -> None:
                          **confusion(p, y)})
 
 
+# ------------------------------------------------------------------ JetClass-II, fine-tuned
+
+def jc2ft_cells(models, trees, scratch_tree: pathlib.Path, n: int) -> list[tuple[str, pathlib.Path]]:
+    """[(model, cell)]: mtx-<init> from the first of trees whose cell is DONE, scratch-s<S> from scratch_tree;
+    FATAL for a model with no finished cell or a NaN loss."""
+    out = []
+    for m in models:
+        if m.startswith("scratch-s"):
+            cands = [scratch_tree / "scratch" / f"N{n}" / m.removeprefix("scratch-")]
+        else:
+            cands = [t / m.removeprefix("mtx-") / f"N{n}" / "s1" for t in trees]
+        cell = next((c for c in cands if (c / "DONE").exists()), None)
+        if cell is None:
+            raise SystemExit(f"FATAL: no finished JetClass-II cell of {m} among {[str(c) for c in cands]}")
+        if FC.BM.diverged(cell):
+            raise SystemExit(f"FATAL: {cell} trained to a NaN loss; not a result")
+        out.append((m, cell))
+    return out
+
+
+def jc2ft_inputs(cell: pathlib.Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+    """(probabilities, labels, pT, sources) of one cell: its 188 logits and labels (ft_curves.cell_scores) and the
+    jet pT the same extraction stored beside them."""
+    _, y, p, _ = FC.cell_scores(cell, "jc2b")
+    obs = cell / "features" / "observers.npz"
+    pt = np.load(obs)["jet_pt"].astype(np.float64)
+    if pt.shape != y.shape:
+        raise SystemExit(f"FATAL: {obs} holds {pt.size} jets, the logits {y.size}")
+    fd = cell / "features"
+    return p, y, pt, {str(fd / f): sha256(fd / f) for f in ("logits.npy", "label188.npy", "observers.npz")}
+
+
+def probe_sha(probe_dir) -> str | None:
+    """The jets_sha256 of the linear probe's files (one value, or FATAL), None without them."""
+    shas = {json.loads(f.read_text())["jets_sha256"] for f in sorted(probe_dir.glob("*.json"))} if probe_dir else set()
+    if len(shas) > 1:
+        raise SystemExit(f"FATAL: {probe_dir} holds files of different jets")
+    return next(iter(shas), None)
+
+
+def run_jc2ft(a) -> None:
+    names = native_names()
+    bb, cc = (names[n] for n in BB_CC)
+    models = a.models or paper_models() + [f"scratch-s{k}" for k in SCRATCH_SEEDS]
+    ref = probe_sha(a.probe_dir)
+    for model, cell in jc2ft_cells(models, a.trees, a.scratch_tree, JC1_N):
+        out = a.out_dir / f"{model}.json"
+        if out.exists():
+            print(f"{out} exists", flush=True)
+            continue
+        p, y, pt, src = jc2ft_inputs(cell)
+        sha = jets_sha(y, pt)
+        same_jets(a.out_dir, sha, model)
+        doc = {"task": "jc2", "model": model, "mode": "fine-tuned", "cell": str(cell), "n_train": JC1_N,
+               "test_set": "class-balanced JetClass-II test set", "pt": "reconstructed jet pT, GeV",
+               "bb_vs_cc": {"signal": BB_CC[0], "background": BB_CC[1], "discriminant": "p_bb / (p_bb + p_cc)"},
+               "n_jets": int(y.size), "jets_sha256": sha, "probe_jets_sha256": ref,
+               "same_jets_as_probe": None if ref is None else sha == ref, "sources": src, **provenance(),
+               **binned(p, y, pt, PT_EDGES["jc2"], jc2_block(bb, cc))}
+        write(out, doc)
+
+
+# ------------------------------------------------------------------ JetClass, the linear probe
+
+def file_stream(files) -> tuple[np.ndarray, np.ndarray]:
+    """(labels in JC1_CLASSES order, pT) of every jet of the files, read one after another in order."""
+    got = [read_test_file(f) for f in files]
+    return np.concatenate([g[0] for g in got]), np.concatenate([g[1] for g in got])
+
+
+def jc1probe_inputs(model: str, probs_root: pathlib.Path, extract_root: pathlib.Path, files, cache: dict):
+    """(probabilities, labels, pT, sources, checkpoint) of one model's probe, aligned or FATAL."""
+    folder, ck = ((model, "init") if model in INIT_MODELS else ("init" + model.removeprefix("initbn"), "init_bn")
+                  if model in INIT_BN_MODELS else (model, CKPT))
+    npz = probs_root / folder / ck / JC1_PROBE_FILE
+    ext = extract_root / folder / "jc1" / "test" / ck
+    for f in (npz, ext / "manifest.json", ext / "label188.npy", ext / "rows.npy"):
+        if not f.exists():
+            raise SystemExit(f"FATAL: no {f}")
+    man = json.loads((ext / "manifest.json").read_text())
+    cfg = REPO / man["data_config"]
+    if sha256(cfg) != man["data_config_sha256"]:
+        raise SystemExit(f"FATAL: {cfg} is not the data config {ext} was extracted with")
+    import yaml
+    if yaml.safe_load(cfg.read_text()).get("selection"):
+        raise SystemExit(f"FATAL: {cfg} has a selection; the row map assumes every jet of the files")
+    if man["n_test_files"] != len(files):
+        raise SystemExit(f"FATAL: {ext} read {man['n_test_files']} test files, --test-files names {len(files)}")
+    key = tuple(files)
+    if key not in cache:
+        cache[key] = (*file_stream(files), {f: sha256(pathlib.Path(f)) for f in files})
+    y_file, pt, fsha = cache[key]
+    y_ext = np.load(ext / "label188.npy").astype(np.int64)
+    ext_rows = np.load(ext / "rows.npy")
+    z = np.load(npz)
+    rows, y, p = z["rows"].astype(np.int64), z["y"].astype(np.int64), z["p"].astype(np.float32)
+    if not (man["n_stream"] == y_file.size == y_ext.size and np.array_equal(ext_rows, np.arange(y_ext.size))
+            and np.array_equal(y_ext, y_file) and rows.size == y.size == p.shape[0]
+            and rows.min() >= 0 and rows.max() < y_file.size and np.array_equal(y, y_file[rows])):
+        raise SystemExit(f"FATAL: {npz}, {ext} and the test files are not the same jets in the same order")
+    return p, y, pt[rows], {str(npz): sha256(npz), str(ext / "label188.npy"): sha256(ext / "label188.npy"), **fsha}, ck
+
+
+def run_jc1probe(a) -> None:
+    cache = {}
+    for model in a.models or paper_models() + list(INIT_MODELS) + list(INIT_BN_MODELS):
+        out = a.out_dir / f"{model}.json"
+        if out.exists():
+            print(f"{out} exists", flush=True)
+            continue
+        p, y, pt, src, ck = jc1probe_inputs(model, a.probs_root, a.extract_root, a.test_files, cache)
+        sha = jets_sha(y, pt)
+        same_jets(a.out_dir, sha, model)
+        write(out, {"task": "jc1", "model": model, "mode": "linear probe", "checkpoint": ck,
+                    "probe": "linear, 1e6 (probe_bal.py)", "n_train": JC1_N, "n_jets": int(y.size),
+                    "classes": list(LP.JC1_CLASSES), "jets_sha256": sha, "sources": src, **provenance(),
+                    "pt": "reconstructed jet pT, GeV",
+                    "discriminant": "p_S / (p_S + p_QCD), p the probe's ten class probabilities",
+                    **binned(p, y, pt, PT_EDGES["jc1"], jc1_block)})
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="task", required=True)
@@ -390,10 +536,27 @@ def main(argv=None) -> int:
     j1.add_argument("--out-dir", required=True, type=pathlib.Path)
     j1.add_argument("--confusion-out", required=True, type=pathlib.Path)
     j1.add_argument("--tree", type=pathlib.Path, default=JC1_TREE)
+    f2 = sub.add_parser("jc2ft")
+    f2.add_argument("--out-dir", required=True, type=pathlib.Path)
+    f2.add_argument("--models", nargs="+", help="default: configs/arms/v2_paper_runs.txt and scratch-s1..3")
+    f2.add_argument("--trees", nargs="+", type=pathlib.Path, default=list(JC2FT_TREES),
+                    help="the pretrained cells' trees, the first with a DONE cell wins")
+    f2.add_argument("--scratch-tree", type=pathlib.Path, default=JC2FT_SCRATCH)
+    f2.add_argument("--probe-dir", type=pathlib.Path, help="the linear probe's jc2 files, whose jets_sha256 is recorded")
+    p1 = sub.add_parser("jc1probe")
+    p1.add_argument("--out-dir", required=True, type=pathlib.Path)
+    p1.add_argument("--test-files", required=True, nargs="+", help="the extraction's JetClass test files, in its order")
+    p1.add_argument("--models", nargs="+", help="default: configs/arms/v2_paper_runs.txt, init-s1..3, initbn-s1..3")
+    p1.add_argument("--probs-root", type=pathlib.Path, default=PROBS_ROOT)
+    p1.add_argument("--extract-root", type=pathlib.Path, default=JC1_EXTRACT_ROOT)
     a = ap.parse_args(argv)
     a.out_dir.mkdir(parents=True, exist_ok=True)
     if a.task == "jc2":
         run_jc2(a)
+    elif a.task == "jc2ft":
+        run_jc2ft(a)
+    elif a.task == "jc1probe":
+        run_jc1probe(a)
     else:
         a.confusion_out.mkdir(parents=True, exist_ok=True)
         run_jc1(a)

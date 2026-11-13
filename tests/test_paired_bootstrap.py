@@ -118,6 +118,65 @@ def test_class_probabilities_give_the_macro_and_per_class_auc(tmp_path):
         assert m[f"class_{k}"]["one_minus_auc"] == pytest.approx(1 - per[k], abs=1e-12)
 
 
+
+def test_r30_is_ft_curves_rejection_on_the_resample_ties_included():
+    """roc_points' R30 (sklearn's ROC, eps_B interpolated at 30% signal efficiency) on the repeated jets."""
+    from sklearn.metrics import roc_curve
+    y, s = _binary(1500, seed=4)
+    s = np.round(s, 1)                               # many ties
+
+    def r30(yy, ss):
+        fpr, tpr, _ = roc_curve(yy, ss)
+        eb = np.interp(0.3, tpr, fpr)
+        return min(1 / eb, (yy == 0).sum()) if eb > 0 else (yy == 0).sum()
+    sc = PB.RejScorer(y == 1, s, 0.3)
+    assert sc() == pytest.approx(r30(y, s), rel=1e-12)
+    c = np.random.default_rng(1).integers(0, 4, (3, y.size)).astype(np.uint8)
+    for k in range(3):
+        rep = np.repeat(np.arange(y.size), c[k])
+        assert sc(c[k]) == pytest.approx(r30(y[rep], s[rep]), rel=1e-12)
+
+
+def test_headline_metrics_and_group_differences(tmp_path):
+    y, s = _binary(4000, seed=5)
+    rng = np.random.default_rng(6)
+    m = {f"a{k}": _npz(tmp_path / f"a{k}.npz", y, s=(s + 0.1 * rng.normal(size=y.size)).astype(np.float32))
+         for k in (1, 2, 3)}
+    m |= {f"b{k}": _npz(tmp_path / f"b{k}.npz", y, s=(s + 2.0 * rng.normal(size=y.size)).astype(np.float32))
+          for k in (1, 2)}
+    out = tmp_path / "boot.json"
+    PB.main([x for v in m.values() for x in ("--model", v)] + ["--headline", "--pair", "b1/a1", "--b", "40",
+             "--diff", "b-a=b1,b2/a1,a2,a3", "--diff", "same=a1/a1", "--out", str(out)])
+    d = json.loads(out.read_text())
+    assert set(d["models"]["a1"]) == {"input", "auc", "r30"} and d["models"]["a1"]["r30"]["sd"] > 0
+    assert set(d["pairs"]["b1/a1"]) == {"auc"}                   # R30 is never a ratio of 1 - AUC
+    r = d["diffs"]["b-a"]
+    for k, q in (("auc", "one_minus_auc"), ("r30", "r30")):
+        va = [d["models"][f"b{i}"][k]["value" if k == "r30" else "one_minus_auc"] for i in (1, 2)]
+        vb = [d["models"][f"a{i}"][k]["value" if k == "r30" else "one_minus_auc"] for i in (1, 2, 3)]
+        assert r[k]["quantity"] == q and r[k]["delta"] == pytest.approx(np.mean(va) - np.mean(vb))
+        assert r[k]["sd_a"] == pytest.approx(np.std(va, ddof=1)) and r[k]["sd_b"] == pytest.approx(np.std(vb, ddof=1))
+        assert r[k]["sigma"] == pytest.approx(np.sqrt(r[k]["sd_a"] ** 2 + r[k]["sd_b"] ** 2 + r[k]["boot_sd"] ** 2))
+        assert r[k]["boot_sd"] > 0 and (r[k]["n_a"], r[k]["n_b"]) == (2, 3)
+    assert r["r30"]["delta"] < 0 and r["auc"]["delta"] > 0 and r["auc"]["pass"]
+    one = d["diffs"]["same"]["auc"]                          # one model a side: no run SD, so no claim
+    assert one["delta"] == one["boot_sd"] == 0.0 and one["sigma"] is None and one["pass"] is False
+    with pytest.raises(SystemExit, match="not models"):
+        PB.main(["--model", m["a1"], "--diff", "x=a1/zz", "--out", str(tmp_path / "x.json")])
+
+
+def test_class_probabilities_get_the_argmax_accuracy(tmp_path):
+    rng = np.random.default_rng(7)
+    y = rng.integers(0, 4, 3000)
+    z = rng.normal(size=(y.size, 4))
+    z[np.arange(y.size), y] += 1.0
+    p = np.exp(z) / np.exp(z).sum(1, keepdims=True)
+    c = PB.counts(y, 5, 1)
+    (v, rep), = PB.headline(y, p, c).values()
+    assert v == pytest.approx(np.mean(p.argmax(1) == y))
+    k = np.repeat(np.arange(y.size), c[2])
+    assert rep[2] == pytest.approx(np.mean(p[k].argmax(1) == y[k]))
+
 def _top_cell(tmp_path, y, logits):
     fd = tmp_path / "N1000" / "s1" / "features"
     fd.mkdir(parents=True)
@@ -153,6 +212,9 @@ def test_jetclass_cells_are_bootstrapped_on_the_tables_jets(tmp_path, monkeypatc
     rows, yy, pp = PB.load(tmp_path, "jc1")
     assert ft.JC1_AUC_STRIDE == 4 and np.array_equal(rows, np.arange(0, y.size, 4))
     assert np.array_equal(yy, y[::4]) and np.allclose(pp, p[::4])
+
+    rows, yy, pp = PB.load(tmp_path, "jc1_all")                # the read-out's macro AUC: every jet
+    assert np.array_equal(rows, np.arange(y.size)) and np.array_equal(yy, y) and np.allclose(pp, p)
 
 
 def test_jetclass2_budget_cells_are_the_softmax_of_their_188_logits_on_every_jet(tmp_path):
@@ -229,3 +291,30 @@ def test_the_bootstrap_specs_cover_every_task_and_size():
     assert "--pair mtx-flavf1r-s2/init-s2" in probe
     for body, out in ((ft, "ft"), (jc2, "jc2"), (probe, "probe")):
         assert f"mv ${{TMP}} {BC.BOOT}/{out}" in body
+
+
+# ------------------------------------------------------------------ the decision-L3 job (scripts/build_boot_l3_jobs.py)
+
+def test_the_l3_job_covers_the_three_new_pairs_in_every_mode():
+    import yaml
+    BL = _load("build_boot_l3_jobs", "scripts/build_boot_l3_jobs.py")
+    d = yaml.safe_load(BL.spec("ab" * 20, 89))
+    c = d["spec"]["template"]["spec"]["containers"][0]
+    a = c["args"][0]
+    assert d["metadata"]["name"] == "boot-l3-raunav" and d["spec"]["backoffLimit"] == 1
+    assert d["spec"]["completionMode"] == "Indexed" and d["spec"]["completions"] == len(BL.parts()) == 8
+    assert "nvidia.com/gpu" not in c["resources"]["limits"] and "configmap" not in a.lower()
+    assert f"git -C tls checkout -q {'ab' * 20}" in a and '[ "${USED}" -le 89 ]' in a
+    for name, (x, y) in (("162-188", ("l162", "l188")), ("162mass-162", ("l162mass", "l162")),
+                         ("17mass-17", ("r16q1mass", "r16q1"))):
+        assert BL.DIFFS[name] == (x, y)
+        assert f"--diff {name}=" + ",".join(f"mtx-{x}-s{k}" for k in BL.ARMS[x]) + "/" in a
+    # every output under the new folder, skipped when present; the ratios and the earlier outputs untouched
+    outs = [w for w in a.split() if w.startswith("/data/results/bootstrap/l3/")]
+    assert outs and all(w.startswith(BL.OUT + "/") for w in outs) and "--pair" not in a
+    assert a.count("paired_bootstrap.py") == a.count("--headline") == 10
+    for task in ("jc2b", "jc1_all", "top", "qg", "qg_herwig"):
+        assert f"--task {task} " in a
+    assert "best70.itop4/top_N1200000.npz" in a and "best70.nqg/qg_herwig_N1600000.npz" in a
+    assert "sculpting_boot.py" in a and f"--out {BL.OUT}/sculpting_boot_l3.json" in a
+    assert "jc1_acc_boot.py --root /data/results/ft_v2/budget_long --n 1000000" in a

@@ -26,6 +26,10 @@ each working point and quantity (distance, jsd), d_i the nominal paired differen
   sigma_run_se, z_run_se, pass_run_se   the same with run_se in place of run_sd (the standard error of the
             mean over the run indices), recorded beside it
 z = delta / sigma (null where sigma = 0).
+Beside them, "l3" (decision L3, 2026-11-13): the sides unpaired over all their runs in --models, delta the difference
+of the two means, sigma^2 = SD^2 of the configuration's runs + SD^2 of the reference's + boot_sd^2, boot_sd the SD
+over the replicas of that replica's difference of the two means; pass = |delta| > 3 sigma (null sigma, no pass, for a
+side with one run).
 
     python3 experiments/EVAL/sculpting_boot.py --head-root /data/results/eval/v2_head --models mtx-l188-s1 ... \\
         --label-set mtx-flavf0-s1=FLAV_F0 ... --replicas 200 --sculpting-dir /data/results/eval/v2_head/sculpting_v3 \\
@@ -50,7 +54,8 @@ MIN_REPLICAS = 200
 NOMINAL_TOL = 1e-12
 WPS = (("eps_b=0.01", "eps_b", 0.01), ("eps_b=0.1", "eps_b", 0.1), ("eps_s=0.5", "eps_s", 0.5))
 # configuration minus reference: model name parts mtx-<arm>-s<k>
-DIFFS = {"17-188": ("r16q1", "l188"), "43-188": ("r42q1", "l188"), "17mass-17": ("r16q1mass", "r16q1"),
+DIFFS = {"17-188": ("r16q1", "l188"), "43-188": ("r42q1", "l188"), "162-188": ("l162", "l188"),
+         "17mass-17": ("r16q1mass", "r16q1"),
          "162mass-162": ("l162mass", "l162"), "flavf0-188": ("flavf0", "l188"), "flavf1-188": ("flavf1", "l188"),
          "flavf1r-188": ("flavf1r", "l188")}
 QTY = {"distance": np.sqrt, "jsd": lambda x: x}
@@ -121,6 +126,23 @@ def pairs_of(models, a: str, b: str) -> list:
     """[(mtx-a-s<k>, mtx-b-s<k>)] over the run indices k both have."""
     seeds = lambda arm: {int(m.rsplit("-s", 1)[1]) for m in models if m.rsplit("-s", 1)[0] == f"mtx-{arm}"}  # noqa: E731
     return [(f"mtx-{a}-s{k}", f"mtx-{b}-s{k}") for k in sorted(seeds(a) & seeds(b))]
+
+
+def runs_of(models, arm: str) -> list:
+    """The runs mtx-<arm>-s<k> among models."""
+    return [m for m in models if m.rsplit("-s", 1)[0] == f"mtx-{arm}"]
+
+
+def unpaired(nominal: dict, boot: dict, a_runs: list, b_runs: list, wp: str, f) -> dict:
+    """Decision L3 for one difference, working point and quantity: the sides unpaired over all their runs."""
+    va, vb = (np.array([f(nominal[m][wp]) for m in r]) for r in (a_runs, b_runs))
+    rep = np.mean([f(boot[m][wp]) for m in a_runs], axis=0) - np.mean([f(boot[m][wp]) for m in b_runs], axis=0)
+    sd_a, sd_b = (float(v.std(ddof=1)) if v.size > 1 else None for v in (va, vb))
+    delta, boot_sd = float(va.mean() - vb.mean()), float(rep.std(ddof=1))
+    sigma = math.sqrt(sd_a ** 2 + sd_b ** 2 + boot_sd ** 2) if sd_a is not None and sd_b is not None else None
+    return {"runs_config": list(a_runs), "runs_reference": list(b_runs), "delta": delta, "sd_config": sd_a,
+            "sd_reference": sd_b, "boot_sd": boot_sd, "sigma": sigma, "z": delta / sigma if sigma else None,
+            "pass": bool(sigma is not None and abs(delta) > 3 * sigma)}
 
 
 def difference(nominal: dict, boot: dict, pairs: list, wp: str, f) -> dict:
@@ -220,8 +242,10 @@ def main(argv=None) -> int:
         pairs = pairs_of(a.models, x, y)
         if not pairs:
             raise SystemExit(f"FATAL: no run index has both mtx-{x} and mtx-{y}")
+        rx, ry = runs_of(a.models, x), runs_of(a.models, y)
         diffs[name] = {"configuration": x, "reference": y, "pairs": [list(p) for p in pairs],
-                       **{wp: {q: difference(nominal, boot, pairs, wp, f) for q, f in QTY.items()} for wp, *_ in WPS}}
+                       **{wp: {q: difference(nominal, boot, pairs, wp, f) for q, f in QTY.items()} for wp, *_ in WPS},
+                       "l3": {wp: {q: unpaired(nominal, boot, rx, ry, wp, f) for q, f in QTY.items()} for wp, *_ in WPS}}
     lab = ref["label188"]
     doc = {"head_root": str(a.head_root), "sculpting_dir": str(a.sculpting_dir), "replicas": a.replicas, "seed": a.seed,
            "n_jets": int(lab.size), "n_qcd": int(((lab >= MS.QCD_LABELS[0]) & (lab < MS.QCD_LABELS[1])).sum()),
@@ -233,6 +257,8 @@ def main(argv=None) -> int:
            "test": "pass = |delta| > 3 sigma, sigma^2 = run_sd^2 + boot_sd^2, run_sd = run-to-run SD of the paired "
                    "differences, boot_sd = bootstrap SD of the mean paired difference; pass_run_se uses "
                    "run_se = run_sd / sqrt(n_pairs) in place of run_sd",
+           "test_l3": "l3: the sides unpaired over all their runs, pass = |delta| > 3 sigma, sigma^2 = sd_config^2 + "
+                      "sd_reference^2 + boot_sd^2 (decision L3, 2026-11-13)",
            "runs": {m: {"label_set": r["label_set"], "qcd_nodes": r["qcd_nodes"],
                         "head_outputs_sha256": r["head_outputs_sha256"],
                         **{wp: {"jsd": nominal[m][wp], "distance": math.sqrt(nominal[m][wp]), "n_pass": n_pass[m][wp],
@@ -249,6 +275,9 @@ def main(argv=None) -> int:
     for name, d in diffs.items():
         print(f"{name}: " + "; ".join(f"{wp} {d[wp]['distance']['delta']:+.4f} +- {d[wp]['distance']['sigma'] or 0:.4f} "
                                        f"({'pass' if d[wp]['distance']['pass'] else 'fail'})" for wp, *_ in WPS))
+        u = d["l3"]
+        print("  l3: " + "; ".join(f"{wp} {u[wp]['distance']['delta']:+.4f} +- {u[wp]['distance']['sigma'] or 0:.4f} "
+                                    f"({'pass' if u[wp]['distance']['pass'] else 'fail'})" for wp, *_ in WPS))
     return 0
 
 

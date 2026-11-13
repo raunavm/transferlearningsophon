@@ -93,6 +93,25 @@ def test_a_known_shift_is_detected_and_two_alike_configurations_are_not():
         assert same["boot_mean"] == pytest.approx(same["delta"], abs=3 * same["boot_sd"])
 
 
+def test_decision_l3_reads_the_sides_unpaired_over_all_their_runs():
+    lab, msd, rng = _sample(20_000, 20_000, seed=4)
+    runs = {f"mtx-r16q1-s{k}": {"s": rng.uniform(size=lab.size) + 0.6 * msd / 500} for k in (1, 2, 3)}
+    runs |= {f"mtx-r16q1mass-s{k}": {"s": rng.uniform(size=lab.size) + 0.1 * msd / 500} for k in (1, 2)}
+    nominal, _, boot = SB.bootstrap(runs, msd, lab, 40, 5, _stored(runs, msd, lab))
+    a, b = SB.runs_of(list(runs), "r16q1mass"), SB.runs_of(list(runs), "r16q1")
+    assert a == ["mtx-r16q1mass-s1", "mtx-r16q1mass-s2"] and len(b) == 3
+    wp = "eps_b=0.1"
+    u = SB.unpaired(nominal, boot, a, b, wp, np.sqrt)
+    va, vb = (np.sqrt([nominal[m][wp] for m in r]) for r in (a, b))
+    assert u["delta"] == pytest.approx(va.mean() - vb.mean()) and u["delta"] < 0
+    assert u["sd_config"] == pytest.approx(np.std(va, ddof=1)) and u["sd_reference"] == pytest.approx(np.std(vb, ddof=1))
+    assert u["sigma"] == pytest.approx(np.sqrt(u["sd_config"] ** 2 + u["sd_reference"] ** 2 + u["boot_sd"] ** 2))
+    assert u["boot_sd"] > 0 and u["pass"]
+    one = SB.unpaired(nominal, boot, a[:1], b, wp, np.sqrt)    # one run a side: no SD, no claim
+    assert one["sigma"] is None and one["pass"] is False
+    assert SB.DIFFS["162-188"] == ("l162", "l188")
+
+
 def test_replica_zero_must_reproduce_the_stored_documents():
     lab, msd, rng = _sample(5_000, 5_000)
     runs = {"mtx-l188-s1": {"s": rng.uniform(size=lab.size) + 0.2 * msd / 500}}

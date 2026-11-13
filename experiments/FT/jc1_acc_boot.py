@@ -9,14 +9,20 @@ set itself and must reproduce the cell's accuracy in --metrics (budget_metrics.p
 FATAL beyond NOMINAL_TOL. Each of the --replicas resamples the test jets with replacement ONCE, and the same
 resample serves every run (paired).
 
-DIFFERENCES: configuration minus the 188-class reference, paired by run index (seed). For each quantity, d_i the
-nominal paired value of run index i:
+DIFFERENCES (DIFFS): configuration minus reference -- each label set minus 188 classes, and each mass-output model
+minus its label set (round 5, decision L3) -- paired by the run indices both have (ARM_RUNS). For each quantity, d_i
+the nominal paired value of run index i:
   accuracy     d_i = acc(config, i) - acc(188, i)
   error_ratio  d_i = (1 - acc(config, i)) / (1 - acc(188, i)) - 1   (the share of more errors)
   delta     mean_i d_i
   run_sd    SD of d_i over the indices (ddof 1)
   boot_sd   SD over the replicas of that replica's mean_i d_i (ddof 1)
   sigma     sqrt(run_sd^2 + boot_sd^2); pass = |delta| > 3 sigma
+and beside it, under "l3", the rule of decision L3 (PI 2026-11-13), which reads the sides unpaired over all their runs:
+  delta     mean accuracy of the configuration's runs minus the reference's
+  sd_config, sd_reference   the SD of each side over its runs (ddof 1)
+  boot_sd   SD over the replicas of that replica's difference of the two means
+  sigma     sqrt(sd_config^2 + sd_reference^2 + boot_sd^2); pass = |delta| > 3 sigma
 
     python3 experiments/FT/jc1_acc_boot.py --root /data/results/ft_v2/budget_long --n 1000000 \\
         --metrics /data/results/ft_v2/budget_long/budget_long_metrics.json --replicas 200 --out jc1_acc_boot_1e6.json
@@ -38,6 +44,10 @@ JC1_CLASSES = ("label_QCD", "label_Hbb", "label_Hcc", "label_Hgg", "label_H4q", 
 REF = "l188"
 CONFIGS = ("l162", "r42q1", "r16q1")
 RUNS = (1, 2, 3)
+# configuration minus reference, by name; and the run indices of each arm (the mass-output models have two)
+DIFFS = {**{f"{c}-{REF}": (c, REF) for c in CONFIGS},
+         "l162mass-l162": ("l162mass", "l162"), "r16q1mass-r16q1": ("r16q1mass", "r16q1")}
+ARM_RUNS = {**{a: RUNS for a in (REF,) + CONFIGS}, "l162mass": (1, 2), "r16q1mass": (1, 2)}
 
 
 def correct(path: pathlib.Path) -> tuple[np.ndarray, np.ndarray]:
@@ -58,6 +68,17 @@ def summary(d: np.ndarray, boot: np.ndarray) -> dict:
             "z": delta / sigma if sigma else None, "pass": bool(abs(delta) > 3 * sigma)}
 
 
+def l3(nom_c: np.ndarray, nom_r: np.ndarray, boot_c: np.ndarray, boot_r: np.ndarray) -> dict:
+    """Decision L3, the sides unpaired: nom_* the nominal value of each run of a side, boot_* (replicas, runs)."""
+    sd = lambda v: float(v.std(ddof=1)) if v.size > 1 else None  # noqa: E731
+    delta, sd_c, sd_r = float(nom_c.mean() - nom_r.mean()), sd(nom_c), sd(nom_r)
+    boot_sd = float((boot_c.mean(1) - boot_r.mean(1)).std(ddof=1))
+    sigma = float(np.sqrt(sd_c ** 2 + sd_r ** 2 + boot_sd ** 2)) if sd_c is not None and sd_r is not None else None
+    return {"delta": delta, "n_config": int(nom_c.size), "n_reference": int(nom_r.size), "sd_config": sd_c,
+            "sd_reference": sd_r, "boot_sd": boot_sd, "sigma": sigma, "z": delta / sigma if sigma else None,
+            "pass": bool(sigma is not None and abs(delta) > 3 * sigma)}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True, type=pathlib.Path)
@@ -66,13 +87,15 @@ def main(argv=None) -> int:
     ap.add_argument("--replicas", type=int, default=MIN_REPLICAS)
     ap.add_argument("--seed", type=int, default=20261109)
     ap.add_argument("--out", required=True, type=pathlib.Path)
+    ap.add_argument("--diffs", nargs="+", choices=list(DIFFS), default=list(DIFFS))
     a = ap.parse_args(argv)
     if a.replicas < MIN_REPLICAS:
         raise SystemExit(f"FATAL: {a.replicas} replicas, at least {MIN_REPLICAS}")
     stored = json.loads(a.metrics.read_text())["cells"]
     ok, y0, acc = {}, None, {}
-    for init in (REF,) + CONFIGS:
-        for k in RUNS:
+    arms = list(dict.fromkeys(x for d in a.diffs for x in DIFFS[d]))
+    for init in arms:
+        for k in ARM_RUNS[init]:
             key = f"leg2/{init}-s{k}/N{a.n}/s1"
             cell = a.root / key
             if not (cell / "DONE").exists():
@@ -97,21 +120,29 @@ def main(argv=None) -> int:
     col = {m: i for i, m in enumerate(names)}
     nominal = np.array([ok[m].mean() for m in names])
     diffs = {}
-    for conf in CONFIGS:
-        ref_i = [col[(REF, k)] for k in RUNS]
-        con_i = [col[(conf, k)] for k in RUNS]
+    for name in a.diffs:
+        conf, ref = DIFFS[name]
+        ks = [k for k in ARM_RUNS[conf] if k in ARM_RUNS[ref]]
+        ref_i = [col[(ref, k)] for k in ks]
+        con_i = [col[(conf, k)] for k in ks]
         d_acc = nominal[con_i] - nominal[ref_i]
         b_acc = boot_acc[:, con_i] - boot_acc[:, ref_i]
         d_err = (1 - nominal[con_i]) / (1 - nominal[ref_i]) - 1
         b_err = (1 - boot_acc[:, con_i]) / (1 - boot_acc[:, ref_i]) - 1
-        diffs[f"{conf}-{REF}"] = {"accuracy_ref": nominal[ref_i].tolist(), "accuracy_config": nominal[con_i].tolist(),
-                                  "accuracy": summary(d_acc, b_acc), "error_ratio": summary(d_err, b_err)}
-        print(conf, json.dumps({q: {k: diffs[f"{conf}-{REF}"][q][k] for k in ("delta", "run_sd", "boot_sd", "pass")}
-                                for q in ("accuracy", "error_ratio")}), flush=True)
+        all_c = [col[(conf, k)] for k in ARM_RUNS[conf]]
+        all_r = [col[(ref, k)] for k in ARM_RUNS[ref]]
+        diffs[name] = {"runs": ks, "accuracy_ref": nominal[ref_i].tolist(), "accuracy_config": nominal[con_i].tolist(),
+                       "accuracy": summary(d_acc, b_acc), "error_ratio": summary(d_err, b_err),
+                       "l3": {"accuracy": l3(nominal[all_c], nominal[all_r], boot_acc[:, all_c], boot_acc[:, all_r])}}
+        print(name, json.dumps({q: {k: diffs[name][q][k] for k in ("delta", "run_sd", "boot_sd", "pass")}
+                                for q in ("accuracy", "error_ratio")}),
+              json.dumps({k: diffs[name]["l3"]["accuracy"][k] for k in ("delta", "sigma", "pass")}), flush=True)
     doc = {"script": "experiments/FT/jc1_acc_boot.py",
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
            "root": str(a.root), "n": a.n, "n_test_jets": int(n), "replicas": a.replicas, "seed": a.seed,
            "rule": "pass = |delta| > 3 sigma, sigma^2 = run_sd^2 + boot_sd^2 (PI 2026-11-09)",
+           "rule_l3": "pass = |delta| > 3 sigma, sigma^2 = sd_config^2 + sd_reference^2 + boot_sd^2, the sides unpaired "
+                      "over all their runs (decision L3, 2026-11-13)",
            "accuracy": acc, "diffs": diffs}
     a.out.parent.mkdir(parents=True, exist_ok=True)
     if a.out.exists():

@@ -90,46 +90,90 @@ def test_extractions_through_other_data_configs_are_refused(tmp_path):
         uc.main(["--feat-dir", str(tmp_path), "--out-dir", str(tmp_path / "o"), "--sets", "qg"])
 
 
-def test_the_umap_job_reads_both_models_frozen_and_fine_tuned_on_every_task():
+def test_the_umap_job_extracts_the_new_models_and_links_the_earlier_ones():
     import yaml
     BU = _bu()
-    d = yaml.safe_load(BU.spec("t", "umap_v2"))
+    sha = "ab" * 20
+    d = yaml.safe_load(BU.spec(sha, "umap_v3", "umap_v2", 89))
     c = d["spec"]["template"]["spec"]["containers"][0]
     a = c["args"][0]
-    assert d["metadata"]["name"] == "umap-v2-raunav" and d["spec"]["backoffLimit"] == 1
+    assert d["metadata"]["name"] == "umap-v3-raunav" and d["spec"]["backoffLimit"] == 1
     # CPU only: no GPU request, no GPU toleration, torch threads pinned to the quota
     assert "nvidia.com/gpu" not in c["resources"]["limits"] and c["resources"]["limits"]["cpu"] == "8"
     assert "tolerations" not in d["spec"]["template"]["spec"] and "export OMP_NUM_THREADS=7 " in a
-    # one extraction per pod; the pod that finds all 16 in place takes the lock and fits
-    assert d["spec"]["completionMode"] == "Indexed" and d["spec"]["completions"] == 16 and d["spec"]["parallelism"] <= 12
-    assert "-name extract_manifest.json | wc -l)" in a and '[ "${N}" -eq 16 ]' in a
-    assert a.index("mkdir /data/results/eval/umap_v2/fit.lock") < a.index("umap_class_token.py") < a.index("touch /data/results/eval/umap_v2/DONE")
-    assert "gpu_probe" not in a and "pip install --no-cache-dir -q umap-learn==0.5.7 pyarrow==25.0.1" in a
-    assert 'python3 -c "import pyarrow" || ' in a        # weaver reads the parquet test sets through it
-    assert '[ ! -f /data/results/eval/umap_v2/DONE ]' in a and '[ "${USED}" -le 85 ]' in a and "retry clone" in a
-    assert "ry-gpu-04.sdsc.optiputer.net" in yaml.safe_dump(d["spec"]["template"]["spec"]["affinity"])
+    # the code of a pushed commit; the storage line before anything is written
+    assert f"git -C tls checkout -q {sha}" in a and "--branch" not in a and "retry clone" in a
+    assert '[ "${USED}" -le 89 ]' in a and "configmap" not in a.lower()
+    # four new models x four tasks x frozen and fine-tuned, one per pod; 188 and 17 classes come from umap_v2
+    new = [m for m, _k, _r in BU.MODELS if m not in BU.REUSABLE]
+    assert new == ["l162-s1", "r42q1-s1", "l162mass-s1", "r16q1mass-s1"]
+    assert d["spec"]["completionMode"] == "Indexed" and d["spec"]["completions"] == 32 and d["spec"]["parallelism"] <= 12
+    assert '[ "${N}" -eq 32 ]' in a and "-mindepth 4 -maxdepth 4 -name extract_manifest.json" in a
+    assert "x jc1 frozen mtx-l188-s1" not in a and "x jc2 ft mtx-r16q1-s1 " not in a
     jc2b = "configs/data/JetClassII_base.yaml 2 /data/finetune/jc2_bal/test.parquet"
-    qg = "configs/finetune/EnergyFlowQG.yaml 10 /data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet"
-    for i, (m, k) in enumerate((("l188-s1", 188), ("r16q1-s1", 17))):
-        assert f"C_jc1_{i}=/data/results/ft_v2/budget_long/leg2/{m}/N1000000/s1; done_cell" in a
+    for i, (m, k, reg) in enumerate(BU.MODELS):
+        if m in BU.REUSABLE:
+            assert f"/data/results/eval/umap_v2/features/{{jc1,jc2,top,qg}}/mtx-{m}/{{frozen,ft}}; do [ -f" in a
+            continue
         assert f"C_jc2_{i}=$(jc2_cell {m})" in a
-        assert f"C_top_{i}=/data/results/ft_v2/best70/leg_top/{m}/N1200000/s1; done_cell" in a
-        assert f"C_qg_{i}=/data/results/ft_v2/best70/leg_qg/{m}/N1600000/s1; done_cell" in a
-        for task, kt, tail in (("jc1", 10, "configs/finetune/JetClassI_sophon_noweight.yaml 10 ${JC1}"), ("jc2", 188, jc2b),
-                               ("top", 2, "configs/finetune/TopReference.yaml 20 /data/finetune/top/top_test.parquet"),
-                               ("qg", 2, qg)):
-            # the frozen and the fine-tuned model read the same jets through the same config
-            assert f"x {task} frozen mtx-{m} ${{CK{i}}} {k} {tail} ;;" in a
-            assert f"x {task} ft mtx-{m} ${{C_{task}_{i}}}/net_best_epoch_state.pt {kt} {tail} ;;" in a
-        for man in (f"v2_linprobe/mtx-{m}/jc1/", f"v2_linprobe_bal/mtx-{m}/jc2bal/", f"v2_linprobe/mtx-{m}/top/",
-                    f"v2_linprobe/mtx-{m}/qg/"):
-            assert f"/data/results/eval/{man}test/best70/manifest.json" in a
-    # the long budget first, else the standard one; every cell checked before the first extraction
-    assert "for R in /data/results/ft_v2/budget_long /data/results/ft_v2/budget; do" in a
-    assert a.rindex("done_cell ${C_") < a.index("0) x jc1 frozen")
-    assert "[ -f ${D}/extract_manifest.json ] && return 0" in a and "--num-workers 1" in a
-    assert "umap_class_token.py --feat-dir /data/results/eval/umap_v2/features --out-dir /data/results/eval/umap_v2" in a
-    assert "configmap" not in a.lower()
+        # the frozen mass-output checkpoint is read with its regression output; the fine-tuned cell has none
+        assert f"x jc2 frozen mtx-{m} ${{CK{i}}} {k} {reg} {jc2b} ;;" in a
+        assert f"x jc2 ft mtx-{m} ${{C_jc2_{i}}}/net_best_epoch_state.pt 188 0 {jc2b} ;;" in a
+        assert f"x top ft mtx-{m} ${{C_top_{i}}}/net_best_epoch_state.pt 2 0 " in a
+    assert (k, reg) == (17, 1) and "--num-reg ${REG}" in a
+    # the long JetClass-II extractions first; every cell checked before the first extraction
+    assert a.index("0) x jc2 frozen mtx-l162-s1") < a.index("x jc1 frozen mtx-l162-s1") < a.index("x qg ft mtx-r16q1mass-s1")
+    assert a.rindex("done_cell ${C_") < a.index("0) x jc2")
+    # the earlier extractions linked (not copied, not changed) by the pod that fits, before the fit
+    link = a.index("ln -s ${D} ${L}")
+    assert a.index("mkdir /data/results/eval/umap_v3/fit.lock") < link < a.index("umap_class_token.py")
+    assert "/umap_v2/features/{jc1,jc2,top,qg}/mtx-{l188-s1,r16q1-s1}/{frozen,ft}" in next(
+        ln for ln in a.splitlines() if "ln -s" in ln)
+    # the X->bx class token of every model, checked before the extractions start
+    assert "/data/results/eval/xbx/mtx-{l188-s1,l162-s1,r42q1-s1,r16q1-s1,l162mass-s1,r16q1mass-s1}/{xbb,xbs,qcd}/eval/best70" in a
+    assert "umap_class_token.py --feat-dir /data/results/eval/umap_v3/features --out-dir /data/results/eval/umap_v3" in a
+    assert d["spec"]["activeDeadlineSeconds"] >= 43200
+    # without --reuse every model is extracted
+    assert yaml.safe_load(BU.spec(sha, "umap_x"))["spec"]["completions"] == 48
+
+
+def _xbx(root, model, rng_seed=0, n=(2500, 2600, 9000)):
+    r = np.random.default_rng(rng_seed)
+    for k, (split, m) in enumerate(zip(uc.XBX_SPLITS, n)):
+        d = root / model / split / "eval" / uc.XBX_CKPT
+        d.mkdir(parents=True)
+        msd = np.random.default_rng(10 + k).uniform(100, 300, m).astype(np.float32)   # the same jets for every model
+        np.save(d / "features.npy", r.normal(size=(m, 128)).astype(np.float16))
+        np.save(d / "label188.npy", np.full(m, 0 if split == "qcd" else 1, np.int16))
+        np.save(d / "rows.npy", np.arange(m))
+        np.savez(d / "observers.npz", jet_sdmass=msd)
+        (d / "manifest.json").write_text(json.dumps({"n_feature_rows": m, "n_stream": m, "checkpoint": f"{model}.pt",
+                                                     "checkpoint_sha256": "s", "data_config": "x.yaml"}))
+
+
+def test_the_xbb_and_xbs_grids_embed_the_same_jets_in_the_window_for_every_model(tmp_path, monkeypatch):
+    seen = []
+    monkeypatch.setattr(uc, "N_PER_GROUP", 50)
+    monkeypatch.setattr(uc, "embed", lambda x: (seen.append(np.array(x)), np.zeros((len(x), 2)))[1])
+    for i, m in enumerate(("ma", "mb")):
+        _xbx(tmp_path / "xbx", m, rng_seed=i)
+    args = ["--feat-dir", str(tmp_path), "--out-dir", str(tmp_path / "o"), "--sets", "xbb", "xbs", "--models", "ma",
+            "mb", "--xbx-root", str(tmp_path / "xbx")]
+    assert uc.main(args) == 0
+    # one grid per task (decision L12): X->bb against QCD, X->bs against QCD
+    for name, sig in (("xbb", "bb"), ("xbs", "bs")):
+        docs = [json.loads((tmp_path / "o" / f"{name}_{m}_frozen.json").read_text()) for m in ("ma", "mb")]
+        assert len({d["rows_sha256"] for d in docs}) == 1 and docs[0]["groups"] == [sig, "QCD"]
+        assert (docs[0]["set"], docs[0]["task"]) == (name, "xbx") and docs[1]["checkpoint"] == "mb.pt"
+        assert docs[0]["window"] == [150.0, 230.0] and docs[0]["mx"] == 200.0
+        assert np.bincount(docs[0]["group"]).tolist() == [50, 50] and not (tmp_path / "o" / f"{name}_ma_ft.json").exists()
+    x, g, msd, _ = uc.xbx_inputs(tmp_path / "xbx", "ma")
+    assert ((msd > 150) & (msd < 230)).all() and x.shape == (g.size, 128) and set(g.tolist()) == {0, 1, 2}
+    # another model's jets (another m_SD order) are refused
+    o = tmp_path / "xbx" / "mb" / "qcd" / "eval" / "best70" / "observers.npz"
+    np.savez(o, jet_sdmass=np.load(o)["jet_sdmass"][::-1].copy())
+    with pytest.raises(SystemExit, match="not those of"):
+        uc.main(args)
 
 
 def _assigned(path: pathlib.Path, name: str):
@@ -147,7 +191,8 @@ def test_the_gallery_has_five_umap_pages_none_in_the_paper():
     assert not [p for p in paper if p.startswith("UMAP")]
     pages = _assigned(fig / "gallery_labelset.py", "UMAP_PAGES")
     assert list(pages) == new
-    assert [v[0] for v in pages.values()] == ["jc1", "two_prong", "leptons", "top", "qg"] == list(uc.SETS)
+    assert [v[0] for v in pages.values()] == ["jc1", "two_prong", "leptons", "top", "qg"] == list(uc.SETS)[:5]
+    assert list(uc.SETS)[5:] == ["xbb", "xbs"]   # round 5 (L12): drawn once the gallery has their pages
     read = _assigned(fig / "gallery_labelset.py", "UMAP_READ")      # written after the embeddings were seen (round 4)
     assert list(read) == new and all(v.endswith(".") and "LOOK" not in v for v in read.values())
     assert _assigned(fig / "gallery_labelset.py", "UMAP_SETTINGS") == uc.UMAP

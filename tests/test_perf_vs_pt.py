@@ -274,6 +274,116 @@ def test_a_model_scored_on_other_jets_than_the_written_ones_is_refused(tmp_path)
     PV.same_jets(tmp_path, "x", "m")
 
 
+# ------------------------------------------------------------------ round 5: JetClass-II fine-tuned, JetClass probed
+
+def _jc2ft_cell(cell: pathlib.Path, y, pt, logits):
+    fd = cell / "features"
+    fd.mkdir(parents=True)
+    np.save(fd / "logits.npy", logits.astype(np.float32))
+    np.save(fd / "label188.npy", y.astype(np.int16))
+    np.savez(fd / "observers.npz", jet_pt=pt.astype(np.float32), jet_energy=pt.astype(np.float32))
+    (cell / "DONE").touch()
+
+
+def test_jc2ft_bins_the_reported_cell_with_the_pt_of_its_own_extraction(tmp_path):
+    r = np.random.default_rng(4)
+    y = r.integers(0, 188, 4000)
+    pt = r.uniform(200.5, 2499, y.size).astype(np.float32)
+    logits = r.normal(size=(y.size, 188))
+    logits[np.arange(y.size), y] += 3
+    long_, std, scr = tmp_path / "long", tmp_path / "std", tmp_path / "scratch"
+    _jc2ft_cell(std / "l188-s1" / "N1000000" / "s1", y, pt, logits - 1)    # superseded by the long cell
+    _jc2ft_cell(long_ / "l188-s1" / "N1000000" / "s1", y, pt, logits)
+    _jc2ft_cell(std / "l162-s1" / "N1000000" / "s1", y, pt, logits)
+    _jc2ft_cell(scr / "scratch" / "N1000000" / "s2", y, pt, logits)
+    out = tmp_path / "out"
+    args = ["jc2ft", "--out-dir", str(out), "--trees", str(long_), str(std), "--scratch-tree", str(scr)]
+    assert PV.main(args + ["--models", "mtx-l188-s1", "mtx-l162-s1", "scratch-s2"]) == 0
+    doc = json.loads((out / "mtx-l188-s1.json").read_text())
+    assert doc["cell"] == str(long_ / "l188-s1" / "N1000000" / "s1") and doc["mode"] == "fine-tuned"
+    assert doc["pt_edges"] == PV.PT_EDGES["jc2"] and doc["jets_sha256"] == PV.jets_sha(y, pt.astype(np.float64))
+    assert doc["same_jets_as_probe"] is None and set(doc["bins"][0]) == set(_probe_bin_keys())
+    p = np.exp(logits - logits.max(1, keepdims=True))
+    p /= p.sum(1, keepdims=True)
+    m = (pt >= doc["bins"][2]["lo"]) & (pt < doc["bins"][2]["hi"])
+    assert doc["bins"][2]["accuracy"] == pytest.approx(np.mean(p[m].argmax(1) == y[m]))
+    assert json.loads((out / "scratch-s2.json").read_text())["cell"] == str(scr / "scratch" / "N1000000" / "s2")
+    with pytest.raises(SystemExit, match="no finished JetClass-II cell"):
+        PV.main(args + ["--models", "mtx-r42q1-s1"])
+    (std / "l162-s1" / "N1000000" / "s1" / "train.log").write_text("AvgLoss: nan\n")
+    (out / "mtx-l162-s1.json").unlink()
+    with pytest.raises(SystemExit, match="NaN"):
+        PV.main(args + ["--models", "mtx-l162-s1"])
+
+
+def _probe_bin_keys():
+    return ["lo", "hi", "n", "accuracy", "accuracy_stat", "macro_auc_ovr", "n_classes_present", "class_counts",
+            "bb_vs_cc", "n_bb", "n_cc"]
+
+
+def _jc1probe(tmp, uproot, per_file=400, model="mtx-l188-s1", ck="best70"):
+    """Four JetClass test files (QCD and H->bb, two each), one probe extraction of them in file order, and the
+    probe's outputs on every 2nd row."""
+    tmp.mkdir(parents=True, exist_ok=True)
+    r = np.random.default_rng(8)
+    files, ys, pts = [], [], []
+    for cls in (0, 1):
+        for half in "ab":
+            name = str(tmp / f"{JC1[cls]}_{half}.root")
+            pt = r.uniform(500, 1000, per_file).astype(np.float32)
+            try:
+                with uproot.recreate(name) as f:
+                    f["tree"] = {**{c: np.full(per_file, i == cls) for i, c in enumerate(JC1)}, "jet_pt": pt}
+            except AttributeError as exc:
+                pytest.skip(f"this uproot cannot write ROOT files here: {exc}")
+            files.append(name), ys.append(np.full(per_file, cls)), pts.append(pt.astype(np.float64))
+    y, pt = np.concatenate(ys), np.concatenate(pts)
+    cfg = tmp / "jc1.yaml"
+    cfg.write_text("selection:\n")
+    e = tmp / "ext" / model / "jc1" / "test" / ck
+    e.mkdir(parents=True)
+    np.save(e / "label188.npy", y.astype(np.int16))
+    np.save(e / "rows.npy", np.arange(y.size))
+    (e / "manifest.json").write_text(json.dumps({"data_config": str(cfg), "n_stream": int(y.size), "n_test_files": 4,
+                                                 "data_config_sha256": hashlib.sha256(cfg.read_bytes()).hexdigest()}))
+    rows = np.arange(0, y.size, 2)
+    p = r.dirichlet(np.ones(10), rows.size)
+    p[np.arange(rows.size), y[rows]] += 0.5
+    p /= p.sum(1, keepdims=True)
+    d = tmp / "probs" / model / ck
+    d.mkdir(parents=True)
+    np.savez(d / "jc1_N1000000.npz", rows=rows, y=y[rows].astype(np.int16), p=p.astype(np.float16))
+    return files, y[rows], pt[rows]
+
+
+def test_jc1probe_takes_pt_from_the_test_files_in_the_extractions_order(tmp_path):
+    uproot = pytest.importorskip("uproot")
+    files, y, pt = _jc1probe(tmp_path, uproot)
+    _jc1probe(tmp_path / "i", uproot, model="init-s1", ck="init")
+    out = tmp_path / "out"
+    base = ["jc1probe", "--out-dir", str(out), "--test-files", *files]
+    assert PV.main(base + ["--models", "mtx-l188-s1", "--probs-root", str(tmp_path / "probs"),
+                           "--extract-root", str(tmp_path / "ext")]) == 0
+    doc = json.loads((out / "mtx-l188-s1.json").read_text())
+    assert doc["checkpoint"] == "best70" and doc["pt_edges"] == PV.PT_EDGES["jc1"] and doc["n_jets"] == y.size
+    assert doc["jets_sha256"] == PV.jets_sha(y, pt) and set(doc["bins"][0]["vs_qcd"]) == set(JC1[1:])
+    assert PV.main(["jc1probe", "--out-dir", str(out), "--test-files", *files, "--models", "init-s1",
+                    "--probs-root", str(tmp_path / "i" / "probs"), "--extract-root", str(tmp_path / "i" / "ext")]) == 0
+    assert json.loads((out / "init-s1.json").read_text())["checkpoint"] == "init"
+    # the random network with BatchNorm recomputed: folder init-s1, checkpoint init_bn, written as initbn-s1
+    _jc1probe(tmp_path / "b", uproot, model="init-s1", ck="init_bn")
+    assert PV.main(["jc1probe", "--out-dir", str(out), "--test-files", *files, "--models", "initbn-s1",
+                    "--probs-root", str(tmp_path / "b" / "probs"), "--extract-root", str(tmp_path / "b" / "ext")]) == 0
+    assert json.loads((out / "initbn-s1.json").read_text())["checkpoint"] == "init_bn"
+    assert PV.INIT_BN_MODELS == ("initbn-s1", "initbn-s2", "initbn-s3")
+    # the files in another order are other jets
+    with pytest.raises(SystemExit, match="not the same jets"):
+        PV.main(["jc1probe", "--out-dir", str(tmp_path / "o2"), "--test-files", *files[2:], *files[:2],
+                 "--models", "mtx-l188-s1", "--probs-root", str(tmp_path / "probs"), "--extract-root", str(tmp_path / "ext")])
+    with pytest.raises(SystemExit, match="read 4 test files"):
+        PV.main(["jc1probe", "--out-dir", str(tmp_path / "o3"), "--test-files", *files[:3],
+                 "--models", "mtx-l188-s1", "--probs-root", str(tmp_path / "probs"), "--extract-root", str(tmp_path / "ext")])
+
 # ------------------------------------------------------------------ the job
 
 def _job(parts):
@@ -314,3 +424,21 @@ def test_the_jetclass_part_waits_for_all_30_long_cells_and_the_jetclass_ii_part_
     # both: nothing runs before every JetClass cell is DONE
     _, _, s = _job(["jc2", "jc1"])
     assert s.index("not DONE") < s.index("perf_vs_pt.py jc2") < s.index("perf_vs_pt.py jc1")
+
+
+def test_the_round5_parts_clone_a_commit_and_write_new_folders():
+    d = yaml.safe_load(BJ.spec("ab" * 20, ["jc2ft", "jc1probe", "jc1full"], True, 89))
+    s = d["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    assert d["metadata"]["name"] == "perf-pt-jc2ft-jc1probe-jc1full-raunav" and d["spec"]["backoffLimit"] == 1
+    assert f"git -C tls checkout -q {'ab' * 20}" in s and "--branch" not in s
+    assert '[ "${USED}" -le 89 ]' in s and "configmap" not in s.lower()
+    assert f"perf_vs_pt.py jc2ft --out-dir {BJ.OUT_V3}/jc2_ft --probe-dir {BJ.OUT_ROOT}/jc2" in s
+    assert f"perf_vs_pt.py jc1probe --out-dir {BJ.OUT_V3}/jc1_probe --test-files ${{TEST1}}" in s
+    assert f"perf_vs_pt.py jc1 --tree /data/results/ft_v2/budget_long_fulldecay/leg2 --out-dir {BJ.OUT_V3}/jc1_fulldecay" in s
+    assert BJ.CONF_FULL != BJ.CONF_ROOT and BJ.OUT_V3 != BJ.OUT_ROOT       # nothing written next to the old files
+    # the 20 test files exactly as the probe extraction listed them (build_linprobe_jobs.LIST_TEST1)
+    LPJ = _load("build_linprobe_jobs", "scripts/build_linprobe_jobs.py")
+    assert LPJ.BF.JC1_CLASSES.split() == list(BJ.BFB.JC1_CLASSES)
+    assert "| sort | head -2" in s and "-eq 20 ]" in s
+    cells = BJ.full_jc1_cells()
+    assert len(cells) == 3 and all(c in s for c in cells) and s.index("not DONE") < s.index("perf_vs_pt.py")
