@@ -19,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import font_manager
-from matplotlib.patches import Circle, FancyArrowPatch, Rectangle, Wedge
+from matplotlib.patches import Circle, FancyArrowPatch, Polygon, Rectangle, Wedge
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -28,8 +28,11 @@ FONTS = HERE / "figstyle" / "fonts"
 
 C = {188: "#332288", 162: "#AA4499", 43: "#999933", 17: "#44AA99"}
 COLUMN = {188: "L188", 162: "L162", 43: "R42_Q1", 17: "R16_Q1"}      # the map's column of each label set
-SLATE, BLOCK, GREY, INK, LG = "#5B6B8A", "#DDE4EE", "#6B6B6B", "#4A4A4A", "#C9C9C9"
-W, H = 13.0, 12.4
+GREY, INK, LG = "#6B6B6B", "#4A4A4A", "#C9C9C9"
+# the one accent (PI 2026-11-12: "a pop of colour that goes with the theme"): the wine of the Tol muted palette our
+# other figures use, which no label set has; it marks the pretrained network and what is taken from it
+ACC, ACC_TINT = "#882255", "#F3E6EC"
+W, H = 13.0, 11.9
 FS, FS_T = 8, 9
 
 
@@ -49,10 +52,9 @@ def build():
     def line(xs, ys, ls="-", lw=0.9):
         ax.plot(xs, ys, color=GREY, lw=lw, ls=ls, solid_capstyle="butt", zorder=3)
 
-    def block(x, y, w, h, txt, rot=0, stack=0):
-        for k in range(stack, -1, -1):
-            ax.add_patch(Rectangle((x + 0.07 * k, y + 0.07 * k), w, h, fc=BLOCK, ec=SLATE, lw=0.7,
-                                   joinstyle="miter", zorder=2))
+    def block(x, y, w, h, txt, rot=0, ec=INK, lw=0.6):
+        """A plain outlined box: white, no tint (boxes only for the network and its head)."""
+        ax.add_patch(Rectangle((x, y), w, h, fc="white", ec=ec, lw=lw, joinstyle="miter", zorder=2))
         ax.text(x + w / 2, y + h / 2, txt, ha="center", va="center", rotation=rot, fontsize=FS, zorder=4, linespacing=1.05)
 
     def jet(ox, oy, R, prongs, half=26, seed=0, layers=4, hits=True, lw=0.32, sq=1.0, dep=0.035):
@@ -195,14 +197,18 @@ def build():
     ax.text(1.35, y0 + 1.13, "Jet", ha="center", va="center", fontsize=FS)
     arrow((2.65, y0), (3.3, y0))
     xb0, wb = 3.35, 1.0                      # the network that is reused
-    block(xb0, y0 - 1.0, wb, 2.0, "Sophon's\nnetwork", rot=90, stack=2)      # the tables' name for it
+    block(xb0, y0 - 1.0, wb, 2.0, "Sophon's\nnetwork", rot=90, ec=ACC, lw=0.9)      # the tables' name for it
     arrow((xb0 + wb + 0.2, y0), (5.3, y0))
     xf = 5.52
     for k in range(6):
-        ax.add_patch(Circle((xf, y0 - 0.5 + 0.2 * k), 0.065, fc="white", ec=SLATE, lw=0.7, zorder=3))
+        ax.add_patch(Circle((xf, y0 - 0.5 + 0.2 * k), 0.065, fc=ACC_TINT, ec=ACC, lw=0.8, zorder=3))
     ax.text(xf, y0 + 0.8, "Features", ha="center", va="center", fontsize=FS)
     arrow((xf + 0.22, y0), (xf + 0.92, y0))
-    block(xf + 0.97, y0 - 0.3, 0.95, 0.6, "Head")
+    # the head: a shape of its own, tapering toward the outputs
+    xh, wh = xf + 0.97, 0.95
+    ax.add_patch(Polygon([(xh, y0 - 0.42), (xh + wh, y0 - 0.26), (xh + wh, y0 + 0.26), (xh, y0 + 0.42)], closed=True,
+                         fc="white", ec=INK, lw=0.6, joinstyle="miter", zorder=2))
+    ax.text(xh + wh / 2, y0, "Head", ha="center", va="center", fontsize=FS, zorder=4)
     # one pretraining per label set: the head's output is ONE of the four rows (brace, not a fan of arrows)
     xe = xf + 2.55
     arrow((xf + 1.92, y0), (xe - 0.12, y0))
@@ -235,45 +241,38 @@ def build():
         o = ax.text(0, 0, txt, fontsize=FS); wd = o.get_window_extent(REN).width / fig.dpi * 2.54; o.remove()
         return wd
 
-    PH, PAD, TG = 0.38, 0.1, 0.06                  # pill height, side padding, gap between pills
+    TOKEN = "#6B6B6B"                              # what each task tells apart: plain grey text, no boxes
     TASKS = [("JetClass-II", ("188 classes",), True),
              ("JetClass", (r"$H$", r"$W$", r"$Z$", r"$t$", "QCD"), True),
              ("Top tagging", (r"$t$", "QCD"), True),
              ("Quark/gluon", (r"$q$", r"$g$"), True),
              (r"$X\!\to b\bar b$, $X\!\to bs$", (r"$b\bar b$", r"$bs$", "QCD"), False)]   # fine-tuned on the first four
-    pw = lambda t: max(0.44, tw(t) + 2 * PAD)
-    tokw = [[pw(t) for t in toks] for _, toks, _ in TASKS]
-    grpw = [sum(ws) + TG * (len(ws) - 1) for ws in tokw]
-    colw = [max(g, tw(nm)) for g, (nm, _, _) in zip(grpw, TASKS)]
-    BX, BW, BH = 0.34, 1.7, 0.74                   # the two row-label blocks
-    XL, XR = BX + BW + 0.3, W - 0.13
+    toks_of = lambda toks: ", ".join(toks)
+    colw = [max(tw(toks_of(toks)), tw(nm)) for nm, toks, _ in TASKS]
+    BX, BW = 0.5, 1.75                             # the two row labels, plain text
+    XL, XR = BX + BW + 0.25, W - 0.2
     GAP = (XR - XL - sum(colw)) / (len(colw) - 1)  # equal gaps between the five columns
     cx, x = [], XL
     for cw_ in colw:
         cx.append(x + cw_ / 2); x += cw_ + GAP
     yb_, ya_ = y0 - 1.28, y0 - 1.52                # feed lines: block (outer), features (inner)
-    ysym = ya_ - 0.5; ynam = ysym - 0.47
-    yF = ynam - 0.6; yT = yF - 0.86
+    ynam = ya_ - 0.5; ysym = ynam - 0.4
+    yF = ysym - 0.6; yT = yF - 0.62
     # fine-tuning starts from the pretrained network; frozen features come out of the Features column
     xbk = xb0 + wb / 2
-    line([xbk, xbk, 0.14, 0.14], [y0 - 1.0, yb_, yb_, yT]); arrow((0.14, yT), (BX - 0.03, yT), ms=5)
-    xfc = BX + BW / 2
-    line([xf, xf, xfc], [y0 - 0.62, ya_, ya_]); arrow((xfc, ya_), (xfc, yF + BH / 2 + 0.03), ms=5)
-    block(BX, yF - BH / 2, BW, BH, "Frozen\nfeatures")
-    block(BX, yT - BH / 2, BW, BH, "Fine-tuning")
+    line([xbk, xbk, 0.14, 0.14], [y0 - 1.0, yb_, yb_, yT]); arrow((0.14, yT), (BX - 0.08, yT), ms=5)
+    line([xf, xf, 0.3, 0.3], [y0 - 0.62, ya_, ya_, yF]); arrow((0.3, yF), (BX - 0.08, yF), ms=5)
+    ax.text(BX, yF, "Frozen features", ha="left", va="center", fontsize=FS)
+    ax.text(BX, yT, "Fine-tuning", ha="left", va="center", fontsize=FS)
     MS = 0.17
-    line([BX + BW, cx[-1]], [yF, yF], lw=0.7)
-    line([BX + BW, max(c for c, t in zip(cx, TASKS) if t[2])], [yT, yT], lw=0.7)
-    for c, ws, (nm, toks, ft) in zip(cx, tokw, TASKS):
-        xx = c - (sum(ws) + TG * (len(ws) - 1)) / 2
-        for wd, t in zip(ws, toks):
-            ax.add_patch(Rectangle((xx, ysym - PH / 2), wd, PH, fc=BLOCK, ec=SLATE, lw=0.7, joinstyle="miter", zorder=2))
-            ax.text(xx + wd / 2, ysym - 0.01, t, ha="center", va="center", fontsize=FS, zorder=3)
-            xx += wd + TG
+    line([BX + tw("Frozen features") + 0.12, cx[-1]], [yF, yF], lw=0.6)
+    line([BX + tw("Frozen features") + 0.12, max(c for c, t in zip(cx, TASKS) if t[2])], [yT, yT], lw=0.6)
+    for c, (nm, toks, ft) in zip(cx, TASKS):
         ax.text(c, ynam, nm, ha="center", va="center", fontsize=FS)
-        ax.add_patch(Rectangle((c - MS / 2, yF - MS / 2), MS, MS, fc="white", ec=INK, lw=0.8, zorder=4))     # frozen: open
+        ax.text(c, ysym, toks_of(toks), ha="center", va="center", fontsize=FS, color=TOKEN)
+        ax.add_patch(Rectangle((c - MS / 2, yF - MS / 2), MS, MS, fc="white", ec=ACC, lw=0.9, zorder=4))     # frozen: open
         if ft:
-            ax.add_patch(Rectangle((c - MS / 2, yT - MS / 2), MS, MS, fc=INK, ec=INK, lw=0.8, zorder=4))     # fine-tuned: filled
+            ax.add_patch(Rectangle((c - MS / 2, yT - MS / 2), MS, MS, fc=ACC, ec=ACC, lw=0.9, zorder=4))     # fine-tuned: filled
     return fig
 
 

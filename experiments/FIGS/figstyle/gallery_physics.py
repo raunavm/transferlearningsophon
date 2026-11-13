@@ -799,7 +799,8 @@ PAGES = [
     Page("F1", "Design of the study", ["2405.12972/fig1.png"], "Sophon Fig. 1; finish after arXiv:2610.41889 Fig. 1", F1_CAPTION,
          "The PI's drawing (2026-11-12), replacing the Sophon-shaped card: example jets with a fine-to-coarse tree, all "
          "188 classes as a strip of cells read from the label maps, and a pipeline with a task matrix (open: frozen "
-         "features, filled: fine-tuned). Drawn 13 cm wide.", draw_f1,
+         "features, filled: fine-tuned). Drawn 13 cm wide. Boxes only for the network and its head, white; one accent "
+         "(Tol muted wine) for the pretrained network, its features and the two uses.", draw_f1,
          data_note="X→bb̄ and X→bs use frozen features only. The jets are drawings, not events."),
     Page("F9a", "Mass regression: response", ["ATL-PHYS-PUB-2024-015/fig7.png"], "ATLAS 2024-015 Fig. 7", F9A_CAPTION,
          "Two jet groups instead of mass and pT responses, as we regress mass only, with panel titles ATLAS lacks. Three "
