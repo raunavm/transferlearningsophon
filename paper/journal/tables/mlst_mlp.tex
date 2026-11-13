@@ -1,18 +1,24 @@
 \begin{landscape}
 {
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\setlength{\abovecaptionskip}{0pt}
-\captionof{table}{Nonlinear probes (a multilayer perceptron with one hidden layer of \LpMlpHidden{} units) on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, at the largest training set of each task: the quantities of table~\ref{tab:probes} and the class pairs of table~\ref{tab:pairs}; then the models scored on the natural-composition test set only, and the linear probe on the hidden layer of the pretraining head beside the one on the class token. Mean $\pm$ SD over the pretraining runs of each configuration. $^{\S}$ marks a value from a single run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
-\label{tab:mlp}
-\par\medskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\addtolength{\belowcaptionskip}{\medskipamount}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\caption{Multilayer-perceptron probes, with one hidden layer of \LpMlpHidden{} units, on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with every 17-class partition and of the random networks, at the largest training set of each task, in the quantities of table~\ref{tab:probes} and the class pairs of table~\ref{tab:pairs}. The last block gives the probes scored on the natural-composition test set only, and the linear probe on the hidden layer of the pretraining head beside the one on the class token. The network with kinematic inputs is pretrained on those inputs only. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. The ratio $\rho$ is that of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed. The random network with BatchNorm recomputed re-estimates its BatchNorm statistics on \DesignBnJets{} training jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:mlp}\\
 \toprule
- & \multicolumn{4}{c}{JetClass-II} \\
+& \multicolumn{4}{c}{JetClass-II} \\
 \cmidrule(lr){2-5}
  & AUC & $\rho$ & AUC, resonant & AUC, QCD \\
 \midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:mlp} (continued)}} \\[\smallskipamount]
+\toprule
+& \multicolumn{4}{c}{JetClass-II} \\
+\cmidrule(lr){2-5}
+ & AUC & $\rho$ & AUC, resonant & AUC, QCD \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \multicolumn{5}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\
 \Kfull{} classes & 0.98062\,$\pm$\,0.00002 & 1.000$^{\P}$ & 0.98336\,$\pm$\,0.00003 & 0.9643\,$\pm$\,0.0001 \\
 \Kres{} classes & 0.98025\,$\pm$\,0.00012 & 1.019\,$\pm$\,0.007 & 0.98334\,$\pm$\,0.00009 & 0.9618\,$\pm$\,0.0003 \\
@@ -27,10 +33,7 @@ random network, BatchNorm recomputed & 0.89744\,$\pm$\,0.00184 & -- & 0.90354\,$
 \midrule
 \Kfull{} classes, linear probe, class token & 0.98014\,$\pm$\,0.00001 & -- & -- & -- \\
 \Kfull{} classes, linear probe, 512-unit hidden layer & 0.98021\,$\pm$\,0.00001 & -- & -- & -- \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\end{longtable}
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \makebox[\linewidth][l]{\textit{Table~\ref{tab:mlp} (continued)}}
@@ -218,9 +221,9 @@ natural-composition test set & AUC & $\rho$ & $X\to bc$ vs $bq$, $cs$ & $X\to b\
 \multicolumn{6}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\
 \Kfull{} classes & 0.9767\,$\pm$\,0.0002 & 1.000$^{\P}$ & 1.000$^{\P}$ & 1.00$^{\P}$ & 1.00$^{\P}$ \\
 \Kres{} classes & 0.9759\,$\pm$\,0.0004 & 1.033\,$\pm$\,0.016 & 1.003\,$\pm$\,0.004 & 1.00\,$\pm$\,0.09 & 0.97\,$\pm$\,0.08 \\
+\Kres{} classes + mass & 0.9755\,$\pm$\,0.0004 & 1.056\,$\pm$\,0.006 & 1.038\,$\pm$\,0.028 & 1.15\,$\pm$\,0.08 & 1.10\,$\pm$\,0.09 \\
 \Kmid{} classes & 0.9736\,$\pm$\,0.0005 & 1.135\,$\pm$\,0.018 & 1.135\,$\pm$\,0.017 & 1.11\,$\pm$\,0.01 & 1.02\,$\pm$\,0.06 \\
 \Kcoarse{} classes & 0.9682\,$\pm$\,0.0003 & 1.364\,$\pm$\,0.008 & 1.762\,$\pm$\,0.043 & 3.26\,$\pm$\,0.10 & 3.34\,$\pm$\,0.29 \\
-\Kres{} classes + mass & 0.9755\,$\pm$\,0.0004 & 1.056\,$\pm$\,0.006 & 1.038\,$\pm$\,0.028 & 1.15\,$\pm$\,0.08 & 1.10\,$\pm$\,0.09 \\
 \Kcoarse{} classes + mass & 0.9677\,$\pm$\,0.0003 & 1.392\,$\pm$\,0.001 & 1.818\,$\pm$\,0.030 & 3.38\,$\pm$\,0.38 & 3.54\,$\pm$\,0.28 \\
 \multicolumn{6}{@{}l}{17-class partitions} \\
 \quad random partition 1, seed 1 & 0.9736$^{\S}$ & 1.131$^{\S}$ & 1.201$^{\S}$ & 1.44$^{\S}$ & 1.35$^{\S}$ \\
@@ -245,9 +248,9 @@ natural-composition test set & QCD $b\bar{b}$ vs $c\bar{c}$ & QCD with $b$ vs li
 \multicolumn{4}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\
 \Kfull{} classes & 1.00$^{\P}$ & 1.00$^{\P}$ & 1.000$^{\P}$ \\
 \Kres{} classes & 1.08\,$\pm$\,0.09 & 1.06\,$\pm$\,0.06 & 1.041\,$\pm$\,0.021 \\
+\Kres{} classes + mass & 1.23\,$\pm$\,0.10 & 0.98\,$\pm$\,0.06 & 1.058\,$\pm$\,0.018 \\
 \Kmid{} classes & 1.13\,$\pm$\,0.05 & 1.05\,$\pm$\,0.09 & 1.057\,$\pm$\,0.016 \\
 \Kcoarse{} classes & 2.71\,$\pm$\,0.13 & 1.32\,$\pm$\,0.18 & 1.303\,$\pm$\,0.032 \\
-\Kres{} classes + mass & 1.23\,$\pm$\,0.10 & 0.98\,$\pm$\,0.06 & 1.058\,$\pm$\,0.018 \\
 \Kcoarse{} classes + mass & 3.07\,$\pm$\,0.27 & 1.32\,$\pm$\,0.09 & 1.324\,$\pm$\,0.002 \\
 \multicolumn{4}{@{}l}{17-class partitions} \\
 \quad random partition 1, seed 1 & 1.53$^{\S}$ & 1.05$^{\S}$ & 1.125$^{\S}$ \\

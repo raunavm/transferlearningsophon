@@ -5,7 +5,7 @@
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \setlength{\abovecaptionskip}{0pt}
-\captionof{table}{Linear probes on the frozen features of the networks of table~\ref{tab:summary}, compared on accuracy and on $R_{50}$, the inverse background efficiency at 50\% signal efficiency with quarks as the signal in quark/gluon tagging, in top tagging and in quark/gluon tagging scored on Pythia and on Herwig jets, at each task's largest training set. Their $R_{30}$ and AUC are in tables~\ref{tab:summary} and~\ref{tab:summaryauc}. The missing top and quark/gluon inputs are replaced by \LpSubstitutionTop{} for top and by \LpSubstitutionQg{} for quark/gluon, as chosen on validation, and set to zero for the released Sophon checkpoint. The network with kinematic inputs is pretrained on those inputs only. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions and three initializations of the random network. Bold marks the best value of a column and every value within three standard deviations of it. $^{\S}$ marks a value from a single run.}
+\captionof{table}{Linear probes of table~\ref{tab:summary} on top and quark/gluon tagging, scored on Pythia and Herwig jets, compared on accuracy and on $R_{50}$, the inverse background efficiency at 50\% signal efficiency, quarks being the signal. The missing inputs are \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon, chosen on validation, and zero for the released Sophon checkpoint. The kinematic-inputs network uses kinematic inputs only. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each. Bold marks the best value of a column and every value within three standard deviations of it. $^{\S}$~marks a value from a single run.}
 \label{tab:probes}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
@@ -26,8 +26,8 @@
 \quad $b$-quark boundary & 0.9075\,$\pm$\,0.0017 & 80\,$\pm$\,6 & 0.8034\,$\pm$\,0.0013 & 24.77\,$\pm$\,0.28 & {\fontseries{b}\selectfont 0.7214\,$\pm$\,0.0007} & {\fontseries{b}\selectfont 11.56\,$\pm$\,0.13} \\
 \quad random flavor boundary & 0.9088\,$\pm$\,0.0004 & 84\,$\pm$\,1 & {\fontseries{b}\selectfont 0.8050\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 25.34\,$\pm$\,0.22} & {\fontseries{b}\selectfont 0.7216\,$\pm$\,0.0022} & 11.66\,$\pm$\,0.08 \\
 \quad random partitions & 0.9029\,$\pm$\,0.0035 & 64\,$\pm$\,4 & {\fontseries{b}\selectfont 0.8027\,$\pm$\,0.0031} & {\fontseries{b}\selectfont 24.08\,$\pm$\,0.80} & {\fontseries{b}\selectfont 0.7212\,$\pm$\,0.0034} & {\fontseries{b}\selectfont 11.34\,$\pm$\,0.35} \\
-\Kfull{} classes, kinematic inputs & {\fontseries{b}\selectfont 0.9163}$^{\S}$ & {\fontseries{b}\selectfont 94}$^{\S}$ & -- & -- & -- & -- \\
 random network & 0.8867\,$\pm$\,0.0013 & 25\,$\pm$\,1 & 0.7851\,$\pm$\,0.0018 & 19.40\,$\pm$\,0.28 & 0.7205\,$\pm$\,0.0021 & 10.58\,$\pm$\,0.11 \\
+\Kfull{} classes, kinematic inputs & {\fontseries{b}\selectfont 0.9163}$^{\S}$ & {\fontseries{b}\selectfont 94}$^{\S}$ & -- & -- & -- & -- \\
 \midrule
 released Sophon checkpoint & 0.8882$^{\S}$ & 39$^{\S}$ & 0.7917$^{\S}$ & 19.30$^{\S}$ & 0.7153$^{\S}$ & 10.32$^{\S}$ \\
 \bottomrule

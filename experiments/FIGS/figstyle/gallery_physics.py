@@ -16,7 +16,7 @@ from matplotlib.ticker import FuncFormatter, MaxNLocator
 
 from gallery_bands import spread_band
 from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
-from gallery_roc import POOLED, _legend_cols, _style
+from gallery_roc import POOLED, _group_legend, _legend_cols, _style
 import lines_v6 as L
 
 GROOMED = "soft-drop mass"
@@ -567,20 +567,28 @@ def draw_f11_probe(path: pathlib.Path) -> None:
     _xbx_figure(path, XBX_LABEL_SETS + ("INIT",), LINEAR)
 
 
-# ------------------------------------------------------------------ PT (round 3, docs/figstyle/TAGGER_GAP.md); CONF is
+# ------------------------------------------------------------------ the jet-pT family (PI 2026-11-13, L4-L6); CONF is
 # now the per-class family's confusion slice (gallery_perclass)
-# experiments/EVAL/perf_vs_pt.py's files, pulled by pull_mlst_data.py
+# experiments/EVAL/perf_vs_pt.py's files, pulled by pull_mlst_data.py: per pT bin, the linear probes on class-balanced
+# JetClass-II (jc2) and on JetClass (jc1_probe), and the networks fine-tuned on them (jc2_ft, jc1)
 PERF = P.DATA / "perf_vs_pt"
 PT_MARKER = 3.5
+# the family's panels, (perf_vs_pt folder, panel title): rows linear probe and fine-tuned, columns JetClass-II (ten
+# bins, 200-2500 GeV) and JetClass (five bins, 500-1000 GeV). Only these two test sets: the top and quark/gluon samples
+# span about 50-100 GeV of jet pT, and the resonance samples have no measured spectrum (L4)
+PT_PANELS = (("jc2", "JetClass-II, linear probe"), ("jc1_probe", "JetClass, linear probe"),
+             ("jc2_ft", "JetClass-II, fine-tuned"), ("jc1", "JetClass, fine-tuned"))
+PT_BBCC = (("jc2", r"Linear probe, $X\to b\bar{b}$ vs $c\bar{c}$"), ("jc2_ft", r"Fine-tuned, $X\to b\bar{b}$ vs $c\bar{c}$"))
+PT_ROWS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")       # L5: each mass network under its label set
+PT_PARTITIONS = ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")     # with 188 and 17 classes for reference
 
 
-def _seed(model: str) -> str:
-    return model.rsplit("-s", 1)[1]
-
-
-def _by_seed(docs: dict, row: str) -> dict:
-    """{seed: doc} of the runs of row that have a file."""
-    return {_seed(m): docs[m] for m in RUNS[row] if m in docs}
+def _runs_in(docs: dict, row: str) -> list:
+    """The docs of a row's runs (the five random partitions pooled under RAND); every run must have its file."""
+    have = [docs[m] for m in POOLED[row] if m in docs]
+    if len(have) != len(POOLED[row]):
+        raise Absent(f"perf_vs_pt holds {len(have)} of the {len(POOLED[row])} runs of {row}")
+    return have
 
 
 def _edges(docs: dict) -> np.ndarray:
@@ -598,9 +606,9 @@ def _bb_cc(doc: dict) -> np.ndarray:
     return np.array([np.nan if b["bb_vs_cc"] is None else b["bb_vs_cc"]["auc"] for b in doc["bins"]])
 
 
-def _pt_series(ax, e, values: list, key: str, label: str, band: bool = True, style: str = "A", probe: bool = False) -> None:
+def _pt_series(ax, e, values: list, key: str, label: str, band: bool = True, style: str = "B", probe: bool = False) -> None:
     """Mean over runs per bin of edges e. Style A: joined at the bin centres, the series' marker, band the SD,
-    as F8. Styles B and C: binned points (lines_v6.binned)."""
+    as F8. Styles B and C: binned points (lines_v6.binned), the family's form."""
     st = [P.F._spread(list(v)) for v in np.asarray(values).T]
     mean = np.array([s[0] for s in st])
     if style != "A":
@@ -615,55 +623,65 @@ def _pt_series(ax, e, values: list, key: str, label: str, band: bool = True, sty
                         color=style["color"], alpha=0.2, linewidth=0)
 
 
-def _pt_panel(ax, docs: dict, rows: tuple, value, ylabel: str, style: str = "A", probe: bool = False) -> None:
-    """value(doc) per pT bin for each row's runs, absolute (round 4: accuracy as F2, AUC for X->bb vs X->cc)."""
+def _pt_panel(ax, docs: dict, rows: tuple, value, ylabel: str, style: str = "B", probe: bool = False) -> None:
+    """value(doc) per pT bin for each row's runs, absolute; drawn in reverse, so that the first row (188 classes)
+    lies on top. One mode a panel: filled points (PI 2026-11-11)."""
     e = _edges(docs)
-    for row in rows:
-        r = [value(d) for d in _by_seed(docs, row).values()]
-        if r:
-            _pt_series(ax, e, r, row, S.LEGEND[row], style=style, probe=probe)
+    for row in reversed(rows):
+        _pt_series(ax, e, [value(d) for d in _runs_in(docs, row)], row, S.LEGEND[row], style=style, probe=probe)
     ax.set_xlim(e[0], e[-1])
-    ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 2.5, 5, 10]))
     if ylabel:
         S.labels(ax, ylabel=ylabel)
 
 
-def draw_pt(path: pathlib.Path, style: str = "B") -> None:
-    """Round 4 (ROUND4_BRIEF Part 4): absolute values per pT bin, no ratio. Upper row JetClass-II accuracy of the
-    linear probes, (a) per label set and (b) for the controlled partitions with the 188- and 17-class models for
-    reference, on one y axis; lower row (c) JetClass accuracy after fine-tuning and (d) the probes' AUC of X->bb
-    against X->cc, with its own y label (PI 2026-11-11: every axis labelled). No from scratch."""
-    jc2, jc1 = M._load(PERF / "jc2"), M._load(PERF / "jc1")
-    if not (jc2 and jc1):
-        raise Absent("no performance against jet pT (perf_vs_pt/jc2, perf_vs_pt/jc1)")
-    fig, axes, _ = S.grid_cm(2, 2, w=6.25, aspect=0.85, top=1.9, left=1.25, wgap=1.25, hgap=1.6)
-    (a, b), (cx, d) = axes
-    panels = ((a, jc2, S.LEVELS, _accuracy, "Accuracy", "JetClass-II, linear probes"),
-              (b, jc2, ("L188", "R16_Q1") + tuple(S.CONTROLS), _accuracy, None, "JetClass-II, linear probes, controls"),
-              (cx, jc1, S.LEVELS, _accuracy, "Accuracy", "JetClass, fine-tuned"),
-              (d, jc2, S.LEVELS, _bb_cc, "AUC", r"Linear probes, $X\to b\bar{b}$ vs $c\bar{c}$"))
-    for k, (ax, docs, rows, value, ylabel, text) in enumerate(panels):
+def _pt_figure(path: pathlib.Path, panels: tuple, rows: tuple, value, ylabel: str, style: str = "B") -> None:
+    """The family's form: panels (perf_vs_pt folder, title) two to a row, each on its own y axis (the test sets and
+    modes differ in level), every axis labelled; unjoined points with bin bars; the figure legend above in the
+    columns of the networks' groups (gallery_roc._group_legend)."""
+    docs = {sub: M._load(PERF / sub) for sub, _ in panels}
+    if not all(docs.values()):
+        raise Absent("no performance against jet pT (perf_vs_pt/" + ", ".join(s for s, d in docs.items() if not d) + ")")
+    n_rows = (len(panels) + 1) // 2
+    legend_rows = max(len(c) for c in _legend_cols(rows))
+    fig, axes, _ = S.grid_cm(n_rows, 2, w=6.1, aspect=0.87, top=0.95 + 0.42 * legend_rows, left=1.3, wgap=1.5,
+                             hgap=1.6)
+    handles = {}
+    for ax, (sub, text) in zip(axes.flat, panels):
         S.title(ax, text)
         S.fine_grid(ax)
-        _pt_panel(ax, docs, rows, value, ylabel, style)      # one mode a panel: filled (PI 2026-11-11)
-        S.labels(ax, xlabel=X_PT)          # (c) is JetClass, 500-1000 GeV: every panel its own
-    lo, hi = min(a.get_ylim()[0], b.get_ylim()[0]), max(a.get_ylim()[1], b.get_ylim()[1])
-    for ax in (a, b):
-        ax.set_ylim(lo, hi)
-    b.tick_params(labelleft=False)
-    d.yaxis.set_major_locator(MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))     # two decimals: room beside (c)
-    d.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.2f}"))
-    cx.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10]))    # three decimals, as (a)
-    fig.align_ylabels([a, cx])
-    for ax in (a, b, d):        # the last label at 2500 would run off the page or into the next panel
-        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=_edges(jc2)[-1]: "" if v >= hi - 1e-9 else f"{v:g}"))
-    handles = {}
-    for ax in axes.flat:
-        for h_, l_ in zip(*ax.get_legend_handles_labels()):
-            handles.setdefault(l_, h_)
-    S.fig_legend(fig, list(handles.values()), top_cm=S.LEGEND_TOP, ncol=4)
+        _pt_panel(ax, docs[sub], rows, value, ylabel, style)
+        S.labels(ax, xlabel=X_PT)
+        S.data_ylim(ax)              # every bar clear of the frame (L7)
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10]))     # no 2.5 step: its labels need a digit more
+        S.clear_edge_labels(ax)      # the decimals the tick step needs, the same on every tick
+        hi = _edges(docs[sub])[-1]   # the last label at 2500 would run into the next panel or off the page
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _, hi=hi: "" if v >= hi - 1e-9 else f"{v:g}"))
+        for h_, row in zip(*ax.get_legend_handles_labels()):
+            handles.setdefault(row, h_)
+    fig.align_ylabels(axes[:, 0])
+    by_name = {S.LEGEND[r]: r for r in rows}
+    _group_legend(fig, {by_name[k]: h for k, h in handles.items()})
     S.letter_panels(axes.flat)
     S.save(fig, path)
+
+
+def draw_pt(path: pathlib.Path, style: str = "B") -> None:
+    """The family (PI 2026-11-13, L4): accuracy per jet-pT bin, linear probes over fine-tuned networks, JetClass-II
+    beside JetClass, for the label sets and the mass networks (lighter shades); nothing else. style: the PI's
+    comparison pages (gallery_compare)."""
+    _pt_figure(path, PT_PANELS, PT_ROWS, _accuracy, "Accuracy", style)
+
+
+def draw_pt_part(path: pathlib.Path) -> None:
+    """The family's form for the 17-class partitions, the five random partitions pooled (one point, the bar their
+    SD), with 188 and 17 classes for reference."""
+    _pt_figure(path, PT_PANELS, PT_PARTITIONS, _accuracy, "Accuracy")
+
+
+def draw_pt_bbcc(path: pathlib.Path) -> None:
+    """The slice of the old panel (d), in both modes: the area under the ROC curve of X->bb against X->cc per
+    JetClass-II jet-pT bin, p_bb / (p_bb + p_cc) of the 188 outputs, for the label sets and the mass networks."""
+    _pt_figure(path, PT_BBCC, PT_ROWS, _bb_cc, "AUC")
 
 
 # ------------------------------------------------------------------ the pages
@@ -726,7 +744,8 @@ SUPPLEMENT_CAPTIONS = {
         "the QCD rejection, both at the cut that keeps 50% of resonant test jets, as in figure 3 of the DisCo paper. "
         "Points higher up distort the QCD mass less and points further right reject more QCD jets. Points are means "
         "over three pretraining runs, two for networks with an added mass regression (+ mass, lighter shades) and the "
-        "flavor-boundary partitions, and bars show the standard deviation over runs."
+        "flavor-boundary partitions, and bars show the standard deviation over runs. The values are in table {tab:sculpt}, "
+        "at 50% signal efficiency."
     ),
     "F10-ft": (
         "The curves show the Jensen-Shannon distance between the soft-drop mass distributions of all QCD test jets and "
@@ -745,6 +764,24 @@ SUPPLEMENT_CAPTIONS = {
         "of 17 classes with the 40-epoch cap. Bands show ±1 standard deviation over two pretraining runs per "
         "flavor-boundary partition, three for 188 and 17 classes, or the five random partitions, and the dotted line "
         "is a random selection of as many QCD jets."
+    ),
+    "PT-part": (
+        "With linear probes on JetClass-II, every 17-class partition is less accurate than the network pretrained with "
+        "188 classes and more accurate than the network pretrained with 17 classes in every jet pT bin. The panels "
+        "repeat figure {fig:PT} for the 17-class partitions, each a regrouping of the 188 classes into 17, named by "
+        "its flavor boundary, a class boundary between decays that differ only in quark flavor, with the 188- and "
+        "17-class networks for reference. Points are means over two pretraining runs per flavor-boundary partition, "
+        "three for 188 and 17 classes, or the five random partitions, horizontal bars span the bin, and vertical bars "
+        "show ±1 standard deviation. Values are in table {tab:ptbins}."
+    ),
+    "PT-bbcc": (
+        "The panels show the area under the ROC curve for separating X→bb̄ from X→cc̄ jets in each JetClass-II jet "
+        "pT bin, with the discriminant p(bb̄)/(p(bb̄) + p(cc̄)) of the 188 class outputs, for linear probes (a) and "
+        "fine-tuned networks (b) of figure {fig:PT}, the label sets and the networks with an added mass regression "
+        "(+ mass, lighter shades). A bin holds 240 to 930 jets of each kind. Points are means over three pretraining "
+        "runs, two for + mass, horizontal bars span the bin, and vertical bars show ±1 standard deviation over runs, "
+        "without the uncertainty from the few test jets per bin, so no bin is compared. Values are in table "
+        "{tab:ptbins}."
     ),
     "F11-probe": (
         "With a linear probe in place of the classifier of figure {fig:F11}, the random network, a network with its "
@@ -956,14 +993,27 @@ PAGES = [
          draw_f11_probe, "The random network's value in the resonance table is this linear probe."),
     Page("PT", "Performance against jet pT", ["2004.08262/fig17.png", "1808.07858/fig2.png"],
          "CMS DeepAK8 Fig. 17, ATLAS top/W Fig. 2", PT_CAPTION,
-         "Absolute values per pT bin (round 4): accuracy in (a)-(c) and the X→bb̄ against X→cc̄ AUC in (d), not the "
-         "precedents' mistag rate or rejection at a working point, which would be a bound in every bin here (fewer "
-         "than 20 X→cc̄ jets pass at 50% X→bb̄ efficiency in all bins of the 188-class runs). Markers at the bin centres "
-         "joined by lines with SD bands, as F9b, A17 and F8, instead of unjoined bin bars without "
-         "uncertainty. Reconstructed jet pT in ten (JetClass-II) or five (JetClass) bins. Panel titles and a figure "
-         "legend instead of the precedents' text block; no experiment label; from scratch not drawn.",
+         "Absolute accuracy per pT bin, not the precedents' mistag rate or rejection at a working point, which would be "
+         "a bound in many bins of the 188-class runs. Unjoined points at the bin centres with a horizontal bar across "
+         "the bin and a vertical bar of the SD over runs, as the precedents. Rows linear probe and fine-tuned, columns "
+         "JetClass-II (ten bins of reconstructed jet pT) and JetClass (five bins), each panel on its own y axis (PI "
+         "2026-11-11: every axis labelled). Panel titles and a figure legend instead of the precedents' text block; no "
+         "experiment label; the label sets and the mass networks only (PI 2026-11-12: nothing else mixed in).",
          draw_pt,
-         "Four label sets and from scratch have three runs, the controlled partitions two."),
+         "Three runs per label set, two per mass network. JetClass-II fine-tuned: 17 classes run 1 and both 17 + mass "
+         "runs are the long-budget cells (160-epoch cap), the others the 40-epoch cells, as Table 1 reads them; "
+         "JetClass fine-tuned: the long-budget cells (budget_long/leg2) of Table 1."),
+    Page("PT-part", "Performance against jet pT, 17-class partitions (supplement)", ["2004.08262/fig17.png"],
+         "CMS DeepAK8 Fig. 17", PT_CAPTION,
+         "PT's form for the three flavor-boundary partitions and the five random partitions (one point, the bar their "
+         "SD), with 188 and 17 classes for reference.", draw_pt_part,
+         "Two runs per flavor-boundary partition, three for 188 and 17 classes; every partition's fine-tuned JetClass-II "
+         "cell is a long-budget cell (160-epoch cap)."),
+    Page("PT-bbcc", "X→bb̄ vs X→cc̄ against jet pT (supplement)", ["2004.08262/fig17.png"], "CMS DeepAK8 Fig. 17",
+         PT_CAPTION,
+         "The old PT panel (d) in both modes: the area under the ROC curve of X→bb̄ against X→cc̄ per JetClass-II jet-pT "
+         "bin, for the label sets and the mass networks, on PT's axes.", draw_pt_bbcc,
+         "Discriminant p_bb / (p_bb + p_cc); 5,000 jets of each class in all, 240 to 930 in a bin."),
 ]
 
 import dataclasses  # noqa: E402

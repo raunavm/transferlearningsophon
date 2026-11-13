@@ -1,47 +1,55 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
-\begin{center}
+\begin{landscape}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \setlength{\tabcolsep}{6pt}
-\begin{minipage}{\linewidth}\centering
-\captionof{table}{Differences in mass sculpting between pairs of pretrained networks, each row the first network named minus the second. $\Delta$ is the difference of the Jensen--Shannon distances of table~\ref{tab:sculpt} ($\times10^{2}$), averaged over pairs of pretraining runs with the same seed. Run SD is the standard deviation of the paired differences over the seeds, bootstrap SD is that of $\Delta$ over 200 bootstrap replicas of the test jets, and $\sigma$ adds the two in quadrature. The blocks are the cuts of table~\ref{tab:sculpt}, which keep 1\% and 10\% of the QCD jets ($\epsB$) or half of the resonant jets ($\epsS = 50\%$). A flavor boundary is a class boundary between decays that differ only in quark flavor. There are \MlstNRunsWord{} pairs of runs for a label set against 188 classes and two for the others. $^{\dagger}$ marks a pair that the bootstrap does not include, whose $\sigma$ is the run SD alone.}
-\label{tab:sculptboot}
-\par\medskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\addtolength{\belowcaptionskip}{\medskipamount}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\caption{Differences in mass sculpting between pairs of pretrained networks, the first named minus the second, at the cuts of table~\ref{tab:sculpt}. $\Delta$ is the difference of their mean Jensen--Shannon distances ($\times10^{2}$). SD is a standard deviation, that of each network over its runs (run SD) or that of $\Delta$ over 200 replicas of the test jets (bootstrap SD), and $\sigma$ adds the three in quadrature. A label set has \MlstNRunsWord{} pretraining runs, and a mass network and a flavor-boundary partition \MlstMassNRunsWord{}.}\label{tab:sculptboot}\\
 \toprule
- & $\Delta$ & run SD & bootstrap SD & $\Delta/\sigma$ \\
+& $\Delta$ & run SD, first & run SD, second & bootstrap SD & $\Delta/\sigma$ \\
 \midrule
-\multicolumn{5}{@{}l}{\textit{$\epsB = 1\%$}} \\
-\Kres{} classes $-$ \Kfull{} classes & $-$0.10 & 0.21 & -- & $-$0.49$^{\dagger}$ \\
-\Kres{} classes + mass $-$ \Kres{} classes & $-$0.12 & 0.06 & 0.43 & $-$0.28 \\
-\Kmid{} classes $-$ \Kfull{} classes & 0.67 & 0.52 & 0.35 & 1.06 \\
-\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.13 & 0.38 & 3.07 \\
-\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.36 & 0.56 & 0.41 & $-$1.96 \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary $-$ \Kfull{} classes & 0.59 & 0.22 & 0.46 & 1.17 \\
-\quad $b$-quark boundary $-$ \Kfull{} classes & 0.70 & 0.27 & 0.44 & 1.35 \\
-\quad random flavor boundary $-$ \Kfull{} classes & 0.36 & 0.14 & 0.41 & 0.83 \\
+\endfirsthead
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:sculptboot} (continued)}} \\[\smallskipamount]
+\toprule
+& $\Delta$ & run SD, first & run SD, second & bootstrap SD & $\Delta/\sigma$ \\
 \midrule
-\multicolumn{5}{@{}l}{\textit{$\epsB = 10\%$}} \\
-\Kres{} classes $-$ \Kfull{} classes & 0.07 & 0.30 & -- & 0.24$^{\dagger}$ \\
-\Kres{} classes + mass $-$ \Kres{} classes & $-$0.94 & 0.26 & 0.09 & $-$3.38 \\
-\Kmid{} classes $-$ \Kfull{} classes & 0.36 & 0.09 & 0.07 & 3.16 \\
-\Kcoarse{} classes $-$ \Kfull{} classes & 0.19 & 0.26 & 0.08 & 0.71 \\
-\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$0.73 & 0.57 & 0.08 & $-$1.27 \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary $-$ \Kfull{} classes & 0.09 & 0.31 & 0.09 & 0.29 \\
-\quad $b$-quark boundary $-$ \Kfull{} classes & 0.02 & 0.12 & 0.08 & 0.12 \\
-\quad random flavor boundary $-$ \Kfull{} classes & $-$0.06 & 0.25 & 0.09 & $-$0.23 \\
-\midrule
-\multicolumn{5}{@{}l}{\textit{$\epsS = 50\%$}} \\
-\Kres{} classes $-$ \Kfull{} classes & 0.08 & 0.33 & -- & 0.24$^{\dagger}$ \\
-\Kres{} classes + mass $-$ \Kres{} classes & $-$0.10 & 0.51 & 0.54 & $-$0.14 \\
-\Kmid{} classes $-$ \Kfull{} classes & 0.91 & 0.58 & 0.43 & 1.26 \\
-\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.27 & 0.52 & 2.10 \\
-\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.58 & 0.11 & 0.60 & $-$2.59 \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary $-$ \Kfull{} classes & 0.41 & 0.18 & 0.61 & 0.65 \\
-\quad $b$-quark boundary $-$ \Kfull{} classes & 0.36 & 1.18 & 0.57 & 0.28 \\
-\quad random flavor boundary $-$ \Kfull{} classes & 0.45 & 0.98 & 0.56 & 0.40 \\
+\endhead
 \bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\endlastfoot
+\multicolumn{6}{@{}l}{\textit{$\epsB = 1\%$}} \\
+\Kres{} classes $-$ \Kfull{} classes & $-$0.10 & 0.29 & 0.24 & 0.28 & $-$0.22 \\
+\Kres{} classes + mass $-$ \Kres{} classes & 0.04 & 0.12 & 0.29 & 0.40 & 0.08 \\
+\Kmid{} classes $-$ \Kfull{} classes & 0.67 & 0.74 & 0.24 & 0.35 & 0.79 \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.17 & 0.24 & 0.38 & 2.55 \\
+\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.33 & 0.33 & 0.17 & 0.39 & $-$2.45 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary $-$ \Kfull{} classes & 0.70 & 0.01 & 0.24 & 0.43 & 1.42 \\
+\quad $b$-quark boundary $-$ \Kfull{} classes & 0.82 & 0.07 & 0.24 & 0.41 & 1.69 \\
+\quad random flavor boundary $-$ \Kfull{} classes & 0.47 & 0.06 & 0.24 & 0.38 & 1.04 \\
+\midrule
+\newpage
+\multicolumn{6}{@{}l}{\textit{$\epsB = 10\%$}} \\
+\Kres{} classes $-$ \Kfull{} classes & 0.07 & 0.09 & 0.34 & 0.06 & 0.20 \\
+\Kres{} classes + mass $-$ \Kres{} classes & $-$0.89 & 0.30 & 0.09 & 0.08 & $-$2.76 \\
+\Kmid{} classes $-$ \Kfull{} classes & 0.36 & 0.27 & 0.34 & 0.07 & 0.81 \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 0.19 & 0.10 & 0.34 & 0.08 & 0.52 \\
+\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$0.71 & 0.70 & 0.10 & 0.08 & $-$1.00 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary $-$ \Kfull{} classes & 0.24 & 0.02 & 0.34 & 0.08 & 0.68 \\
+\quad $b$-quark boundary $-$ \Kfull{} classes & 0.16 & 0.44 & 0.34 & 0.08 & 0.28 \\
+\quad random flavor boundary $-$ \Kfull{} classes & 0.08 & 0.08 & 0.34 & 0.08 & 0.23 \\
+\midrule
+\newpage
+\multicolumn{6}{@{}l}{\textit{$\epsS = 50\%$}} \\
+\Kres{} classes $-$ \Kfull{} classes & 0.08 & 0.15 & 0.48 & 0.39 & 0.13 \\
+\Kres{} classes + mass $-$ \Kres{} classes & $-$0.07 & 0.32 & 0.15 & 0.49 & $-$0.11 \\
+\Kmid{} classes $-$ \Kfull{} classes & 0.91 & 0.23 & 0.48 & 0.43 & 1.33 \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.22 & 0.48 & 0.52 & 1.66 \\
+\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.57 & 0.42 & 0.22 & 0.55 & $-$2.16 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary $-$ \Kfull{} classes & 0.51 & 0.45 & 0.48 & 0.55 & 0.60 \\
+\quad $b$-quark boundary $-$ \Kfull{} classes & 0.46 & 0.55 & 0.48 & 0.51 & 0.52 \\
+\quad random flavor boundary $-$ \Kfull{} classes & 0.55 & 0.36 & 0.48 & 0.51 & 0.70 \\
+\end{longtable}
+}
+\end{landscape}

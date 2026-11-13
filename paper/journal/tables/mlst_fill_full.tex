@@ -3,7 +3,7 @@
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \addtolength{\belowcaptionskip}{\medskipamount}
 \begin{longtable}{@{\extracolsep{\fill}}lcccccc@{}}
-\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls (every random partition), with the inputs a data set lacks set to zero, to the training mean or to random draws of a real particle: the relative drop in JetClass-II accuracy (percent) when those slots are substituted, then $R_{30}$ on top and quark/gluon tagging. Mean $\pm$ SD over the pretraining runs of each configuration. $^{\S}$ marks a value from a single run.}\label{tab:fillfull}\\
+\caption{Linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with every 17-class partition and of the random network with BatchNorm recomputed, with the inputs a data set lacks set to zero, to the training mean or to random draws of a real particle. The columns give the relative drop in JetClass-II accuracy, in percent, when the slots that the top or the quark/gluon data lack are substituted, and $R_{30}$, the inverse background efficiency at 30\% signal efficiency, on top and quark/gluon tagging. The network with kinematic inputs is pretrained on those inputs only and lacks nothing. The random network with BatchNorm recomputed re-estimates its BatchNorm statistics on \DesignBnJets{} training jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. $^{\S}$~marks a value from a single run.}\label{tab:fillfull}\\
 \toprule
 & \multicolumn{3}{c}{JetClass-II, top slots} & \multicolumn{3}{c}{JetClass-II, quark/gluon slots} \\
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
@@ -63,8 +63,8 @@ random network, BatchNorm recomputed & 56.4\,$\pm$\,1.4\% & 59.8\,$\pm$\,0.8\% &
 \quad random partition 3, seed 1 & 50.0$^{\S}$ & 43$^{\S}$ & 164$^{\S}$ & 65.2$^{\S}$ & 68.4$^{\S}$ & 62.3$^{\S}$ \\
 \quad random partition 4, seed 2 & 30.2$^{\S}$ & 56$^{\S}$ & 152$^{\S}$ & 51.0$^{\S}$ & 64.7$^{\S}$ & 61.6$^{\S}$ \\
 \quad random partition 5, seed 2 & 73.9$^{\S}$ & 45$^{\S}$ & 173$^{\S}$ & 54.9$^{\S}$ & 69.6$^{\S}$ & 68.2$^{\S}$ \\
-\Kfull{} classes, kinematic inputs & \multicolumn{3}{c}{231$^{\S}$ (nothing missing)} & -- & -- & -- \\
 random network, BatchNorm recomputed & 57.6\,$\pm$\,12.7 & 60\,$\pm$\,2 & 49\,$\pm$\,3 & 54.2\,$\pm$\,2.4 & 52.2\,$\pm$\,0.8 & 52.4\,$\pm$\,0.4 \\
+\Kfull{} classes, kinematic inputs & \multicolumn{3}{c}{231$^{\S}$ (nothing missing)} & -- & -- & -- \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

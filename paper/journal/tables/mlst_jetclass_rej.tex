@@ -1,13 +1,9 @@
 \begin{landscape}
-{
-\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{table*}[t]
+\centering
 \setlength{\tabcolsep}{2.5pt}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\setlength{\abovecaptionskip}{0pt}
-\captionof{table}{Rejection of QCD jets for each JetClass signal class by the networks pretrained with 188, 162, 43 and 17 classes and with an added mass output, fine-tuned on one million JetClass jets, by the same architecture trained from scratch on those jets, and by published models trained from scratch on two million jets. The rejection is the inverse QCD efficiency at the signal efficiency in the subscript, 50\% except 99\% for $H\to\ell\nu qq'$ and 99.5\% for $t\to b\ell\nu$. Values of this work are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \MlstMassNRunsWord{} per network with an added mass output and three training seeds from scratch. Accuracy and AUC are in tables~\ref{tab:summary}, \ref{tab:summaryauc} and~\ref{tab:published}. Bold marks the best value of a column and every value within three standard deviations of it. $^\dagger$ marks a value for which fewer than \MlstMinBkgPass{} QCD jets pass in a run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}
+\caption{Rejection of QCD jets for each JetClass signal class, the inverse QCD efficiency at the signal efficiency in the subscript, 50\% except 99\% for $H\to\ell\nu qq'$ and 99.5\% for $t\to b\ell\nu$. The pretrained networks are fine-tuned on one million JetClass jets, beside training from scratch on them and published models trained from scratch on two million. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network. Bold marks the best value of a column and every value within three standard deviations of it. $^\dagger$~marks a value for which fewer than \MlstMinBkgPass{} QCD jets pass in a run. $^{\P}$~marks a value whose runs agree to the digits shown.}
 \label{tab:jetclassrej}
-\par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccccccccc@{}}
 \toprule
  & & \multicolumn{9}{c}{rejection of QCD} \\
@@ -28,7 +24,5 @@ ParT~\cite{part} & 2 M & 5{,}587 & 1{,}982 & 93 & 761 & 1{,}609 & 6{,}061 & {\fo
 from scratch & 1 M & 4{,}800\,$\pm$\,100 & 1{,}570\,$\pm$\,50 & 86\,$\pm$\,3 & 640\,$\pm$\,40 & 1{,}290\,$\pm$\,100 & 6{,}400\,$\pm$\,200 & {\fontseries{b}\selectfont 3{,}600\,$\pm$\,1{,}000} & 262\,$\pm$\,15 & 210\,$\pm$\,12 \\
 \bottomrule
 \end{tabular*}
-\end{minipage}
-\end{center}
-}
+\end{table*}
 \end{landscape}

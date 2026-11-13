@@ -31,7 +31,7 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
          # supplement
          "PC-jc2-part", "PC-jc1-part", "PC-jc2-mass", "PC-jc1-mass", "PC-conf", "PC-conf-part", "PC-conf-mass",
          "F4-ee", "F4-rand", "F4-rand-ft", "F8", "F8-auc", "A8-auc", "A10-auc", "A8-part", "A10-part", "F6-part",
-         "FJ", "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "A3R", "A3R-ft", "F9a", "A17-res", "A17-qcd", "A17-probe",
+         "FJ", "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "A3R", "A3R-ft", "PT-part", "PT-bbcc", "F9a", "A17-res", "A17-qcd", "A17-probe",
          "A17-ridge", "F10a", "F10b-flav", "F10c", "F10a-flav", "F10-ft", "F10-ft-part", "F10a-mass", "F11-probe",
          "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "VAL-part",
          "SOPHON-FIG2", "PALETTE",      # gallery only
@@ -41,14 +41,15 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
 
 # the figures the PI approved page by page (2026-11-05), drawn into the paper by the render job (--paper);
 # the pages still coming back through the gallery are not here (the resonance, mass, sculpting and pretraining-curve
-# families are, PI 2026-11-13); F3, F3-scatter, F4 and
+# families are, PI 2026-11-13, and the jet-pT family); F3, F3-scatter, F4 and
 # F4-app were dropped (gallery_placement.DROPPED, PI 2026-11-08); the per-class family replaced F3-main, F3-app,
 # F3-app2, F3-app3, F3-ft, F3-ft2 and CONF, and F6 took in F6-app (gallery_placement.SUPERSEDED, PI 2026-11-13)
 PAPER = ("F1", "F2", "F2a", "F2b", "PC-jc2", "PC-jc1", "PC-jc2-part", "PC-jc1-part", "PC-jc2-mass", "PC-jc1-mass",
          "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-mech", "F4-mech-ft", "F4-other", "F4-other-ft", "F4-ee", "F4-rand",
          "F4-rand-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F6", "F6-part", "F8",
          "F8-auc", "A8", "A8-auc", "A8-part", "A10", "A10-auc", "A10-part", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge", "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",
-         "F10-ft", "F10-ft-part", "F10a-mass", "F11", "F11-part", "F11-probe", "A3R", "A3R-ft", "VAL", "VAL-part")      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
+         "F10-ft", "F10-ft-part", "F10a-mass", "F11", "F11-part", "F11-probe", "A3R", "A3R-ft", "PT", "PT-part", "PT-bbcc",
+         "VAL", "VAL-part")      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
 
 
 def main() -> int:

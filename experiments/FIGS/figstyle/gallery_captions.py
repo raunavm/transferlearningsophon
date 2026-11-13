@@ -19,15 +19,15 @@ CAPTIONS = {
         "tasks, namely JetClass-II, JetClass, top tagging, quark/gluon tagging, and X→bb̄ and X→bs resonance tagging."
     ),
     "F2": (
-        "With linear probes, the networks pretrained with 43 and 17 classes and with every 17-class partition, a "
-        "regrouping of the 188 classes, are less accurate on JetClass-II than the 188-class network, and fine-tuned "
-        "the 17-class network stays below it on JetClass-II and JetClass. On top and quark/gluon tagging, Pythia and "
-        "Herwig, no label set differs from 188 classes by more than the spread over runs. Rows show the mean and ±1 "
-        "standard deviation over three pretraining runs at each task's largest training set, two for networks with an "
-        "added mass regression (+ mass) and for partitions named by their flavor boundary, between decays differing "
-        "only in quark flavor, or five random partitions. R30 is the inverse background efficiency at 30% signal "
-        "efficiency, and the random network is untrained. Figures {fig:F2a} and {fig:F2b} add the area under the ROC "
-        "curve, with values in table {tab:summary}."
+        "With linear probes, the networks pretrained with 43 and 17 classes and every 17-class partition, a "
+        "regrouping of the 188 classes, fall below 188 classes in JetClass-II accuracy. After fine-tuning, 17 classes "
+        "stay below 188 on JetClass-II and make about 3% more errors on JetClass, while on top and quark/gluon "
+        "tagging, Pythia and Herwig, no label set differs from 188 classes by more than the spread over runs. Rows "
+        "show the mean ±1 standard deviation over three pretraining runs at the largest training sets, two for "
+        "networks with an added mass regression (+ mass) and for partitions named by their flavor boundary, between "
+        "decays differing only in quark flavor, or five random partitions. R30 is the inverse background efficiency "
+        "at 30% signal efficiency, and the random network is untrained. Figures {fig:F2a} and {fig:F2b} add the area "
+        "under the ROC curve, with values in table {tab:summary}."
     ),
     "F2a": (
         "Linear probes on JetClass-II separate the classes less well for the networks pretrained with 43 and 17 "
@@ -150,14 +150,14 @@ CAPTIONS = {
         "count. Curves end where fewer than 20 background jets remain, and the values are in table {tab:pairs}."
     ),
     "PT": (
-        "In every bin of jet transverse momentum, linear probes on the networks pretrained with 43 and 17 "
-        "classes are less accurate on JetClass-II than probes on the network pretrained with 188 classes. "
-        "Panels (a) and (b) show linear-probe accuracy on JetClass-II, panel (c) accuracy on JetClass after "
-        "fine-tuning on one million jets, and panel (d) the area under the receiver operating characteristic "
-        "curve (AUC) of the linear probes separating X→bb̄ from X→cc̄ jets. Panel (b) uses the "
-        "flavor-boundary partitions of figure 2. Points show the mean over three pretraining runs, two for "
-        "each flavor-boundary partition, horizontal bars span the bin, and vertical bars show ±1 standard "
-        "deviation over runs."
+        "In every bin of jet pT (transverse momentum), linear probes on the networks pretrained with 43 and 17 classes "
+        "are less accurate on JetClass-II than on the 188-class network, and fine-tuned, the 17-class network stays "
+        "below it in every JetClass-II bin and in the two lowest JetClass bins, 500-700 GeV. The panels show the "
+        "accuracy per jet pT bin of linear probes (upper row) and fine-tuned networks (lower row), trained on one "
+        "million jets, for the label sets and the networks with an added mass regression (+ mass, lighter shades). "
+        "Only JetClass-II and JetClass are binned, because the top and quark/gluon samples span only about 50 to 100 "
+        "GeV of jet pT each. Points are means over three pretraining runs, two for + mass, horizontal bars span the "
+        "bin, and vertical bars show ±1 standard deviation over runs. Values are in table {tab:ptbins}."
     ),
     "F6": (
         "On top and quark/gluon tagging, Pythia and Herwig, no label set or mass network differs "
@@ -206,7 +206,7 @@ CAPTIONS = {
         "(+ mass, lighter shades). Each network is scored on its own classes, so the heights of the curves do not "
         "compare the label sets. The learning rate decays from epoch 57, where every curve rises slightly. Each "
         "curve is the mean over three pretraining runs, two for + mass, and the bands show ±1 standard deviation "
-        "over runs."
+        "over runs. The values at the last epoch are in table {tab:compute}."
     ),
 }
 

@@ -1,0 +1,268 @@
+\begin{landscape}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\setlength{\tabcolsep}{6pt}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\setlength{\abovecaptionskip}{0pt}
+\captionof{table}{Accuracy on class-balanced JetClass-II and on JetClass, and the AUC of $X\to b\bar b$ against $X\to c\bar c$ on JetClass-II, in bins of jet $p_{\mathrm{T}}$, for linear probes on the frozen features and for fine-tuned networks, each trained on one million jets. The AUC is the area under the receiver operating characteristic curve of the discriminant $p_{b\bar b}/(p_{b\bar b}+p_{c\bar c})$. Fine-tuning on JetClass-II had a cap of 40 epochs, and of 160 for the first run of \Kcoarse{} classes, both runs of \Kcoarse{} classes + mass and every partition. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each.}
+\label{tab:ptbins}
+\par\medskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass-II, accuracy, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.3502\,$\pm$\,0.0004 & 0.3873\,$\pm$\,0.0011 & 0.4138\,$\pm$\,0.0007 & 0.432\,$\pm$\,0.001 & 0.4415\,$\pm$\,0.0001 \\
+\Kres{} classes & 0.3498\,$\pm$\,0.0008 & 0.3869\,$\pm$\,0.0009 & 0.4132\,$\pm$\,0.0009 & 0.430\,$\pm$\,0.001 & 0.4392\,$\pm$\,0.0005 \\
+\Kres{} classes + mass & 0.3460\,$\pm$\,0.0016 & 0.3835\,$\pm$\,0.0024 & 0.4095\,$\pm$\,0.0018 & 0.426\,$\pm$\,0.002 & 0.4352\,$\pm$\,0.0030 \\
+\Kmid{} classes & 0.2868\,$\pm$\,0.0062 & 0.3210\,$\pm$\,0.0062 & 0.3451\,$\pm$\,0.0050 & 0.361\,$\pm$\,0.006 & 0.3687\,$\pm$\,0.0049 \\
+\Kcoarse{} classes & 0.2683\,$\pm$\,0.0080 & 0.3005\,$\pm$\,0.0074 & 0.3215\,$\pm$\,0.0079 & 0.338\,$\pm$\,0.006 & 0.3428\,$\pm$\,0.0057 \\
+\Kcoarse{} classes + mass & 0.2642\,$\pm$\,0.0247 & 0.2951\,$\pm$\,0.0263 & 0.3191\,$\pm$\,0.0254 & 0.332\,$\pm$\,0.026 & 0.3400\,$\pm$\,0.0255 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.3060\,$\pm$\,0.0042 & 0.3379\,$\pm$\,0.0019 & 0.3605\,$\pm$\,0.0045 & 0.375\,$\pm$\,0.004 & 0.3834\,$\pm$\,0.0030 \\
+\quad $b$-quark boundary & 0.3218\,$\pm$\,0.0014 & 0.3549\,$\pm$\,0.0003 & 0.3792\,$\pm$\,0.0014 & 0.396\,$\pm$\,0.001 & 0.4033\,$\pm$\,0.0015 \\
+\quad random flavor boundary & 0.3288\,$\pm$\,0.0016 & 0.3642\,$\pm$\,0.0017 & 0.3892\,$\pm$\,0.0008 & 0.407\,$\pm$\,0.001 & 0.4160\,$\pm$\,0.0008 \\
+\quad random partitions & 0.3390\,$\pm$\,0.0017 & 0.3760\,$\pm$\,0.0010 & 0.4029\,$\pm$\,0.0011 & 0.420\,$\pm$\,0.002 & 0.4296\,$\pm$\,0.0011 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ptbins} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass-II, accuracy, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 850--1{,}000 & 1{,}000--1{,}250 & 1{,}250--1{,}500 & 1{,}500--2{,}000 & 2{,}000--2{,}500 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.4519\,$\pm$\,0.0016 & 0.460\,$\pm$\,0.001 & 0.469\,$\pm$\,0.001 & 0.4815\,$\pm$\,0.0006 & 0.4846\,$\pm$\,0.0013 \\
+\Kres{} classes & 0.4505\,$\pm$\,0.0012 & 0.458\,$\pm$\,0.001 & 0.466\,$\pm$\,0.001 & 0.4781\,$\pm$\,0.0008 & 0.4788\,$\pm$\,0.0012 \\
+\Kres{} classes + mass & 0.4463\,$\pm$\,0.0020 & 0.454\,$\pm$\,0.002 & 0.462\,$\pm$\,0.003 & 0.4732\,$\pm$\,0.0029 & 0.4746\,$\pm$\,0.0018 \\
+\Kmid{} classes & 0.3782\,$\pm$\,0.0044 & 0.383\,$\pm$\,0.004 & 0.390\,$\pm$\,0.005 & 0.3970\,$\pm$\,0.0031 & 0.3930\,$\pm$\,0.0009 \\
+\Kcoarse{} classes & 0.3502\,$\pm$\,0.0065 & 0.355\,$\pm$\,0.006 & 0.360\,$\pm$\,0.007 & 0.3617\,$\pm$\,0.0072 & 0.3520\,$\pm$\,0.0083 \\
+\Kcoarse{} classes + mass & 0.3479\,$\pm$\,0.0237 & 0.352\,$\pm$\,0.026 & 0.355\,$\pm$\,0.027 & 0.3600\,$\pm$\,0.0304 & 0.3545\,$\pm$\,0.0296 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.3899\,$\pm$\,0.0036 & 0.395\,$\pm$\,0.003 & 0.400\,$\pm$\,0.003 & 0.4076\,$\pm$\,0.0009 & 0.4031\,$\pm$\,0.0035 \\
+\quad $b$-quark boundary & 0.4103\,$\pm$\,0.0001 & 0.416\,$\pm$\,0.004 & 0.423\,$\pm$\,0.001 & 0.4329\,$\pm$\,0.0004 & 0.4321\,$\pm$\,0.0015 \\
+\quad random flavor boundary & 0.4240\,$\pm$\,0.0013 & 0.433\,$\pm$\,0.002 & 0.440\,$\pm$\,0.001 & 0.4493\,$\pm$\,0.0018 & 0.4483\,$\pm$\,0.0009 \\
+\quad random partitions & 0.4398\,$\pm$\,0.0015 & 0.447\,$\pm$\,0.001 & 0.453\,$\pm$\,0.003 & 0.4647\,$\pm$\,0.0013 & 0.4638\,$\pm$\,0.0021 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ptbins} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass-II, accuracy, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 0.3460\,$\pm$\,0.0006 & 0.38143\,$\pm$\,0.00059 & 0.4071\,$\pm$\,0.0002 & 0.4242\,$\pm$\,0.0010 & 0.4320\,$\pm$\,0.0007 \\
+\Kres{} classes & 0.3464\,$\pm$\,0.0017 & 0.38178\,$\pm$\,0.00161 & 0.4061\,$\pm$\,0.0022 & 0.4230\,$\pm$\,0.0019 & 0.4307\,$\pm$\,0.0020 \\
+\Kres{} classes + mass & 0.3394\,$\pm$\,0.0015 & 0.37605\,$\pm$\,0.00167 & 0.4013\,$\pm$\,0.0013 & 0.4184\,$\pm$\,0.0012 & 0.4264\,$\pm$\,0.0008 \\
+\Kmid{} classes & 0.3396\,$\pm$\,0.0013 & 0.37474\,$\pm$\,0.00191 & 0.3982\,$\pm$\,0.0006 & 0.4155\,$\pm$\,0.0012 & 0.4222\,$\pm$\,0.0006 \\
+\Kcoarse{} classes & 0.3281\,$\pm$\,0.0014 & 0.36277\,$\pm$\,0.00133 & 0.3877\,$\pm$\,0.0019 & 0.4038\,$\pm$\,0.0018 & 0.4119\,$\pm$\,0.0022 \\
+\Kcoarse{} classes + mass & 0.3240\,$\pm$\,0.0002 & 0.36007\,$\pm$\,0.00054 & 0.3838\,$\pm$\,0.0008 & 0.3989\,$\pm$\,0.0019 & 0.4066\,$\pm$\,0.0010 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.3318\,$\pm$\,0.0017 & 0.36667\,$\pm$\,0.00004 & 0.3896\,$\pm$\,0.0009 & 0.4063\,$\pm$\,0.0003 & 0.4149\,$\pm$\,0.0005 \\
+\quad $b$-quark boundary & 0.3329\,$\pm$\,0.0012 & 0.36747\,$\pm$\,0.00196 & 0.3921\,$\pm$\,0.0010 & 0.4098\,$\pm$\,0.0014 & 0.4162\,$\pm$\,0.0005 \\
+\quad random flavor boundary & 0.3331\,$\pm$\,0.0027 & 0.36912\,$\pm$\,0.00242 & 0.3938\,$\pm$\,0.0017 & 0.4112\,$\pm$\,0.0030 & 0.4196\,$\pm$\,0.0027 \\
+\quad random partitions & 0.3373\,$\pm$\,0.0021 & 0.37296\,$\pm$\,0.00177 & 0.3988\,$\pm$\,0.0016 & 0.4154\,$\pm$\,0.0017 & 0.4227\,$\pm$\,0.0014 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ptbins} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass-II, accuracy, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 850--1{,}000 & 1{,}000--1{,}250 & 1{,}250--1{,}500 & 1{,}500--2{,}000 & 2{,}000--2{,}500 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 0.4430\,$\pm$\,0.0011 & 0.4502\,$\pm$\,0.0002 & 0.4581\,$\pm$\,0.0008 & 0.4704\,$\pm$\,0.0014 & 0.4713\,$\pm$\,0.0010 \\
+\Kres{} classes & 0.4413\,$\pm$\,0.0020 & 0.4483\,$\pm$\,0.0024 & 0.4550\,$\pm$\,0.0031 & 0.4676\,$\pm$\,0.0020 & 0.4688\,$\pm$\,0.0037 \\
+\Kres{} classes + mass & 0.4376\,$\pm$\,0.0011 & 0.4447\,$\pm$\,0.0016 & 0.4521\,$\pm$\,0.0001 & 0.4655\,$\pm$\,0.0005 & 0.4649\,$\pm$\,0.0007 \\
+\Kmid{} classes & 0.4331\,$\pm$\,0.0012 & 0.4407\,$\pm$\,0.0016 & 0.4465\,$\pm$\,0.0020 & 0.4573\,$\pm$\,0.0024 & 0.4576\,$\pm$\,0.0018 \\
+\Kcoarse{} classes & 0.4220\,$\pm$\,0.0023 & 0.4287\,$\pm$\,0.0021 & 0.4358\,$\pm$\,0.0022 & 0.4449\,$\pm$\,0.0021 & 0.4478\,$\pm$\,0.0040 \\
+\Kcoarse{} classes + mass & 0.4168\,$\pm$\,0.0023 & 0.4241\,$\pm$\,0.0021 & 0.4300\,$\pm$\,0.0012 & 0.4399\,$\pm$\,0.0011 & 0.4402\,$\pm$\,0.0004 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.4236\,$\pm$\,0.0003 & 0.4322\,$\pm$\,0.0006 & 0.4370\,$\pm$\,0.0012 & 0.4472\,$\pm$\,0.0001 & 0.4474\,$\pm$\,0.0005 \\
+\quad $b$-quark boundary & 0.4255\,$\pm$\,0.0001 & 0.4339\,$\pm$\,0.0012 & 0.4409\,$\pm$\,0.0021 & 0.4503\,$\pm$\,0.0012 & 0.4501\,$\pm$\,0.0031 \\
+\quad random flavor boundary & 0.4290\,$\pm$\,0.0005 & 0.4365\,$\pm$\,0.0016 & 0.4439\,$\pm$\,0.0010 & 0.4559\,$\pm$\,0.0027 & 0.4555\,$\pm$\,0.0028 \\
+\quad random partitions & 0.4334\,$\pm$\,0.0012 & 0.4404\,$\pm$\,0.0010 & 0.4469\,$\pm$\,0.0023 & 0.4579\,$\pm$\,0.0018 & 0.4573\,$\pm$\,0.0032 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ptbins} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass, accuracy, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 500--600 & 600--700 & 700--800 & 800--900 & 900--1{,}000 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.7743\,$\pm$\,0.0022 & 0.770\,$\pm$\,0.002 & 0.764\,$\pm$\,0.002 & 0.760\,$\pm$\,0.003 & 0.757\,$\pm$\,0.003 \\
+\Kres{} classes & 0.7745\,$\pm$\,0.0009 & 0.770\,$\pm$\,0.001 & 0.764\,$\pm$\,0.001 & 0.759\,$\pm$\,0.001 & 0.754\,$\pm$\,0.002 \\
+\Kres{} classes + mass & 0.7773\,$\pm$\,0.0031 & 0.774\,$\pm$\,0.003 & 0.767\,$\pm$\,0.003 & 0.762\,$\pm$\,0.003 & 0.758\,$\pm$\,0.002 \\
+\Kmid{} classes & 0.7729\,$\pm$\,0.0014 & 0.769\,$\pm$\,0.001 & 0.763\,$\pm$\,0.002 & 0.758\,$\pm$\,0.002 & 0.755\,$\pm$\,0.002 \\
+\Kcoarse{} classes & 0.7645\,$\pm$\,0.0024 & 0.761\,$\pm$\,0.003 & 0.753\,$\pm$\,0.004 & 0.746\,$\pm$\,0.005 & 0.740\,$\pm$\,0.002 \\
+\Kcoarse{} classes + mass & 0.7662\,$\pm$\,0.0002 & 0.762\,$\pm$\,0.001 & 0.754\,$\pm$\,0.002 & 0.747\,$\pm$\,0.002 & 0.738\,$\pm$\,0.002 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.7555\,$\pm$\,0.0032 & 0.751\,$\pm$\,0.003 & 0.743\,$\pm$\,0.004 & 0.735\,$\pm$\,0.005 & 0.728\,$\pm$\,0.006 \\
+\quad $b$-quark boundary & 0.7665\,$\pm$\,0.0024 & 0.763\,$\pm$\,0.002 & 0.756\,$\pm$\,0.001 & 0.751\,$\pm$\,0.001 & 0.745\,$\pm$\,0.001 \\
+\quad random flavor boundary & 0.7618\,$\pm$\,0.0017 & 0.758\,$\pm$\,0.002 & 0.750\,$\pm$\,0.002 & 0.744\,$\pm$\,0.003 & 0.736\,$\pm$\,0.003 \\
+\quad random partitions & 0.7575\,$\pm$\,0.0010 & 0.754\,$\pm$\,0.001 & 0.747\,$\pm$\,0.001 & 0.743\,$\pm$\,0.001 & 0.740\,$\pm$\,0.001 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ptbins} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass, accuracy, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 500--600 & 600--700 & 700--800 & 800--900 & 900--1{,}000 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 0.8475\,$\pm$\,0.0002 & 0.84722\,$\pm$\,0.00080 & 0.8443\,$\pm$\,0.0014 & 0.8452\,$\pm$\,0.0014 & 0.8429\,$\pm$\,0.0015 \\
+\Kres{} classes & 0.8485\,$\pm$\,0.0010 & 0.84768\,$\pm$\,0.00115 & 0.8450\,$\pm$\,0.0009 & 0.8456\,$\pm$\,0.0007 & 0.8423\,$\pm$\,0.0010 \\
+\Kres{} classes + mass & 0.8472\,$\pm$\,0.0007 & 0.84699\,$\pm$\,0.00094 & 0.8441\,$\pm$\,0.0010 & 0.8445\,$\pm$\,0.0014 & 0.8405\,$\pm$\,0.0021 \\
+\Kmid{} classes & 0.8467\,$\pm$\,0.0004 & 0.84590\,$\pm$\,0.00010 & 0.8437\,$\pm$\,0.0001 & 0.8445\,$\pm$\,0.0001 & 0.8408\,$\pm$\,0.0010 \\
+\Kcoarse{} classes & 0.8432\,$\pm$\,0.0003 & 0.84269\,$\pm$\,0.00077 & 0.8386\,$\pm$\,0.0013 & 0.8393\,$\pm$\,0.0012 & 0.8379\,$\pm$\,0.0005 \\
+\Kcoarse{} classes + mass & 0.8408\,$\pm$\,0.0004 & 0.84017\,$\pm$\,0.00003 & 0.8372\,$\pm$\,0.0004 & 0.8374\,$\pm$\,0.0001 & 0.8351\,$\pm$\,0.0001 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.8439\,$\pm$\,0.0004 & 0.84384\,$\pm$\,0.00021 & 0.8409\,$\pm$\,0.0001 & 0.8413\,$\pm$\,0.0009 & 0.8398\,$\pm$\,0.0002 \\
+\quad $b$-quark boundary & 0.8445\,$\pm$\,0.0003 & 0.84450\,$\pm$\,0.00118 & 0.8414\,$\pm$\,0.0004 & 0.8420\,$\pm$\,0.0020 & 0.8386\,$\pm$\,0.0025 \\
+\quad random flavor boundary & 0.8441\,$\pm$\,0.0001 & 0.84358\,$\pm$\,0.00049 & 0.8406\,$\pm$\,0.0001 & 0.8422\,$\pm$\,0.0006 & 0.8400\,$\pm$\,0.0024 \\
+\quad random partitions & 0.8450\,$\pm$\,0.0007 & 0.84469\,$\pm$\,0.00089 & 0.8419\,$\pm$\,0.0008 & 0.8426\,$\pm$\,0.0010 & 0.8400\,$\pm$\,0.0012 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ptbins} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ vs $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.9976\,$\pm$\,0.0002 & 0.9948\,$\pm$\,0.0003 & 0.9947\,$\pm$\,0.0001 & 0.99809\,$\pm$\,0.00033 & 0.9961\,$\pm$\,0.0001 \\
+\Kres{} classes & 0.9975\,$\pm$\,0.0002 & 0.9950\,$\pm$\,0.0004 & 0.9946\,$\pm$\,0.0006 & 0.99851\,$\pm$\,0.00021 & 0.9960\,$\pm$\,0.0001 \\
+\Kres{} classes + mass & 0.9972\,$\pm$\,0.0003 & 0.9934\,$\pm$\,0.0005 & 0.9950\,$\pm$\,0.0003 & 0.99802\,$\pm$\,0.00071 & 0.9961\,$\pm$\,0.0001 \\
+\Kmid{} classes & 0.9974\,$\pm$\,0.0004 & 0.9940\,$\pm$\,0.0004 & 0.9944\,$\pm$\,0.0004 & 0.99805\,$\pm$\,0.00017 & 0.9957\,$\pm$\,0.0006 \\
+\Kcoarse{} classes & 0.9892\,$\pm$\,0.0038 & 0.9790\,$\pm$\,0.0033 & 0.9847\,$\pm$\,0.0019 & 0.98843\,$\pm$\,0.00122 & 0.9879\,$\pm$\,0.0013 \\
+\Kcoarse{} classes + mass & 0.9862\,$\pm$\,0.0031 & 0.9787\,$\pm$\,0.0023 & 0.9868\,$\pm$\,0.0027 & 0.98710\,$\pm$\,0.00004 & 0.9899\,$\pm$\,0.0022 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.9729\,$\pm$\,0.0176 & 0.9577\,$\pm$\,0.0185 & 0.9739\,$\pm$\,0.0139 & 0.97421\,$\pm$\,0.01197 & 0.9694\,$\pm$\,0.0199 \\
+\quad $b$-quark boundary & 0.9942\,$\pm$\,0.0012 & 0.9894\,$\pm$\,0.0018 & 0.9902\,$\pm$\,0.0014 & 0.99500\,$\pm$\,0.00011 & 0.9926\,$\pm$\,0.0003 \\
+\quad random flavor boundary & 0.9894\,$\pm$\,0.0024 & 0.9842\,$\pm$\,0.0015 & 0.9903\,$\pm$\,0.0012 & 0.99060\,$\pm$\,0.00078 & 0.9921\,$\pm$\,0.0026 \\
+\quad random partitions & 0.9960\,$\pm$\,0.0012 & 0.9914\,$\pm$\,0.0012 & 0.9940\,$\pm$\,0.0008 & 0.99568\,$\pm$\,0.00068 & 0.9946\,$\pm$\,0.0004 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ptbins} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ vs $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 850--1{,}000 & 1{,}000--1{,}250 & 1{,}250--1{,}500 & 1{,}500--2{,}000 & 2{,}000--2{,}500 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.9976\,$\pm$\,0.0004 & 0.9980\,$\pm$\,0.0001 & 0.9994\,$\pm$\,0.0001 & 0.9982\,$\pm$\,0.0001 & 0.99873\,$\pm$\,0.00007 \\
+\Kres{} classes & 0.9975\,$\pm$\,0.0003 & 0.9980\,$\pm$\,0.0002 & 0.9994\,$\pm$\,0.0002 & 0.9982\,$\pm$\,0.0001 & 0.99854\,$\pm$\,0.00040 \\
+\Kres{} classes + mass & 0.9974\,$\pm$\,0.0006 & 0.9976\,$\pm$\,0.0001 & 0.9993\,$\pm$\,0.0001 & 0.9978\,$\pm$\,0.0006 & 0.99838\,$\pm$\,0.00005 \\
+\Kmid{} classes & 0.9973\,$\pm$\,0.0003 & 0.9978\,$\pm$\,0.0003 & 0.9991\,$\pm$\,0.0001 & 0.9979\,$\pm$\,0.0001 & 0.99837\,$\pm$\,0.00020 \\
+\Kcoarse{} classes & 0.9909\,$\pm$\,0.0018 & 0.9882\,$\pm$\,0.0012 & 0.9934\,$\pm$\,0.0019 & 0.9836\,$\pm$\,0.0016 & 0.99324\,$\pm$\,0.00096 \\
+\Kcoarse{} classes + mass & 0.9909\,$\pm$\,0.0031 & 0.9899\,$\pm$\,0.0001 & 0.9904\,$\pm$\,0.0020 & 0.9867\,$\pm$\,0.0005 & 0.99222\,$\pm$\,0.00158 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.9801\,$\pm$\,0.0164 & 0.9769\,$\pm$\,0.0166 & 0.9803\,$\pm$\,0.0113 & 0.9670\,$\pm$\,0.0109 & 0.97774\,$\pm$\,0.01908 \\
+\quad $b$-quark boundary & 0.9955\,$\pm$\,0.0002 & 0.9951\,$\pm$\,0.0002 & 0.9979\,$\pm$\,0.0003 & 0.9958\,$\pm$\,0.0001 & 0.99841\,$\pm$\,0.00023 \\
+\quad random flavor boundary & 0.9955\,$\pm$\,0.0010 & 0.9917\,$\pm$\,0.0008 & 0.9968\,$\pm$\,0.0004 & 0.9917\,$\pm$\,0.0016 & 0.99611\,$\pm$\,0.00052 \\
+\quad random partitions & 0.9966\,$\pm$\,0.0009 & 0.9965\,$\pm$\,0.0004 & 0.9987\,$\pm$\,0.0006 & 0.9965\,$\pm$\,0.0007 & 0.99741\,$\pm$\,0.00041 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ptbins} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ vs $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 0.9969\,$\pm$\,0.0006 & 0.9939\,$\pm$\,0.0001 & 0.9944\,$\pm$\,0.0006 & 0.9981\,$\pm$\,0.0003 & 0.99628\,$\pm$\,0.00010 \\
+\Kres{} classes & 0.9971\,$\pm$\,0.0007 & 0.9944\,$\pm$\,0.0011 & 0.9939\,$\pm$\,0.0002 & 0.9981\,$\pm$\,0.0004 & 0.99581\,$\pm$\,0.00022 \\
+\Kres{} classes + mass & 0.9967\,$\pm$\,0.0010 & 0.9922\,$\pm$\,0.0006 & 0.9944\,$\pm$\,0.0001 & 0.9980\,$\pm$\,0.0003 & 0.99579\,$\pm$\,0.00036 \\
+\Kmid{} classes & 0.9969\,$\pm$\,0.0009 & 0.9944\,$\pm$\,0.0009 & 0.9936\,$\pm$\,0.0006 & 0.9977\,$\pm$\,0.0002 & 0.99517\,$\pm$\,0.00104 \\
+\Kcoarse{} classes & 0.9937\,$\pm$\,0.0005 & 0.9893\,$\pm$\,0.0018 & 0.9920\,$\pm$\,0.0010 & 0.9937\,$\pm$\,0.0007 & 0.99384\,$\pm$\,0.00089 \\
+\Kcoarse{} classes + mass & 0.9950\,$\pm$\,0.0004 & 0.9895\,$\pm$\,0.0006 & 0.9903\,$\pm$\,0.0004 & 0.9941\,$\pm$\,0.0012 & 0.99391\,$\pm$\,0.00142 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.9950\,$\pm$\,0.0011 & 0.9893\,$\pm$\,0.0013 & 0.9929\,$\pm$\,0.0006 & 0.9948\,$\pm$\,0.0011 & 0.99425\,$\pm$\,0.00002 \\
+\quad $b$-quark boundary & 0.9947\,$\pm$\,0.0001 & 0.9923\,$\pm$\,0.0009 & 0.9924\,$\pm$\,0.0005 & 0.9966\,$\pm$\,0.0004 & 0.99404\,$\pm$\,0.00140 \\
+\quad random flavor boundary & 0.9934\,$\pm$\,0.0004 & 0.9915\,$\pm$\,0.0020 & 0.9923\,$\pm$\,0.0004 & 0.9949\,$\pm$\,0.0007 & 0.99367\,$\pm$\,0.00073 \\
+\quad random partitions & 0.9957\,$\pm$\,0.0011 & 0.9926\,$\pm$\,0.0012 & 0.9934\,$\pm$\,0.0010 & 0.9964\,$\pm$\,0.0006 & 0.99490\,$\pm$\,0.00025 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ptbins} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ vs $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
+\cmidrule(lr){2-6}
+ & 850--1{,}000 & 1{,}000--1{,}250 & 1{,}250--1{,}500 & 1{,}500--2{,}000 & 2{,}000--2{,}500 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 0.9974\,$\pm$\,0.0002 & 0.9973\,$\pm$\,0.0003 & 0.9989\,$\pm$\,0.0003 & 0.9974\,$\pm$\,0.0007 & 0.99826\,$\pm$\,0.00043 \\
+\Kres{} classes & 0.9971\,$\pm$\,0.0007 & 0.9975\,$\pm$\,0.0001 & 0.9988\,$\pm$\,0.0002 & 0.9974\,$\pm$\,0.0001 & 0.99786\,$\pm$\,0.00019 \\
+\Kres{} classes + mass & 0.9971\,$\pm$\,0.0012 & 0.9971\,$\pm$\,0.0005 & 0.9989\,$\pm$\,0.0005 & 0.9970\,$\pm$\,0.0002 & 0.99793\,$\pm$\,0.00004 \\
+\Kmid{} classes & 0.9970\,$\pm$\,0.0005 & 0.9968\,$\pm$\,0.0003 & 0.9982\,$\pm$\,0.0003 & 0.9969\,$\pm$\,0.0003 & 0.99835\,$\pm$\,0.00042 \\
+\Kcoarse{} classes & 0.9956\,$\pm$\,0.0005 & 0.9945\,$\pm$\,0.0013 & 0.9967\,$\pm$\,0.0004 & 0.9952\,$\pm$\,0.0003 & 0.99634\,$\pm$\,0.00057 \\
+\Kcoarse{} classes + mass & 0.9945\,$\pm$\,0.0006 & 0.9953\,$\pm$\,0.0004 & 0.9978\,$\pm$\,0.0001 & 0.9948\,$\pm$\,0.0017 & 0.99687\,$\pm$\,0.00030 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.9954\,$\pm$\,0.0001 & 0.9962\,$\pm$\,0.0002 & 0.9977\,$\pm$\,0.0003 & 0.9953\,$\pm$\,0.0003 & 0.99664\,$\pm$\,0.00046 \\
+\quad $b$-quark boundary & 0.9962\,$\pm$\,0.0001 & 0.9955\,$\pm$\,0.0005 & 0.9982\,$\pm$\,0.0001 & 0.9960\,$\pm$\,0.0010 & 0.99777\,$\pm$\,0.00024 \\
+\quad random flavor boundary & 0.9965\,$\pm$\,0.0006 & 0.9959\,$\pm$\,0.0005 & 0.9979\,$\pm$\,0.0001 & 0.9955\,$\pm$\,0.0007 & 0.99706\,$\pm$\,0.00049 \\
+\quad random partitions & 0.9969\,$\pm$\,0.0007 & 0.9962\,$\pm$\,0.0005 & 0.9984\,$\pm$\,0.0001 & 0.9960\,$\pm$\,0.0004 & 0.99732\,$\pm$\,0.00046 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+}
+\end{landscape}

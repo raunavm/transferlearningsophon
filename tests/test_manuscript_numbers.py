@@ -73,6 +73,8 @@ GENERATED = {"results_generated.tex",
              # the supplement's whole training-size tables and the X->bs closest-class table
              "tables/mlst_summary_auc.tex", "tables/mlst_masseffect.tex", "tables/mlst_probes_n_full.tex",
              "tables/mlst_ft_full.tex", "tables/mlst_xbx_node.tex",
+             # 2026-11-13, round 2: every point of the jet-pT figures and the JetClass confusion percentages
+             "tables/mlst_pt_bins.tex", "tables/mlst_jc1_conf.tex",
              # the review books (experiments/FIGS/make_results_book.py writes them): the gallery's figures with
              # its captions and the generated tables above, for review; not the manuscript, which main.tex inputs
              "results_book.tex", "results_supplement.tex", "results_book_all.tex"}

@@ -220,6 +220,13 @@ def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_p
     assert [number(k) for k in ("tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets")] == ["1", "A1", "A2", "A10"]
     # the headline family's captions name Table 1 and the AUC table (L2)
     assert all(K.text(k).endswith(f"tables {number('tab:summary')} and {number('tab:summaryauc')}.") for k in ("F2a", "F2b"))
+    # the PI's sentence on JetClass in the main headline figure (round 2, package 3)
+    assert "17 classes stay below 188 on JetClass-II and make about 3% more errors on JetClass" in K.text("F2")
+    # the jet-pT figure (L4): why only JetClass-II and JetClass are binned, and its values in the supplement's table
+    assert re.findall(r"\{(tab:[a-z_0-9]+)\}", K.CAPTIONS["PT"]) == ["tab:ptbins"]
+    assert "Only JetClass-II and JetClass are binned, because the top and quark/gluon samples span only about 50 to " \
+           "100 GeV of jet pT each." in K.text("PT")
+    assert K.text("PT").endswith(f"Values are in table {number('tab:ptbins')}.") and number("tab:ptbins") == "S12"
     # the pages of the gallery carry these captions (apply at the end of each module)
     for mod in (L, R, PC, H):
         for page in mod.PAGES:
@@ -354,9 +361,9 @@ def test_no_figure_has_a_heading_and_no_panel_title_a_colon():
     assert any(f.startswith("text inside the panel") for f in fig_with(inside="0.98"))
 
 
-@pytest.mark.parametrize("pid", ["F2", "PC-jc2", "F4-mech", "A8", "F11", "F6", "F10b"])
+@pytest.mark.parametrize("pid", ["F2", "PC-jc2", "F4-mech", "A8", "F11", "F6", "F10b", "PT", "PT-part", "PT-bbcc"])
 def test_the_drawn_figures_follow_the_figure_rules(pid, monkeypatch, tmp_path):
-    """The main-text figures and three appendix ones as the gallery draws them: no heading, no colon in a panel title,
+    """The main-text figures, three appendix ones and the jet-pT family (round 2) as the gallery draws them: no heading, no colon in a panel title,
     no text in a panel (figcheck "title", L7); every dotted line black (a reference line, L6); from scratch solid; a mass
     network solid, or dash-dot where it is the direct discriminant (F11), never dashed or dotted."""
     pytest.importorskip("fitz")                 # figcheck rasterises with PyMuPDF
@@ -397,7 +404,9 @@ def test_every_figure_family_and_table_lists_the_networks_in_one_order():
     order = sets + ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")
     # the figure families
     assert R.NETWORKS == order + ("INIT", "SCRATCH") and sum(R.LEGEND_GROUPS, ()) == R.NETWORKS
-    assert R.LABEL_SETS == L.HV_ROWS == L.SIZE_ROWS == L.VAL_ROWS == H.XBX_LABEL_SETS == H.SCULPT_ROWS == sets
+    assert R.LABEL_SETS == L.HV_ROWS == L.SIZE_ROWS == L.VAL_ROWS == H.XBX_LABEL_SETS == H.SCULPT_ROWS == H.PT_ROWS == sets
+    # the jet-pT family's partition figure (round 2): 188 and 17 classes for reference, then the partitions
+    assert H.PT_PARTITIONS == H.SCULPT_PARTITIONS == ("L188", "R16_Q1") + order[len(sets):]
     assert L.HV_PARTITIONS == order[len(sets):] and H.PROBE_NETS == sets + ("INIT",)
     assert H.F10C_ROWS == sets + ("FLAV_F0", "FLAV_F1", "FLAV_F1R")
     assert [a for a, _ in PC.LABEL_SETS + PC.PARTITIONS] == ["L162", "R42_Q1", "R16_Q1", *order[len(sets):]]
@@ -406,9 +415,164 @@ def test_every_figure_family_and_table_lists_the_networks_in_one_order():
     assert M.SETS == sets and M.ALL_ROWS == sets + M.FLAV + M.RAND and M._paper_rows(M.ALL_ROWS) == order
     assert M.XBX_ROWS == tuple(XR.ROWS) == order + (M.INIT,) and M.SIZE_ROWS == order and M.MASS_ROWS == sets + (M.INIT,)
     assert M.SUMMARY_CONTROLS == order[len(sets):] and M.RAND_POOLED == "RAND"
+    # round 2: the per-bin table (tab:ptbins), the confusion percentages (tab:jc1conf, each network against its
+    # reference as the confusion figures draw it) and the pair tables' columns in the class-pair figures' order
+    pooled = M._pooled(L.RUNS)
+    one = {"pt_edges": [200, 300], "bins": [{"accuracy": 0.5, "bb_vs_cc": {"auc": 0.6}}]}
+    perf = {sub: {m: one for ms in pooled.values() for m in ms} for sub in M.PT_DIRS}
+    for part in M.table_pt_bins(perf, pooled, M.TAB).split("%SPLIT%"):
+        names = [ln.split(" & ")[0] for ln in part.splitlines() if " & " in ln and not ln.startswith(" & ")]
+        assert names == [M.LABEL[a] for a in order], names
+    assert [a for a, _ in M.CONF_DIFF] == list(order[1:]) and dict(M.CONF_DIFF) == dict(PC.LABEL_SETS + PC.PARTITIONS + PC.MASS)
+    assert M.PAIR_ORDER == R.PAIR_ORDER and [k for k, *_ in M.PAIRS_FIG] == list(R.PAIR_ORDER)
+    assert sorted(M.PAIRS_FIG) == sorted(M.PAIRS) and M.CONF_CLASSES == L.S.JC1_CLASSES
     # one name for each: the table rows are the legends (the label sets as macros)
     plain = lambda t: t.replace(r"\Kfull{}", "188").replace(r"\Kres{}", "162").replace(r"\Kmid{}", "43").replace(r"\Kcoarse{}", "17")   # noqa: E731
     assert [plain(M.LABEL[a]) for a in order] == [L.S.LEGEND[a] for a in order] == [
         "188 classes", "162 classes", "162 classes + mass", "43 classes", "17 classes", "17 classes + mass",
         "no flavor boundary", "$b$-quark boundary", "random flavor boundary", "random partitions"]
     assert (M.LABEL[M.INIT], M.SCRATCH_LABEL, M.LABEL[M.SOPHON]) == tuple(L.S.LEGEND[k] for k in ("INIT_BN", "SCRATCH", "SOPHON"))
+
+
+# ------------------------------------------------------------------ round 2 (2026-11-13): the jet-pT family and the tables
+# that hold what the figures draw
+def _pt_docs() -> dict:
+    """The perf_vs_pt folders the jet-pT family and tab:ptbins read, {folder: {model: doc}}; {} if one is not pulled."""
+    docs = {sub: L.M._load(H.PERF / sub) for sub in L.M.PT_DIRS}
+    return docs if all(docs.values()) else {}
+
+
+def test_the_jet_pt_family_is_two_by_two_with_one_mode_a_row_and_its_slices_in_the_same_form(monkeypatch):
+    """PI 2026-11-13 (L4-L7): PT is linear probes over fine-tuned networks, JetClass-II (ten bins, 200-2500 GeV) beside
+    JetClass (five bins, 500-1000 GeV), for the label sets and the mass networks; PT-part the same panels for the
+    17-class partitions with 188 and 17 classes for reference (the random partitions one point); PT-bbcc the X->bb vs
+    X->cc AUC per JetClass-II bin in both modes. Every panel has its own labelled y axis, no colon in a title, the
+    legend in the L5 order, nothing else drawn (from scratch and the random network are not in the family)."""
+    M = L.M
+    assert H.PT_PANELS == (("jc2", "JetClass-II, linear probe"), ("jc1_probe", "JetClass, linear probe"),
+                           ("jc2_ft", "JetClass-II, fine-tuned"), ("jc1", "JetClass, fine-tuned"))
+    assert [s for s, _ in H.PT_BBCC] == ["jc2", "jc2_ft"] and set(M.PT_DIRS) == {s for s, _ in H.PT_PANELS + H.PT_BBCC}
+    assert not any(":" in t or "LP" in t or "f.t." in t for _, t in H.PT_PANELS + H.PT_BBCC)
+    if not _pt_docs():
+        pytest.skip("the perf_vs_pt folders are not pulled")
+    figs = []
+    monkeypatch.setattr(L.S, "save", lambda fig, path: figs.append(fig))
+    for draw in (H.draw_pt, H.draw_pt_part, H.draw_pt_bbcc):
+        draw(None)
+    pt = {"jc2": (200.0, 2500.0), "jc2_ft": (200.0, 2500.0), "jc1_probe": (500.0, 1000.0), "jc1": (500.0, 1000.0)}
+    for fig, panels, rows, ylabel in zip(figs, (H.PT_PANELS, H.PT_PANELS, H.PT_BBCC), (H.PT_ROWS, H.PT_PARTITIONS, H.PT_ROWS),
+                                         ("Accuracy", "Accuracy", "AUC")):
+        axes = [ax for ax in fig.axes if ax.get_xlabel()]
+        assert [ax.get_title() for ax in axes] == [f"({'abcd'[k]}) {t}" for k, (_, t) in enumerate(panels)]
+        assert all(ax.get_ylabel() == ylabel and ax.get_xlabel() == H.X_PT for ax in axes)
+        assert [ax.get_xlim() for ax in axes] == [pt[s] for s, _ in panels]
+        shown = [t.get_text() for t in fig.legends[0].get_texts() if t.get_text()]
+        assert shown == [L.S.LEGEND[r] for r in rows]
+        assert not ({L.S.LEGEND[k] for k in ("SCRATCH", "INIT_BN")} & set(shown))
+        matplotlib.pyplot.close(fig)
+
+
+def test_the_jet_pt_files_hold_every_run_on_one_binning_and_the_jets_of_their_mode():
+    """The four perf_vs_pt folders pulled 2026-11-13 (jc2_ft and jc1_probe new): every run of the figure's rows, one
+    pT binning per test set, the fine-tuned JetClass-II networks binned on the probes' own jets, the JetClass probes and
+    fine-tuned networks on as many jets per bin; the fine-tuning cells those of Table 1 (40-epoch cap, 160 for the first
+    17-class run, both 17 + mass runs and every partition, as tab:ptbins says); from scratch on JetClass read from its
+    full-schedule cells (jc1_fulldecay)."""
+    docs = _pt_docs()
+    if not docs:
+        pytest.skip("the perf_vs_pt folders are not pulled")
+    M = L.M
+    pooled = M._pooled(L.RUNS)
+    need = {m for r in H.PT_ROWS + H.PT_PARTITIONS for m in pooled[r]}
+    assert len(need) == 27 and all(need <= set(d) for d in docs.values())
+    edges = {sub: {tuple(d["pt_edges"]) for d in docs[sub].values()} for sub in docs}
+    assert edges["jc2"] == edges["jc2_ft"] == {(200, 300, 400, 550, 700, 850, 1000, 1250, 1500, 2000, 2500)}
+    assert edges["jc1_probe"] == edges["jc1"] == {(500, 600, 700, 800, 900, 1000)}
+    probe = {d["jets_sha256"] for d in docs["jc2"].values()}
+    assert len(probe) == 1 and {d["probe_jets_sha256"] for d in docs["jc2_ft"].values()} == probe
+    assert all(d["same_jets_as_probe"] for d in docs["jc2_ft"].values())
+    n = lambda sub: {tuple(b["n"] for b in d["bins"]) for m, d in docs[sub].items() if m in need}      # noqa: E731
+    assert n("jc2") == n("jc2_ft") and len(n("jc2")) == 1 and n("jc1_probe") == n("jc1") and len(n("jc1")) == 1
+    assert {d["mode"] for d in docs["jc1_probe"].values()} == {"linear probe"}
+    # the fine-tuning cells: the 160-epoch (budget_long) cells exactly where the tab:ptbins caption says
+    long = {m for m in need if "/budget_long/" in docs["jc2_ft"][m]["cell"]}
+    assert long == {"mtx-r16q1-s1", *pooled["R16_Q1_MASS"], *(m for a in M.FLAV for m in pooled[a]), *pooled["RAND"]}
+    assert all("/budget/leg_jc2b/" in docs["jc2_ft"][m]["cell"] for m in need - long)
+    assert all("/budget_long/leg2/" in docs["jc1"][m]["cell"] for m in need)
+    assert "cap of 40 epochs, and of 160 for the first run of \\Kcoarse{} classes, both runs of \\Kcoarse{} classes + mass " \
+           "and every partition" in M.printed_caption("pt_bins")
+    full = M._load(H.PERF / "jc1_fulldecay")
+    assert sorted(full) == ["scratch-s1", "scratch-s2", "scratch-s3"]
+    assert all("/budget_long_fulldecay/leg2/scratch/" in d["cell"] for d in full.values())
+
+
+def test_the_jet_pt_table_prints_every_point_of_the_jet_pt_figures():
+    """tab:ptbins (supplement): one block per quantity, mode and five bins, each row the mean +- SD over the runs of
+    exactly the values the figures draw (gallery_physics._accuracy, _bb_cc over _runs_in), rows in the L5 order; the
+    generated file has the ten blocks (JetClass-II two of five bins a quantity and mode, JetClass one)."""
+    docs = _pt_docs()
+    if not docs:
+        pytest.skip("the perf_vs_pt folders are not pulled")
+    M = L.M
+    pooled = M._pooled(L.RUNS)
+    rows = M.SETS + M.FLAV + (M.RAND_POOLED,)
+    assert set(rows) == set(H.PT_ROWS + H.PT_PARTITIONS)
+    parts = M.table_pt_bins(docs, pooled, M.TAB).split("%SPLIT%")
+    figure = {"JetClass-II, accuracy": H._accuracy, "JetClass, accuracy": H._accuracy}
+    k = 0
+    for title, dirs, _ in M.PT_BLOCKS:
+        value = figure.get(title, H._bb_cc)
+        for mode, sub in dirs:
+            e = H._edges(docs[sub])
+            for lo in range(0, len(e) - 1, M.PT_PER_BLOCK):
+                bins = range(lo, min(lo + M.PT_PER_BLOCK, len(e) - 1))
+                lines = parts[k].splitlines()
+                assert M._full_row(1 + len(bins), M.HEADING[mode], italic=True) in lines
+                for a in rows:
+                    drawn = np.array([value(d) for d in H._runs_in(docs[sub], a)])
+                    want = M.LABEL[a] + " & " + " & ".join(M._cell([float(v) for v in drawn[:, i]], len(pooled[a]), M.TAB,
+                                                                    frac=True) for i in bins) + r" \\"
+                    assert want in lines, (title, mode, a)
+                k += 1
+    assert k == len(parts) == 10
+    tex = (ROOT / "paper/journal/tables/mlst_pt_bins.tex").read_text()
+    assert tex.count(r"\label{tab:ptbins}") == 1 and tex.count(M.LABEL["L188"] + " & ") == 10 and r"\pending" not in tex
+    assert tex.count(r"\quad " + M.LABEL[M.RAND_POOLED] + " & ") == 10
+
+
+def test_the_supplement_tables_hold_the_points_their_figures_draw():
+    """Round 2 (2026-11-13, one home per plotted number): tab:compute's last block is the last point of the
+    pretraining-curve figures (VAL, VAL-part), tab:sculpt's 1/JSD column F10c's vertical axis, and tab:jc1conf every
+    matrix of the confusion figures (PC-conf, PC-conf-part, PC-conf-mass): each from the same files by the same
+    reduction."""
+    M = L.M
+    pooled = M._pooled(L.RUNS)
+    comp = M._load(L.P.DATA / "compute")
+    if comp:
+        for row in L.VAL_ROWS + L.VAL_PARTITIONS:
+            ms = [m for m in pooled[row] if m in comp and "val_acc" in comp[m]["epochs"][0]]
+            last = np.array([[e["val_acc"] for e in comp[m]["epochs"]] for m in ms])[:, -1]
+            assert [M._val_acc(comp, m) for m in ms] == list(last), row
+        tex = (ROOT / "paper/journal/tables/compute.tex").read_text()
+        block = tex[tex.index("validation accuracy at the last pretraining epoch"):]
+        names = [ln.split(" & ")[0].removeprefix(r"\quad ") for ln in block.splitlines() if " & " in ln]
+        assert names == [M.LABEL[a] for a in M.SETS + M.FLAV + (M.RAND_POOLED,)]
+    # the per-run sculpting files as the build reads them (head/sculpting_v3), the figure's own inputs on its runs
+    sc = {k.removesuffix("_sculpting"): v for k, v in M._load(L.P.DATA / "head/sculpting_v3").items()}
+    if sc and all(H.F10C_KEY in sc.get(m, {}) for r in H.F10C_ROWS for m in L.RUNS[r]):
+        assert all(H.I["sculpt"][m][H.F10C_KEY] == sc[m][H.F10C_KEY] for r in H.F10C_ROWS for m in L.RUNS[r])
+        t = M.table_sculpt(sc, L.RUNS, M.TAB, H.F10C_ROWS)
+        for row in H.F10C_ROWS:
+            ln = next(x for x in t.splitlines() if x.startswith(M.LABEL[row] + " & ")).removesuffix(r" \\")
+            y = [1 / sc[m][H.F10C_KEY]["jsd"] for m in L.RUNS[row]]
+            assert ln.split(" & ")[-1] == M._cell(y, len(L.RUNS[row]), M.TAB), row
+    conf = M._load(PC.CONF)
+    if conf:
+        assert M.CONF_CLASSES == L.S.JC1_CLASSES
+        for doc in conf.values():
+            assert np.array_equal(M._conf_matrix(doc), 100 * PC._matrix(doc), equal_nan=True)
+        seed = lambda m: m.rsplit("-s", 1)[1]      # noqa: E731
+        for a, b in M.CONF_DIFF:
+            ref = {seed(m): M._conf_matrix(conf[m]) for m in pooled[b]}
+            mine = np.mean([M._conf_matrix(conf[m]) - ref[seed(m)] for m in pooled[a]], axis=0)
+            assert np.allclose(mine, PC._diff(conf, a, b), equal_nan=True), (a, b)

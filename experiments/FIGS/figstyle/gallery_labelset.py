@@ -734,7 +734,7 @@ SUPPLEMENT_CAPTIONS = {
         "with the network pretrained with 17 classes for reference, every network scored on its own 17 classes. Each "
         "curve is the mean, and its band ±1 standard deviation, over two pretraining runs per flavor-boundary "
         "partition, three for 17 classes, or the five random partitions. The learning rate decays from epoch 57, "
-        "where every curve rises slightly."
+        "where every curve rises slightly. The values at the last epoch are in table {tab:compute}."
     ),
     "F8": (
         "Fine-tuning the network pretrained with 188 classes is more accurate than training from scratch on JetClass-II "

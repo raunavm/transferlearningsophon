@@ -266,8 +266,8 @@ RUN_NOTE = ("Means over runs: three per label set, two per mass network and flav
             "partitions one run each (pooled).")
 CONF_DIFFERS = ("Ten classes instead of 34; the 188-class matrix in CMS's Blues, every other panel a difference on one "
                 "diverging RdBu_r scale shared by the three confusion pages; no numbers in the cells (L7).")
-CONF_NOTE = ("Each run against the run of its reference with the same pretraining seed. From scratch is not drawn: its "
-             "committed matrices come from superseded cells (a CPU re-read of the full-schedule cells is queued).")
+CONF_NOTE = ("Each run against the run of its reference with the same pretraining seed. From scratch is not drawn; its "
+             "full-schedule matrices (confusion_jc1_fulldecay) are in tab:jc1conf.")
 
 
 def _page(pid, title, draw, precedent=HEATMAPS, label=HEAT_LABEL, differs=SCATTER_DIFFERS, note=RUN_NOTE) -> C.Page:
@@ -333,7 +333,8 @@ SUPPLEMENT_CAPTIONS = {
         "and panels (b)-(d) the change in that percentage with 162, 43 and 17 classes, each run against the "
         "188-class run of the same pretraining seed. Red marks a larger share and blue a smaller one, so a loss "
         "shows as blue on the diagonal. Each panel is the mean over three pretraining runs, and every difference "
-        "shares one color scale with figures {fig:PC-conf-part} and {fig:PC-conf-mass}."
+        "shares one color scale with figures {fig:PC-conf-part} and {fig:PC-conf-mass}. The percentages are in table "
+        "{tab:jc1conf}."
     ),
     "PC-conf-part": (
         "The networks pretrained with the four 17-class partitions in the form of figure {fig:PC-conf}, fine-tuned on "
@@ -341,14 +342,15 @@ SUPPLEMENT_CAPTIONS = {
         "predicted class with (a) no flavor boundary, (b) a b-quark boundary, (c) a random flavor boundary and (d) "
         "random partitions, each run against the 188-class run of the same pretraining seed. Each panel is the mean "
         "over two pretraining runs, or over the five random partitions with one run each, on the color scale of "
-        "figure {fig:PC-conf}."
+        "figure {fig:PC-conf}. The changes are in table {tab:jc1conf}."
     ),
     "PC-conf-mass": (
         "The networks pretrained with an added mass regression in the form of figure {fig:PC-conf}, fine-tuned on one "
         "million JetClass jets. Each panel shows the change in the percentage of each true class assigned to each "
         "predicted class with (a) 162 classes + mass against 162 classes and (b) 17 classes + mass against 17 "
         "classes, each run against the run of its label set with the same pretraining seed. Each panel is the mean "
-        "over two pretraining runs, on the color scale of figure {fig:PC-conf}."
+        "over two pretraining runs, on the color scale of figure {fig:PC-conf}. The changes are in table "
+        "{tab:jc1conf}."
     ),
 }
 

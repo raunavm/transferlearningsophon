@@ -123,6 +123,14 @@ def test_numbers_count_within_each_tier_and_kind():
     # four main-text tables (PI 2026-11-12)
     assert [G.number(k) for k in ("tab:published", "tab:mass", "tab:xbx")] == ["Table 2", "Table 3", "Table 4"]
     assert G.number("tab:labelsets") == "Table A10" and G.number("tab:jetclassrej") == "Table A8" and G.number("tab:pairs") == "Table A12"
+    # round 2 (2026-11-13): the jet-pT family (PT in the appendix, its partition and X->bb vs cc slices in the
+    # supplement after the JetClass-II ROC curves), the confusion percentages and the per-bin values as supplement
+    # tables before the coarse targets
+    assert G.number("PT") == "Fig. A9" and G.number("F9b") == "Fig. A10"
+    assert [G.number(k) for k in ("A3R-ft", "PT-part", "PT-bbcc", "F9a")] == ["Fig. S24", "Fig. S25", "Fig. S26", "Fig. S27"]
+    assert [G.number(k) for k in ("tab:perclass", "tab:jc1conf", "tab:ptbins", "tab:coarse")] == [
+        "Table S10", "Table S11", "Table S12", "Table S13"]
+    assert G.number("tab:compute") == "Table S17"
 
 
 def test_f10b_goes_to_the_main_text_only_with_the_signs_of_the_rule():
@@ -172,6 +180,12 @@ def test_every_sentence_names_its_evidence():
     # the per-class and training-size families point at their tables
     assert G.evidence("PC-jc2") == ("PC-jc2", "tab:summaryauc", "tab:perclass")
     assert G.evidence("A8") == ("A8", "tab:ft", "tab:summary") and G.evidence("A10") == ("A10", "tab:probesn", "tab:summary")
+    # the jet-pT family (round 2): its sentence rests on the per-bin table; the two supplement slices share one sentence
+    assert G.evidence("PT") == ("PT", "tab:ptbins") and G.TIER["tab:ptbins"] == G.SUPPLEMENT
+    assert G.BACKS["PT-part"] == G.BACKS["PT-bbcc"] == (f"{G.number('PT-part')} and {G.number('PT-bbcc')} show "
+                                                        f"{G.number('PT')} for the partitions and for X→bb̄ vs cc̄.")
+    assert G.BACKS["tab:jc1conf"] == (f"The percentages of {G.number('PC-conf')} to {G.number('PC-conf-mass')} are in "
+                                      f"{G.number('tab:jc1conf')}.")
 
 
 def test_the_new_pages_are_marked_new():
@@ -232,32 +246,40 @@ def test_the_book_boxes_only_a_provisional_figure_the_render_lacks(monkeypatch, 
 def test_the_sculpting_sentence_names_exactly_the_differences_beyond_three_sigma():
     """PI 2026-11-09, 2026-11-13 (L3): the text reports a sculpting difference only where |delta| > 3 sigma with
     sigma^2 the SD^2 over the runs of each network plus the bootstrap SD^2 over test jets (the paired-by-run verdict
-    of the bootstrap file is never the sole basis). On the pulled distances no difference passes, so F10b's sentence
-    states none and quotes the two closest at one decimal."""
+    of the bootstrap file is never the sole basis). Recomputed from the per-run distances (sculpting_v3) over every run
+    of each side, with the bootstrap SD of bootstrap/l3/sculpting_boot_l3.json ("l3" block, Table A14): no difference
+    passes, so F10b's sentence states none and quotes no closest value (round 2, package 3: the "closest are ..."
+    clause is gone)."""
     import math
     import statistics
     M = _load_results()
-    data = ROOT / "experiments/FIGS/data/v2/head"
-    if not (data / "sculpting_boot.json").exists() or not (data / "sculpting_v3").is_dir():
+    data = ROOT / "experiments/FIGS/data/v2"
+    boot, v3 = data / M.SCULPT_BOOT_L3, data / "head/sculpting_v3"
+    if not boot.exists() or not v3.is_dir():
         pytest.skip("the sculpting files are not pulled")
-    doc = json.loads((data / "sculpting_boot.json").read_text())["differences"]
-    sculpt = {k.removesuffix("_sculpting"): v for k, v in M._load(data / "sculpting_v3").items()}
+    doc = json.loads(boot.read_text())["differences"]
+    sculpt = {k.removesuffix("_sculpting"): v for k, v in M._load(v3).items()}
     runs = M._paper(ROOT)
     arm = {m.removeprefix("mtx-").rsplit("-s", 1)[0]: a for a, ms in runs.items() for m in ms}
     z = {}
     for name, d in doc.items():
         for wp, _ in M.SCULPT_BOOT_WPS:
-            a, b = ([M._sculpt_distance(sculpt, m, wp) for m in runs[arm[d[side]]]] for side in ("configuration", "reference"))
-            sigma = math.sqrt(statistics.stdev(a) ** 2 + statistics.stdev(b) ** 2 + d[wp]["distance"]["boot_sd"] ** 2)
+            x = d["l3"][wp]["distance"]
+            # every run of each side, not only the seed pairs
+            assert x["runs_config"] == runs[arm[d["configuration"]]] and x["runs_reference"] == runs[arm[d["reference"]]]
+            a, b = ([M._sculpt_distance(sculpt, m, wp) for m in x[side]] for side in ("runs_config", "runs_reference"))
+            sigma = math.sqrt(statistics.stdev(a) ** 2 + statistics.stdev(b) ** 2 + x["boot_sd"] ** 2)
             z[name, wp] = (statistics.mean(a) - statistics.mean(b)) / sigma
+            assert z[name, wp] == pytest.approx(x["z"], rel=1e-9) and x["pass"] == (abs(z[name, wp]) > 3)
     assert {k for k, v in z.items() if abs(v) > 3} == set(G.F10B_STATED) == set()
-    sentence = G.BACKS["F10b"]
-    assert sentence.startswith("Used directly, no label set or mass network sculpts the QCD mass differently")
-    assert "by more than three standard deviations" in sentence and not G.f10b_main(doc)
-    # the two closest, each quoted at one decimal of its |delta| / sigma
-    assert f"162 classes + mass below 162 classes at 10% ({abs(z['162mass-162', 'eps_b=0.1']):.1f} standard deviations)" in sentence
-    assert f"17 classes above 188 at 1% ({abs(z['17-188', 'eps_b=0.01']):.1f})" in sentence
-    assert max(abs(v) for v in z.values()) == abs(z["162mass-162", "eps_b=0.1"])
+    assert not G.f10b_main({name: d["l3"] for name, d in doc.items()})
+    # the closest stay below three standard deviations (the placement's comment quotes them)
+    assert max(abs(v) for v in z.values()) == abs(z["162mass-162", "eps_b=0.1"]) < 3
+    assert f"{abs(z['162mass-162', 'eps_b=0.1']):.2f}" == "2.76" and f"{z['17-188', 'eps_b=0.01']:.2f}" == "2.55"
+    assert G.BACKS["F10b"] == ("Used directly, no label set or mass network sculpts the QCD mass differently from 188 "
+                               "classes, or a mass network from its own label set, by more than three standard "
+                               "deviations at 10% or 1% QCD efficiency or 50% signal efficiency.")
+    assert not re.search(r"\d\.\d", G.BACKS["F10b"]) and "closest" not in G.BACKS["F10b"]
 
 
 def test_the_scaling_figures_in_auc_sit_in_the_supplement_as_one_row():
@@ -266,3 +288,20 @@ def test_the_scaling_figures_in_auc_sit_in_the_supplement_as_one_row():
     i = sup.index("F8-auc")
     assert sup[i:i + 3] == ["F8-auc", "A8-auc", "A10-auc"]
     assert len({s for k, _, s in G.FIGURES if k.endswith("-auc")}) == 1
+
+
+def test_the_round_two_sentences_claim_only_what_passes_the_three_sigma_rule():
+    """Round 2 (2026-11-13, L3): the sentences rewritten on the L3 arithmetic that gallery_placement.py's comments
+    record: the jet-pT finding (probes on JetClass-II, at least 9.5 sigma in every bin; fine-tuned 17 classes in every
+    JetClass-II bin and the two lowest JetClass bins), the comparison with ParT (JetClass accuracy above ParT trained
+    from scratch; top and quark/gluon R30 consistent with it, no longer "between" it and ParT fine-tuned), the
+    missing-input fills (the b-quark boundary's quark/gluon fills, 3.2-3.6 sigma on two runs, not claimed) and the
+    single rescaled reproduction run (2.7 sigma, not a claim)."""
+    assert G.BACKS["PT"] == ("Per jet-pT bin, 43 and 17 classes trail 188 on JetClass-II probes; fine-tuned, 17 classes "
+                             "trail in every JetClass-II bin and the two lowest JetClass bins.")
+    pub = G.BACKS["tab:published"]
+    assert "consistent with ParT trained from scratch" in pub and "between" not in pub
+    assert G.BACKS["tab:fill"].startswith("Random draws for the missing top inputs beat zeros for every pretrained network;")
+    assert "but with the b-quark boundary, are consistent with zeros" in G.BACKS["tab:fill"]
+    assert G.BACKS["tab:partrepro"].endswith("a single run with Sophon's jet-pT rescaling is 28% lower, within three "
+                                             "standard deviations.")

@@ -1,16 +1,16 @@
 \begin{landscape}
-{\scriptsize
-\setlength{\tabcolsep}{2pt}
+{
+\setlength{\tabcolsep}{3pt}
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \begin{longtable}{@{\extracolsep{\fill}}lcccccc@{}}
-\caption{The area under the receiver operating characteristic curve (AUC) of each JetClass-II class against the other classes for the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with the 17-class partitions, as linear probes on the frozen features trained on one million class-balanced JetClass-II jets (upper part) and fine-tuned on as many (lower part). The columns name each network by its number of classes, and the classes are grouped by the 17 classes of the coarsest label set, decays that differ only in flavor side by side. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output and one for each of five random partitions. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}\label{tab:perclass}\\
+\caption{The area under the receiver operating characteristic curve (AUC) of each JetClass-II class against the other classes for the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with the 17-class partitions, as linear probes on the frozen features trained on one million class-balanced JetClass-II jets (upper part) and fine-tuned on as many (lower part). The columns name each network by its number of classes, and the classes are grouped by the 17 classes of the coarsest label set, decays that differ only in flavor side by side. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:perclass}\\
 \toprule
-class & \Kfull{} classes & \Kres{} classes & \Kres{} classes + mass & \Kmid{} classes & \Kcoarse{} classes & \Kcoarse{} classes + mass \\
+class & \Kfull{} classes & \Kres{} classes & \begin{tabular}[b]{@{}c@{}}\Kres{} classes\\+ mass\end{tabular} & \Kmid{} classes & \Kcoarse{} classes & \begin{tabular}[b]{@{}c@{}}\Kcoarse{} classes\\+ mass\end{tabular} \\
 \midrule
 \endfirsthead
 \multicolumn{7}{@{}l}{\textit{Table~\ref{tab:perclass} (continued)}} \\
 \toprule
-class & \Kfull{} classes & \Kres{} classes & \Kres{} classes + mass & \Kmid{} classes & \Kcoarse{} classes & \Kcoarse{} classes + mass \\
+class & \Kfull{} classes & \Kres{} classes & \begin{tabular}[b]{@{}c@{}}\Kres{} classes\\+ mass\end{tabular} & \Kmid{} classes & \Kcoarse{} classes & \begin{tabular}[b]{@{}c@{}}\Kcoarse{} classes\\+ mass\end{tabular} \\
 \midrule
 \endhead
 \bottomrule

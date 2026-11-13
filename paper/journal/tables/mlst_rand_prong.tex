@@ -1,5 +1,6 @@
 \providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
 \begin{center}
+\setlength{\tabcolsep}{4pt}
 \begin{minipage}{\linewidth}\centering
 \captionof{table}{Networks pretrained on JetClass-II with random partitions into 17 classes, fine-tuned on JetClass: none keeps a boundary between two, three and four prongs (for each pair of these prong counts, every partition has a group holding classes of both); the groups that mix prong counts, and each partition's fine-tuned rejection of QCD per signal class over that of the \Kfull-class run of the same seed. $^\dagger$: fewer than $\nmin$ QCD jets pass in the partition's run or in that \Kfull-class run (equation~(\ref{eq:cut})).}
 \label{tab:randprong}
