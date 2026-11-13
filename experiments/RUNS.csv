@@ -1751,3 +1751,12 @@ mtx2-tests-bookfull-bb65f4c-raunav,2026-11-12T01:23:22Z,launched,"Full suite at 
 mtx2-tests-book-bb65f4c-raunav,2026-11-12T01:23:22Z,launched,"Targeted tests at the final book commit.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-bb65f4c-raunav.yaml
 render-gallery-bb65f4c-raunav,2026-11-12T01:31:55Z,complete,"Final books built from it (results_book 72 p, results_supplement 36 p, CHANGED copies).",experiments/FIGS/k8s/job-render-gallery-bb65f4c-raunav.yaml
 mtx2-tests-book-bb65f4c-raunav,2026-11-12T01:31:55Z,complete,"127 passed, 1 skipped.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-bb65f4c-raunav.yaml
+mtx2-tests-bookfull-bb65f4c-raunav,2026-11-13T00:25:06Z,complete,"3502 passed, 1444 skipped (green). Job deleted with the superseded suites (PI 2026-11-12: jobs only, no data).",experiments/MTX/k8s/v2/tests/job-mtx2-tests-bookfull-bb65f4c-raunav.yaml
+mtx2-tests-bookfull-18e4473-raunav,2026-11-13T00:25:06Z,deleted,"Superseded test suites deleted on the PI's request 2026-11-12 (jobs only, no data): bookfull 18e4473, 8437190, a152b67, dab5a28, bb65f4c; book 18e4473, a152b67, c2c437b, c65a9be, bb65f4c; gallery 649d705.",experiments/MTX/k8s/v2/tests
+pull-host-raunav,2026-11-13T00:25:06Z,relaunched,"Completed download pod deleted and recreated for reading /data.",experiments/FIGS/k8s/job-pull-host-raunav.yaml
+xbx-ihep-scratch-xbb-s1-raunav,2026-11-13T00:25:06Z,launched,"X->bb from scratch with the X->bs recipe (PI 2026-11-12), seed 1, mtx-s2.93, 3a00a6a; seeds 2-3 75 s apart.",experiments/XBS/k8s/job-xbx-ihep-scratch-xbb-s1-raunav.yaml
+xbx-ihep-scratch-xbb-s2-raunav,2026-11-13T00:25:06Z,launched,"As s1.",experiments/XBS/k8s/job-xbx-ihep-scratch-xbb-s2-raunav.yaml
+xbx-ihep-scratch-xbb-s3-raunav,2026-11-13T00:25:06Z,launched,"As s1.",experiments/XBS/k8s/job-xbx-ihep-scratch-xbb-s3-raunav.yaml
+render-gallery-9e2d415-raunav,2026-11-13T00:25:06Z,launched,"Figures to the PI's 2026-11-12 list (absolute Figs. 2-3, bands on Fig. 9, single panels 8.5 cm).",experiments/FIGS/k8s/job-render-gallery-9e2d415-raunav.yaml
+render-gallery-15d74ad-raunav,2026-11-13T00:25:06Z,launched,"With the tables of the paper cut and random partitions in Fig. 3.",experiments/FIGS/k8s/job-render-gallery-15d74ad-raunav.yaml
+mtx2-tests-book-15d74ad-raunav,2026-11-13T00:25:06Z,launched,"Targeted tests (book, tables, placement, X->bb jobs).",experiments/MTX/k8s/v2/tests/job-mtx2-tests-book-15d74ad-raunav.yaml
