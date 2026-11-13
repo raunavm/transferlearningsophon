@@ -68,7 +68,7 @@ def build():
         rng = np.random.default_rng(seed)
         a0, a1 = 90 - half, 90 + half
         rt = 0.60 * R
-        ax.add_patch(Wedge((ox, oy), rt, a0, a1, fc="#FAFAFA", ec=LG, lw=0.5, zorder=0))
+        tracker = ax.add_patch(Wedge((ox, oy), rt, a0, a1, fc="#FAFAFA", ec=LG, lw=0.5, zorder=0))
         for k in range(1, layers + 1):
             ax.add_patch(Wedge((ox, oy), rt * k / (layers + 0.6), a0, a1, fc="none", ec="#DCDCDC", lw=0.4, zorder=0))
         # (inner radius, outer radius, layers, colour, energy share per layer, lateral width in cells)
@@ -93,9 +93,10 @@ def build():
                 bend = rng.normal(0, 0.05) * R
                 nx, ny = -(ey - vy), (ex - vx)
                 nn = np.hypot(nx, ny) + 1e-9
-                ax.plot(vx + (ex - vx) * t + bend * nx / nn * 2 * t * (1 - t),
-                        vy + (ey - vy) * t + bend * ny / nn * 2 * t * (1 - t),
-                        color=TRK, lw=lw, alpha=0.95, zorder=1, solid_capstyle="round")
+                track, = ax.plot(vx + (ex - vx) * t + bend * nx / nn * 2 * t * (1 - t),
+                                 vy + (ey - vy) * t + bend * ny / nn * 2 * t * (1 - t),
+                                 color=TRK, lw=lw, alpha=0.95, zorder=1, solid_capstyle="round")
+                track.set_clip_path(tracker)         # a bent track stays inside the tracker (PI 2026-11-13)
                 e = 0.35 + rng.exponential(0.6)
                 inner.append((aend, 0.35 * e)); outer.append((aend, e))
             for _ in range(n // 2 + 1):              # photons: no track, inner calorimeter only
