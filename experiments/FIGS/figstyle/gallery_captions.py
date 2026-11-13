@@ -20,23 +20,25 @@ CAPTIONS = {
     "F2a": (
         "With linear probes on frozen features, the networks pretrained with 43 classes, 17 classes and every "
         "17-class partition are less accurate on JetClass-II than the network pretrained with 188 classes. "
-        "Panels (a) and (b) show accuracy and panels (c) and (d) show R30, the inverse background efficiency "
-        "at 30% signal efficiency. The four bracketed rows are other 17-class partitions of the 188 classes, "
+        "Each pair of panels is one task, with its accuracy or R30, the inverse background efficiency at 30% "
+        "signal efficiency, on the left and its area under the receiver operating characteristic curve (AUC) "
+        "on the right. The four bracketed rows are other 17-class partitions of the 188 classes, "
         "and a flavor boundary is a class boundary between decays that differ only in quark flavor. Each row "
         "shows the mean and ±1 standard deviation over three pretraining runs, two per flavor-boundary "
         "partition, or five random partitions with one run each. Values are in table {tab:summary}."
     ),
     "F2b": (
         "After fine-tuning, the network pretrained with 17 classes makes about 3% more errors on JetClass "
-        "than the network pretrained with 188 classes. On top and quark/gluon tagging, the networks "
+        "than the network pretrained with 188 classes. In R30 on top and quark/gluon tagging, the networks "
         "pretrained with 162, 43 and 17 classes agree with it within the spread over pretraining runs. Every "
-        "pretrained network outperforms training from scratch on JetClass-II and JetClass. Each row shows the "
+        "pretrained network is more accurate than training from scratch on JetClass-II and JetClass. Each row shows the "
         "mean over pretraining runs with a bar of ±1 standard deviation, and the vertical line and shaded "
         "band show the same for 188 classes. There are three runs per label set, two per flavor-boundary "
         "partition, five random partitions with one run each, and three from scratch. Fine-tuning uses one "
         "million class-balanced JetClass-II jets, one million JetClass jets and the full top and quark/gluon "
-        "training sets. R30 is the inverse background efficiency at 30% signal efficiency. Values are in "
-        "table {tab:summary}."
+        "training sets. Each pair of panels is one task, with its accuracy or R30, the inverse background "
+        "efficiency at 30% signal efficiency, on the left and its area under the receiver operating "
+        "characteristic curve (AUC) on the right. Values are in table {tab:summary}."
     ),
     "F3-main": (
         "Pretraining with 17 classes instead of 188 lowers the area under the ROC curve (AUC), averaged over "

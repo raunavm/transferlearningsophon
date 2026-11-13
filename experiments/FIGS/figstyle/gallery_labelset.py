@@ -70,8 +70,12 @@ F2_CONTROLS = ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")      # rows below the f
 F2_NAMES = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes",
             "RAND": "random partitions", "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary",
             "FLAV_F1R": "random flavor boundary", "SCRATCH": S.LEGEND["SCRATCH"]}
-F2_LEFT, F2_W, F2_H, F2_WGAP, F2_HGAP = 4.2, 5.0, 5.0, 0.45, 1.35
-X_F2 = {"accuracy": "Accuracy", "r30": "Rejection ($R_{30}$)"}
+F2_LEFT, F2_W, F2_H, F2_WGAP, F2_HGAP = 4.2, 5.0, 3.0, 0.45, 1.25
+X_F2 = {"accuracy": "Accuracy", "r30": "Rejection ($R_{30}$)", "macro_auc_ovr": "AUC", "auc": "AUC"}
+# each task is a row of two panels (PI 2026-11-12): its headline metric, then its AUC (averaged over the classes, each
+# against the rest, on JetClass-II and JetClass; of the binary task on top and quark/gluon)
+F2_AUC = {"jc2": "macro_auc_ovr", "jc1": "macro_auc_ovr", "top": "auc", "qg": "auc"}
+F2_GRID = [(key, n, ds, m) for key, n, ds, met, *_ in P.F2_PANELS for m in (met, F2_AUC[key])]
 MEAN_DOT = 4.6                   # pt: the mean over runs
 
 
@@ -122,19 +126,19 @@ def _f2_row(ax, y: float, v: list, color: str) -> list:
 
 def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch: bool) -> None:
     """value_of(key, n, ds, met): a run's value or None for the task; groups: (legend label, style key, rows) of the
-    17-class controls. A 2x2 grid of near-square panels, the row labels on the left panels."""
+    17-class controls. Four rows of two panels, one row a task (F2_GRID), the row labels on the left panels."""
     from matplotlib.patches import Patch
-    values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
+    values = [value_of(key, n, ds, met) for key, n, ds, met in F2_GRID]
     if not any(values):
         raise C.Absent(absent)
     rows = _f2_rows(groups, scratch)
     controls = [y for k, y in rows.items() if k in F2_CONTROLS]
     top, bottom = 1.75, 1.0
-    fig = S.figure_cm(S.PRINT_W, top + 2 * F2_H + F2_HGAP + bottom)
+    fig = S.figure_cm(S.PRINT_W, top + 4 * F2_H + 3 * F2_HGAP + bottom)
     axes = [S.axes_cm(fig, F2_LEFT + j * (F2_W + F2_WGAP), top + i * (F2_H + F2_HGAP), F2_W, F2_H)
-            for i in range(2) for j in range(2)]
+            for i in range(4) for j in range(2)]
     hidden = bars = 0
-    for k, (ax, value, (key, _, ds, met, *_)) in enumerate(zip(axes, values, P.F2_PANELS)):
+    for k, (ax, value, (key, _, ds, met)) in enumerate(zip(axes, values, F2_GRID)):
         S.title(ax, TITLES[key])
         ax.set_ylim(max(rows.values()) + 0.6, -0.6)
         ax.yaxis.set_major_locator(ticker.FixedLocator(list(rows.values())))
@@ -168,7 +172,7 @@ def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch: bool) -
         hidden += sum(c.get_segments()[0][1][0] - c.get_segments()[0][0][0] <= (MEAN_DOT + 0.5) / per_pt
                       for c in ax.collections if hasattr(c, "get_segments"))
         bars += sum(hasattr(c, "get_segments") for c in ax.collections)
-    for i in (0, 2):
+    for i in range(0, len(axes), 2):
         _f2_bracket(fig, axes[i], controls)
     S.letter_panels(axes)
     S.heading(fig, heading)
