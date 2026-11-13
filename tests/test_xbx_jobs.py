@@ -95,6 +95,11 @@ def test_the_gpu_jobs_stay_off_the_grids_and_the_fine_tunes_gpus_and_the_scratch
             # the plumbing check only: any GPU but the fine-tunes' V100s and the grid's RTX 3090s
             assert _products(text) == {("In", B.DRYRUN_GPUS)}
             assert not {B.SCRATCH_GPU, "NVIDIA-GeForce-RTX-3090"} & set(B.DRYRUN_GPUS)
+        elif "-ihep-scratch-xbb-a100-" in name:
+            # NRP's A100 pool (2026-11-12): the resource picks the product, no product list
+            assert _products(text) == set() and 'nvidia.com/a100: "1"' in text and 'nvidia.com/gpu: "1"' not in text
+            assert text.replace("-a100-", "-").replace('nvidia.com/a100: "1"', 'nvidia.com/gpu: "1"').count("\n") \
+                < SPECS[name.replace("-a100-", "-")].count("\n")      # the same spec less the product lines
         elif "-ihep-scratch-" in name:
             # any GPU that fits, as every fine-tune since 2026-11-01
             assert _products(text) == {("In", B.LAUNCH.V2_FT_GPU)}
