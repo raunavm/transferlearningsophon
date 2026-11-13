@@ -32,7 +32,7 @@ GREY, INK, LG = "#6B6B6B", "#4A4A4A", "#C9C9C9"
 # the one accent (PI 2026-11-12: "a pop of colour that goes with the theme"): the wine of the Tol muted palette our
 # other figures use, which no label set has; it marks the pretrained network and what is taken from it
 ACC, ACC_TINT = "#882255", "#F3E6EC"
-W, H = 13.0, 11.9
+W, H = 13.0, 11.75
 FS, FS_T = 8, 9
 
 
@@ -197,7 +197,7 @@ def build():
     ax.text(1.35, y0 + 1.13, "Jet", ha="center", va="center", fontsize=FS)
     arrow((2.65, y0), (3.3, y0))
     xb0, wb = 3.35, 1.0                      # the network that is reused
-    block(xb0, y0 - 1.0, wb, 2.0, "Sophon's\nnetwork", rot=90, ec=ACC, lw=0.9)      # the tables' name for it
+    block(xb0, y0 - 1.0, wb, 2.0, "Sophon's\nnetwork", rot=90)      # the tables' name for it
     arrow((xb0 + wb + 0.2, y0), (5.3, y0))
     xf = 5.52
     for k in range(6):
@@ -241,35 +241,32 @@ def build():
         o = ax.text(0, 0, txt, fontsize=FS); wd = o.get_window_extent(REN).width / fig.dpi * 2.54; o.remove()
         return wd
 
-    TOKEN = "#6B6B6B"                              # what each task tells apart: plain grey text, no boxes
     TASKS = [("JetClass-II", ("188 classes",), True),
              ("JetClass", (r"$H$", r"$W$", r"$Z$", r"$t$", "QCD"), True),
              ("Top tagging", (r"$t$", "QCD"), True),
              ("Quark/gluon", (r"$q$", r"$g$"), True),
              (r"$X\!\to b\bar b$, $X\!\to bs$", (r"$b\bar b$", r"$bs$", "QCD"), False)]   # fine-tuned on the first four
-    toks_of = lambda toks: ", ".join(toks)
-    colw = [max(tw(toks_of(toks)), tw(nm)) for nm, toks, _ in TASKS]
-    BX, BW = 0.5, 1.75                             # the two row labels, plain text
-    XL, XR = BX + BW + 0.25, W - 0.2
+    colw = [tw(nm) for nm, _, _ in TASKS]          # the task names only (PI 2026-11-12: no lines under them)
+    BX, BW, BH = 0.85, 2.2, 0.48                   # the two row labels, in the same plain box as the network and head
+    XL, XR = BX + BW + 0.45, W - 0.2
     GAP = (XR - XL - sum(colw)) / (len(colw) - 1)  # equal gaps between the five columns
     cx, x = [], XL
     for cw_ in colw:
         cx.append(x + cw_ / 2); x += cw_ + GAP
     yb_, ya_ = y0 - 1.28, y0 - 1.52                # feed lines: block (outer), features (inner)
-    ynam = ya_ - 0.5; ysym = ynam - 0.4
-    yF = ysym - 0.6; yT = yF - 0.62
+    ynam = ya_ - 0.5
+    yF = ynam - 0.62; yT = yF - 0.66
     # fine-tuning starts from the pretrained network; frozen features come out of the Features column
     xbk = xb0 + wb / 2
-    line([xbk, xbk, 0.14, 0.14], [y0 - 1.0, yb_, yb_, yT]); arrow((0.14, yT), (BX - 0.08, yT), ms=5)
-    line([xf, xf, 0.3, 0.3], [y0 - 0.62, ya_, ya_, yF]); arrow((0.3, yF), (BX - 0.08, yF), ms=5)
-    ax.text(BX, yF, "Frozen features", ha="left", va="center", fontsize=FS)
-    ax.text(BX, yT, "Fine-tuning", ha="left", va="center", fontsize=FS)
+    line([xbk, xbk, 0.14, 0.14], [y0 - 1.0, yb_, yb_, yT]); arrow((0.14, yT), (BX - 0.03, yT), ms=8)
+    line([xf, xf, 0.38, 0.38], [y0 - 0.62, ya_, ya_, yF]); arrow((0.38, yF), (BX - 0.03, yF), ms=8)
+    block(BX, yF - BH / 2, BW, BH, "Frozen features")
+    block(BX, yT - BH / 2, BW, BH, "Fine-tuning")
     MS = 0.17
-    line([BX + tw("Frozen features") + 0.12, cx[-1]], [yF, yF], lw=0.6)
-    line([BX + tw("Frozen features") + 0.12, max(c for c, t in zip(cx, TASKS) if t[2])], [yT, yT], lw=0.6)
+    line([BX + BW, cx[-1]], [yF, yF], lw=0.6)
+    line([BX + BW, max(c for c, t in zip(cx, TASKS) if t[2])], [yT, yT], lw=0.6)
     for c, (nm, toks, ft) in zip(cx, TASKS):
         ax.text(c, ynam, nm, ha="center", va="center", fontsize=FS)
-        ax.text(c, ysym, toks_of(toks), ha="center", va="center", fontsize=FS, color=TOKEN)
         ax.add_patch(Rectangle((c - MS / 2, yF - MS / 2), MS, MS, fc="white", ec=ACC, lw=0.9, zorder=4))     # frozen: open
         if ft:
             ax.add_patch(Rectangle((c - MS / 2, yT - MS / 2), MS, MS, fc=ACC, ec=ACC, lw=0.9, zorder=4))     # fine-tuned: filled
