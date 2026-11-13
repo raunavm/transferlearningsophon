@@ -5,7 +5,7 @@
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \setlength{\abovecaptionskip}{0pt}
-\captionof{table}{The networks pretrained with 162 and 17 classes, without and with an added mass output, on every task. Each row names a task, a metric and the way the network is used. Mass resolution and median response are defined as in table~\ref{tab:mass} and the Jensen--Shannon distance as in table~\ref{tab:sculpt}, without its factor 100. Training sets and missing-input substitutions are those of table~\ref{tab:summary}, except that the multilayer-perceptron probe on top tagging has the missing inputs at zero. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network. Bold marks the best value of a row and every value within three standard deviations of it.}
+\captionof{table}{The networks pretrained with 162 and 17 classes, without and with an added mass output, on every task, metric and read-out (rows). Definitions, training sets and inputs are those of tables~\ref{tab:summary}, \ref{tab:mass}, \ref{tab:xbx} and~\ref{tab:sculpt}, the fine-tuned sculpting rows using the networks fine-tuned on JetClass-II. A dash marks a read-out a network lacks, and repeated values are rounded per row. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network. The best resolution and distance are the lowest, the best median response the closest to one (distances from one compared), and every other value the highest. Bold marks values within three standard deviations (both added in quadrature, before rounding) of the best in their row.}
 \label{tab:masseffect}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
@@ -17,7 +17,7 @@
 resolution, mass output of the pretraining head & -- & {\fontseries{b}\selectfont 0.1467\,$\pm$\,0.0006} & -- & {\fontseries{b}\selectfont 0.1455\,$\pm$\,0.0008} \\
 median response, mass output of the pretraining head & -- & {\fontseries{b}\selectfont 0.9992\,$\pm$\,0.0055} & -- & {\fontseries{b}\selectfont 1.0052\,$\pm$\,0.0002} \\
 resolution, multilayer-perceptron probe & 0.2195\,$\pm$\,0.0017 & {\fontseries{b}\selectfont 0.1589\,$\pm$\,0.0003} & 0.2098\,$\pm$\,0.0031 & {\fontseries{b}\selectfont 0.1585\,$\pm$\,0.0003} \\
-median response, multilayer-perceptron probe & 0.9876\,$\pm$\,0.0014 & {\fontseries{b}\selectfont 1.0049\,$\pm$\,0.0015} & 0.9908\,$\pm$\,0.0041 & {\fontseries{b}\selectfont 1.0077\,$\pm$\,0.0022} \\
+median response, multilayer-perceptron probe & 0.9876\,$\pm$\,0.0014 & {\fontseries{b}\selectfont 1.0049\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 0.9908\,$\pm$\,0.0041} & {\fontseries{b}\selectfont 1.0077\,$\pm$\,0.0022} \\
 resolution, ridge probe & 0.316\,$\pm$\,0.009 & {\fontseries{b}\selectfont 0.190\,$\pm$\,0.003} & 0.293\,$\pm$\,0.012 & {\fontseries{b}\selectfont 0.183\,$\pm$\,0.001} \\
 median response, ridge probe & 0.96547\,$\pm$\,0.00049 & {\fontseries{b}\selectfont 0.99978\,$\pm$\,0.00003} & 0.97314\,$\pm$\,0.00477 & 1.00199\,$\pm$\,0.00042 \\
 \midrule
@@ -74,19 +74,19 @@ AUC, fine-tuned & {\fontseries{b}\selectfont 0.91478\,$\pm$\,0.00008} & {\fontse
  & \Kres{} classes & \Kres{} classes + mass & \Kcoarse{} classes & \Kcoarse{} classes + mass \\
  & 3 runs & 2 runs & 3 runs & 2 runs \\
 \midrule
-\multicolumn{5}{@{}l}{quark/gluon tagging, scored on Herwig jets} \\
+\multicolumn{5}{@{}l}{quark/gluon tagging, Herwig jets} \\
 $R_{30}$, linear probe & {\fontseries{b}\selectfont 35.9\,$\pm$\,1.7} & {\fontseries{b}\selectfont 35.3\,$\pm$\,0.5} & {\fontseries{b}\selectfont 35.5\,$\pm$\,1.0} & {\fontseries{b}\selectfont 35.5\,$\pm$\,1.1} \\
 AUC, linear probe & {\fontseries{b}\selectfont 0.8068\,$\pm$\,0.0022} & {\fontseries{b}\selectfont 0.8071\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 0.8053\,$\pm$\,0.0020} & {\fontseries{b}\selectfont 0.8079\,$\pm$\,0.0001} \\
 $R_{30}$, fine-tuned & {\fontseries{b}\selectfont 35\,$\pm$\,2} & {\fontseries{b}\selectfont 36\,$\pm$\,2} & {\fontseries{b}\selectfont 37\,$\pm$\,1} & {\fontseries{b}\selectfont 35\,$\pm$\,3} \\
 AUC, fine-tuned & {\fontseries{b}\selectfont 0.807\,$\pm$\,0.001} & {\fontseries{b}\selectfont 0.809\,$\pm$\,0.002} & {\fontseries{b}\selectfont 0.810\,$\pm$\,0.002} & {\fontseries{b}\selectfont 0.808\,$\pm$\,0.003} \\
 \midrule
 \multicolumn{5}{@{}l}{$X\to b\bar b$ against QCD at 1\% QCD efficiency} \\
-signal efficiency (\%), frozen-feature classifier & {\fontseries{b}\selectfont 71.7\,$\pm$\,0.3} & {\fontseries{b}\selectfont 71.1\,$\pm$\,0.5} & 65.9\,$\pm$\,1.0 & 66.8\,$\pm$\,0.3 \\
+signal efficiency (\%), classifier & {\fontseries{b}\selectfont 71.7\,$\pm$\,0.3} & {\fontseries{b}\selectfont 71.1\,$\pm$\,0.5} & 65.9\,$\pm$\,1.0 & 66.8\,$\pm$\,0.3 \\
 signal efficiency (\%), linear probe & {\fontseries{b}\selectfont 69.7\,$\pm$\,0.4} & {\fontseries{b}\selectfont 70.1\,$\pm$\,1.2} & {\fontseries{b}\selectfont 67.0\,$\pm$\,1.1} & {\fontseries{b}\selectfont 68.3\,$\pm$\,1.8} \\
-signal efficiency (\%), direct discriminant & {\fontseries{b}\selectfont 70.0\,$\pm$\,0.2} & {\fontseries{b}\selectfont 69.7\,$\pm$\,0.2} & -- & -- \\
+signal efficiency (\%), direct & {\fontseries{b}\selectfont 70.0\,$\pm$\,0.2} & {\fontseries{b}\selectfont 69.7\,$\pm$\,0.2} & -- & -- \\
 \midrule
 \multicolumn{5}{@{}l}{$X\to bs$ against QCD at 1\% QCD efficiency} \\
-signal efficiency (\%), frozen-feature classifier & {\fontseries{b}\selectfont 68.90\,$\pm$\,0.06} & 68.03\,$\pm$\,0.05 & 59.37\,$\pm$\,1.56 & 59.89\,$\pm$\,1.16 \\
+signal efficiency (\%), classifier & {\fontseries{b}\selectfont 68.90\,$\pm$\,0.06} & 68.03\,$\pm$\,0.05 & 59.37\,$\pm$\,1.56 & 59.89\,$\pm$\,1.16 \\
 signal efficiency (\%), linear probe & {\fontseries{b}\selectfont 65.4\,$\pm$\,0.9} & {\fontseries{b}\selectfont 64.6\,$\pm$\,0.7} & 58.6\,$\pm$\,2.0 & 59.6\,$\pm$\,1.0 \\
 \midrule
 \multicolumn{5}{@{}l}{Jensen--Shannon distance of the QCD jet mass} \\
@@ -100,5 +100,6 @@ at 50\% signal efficiency, fine-tuned & {\fontseries{b}\selectfont 0.296\,$\pm$\
 \end{tabular*}
 \end{minipage}
 \end{center}
+\par\smallskip{\noindent Quark/gluon tagging trains on Pythia jets.}
 }
 \end{landscape}

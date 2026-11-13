@@ -279,7 +279,9 @@ def gpu_bound_macro(em, fits: dict, runs: dict, comp: dict, index) -> None:
 # ------------------------------------------------------------------ benchmark tables
 LIT = REPO / "experiments/FIGS/data/literature_benchmarks.json"
 BENCH_COLS = (("acc", "accuracy", 3), ("auc", "auc", 4), ("r50", "r50", None), ("r30", "r30", None))
-METHOD_TEX = {"MIParT-L-f.t.": "MIParT-L-f.t.", "L-GATr-f.t.": "L-GATr-f.t."}
+# the printed names (round-1 fix 2026-11-13: no "f.t." anywhere, the rules and the caption brief)
+METHOD_TEX = {"MIParT-L-f.t.": "MIParT-L, fine-tuned", "L-GATr-f.t.": "L-GATr, fine-tuned",
+              "ParT-f.t.": "ParT, fine-tuned", "ParticleNet-f.t.": "ParticleNet, fine-tuned"}
 SCRATCH_LABEL = "from scratch"     # trained, not fine-tuned: no mode tag (PI 2026-11-11)
 PARAMS_HEAD = "parameters"
 
@@ -592,9 +594,10 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
     JC1_MIN_BKG QCD jets pass in any run. Published rows: those trained on 2 M jets (literature_benchmarks.json
     entries with n_train; MIParT and L-GATr when the file has them), the training size beside each
     row; ours fine-tuned on nmax jets (ft_curves.py cells: pre the pretrained runs' tree, ref the
-    from-scratch reference's), mean +- SD over the runs. No bold (PI 2026-11-12). part: "all" every column;
-    "summary" jets, parameters, accuracy and AUC (the main text); "rej" jets and the per-class rejections (the
-    appendix). A rejection that is the same in every run is printed once with SAME_PASS."""
+    from-scratch reference's), mean +- SD over the runs. No bold (PI 2026-11-12). part: "all" accuracy, AUC and the
+    per-class rejections, without the training jets and parameters, the same in every row (the caption states them,
+    page review round 3); "summary" jets, parameters, accuracy and AUC (the main text); "rej" jets and the per-class
+    rejections (the appendix). A rejection that is the same in every run is printed once with SAME_PASS."""
     if part == "summary":
         head = (r"\begin{tabular}{llccc}", r"\toprule", rf" & training jets & {PARAMS_HEAD} & accuracy & AUC \\", r"\midrule")
     elif part == "rej":
@@ -605,11 +608,11 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
                 r" & jets & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",  # page is full
                 r"\midrule")
     else:
-        head = (r"\begin{tabular}{ll" + "c" * (3 + len(JC1_COLS)) + "}", r"\toprule",
-                r" & & & & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
-                r"\cmidrule(lr){6-" + str(5 + len(JC1_COLS)) + "}",
-                rf" & training jets & {PARAMS_HEAD} & accuracy & AUC & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
-                r" & & & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
+        head = (r"\begin{tabular}{l" + "c" * (2 + len(JC1_COLS)) + "}", r"\toprule",
+                r" & & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
+                r"\cmidrule(lr){4-" + str(3 + len(JC1_COLS)) + "}",
+                r" & accuracy & AUC & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
+                r" & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
                 r"\midrule")
     lines = list(head)
     ncol = 2 + len(JC1_COLS)
@@ -618,6 +621,8 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
     for i, (prefix, cells, marks) in enumerate(lit + ours):
         if part == "rej":          # jets only: the parameters belong to the main-text table
             prefix = " & ".join(_depth0(prefix)[:2])
+        elif part == "all":        # the name only: jets and parameters are the caption's
+            prefix = _depth0(prefix)[0]
         if literature and i == len(lit):
             lines += [r"\midrule"]
         lines.append(prefix + " & " + " & ".join(cells[j] + marks[j] for j in keep) + r" \\")

@@ -10,9 +10,9 @@
 linear EFP~\cite{toptag} & 1\,k & 0.932 & 0.980 & -- & 384 \\
 ParticleNet~\cite{particlenet} & 366\,k & 0.940 & 0.9858 & 397\,$\pm$\,7 & 1{,}615\,$\pm$\,93 \\
 ParT~\cite{part} & 2.14\,M & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1{,}602\,$\pm$\,81 \\
-ParT-f.t.~\cite{part} & 2.14\,M & 0.944 & 0.9877 & 691\,$\pm$\,15 & 2{,}766\,$\pm$\,130 \\
-MIParT-L-f.t.~\cite{mipart} & 2.38\,M & 0.944 & 0.9878 & 640\,$\pm$\,10 & 2{,}789\,$\pm$\,133 \\
-L-GATr-f.t.~\cite{lgatr} & 1.1\,M & 0.9446 & 0.9879 & 651\,$\pm$\,11 & 2{,}894\,$\pm$\,84 \\
+ParT, fine-tuned~\cite{part} & 2.14\,M & 0.944 & 0.9877 & 691\,$\pm$\,15 & 2{,}766\,$\pm$\,130 \\
+MIParT-L, fine-tuned~\cite{mipart} & 2.38\,M & 0.944 & 0.9878 & 640\,$\pm$\,10 & 2{,}789\,$\pm$\,133 \\
+L-GATr, fine-tuned~\cite{lgatr} & 1.1\,M & 0.9446 & 0.9879 & 651\,$\pm$\,11 & 2{,}894\,$\pm$\,84 \\
 OmniLearned-l~\cite{omnilearned} & 423\,M & 0.944 & 0.9880 & 688\,$\pm$\,9 & 3{,}486\,$\pm$\,157 \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
@@ -20,7 +20,7 @@ OmniLearned-l~\cite{omnilearned} & 423\,M & 0.944 & 0.9880 & 688\,$\pm$\,9 & 3{,
 \Kres{} classes & 2.21\,M & 0.94013\,$\pm$\,0.00018 & 0.98610\,$\pm$\,0.00008 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
 \Kmid{} classes & 2.21\,M & 0.94020\,$\pm$\,0.00045 & 0.98610\,$\pm$\,0.00005 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
 \Kcoarse{} classes & 2.21\,M & 0.93981\,$\pm$\,0.00014 & 0.98590\,$\pm$\,0.00006 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
-\Kfull{} classes, kinematic inputs & 2.21\,M & 0.94072$^{\S}$ & 0.98620$^{\S}$ & 443$^{\S}$ & 1{,}800$^{\S}$ \\
+\Kfull{} classes, kinematic inputs only & 2.21\,M & 0.94072$^{\S}$ & 0.98620$^{\S}$ & 443$^{\S}$ & 1{,}800$^{\S}$ \\
 from scratch & 2.21\,M & 0.93875\,$\pm$\,0.00016 & 0.98524\,$\pm$\,0.00008 & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 \\
 \bottomrule
 \end{tabular*}

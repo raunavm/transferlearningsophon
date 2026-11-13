@@ -1,15 +1,15 @@
 \begin{landscape}
 \begin{table}[t]
 \centering
-\caption{ParT's top-tagging training script run from scratch, compared unchanged and with one of two changes taken from Sophon, which are not combined. The changes are Sophon's output head and Sophon's rescaling of every jet's four-momenta to $p_{\mathrm{T}}=500$~GeV. AUC is the area under the receiver operating characteristic curve. $R_{50}$ and $R_{30}$ are the inverse background efficiencies at 50\% and 30\% signal efficiency, and the last column counts the background jets that pass the selection of $R_{30}$. ParT's published result and our network trained from scratch, which has both changes and the missing inputs at zero, are in table~\ref{tab:published}. $^{\S}$~marks a value from a single run.}
+\caption{The top-tagging training script of the Particle Transformer run from scratch, compared unchanged and with one of two changes taken from Sophon, which are not combined. The changes are Sophon's output head, a 512-unit hidden layer before the output in place of a single linear layer, and its rescaling of each jet to $p_{\mathrm{T}}=500$~GeV. AUC is the area under the receiver operating characteristic curve, $R_{50}$ and $R_{30}$ the inverse background efficiencies at 50\% and 30\% signal efficiency, and the last column counts the background jets passing the $R_{30}$ selection. Table~\ref{tab:published} has the published result and our network from scratch, with both changes. Every value is from a single run, and $R_{30}$, resting on 118 to 165 background jets, has a Poisson uncertainty of about 8\%, larger than the change from Sophon's output head.}
 \label{tab:partrepro}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
 \toprule
  & accuracy & AUC & $R_{50}$ & $R_{30}$ & background jets passing at $R_{30}$ \\
 \midrule
-ParT's training script, unchanged & 0.93979$^{\S}$ & 0.98585$^{\S}$ & 424$^{\S}$ & 1{,}710$^{\S}$ & 118$^{\S}$ \\
-ParT's script with Sophon's output head & 0.94033$^{\S}$ & 0.98586$^{\S}$ & 416$^{\S}$ & 1{,}580$^{\S}$ & 128$^{\S}$ \\
-ParT's script with Sophon's jet-$p_{\mathrm{T}}$ rescaling & 0.93852$^{\S}$ & 0.98504$^{\S}$ & 357$^{\S}$ & 1{,}220$^{\S}$ & 165$^{\S}$ \\
+Particle Transformer training script, unchanged & 0.93979 & 0.98585 & 424 & 1{,}710 & 118 \\
+the same script with Sophon's output head & 0.94033 & 0.98586 & 416 & 1{,}580 & 128 \\
+the same script with Sophon's jet-$p_{\mathrm{T}}$ rescaling & 0.93852 & 0.98504 & 357 & 1{,}220 & 165 \\
 \bottomrule
 \end{tabular*}
 \end{table}

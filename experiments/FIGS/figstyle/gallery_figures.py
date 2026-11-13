@@ -24,16 +24,19 @@ import style_v5 as S
 MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_perclass, gallery_roc, gallery_inventory,
            gallery_compare)
 ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement): main text,
-         "F1", "F2", "PC-jc2", "F4-mech", "A8", "F11",
+         "F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11",
          # appendix
-         "F2a", "F2b", "PC-jc1", "F4-mech-ft", "F4-other", "F4-other-ft", "A10", "F6", "PT", "F9b", "F10b", "F11-part",
+         "F2a", "F2b", "PC-jc1", "F4-mech-ft", "F4-other", "F4-light", "F4-other-ft", "F4-light-ft", "A10", "F6", "F6-ft",
+         "PT", "F9b", "F10b", "F11-part",
          "UMAP-jc2-had", "VAL",
          # supplement
-         "PC-jc2-part", "PC-jc1-part", "PC-jc2-mass", "PC-jc1-mass", "PC-conf", "PC-conf-part", "PC-conf-mass",
-         "F4-ee", "F4-rand", "F4-rand-ft", "F8", "F8-auc", "A8-auc", "A10-auc", "A8-part", "A10-part", "F6-part",
-         "FJ", "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "A3R", "A3R-ft", "PT-part", "PT-bbcc", "F9a", "A17-res", "A17-qcd", "A17-probe",
+         "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand", "PC-jc2-mass", "PC-jc1-mass", "PC-conf",
+         "PC-conf-part", "PC-conf-mass", "F4-ee", "F4-rand", "F4-rand-qcd", "F4-rand-ft", "F4-rand-qcd-ft", "F8", "F8-auc",
+         "A8-auc", "A10-auc", "A8-part", "A10-part", "F6-part", "F6-part-ft",
+         "FJ", "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-mass", "FJ-mass-app", "FJ-s", "A3R", "A3R-ft", "A3R-ctrl-ft", "A3R-s", "PT-part", "PT-bbcc", "PT-bbcc-part", "F9a", "A17-res", "A17-qcd", "A17-probe",
          "A17-ridge", "F10a", "F10b-flav", "F10c", "F10a-flav", "F10-ft", "F10-ft-part", "F10a-mass", "F11-probe",
-         "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "VAL-part",
+         "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "UMAP-xbx", "UMAP-mass-jc2-had", "UMAP-mass-jc1",
+         "UMAP-mass-jc2-lep", "UMAP-mass-top", "UMAP-mass-qg", "UMAP-mass-xbx", "VAL-part",
          "SOPHON-FIG2", "PALETTE",      # gallery only
          # the PI's line-graph style comparison (2026-11-11), gallery only
          "CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-FONT-T", "CMP-FONT-LM")
@@ -44,11 +47,11 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
 # families are, PI 2026-11-13, and the jet-pT family); F3, F3-scatter, F4 and
 # F4-app were dropped (gallery_placement.DROPPED, PI 2026-11-08); the per-class family replaced F3-main, F3-app,
 # F3-app2, F3-app3, F3-ft, F3-ft2 and CONF, and F6 took in F6-app (gallery_placement.SUPERSEDED, PI 2026-11-13)
-PAPER = ("F1", "F2", "F2a", "F2b", "PC-jc2", "PC-jc1", "PC-jc2-part", "PC-jc1-part", "PC-jc2-mass", "PC-jc1-mass",
-         "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-mech", "F4-mech-ft", "F4-other", "F4-other-ft", "F4-ee", "F4-rand",
-         "F4-rand-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "F6", "F6-part", "F8",
+PAPER = ("F1", "F2", "F2-ft", "F2a", "F2b", "PC-jc2", "PC-jc1", "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand", "PC-jc2-mass", "PC-jc1-mass",
+         "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-mech", "F4-mech-ft", "F4-other", "F4-other-ft", "F4-light", "F4-light-ft", "F4-ee", "F4-rand", "F4-rand-qcd",
+         "F4-rand-ft", "F4-rand-qcd-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "FJ-mass", "FJ-mass-app", "F6", "F6-ft", "F6-part", "F6-part-ft", "F8",
          "F8-auc", "A8", "A8-auc", "A8-part", "A10", "A10-auc", "A10-part", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge", "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",
-         "F10-ft", "F10-ft-part", "F10a-mass", "F11", "F11-part", "F11-probe", "A3R", "A3R-ft", "PT", "PT-part", "PT-bbcc",
+         "F10-ft", "F10-ft-part", "F10a-mass", "F11", "F11-part", "F11-probe", "A3R", "A3R-ft", "A3R-ctrl-ft", "A3R-s", "PT", "PT-part", "PT-bbcc", "PT-bbcc-part",
          "VAL", "VAL-part")      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
 
 

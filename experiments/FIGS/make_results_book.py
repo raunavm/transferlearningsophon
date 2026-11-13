@@ -50,16 +50,18 @@ OUTPUTS = {"paper": ("results_book", (G.MAIN, G.APPENDIX)), "supplement": ("resu
 PREFIX = {G.MAIN: "", G.APPENDIX: "A", G.SUPPLEMENT: "S"}
 
 # the gallery captions are plain text; typeset their physics notation
-TEX = [("X→YY→bb̄qq", r"$X\to YY\to b\bar bqq$"), ("cc̄qq", r"$c\bar cqq$"), ("X→bc", r"$X\to bc$"),
+TEX = [("X→YY→bb̄qq", r"$X\to YY\to b\bar bqq$"), ("cc̄qq", r"$c\bar cqq$"),
+       ("X→bc vs bq, cs", r"$X\to bc$ vs $bq$, $cs$"), ("from bq, cs", r"from $bq$, $cs$"), ("X→bc", r"$X\to bc$"), ("X→bq", r"$X\to bq$"), ("X→cs", r"$X\to cs$"),
+       ("X→YY", r"$X\to YY$"),
        ("Jensen-Shannon", "Jensen--Shannon"), ("X→bb̄", r"$X\to b\bar b$"), ("X→cc̄", r"$X\to c\bar c$"), ("X→qq̄", r"$X\to q\bar q$"),
        ("H→bb̄", r"$H\to b\bar b$"), ("H→cc̄", r"$H\to c\bar c$"), ("Z→qq̄", r"$Z\to q\bar q$"), ("W→qq′", r"$W\to qq'$"), ("X→bs", r"$X\to bs$"),
-       ("X→ee", r"$X\to ee$"), ("X→μμ", r"$X\to\mu\mu$"), ("μμ", r"$\mu\mu$"), ("X→bb", r"$X\to b\bar b$"),
+       ("jet_pt_bins.csv", r"\texttt{jet\_pt\_bins.csv}"), ("X→ee", r"$X\to ee$"), ("X→μμ", r"$X\to\mu\mu$"), ("μμ", r"$\mu\mu$"), ("X→bb", r"$X\to b\bar b$"),
        ("cc̄", r"$c\bar c$"), ("bb̄", r"$b\bar b$"), ("qq̄", r"$q\bar q$"), ("±", r"$\pm$"),
        ("r = m/m_gen", r"$r = m/m_{\mathrm{gen}}$"), (" pT ", r" $p_{\mathrm{T}}$ "), ("sigma_r", r"$\sigma_r$"), ("eps_B", r"$\varepsilon_B$"),
        ("1 - g_QCD", r"$1-g_{\mathrm{QCD}}$"), ("16-84%", r"16--84\%"), ("20-500 GeV", r"20--500~GeV"),
        ("R30", r"$R_{30}$"), ("10^4", r"$10^{4}$"), ("10^3", r"$10^{3}$"), ("10^6", r"$10^{6}$"),
        (" (a)-(c)", r" (a)--(c)"), ("(b)-(d)", r"(b)--(d)"), ("15.9-84.1%", r"15.9--84.1\%"),
-       ("b-quark", r"$b$-quark"), ("response r (", r"response $r$ ("), ("range of r over", r"range of $r$ over"),
+       ("b-quark", r"$b$-quark"), (" with b quarks", r" with $b$ quarks"), (" with c but no b quarks", r" with $c$ but no $b$ quarks"), ("–", "--"), ("response r (", r"response $r$ ("), ("range of r over", r"range of $r$ over"), ("range of r divided", r"range of $r$ divided"),
        # the gallery's captions name a figure of the paper in words; here it has a number
        ("Sub-panels as in the main-text mass figure", r"Sub-panels as in figure~\ref{fig:F9b}"),
        ("as in the main-text figure", r"as in figure~\ref{fig:F9b}"),

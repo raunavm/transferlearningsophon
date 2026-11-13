@@ -5,7 +5,7 @@
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \setlength{\abovecaptionskip}{0pt}
-\captionof{table}{The Jensen--Shannon distance (base 2, $\times10^{2}$) between the soft-drop mass distributions of all QCD test jets and of those passing a cut on $1-g_{\mathrm{QCD}}$, $g_{\mathrm{QCD}}$ being a pretrained network's summed QCD output, used directly. The cut keeps a fraction $\epsB$ of QCD jets or half of the resonant jets ($\epsS = 50\%$), where $R_{50} = 1/\epsB$ and $1/\mathrm{JSD}$ is the mean over runs of the inverse divergence, the squared distance without the factor $10^{2}$. $\epsS$ beside a distance is the fraction of resonant jets that pass. Random selection is the distance for as many QCD jets kept at random. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. Bold marks the best value of a column and every value within three standard deviations of it.}
+\captionof{table}{Jensen--Shannon distance (base 2, $\times10^{2}$) between the soft-drop mass distributions of all QCD test jets and those passing a cut on one minus the summed QCD output, of networks used directly (first part) and fine-tuned (second part). The cut keeps a fraction $\epsB$ of QCD jets, as random selection does at random, or half the resonant jets ($\epsS = 50\%$, $R_{50} = 1/\epsB$), $\epsS$ being the resonant fraction passing and $1/\mathrm{JSD}$ the mean inverse divergence. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Lower distances and higher $\epsS$, $R_{50}$ and $1/\mathrm{JSD}$ are better. Bold marks values within three standard deviations (both added in quadrature, before rounding) of the best in their column. The random selection is a reference, never bold.}
 \label{tab:sculpt}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccccc@{}}
@@ -14,6 +14,7 @@
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-8}
  & distance & $\varepsilon_S$ & distance & $\varepsilon_S$ & $R_{50}$ & distance & $1/\mathrm{JSD}$ \\
 \midrule
+\multicolumn{8}{@{}l}{\textit{pretraining head used directly}} \\
 \Kfull{} classes & {\fontseries{b}\selectfont 5.24\,$\pm$\,0.34} & {\fontseries{b}\selectfont 0.8178\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 4.39\,$\pm$\,0.24} & {\fontseries{b}\selectfont 0.5483\,$\pm$\,0.0014} & {\fontseries{b}\selectfont 169\,$\pm$\,2} & {\fontseries{b}\selectfont 5.5\,$\pm$\,0.5} & {\fontseries{b}\selectfont 340\,$\pm$\,60} \\
 \Kres{} classes & {\fontseries{b}\selectfont 5.32\,$\pm$\,0.09} & {\fontseries{b}\selectfont 0.8181\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 4.29\,$\pm$\,0.29} & {\fontseries{b}\selectfont 0.5490\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 170\,$\pm$\,3} & {\fontseries{b}\selectfont 5.5\,$\pm$\,0.1} & {\fontseries{b}\selectfont 330\,$\pm$\,20} \\
 \Kres{} classes + mass & {\fontseries{b}\selectfont 4.43\,$\pm$\,0.30} & {\fontseries{b}\selectfont 0.8156\,$\pm$\,0.0016} & {\fontseries{b}\selectfont 4.33\,$\pm$\,0.12} & 0.5447\,$\pm$\,0.0011 & {\fontseries{b}\selectfont 160\,$\pm$\,3} & {\fontseries{b}\selectfont 5.5\,$\pm$\,0.3} & {\fontseries{b}\selectfont 340\,$\pm$\,40} \\
@@ -26,6 +27,35 @@
 \quad random flavor boundary & {\fontseries{b}\selectfont 5.33\,$\pm$\,0.08} & {\fontseries{b}\selectfont 0.8167\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 4.86\,$\pm$\,0.06} & {\fontseries{b}\selectfont 0.5462\,$\pm$\,0.0022} & {\fontseries{b}\selectfont 166\,$\pm$\,5} & {\fontseries{b}\selectfont 6.0\,$\pm$\,0.4} & {\fontseries{b}\selectfont 280\,$\pm$\,30} \\
 \midrule
 random selection & 0.94 & -- & 3.13 & -- & -- & -- & -- \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:sculpt} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccccc@{}}
+\toprule
+ & \multicolumn{2}{c}{$\epsB = 10\%$} & \multicolumn{2}{c}{$\epsB = 1\%$} & \multicolumn{3}{c}{$\varepsilon_S = 50\%$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-8}
+ & distance & $\varepsilon_S$ & distance & $\varepsilon_S$ & $R_{50}$ & distance & $1/\mathrm{JSD}$ \\
+\midrule
+\multicolumn{8}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 26.2\,$\pm$\,2.6} & {\fontseries{b}\selectfont 0.745\,$\pm$\,0.012} & {\fontseries{b}\selectfont 29\,$\pm$\,4} & {\fontseries{b}\selectfont 0.4535\,$\pm$\,0.0170} & {\fontseries{b}\selectfont 63.7\,$\pm$\,10.4} & {\fontseries{b}\selectfont 29.2\,$\pm$\,3.7} & {\fontseries{b}\selectfont 12.1\,$\pm$\,3.1} \\
+\Kres{} classes & {\fontseries{b}\selectfont 25.8\,$\pm$\,2.4} & {\fontseries{b}\selectfont 0.757\,$\pm$\,0.002} & {\fontseries{b}\selectfont 30\,$\pm$\,3} & {\fontseries{b}\selectfont 0.4634\,$\pm$\,0.0024} & {\fontseries{b}\selectfont 69.5\,$\pm$\,1.2} & {\fontseries{b}\selectfont 29.6\,$\pm$\,3.1} & {\fontseries{b}\selectfont 11.7\,$\pm$\,2.6} \\
+\Kres{} classes + mass & 29.4\,$\pm$\,0.2 & 0.732\,$\pm$\,0.004 & 34\,$\pm$\,1 & 0.4306\,$\pm$\,0.0048 & 51.2\,$\pm$\,2.3 & 33.8\,$\pm$\,0.1 & {\fontseries{b}\selectfont 8.7\,$\pm$\,0.1} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 27.6\,$\pm$\,2.3} & {\fontseries{b}\selectfont 0.746\,$\pm$\,0.009} & {\fontseries{b}\selectfont 32\,$\pm$\,4} & {\fontseries{b}\selectfont 0.4523\,$\pm$\,0.0145} & {\fontseries{b}\selectfont 62.8\,$\pm$\,7.9} & {\fontseries{b}\selectfont 31.5\,$\pm$\,3.5} & {\fontseries{b}\selectfont 10.3\,$\pm$\,2.3} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 25.8\,$\pm$\,0.4} & {\fontseries{b}\selectfont 0.749\,$\pm$\,0.005} & {\fontseries{b}\selectfont 27\,$\pm$\,2} & {\fontseries{b}\selectfont 0.4601\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 66.9\,$\pm$\,1.0} & {\fontseries{b}\selectfont 27.5\,$\pm$\,1.9} & {\fontseries{b}\selectfont 13.4\,$\pm$\,1.7} \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 26.3\,$\pm$\,4.8} & {\fontseries{b}\selectfont 0.745\,$\pm$\,0.011} & {\fontseries{b}\selectfont 29\,$\pm$\,5} & {\fontseries{b}\selectfont 0.4501\,$\pm$\,0.0063} & {\fontseries{b}\selectfont 61.4\,$\pm$\,5.0} & {\fontseries{b}\selectfont 29.1\,$\pm$\,5.1} & {\fontseries{b}\selectfont 12.3\,$\pm$\,4.3} \\
+\multicolumn{8}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 23.5\,$\pm$\,1.1} & {\fontseries{b}\selectfont 0.753\,$\pm$\,0.002} & {\fontseries{b}\selectfont 28\,$\pm$\,2} & {\fontseries{b}\selectfont 0.4569\,$\pm$\,0.0007} & 64.9\,$\pm$\,0.2 & {\fontseries{b}\selectfont 27.1\,$\pm$\,1.7} & {\fontseries{b}\selectfont 13.6\,$\pm$\,1.7} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 26.9\,$\pm$\,1.1} & {\fontseries{b}\selectfont 0.750\,$\pm$\,0.005} & {\fontseries{b}\selectfont 31\,$\pm$\,3} & {\fontseries{b}\selectfont 0.4596\,$\pm$\,0.0012} & {\fontseries{b}\selectfont 66.5\,$\pm$\,0.8} & {\fontseries{b}\selectfont 31.4\,$\pm$\,1.9} & {\fontseries{b}\selectfont 10.2\,$\pm$\,1.2} \\
+\quad random flavor boundary & {\fontseries{b}\selectfont 27.8\,$\pm$\,1.2} & 0.736\,$\pm$\,0.005 & {\fontseries{b}\selectfont 32\,$\pm$\,2} & {\fontseries{b}\selectfont 0.4414\,$\pm$\,0.0077} & 55.7\,$\pm$\,4.0 & {\fontseries{b}\selectfont 31.2\,$\pm$\,1.9} & {\fontseries{b}\selectfont 10.3\,$\pm$\,1.2} \\
+\quad random partitions & {\fontseries{b}\selectfont 27.3\,$\pm$\,1.2} & {\fontseries{b}\selectfont 0.749\,$\pm$\,0.009} & {\fontseries{b}\selectfont 31\,$\pm$\,2} & {\fontseries{b}\selectfont 0.4571\,$\pm$\,0.0125} & {\fontseries{b}\selectfont 65.4\,$\pm$\,7.0} & {\fontseries{b}\selectfont 30.8\,$\pm$\,1.8} & {\fontseries{b}\selectfont 10.6\,$\pm$\,1.2} \\
+from scratch & {\fontseries{b}\selectfont 27.0\,$\pm$\,0.9} & 0.716\,$\pm$\,0.005 & {\fontseries{b}\selectfont 26\,$\pm$\,2} & 0.4239\,$\pm$\,0.0050 & 47.3\,$\pm$\,2.3 & {\fontseries{b}\selectfont 27.6\,$\pm$\,1.2} & {\fontseries{b}\selectfont 13.1\,$\pm$\,1.1} \\
+\midrule
+random selection & 0.9 & -- & 3 & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

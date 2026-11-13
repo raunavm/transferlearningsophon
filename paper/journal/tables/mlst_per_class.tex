@@ -3,12 +3,12 @@
 \setlength{\tabcolsep}{3pt}
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \begin{longtable}{@{\extracolsep{\fill}}lcccccc@{}}
-\caption{The area under the receiver operating characteristic curve (AUC) of each JetClass-II class against the other classes for the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with the 17-class partitions, as linear probes on the frozen features trained on one million class-balanced JetClass-II jets (upper part) and fine-tuned on as many (lower part). The columns name each network by its number of classes, and the classes are grouped by the 17 classes of the coarsest label set, decays that differ only in flavor side by side. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:perclass}\\
+\caption{The area under the receiver operating characteristic curve (AUC) of each JetClass-II class against the other classes for the networks pretrained with 188, 162, 43 and 17 classes, the two networks with an added mass output (\Kres{} classes + mass, \Kcoarse{} classes + mass) and the 17-class partitions, as linear probes on the frozen features trained on one million class-balanced JetClass-II jets and fine-tuned on as many. The label sets come first and the 17-class partitions second, each with a linear-probe block and a fine-tuned block, named in every page's heading. The columns name each label set by its number of classes and each 17-class partition by its boundary, and the classes are grouped by the 17 classes of the coarsest label set, with decays that differ only in quark flavor next to each other. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:perclass}\\
 \toprule
 class & \Kfull{} classes & \Kres{} classes & \begin{tabular}[b]{@{}c@{}}\Kres{} classes\\+ mass\end{tabular} & \Kmid{} classes & \Kcoarse{} classes & \begin{tabular}[b]{@{}c@{}}\Kcoarse{} classes\\+ mass\end{tabular} \\
 \midrule
 \endfirsthead
-\multicolumn{7}{@{}l}{\textit{Table~\ref{tab:perclass} (continued)}} \\
+\multicolumn{7}{@{}l}{\textit{Table~\ref{tab:perclass} (continued), linear probe on the frozen features}} \\
 \toprule
 class & \Kfull{} classes & \Kres{} classes & \begin{tabular}[b]{@{}c@{}}\Kres{} classes\\+ mass\end{tabular} & \Kmid{} classes & \Kcoarse{} classes & \begin{tabular}[b]{@{}c@{}}\Kcoarse{} classes\\+ mass\end{tabular} \\
 \midrule
@@ -220,7 +220,22 @@ QCD, $css$ & 0.95217\,$\pm$\,0.00011 & 0.94733\,$\pm$\,0.00043 & 0.94677\,$\pm$\
 QCD, light & 0.97913\,$\pm$\,0.00008 & 0.97816\,$\pm$\,0.00001 & 0.97823\,$\pm$\,0.00007 & 0.97809\,$\pm$\,0.00009 & 0.97604\,$\pm$\,0.00013 & 0.97555\,$\pm$\,0.00019 \\
 QCD, $s$ & 0.97268\,$\pm$\,0.00002 & 0.97138\,$\pm$\,0.00002 & 0.97137\,$\pm$\,0.00012 & 0.97147\,$\pm$\,0.00019 & 0.96802\,$\pm$\,0.00026 & 0.96756\,$\pm$\,0.00037 \\
 QCD, $ss$ & 0.96946\,$\pm$\,0.00020 & 0.96778\,$\pm$\,0.00018 & 0.96774\,$\pm$\,0.00016 & 0.96729\,$\pm$\,0.00022 & 0.96222\,$\pm$\,0.00040 & 0.96242\,$\pm$\,0.00069 \\
-\midrule[\heavyrulewidth]
+\end{longtable}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcccccc@{}}
+\multicolumn{7}{@{}l}{\textit{Table~\ref{tab:perclass} (continued), fine-tuned}} \\
+\toprule
+class & \Kfull{} classes & \Kres{} classes & \begin{tabular}[b]{@{}c@{}}\Kres{} classes\\+ mass\end{tabular} & \Kmid{} classes & \Kcoarse{} classes & \begin{tabular}[b]{@{}c@{}}\Kcoarse{} classes\\+ mass\end{tabular} \\
+\midrule
+\endfirsthead
+\multicolumn{7}{@{}l}{\textit{Table~\ref{tab:perclass} (continued), fine-tuned}} \\
+\toprule
+class & \Kfull{} classes & \Kres{} classes & \begin{tabular}[b]{@{}c@{}}\Kres{} classes\\+ mass\end{tabular} & \Kmid{} classes & \Kcoarse{} classes & \begin{tabular}[b]{@{}c@{}}\Kcoarse{} classes\\+ mass\end{tabular} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \multicolumn{7}{@{}l}{\textit{fine-tuned}} \\*
 $X\to bb$ & 0.98845\,$\pm$\,0.00017 & 0.98841\,$\pm$\,0.00013 & 0.98806\,$\pm$\,0.00009 & 0.98793\,$\pm$\,0.00030 & 0.98603\,$\pm$\,0.00015 & 0.98610\,$\pm$\,0.00013 \\
 $X\to cc$ & 0.97632\,$\pm$\,0.00024 & 0.97634\,$\pm$\,0.00034 & 0.97603\,$\pm$\,0.00038 & 0.97549\,$\pm$\,0.00079 & 0.97230\,$\pm$\,0.00034 & 0.97227\,$\pm$\,0.00030 \\
@@ -427,16 +442,17 @@ QCD, light & 0.97867\,$\pm$\,0.00021 & 0.97802\,$\pm$\,0.00013 & 0.97772\,$\pm$\
 QCD, $s$ & 0.97238\,$\pm$\,0.00017 & 0.97150\,$\pm$\,0.00024 & 0.97157\,$\pm$\,0.00013 & 0.97151\,$\pm$\,0.00011 & 0.97079\,$\pm$\,0.00027 & 0.97033\,$\pm$\,0.00007 \\
 QCD, $ss$ & 0.96940\,$\pm$\,0.00017 & 0.96881\,$\pm$\,0.00029 & 0.96843\,$\pm$\,0.00018 & 0.96859\,$\pm$\,0.00018 & 0.96775\,$\pm$\,0.00009 & 0.96685\,$\pm$\,0.00018 \\
 \end{longtable}
+\newpage
 \addtocounter{table}{-1}
 \begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:perclass} (continued)}} \\
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:perclass} (continued), linear probe on the frozen features}} \\
 \toprule
  & \multicolumn{4}{c}{17-class partitions} \\
 \cmidrule(lr){2-5}
 class & no flavor boundary & $b$-quark boundary & random flavor boundary & random partitions \\
 \midrule
 \endfirsthead
-\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:perclass} (continued)}} \\
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:perclass} (continued), linear probe on the frozen features}} \\
 \toprule
  & \multicolumn{4}{c}{17-class partitions} \\
 \cmidrule(lr){2-5}
@@ -650,7 +666,26 @@ QCD, $css$ & 0.93369\,$\pm$\,0.00042 & 0.94168\,$\pm$\,0.00043 & 0.94188\,$\pm$\
 QCD, light & 0.97628\,$\pm$\,0.00055 & 0.97701\,$\pm$\,0.00008 & 0.97754\,$\pm$\,0.00007 & 0.97733\,$\pm$\,0.00022 \\
 QCD, $s$ & 0.96792\,$\pm$\,0.00012 & 0.96974\,$\pm$\,0.00022 & 0.97006\,$\pm$\,0.00013 & 0.97040\,$\pm$\,0.00021 \\
 QCD, $ss$ & 0.96342\,$\pm$\,0.00006 & 0.96565\,$\pm$\,0.00013 & 0.96630\,$\pm$\,0.00031 & 0.96665\,$\pm$\,0.00026 \\
-\midrule[\heavyrulewidth]
+\end{longtable}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:perclass} (continued), fine-tuned}} \\
+\toprule
+ & \multicolumn{4}{c}{17-class partitions} \\
+\cmidrule(lr){2-5}
+class & no flavor boundary & $b$-quark boundary & random flavor boundary & random partitions \\
+\midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:perclass} (continued), fine-tuned}} \\
+\toprule
+ & \multicolumn{4}{c}{17-class partitions} \\
+\cmidrule(lr){2-5}
+class & no flavor boundary & $b$-quark boundary & random flavor boundary & random partitions \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 \multicolumn{5}{@{}l}{\textit{fine-tuned}} \\*
 $X\to bb$ & 0.98674\,$\pm$\,0.00024 & 0.98735\,$\pm$\,0.00009 & 0.98712\,$\pm$\,0.00002 & 0.98738\,$\pm$\,0.00023 \\
 $X\to cc$ & 0.97327\,$\pm$\,0.00028 & 0.97354\,$\pm$\,0.00050 & 0.97391\,$\pm$\,0.00016 & 0.97444\,$\pm$\,0.00047 \\

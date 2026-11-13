@@ -5,7 +5,7 @@
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \setlength{\abovecaptionskip}{0pt}
-\captionof{table}{Linear probes and fine-tuned networks compared on accuracy on class-balanced JetClass-II and JetClass and on $R_{30}$, the inverse background efficiency at 30\% signal efficiency, in top and quark/gluon tagging on Pythia and Herwig jets. Both train on one million JetClass-II or JetClass jets or the full top and quark/gluon sets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each. Bold marks the best value of each block of a column and every value within three standard deviations of it. $^{\S}$~marks a value from a single run.}
+\captionof{table}{Accuracy on class-balanced JetClass-II and JetClass and $R_{30}$, the inverse background efficiency at 30\% signal efficiency, on top and quark/gluon tagging, of linear probes and fine-tuned networks on one million jets or the full sets. The released Sophon checkpoint's dashes are explained in table~\ref{tab:probes}. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks values within three standard deviations (both added in quadrature, before rounding) of the best in their column under their italic heading. References (random network, released Sophon checkpoint) are never bold. $^{\S}$~marks a value from a single run.}
 \label{tab:summary}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
@@ -15,20 +15,20 @@
  & accuracy & accuracy & $R_{30}$ & $R_{30}$, Pythia & $R_{30}$, Herwig \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 0.4348\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.771\,$\pm$\,0.002} & {\fontseries{b}\selectfont 228\,$\pm$\,25} & {\fontseries{b}\selectfont 72.7\,$\pm$\,2.4} & {\fontseries{b}\selectfont 35.0\,$\pm$\,2.6} \\
-\Kres{} classes & {\fontseries{b}\selectfont 0.4328\,$\pm$\,0.0008} & {\fontseries{b}\selectfont 0.771\,$\pm$\,0.001} & {\fontseries{b}\selectfont 199\,$\pm$\,25} & {\fontseries{b}\selectfont 71.0\,$\pm$\,0.3} & {\fontseries{b}\selectfont 35.9\,$\pm$\,1.7} \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 0.4288\,$\pm$\,0.0024} & {\fontseries{b}\selectfont 0.774\,$\pm$\,0.003} & {\fontseries{b}\selectfont 283\,$\pm$\,33} & {\fontseries{b}\selectfont 72.3\,$\pm$\,2.3} & {\fontseries{b}\selectfont 35.3\,$\pm$\,0.5} \\
-\Kmid{} classes & 0.3609\,$\pm$\,0.0046 & {\fontseries{b}\selectfont 0.770\,$\pm$\,0.001} & {\fontseries{b}\selectfont 231\,$\pm$\,8} & {\fontseries{b}\selectfont 70.8\,$\pm$\,1.8} & {\fontseries{b}\selectfont 34.4\,$\pm$\,1.7} \\
-\Kcoarse{} classes & 0.3341\,$\pm$\,0.0067 & 0.761\,$\pm$\,0.003 & {\fontseries{b}\selectfont 255\,$\pm$\,17} & {\fontseries{b}\selectfont 74.3\,$\pm$\,1.9} & {\fontseries{b}\selectfont 35.5\,$\pm$\,1.0} \\
-\Kcoarse{} classes + mass & 0.3311\,$\pm$\,0.0264 & 0.762\,$\pm$\,0.001 & {\fontseries{b}\selectfont 342\,$\pm$\,51} & {\fontseries{b}\selectfont 70.3\,$\pm$\,2.7} & {\fontseries{b}\selectfont 35.5\,$\pm$\,1.1} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.4348\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 0.7709\,$\pm$\,0.0023} & {\fontseries{b}\selectfont 228\,$\pm$\,25} & {\fontseries{b}\selectfont 72.7\,$\pm$\,2.4} & {\fontseries{b}\selectfont 35.0\,$\pm$\,2.6} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.4328\,$\pm$\,0.0008} & {\fontseries{b}\selectfont 0.7709\,$\pm$\,0.0005} & {\fontseries{b}\selectfont 199\,$\pm$\,25} & {\fontseries{b}\selectfont 71.0\,$\pm$\,0.3} & {\fontseries{b}\selectfont 35.9\,$\pm$\,1.7} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.4288\,$\pm$\,0.0024} & {\fontseries{b}\selectfont 0.7739\,$\pm$\,0.0030} & {\fontseries{b}\selectfont 283\,$\pm$\,33} & {\fontseries{b}\selectfont 72.3\,$\pm$\,2.3} & {\fontseries{b}\selectfont 35.3\,$\pm$\,0.5} \\
+\Kmid{} classes & 0.3609\,$\pm$\,0.0046 & {\fontseries{b}\selectfont 0.7695\,$\pm$\,0.0014} & {\fontseries{b}\selectfont 231\,$\pm$\,8} & {\fontseries{b}\selectfont 70.8\,$\pm$\,1.8} & {\fontseries{b}\selectfont 34.4\,$\pm$\,1.7} \\
+\Kcoarse{} classes & 0.3341\,$\pm$\,0.0067 & 0.7605\,$\pm$\,0.0027 & {\fontseries{b}\selectfont 255\,$\pm$\,17} & {\fontseries{b}\selectfont 74.3\,$\pm$\,1.9} & {\fontseries{b}\selectfont 35.5\,$\pm$\,1.0} \\
+\Kcoarse{} classes + mass & 0.3311\,$\pm$\,0.0264 & 0.7618\,$\pm$\,0.0009 & {\fontseries{b}\selectfont 342\,$\pm$\,51} & {\fontseries{b}\selectfont 70.3\,$\pm$\,2.7} & {\fontseries{b}\selectfont 35.5\,$\pm$\,1.1} \\
 \multicolumn{6}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.3746\,$\pm$\,0.0033 & 0.751\,$\pm$\,0.003 & {\fontseries{b}\selectfont 253\,$\pm$\,13} & {\fontseries{b}\selectfont 72.8\,$\pm$\,1.5} & {\fontseries{b}\selectfont 34.6\,$\pm$\,0.4} \\
-\quad $b$-quark boundary & 0.3954\,$\pm$\,0.0013 & 0.763\,$\pm$\,0.002 & {\fontseries{b}\selectfont 207\,$\pm$\,6} & {\fontseries{b}\selectfont 72.4\,$\pm$\,0.2} & {\fontseries{b}\selectfont 34.9\,$\pm$\,0.5} \\
-\quad random flavor boundary & 0.4080\,$\pm$\,0.0013 & 0.758\,$\pm$\,0.002 & {\fontseries{b}\selectfont 224\,$\pm$\,13} & {\fontseries{b}\selectfont 72.0\,$\pm$\,1.2} & {\fontseries{b}\selectfont 35.3\,$\pm$\,0.4} \\
-\quad random partitions & 0.4216\,$\pm$\,0.0014 & 0.754\,$\pm$\,0.001 & 163\,$\pm$\,11 & {\fontseries{b}\selectfont 68.3\,$\pm$\,2.1} & {\fontseries{b}\selectfont 34.0\,$\pm$\,1.4} \\
-random network & 0.0724\,$\pm$\,0.0015 & 0.408\,$\pm$\,0.001 & 57\,$\pm$\,3 & 56.4\,$\pm$\,1.0 & 31.6\,$\pm$\,0.8 \\
+\quad no flavor boundary & 0.3746\,$\pm$\,0.0033 & 0.7511\,$\pm$\,0.0034 & {\fontseries{b}\selectfont 253\,$\pm$\,13} & {\fontseries{b}\selectfont 72.8\,$\pm$\,1.5} & {\fontseries{b}\selectfont 34.6\,$\pm$\,0.4} \\
+\quad $b$-quark boundary & 0.3954\,$\pm$\,0.0013 & 0.7630\,$\pm$\,0.0021 & {\fontseries{b}\selectfont 207\,$\pm$\,6} & {\fontseries{b}\selectfont 72.4\,$\pm$\,0.2} & {\fontseries{b}\selectfont 34.9\,$\pm$\,0.5} \\
+\quad random flavor boundary & 0.4080\,$\pm$\,0.0013 & 0.7579\,$\pm$\,0.0021 & {\fontseries{b}\selectfont 224\,$\pm$\,13} & {\fontseries{b}\selectfont 72.0\,$\pm$\,1.2} & {\fontseries{b}\selectfont 35.3\,$\pm$\,0.4} \\
+\quad random partitions & 0.4216\,$\pm$\,0.0014 & 0.7541\,$\pm$\,0.0009 & 163\,$\pm$\,11 & {\fontseries{b}\selectfont 68.3\,$\pm$\,2.1} & {\fontseries{b}\selectfont 34.0\,$\pm$\,1.4} \\
+random network & 0.0724\,$\pm$\,0.0015 & 0.4077\,$\pm$\,0.0013 & 57\,$\pm$\,3 & 56.4\,$\pm$\,1.0 & 31.6\,$\pm$\,0.8 \\
 \midrule
-released Sophon checkpoint & 0.4340$^{\S}$ & 0.768$^{\S}$ & -- & -- & -- \\
+released Sophon checkpoint & 0.4340$^{\S}$ & 0.7679$^{\S}$ & -- & -- & -- \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -45,21 +45,22 @@ released Sophon checkpoint & 0.4340$^{\S}$ & 0.768$^{\S}$ & -- & -- & -- \\
  & accuracy & accuracy & $R_{30}$ & $R_{30}$, Pythia & $R_{30}$, Herwig \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 0.4263\,$\pm$\,0.0005} & {\fontseries{b}\selectfont 0.8468\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 1{,}800\,$\pm$\,60} & {\fontseries{b}\selectfont 107.3\,$\pm$\,2.2} & {\fontseries{b}\selectfont 35\,$\pm$\,2} \\
-\Kres{} classes & {\fontseries{b}\selectfont 0.4249\,$\pm$\,0.0021} & {\fontseries{b}\selectfont 0.8475\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 1{,}790\,$\pm$\,60} & {\fontseries{b}\selectfont 108.0\,$\pm$\,1.4} & {\fontseries{b}\selectfont 35\,$\pm$\,2} \\
-\Kres{} classes + mass & 0.4206\,$\pm$\,0.0011 & {\fontseries{b}\selectfont 0.8465\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 1{,}770\,$\pm$\,250} & 106.8\,$\pm$\,0.2 & {\fontseries{b}\selectfont 36\,$\pm$\,2} \\
-\Kmid{} classes & 0.4166\,$\pm$\,0.0011 & {\fontseries{b}\selectfont 0.8459\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 1{,}780\,$\pm$\,150} & {\fontseries{b}\selectfont 108.3\,$\pm$\,1.0} & {\fontseries{b}\selectfont 36\,$\pm$\,3} \\
-\Kcoarse{} classes & 0.4054\,$\pm$\,0.0020 & 0.8422\,$\pm$\,0.0005 & {\fontseries{b}\selectfont 1{,}740\,$\pm$\,140} & 106.5\,$\pm$\,0.8 & {\fontseries{b}\selectfont 37\,$\pm$\,1} \\
-\Kcoarse{} classes + mass & 0.4006\,$\pm$\,0.0008 & 0.8399\,$\pm$\,0.0002 & {\fontseries{b}\selectfont 1{,}660\,$\pm$\,40} & 105.3\,$\pm$\,0.5 & {\fontseries{b}\selectfont 35\,$\pm$\,3} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.4263\,$\pm$\,0.0005} & {\fontseries{b}\selectfont 0.8468\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 1{,}799\,$\pm$\,56} & {\fontseries{b}\selectfont 107.3\,$\pm$\,2.2} & {\fontseries{b}\selectfont 35.2\,$\pm$\,2.1} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.4249\,$\pm$\,0.0021} & {\fontseries{b}\selectfont 0.8475\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 1{,}793\,$\pm$\,56} & {\fontseries{b}\selectfont 108.0\,$\pm$\,1.4} & {\fontseries{b}\selectfont 34.6\,$\pm$\,2.0} \\
+\Kres{} classes + mass & 0.4206\,$\pm$\,0.0011 & {\fontseries{b}\selectfont 0.8465\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 1{,}766\,$\pm$\,249} & 106.8\,$\pm$\,0.2 & {\fontseries{b}\selectfont 36.1\,$\pm$\,2.4} \\
+\Kmid{} classes & 0.4166\,$\pm$\,0.0011 & {\fontseries{b}\selectfont 0.8459\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 1{,}780\,$\pm$\,151} & {\fontseries{b}\selectfont 108.3\,$\pm$\,1.0} & {\fontseries{b}\selectfont 36.1\,$\pm$\,2.7} \\
+\Kcoarse{} classes & 0.4054\,$\pm$\,0.0020 & 0.8422\,$\pm$\,0.0005 & {\fontseries{b}\selectfont 1{,}744\,$\pm$\,142} & 106.5\,$\pm$\,0.8 & {\fontseries{b}\selectfont 36.9\,$\pm$\,0.9} \\
+\Kcoarse{} classes + mass & 0.4006\,$\pm$\,0.0008 & 0.8399\,$\pm$\,0.0002 & {\fontseries{b}\selectfont 1{,}655\,$\pm$\,38} & 105.3\,$\pm$\,0.5 & {\fontseries{b}\selectfont 35.3\,$\pm$\,3.4} \\
 \multicolumn{6}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.4078\,$\pm$\,0.0005 & 0.8433\,$\pm$\,0.0002 & {\fontseries{b}\selectfont 1{,}790\,$\pm$\,90} & {\fontseries{b}\selectfont 109.1\,$\pm$\,0.2} & {\fontseries{b}\selectfont 37\,$\pm$\,4} \\
-\quad $b$-quark boundary & 0.4101\,$\pm$\,0.0013 & 0.8439\,$\pm$\,0.0007 & {\fontseries{b}\selectfont 1{,}830\,$\pm$\,330} & 106.7\,$\pm$\,0.2 & {\fontseries{b}\selectfont 36\,$\pm$\,2} \\
-\quad random flavor boundary & 0.4128\,$\pm$\,0.0021 & 0.8434\,$\pm$\,0.0003 & {\fontseries{b}\selectfont 1{,}610\,$\pm$\,60} & {\fontseries{b}\selectfont 106.3\,$\pm$\,2.7} & {\fontseries{b}\selectfont 36\,$\pm$\,2} \\
-\quad random partitions & 0.4164\,$\pm$\,0.0014 & {\fontseries{b}\selectfont 0.8443\,$\pm$\,0.0007} & {\fontseries{b}\selectfont 1{,}750\,$\pm$\,110} & {\fontseries{b}\selectfont 107.0\,$\pm$\,1.0} & {\fontseries{b}\selectfont 35\,$\pm$\,1} \\
-from scratch & 0.3677\,$\pm$\,0.0012 & 0.8267\,$\pm$\,0.0011 & {\fontseries{b}\selectfont 1{,}410\,$\pm$\,20} & 104.0\,$\pm$\,1.0 & {\fontseries{b}\selectfont 35\,$\pm$\,1} \\
+\quad no flavor boundary & 0.4078\,$\pm$\,0.0005 & 0.8433\,$\pm$\,0.0002 & {\fontseries{b}\selectfont 1{,}789\,$\pm$\,90} & {\fontseries{b}\selectfont 109.1\,$\pm$\,0.2} & {\fontseries{b}\selectfont 36.7\,$\pm$\,3.7} \\
+\quad $b$-quark boundary & 0.4101\,$\pm$\,0.0013 & 0.8439\,$\pm$\,0.0007 & {\fontseries{b}\selectfont 1{,}825\,$\pm$\,333} & 106.7\,$\pm$\,0.2 & {\fontseries{b}\selectfont 36.4\,$\pm$\,2.4} \\
+\quad random flavor boundary & 0.4128\,$\pm$\,0.0021 & 0.8434\,$\pm$\,0.0003 & {\fontseries{b}\selectfont 1{,}610\,$\pm$\,64} & {\fontseries{b}\selectfont 106.3\,$\pm$\,2.7} & {\fontseries{b}\selectfont 36.2\,$\pm$\,1.8} \\
+\quad random partitions & 0.4164\,$\pm$\,0.0014 & {\fontseries{b}\selectfont 0.8443\,$\pm$\,0.0007} & {\fontseries{b}\selectfont 1{,}752\,$\pm$\,111} & {\fontseries{b}\selectfont 107.0\,$\pm$\,1.0} & {\fontseries{b}\selectfont 35.2\,$\pm$\,1.5} \\
+from scratch & 0.3677\,$\pm$\,0.0012 & 0.8267\,$\pm$\,0.0011 & {\fontseries{b}\selectfont 1{,}412\,$\pm$\,20} & 104.0\,$\pm$\,1.0 & {\fontseries{b}\selectfont 35.5\,$\pm$\,1.2} \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
 \end{center}
+\par\smallskip{\noindent A network marked + mass has an added jet-mass regression output, and the 17-class partitions regroup the 188 classes into 17.}
 }
 \end{landscape}

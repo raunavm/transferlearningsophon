@@ -5,7 +5,7 @@
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \setlength{\abovecaptionskip}{0pt}
-\captionof{table}{The area under the receiver operating characteristic curve (AUC) of the linear probes and fine-tuned networks of table~\ref{tab:summary}, on the same training and test sets. On JetClass-II and JetClass it is averaged over the classes, each against the rest. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each. Bold marks the best value of each block of a column and every value within three standard deviations of it. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}
+\captionof{table}{The area under the receiver operating characteristic curve (AUC) of the linear probes and fine-tuned networks of table~\ref{tab:summary}, on the same sets, averaged on JetClass-II and JetClass over the classes, each against the rest. The released Sophon checkpoint's dashes are those of table~\ref{tab:summary}. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks values within three standard deviations (both added in quadrature, before rounding) of the best in their column under their italic heading. A value without a standard deviation counts with none. References (random network, released Sophon checkpoint) are never bold. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}
 \label{tab:summaryauc}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
@@ -15,20 +15,20 @@
  & AUC & AUC & AUC & AUC, Pythia & AUC, Herwig \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 0.98014\,$\pm$\,0.00001} & {\fontseries{b}\selectfont 0.9682\,$\pm$\,0.0006} & 0.9686\,$\pm$\,0.0007 & {\fontseries{b}\selectfont 0.8835\,$\pm$\,0.0002} & {\fontseries{b}\selectfont 0.8075\,$\pm$\,0.0006} \\
-\Kres{} classes & 0.97963\,$\pm$\,0.00010 & {\fontseries{b}\selectfont 0.9683\,$\pm$\,0.0002} & 0.9671\,$\pm$\,0.0020 & {\fontseries{b}\selectfont 0.8818\,$\pm$\,0.0018} & {\fontseries{b}\selectfont 0.8068\,$\pm$\,0.0022} \\
-\Kres{} classes + mass & 0.97924\,$\pm$\,0.00023 & {\fontseries{b}\selectfont 0.9690\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 0.9709\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 0.8834\,$\pm$\,0.0005} & {\fontseries{b}\selectfont 0.8071\,$\pm$\,0.0010} \\
-\Kmid{} classes & 0.97562\,$\pm$\,0.00016 & {\fontseries{b}\selectfont 0.9680\,$\pm$\,0.0004} & 0.9681\,$\pm$\,0.0013 & {\fontseries{b}\selectfont 0.8821\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 0.8058\,$\pm$\,0.0011} \\
-\Kcoarse{} classes & 0.96908\,$\pm$\,0.00038 & 0.9650\,$\pm$\,0.0008 & {\fontseries{b}\selectfont 0.9710\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 0.8821\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 0.8053\,$\pm$\,0.0020} \\
-\Kcoarse{} classes + mass & 0.96875\,$\pm$\,0.00126 & 0.9653\,$\pm$\,0.0003 & {\fontseries{b}\selectfont 0.9741\,$\pm$\,0.0010} & 0.8801\,$\pm$\,0.0006 & {\fontseries{b}\selectfont 0.8079\,$\pm$\,0.0001} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.98014\,$\pm$\,0.00001} & {\fontseries{b}\selectfont 0.96816\,$\pm$\,0.00063} & 0.96858\,$\pm$\,0.00072 & {\fontseries{b}\selectfont 0.88347\,$\pm$\,0.00016} & {\fontseries{b}\selectfont 0.8075\,$\pm$\,0.0006} \\
+\Kres{} classes & 0.97963\,$\pm$\,0.00010 & {\fontseries{b}\selectfont 0.96832\,$\pm$\,0.00016} & 0.96715\,$\pm$\,0.00199 & {\fontseries{b}\selectfont 0.88179\,$\pm$\,0.00179} & {\fontseries{b}\selectfont 0.8068\,$\pm$\,0.0022} \\
+\Kres{} classes + mass & 0.97924\,$\pm$\,0.00023 & {\fontseries{b}\selectfont 0.96903\,$\pm$\,0.00088} & {\fontseries{b}\selectfont 0.97088\,$\pm$\,0.00095} & {\fontseries{b}\selectfont 0.88341\,$\pm$\,0.00047} & {\fontseries{b}\selectfont 0.8071\,$\pm$\,0.0010} \\
+\Kmid{} classes & 0.97562\,$\pm$\,0.00016 & {\fontseries{b}\selectfont 0.96804\,$\pm$\,0.00039} & 0.96812\,$\pm$\,0.00133 & {\fontseries{b}\selectfont 0.88208\,$\pm$\,0.00111} & {\fontseries{b}\selectfont 0.8058\,$\pm$\,0.0011} \\
+\Kcoarse{} classes & 0.96908\,$\pm$\,0.00038 & 0.96505\,$\pm$\,0.00075 & {\fontseries{b}\selectfont 0.97104\,$\pm$\,0.00056} & {\fontseries{b}\selectfont 0.88213\,$\pm$\,0.00149} & {\fontseries{b}\selectfont 0.8053\,$\pm$\,0.0020} \\
+\Kcoarse{} classes + mass & 0.96875\,$\pm$\,0.00126 & 0.96532\,$\pm$\,0.00026 & {\fontseries{b}\selectfont 0.97411\,$\pm$\,0.00097} & 0.88015\,$\pm$\,0.00056 & {\fontseries{b}\selectfont 0.8079\,$\pm$\,0.0001} \\
 \multicolumn{6}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.97134\,$\pm$\,0.00053 & 0.9628\,$\pm$\,0.0008 & {\fontseries{b}\selectfont 0.9696\,$\pm$\,0.0018} & {\fontseries{b}\selectfont 0.8798\,$\pm$\,0.0035} & 0.8057\,$\pm$\,0.0002 \\
-\quad $b$-quark boundary & 0.97586\,$\pm$\,0.00010 & {\fontseries{b}\selectfont 0.9663\,$\pm$\,0.0003} & 0.9665\,$\pm$\,0.0011 & {\fontseries{b}\selectfont 0.8805\,$\pm$\,0.0012} & 0.8058\,$\pm$\,0.0002 \\
-\quad random flavor boundary & 0.97602\,$\pm$\,0.00002 & 0.9649\,$\pm$\,0.0006 & 0.9672\,$\pm$\,0.0002 & {\fontseries{b}\selectfont 0.8818\,$\pm$\,0.0016} & 0.8062\,$\pm$\,0.0003 \\
-\quad random partitions & 0.97766\,$\pm$\,0.00016 & 0.9638\,$\pm$\,0.0002 & 0.9626\,$\pm$\,0.0019 & {\fontseries{b}\selectfont 0.8788\,$\pm$\,0.0024} & {\fontseries{b}\selectfont 0.8046\,$\pm$\,0.0025} \\
-random network & 0.81212\,$\pm$\,0.00190 & 0.8280\,$\pm$\,0.0011 & 0.9408\,$\pm$\,0.0012 & 0.8612\,$\pm$\,0.0016 & 0.7965\,$\pm$\,0.0009 \\
+\quad no flavor boundary & 0.97134\,$\pm$\,0.00053 & 0.96276\,$\pm$\,0.00078 & {\fontseries{b}\selectfont 0.96955\,$\pm$\,0.00183} & {\fontseries{b}\selectfont 0.87985\,$\pm$\,0.00345} & 0.8057\,$\pm$\,0.0002 \\
+\quad $b$-quark boundary & 0.97586\,$\pm$\,0.00010 & {\fontseries{b}\selectfont 0.96629\,$\pm$\,0.00029} & 0.96647\,$\pm$\,0.00110 & {\fontseries{b}\selectfont 0.88052\,$\pm$\,0.00117} & 0.8058\,$\pm$\,0.0002 \\
+\quad random flavor boundary & 0.97602\,$\pm$\,0.00002 & 0.96493\,$\pm$\,0.00064 & 0.96725\,$\pm$\,0.00023 & {\fontseries{b}\selectfont 0.88176\,$\pm$\,0.00156} & 0.8062\,$\pm$\,0.0003 \\
+\quad random partitions & 0.97766\,$\pm$\,0.00016 & 0.96379\,$\pm$\,0.00021 & 0.96255\,$\pm$\,0.00187 & {\fontseries{b}\selectfont 0.87884\,$\pm$\,0.00245} & {\fontseries{b}\selectfont 0.8046\,$\pm$\,0.0025} \\
+random network & 0.81212\,$\pm$\,0.00190 & 0.82801\,$\pm$\,0.00109 & 0.94079\,$\pm$\,0.00123 & 0.86115\,$\pm$\,0.00156 & 0.7965\,$\pm$\,0.0009 \\
 \midrule
-released Sophon checkpoint & 0.97990$^{\S}$ & 0.9675$^{\S}$ & -- & -- & -- \\
+released Sophon checkpoint & 0.97990$^{\S}$ & 0.96749$^{\S}$ & -- & -- & -- \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -45,18 +45,18 @@ released Sophon checkpoint & 0.97990$^{\S}$ & 0.9675$^{\S}$ & -- & -- & -- \\
  & AUC & AUC & AUC & AUC, Pythia & AUC, Herwig \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 0.97966\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 0.98542\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 0.98606\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 0.91482\,$\pm$\,0.00014} & {\fontseries{b}\selectfont 0.808\,$\pm$\,0.002} \\
-\Kres{} classes & {\fontseries{b}\selectfont 0.97937\,$\pm$\,0.00017} & {\fontseries{b}\selectfont 0.98559\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.98610\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 0.91478\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 0.807\,$\pm$\,0.001} \\
-\Kres{} classes + mass & 0.97910\,$\pm$\,0.00013 & {\fontseries{b}\selectfont 0.98537\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 0.98603\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.91461\,$\pm$\,0.00011} & {\fontseries{b}\selectfont 0.809\,$\pm$\,0.002} \\
-\Kmid{} classes & 0.97878\,$\pm$\,0.00010 & 0.98533\,$\pm$\,0.00006 & {\fontseries{b}\selectfont 0.98610\,$\pm$\,0.00005} & {\fontseries{b}\selectfont 0.91456\,$\pm$\,0.00032} & {\fontseries{b}\selectfont 0.809\,$\pm$\,0.005} \\
-\Kcoarse{} classes & 0.97716\,$\pm$\,0.00009 & 0.98472\,$\pm$\,0.00012 & {\fontseries{b}\selectfont 0.98590\,$\pm$\,0.00006} & {\fontseries{b}\selectfont 0.91440\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.810\,$\pm$\,0.002} \\
-\Kcoarse{} classes + mass & 0.97675\,$\pm$\,0.00015 & 0.98436\,$\pm$\,0.00006 & {\fontseries{b}\selectfont 0.98583\,$\pm$\,0.00007} & 0.91409\,$\pm$\,0.00013 & {\fontseries{b}\selectfont 0.808\,$\pm$\,0.003} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.97966\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 0.98542\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 0.98606\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 0.91482\,$\pm$\,0.00014} & {\fontseries{b}\selectfont 0.8078\,$\pm$\,0.0023} \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.97937\,$\pm$\,0.00017} & {\fontseries{b}\selectfont 0.98559\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.98610\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 0.91478\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 0.8074\,$\pm$\,0.0010} \\
+\Kres{} classes + mass & 0.97910\,$\pm$\,0.00013 & {\fontseries{b}\selectfont 0.98537\,$\pm$\,0.00008} & {\fontseries{b}\selectfont 0.98603\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.91461\,$\pm$\,0.00011} & {\fontseries{b}\selectfont 0.8091\,$\pm$\,0.0025} \\
+\Kmid{} classes & 0.97878\,$\pm$\,0.00010 & 0.98533\,$\pm$\,0.00006 & {\fontseries{b}\selectfont 0.98610\,$\pm$\,0.00005} & {\fontseries{b}\selectfont 0.91456\,$\pm$\,0.00032} & {\fontseries{b}\selectfont 0.8087\,$\pm$\,0.0046} \\
+\Kcoarse{} classes & 0.97716\,$\pm$\,0.00009 & 0.98472\,$\pm$\,0.00012 & {\fontseries{b}\selectfont 0.98590\,$\pm$\,0.00006} & {\fontseries{b}\selectfont 0.91440\,$\pm$\,0.00003} & {\fontseries{b}\selectfont 0.8103\,$\pm$\,0.0018} \\
+\Kcoarse{} classes + mass & 0.97675\,$\pm$\,0.00015 & 0.98436\,$\pm$\,0.00006 & {\fontseries{b}\selectfont 0.98583\,$\pm$\,0.00007} & 0.91409\,$\pm$\,0.00013 & {\fontseries{b}\selectfont 0.8076\,$\pm$\,0.0034} \\
 \multicolumn{6}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.97755\,$\pm$\,0.00009 & 0.98487\,$\pm$\,0.00004 & {\fontseries{b}\selectfont 0.98604\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 0.91446\,$\pm$\,0.00013} & {\fontseries{b}\selectfont 0.807\,$\pm$\,0.003} \\
-\quad $b$-quark boundary & 0.97803\,$\pm$\,0.00027 & 0.98498\,$\pm$\,0.00007 & {\fontseries{b}\selectfont 0.98604\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 0.91472}$^{\P}$ & {\fontseries{b}\selectfont 0.809\,$\pm$\,0.003} \\
-\quad random flavor boundary & 0.97803\,$\pm$\,0.00014 & 0.98494\,$\pm$\,0.00002 & {\fontseries{b}\selectfont 0.98597\,$\pm$\,0.00019} & {\fontseries{b}\selectfont 0.91460\,$\pm$\,0.00016} & {\fontseries{b}\selectfont 0.808\,$\pm$\,0.004} \\
-\quad random partitions & 0.97841\,$\pm$\,0.00017 & 0.98509\,$\pm$\,0.00006 & {\fontseries{b}\selectfont 0.98598\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 0.91459\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 0.808\,$\pm$\,0.001} \\
-from scratch & 0.97341\,$\pm$\,0.00032 & 0.98185\,$\pm$\,0.00026 & 0.98524\,$\pm$\,0.00008 & 0.91212\,$\pm$\,0.00022 & {\fontseries{b}\selectfont 0.806\,$\pm$\,0.001} \\
+\quad no flavor boundary & 0.97755\,$\pm$\,0.00009 & 0.98487\,$\pm$\,0.00004 & {\fontseries{b}\selectfont 0.98604\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 0.91446\,$\pm$\,0.00013} & {\fontseries{b}\selectfont 0.8070\,$\pm$\,0.0034} \\
+\quad $b$-quark boundary & 0.97803\,$\pm$\,0.00027 & 0.98498\,$\pm$\,0.00007 & {\fontseries{b}\selectfont 0.98604\,$\pm$\,0.00007} & {\fontseries{b}\selectfont 0.91472}$^{\P}$ & {\fontseries{b}\selectfont 0.8087\,$\pm$\,0.0030} \\
+\quad random flavor boundary & 0.97803\,$\pm$\,0.00014 & 0.98494\,$\pm$\,0.00002 & {\fontseries{b}\selectfont 0.98597\,$\pm$\,0.00019} & {\fontseries{b}\selectfont 0.91460\,$\pm$\,0.00016} & {\fontseries{b}\selectfont 0.8077\,$\pm$\,0.0042} \\
+\quad random partitions & 0.97841\,$\pm$\,0.00017 & 0.98509\,$\pm$\,0.00006 & {\fontseries{b}\selectfont 0.98598\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 0.91459\,$\pm$\,0.00009} & {\fontseries{b}\selectfont 0.8078\,$\pm$\,0.0007} \\
+from scratch & 0.97341\,$\pm$\,0.00032 & 0.98185\,$\pm$\,0.00026 & 0.98524\,$\pm$\,0.00008 & 0.91212\,$\pm$\,0.00022 & {\fontseries{b}\selectfont 0.8061\,$\pm$\,0.0007} \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

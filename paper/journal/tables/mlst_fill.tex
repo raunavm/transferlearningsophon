@@ -1,15 +1,10 @@
-\begin{landscape}
-{
-\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\setlength{\abovecaptionskip}{0pt}
-\captionof{table}{$R_{30}$, the inverse background efficiency at 30\% signal efficiency, of the linear probes of table~\ref{tab:summary} with the inputs that the top and quark/gluon data lack set to zero, to the training mean (mean) or to random draws of a real particle (draws). The columns leave out the substitution chosen on validation, which table~\ref{tab:summary} uses. The random network with BatchNorm recomputed re-estimates its BatchNorm statistics on \DesignBnJets{} training jets. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each. Bold marks the best value of a column and every value within three standard deviations of it.}
+\begin{table*}[t]
+\centering
+\caption{$R_{30}$, the inverse background efficiency at 30\% signal efficiency, of the linear probes of table~\ref{tab:summary} on top and quark/gluon tagging with Pythia jets, with the missing inputs (table~\ref{tab:inputs}) at zero, the training mean (mean) or random draws of a real particle (draws). Table~\ref{tab:summary} uses \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon, so those columns are left out. The random network here has its batch-normalization statistics recomputed on \DesignBnJets{} training jets, unlike that of table~\ref{tab:summary}. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks values within three standard deviations (both added in quadrature, before rounding) of the best in their column. The random network is a reference, never bold.}
 \label{tab:fill}
-\par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
- & \multicolumn{2}{c}{top, $R_{30}$} & \multicolumn{2}{c}{quark/gluon, $R_{30}$} \\
+ & \multicolumn{2}{c}{top, $R_{30}$} & \multicolumn{2}{c}{quark/gluon (Pythia), $R_{30}$} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & zero & mean & zero & draws \\
 \midrule
@@ -25,10 +20,7 @@
 \quad $b$-quark boundary & {\fontseries{b}\selectfont 77.2\,$\pm$\,5.0} & {\fontseries{b}\selectfont 57\,$\pm$\,16} & {\fontseries{b}\selectfont 57.0\,$\pm$\,3.4} & {\fontseries{b}\selectfont 70.7\,$\pm$\,0.3} \\
 \quad random flavor boundary & {\fontseries{b}\selectfont 52.7\,$\pm$\,16.7} & {\fontseries{b}\selectfont 37\,$\pm$\,5} & {\fontseries{b}\selectfont 59.9\,$\pm$\,8.0} & {\fontseries{b}\selectfont 70.5\,$\pm$\,1.0} \\
 \quad random partitions & {\fontseries{b}\selectfont 51.8\,$\pm$\,16.5} & {\fontseries{b}\selectfont 51\,$\pm$\,6} & {\fontseries{b}\selectfont 59.2\,$\pm$\,6.5} & {\fontseries{b}\selectfont 64.7\,$\pm$\,2.8} \\
-random network, BatchNorm recomputed & 57.6\,$\pm$\,12.7 & 60\,$\pm$\,2 & 54.2\,$\pm$\,2.4 & 52.4\,$\pm$\,0.4 \\
+random network & 57.6\,$\pm$\,12.7 & 60\,$\pm$\,2 & 54.2\,$\pm$\,2.4 & 52.4\,$\pm$\,0.4 \\
 \bottomrule
 \end{tabular*}
-\end{minipage}
-\end{center}
-}
-\end{landscape}
+\end{table*}

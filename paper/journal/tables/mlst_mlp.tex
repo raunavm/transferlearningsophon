@@ -3,7 +3,7 @@
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \addtolength{\belowcaptionskip}{\medskipamount}
 \begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\caption{Multilayer-perceptron probes, with one hidden layer of \LpMlpHidden{} units, on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with every 17-class partition and of the random networks, at the largest training set of each task, in the quantities of table~\ref{tab:probes} and the class pairs of table~\ref{tab:pairs}. The last block gives the probes scored on the natural-composition test set only, and the linear probe on the hidden layer of the pretraining head beside the one on the class token. The network with kinematic inputs is pretrained on those inputs only. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. The ratio $\rho$ is that of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed. The random network with BatchNorm recomputed re-estimates its BatchNorm statistics on \DesignBnJets{} training jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:mlp}\\
+\caption{Multilayer-perceptron probes, with one hidden layer of \LpMlpHidden{} units, on the frozen features of every pretrained network and of the random networks, at each task's largest training set, scored on the AUC for JetClass-II and JetClass, on the AUC and $R_{30}$ for top and quark/gluon tagging, and on the AUC of the class pairs of table~\ref{tab:pairs}. On JetClass-II the mass networks and the random partitions were probed only at its natural composition (the last block, beside the four label sets), and the other partitions and the random network only on the class-balanced set. The linear-probe block gives the \Kfull-class networks on the class token and on the pretraining head's 512-unit hidden layer, on JetClass-II and Pythia quark/gluon jets only, as the hidden layer was not scored on Herwig jets. The network on kinematic inputs only is probed on top tagging only. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest, or over the resonant or the QCD classes only (AUC, resonant and AUC, QCD). $\rho$ is $1-\mathrm{AUC}$ over that of the \Kfull-class run of the same seed. The batch-normalization (BatchNorm) statistics of the random network with BatchNorm recomputed are re-estimated on \DesignBnJets{} training jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:mlp}\\
 \toprule
 & \multicolumn{4}{c}{JetClass-II} \\
 \cmidrule(lr){2-5}
@@ -17,96 +17,103 @@
  & AUC & $\rho$ & AUC, resonant & AUC, QCD \\
 \midrule
 \endhead
-\bottomrule
-\endlastfoot
-\multicolumn{5}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\
+\multicolumn{5}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\*
 \Kfull{} classes & 0.98062\,$\pm$\,0.00002 & 1.000$^{\P}$ & 0.98336\,$\pm$\,0.00003 & 0.9643\,$\pm$\,0.0001 \\
 \Kres{} classes & 0.98025\,$\pm$\,0.00012 & 1.019\,$\pm$\,0.007 & 0.98334\,$\pm$\,0.00009 & 0.9618\,$\pm$\,0.0003 \\
 \Kmid{} classes & 0.97733\,$\pm$\,0.00012 & 1.170\,$\pm$\,0.006 & 0.98016\,$\pm$\,0.00016 & 0.9605\,$\pm$\,0.0001 \\
 \Kcoarse{} classes & 0.97310\,$\pm$\,0.00041 & 1.388\,$\pm$\,0.021 & 0.97657\,$\pm$\,0.00044 & 0.9524\,$\pm$\,0.0004 \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.97475\,$\pm$\,0.00025 & 1.302\,$\pm$\,0.011 & 0.97848\,$\pm$\,0.00022 & 0.9525\,$\pm$\,0.0004 \\
-\quad $b$-quark boundary & 0.97744\,$\pm$\,0.00010 & 1.164\,$\pm$\,0.007 & 0.98065\,$\pm$\,0.00010 & 0.9583\,$\pm$\,0.0001 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\*
+\quad no flavor boundary & 0.97475\,$\pm$\,0.00025 & 1.302\,$\pm$\,0.011 & 0.97848\,$\pm$\,0.00022 & 0.9525\,$\pm$\,0.0004 \\*
+\quad $b$-quark boundary & 0.97744\,$\pm$\,0.00010 & 1.164\,$\pm$\,0.007 & 0.98065\,$\pm$\,0.00010 & 0.9583\,$\pm$\,0.0001 \\*
 \quad random flavor boundary & 0.97762\,$\pm$\,0.00010 & 1.154\,$\pm$\,0.006 & 0.98102\,$\pm$\,0.00005 & 0.9574\,$\pm$\,0.0004 \\
 random network & 0.86480\,$\pm$\,0.00139 & -- & 0.86943\,$\pm$\,0.00167 & 0.8372\,$\pm$\,0.0015 \\
 random network, BatchNorm recomputed & 0.89744\,$\pm$\,0.00184 & -- & 0.90354\,$\pm$\,0.00201 & 0.8610\,$\pm$\,0.0008 \\
-\midrule
-\Kfull{} classes, linear probe, class token & 0.98014\,$\pm$\,0.00001 & -- & -- & -- \\
-\Kfull{} classes, linear probe, 512-unit hidden layer & 0.98021\,$\pm$\,0.00001 & -- & -- & -- \\
+\midrule\noalign{\penalty-50}
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*
+\Kfull{} classes, class token & 0.98014\,$\pm$\,0.00001 & -- & -- & -- \\*
+\Kfull{} classes, hidden layer of the pretraining head & 0.98021\,$\pm$\,0.00001 & -- & -- & -- \\
+\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
 \end{longtable}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\textit{Table~\ref{tab:mlp} (continued)}}
-\par\smallskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lccc@{}}
+\multicolumn{4}{@{}l}{\textit{Table~\ref{tab:mlp} (continued)}} \\[\smallskipamount]
 \toprule
- & JetClass & \multicolumn{2}{c}{top} \\
+& JetClass & \multicolumn{2}{c}{top} \\
 \cmidrule(lr){3-4}
  & AUC & AUC & $R_{30}$ \\
 \midrule
-\multicolumn{4}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\
+\endfirsthead
+\multicolumn{4}{@{}l}{\textit{Table~\ref{tab:mlp} (continued)}} \\[\smallskipamount]
+\toprule
+& JetClass & \multicolumn{2}{c}{top} \\
+\cmidrule(lr){3-4}
+ & AUC & AUC & $R_{30}$ \\
+\midrule
+\endhead
+\multicolumn{4}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\*
 \Kfull{} classes & 0.9786\,$\pm$\,0.0004 & 0.9713\,$\pm$\,0.0034 & 291\,$\pm$\,60 \\
 \Kres{} classes & 0.9786\,$\pm$\,0.0002 & 0.9711\,$\pm$\,0.0042 & 279\,$\pm$\,88 \\
 \Kres{} classes + mass & 0.9796\,$\pm$\,0.0003 & 0.9742\,$\pm$\,0.0016 & 347\,$\pm$\,41 \\
 \Kmid{} classes & 0.9782\,$\pm$\,0.0003 & 0.9688\,$\pm$\,0.0029 & 249\,$\pm$\,55 \\
 \Kcoarse{} classes & 0.9776\,$\pm$\,0.0005 & 0.9688\,$\pm$\,0.0018 & 224\,$\pm$\,24 \\
 \Kcoarse{} classes + mass & 0.9786\,$\pm$\,0.0001 & 0.9726\,$\pm$\,0.0030 & 309\,$\pm$\,67 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.9764\,$\pm$\,0.0001 & 0.9675\,$\pm$\,0.0010 & 214\,$\pm$\,6 \\
-\quad $b$-quark boundary & 0.9771\,$\pm$\,0.0006 & 0.9721\,$\pm$\,0.0005 & 309\,$\pm$\,7 \\
-\quad random flavor boundary & 0.9765\,$\pm$\,0.0003 & 0.9648\,$\pm$\,0.0032 & 188\,$\pm$\,40 \\
-\quad random partition 1, seed 1 & 0.9739$^{\S}$ & 0.9635$^{\S}$ & 161$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.9750$^{\S}$ & 0.9676$^{\S}$ & 210$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.9744$^{\S}$ & 0.9667$^{\S}$ & 190$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.9742$^{\S}$ & 0.9587$^{\S}$ & 125$^{\S}$ \\
+\multicolumn{4}{@{}l}{17-class partitions} \\*
+\quad no flavor boundary & 0.9764\,$\pm$\,0.0001 & 0.9675\,$\pm$\,0.0010 & 214\,$\pm$\,6 \\*
+\quad $b$-quark boundary & 0.9771\,$\pm$\,0.0006 & 0.9721\,$\pm$\,0.0005 & 309\,$\pm$\,7 \\*
+\quad random flavor boundary & 0.9765\,$\pm$\,0.0003 & 0.9648\,$\pm$\,0.0032 & 188\,$\pm$\,40 \\*
+\quad random partition 1, seed 1 & 0.9739$^{\S}$ & 0.9635$^{\S}$ & 161$^{\S}$ \\*
+\quad random partition 2, seed 2 & 0.9750$^{\S}$ & 0.9676$^{\S}$ & 210$^{\S}$ \\*
+\quad random partition 3, seed 1 & 0.9744$^{\S}$ & 0.9667$^{\S}$ & 190$^{\S}$ \\*
+\quad random partition 4, seed 2 & 0.9742$^{\S}$ & 0.9587$^{\S}$ & 125$^{\S}$ \\*
 \quad random partition 5, seed 2 & 0.9752$^{\S}$ & 0.9701$^{\S}$ & 251$^{\S}$ \\
 random network & 0.8859\,$\pm$\,0.0021 & 0.9667\,$\pm$\,0.0006 & 210\,$\pm$\,4 \\
 random network, BatchNorm recomputed & 0.9146\,$\pm$\,0.0012 & 0.9712\,$\pm$\,0.0024 & 299\,$\pm$\,47 \\
-\Kfull{} classes, kinematic inputs & -- & 0.9811$^{\S}$ & 716$^{\S}$ \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\Kfull{} classes, kinematic inputs only & -- & 0.9811$^{\S}$ & 716$^{\S}$ \\
+\midrule\noalign{\penalty-50}
+\multicolumn{4}{@{}l}{\textit{linear probe on the frozen features}} \\*
+\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
+\end{longtable}
 \newpage
 \addtocounter{table}{-1}
 \begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
 \multicolumn{5}{@{}l}{\textit{Table~\ref{tab:mlp} (continued)}} \\[\smallskipamount]
 \toprule
-& \multicolumn{2}{c}{quark/gluon} & \multicolumn{2}{c}{Herwig} \\
+& \multicolumn{2}{c}{quark/gluon, Pythia} & \multicolumn{2}{c}{quark/gluon, Herwig} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & AUC & $R_{30}$ & AUC & $R_{30}$ \\
 \midrule
 \endfirsthead
 \multicolumn{5}{@{}l}{\textit{Table~\ref{tab:mlp} (continued)}} \\[\smallskipamount]
 \toprule
-& \multicolumn{2}{c}{quark/gluon} & \multicolumn{2}{c}{Herwig} \\
+& \multicolumn{2}{c}{quark/gluon, Pythia} & \multicolumn{2}{c}{quark/gluon, Herwig} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & AUC & $R_{30}$ & AUC & $R_{30}$ \\
 \midrule
 \endhead
-\bottomrule
-\endlastfoot
-\multicolumn{5}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\
+\multicolumn{5}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\*
 \Kfull{} classes & 0.8937\,$\pm$\,0.0043 & 83\,$\pm$\,4 & 0.8077\,$\pm$\,0.0006 & 36.6\,$\pm$\,0.3 \\
 \Kres{} classes & 0.8889\,$\pm$\,0.0048 & 77\,$\pm$\,2 & 0.8060\,$\pm$\,0.0014 & 35.6\,$\pm$\,0.6 \\
 \Kres{} classes + mass & 0.8923\,$\pm$\,0.0012 & 80\,$\pm$\,2 & 0.8083\,$\pm$\,0.0016 & 37.2\,$\pm$\,0.6 \\
 \Kmid{} classes & 0.8904\,$\pm$\,0.0031 & 81\,$\pm$\,4 & 0.8071\,$\pm$\,0.0007 & 35.7\,$\pm$\,0.3 \\
 \Kcoarse{} classes & 0.8870\,$\pm$\,0.0055 & 79\,$\pm$\,2 & 0.8062\,$\pm$\,0.0024 & 36.2\,$\pm$\,0.5 \\
 \Kcoarse{} classes + mass & 0.8930\,$\pm$\,0.0004 & 81\,$\pm$\,1 & 0.8081\,$\pm$\,0.0004 & 36.2\,$\pm$\,0.4 \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.8916\,$\pm$\,0.0007 & 80\,$\pm$\,4 & 0.8072\,$\pm$\,0.0001 & 35.1\,$\pm$\,0.2 \\
-\quad $b$-quark boundary & 0.8899\,$\pm$\,0.0017 & 80\,$\pm$\,2 & 0.8068\,$\pm$\,0.0001 & 35.8\,$\pm$\,0.4 \\
-\quad random flavor boundary & 0.8888\,$\pm$\,0.0026 & 79\,$\pm$\,2 & 0.8063\,$\pm$\,0.0016 & 34.9\,$\pm$\,0.6 \\
-\quad random partition 1, seed 1 & 0.8927$^{\S}$ & 81$^{\S}$ & 0.8087$^{\S}$ & 36.6$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.8882$^{\S}$ & 79$^{\S}$ & 0.8057$^{\S}$ & 35.2$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.8938$^{\S}$ & 80$^{\S}$ & 0.8059$^{\S}$ & 35.2$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.8811$^{\S}$ & 72$^{\S}$ & 0.8062$^{\S}$ & 35.5$^{\S}$ \\
+\multicolumn{5}{@{}l}{17-class partitions} \\*
+\quad no flavor boundary & 0.8916\,$\pm$\,0.0007 & 80\,$\pm$\,4 & 0.8072\,$\pm$\,0.0001 & 35.1\,$\pm$\,0.2 \\*
+\quad $b$-quark boundary & 0.8899\,$\pm$\,0.0017 & 80\,$\pm$\,2 & 0.8068\,$\pm$\,0.0001 & 35.8\,$\pm$\,0.4 \\*
+\quad random flavor boundary & 0.8888\,$\pm$\,0.0026 & 79\,$\pm$\,2 & 0.8063\,$\pm$\,0.0016 & 34.9\,$\pm$\,0.6 \\*
+\quad random partition 1, seed 1 & 0.8927$^{\S}$ & 81$^{\S}$ & 0.8087$^{\S}$ & 36.6$^{\S}$ \\*
+\quad random partition 2, seed 2 & 0.8882$^{\S}$ & 79$^{\S}$ & 0.8057$^{\S}$ & 35.2$^{\S}$ \\*
+\quad random partition 3, seed 1 & 0.8938$^{\S}$ & 80$^{\S}$ & 0.8059$^{\S}$ & 35.2$^{\S}$ \\*
+\quad random partition 4, seed 2 & 0.8811$^{\S}$ & 72$^{\S}$ & 0.8062$^{\S}$ & 35.5$^{\S}$ \\*
 \quad random partition 5, seed 2 & 0.8858$^{\S}$ & 76$^{\S}$ & 0.8049$^{\S}$ & 35.4$^{\S}$ \\
 random network & 0.8844\,$\pm$\,0.0001 & 77\,$\pm$\,1 & 0.8074\,$\pm$\,0.0007 & 38.2\,$\pm$\,0.4 \\
 random network, BatchNorm recomputed & 0.8831\,$\pm$\,0.0003 & 76\,$\pm$\,2 & 0.8087\,$\pm$\,0.0009 & 37.8\,$\pm$\,1.5 \\
-\midrule
-\Kfull{} classes, linear probe, class token & 0.8780\,$\pm$\,0.0059 & 66\,$\pm$\,7 & -- & -- \\
-\Kfull{} classes, linear probe, 512-unit hidden layer & 0.8802\,$\pm$\,0.0070 & 70\,$\pm$\,6 & -- & -- \\
+\midrule\noalign{\penalty-50}
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*
+\Kfull{} classes, class token & 0.8780\,$\pm$\,0.0059 & 66\,$\pm$\,7 & -- & -- \\*
+\Kfull{} classes, hidden layer of the pretraining head & 0.8802\,$\pm$\,0.0070 & 70\,$\pm$\,6 & -- & -- \\
+\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
 \end{longtable}
 \begin{center}
 \begin{minipage}{\linewidth}\centering

@@ -22,7 +22,7 @@ from matplotlib import ticker
 from matplotlib.lines import Line2D
 
 import gallery_common as C
-from gallery_roc import FAMILIES, family_label, family_of
+from gallery_roc import FAMILIES, FAMILY_COLOURS, family_label, family_of
 import style_v5 as S
 
 P, M, RUNS, I = C.P, C.M, C.RUNS, C.I
@@ -32,18 +32,21 @@ N_FT = 1_000_000
 # the slices: (compared, reference) per column
 LABEL_SETS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"))
 PARTITIONS = (("FLAV_F0", "L188"), ("FLAV_F1", "L188"), ("FLAV_F1R", "L188"), ("RAND", "L188"))
+# L20: four rows of two panels overrun the page, so two figures: the named flavor boundaries (-part) and the random
+# controls, the random flavor boundary and the random partitions (-rand)
 MASS = (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))
 MODES = ("Linear probe", "Fine-tuned")
-# panel width (cm) by columns: two at a two-column figure's width, three at the three-in-a-row width, four beside the
-# turned mode names and the y labels in 15 cm
-PANEL = {2: 6.3, 3: 4.1, 4: 3.0}
-DOT = {2: 3.0, 3: 2.5, 4: 2.2}          # pt: 188 points in a panel stay apart
+# panel width (cm) by rows of networks (L20, points only: at least 4.5 cm): two rows at a two-column figure's width,
+# three as wide as the page's height allows (make_results_book.MAX_H_CM)
+PANEL = {2: 6.3, 3: 4.6}
+DOT = {2: 3.0, 3: 2.6}                  # pt: 188 points in a panel stay apart
 JC1_DOT = 4.0
 JC1_SHAPES = ("o", "s", "^", "v", "D", "P", "X", "p", "h", "*")    # with the colour, so the ten classes part in greyscale
-LEFT = 1.7                               # cm: the turned mode name, the y label and the tick labels
+LEFT = 1.3                               # cm: the y label and the tick labels
 WGAP = 0.35                              # cm between panels of a row: a tick label at AUC 1 clears the next panel
 TITLE_LINE = 0.4                         # cm: a second title line (four columns: a partition's name in two lines)
 HGAP = 0.95                              # cm: the upper row's x tick labels are shared, so only the next titles
+XLABEL = 0.9                             # cm: x tick labels and label under each row (rows with their own reference)
 ABSENT = "no class-against-rest AUCs of the 188-class network"
 
 
@@ -86,41 +89,45 @@ def _look(test: str):
 
     def look(c):
         k = FAMILIES.index(family[c])
-        return S.CLASS10[k], "o", None, 3.1 if size[family[c]] < 10 else 3     # a small family over the large ones
-    handles = [Line2D([], [], color=S.CLASS10[k], marker="o", markersize=3, linestyle="none", label=family_label(f))
+        return FAMILY_COLOURS[k], "o", None, 3.1 if size[family[c]] < 10 else 3     # a small family over the large ones
+    handles = [Line2D([], [], color=FAMILY_COLOURS[k], marker="o", markersize=3, linestyle="none", label=family_label(f))
                for k, f in enumerate(FAMILIES)]
     return look, handles, 3
 
 
-def _draw_grid(path, test: str, columns: tuple) -> None:
-    """Two rows (linear probe, fine-tuned) by one column per (compared, reference) pair, on one axis range: the
-    lowest AUC of any point and the points at AUC 1 clear of the frame."""
+def _draw_grid(path, test: str, rows: tuple) -> None:
+    """One row per (compared, reference) pair, linear probe and fine-tuned beside each other (L20: points-only panels at
+    least 4.5 cm, so the networks are rows and the two modes the columns), on one axis range: the lowest AUC of any point
+    and the points at AUC 1 clear of the frame. Rows with one reference share the x labels under the lowest row."""
     gets = SOURCES[test]
     if not all(_mean(get, "L188") for get in gets):
         raise C.Absent(ABSENT)
     look, handles, ncol = _look(test)
     handles = handles + [Line2D([], [], **S.REFERENCE, label="equal AUC")]
-    cols = len(columns)
-    w = PANEL[cols]
-    pts = [[[(ref[c], cmp_[c], c) for c in ref if c in cmp_]
-            for cmp_, ref in ((_mean(get, a), _mean(get, b)) for a, b in columns)] for get in gets]
+    n = len(rows)
+    w = PANEL[n]
+    pts = [[[(ref[c], cmp_[c], c) for c in ref if c in cmp_] for cmp_, ref in ((_mean(get, a), _mean(get, b)) for get in gets)]
+           for a, b in rows]
     lo = min(v for row in pts for panel in row for x, y, _ in panel for v in (x, y))
-    lim = (lo - 0.04 * (1 - lo), 1.0 + 0.04 * (1 - lo))
-    legend_rows = math.ceil(len(handles) / ncol)
-    two = cols == 4
+    lim = (lo - 0.08 * (1 - lo), 1.0 + 0.08 * (1 - lo))      # the points clear of the frames, the lowest too (L7)
+    ncol = math.ceil(len(handles) / 2)                       # two legend rows: three rows of panels fit the page
+    one_ref = len({b for _, b in rows}) == 1
+    two = any(len(S.LEGEND[a]) > 16 for a, _ in rows)        # a partition's name and the mode on two title lines
     row_cm = 0.5 if test == "jc1" else 0.45          # a legend row of class names in mathtext is taller
-    top = S.LEGEND_TOP + row_cm * legend_rows + 0.6 + (TITLE_LINE if two else 0)
-    hgap = HGAP + (TITLE_LINE if two else 0)
-    fig = S.figure_cm(S.PRINT_W, top + 2 * w + hgap + 1.0)
+    top = S.LEGEND_TOP + row_cm * 2 + 0.6 + (TITLE_LINE if two else 0)
+    hgap = HGAP + (TITLE_LINE if two else 0) + (0 if one_ref else XLABEL)
+    fig = S.figure_cm(S.PRINT_W, top + n * w + (n - 1) * hgap + 1.0)
+    x0 = (S.PRINT_W - LEFT - 2 * w - WGAP) / 2 + LEFT       # the block of labels and panels centred
     span = lim[1] - lim[0]
     # the finest round step whose labels fit (0.8 cm each) and whose first tick clears the previous panel's last label
     step = next(t for t in (0.02, 0.04, 0.05, 0.1)
                 if span / t * 0.8 <= w and (math.ceil(lim[0] / t - 1e-9) * t - lim[0]) / span * w >= 0.3)
-    dot = DOT[cols]
-    for i, (row, mode) in enumerate(zip(pts, MODES)):
+    dot = DOT[n]
+    for i, (row, (a, b)) in enumerate(zip(pts, rows)):
         y0 = top + i * (w + hgap)
-        for j, (panel, (a, b)) in enumerate(zip(row, columns)):
-            ax = S.axes_cm(fig, LEFT + j * (w + WGAP), y0, w, w)
+        last = i == n - 1 or not one_ref
+        for j, (panel, mode) in enumerate(zip(row, MODES)):
+            ax = S.axes_cm(fig, x0 + j * (w + WGAP), y0, w, w)
             S.fine_grid(ax)
             ax.plot(lim, lim, **S.REFERENCE)
             for x, y, c in panel:
@@ -131,16 +138,14 @@ def _draw_grid(path, test: str, columns: tuple) -> None:
             ax.set_ylim(lim)
             for axis in (ax.xaxis, ax.yaxis):
                 axis.set_major_locator(ticker.MultipleLocator(step))
-            ax.tick_params(labelleft=j == 0, labelbottom=i == 1)
-            name = S.LEGEND[a].rsplit(" ", 1) if two else [S.LEGEND[a]]
-            S.title(ax, f"({'abcdefgh'[i * cols + j]}) " + "\n".join(name))
+            ax.tick_params(labelleft=j == 0, labelbottom=last)
+            S.title(ax, f"({'abcdefgh'[2 * i + j]}) {S.LEGEND[a]},{chr(10) if two else ' '}{mode.lower()}")
             if j == 0:
                 S.labels(ax, ylabel="AUC, the panel's network")
-            if i == 1:
+            if last:
                 S.labels(ax, xlabel=f"AUC, {S.LEGEND[b]}")
-        fig.text(0.18 / S.PRINT_W, 1 - (y0 + w / 2) / (fig.get_figheight() / S.CM), mode, rotation=90,
-                 ha="center", va="center", fontsize=S.LABEL_PT5)
-    S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=ncol)
+    # the six decay families and the diagonal in two rows across 15 cm: closer columns
+    S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=ncol, columnspacing=0.8, handletextpad=0.4)
     S.save(fig, path)
 
 
@@ -153,11 +158,19 @@ def draw_jc1(path) -> None:
 
 
 def draw_jc2_part(path) -> None:
-    _draw_grid(path, "jc2", PARTITIONS)
+    _draw_grid(path, "jc2", PARTITIONS[:2])
 
 
 def draw_jc1_part(path) -> None:
-    _draw_grid(path, "jc1", PARTITIONS)
+    _draw_grid(path, "jc1", PARTITIONS[:2])
+
+
+def draw_jc2_rand(path) -> None:
+    _draw_grid(path, "jc2", PARTITIONS[2:])
+
+
+def draw_jc1_rand(path) -> None:
+    _draw_grid(path, "jc1", PARTITIONS[2:])
 
 
 def draw_jc2_mass(path) -> None:
@@ -239,6 +252,8 @@ def _draw_conf(path, pairs: tuple, base: bool, bar_word: str) -> None:
         cb.ax.minorticks_off()
         if image is images[0] and base:
             cb.set_ticks([0, 20, 40, 60, 80])       # no "100" at the end, where it would meet the other bar
+        else:                                   # one difference scale, the same ticks on every page (CONF_DIFF)
+            cb.set_ticks([t for t in range(-int(limit), int(limit) + 1)])
         cb.set_label(word, fontsize=S.LABEL_PT5, labelpad=4)
     S.letter_panels(panels)
     S.save(fig, path)
@@ -249,18 +264,18 @@ def draw_conf(path) -> None:
 
 
 def draw_conf_part(path) -> None:
-    _draw_conf(path, PARTITIONS, False, "Difference from 188 classes")
+    _draw_conf(path, PARTITIONS, False, "difference from 188 classes")
 
 
 def draw_conf_mass(path) -> None:
-    _draw_conf(path, MASS, False, "Difference from the network's label set")
+    _draw_conf(path, MASS, False, "difference from the network's label set")
 
 
 # ------------------------------------------------------------------ the pages
 HEATMAPS = ["2604.09809/fig7.png", "2606.14813/fig12.png"]
 HEAT_LABEL = "None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the dropped heatmap's"
-SCATTER_DIFFERS = ("One layout for the family (PI 2026-11-12): linear probe over fine-tuned, a column per compared "
-                   "network, one axis range per grid; points coloured by decay family (JetClass-II) or class "
+SCATTER_DIFFERS = ("One layout for the family (PI 2026-11-12; L20 2026-11-13: networks as rows): linear probe beside "
+                   "fine-tuned, a row per compared network, one axis range per grid; points coloured by decay family (JetClass-II) or class "
                    "(JetClass) in colours that mean no network (L6).")
 RUN_NOTE = ("Means over runs: three per label set, two per mass network and flavor-boundary partition, the five random "
             "partitions one run each (pooled).")
@@ -278,8 +293,10 @@ def _page(pid, title, draw, precedent=HEATMAPS, label=HEAT_LABEL, differs=SCATTE
 PAGES = [
     _page("PC-jc2", "Per class, JetClass-II, label sets", draw_jc2),
     _page("PC-jc1", "Per class, JetClass, label sets", draw_jc1),
-    _page("PC-jc2-part", "Per class, JetClass-II, 17-class partitions", draw_jc2_part),
-    _page("PC-jc1-part", "Per class, JetClass, 17-class partitions", draw_jc1_part),
+    _page("PC-jc2-part", "Per class, JetClass-II, partitions with no and a b-quark flavor boundary", draw_jc2_part),
+    _page("PC-jc1-part", "Per class, JetClass, partitions with no and a b-quark flavor boundary", draw_jc1_part),
+    _page("PC-jc2-rand", "Per class, JetClass-II, random flavor boundary and random partitions", draw_jc2_rand),
+    _page("PC-jc1-rand", "Per class, JetClass, random flavor boundary and random partitions", draw_jc1_rand),
     _page("PC-jc2-mass", "Per class, JetClass-II, mass networks against their label set", draw_jc2_mass),
     _page("PC-jc1-mass", "Per class, JetClass, mass networks against their label set", draw_jc1_mass),
     _page("PC-conf", "JetClass confusion matrices, label sets", draw_conf, ["2604.09809/fig7.png"],
@@ -293,37 +310,61 @@ PAGES = [
 # the supplement members' captions, filled like the paper's (gallery_captions holds the main-text and appendix ones)
 SUPPLEMENT_CAPTIONS = {
     "PC-jc2-part": (
-        "The networks pretrained with the four 17-class partitions in the form of figure {fig:PC-jc2}. Each point is "
-        "one JetClass-II class, at its area under the ROC curve for separating it from all other classes, with (a, e) "
-        "no flavor boundary, (b, f) a b-quark boundary, (c, g) a random flavor boundary and (d, h) random partitions "
-        "(vertical) against 188 classes (horizontal), as linear probes (upper row) or fine-tuned (lower row) on one "
-        "million class-balanced JetClass-II jets. Points below the dotted diagonal are classes the partition "
-        "separates less well, and colors are decay families. Each point is the mean over two pretraining runs, or "
-        "over the five random partitions with one run each, and the 188-class values over three runs. The points are "
-        "in table {tab:perclass} and their averages in table {tab:summaryauc}."
+        "The networks pretrained with the 17-class partitions with no and with a b-quark flavor boundary in the form of "
+        "figure {fig:PC-jc2}. Each point is one JetClass-II class, at its area under the receiver operating "
+        "characteristic curve (AUC) for separating it from all other classes, with (a, b) no flavor boundary and "
+        "(c, d) a b-quark boundary (vertical) against 188 classes (horizontal), as linear probes (left column) or "
+        "fine-tuned (right column) on one million class-balanced JetClass-II jets. Points below the dotted diagonal "
+        "are classes the partition separates less well, and colors are decay families. Each point is the mean over "
+        "two pretraining runs, and the 188-class values over three runs. Fine-tuning on JetClass-II ran with a cap of "
+        "160 epochs for every partition and of 40 epochs for 188 classes. Figure {fig:PC-jc2-rand} shows the random "
+        "flavor boundary and the random partitions. The points are in table {tab:perclass} and their averages in "
+        "table {tab:summaryauc}."
+    ),
+    "PC-jc2-rand": (
+        "The panels of figure {fig:PC-jc2-part} for (a, b) the 17-class partition with a random flavor boundary and "
+        "(c, d) the five random 17-class partitions, each point one JetClass-II class at its area under the receiver "
+        "operating characteristic curve (AUC) for separating it from all other classes (vertical) against 188 classes "
+        "(horizontal), as linear probes (left column) or fine-tuned (right column) on one million class-balanced "
+        "JetClass-II jets. Points below the dotted diagonal are classes the partition separates less well, and colors "
+        "are decay families. Each point is the mean over two pretraining runs, or over the five random partitions "
+        "with one run each, and the 188-class values over three runs. Fine-tuning on JetClass-II ran with a cap of "
+        "160 epochs for every partition and of 40 epochs for 188 classes. The points are in table {tab:perclass} and "
+        "their averages in table {tab:summaryauc}."
     ),
     "PC-jc1-part": (
-        "The networks pretrained with the four 17-class partitions in the form of figure {fig:PC-jc1}. Each point is "
-        "one JetClass class, at its area under the ROC curve for separating it from the other nine, with (a, e) no "
-        "flavor boundary, (b, f) a b-quark boundary, (c, g) a random flavor boundary and (d, h) random partitions "
-        "(vertical) against 188 classes (horizontal), as linear probes (upper row) or fine-tuned (lower row) on one "
-        "million JetClass jets. Each point is the mean over two pretraining runs, or over the five random partitions "
-        "with one run each, and the 188-class values over three runs. Values are in table {tab:jc1_class_auc}."
+        "The networks pretrained with the 17-class partitions with no and with a b-quark flavor boundary in the form of "
+        "figure {fig:PC-jc1}. Each point is one JetClass class, at its area under the receiver operating "
+        "characteristic curve (AUC) for separating it from the other nine, with (a, b) no flavor boundary and (c, d) a "
+        "b-quark boundary (vertical) against 188 classes (horizontal), as linear probes (left column) or fine-tuned "
+        "(right column) on one million JetClass jets. Each point is the mean over two pretraining runs, and the "
+        "188-class values over three runs. Figure {fig:PC-jc1-rand} shows the random flavor boundary and the random "
+        "partitions, and values are in table {tab:jc1_class_auc}."
+    ),
+    "PC-jc1-rand": (
+        "The panels of figure {fig:PC-jc1-part} for (a, b) the 17-class partition with a random flavor boundary and "
+        "(c, d) the five random 17-class partitions, each point one JetClass class at its area under the receiver "
+        "operating characteristic curve (AUC) for separating it from the other nine (vertical) against 188 classes "
+        "(horizontal), as linear probes (left column) or fine-tuned (right column) on one million JetClass jets. Each "
+        "point is the mean over two pretraining runs, or over the five random partitions with one run each, and the "
+        "188-class values over three runs. Values are in table {tab:jc1_class_auc}."
     ),
     "PC-jc2-mass": (
         "The networks pretrained with an added mass regression against the same label set without it, in the form of "
-        "figure {fig:PC-jc2}. Each point is one JetClass-II class, at its area under the ROC curve for separating it "
-        "from all other classes, with (a, c) 162 classes + mass against 162 classes and (b, d) 17 classes + mass "
-        "against 17 classes, as linear probes (upper row) or fine-tuned (lower row) on one million class-balanced "
+        "figure {fig:PC-jc2}. Each point is one JetClass-II class, at its area under the receiver operating characteristic curve (AUC) for separating it "
+        "from all other classes, with (a, b) 162 classes + mass against 162 classes and (c, d) 17 classes + mass "
+        "against 17 classes, as linear probes (left column) or fine-tuned (right column) on one million class-balanced "
         "JetClass-II jets. Points below the dotted diagonal are classes the mass network separates less well, and "
         "colors are decay families. Each point is the mean over two pretraining runs for a mass network and three for "
-        "its label set. The points are in table {tab:perclass} and their averages in table {tab:summaryauc}."
+        "its label set. Fine-tuning on JetClass-II ran with a cap of 40 epochs, except the first run of 17 classes "
+        "and both runs of 17 classes + mass, which had the 160-epoch cap. The points are in table {tab:perclass} and "
+        "their averages in table {tab:summaryauc}."
     ),
     "PC-jc1-mass": (
         "The networks pretrained with an added mass regression against the same label set without it, in the form of "
-        "figure {fig:PC-jc1}. Each point is one JetClass class, at its area under the ROC curve for separating it "
-        "from the other nine, with (a, c) 162 classes + mass against 162 classes and (b, d) 17 classes + mass against "
-        "17 classes, as linear probes (upper row) or fine-tuned (lower row) on one million JetClass jets. Each point "
+        "figure {fig:PC-jc1}. Each point is one JetClass class, at its area under the receiver operating characteristic curve (AUC) for separating it "
+        "from the other nine, with (a, b) 162 classes + mass against 162 classes and (c, d) 17 classes + mass against "
+        "17 classes, as linear probes (left column) or fine-tuned (right column) on one million JetClass jets. Each point "
         "is the mean over two pretraining runs for a mass network and three for its label set. Values are in table "
         "{tab:jc1_class_auc}."
     ),

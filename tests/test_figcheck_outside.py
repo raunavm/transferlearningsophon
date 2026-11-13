@@ -96,3 +96,14 @@ def test_a_caption_of_40_to_145_words_passes_the_check():
     assert figcheck.caption_findings(page(39)) == ["caption has 39 words (40-145)"]
     assert figcheck.caption_findings(page(146)) == ["caption has 146 words (40-145)"]
     assert figcheck.caption_findings(page(81)) == []                           # the old limit of 80 is gone
+
+
+def test_the_panel_sizes_of_l20():
+    """L20 (PI 2026-11-13, "Panels can't be so small"): a panel that draws curves or bands is at least 6.1 cm wide at
+    print size, two a row; a points-only panel (the headline dot plots, the per-class scatters, the UMAP grids) at
+    least 4.5 cm; no other exemption and no aspect exemption."""
+    assert figcheck.MIN_PANEL_CM == 6.1 and figcheck.ASPECT_OF == {} and figcheck.ASPECT == (0.7, 1.3)
+    assert set(figcheck.MIN_PANEL_CM_OF) == set(figcheck.POINTS_ONLY) | {"UMAP"} and set(figcheck.MIN_PANEL_CM_OF.values()) == {4.5}
+    assert {"F2", "F2-ft", "F2a", "F2b", "PC-jc2", "PC-jc2-rand"} <= set(figcheck.POINTS_ONLY)
+    assert figcheck.min_panel("UMAP-mass-xbx") == figcheck.min_panel("F2-ft") == 4.5
+    assert figcheck.min_panel("F4-mech") == figcheck.min_panel("A8") == figcheck.min_panel("PT") == 6.1

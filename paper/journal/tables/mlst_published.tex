@@ -5,7 +5,7 @@
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \setlength{\abovecaptionskip}{0pt}
-\captionof{table}{Comparison with published models. Our rows are the mean $\pm$ standard deviation over three runs, and the kinematic-inputs row uses kinematic inputs only. Models whose names end in f.t. (fine-tuned) and OmniLearned-l are pretrained on other data. AUC is the area under the receiver operating characteristic curve, on JetClass the mean over the classes, each against the rest, which with equal class sizes equals ParT's mean over class pairs. $R_{50}$ and $R_{30}$ are the inverse background efficiencies at 50\% and 30\% signal efficiency, quarks being the quark/gluon signal. Bold marks the best value of each block of a column and every value within three standard deviations of it. $^{\S}$~marks a value from a single run.}
+\captionof{table}{Comparison with published models, ours the mean $\pm$ standard deviation over three runs, published uncertainties as given. Models marked fine-tuned and both OmniLearned models are pretrained on other data, and training jets count the downstream set only. AUC is the area under the receiver operating characteristic curve, on JetClass averaged over the classes, each against the rest, and $R_{50}$ and $R_{30}$ the inverse background efficiencies at 50\% and 30\% signal efficiency. Bold marks values within three standard deviations (both added in quadrature, before rounding) of the best in their column and task. A value without a standard deviation counts with none. The network on kinematic inputs only is a reference, never bold. $^{\S}$~marks a value from a single run.}
 \label{tab:published}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
@@ -22,13 +22,13 @@ fine-tuned from \Kfull{} classes (this work) & 2.21\,M & 1\,M & {\fontseries{b}\
 linear EFP~\cite{toptag} & 1\,k & 1.2\,M & 0.932 & 0.980 & -- & 384 \\
 ParticleNet~\cite{particlenet} & 366\,k & 1.2\,M & 0.940 & 0.9858 & 397\,$\pm$\,7 & 1{,}615\,$\pm$\,93 \\
 ParT~\cite{part} & 2.14\,M & 1.2\,M & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1{,}602\,$\pm$\,81 \\
-ParT-f.t.~\cite{part} & 2.14\,M & 1.2\,M & 0.944 & 0.9877 & {\fontseries{b}\selectfont 691\,$\pm$\,15} & 2{,}766\,$\pm$\,130 \\
-MIParT-L-f.t.~\cite{mipart} & 2.38\,M & 1.2\,M & 0.944 & 0.9878 & {\fontseries{b}\selectfont 640\,$\pm$\,10} & 2{,}789\,$\pm$\,133 \\
-L-GATr-f.t.~\cite{lgatr} & 1.1\,M & 1.2\,M & {\fontseries{b}\selectfont 0.9446} & 0.9879 & {\fontseries{b}\selectfont 651\,$\pm$\,11} & 2{,}894\,$\pm$\,84 \\
+ParT, fine-tuned~\cite{part} & 2.14\,M & 1.2\,M & 0.944 & 0.9877 & {\fontseries{b}\selectfont 691\,$\pm$\,15} & 2{,}766\,$\pm$\,130 \\
+MIParT-L, fine-tuned~\cite{mipart} & 2.38\,M & 1.2\,M & 0.944 & 0.9878 & {\fontseries{b}\selectfont 640\,$\pm$\,10} & 2{,}789\,$\pm$\,133 \\
+L-GATr, fine-tuned~\cite{lgatr} & 1.1\,M & 1.2\,M & {\fontseries{b}\selectfont 0.9446} & 0.9879 & {\fontseries{b}\selectfont 651\,$\pm$\,11} & 2{,}894\,$\pm$\,84 \\
 OmniLearned-l~\cite{omnilearned} & 423\,M & 1.2\,M & 0.944 & {\fontseries{b}\selectfont 0.9880} & {\fontseries{b}\selectfont 688\,$\pm$\,9} & {\fontseries{b}\selectfont 3{,}486\,$\pm$\,157} \\
-from scratch (this work) & 2.21\,M & 1.2\,M & 0.93875\,$\pm$\,0.00016 & 0.98524\,$\pm$\,0.00008 & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 \\
-fine-tuned from \Kfull{} classes (this work) & 2.21\,M & 1.2\,M & 0.94001\,$\pm$\,0.00023 & 0.98606\,$\pm$\,0.00007 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
-\Kfull{} classes, kinematic inputs & 2.21\,M & 1.2\,M & 0.94072$^{\S}$ & 0.98620$^{\S}$ & 443$^{\S}$ & 1{,}800$^{\S}$ \\
+from scratch (this work) & 2.21\,M & 1.2\,M & 0.9387\,$\pm$\,0.0002 & 0.98524\,$\pm$\,0.00008 & 358\,$\pm$\,11 & 1{,}412\,$\pm$\,20 \\
+fine-tuned from \Kfull{} classes (this work) & 2.21\,M & 1.2\,M & 0.9400\,$\pm$\,0.0002 & 0.98606\,$\pm$\,0.00007 & 461\,$\pm$\,4 & 1{,}799\,$\pm$\,56 \\
+\Kfull{} classes, kinematic inputs only & 2.21\,M & 1.2\,M & 0.9407$^{\S}$ & 0.98620$^{\S}$ & 443$^{\S}$ & 1{,}803$^{\S}$ \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -48,14 +48,15 @@ linear EFP~\cite{efn} & -- & 1.6\,M & -- & 0.8919 & 29.7 & -- \\
 PFN-Ex~\cite{efn} & -- & 1.6\,M & -- & 0.9005 & 34.7\,$\pm$\,0.4 & -- \\
 ParticleNet~\cite{particlenet} & 366\,k & 1.6\,M & 0.840 & 0.9116 & 39.8\,$\pm$\,0.2 & 98.6\,$\pm$\,1.3 \\
 ParT~\cite{part} & 2.14\,M & 1.6\,M & 0.840 & 0.9121 & 41.3\,$\pm$\,0.3 & 101.2\,$\pm$\,1.1 \\
-ParticleNet-f.t.~\cite{part} & 370\,k & 1.6\,M & 0.839 & 0.9115 & 40.1\,$\pm$\,0.2 & 100.3\,$\pm$\,1.0 \\
-ParT-f.t.~\cite{part} & 2.14\,M & 1.6\,M & 0.843 & 0.9151 & 42.4\,$\pm$\,0.2 & {\fontseries{b}\selectfont 107.9\,$\pm$\,0.5} \\
+ParticleNet, fine-tuned~\cite{part} & 370\,k & 1.6\,M & 0.839 & 0.9115 & 40.1\,$\pm$\,0.2 & 100.3\,$\pm$\,1.0 \\
+ParT, fine-tuned~\cite{part} & 2.14\,M & 1.6\,M & 0.843 & 0.9151 & 42.4\,$\pm$\,0.2 & {\fontseries{b}\selectfont 107.9\,$\pm$\,0.5} \\
 OmniLearned-m~\cite{omnilearned} & 58\,M & 1.6\,M & {\fontseries{b}\selectfont 0.845} & {\fontseries{b}\selectfont 0.9162} & {\fontseries{b}\selectfont 43.2\,$\pm$\,0.1} & {\fontseries{b}\selectfont 111.2\,$\pm$\,1.5} \\
-from scratch (this work) & 2.21\,M & 1.6\,M & 0.8397\,$\pm$\,0.0007 & 0.91212\,$\pm$\,0.00022 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 \\
-fine-tuned from \Kfull{} classes (this work) & 2.21\,M & 1.6\,M & 0.8433\,$\pm$\,0.0002 & 0.91482\,$\pm$\,0.00014 & 42.56\,$\pm$\,0.10 & {\fontseries{b}\selectfont 107.3\,$\pm$\,2.2} \\
+from scratch (this work) & 2.21\,M & 1.6\,M & 0.83966\,$\pm$\,0.00069 & 0.91212\,$\pm$\,0.00022 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 \\
+fine-tuned from \Kfull{} classes (this work) & 2.21\,M & 1.6\,M & 0.84329\,$\pm$\,0.00020 & 0.91482\,$\pm$\,0.00014 & 42.56\,$\pm$\,0.10 & {\fontseries{b}\selectfont 107.3\,$\pm$\,2.2} \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
 \end{center}
+\par\smallskip{\noindent A dash marks a value not reported or not applicable.}
 }
 \end{landscape}

@@ -7,7 +7,7 @@ that can be measured. Everything else is looked at, in the PNGs.
 
 Per figure <id> in <dir>: <id>.pdf (the figure as the paper includes it), <id>_print.png, <id>_grey.png,
 <id>_deutan.png, <id>_protan.png, and <id>_check.json with the findings:
-  panel      a main panel narrower than MIN_PANEL_CM (MIN_PANEL_CM_OF for a figure the brief allows smaller) or with
+  panel      a main panel narrower than MIN_PANEL_CM (MIN_PANEL_CM_OF for a points-only figure, L20) or with
              height/width outside 0.7-1.3; ratio sub-panels (under half the height of the panel above them), colour
              bars, axes with no axis and image (heatmap) panels are not held to the aspect rule
   font       a text under 8 pt at print size
@@ -19,7 +19,8 @@ Per figure <id> in <dir>: <id>.pdf (the figure as the paper includes it), <id>_p
   caption    outside 40-145 words (the paper's captions: two to five sentences, PI 2026-11-12)
   title      (PI 2026-11-13, L7) a figure heading (a horizontal figure text above every panel and the figure legend), a
              colon in a panel title, or a text inside a panel (an ax.text in a panel with axes)
-The print size is the paper's: \\linewidth = 15 cm, except PRINT_CM. The saved PDF is cut to its tight box
+The print size is the paper's: \\linewidth = 15 cm, except PRINT_CM, and less for a figure the book caps at
+BOOK_MAX_H_CM high. The saved PDF is cut to its tight box
 (style_v3.save), so sizes are measured times print width / saved width.
 """
 from __future__ import annotations
@@ -46,25 +47,20 @@ from matplotlib.transforms import Bbox  # noqa: E402
 import palette_check as PC  # noqa: E402
 
 PRINT_CM = {"INVENTORY": 27.7, "F1": 13.0, "F10b": 8.5, "F10b-flav": 8.5, "F10-ft": 8.5, "F10-ft-part": 8.5, "VAL": 8.5, "VAL-part": 8.5, "F4-ee": 8.5}     # \paperfig widths other than \linewidth (15 cm); the map: the gallery page; one-panel figures (style_v5.SINGLE_W)
-# three panels in one row are 4.1 to 4.2 cm wide (PI 2026-11-11: no empty slot in a grid); two beside each other at
-# least 6.1 cm, which leaves the room wide tick labels (10^n) need
-MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.1, {
-                                     # the per-class family: three label sets in a row, four partitions beside the
-                                     # turned mode names (PI 2026-11-12)
-                                     "PC-jc2": 4.0, "PC-jc1": 4.0, "PC-jc2-part": 2.9, "PC-jc1-part": 2.9,
-                                     "F10a-flav": 4.0,
-                                     # the two-class ROC forms (PI 2026-11-13): three panels beside the turned row names,
-                                     # four class pairs a row
-                                     "F6": 3.6, "F6-part": 3.6, "F4-rand": 4.0, "F4-rand-ft": 4.0, "F4-other-ft": 2.9,
-                                     "F4-other": 2.9, "F4-ee": 6.1,
-                                     # the training-size family: three panels a row, the legend in the sixth slot
-                                     **{k: 3.8 for k in ("A8", "A10", "F8", "F8-auc", "A8-auc", "A10-auc", "A8-part",
-                                                         "A10-part")},
-                                     # the headline dot plots: five tasks beside the row names (PI 2026-11-13, L1)
-                                     "F2": 1.9, "F2a": 1.9, "F2b": 1.9}
+# PI 2026-11-13 (L20, "Panels can't be so small, e.g. figure 5, since we have so many lines"): every panel that draws
+# curves or bands at least 6.1 cm wide, two a row across the 15 cm text, never three or more; panels that draw points
+# only (the headline dot plots, the per-class scatters, the UMAP grids) at least 4.5 cm. No other exemption.
+POINTS_ONLY = ("F2", "F2-ft", "F2a", "F2b", "PC-jc2", "PC-jc1", "PC-jc2-part", "PC-jc1-part", "PC-jc2-rand",
+               "PC-jc1-rand", "PC-jc2-mass", "PC-jc1-mass")
+MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.1, {**{k: 4.5 for k in POINTS_ONLY}, "UMAP": 4.5}
 MIN_PT, ASPECT, PAD_IN, DPI = 8.0, (0.7, 1.3), 0.1, 300
-# the headline dot plots: a row per network, five narrow panels in a row, so each panel is higher than it is wide
-ASPECT_OF = {"F2": (1.0, 2.6), "F2a": (1.0, 2.6), "F2b": (1.0, 2.6)}
+ASPECT_OF = {}
+# make_results_book.MAX_H_CM: a full-width figure taller than this is set at this height, so narrower than 15 cm
+BOOK_MAX_H_CM = 18.5
+
+
+def min_panel(page_id: str) -> float:
+    return MIN_PANEL_CM_OF.get(page_id, MIN_PANEL_CM_OF["UMAP"] if page_id.startswith("UMAP-") else MIN_PANEL_CM)
 BANNED = [(re.compile(p), why) for p, why in (
     (r"\bto\s+(ee|mu|mumu|bb|cc|qq|bs|bc|b\b)", "plain 'to' for an arrow"), (r"\bmu\b", "plain 'mu'"),
     (r"\b(bb|cc|qq|mumu)\b(?![\u0304\u2032])", "plain parton pair"), (r"->", "ASCII arrow"), (r"LOOK:", "internal note"),
@@ -239,6 +235,9 @@ def check(fig, name: str, print_cm: float, min_panel: float) -> dict:
     r = fig.canvas.get_renderer()
     tight = fig.get_tightbbox(r)
     saved_in = fig.get_figwidth() if getattr(fig, "exact_size", False) else tight.width + 2 * PAD_IN
+    saved_h = fig.get_figheight() if getattr(fig, "exact_size", False) else tight.height + 2 * PAD_IN
+    if print_cm == 15.0:                # the book sets a figure taller than BOOK_MAX_H_CM at that height, narrower
+        print_cm = min(print_cm, BOOK_MAX_H_CM * saved_in / saved_h)
 
     scale = print_cm / 2.54 / saved_in
     px_per_cm = fig.dpi / scale / 2.54             # display pixels per printed centimetre
@@ -372,7 +371,7 @@ def main(argv=None) -> int:
     def save(fig, path):
         stem = pathlib.Path(path).stem
         page_id = current[0]
-        rep = check(fig, stem, PRINT_CM.get(page_id, 15.0), MIN_PANEL_CM_OF.get(page_id, MIN_PANEL_CM))
+        rep = check(fig, stem, PRINT_CM.get(page_id, 15.0), min_panel(page_id))
         out = original(fig, path)
         rasters(pathlib.Path(path).with_suffix(".pdf"), rep["print_cm"])
         results[stem] = rep

@@ -186,8 +186,11 @@ def test_the_gallery_has_five_umap_pages_none_in_the_paper():
     fig = ROOT / "experiments/FIGS/figstyle"
     new = ["UMAP-jc1", "UMAP-jc2-had", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg"]
     order, paper = _assigned(fig / "gallery_figures.py", "ORDER"), _assigned(fig / "gallery_figures.py", "PAPER")
-    # ordered by tier (gallery_placement): the hadronic JetClass-II page in the appendix, the others in the supplement
-    assert [p for p in order if p.startswith("UMAP")] == [new[1], new[0], *new[2:]]
+    # ordered by tier (gallery_placement): the hadronic JetClass-II page in the appendix, the others in the supplement,
+    # then the supplement's further grids from umap_v3 (round 3, L19): X->bb and X->bs against QCD, and the mass
+    # networks under their label sets on every task (gallery_labelset.UMAP_MORE)
+    mass = [f"UMAP-mass-{p.removeprefix('UMAP-')}" for p in (new[1], new[0], *new[2:])] + ["UMAP-mass-xbx"]
+    assert [p for p in order if p.startswith("UMAP")] == [new[1], new[0], *new[2:], "UMAP-xbx", *mass]
     assert not [p for p in paper if p.startswith("UMAP")]
     pages = _assigned(fig / "gallery_labelset.py", "UMAP_PAGES")
     assert list(pages) == new

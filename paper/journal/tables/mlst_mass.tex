@@ -1,6 +1,6 @@
 \begin{table}[t]
 \centering
-\caption{Jet-mass resolution and median response on JetClass-II of the soft-drop mass, the mass output of the pretraining head and a multilayer-perceptron probe on the frozen features. The response $r = m/m_{\mathrm{gen}}$ is the estimated over the generator-level soft-drop mass, and the resolution is half the range between the 15.9\% and 84.1\% quantiles of $r$ over its median, for all test jets with a generator-level match. Only the perceptron's target is centered on the training median of the jet's true class. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network. Bold marks the best value of each block of a column and every value within three standard deviations of it.}
+\caption{Jet-mass resolution and median response of $r = m/m_{\mathrm{gen}}$, the estimated mass over the generator-level soft-drop mass, on JetClass-II test jets with a generator-level match, for the soft-drop mass, the mass output of the pretraining head and a multilayer-perceptron probe on the frozen features. The resolution is half the 15.9--84.1\% quantile range of $r$ over its median. The probe predicts the mass relative to the true class's training median. The best resolution is the smallest and the best median response the closest to one, compared as distances from one. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network. Bold marks values within three standard deviations (both added in quadrature, before rounding) of the best in their column under their italic heading. References (random network, soft-drop mass) are never bold.}
 \label{tab:mass}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
 \toprule
@@ -17,7 +17,7 @@ soft-drop mass & 0.2448 & 0.9294 \\
 \Kres{} classes & 0.2195\,$\pm$\,0.0017 & 0.9876\,$\pm$\,0.0014 \\
 \Kres{} classes + mass & {\fontseries{b}\selectfont 0.1589\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 1.0049\,$\pm$\,0.0015} \\
 \Kmid{} classes & 0.2158\,$\pm$\,0.0029 & {\fontseries{b}\selectfont 0.9908\,$\pm$\,0.0049} \\
-\Kcoarse{} classes & 0.2098\,$\pm$\,0.0031 & 0.9908\,$\pm$\,0.0041 \\
+\Kcoarse{} classes & 0.2098\,$\pm$\,0.0031 & {\fontseries{b}\selectfont 0.9908\,$\pm$\,0.0041} \\
 \Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.1585\,$\pm$\,0.0003} & {\fontseries{b}\selectfont 1.0077\,$\pm$\,0.0022} \\
 random network & 0.2421\,$\pm$\,0.0018 & 0.9833\,$\pm$\,0.0049 \\
 \bottomrule

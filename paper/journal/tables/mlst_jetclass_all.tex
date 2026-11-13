@@ -1,154 +1,66 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\begin{landscape}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\addtolength{\belowcaptionskip}{\medskipamount}
+\begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
+\caption{JetClass fine-tuning, in the columns of tables~\ref{tab:published} and~\ref{tab:jetclassrej}, of the networks pretrained with 188, 162, 43 and 17 classes, of the two networks with an added mass output and of the 17-class partitions, beside training from scratch, each fine-tuned on one million JetClass jets and with 2.21 million parameters. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. With JetClass's equal class sizes this equals the average over class pairs that the Particle Transformer paper reports. $R$ with a subscript is the inverse QCD efficiency at that signal efficiency in percent, 50\% except 99\% for $H\to\ell\nu qq'$ and 99.5\% for $t\to b\ell\nu$. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. $^\dagger$~marks a value for which fewer than \MlstMinBkgPass{} QCD jets pass in a run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:jetclassall}\\
+\toprule
+&  &  & \multicolumn{3}{c}{rejection of QCD} \\
+\cmidrule(lr){4-6}
+ & accuracy & AUC & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ \\
+ &  &  & $R_{50}$ & $R_{50}$ & $R_{50}$ \\
+\midrule
+\endfirsthead
+\multicolumn{6}{@{}l}{\textit{Table~\ref{tab:jetclassall} (continued)}} \\[\smallskipamount]
+\toprule
+&  &  & \multicolumn{3}{c}{rejection of QCD} \\
+\cmidrule(lr){4-6}
+ & accuracy & AUC & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ \\
+ &  &  & $R_{50}$ & $R_{50}$ & $R_{50}$ \\
+\midrule
+\endhead
+\multicolumn{6}{@{}l}{\textit{fine-tuned}} \\*
+\Kfull{} classes & 0.8468\,$\pm$\,0.0006 & 0.98542\,$\pm$\,0.00007 & 6{,}600\,$\pm$\,300 & 2{,}650\,$\pm$\,260 & 104\,$\pm$\,4 \\
+\Kres{} classes & 0.8475\,$\pm$\,0.0009 & 0.98559\,$\pm$\,0.00003 & 6{,}100$^{\P}$ & 2{,}820\,$\pm$\,40 & 102\,$\pm$\,1 \\
+\Kres{} classes + mass & 0.8465\,$\pm$\,0.0009 & 0.98537\,$\pm$\,0.00008 & 6{,}600\,$\pm$\,200 & 2{,}420\,$\pm$\,160 & 104\,$\pm$\,2 \\
+\Kmid{} classes & 0.8459\,$\pm$\,0.0002 & 0.98533\,$\pm$\,0.00006 & 6{,}500\,$\pm$\,500 & 2{,}610\,$\pm$\,160 & 104\,$\pm$\,1 \\
+\Kcoarse{} classes & 0.8422\,$\pm$\,0.0005 & 0.98472\,$\pm$\,0.00012 & 6{,}700\,$\pm$\,200 & 2{,}390\,$\pm$\,40 & 101\,$\pm$\,6 \\
+\Kcoarse{} classes + mass & 0.8399\,$\pm$\,0.0002 & 0.98436\,$\pm$\,0.00006 & 6{,}000\,$\pm$\,600 & 2{,}160\,$\pm$\,200 & 104\,$\pm$\,2 \\
+\multicolumn{6}{@{}l}{17-class partitions} \\*
+\quad no flavor boundary & 0.8433\,$\pm$\,0.0002 & 0.98487\,$\pm$\,0.00004 & 6{,}100$^{\P}$ & 2{,}160\,$\pm$\,20 & 105\,$\pm$\,1 \\*
+\quad $b$-quark boundary & 0.8439\,$\pm$\,0.0007 & 0.98498\,$\pm$\,0.00007 & 6{,}600\,$\pm$\,1{,}200 & 2{,}380\,$\pm$\,40 & 106\,$\pm$\,2 \\*
+\quad random flavor boundary & 0.8434\,$\pm$\,0.0003 & 0.98494\,$\pm$\,0.00002 & 6{,}200\,$\pm$\,400 & 2{,}740\,$\pm$\,160 & 101\,$\pm$\,7 \\*
+\quad random partitions & 0.8443\,$\pm$\,0.0007 & 0.98509\,$\pm$\,0.00006 & 6{,}100\,$\pm$\,900 & 2{,}580\,$\pm$\,160 & 103\,$\pm$\,2 \\*
+from scratch & 0.8267\,$\pm$\,0.0011 & 0.98185\,$\pm$\,0.00026 & 4{,}800\,$\pm$\,100 & 1{,}570\,$\pm$\,50 & 86\,$\pm$\,3 \\
+\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
+\end{longtable}
 \begin{center}
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{JetClass fine-tuning, in the columns of tables~\ref{tab:published} and~\ref{tab:jetclassrej}, of the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with the 17-class partitions, beside training from scratch, on one million JetClass jets. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. With JetClass's equal class sizes this equals the average over class pairs that ParT reports. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each. $^\dagger$~marks a value for which fewer than \MlstMinBkgPass{} QCD jets pass in a run. $^{\P}$~marks a value whose runs agree to the digits shown.}
-\label{tab:jetclassall}
-\par\medskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llcc@{}}
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:jetclassall} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
- & training jets & parameters & accuracy \\
+ & \multicolumn{6}{c}{rejection of QCD} \\
+\cmidrule(lr){2-7}
+ & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+ & $R_{50}$ & $R_{99}$ & $R_{50}$ & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
 \midrule
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 1 M & 2.21\,M & 0.8468\,$\pm$\,0.0006 \\
-\Kres{} classes & 1 M & 2.21\,M & 0.8475\,$\pm$\,0.0009 \\
-\Kres{} classes + mass & 1 M & 2.21\,M & 0.8465\,$\pm$\,0.0009 \\
-\Kmid{} classes & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 \\
-\Kcoarse{} classes & 1 M & 2.21\,M & 0.8422\,$\pm$\,0.0005 \\
-\Kcoarse{} classes + mass & 1 M & 2.21\,M & 0.8399\,$\pm$\,0.0002 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 1 M & 2.21\,M & 0.8433\,$\pm$\,0.0002 \\
-\quad $b$-quark boundary & 1 M & 2.21\,M & 0.8439\,$\pm$\,0.0007 \\
-\quad random flavor boundary & 1 M & 2.21\,M & 0.8434\,$\pm$\,0.0003 \\
-\quad random partitions & 1 M & 2.21\,M & 0.8443\,$\pm$\,0.0007 \\
-from scratch & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:2}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llc@{}}
-\toprule
- & training jets & AUC \\
-\midrule
-\multicolumn{3}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 1 M & 0.98542\,$\pm$\,0.00007 \\
-\Kres{} classes & 1 M & 0.98559\,$\pm$\,0.00003 \\
-\Kres{} classes + mass & 1 M & 0.98537\,$\pm$\,0.00008 \\
-\Kmid{} classes & 1 M & 0.98533\,$\pm$\,0.00006 \\
-\Kcoarse{} classes & 1 M & 0.98472\,$\pm$\,0.00012 \\
-\Kcoarse{} classes + mass & 1 M & 0.98436\,$\pm$\,0.00006 \\
-\multicolumn{3}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 1 M & 0.98487\,$\pm$\,0.00004 \\
-\quad $b$-quark boundary & 1 M & 0.98498\,$\pm$\,0.00007 \\
-\quad random flavor boundary & 1 M & 0.98494\,$\pm$\,0.00002 \\
-\quad random partitions & 1 M & 0.98509\,$\pm$\,0.00006 \\
-from scratch & 1 M & 0.98185\,$\pm$\,0.00026 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:3}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llcc@{}}
-\toprule
- &  & \multicolumn{2}{c}{rejection of QCD} \\
-\cmidrule(lr){3-4}
- & training jets & $H\to b\bar b$ & $H\to c\bar c$ \\
- &  & $R_{50}$ & $R_{50}$ \\
-\midrule
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 1 M & 6{,}600\,$\pm$\,300 & 2{,}650\,$\pm$\,260 \\
-\Kres{} classes & 1 M & 6{,}100$^{\P}$ & 2{,}820\,$\pm$\,40 \\
-\Kres{} classes + mass & 1 M & 6{,}600\,$\pm$\,200 & 2{,}420\,$\pm$\,160 \\
-\Kmid{} classes & 1 M & 6{,}500\,$\pm$\,500 & 2{,}610\,$\pm$\,160 \\
-\Kcoarse{} classes & 1 M & 6{,}700\,$\pm$\,200 & 2{,}390\,$\pm$\,40 \\
-\Kcoarse{} classes + mass & 1 M & 6{,}000\,$\pm$\,600 & 2{,}160\,$\pm$\,200 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 1 M & 6{,}100$^{\P}$ & 2{,}160\,$\pm$\,20 \\
-\quad $b$-quark boundary & 1 M & 6{,}600\,$\pm$\,1{,}200 & 2{,}380\,$\pm$\,40 \\
-\quad random flavor boundary & 1 M & 6{,}200\,$\pm$\,400 & 2{,}740\,$\pm$\,160 \\
-\quad random partitions & 1 M & 6{,}100\,$\pm$\,900 & 2{,}580\,$\pm$\,160 \\
-from scratch & 1 M & 4{,}800\,$\pm$\,100 & 1{,}570\,$\pm$\,50 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:4}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
-\toprule
- &  & \multicolumn{3}{c}{rejection of QCD} \\
-\cmidrule(lr){3-5}
- & training jets & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ \\
- &  & $R_{50}$ & $R_{50}$ & $R_{99}$ \\
-\midrule
-\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 1 M & 104\,$\pm$\,4 & 1{,}090\,$\pm$\,10 & 3{,}060\,$\pm$\,390 \\
-\Kres{} classes & 1 M & 102\,$\pm$\,1 & 1{,}150\,$\pm$\,70 & 3{,}070\,$\pm$\,330 \\
-\Kres{} classes + mass & 1 M & 104\,$\pm$\,2 & 1{,}110\,$\pm$\,20 & 2{,}860\,$\pm$\,120 \\
-\Kmid{} classes & 1 M & 104\,$\pm$\,1 & 1{,}030\,$\pm$\,40 & 3{,}160\,$\pm$\,280 \\
-\Kcoarse{} classes & 1 M & 101\,$\pm$\,6 & 1{,}050\,$\pm$\,20 & 2{,}800\,$\pm$\,200 \\
-\Kcoarse{} classes + mass & 1 M & 104\,$\pm$\,2 & 950\,$\pm$\,20 & 2{,}920\,$\pm$\,30 \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 1 M & 105\,$\pm$\,1 & 1{,}110\,$\pm$\,100 & 2{,}820$^{\P}$ \\
-\quad $b$-quark boundary & 1 M & 106\,$\pm$\,2 & 1{,}040\,$\pm$\,10 & 2{,}580\,$\pm$\,20 \\
-\quad random flavor boundary & 1 M & 101\,$\pm$\,7 & 1{,}020\,$\pm$\,30 & 2{,}740\,$\pm$\,110 \\
-\quad random partitions & 1 M & 103\,$\pm$\,2 & 1{,}010\,$\pm$\,30 & 2{,}690\,$\pm$\,300 \\
-from scratch & 1 M & 86\,$\pm$\,3 & 640\,$\pm$\,40 & 1{,}290\,$\pm$\,100 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:5}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llcc@{}}
-\toprule
- &  & \multicolumn{2}{c}{rejection of QCD} \\
-\cmidrule(lr){3-4}
- & training jets & $t\to bqq'$ & $t\to b\ell\nu$ \\
- &  & $R_{50}$ & $R_{99.5}$ \\
-\midrule
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 1 M & 12{,}900\,$\pm$\,1{,}600$^\dagger$ & 9{,}400\,$\pm$\,1{,}500$^\dagger$ \\
-\Kres{} classes & 1 M & 14{,}100\,$\pm$\,3{,}500$^\dagger$ & 7{,}800\,$\pm$\,300 \\
-\Kres{} classes + mass & 1 M & 12{,}700\,$\pm$\,2{,}200$^\dagger$ & 7{,}600\,$\pm$\,1{,}000 \\
-\Kmid{} classes & 1 M & 14{,}200\,$\pm$\,2{,}100$^\dagger$ & 8{,}500\,$\pm$\,200 \\
-\Kcoarse{} classes & 1 M & 10{,}600\,$\pm$\,2{,}700$^\dagger$ & 8{,}600\,$\pm$\,1{,}300 \\
-\Kcoarse{} classes + mass & 1 M & 12{,}400\,$\pm$\,2{,}700$^\dagger$ & 9{,}600\,$\pm$\,2{,}200$^\dagger$ \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 1 M & 15{,}000\,$\pm$\,2{,}400$^\dagger$ & 6{,}900\,$\pm$\,300 \\
-\quad $b$-quark boundary & 1 M & 13{,}400\,$\pm$\,1{,}300$^\dagger$ & 7{,}100$^{\P}$ \\
-\quad random flavor boundary & 1 M & 12{,}500\,$\pm$\,1{,}100$^\dagger$ & 7{,}300\,$\pm$\,200 \\
-\quad random partitions & 1 M & 10{,}900\,$\pm$\,2{,}000$^\dagger$ & 7{,}700\,$\pm$\,1{,}300 \\
-from scratch & 1 M & 6{,}400\,$\pm$\,200 & 3{,}600\,$\pm$\,1{,}000 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:jetclassall}{tab:jetclassall:6}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llcc@{}}
-\toprule
- &  & \multicolumn{2}{c}{rejection of QCD} \\
-\cmidrule(lr){3-4}
- & training jets & $W\to qq'$ & $Z\to q\bar q$ \\
- &  & $R_{50}$ & $R_{50}$ \\
-\midrule
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 1 M & 374.4\,$\pm$\,8.1 & 311.9\,$\pm$\,6.1 \\
-\Kres{} classes & 1 M & 388.7\,$\pm$\,8.6 & 307.7\,$\pm$\,1.2 \\
-\Kres{} classes + mass & 1 M & 385.8\,$\pm$\,8.9 & 301.7\,$\pm$\,1.3 \\
-\Kmid{} classes & 1 M & 376.2\,$\pm$\,5.9 & 307.0\,$\pm$\,6.5 \\
-\Kcoarse{} classes & 1 M & 377.5\,$\pm$\,22.0 & 284.9\,$\pm$\,10.6 \\
-\Kcoarse{} classes + mass & 1 M & 357.9\,$\pm$\,7.2 & 282.6\,$\pm$\,9.6 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 1 M & 351.5$^{\P}$ & 291.8\,$\pm$\,0.3 \\
-\quad $b$-quark boundary & 1 M & 356.5\,$\pm$\,13.9 & 295.0\,$\pm$\,3.7 \\
-\quad random flavor boundary & 1 M & 371.4\,$\pm$\,0.5 & 298.5\,$\pm$\,3.8 \\
-\quad random partitions & 1 M & 378.9\,$\pm$\,17.9 & 298.8\,$\pm$\,7.1 \\
-from scratch & 1 M & 262.5\,$\pm$\,15.1 & 209.6\,$\pm$\,12.4 \\
+\multicolumn{7}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 1{,}090\,$\pm$\,10 & 3{,}060\,$\pm$\,390 & 12{,}900\,$\pm$\,1{,}600$^\dagger$ & 9{,}400\,$\pm$\,1{,}500$^\dagger$ & 374.4\,$\pm$\,8.1 & 311.9\,$\pm$\,6.1 \\
+\Kres{} classes & 1{,}150\,$\pm$\,70 & 3{,}070\,$\pm$\,330 & 14{,}100\,$\pm$\,3{,}500$^\dagger$ & 7{,}800\,$\pm$\,300 & 388.7\,$\pm$\,8.6 & 307.7\,$\pm$\,1.2 \\
+\Kres{} classes + mass & 1{,}110\,$\pm$\,20 & 2{,}860\,$\pm$\,120 & 12{,}700\,$\pm$\,2{,}200$^\dagger$ & 7{,}600\,$\pm$\,1{,}000 & 385.8\,$\pm$\,8.9 & 301.7\,$\pm$\,1.3 \\
+\Kmid{} classes & 1{,}030\,$\pm$\,40 & 3{,}160\,$\pm$\,280 & 14{,}200\,$\pm$\,2{,}100$^\dagger$ & 8{,}500\,$\pm$\,200 & 376.2\,$\pm$\,5.9 & 307.0\,$\pm$\,6.5 \\
+\Kcoarse{} classes & 1{,}050\,$\pm$\,20 & 2{,}800\,$\pm$\,200 & 10{,}600\,$\pm$\,2{,}700$^\dagger$ & 8{,}600\,$\pm$\,1{,}300 & 377.5\,$\pm$\,22.0 & 284.9\,$\pm$\,10.6 \\
+\Kcoarse{} classes + mass & 950\,$\pm$\,20 & 2{,}920\,$\pm$\,30 & 12{,}400\,$\pm$\,2{,}700$^\dagger$ & 9{,}600\,$\pm$\,2{,}200$^\dagger$ & 357.9\,$\pm$\,7.2 & 282.6\,$\pm$\,9.6 \\
+\multicolumn{7}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 1{,}110\,$\pm$\,100 & 2{,}820$^{\P}$ & 15{,}000\,$\pm$\,2{,}400$^\dagger$ & 6{,}900\,$\pm$\,300 & 351.5$^{\P}$ & 291.8\,$\pm$\,0.3 \\
+\quad $b$-quark boundary & 1{,}040\,$\pm$\,10 & 2{,}580\,$\pm$\,20 & 13{,}400\,$\pm$\,1{,}300$^\dagger$ & 7{,}100$^{\P}$ & 356.5\,$\pm$\,13.9 & 295.0\,$\pm$\,3.7 \\
+\quad random flavor boundary & 1{,}020\,$\pm$\,30 & 2{,}740\,$\pm$\,110 & 12{,}500\,$\pm$\,1{,}100$^\dagger$ & 7{,}300\,$\pm$\,200 & 371.4\,$\pm$\,0.5 & 298.5\,$\pm$\,3.8 \\
+\quad random partitions & 1{,}010\,$\pm$\,30 & 2{,}690\,$\pm$\,300 & 10{,}900\,$\pm$\,2{,}000$^\dagger$ & 7{,}700\,$\pm$\,1{,}300 & 378.9\,$\pm$\,17.9 & 298.8\,$\pm$\,7.1 \\
+from scratch & 640\,$\pm$\,40 & 1{,}290\,$\pm$\,100 & 6{,}400\,$\pm$\,200 & 3{,}600\,$\pm$\,1{,}000 & 262.5\,$\pm$\,15.1 & 209.6\,$\pm$\,12.4 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
 \end{center}
+}
+\end{landscape}

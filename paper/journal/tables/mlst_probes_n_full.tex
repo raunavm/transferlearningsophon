@@ -2,7 +2,7 @@
 {
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\caption{Linear probes of table~\ref{tab:probesn} at every training-set size, with each random partition on its own row and the area under the receiver operating characteristic curve (AUC) beside each quantity. On JetClass-II and JetClass the AUC is averaged over the classes, each against the rest. The network with kinematic inputs is pretrained on those inputs only. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each. $^{*}$ marks a probe that did not converge. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:probesnfull}\\
+\caption{Linear probes of table~\ref{tab:probesn} at every training-set size, with each random partition on its own row and the area under the receiver operating characteristic curve (AUC) beside each quantity. On JetClass-II and JetClass the AUC is averaged over the classes, each against the rest. The missing top inputs are set to random draws of a real particle and the missing quark/gluon inputs to the training mean, the substitutions chosen on validation in table~\ref{tab:fill}. The network pretrained with \Kfull{} classes on kinematic inputs only is probed on top tagging only. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. Each random partition is a single run on its own row. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:probesnfull}\\
 \toprule
 \endfirsthead
 \multicolumn{5}{@{}l}{\textit{Table~\ref{tab:probesnfull} (continued)}} \\
@@ -94,7 +94,7 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}000{,}000 \\*
 \quad random partition 5, seed 2 & 0.9475$^{\S}$ & 0.9594$^{\S}$ & 0.9634$^{\S}$ & 0.9639$^{\S}$ \\*
 \mbox{random network} & 0.7557\,$\pm$\,0.0034 & 0.8151\,$\pm$\,0.0012 & 0.8266\,$\pm$\,0.0012 & 0.8280\,$\pm$\,0.0011 \\
 \midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{top, $R_{30}$ (missing inputs: random draws)} \\*
+\multicolumn{5}{@{}l}{top, $R_{30}$ (missing inputs set to random draws)} \\*
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*
@@ -114,9 +114,9 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\*
 \quad random partition 4, seed 2 & 95.1$^{\S}$ & 155$^{\S}$ & 152$^{\S}$ & 152$^{\S}$ \\*
 \quad random partition 5, seed 2 & 114.3$^{\S}$ & 179$^{\S}$ & 177$^{\S}$ & 173$^{\S}$ \\*
 \mbox{random network} & 43.1\,$\pm$\,1.1 & 55\,$\pm$\,3 & 57\,$\pm$\,3 & 57\,$\pm$\,3 \\*
-\mbox{\Kfull{} classes,} \mbox{kinematic inputs} & 133.2$^{\S}$ & 208$^{\S}$ & 222$^{\S}$ & 231$^{\S}$ \\
+\mbox{\Kfull{} classes,} \mbox{kinematic inputs only} & 133.2$^{\S}$ & 208$^{\S}$ & 222$^{\S}$ & 231$^{\S}$ \\
 \midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{top, AUC (missing inputs: random draws)} \\*
+\multicolumn{5}{@{}l}{top, AUC (missing inputs set to random draws)} \\*
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*
@@ -136,9 +136,9 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}200{,}000 \\*
 \quad random partition 4, seed 2 & 0.9465$^{\S}$ & 0.9577$^{\S}$ & 0.9597$^{\S}$ & 0.9598$^{\S}$ \\*
 \quad random partition 5, seed 2 & 0.9492$^{\S}$ & 0.9615$^{\S}$ & 0.9633$^{\S}$ & 0.9634$^{\S}$ \\*
 \mbox{random network} & 0.9284\,$\pm$\,0.0014 & 0.9391\,$\pm$\,0.0011 & 0.9407\,$\pm$\,0.0013 & 0.9408\,$\pm$\,0.0012 \\*
-\mbox{\Kfull{} classes,} \mbox{kinematic inputs} & 0.9594$^{\S}$ & 0.9695$^{\S}$ & 0.9711$^{\S}$ & 0.9713$^{\S}$ \\
+\mbox{\Kfull{} classes,} \mbox{kinematic inputs only} & 0.9594$^{\S}$ & 0.9695$^{\S}$ & 0.9711$^{\S}$ & 0.9713$^{\S}$ \\
 \midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{quark/gluon, $R_{30}$ (missing inputs: the training mean)} \\*
+\multicolumn{5}{@{}l}{quark/gluon, $R_{30}$ (missing inputs set to the training mean)} \\*
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*
@@ -159,7 +159,7 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \quad random partition 5, seed 2 & 61$^{\S}$ & 65.4$^{\S}$ & 68.9$^{\S}$ & 69.6$^{\S}$ \\*
 \mbox{random network} & 43\,$\pm$\,2 & 55.6\,$\pm$\,1.2 & 56.7\,$\pm$\,0.5 & 56.4\,$\pm$\,1.0 \\
 \midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{quark/gluon, AUC (missing inputs: the training mean)} \\*
+\multicolumn{5}{@{}l}{quark/gluon, AUC (missing inputs set to the training mean)} \\*
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*
@@ -180,7 +180,7 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \quad random partition 5, seed 2 & 0.8631$^{\S}$ & 0.8748$^{\S}$ & 0.8787$^{\S}$ & 0.8790$^{\S}$ \\*
 \mbox{random network} & 0.8347\,$\pm$\,0.0047 & 0.8564\,$\pm$\,0.0018 & 0.8606\,$\pm$\,0.0016 & 0.8612\,$\pm$\,0.0016 \\
 \midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{quark/gluon, Herwig, $R_{30}$ (missing inputs: the training mean)} \\*
+\multicolumn{5}{@{}l}{quark/gluon, Herwig, $R_{30}$ (missing inputs set to the training mean)} \\*
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*
@@ -201,7 +201,7 @@ training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \quad random partition 5, seed 2 & 29.8$^{\S}$ & 33.26$^{\S}$ & 33.5$^{\S}$ & 34.1$^{\S}$ \\*
 \mbox{random network} & 25.2\,$\pm$\,1.0 & 30.80\,$\pm$\,0.44 & 31.9\,$\pm$\,1.2 & 31.6\,$\pm$\,0.8 \\
 \midrule[\heavyrulewidth]
-\multicolumn{5}{@{}l}{quark/gluon, Herwig, AUC (missing inputs: the training mean)} \\*
+\multicolumn{5}{@{}l}{quark/gluon, Herwig, AUC (missing inputs set to the training mean)} \\*
 training jets & 1{,}000 & 10{,}000 & 100{,}000 & 1{,}600{,}000 \\*
 \noalign{\vskip\aboverulesep\nobreak}\multispan{5}{\leaders\hrule height\lightrulewidth\hfill}\cr\noalign{\nobreak\vskip\belowrulesep\nobreak}
 \multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*

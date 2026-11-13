@@ -3,7 +3,7 @@
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \addtolength{\belowcaptionskip}{\medskipamount}
 \begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\caption{Linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with every 17-class partition and of the random network, on JetClass-II at its natural composition, with the BatchNorm statistics as accumulated in pretraining and as recomputed on \DesignBnJets{} training jets. The columns give the AUC and the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:bn}\\
+\caption{Linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, of the two networks with an added mass output, of every 17-class partition and of the random network, on JetClass-II at its natural composition, with the batch-normalization (BatchNorm) statistics as accumulated in pretraining and as recomputed on \DesignBnJets{} training jets. The columns give the AUC and the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:bn}\\
 \toprule
 & \multicolumn{2}{c}{BatchNorm as trained} & \multicolumn{2}{c}{BatchNorm recomputed} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
@@ -17,25 +17,24 @@
  & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
 \endhead
-\bottomrule
-\endlastfoot
-\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*
 \Kfull{} classes & 0.97599\,$\pm$\,0.00004 & 1.000$^{\P}$ & 0.97600\,$\pm$\,0.00004 & 1.000$^{\P}$ \\
 \Kres{} classes & 0.97481\,$\pm$\,0.00031 & 1.049\,$\pm$\,0.014 & 0.97481\,$\pm$\,0.00032 & 1.050\,$\pm$\,0.014 \\
 \Kres{} classes + mass & 0.97373\,$\pm$\,0.00034 & 1.094\,$\pm$\,0.017 & 0.97373\,$\pm$\,0.00033 & 1.094\,$\pm$\,0.016 \\
 \Kmid{} classes & 0.97188\,$\pm$\,0.00061 & 1.171\,$\pm$\,0.024 & 0.97188\,$\pm$\,0.00060 & 1.172\,$\pm$\,0.025 \\
 \Kcoarse{} classes & 0.96308\,$\pm$\,0.00061 & 1.538\,$\pm$\,0.025 & 0.96310\,$\pm$\,0.00061 & 1.537\,$\pm$\,0.026 \\
 \Kcoarse{} classes + mass & 0.96277\,$\pm$\,0.00060 & 1.551\,$\pm$\,0.029 & 0.96277\,$\pm$\,0.00063 & 1.551\,$\pm$\,0.029 \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.96507\,$\pm$\,0.00085 & 1.455\,$\pm$\,0.032 & 0.96508\,$\pm$\,0.00082 & 1.455\,$\pm$\,0.031 \\
-\quad $b$-quark boundary & 0.96992\,$\pm$\,0.00018 & 1.253\,$\pm$\,0.011 & 0.96994\,$\pm$\,0.00019 & 1.252\,$\pm$\,0.010 \\
-\quad random flavor boundary & 0.96983\,$\pm$\,0.00002 & 1.257\,$\pm$\,0.004 & 0.96982\,$\pm$\,0.00004 & 1.257\,$\pm$\,0.004 \\
-\quad random partition 1, seed 1 & 0.97189$^{\S}$ & 1.173$^{\S}$ & 0.97189$^{\S}$ & 1.173$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.97194$^{\S}$ & 1.167$^{\S}$ & 0.97193$^{\S}$ & 1.167$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.97236$^{\S}$ & 1.153$^{\S}$ & 0.97236$^{\S}$ & 1.153$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.97233$^{\S}$ & 1.151$^{\S}$ & 0.97231$^{\S}$ & 1.152$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.97201$^{\S}$ & 1.164$^{\S}$ & 0.97201$^{\S}$ & 1.164$^{\S}$ \\
+\multicolumn{5}{@{}l}{17-class partitions} \\*
+\quad no flavor boundary & 0.96507\,$\pm$\,0.00085 & 1.455\,$\pm$\,0.032 & 0.96508\,$\pm$\,0.00082 & 1.455\,$\pm$\,0.031 \\*
+\quad $b$-quark boundary & 0.96992\,$\pm$\,0.00018 & 1.253\,$\pm$\,0.011 & 0.96994\,$\pm$\,0.00019 & 1.252\,$\pm$\,0.010 \\*
+\quad random flavor boundary & 0.96983\,$\pm$\,0.00002 & 1.257\,$\pm$\,0.004 & 0.96982\,$\pm$\,0.00004 & 1.257\,$\pm$\,0.004 \\*
+\quad random partition 1, seed 1 & 0.97189$^{\S}$ & 1.173$^{\S}$ & 0.97189$^{\S}$ & 1.173$^{\S}$ \\*
+\quad random partition 2, seed 2 & 0.97194$^{\S}$ & 1.167$^{\S}$ & 0.97193$^{\S}$ & 1.167$^{\S}$ \\*
+\quad random partition 3, seed 1 & 0.97236$^{\S}$ & 1.153$^{\S}$ & 0.97236$^{\S}$ & 1.153$^{\S}$ \\*
+\quad random partition 4, seed 2 & 0.97233$^{\S}$ & 1.151$^{\S}$ & 0.97231$^{\S}$ & 1.152$^{\S}$ \\*
+\quad random partition 5, seed 2 & 0.97201$^{\S}$ & 1.164$^{\S}$ & 0.97201$^{\S}$ & 1.164$^{\S}$ \\*
 random network & 0.80584\,$\pm$\,0.00179 & -- & 0.85252\,$\pm$\,0.00187 & -- \\
+\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
 \end{longtable}
 }
 \end{landscape}

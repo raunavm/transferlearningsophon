@@ -1,18 +1,18 @@
 \begin{table}[t]
 \centering
-\caption{Best validation accuracy at each learning rate tried for fine-tuning the network pretrained with \Kfull{} classes and for training from scratch, on $10^{4}$ top-tagging jets and on $10^{4}$ quark/gluon jets, with the sum of the two in the last column. For fine-tuning, the rate is that of the pretrained layers, and the new output head trains at 50 times that rate, at most $5\times10^{-3}$. $^{\ast}$~marks the rate chosen, by the sum for fine-tuning and by each task's accuracy from scratch. $^{\S}$~marks a value from a single run.}
+\caption{Best validation accuracy at each learning rate tried for fine-tuning the network pretrained with \Kfull{} classes and for training from scratch, on $10^{4}$ top-tagging jets and on $10^{4}$ quark/gluon jets, with the sum of the two in the last column. For fine-tuning, the rate is that of the pretrained layers, and the new output head trains at 50 times that rate, at most $5\times10^{-3}$, so at $5\times10^{-3}$ at every rate tried. The rate chosen for \Kfull{} classes is used for every pretrained network below the full training sets. The two grids differ because training from scratch has no pretrained layers to keep, and neither was extended past its edge. Every value is from a single run. $^{\ast}$~marks the rate chosen, by the sum for fine-tuning and by each task's accuracy from scratch.}
 \label{tab:lrsweep}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
 \toprule
  & learning rate & top & quark/gluon & sum \\
 \midrule
 \multicolumn{5}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & \ensuremath{10^{-4}} & 0.9204$^{\S}$ & 0.8204$^{\S}$ & 1.7408$^{\S}$ \\
-\Kfull{} classes & \ensuremath{3\times10^{-4}} & 0.9192$^{\S}$ & 0.8202$^{\S}$ & 1.7394$^{\S}$ \\
-\Kfull{} classes & \ensuremath{10^{-3}} & 0.9212$^{\S}$ & 0.8211$^{\S}$ & 1.7423$^{\S}$$^{\ast}$ \\
-from scratch & \ensuremath{3\times10^{-4}} & 0.9152$^{\S}$ & 0.8052$^{\S}$ & 1.7204$^{\S}$ \\
-from scratch & \ensuremath{10^{-3}} & 0.9188$^{\S}$$^{\ast}$ & 0.8029$^{\S}$ & 1.7217$^{\S}$ \\
-from scratch & \ensuremath{3\times10^{-3}} & 0.9177$^{\S}$ & 0.8059$^{\S}$$^{\ast}$ & 1.7236$^{\S}$ \\
+\Kfull{} classes & \ensuremath{10^{-4}} & 0.9204 & 0.8204 & 1.7408 \\
+\Kfull{} classes & \ensuremath{3\times10^{-4}} & 0.9192 & 0.8202 & 1.7394 \\
+\Kfull{} classes & \ensuremath{10^{-3}} & 0.9212 & 0.8211 & 1.7423$^{\ast}$ \\
+from scratch & \ensuremath{3\times10^{-4}} & 0.9152 & 0.8052 & 1.7204 \\
+from scratch & \ensuremath{10^{-3}} & 0.9188$^{\ast}$ & 0.8029 & 1.7217 \\
+from scratch & \ensuremath{3\times10^{-3}} & 0.9177 & 0.8059$^{\ast}$ & 1.7236 \\
 \bottomrule
 \end{tabular*}
 \end{table}

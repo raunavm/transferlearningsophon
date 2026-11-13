@@ -301,6 +301,16 @@ def legend(ax, **kw):
 
 def fig_legend(fig, handles, top_cm: float, ncol: int, **kw):
     """A figure-level legend centred above the panels, its top edge top_cm below the figure's top."""
+    opts = dict(frameon=False, fontsize=LEGEND_PT5, borderpad=0.2, labelspacing=0.3, columnspacing=1.2,
+                handlelength=HANDLE, markerscale=1.0)       # PI 2026-11-12: keys the size of the plotted marks
     return fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 1 - top_cm / (fig.get_figheight() / CM)),
+                      ncol=ncol, **{**opts, **kw})
+
+
+def slot_legend(fig, handles, x: float, top: float, w: float, h: float, ncol: int = 1, **kw):
+    """A figure-level legend centred in the free slot of a grid, w x h cm with its upper left corner x cm from the left
+    and top cm from the top of fig (L20: two panels a row, so an odd count leaves a slot for the legend)."""
+    W, H = fig.get_figwidth() / CM, fig.get_figheight() / CM
+    return fig.legend(handles=handles, loc="center", bbox_to_anchor=((x + w / 2) / W, 1 - (top + h / 2) / H),
                       ncol=ncol, frameon=False, fontsize=LEGEND_PT5, borderpad=0.2, labelspacing=0.3,
-                      columnspacing=1.2, handlelength=HANDLE, markerscale=1.0, **kw)     # PI 2026-11-12: keys the size of the plotted marks
+                      columnspacing=1.2, handlelength=HANDLE, markerscale=1.0, **kw)

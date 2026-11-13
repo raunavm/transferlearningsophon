@@ -30,14 +30,15 @@ F10B_STATED = ()
 # a placement that waits on a result; the two tables only while they hold pending cells (make_results_book sets a
 # PROVISIONAL table with its pending cells, and a box for a PROVISIONAL figure not drawn yet)
 PROVISIONAL = {}     # nothing waits: the fine-tuned read-out (2026-11-09) and X→bb/X→bs on Sophon's samples (2026-11-11) are in
-FJ_S = ("The class-against-rest curves of [[FJ]] for the 17-class partitions, for linear probes and for training from "
-        "scratch are in [[FJ-ctrl]], [[FJ-app]], [[FJ-ctrl-app]] and [[FJ-s]].")
+FJ_S = ("The class-against-rest curves of [[FJ]] for the 17-class partitions, for linear probes, for the mass networks and "
+        "for training from scratch are in [[FJ-ctrl]], [[FJ-app]], [[FJ-ctrl-app]], [[FJ-mass]], [[FJ-mass-app]] and "
+        "[[FJ-s]].")
 PER_CLASS_S = ("[[PC-jc2-part]] to [[PC-jc1-mass]] repeat the per-class comparison of [[PC-jc2]] and [[PC-jc1]] for the "
                "17-class partitions and for each mass network against its own label set.")
 CONF_S = "The JetClass confusion matrices of every pretrained network are in [[PC-conf]], [[PC-conf-part]] and [[PC-conf-mass]]."
 AUC_S = ("[[F8-auc]], [[A8-auc]] and [[A10-auc]] repeat [[F8]], [[A8]] and [[A10]] in the area under the ROC curve.")
-PAIRS_S = ("The pair X→ee vs μμ is in [[F4-ee]], and the class pairs of [[F4-mech]] and [[F4-other]] for the random "
-           "partitions are in [[F4-rand]] and [[F4-rand-ft]].")
+PAIRS_S = ("The pair X→ee vs μμ is in [[F4-ee]], and the class pairs of [[F4-mech]], [[F4-other]] and [[F4-light]] for "
+           "the random partitions are in [[F4-rand]] to [[F4-rand-qcd-ft]].")
 SIZE_PART_S = "[[A8-part]] and [[A10-part]] show the 17-class partitions against training-set size."
 XBX = "17 classes keep fewer X→bb̄ and X→bs signal jets than 188 on Sophon's samples."
 MASS_S = ("The response distributions, the mass output by jet group and the mass regressed from frozen features are in "
@@ -47,32 +48,39 @@ SCULPT_S = ("The mass histograms, the flavor-boundary partitions, the rejection 
 # L3 for the resonance read-outs: run SDs plus a binomial term for the signal jets of each side (an estimate; no
 # bootstrap is stored): 17 - 188 is 5.1 sigma on X->bb (6.0 on run spread) and 5.5 on X->bs; each flavor-boundary
 # partition - 188 at least 5.7 sigma; every partition - 17 at most 2.8 sigma (random partitions on X->bs)
-XBX_PART = ("Each flavor-boundary partition keeps fewer X→bb̄ and X→bs signal jets than 188 classes, and no 17-class "
-            "partition differs from 17 classes by more than three standard deviations.")
+XBX_PART = ("At 1% QCD efficiency, the partitions with no, a b-quark and a random flavor boundary each keep fewer X→bb̄ "
+            "and X→bs signal jets than 188 classes, and no 17-class partition differs from 17 classes by more than three "
+            "standard deviations.")
 
 # (gallery id, tier, draft sentence), in paper order within each tier; items that share a sentence share a row on the map.
 # PI 2026-11-12: the paper keeps the main-text figures and, in the appendix, F4-other, F4-mech-ft, PT, F6, A10, F10b,
 # UMAP-jc2-had and VAL; everything else is in the supplement (nothing deleted).
 _FIGURES = (
     ("F1", MAIN, "We pretrain one network on the same jets, in the same order, and change only the label set."),
-    # PI 2026-11-13 (L1): one main-text figure of the headline family, linear probes over fine-tuned networks, the
-    # headline metric only; its two full versions with the AUC (F2a, F2b) open the appendix
-    ("F2", MAIN, "With linear probes, 43 and 17 classes and every 17-class partition are less accurate on JetClass-II "
-                 "than 188 classes, and after fine-tuning 17 classes stay below 188 on JetClass-II and JetClass, while on "
-                 "top and quark/gluon tagging, Pythia and Herwig, the label sets are consistent with 188 in both modes."),
+    # PI 2026-11-13 (L1): the headline family's main-text slice, the headline metric of both modes; L20 (points-only
+    # panels at least 4.5 cm) splits it one mode a figure, linear probes (F2) and fine-tuned (F2-ft), one sentence; the
+    # same in the AUC (F2a, F2b) opens the appendix
+    *((k, MAIN, "With linear probes, 43 and 17 classes and every 17-class partition are less accurate on JetClass-II "
+                "than 188 classes, and after fine-tuning 17 classes stay below 188 on JetClass-II and JetClass, while on "
+                "top and quark/gluon tagging, Pythia and Herwig, the label sets are consistent with 188 in both modes.")
+      for k in ("F2", "F2-ft")),
     # PI 2026-11-13 (L10): the 17-class loss is broad, not uneven; per class against 188 classes, |mean difference| over
     # three standard deviations of the two sides' runs combined (no per-class bootstrap exists); the class averages are
     # Table 1's JetClass-II AUC
     ("PC-jc2", MAIN, "The 17-class loss is broad, with 184 of the 188 JetClass-II classes more than three standard "
                      "deviations over runs below 188 classes with linear probes, 161 after fine-tuning and none above, "
                      "and fine-tuning shrinks the class-averaged loss from 0.011 to 0.0025 but does not remove it."),
-    ("F4-mech", MAIN, "Linear probes separate quark flavors worse with 17 classes than with 188, and a flavor boundary "
-                      "in a 17-class partition recovers part of the loss, except on X→bb̄ vs cc̄."),
+    # L3 with run SDs: b-quark boundary - 17 on X->bb vs cc 8 sigma and on X->bc 6 sigma; random flavor boundary - 17 on
+    # X->bc 6 sigma, on X->bb vs cc 2.3 (not claimed); no flavor boundary below 17 on both
+    ("F4-mech", MAIN, "Linear probes separate quark flavors worse with 17 classes than with 188; the b-quark boundary "
+                      "recovers part of the loss on both pairs and the random flavor boundary on X→bc vs bq, cs, while "
+                      "the partition with no flavor boundary recovers none."),
     # PI 2026-11-13 (L9, L13): the training-size family's main slice is the fine-tuned figure; the 188-class network
-    # against from scratch (F8) is a named slice in the supplement. L3: JetClass at 10,000 jets 3.5 sigma with the
-    # test-jet term, at 100,000 1.6 sigma (not claimed); top and quark/gluon, Pythia and Herwig, |z| < 2.2 everywhere
-    ("A8", MAIN, "Fine-tuned, 17 classes stay below 188 classes on JetClass-II at every size and on JetClass at 10,000 "
-                 "and a million jets; on top and quark/gluon tagging, Pythia and Herwig, the label sets and mass networks "
+    # against from scratch (F8) is a named slice in the supplement. L3: JetClass at 10,000 jets 3.5 sigma on run SDs
+    # with no bootstrap stored at that size (not claimed, round-1 fix 2026-11-13), at 100,000 1.6 sigma (not claimed);
+    # top and quark/gluon, Pythia and Herwig, |z| < 2.2 everywhere
+    ("A8", MAIN, "Fine-tuned, 17 classes stay below 188 classes on JetClass-II at every size and on JetClass at a "
+                 "million jets; on top and quark/gluon tagging, Pythia and Herwig, the label sets and mass networks "
                  "are consistent with 188 classes."),
     ("F11", MAIN, XBX),
     ("F2a", APPENDIX, "In the area under the ROC curve as in accuracy, linear probes on JetClass-II fall below 188 "
@@ -88,16 +96,20 @@ _FIGURES = (
     # above no boundary on X->bb vs cc (6.0 sigma on two runs each) but not on X->bc, so no boundary sentence
     ("F4-mech-ft", APPENDIX, "Fine-tuned, 17 classes still separate X→bb̄ vs cc̄ and X→bc vs bq, cs worse than 188 "
                              "classes, by less than with linear probes."),
-    ("F4-other", APPENDIX, "With linear probes, 43 and 17 classes separate the four other flavor pairs worse than 188 "
-                           "classes, and 162 classes, which merge the QCD classes, the three QCD pairs."),
-    ("F4-other-ft", APPENDIX, "Fine-tuned, 17 classes still separate X→YY→bb̄qq vs cc̄qq, QCD bb̄ vs cc̄ and QCD with c "
-                              "vs light worse than 188 classes, by less than with linear probes."),
+    # L20: the four other flavor pairs in two figures of F4-mech's form, one sentence per mode
+    *((k, APPENDIX, "With linear probes, 43 and 17 classes separate the four other flavor pairs worse than 188 "
+                    "classes, and 162 classes, which merge the QCD classes, the three QCD pairs.")
+      for k in ("F4-other", "F4-light")),
+    *((k, APPENDIX, "Fine-tuned, 17 classes still separate X→YY→bb̄qq vs cc̄qq, QCD bb̄ vs cc̄ and QCD with c "
+                    "vs light worse than 188 classes, by less than with linear probes.")
+      for k in ("F4-other-ft", "F4-light-ft")),
     # the 162-class probe in accuracy is within 2.2 sigma of 188 at every size, so the old "162 at all sizes but
     # 10,000 jets" (an AUC reading) is retired
     ("A10", APPENDIX, "With linear probes, 43 and 17 classes fall behind 188 classes on JetClass-II at every training "
                       "size."),
-    ("F6", APPENDIX, "On top and quark/gluon tagging, Pythia and Herwig, no label set or mass network differs from 188 "
-                     "classes in R30 by more than three standard deviations, as linear probes or fine-tuned."),
+    *((k, APPENDIX, "On top and quark/gluon tagging, Pythia and Herwig, no label set or mass network differs from 188 "
+                    "classes in R30 by more than three standard deviations, as linear probes or fine-tuned.")
+      for k in ("F6", "F6-ft")),
     # the jet-pT family (PI 2026-11-13, L4): L3 per bin with the run SDs and the binomial test-jet term of each side:
     # probes on JetClass-II 43 and 17 - 188 at least 9.5 sigma in every bin; fine-tuned 17 - 188 at least 4.5 sigma
     # in every JetClass-II bin, 7.1 and 3.4 in the two lowest JetClass bins, at most 2.6 above them; the JetClass probes
@@ -115,26 +127,31 @@ _FIGURES = (
     ("UMAP-jc2-had", APPENDIX, "Qualitatively, 188-class frozen features separate X→bb̄, cc̄ and qq̄ and 17-class ones "
                                "only order them; after fine-tuning both separate them."),
     ("VAL", APPENDIX, "Validation accuracy levels off for every label set and mass network during pretraining."),
-    *((k, SUPPLEMENT, PER_CLASS_S) for k in ("PC-jc2-part", "PC-jc1-part", "PC-jc2-mass", "PC-jc1-mass")),
+    *((k, SUPPLEMENT, PER_CLASS_S) for k in ("PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand", "PC-jc2-mass",
+                                             "PC-jc1-mass")),
     *((k, SUPPLEMENT, CONF_S) for k in ("PC-conf", "PC-conf-part", "PC-conf-mass")),
-    *((k, SUPPLEMENT, PAIRS_S) for k in ("F4-ee", "F4-rand", "F4-rand-ft")),
+    *((k, SUPPLEMENT, PAIRS_S) for k in ("F4-ee", "F4-rand", "F4-rand-qcd", "F4-rand-ft", "F4-rand-qcd-ft")),
     ("F8", SUPPLEMENT, "[[F8]] sets the network pretrained with 188 classes, fine-tuned and as a linear probe, against "
                        "training from scratch at every training-set size."),
     *((k, SUPPLEMENT, AUC_S) for k in ("F8-auc", "A8-auc", "A10-auc")),
     *((k, SUPPLEMENT, SIZE_PART_S) for k in ("A8-part", "A10-part")),
-    ("F6-part", SUPPLEMENT, "The ROC curves of [[F6]] for the 17-class partitions are in [[F6-part]]."),
-    ("FJ", SUPPLEMENT, "The rejections of [[tab:jetclassrej]] are read from the class-against-rest ROC curves of [[FJ]]."),
-    *((k, SUPPLEMENT, FJ_S) for k in ("FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s")),
-    *((k, SUPPLEMENT, "Every JetClass-II class's ROC curve is in [[A3R]] and [[A3R-ft]].") for k in ("A3R", "A3R-ft")),
-    *((k, SUPPLEMENT, "[[PT-part]] and [[PT-bbcc]] show [[PT]] for the partitions and for X→bb̄ vs cc̄.")
-      for k in ("PT-part", "PT-bbcc")),
+    *((k, SUPPLEMENT, "The ROC curves of [[F6]] and [[F6-ft]] for the 17-class partitions are in [[F6-part]] and "
+                      "[[F6-part-ft]].") for k in ("F6-part", "F6-part-ft")),
+    ("FJ", SUPPLEMENT, "[[tab:jc1_class_auc]] gives the areas under the ROC curves of [[FJ]]."),
+    *((k, SUPPLEMENT, FJ_S) for k in ("FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-mass", "FJ-mass-app", "FJ-s")),
+    *((k, SUPPLEMENT, "Every JetClass-II class's ROC curve is in [[A3R]] to [[A3R-s]].")
+      for k in ("A3R", "A3R-ft", "A3R-ctrl-ft", "A3R-s")),
+    *((k, SUPPLEMENT, "[[PT-part]] to [[PT-bbcc-part]] repeat [[PT]] for the partitions and X→bb̄ vs cc̄.")
+      for k in ("PT-part", "PT-bbcc", "PT-bbcc-part")),
     *((k, SUPPLEMENT, MASS_S) for k in ("F9a", "A17-res", "A17-qcd", "A17-probe", "A17-ridge")),
     *((k, SUPPLEMENT, SCULPT_S) for k in ("F10a", "F10b-flav", "F10c", "F10a-flav", "F10-ft", "F10-ft-part",
                                           "F10a-mass")),
     ("F11-probe", SUPPLEMENT, "[[F11-probe]] repeats [[F11]] with a linear probe on the same features and adds the "
                               "random network."),
-    *((k, SUPPLEMENT, "[[UMAP-jc1]] to [[UMAP-qg]] show the embeddings of [[UMAP-jc2-had]] for the other tasks.")
-      for k in ("UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg")),
+    *((k, SUPPLEMENT, "[[UMAP-jc1]] to [[UMAP-xbx]] show the embeddings of [[UMAP-jc2-had]] for the other tasks, and "
+                      "[[UMAP-mass-jc2-had]] to [[UMAP-mass-xbx]] for the mass networks beside their label sets.")
+      for k in ("UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "UMAP-xbx", "UMAP-mass-jc2-had", "UMAP-mass-jc1",
+                "UMAP-mass-jc2-lep", "UMAP-mass-top", "UMAP-mass-qg", "UMAP-mass-xbx")),
     ("VAL-part", SUPPLEMENT, "[[VAL-part]] shows the pretraining curves of [[VAL]] for the 17-class partitions."),
 )
 # (table label, tier, draft sentence). PI 2026-11-12: one main-text table holds every value of Figs. 2 and 3
@@ -145,7 +162,8 @@ _FIGURES = (
 # the X->bb / X->bs rejections in the appendix; the trimmed appendix tables whole (every partition, rho) in the supplement
 # (tab:*full); tab:boot nowhere (its probe spreads disagree with tab:probes; the file is kept).
 _TABLES = (
-    ("tab:summary", MAIN, "[[tab:summary]] gives every value of [[F2]], with the released Sophon checkpoint's of [[F2a]]."),
+    ("tab:summary", MAIN, "[[tab:summary]] gives every value of [[F2]] and [[F2-ft]], with the released Sophon "
+                          "checkpoint's."),
     # L3 (round 2, package 3), sigma^2 = our run SD^2 + the published run SD^2 + our test-jet bootstrap SD^2
     # (bootstrap/l3, per network): JetClass accuracy 0.8468 - 0.836, 17 sigma; R30 against ParT trained from scratch,
     # top 1,800 - 1,602, 1.0 sigma, quark/gluon 107.3 - 101.2, 1.4 sigma, so the old "between ParT from scratch and ParT
@@ -159,7 +177,7 @@ _TABLES = (
                        "into the frozen features."),
     ("tab:xbx", MAIN, XBX),
     ("tab:summaryauc", APPENDIX, "[[tab:summaryauc]] gives the area under the ROC curve beside every value of "
-                                 "[[tab:summary]], the lower rows of [[F2a]] and [[F2b]]."),
+                                 "[[tab:summary]], the values of [[F2a]] and [[F2b]]."),
     # PI 2026-11-13 (plan "tables"): what Table 1 and tab:summaryauc lack of the top and quark/gluon probes
     ("tab:probes", APPENDIX, "[[tab:probes]] gives the accuracy and the rejection at 50% signal efficiency of the top "
                              "and quark/gluon linear probes of [[F6]], with the released Sophon checkpoint's."),
@@ -184,13 +202,14 @@ _TABLES = (
     ("tab:jetclassrej", APPENDIX, "Fine-tuned on JetClass, 162, 43 and 17 classes reject QCD jets as 188 classes do "
                                   "in every class, within three standard deviations."),
     # plan "tables": moves to the appendix with the JetClass per-class figure, whose every point it holds
-    ("tab:jc1_class_auc", APPENDIX, "[[tab:jc1_class_auc]] gives every point of [[PC-jc1]], [[PC-jc1-part]] and "
-                                    "[[PC-jc1-mass]], each JetClass class's area under the ROC curve."),
+    ("tab:jc1_class_auc", APPENDIX, "[[tab:jc1_class_auc]] gives every point of [[PC-jc1]], [[PC-jc1-part]], "
+                                    "[[PC-jc1-rand]] and [[PC-jc1-mass]], each JetClass class's area under the ROC "
+                                    "curve."),
     ("tab:labelsets", APPENDIX, "[[tab:labelsets]] gives the accuracy and the rejection at 50% signal efficiency of the "
-                                "fine-tuned top and quark/gluon networks of [[F6]]."),
+                                "fine-tuned top and quark/gluon networks of [[F6-ft]]."),
     ("tab:ft", APPENDIX, "[[tab:ft]] gives every point of [[A8]] and [[A8-part]] below the training-set sizes of "
                          "[[tab:summary]]."),
-    ("tab:pairs", APPENDIX, "[[tab:pairs]] gives every class-pair separation of [[F4-mech]] to [[F4-other-ft]] as an "
+    ("tab:pairs", APPENDIX, "[[tab:pairs]] gives every class-pair separation of [[F4-mech]] to [[F4-light-ft]] as an "
                             "area under the ROC curve, as a linear probe and fine-tuned."),
     ("tab:sculpt", APPENDIX, "[[tab:sculpt]] gives the sculpting of [[F10b]] at 10% and 1% QCD efficiency and at 50% "
                              "signal efficiency, beside the random-selection floor."),
@@ -215,8 +234,7 @@ _TABLES = (
     ("tab:perclass", SUPPLEMENT, "Every JetClass-II class's area under the ROC curve in [[PC-jc2]], as a linear probe "
                                  "and fine-tuned, is in [[tab:perclass]]."),
     ("tab:jc1conf", SUPPLEMENT, "The percentages of [[PC-conf]] to [[PC-conf-mass]] are in [[tab:jc1conf]]."),
-    ("tab:ptbins", SUPPLEMENT, "The values per jet-pT bin are in [[tab:ptbins]]."),
-    # L13: no sentence cites them, so the supplement
+    # L13: no sentence cites them, so the supplement (PI 2026-11-13: delete nothing; the pooled random partitions)
     ("tab:coarse", SUPPLEMENT, "Linear probes scored on the 43 and 17 merged classes are in [[tab:coarse]]."),
     ("tab:qcdhf", SUPPLEMENT, "The linear probes' X→bb̄ discriminant on QCD jets with b quarks is in [[tab:qcdhf]]."),
     ("tab:xbxnode", SUPPLEMENT, "The X→bs rejection of the pretrained output of the class that holds X→bq is in "
@@ -231,7 +249,8 @@ _TABLES = (
 # what a sentence rests on beyond its own item
 EVIDENCE = {
     # Table 1 holds the headline metric of every network of the headline family, tab:summaryauc the AUC beside it
-    "F2": ("tab:summary",), "F2a": ("tab:summary", "tab:summaryauc"), "F2b": ("tab:summary", "tab:summaryauc"),
+    "F2": ("tab:summary",), "F2-ft": ("tab:summary",), "F2a": ("tab:summaryauc", "tab:summary"),
+    "F2b": ("tab:summaryauc", "tab:summary"),
     "PC-jc2": ("tab:summaryauc", "tab:perclass"),      # the class averages, and every point
     "PC-jc1": ("tab:jc1_class_auc",),
     # the training-size points: below the largest training set in tab:ft and tab:probesn, at it in Table 1; every size,
@@ -239,12 +258,14 @@ EVIDENCE = {
     "F4-mech": ("tab:pairs",), "F8": ("tab:ftfull", "tab:probesnfull"), "F8-auc": ("tab:ftfull", "tab:probesnfull"),
     "A8": ("tab:ft", "tab:summary"), "A8-auc": ("tab:ftfull",), "A8-part": ("tab:ft", "tab:summary"),
     "F9b": ("tab:mass", "tab:massdetail"),
-    "PT": ("tab:ptbins",),
+    # "PT": its values are the data release's jet_pt_bins.csv, no table (L18)
     "F4-other": ("tab:pairs",), "F4-mech-ft": ("tab:pairs",), "F4-other-ft": ("tab:pairs",), "F4-ee": ("tab:pairs",),
-    "F4-rand": ("tab:pairsfull",), "F4-rand-ft": ("tab:pairsfull",),
+    "F4-light": ("tab:pairs",), "F4-light-ft": ("tab:pairs",),
+    **{k: ("tab:pairsfull",) for k in ("F4-rand", "F4-rand-qcd", "F4-rand-ft", "F4-rand-qcd-ft")},
     # R30 in Table 1, the AUC in tab:summaryauc
-    "F6": ("tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets"),
-    "F6-part": ("tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets"),
+    # one sentence for both modes of the ROC family (L20 splits it a mode a figure), so one list of tables
+    **{k: ("tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets") for k in ("F6", "F6-ft", "F6-part",
+                                                                                    "F6-part-ft")},
     "A10": ("tab:probesn", "tab:summary"), "A10-auc": ("tab:probesnfull",), "A10-part": ("tab:probesn", "tab:summary"),
     "F9a": ("tab:massdetail",),
     "F11": ("tab:xbx",), "F11-part": ("tab:xbx",), "F11-probe": ("tab:xbx",),

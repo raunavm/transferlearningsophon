@@ -73,7 +73,9 @@ GENERATED = {"results_generated.tex",
              # the supplement's whole training-size tables and the X->bs closest-class table
              "tables/mlst_summary_auc.tex", "tables/mlst_masseffect.tex", "tables/mlst_probes_n_full.tex",
              "tables/mlst_ft_full.tex", "tables/mlst_xbx_node.tex",
-             # 2026-11-13, round 2: every point of the jet-pT figures and the JetClass confusion percentages
+             # 2026-11-13, round 2: every point of the jet-pT figures and the JetClass confusion percentages. Round 3
+             # (L18): the jet-pT values are data_release/jet_pt_bins.csv and mlst_pt_bins.tex is no longer written;
+             # it stays listed while the old file is on disk (deleting it is the PI's), so the scan does not read it
              "tables/mlst_pt_bins.tex", "tables/mlst_jc1_conf.tex",
              # the review books (experiments/FIGS/make_results_book.py writes them): the gallery's figures with
              # its captions and the generated tables above, for review; not the manuscript, which main.tex inputs

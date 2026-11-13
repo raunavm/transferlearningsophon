@@ -28,10 +28,19 @@ def _assigned(path: pathlib.Path, name: str):
                 if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name) and n.targets[0].id == name)
 
 
+def _umap_more() -> set:
+    """The supplement's further UMAP grids (gallery_labelset.UMAP_MORE, round 3: the X->bb/X->bs grid and a mass-network
+    grid per task), a dict built by a comprehension, so read from the module."""
+    import sys
+    sys.path[:0] = [str(FIG), str(FIG.parent)]
+    import gallery_labelset
+    return set(gallery_labelset.UMAP_MORE)
+
+
 def _page_ids() -> set:
     """Every page id the gallery modules define: Page(id="...") or Page("...", ...), the per-class family's
     _page("...", ...), and the UMAP pages."""
-    ids = set(_assigned(FIG / "gallery_labelset.py", "UMAP_PAGES"))
+    ids = set(_assigned(FIG / "gallery_labelset.py", "UMAP_PAGES")) | _umap_more()
     for name in ("gallery_labelset", "gallery_roc", "gallery_physics", "gallery_perclass", "gallery_palette",
                  "gallery_inventory", "gallery_compare"):
         for n in ast.walk(ast.parse((FIG / f"{name}.py").read_text())):
@@ -54,8 +63,10 @@ def test_the_gallery_order_is_the_placement_tier_by_tier():
 
 def test_the_main_text_is_the_pis_list_in_order():
     main = [k for k, t, _ in G.FIGURES if t == G.MAIN]
-    # PI 2026-11-13 (L1, L9, L13): at most one figure a family in the main text, the slice with the approved story
-    assert main == ["F1", "F2", "PC-jc2", "F4-mech", "A8", "F11"]
+    # PI 2026-11-13 (L1, L9, L13): at most one figure a family in the main text, the slice with the approved story;
+    # L20 (panels at least 4.5 cm) split the headline figure into one figure a mode, F2 (linear probes) and F2-ft
+    # (fine-tuned), both in the main text (round 3, package 1b; whether L1's one figure may be two is the lead's)
+    assert main == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11"]
     # PI 2026-11-12: one table beside the published models (tab:published) in place of the JetClass, top and
     # quark/gluon tables; the other label sets' fine-tuned rows in one appendix table (tab:labelsets), which also takes
     # in the Herwig table
@@ -73,8 +84,10 @@ def test_the_main_text_is_the_pis_list_in_order():
     # PI 2026-11-13: the appendix holds the rest of a family where it supports a main-text claim, everything else is
     # in the supplement
     appendix = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
-    assert appendix == ["F2a", "F2b", "PC-jc1", "F4-mech-ft", "F4-other", "F4-other-ft", "A10", "F6", "PT", "F9b", "F10b",
-                        "F11-part", "UMAP-jc2-had", "VAL"]
+    # L20 (two curve panels a row): the four other flavor pairs are F4-other and F4-light in each mode, and the ROC
+    # figure is one mode a figure (F6, F6-ft)
+    assert appendix == ["F2a", "F2b", "PC-jc1", "F4-mech-ft", "F4-other", "F4-light", "F4-other-ft", "F4-light-ft", "A10",
+                        "F6", "F6-ft", "PT", "F9b", "F10b", "F11-part", "UMAP-jc2-had", "VAL"]
     assert G.TIER["tab:sculpt"] == G.APPENDIX and G.TIER["tab:compute"] == G.TIER["tab:massdetail"] == G.SUPPLEMENT
     # the bootstrap's table right after the sculpting table, and what the sculpting sentences rest on
     tables = [k for k, t, _ in G.TABLES if t == G.APPENDIX]
@@ -89,6 +102,8 @@ def test_the_main_text_is_the_pis_list_in_order():
         assert G.TIER[k] == G.APPENDIX and G.TIER[k + "full"] == G.SUPPLEMENT
     for k in ("tab:coarse", "tab:qcdhf"):
         assert G.TIER[k] == G.TIER[k + "full"] == G.SUPPLEMENT
+    # restored to the supplement in round 3 (package 1), after the per-class tables, with their pooled random partitions
+    assert [G.number(k) for k in ("tab:jc1conf", "tab:coarse", "tab:qcdhf")] == ["Table S11", "Table S12", "Table S13"]
     assert "tab:boot" not in G.TIER and "tab:boot" in G.DROPPED_TABLES
 
 
@@ -114,23 +129,31 @@ def test_the_dropped_pages_are_gone():
 
 
 def test_numbers_count_within_each_tier_and_kind():
-    assert G.number("F1") == "Fig. 1" and G.number("PC-jc2") == "Fig. 3" and G.number("F4-other") == "Fig. A5"
+    # round 3 (L20 splits, the UMAP grids of package 1): F2-ft is Fig. 3, F4-light Fig. A6, F6-ft Fig. A11
+    assert G.number("F1") == "Fig. 1" and G.number("F2-ft") == "Fig. 3" and G.number("PC-jc2") == "Fig. 4"
+    assert G.number("F4-other") == "Fig. A5" and G.number("F4-light") == "Fig. A6" and G.number("F6-ft") == "Fig. A11"
     assert G.number("tab:summary") == "Table 1" and G.number("tab:summaryauc") == "Table A1" and G.number("tab:probes") == "Table A2"
-    assert G.number("FJ") == "Fig. S18" and G.number("tab:perrun") == "Table S1"
-    assert G.place("F10b") == "Appendix, Fig. A11" and G.place("F11") == "Main text, Fig. 6"
+    assert G.number("FJ") == "Fig. S23" and G.number("tab:perrun") == "Table S1"
+    assert G.place("F10b") == "Appendix, Fig. A14" and G.place("F11") == "Main text, Fig. 7"
     assert G.number("tab:sculptboot") == "Table A14" and G.number("tab:masseffect") == "Table A15"
     assert G.number("tab:xbxrej") == "Table A16"
     # four main-text tables (PI 2026-11-12)
     assert [G.number(k) for k in ("tab:published", "tab:mass", "tab:xbx")] == ["Table 2", "Table 3", "Table 4"]
     assert G.number("tab:labelsets") == "Table A10" and G.number("tab:jetclassrej") == "Table A8" and G.number("tab:pairs") == "Table A12"
     # round 2 (2026-11-13): the jet-pT family (PT in the appendix, its partition and X->bb vs cc slices in the
-    # supplement after the JetClass-II ROC curves), the confusion percentages and the per-bin values as supplement
-    # tables before the coarse targets
-    assert G.number("PT") == "Fig. A9" and G.number("F9b") == "Fig. A10"
-    assert [G.number(k) for k in ("A3R-ft", "PT-part", "PT-bbcc", "F9a")] == ["Fig. S24", "Fig. S25", "Fig. S26", "Fig. S27"]
-    assert [G.number(k) for k in ("tab:perclass", "tab:jc1conf", "tab:ptbins", "tab:coarse")] == [
+    # supplement after the JetClass-II ROC curves) and the confusion percentages as a supplement table before the
+    # coarse targets; round 3 (L18): the per-bin values are the data release's jet_pt_bins.csv, no table
+    assert G.number("PT") == "Fig. A12" and G.number("F9b") == "Fig. A13"
+    assert [G.number(k) for k in ("A3R-ft", "A3R-s", "PT-part", "PT-bbcc", "PT-bbcc-part", "F9a")] == [
+        "Fig. S31", "Fig. S33", "Fig. S34", "Fig. S35", "Fig. S36", "Fig. S37"]
+    assert [G.number(k) for k in ("tab:perclass", "tab:jc1conf", "tab:coarse", "tab:qcdhf")] == [
         "Table S10", "Table S11", "Table S12", "Table S13"]
-    assert G.number("tab:compute") == "Table S17"
+    assert "tab:ptbins" not in G.TIER and G.number("tab:compute") == "Table S16"
+    # the supplement's UMAP grids (round 3, package 1), then the pretraining curves of the partitions last
+    sup = [k for k, t, _ in G.FIGURES if t == G.SUPPLEMENT]
+    assert sup[-12:] == ["UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "UMAP-xbx", "UMAP-mass-jc2-had", "UMAP-mass-jc1",
+                         "UMAP-mass-jc2-lep", "UMAP-mass-top", "UMAP-mass-qg", "UMAP-mass-xbx", "VAL-part"]
+    assert G.number("UMAP-xbx") == "Fig. S54" and G.number("VAL-part") == "Fig. S61" and len(sup) == 61
 
 
 def test_f10b_goes_to_the_main_text_only_with_the_signs_of_the_rule():
@@ -157,8 +180,7 @@ def test_every_number_in_a_sentence_comes_from_number():
         filled = G.BACKS[key]
         assert "[[" not in filled and re.findall(r"(?:Fig\.|Table) [AS]?\d+", filled) == [G.number(r) for r in refs]
     # plain sentences that name their items (2026-11-13: no "Cited beside ...:" form, no colon)
-    assert G.BACKS["FJ"] == (f"The rejections of {G.number('tab:jetclassrej')} are read from the class-against-rest ROC "
-                             f"curves of {G.number('FJ')}.")
+    assert G.BACKS["FJ"] == f"{G.number('tab:jc1_class_auc')} gives the areas under the ROC curves of {G.number('FJ')}."
     assert G.BACKS["PC-conf"] == (f"The JetClass confusion matrices of every pretrained network are in {G.number('PC-conf')}, "
                                   f"{G.number('PC-conf-part')} and {G.number('PC-conf-mass')}.")
     assert not any(s.startswith("Cited") or ": " in s for s in G.BACKS.values())
@@ -167,11 +189,14 @@ def test_every_number_in_a_sentence_comes_from_number():
 def test_every_sentence_names_its_evidence():
     assert all(set(v) <= set(G.TIER) and k in G.TIER for k, v in G.EVIDENCE.items())
     # the headline family (L2): Table 1 holds the main figure's values, tab:summaryauc the AUC of the full versions
-    assert G.evidence("F2") == ("F2", "tab:summary") and G.evidence("F1") == ("F1",)
-    assert G.evidence("F2a") == ("F2a", "tab:summary", "tab:summaryauc")
-    assert G.evidence("F2b") == ("F2b", "tab:summary", "tab:summaryauc")
+    assert G.evidence("F2") == ("F2", "tab:summary") and G.evidence("F2-ft") == ("F2-ft", "tab:summary")
+    assert G.evidence("F1") == ("F1",)
+    # F2a and F2b draw the AUC only (L20): the AUC table first
+    assert G.evidence("F2a") == ("F2a", "tab:summaryauc", "tab:summary")
+    assert G.evidence("F2b") == ("F2b", "tab:summaryauc", "tab:summary")
     # the ROC family: R30 and AUC in Table 1 and tab:summaryauc, accuracy and R50 in tab:probes and tab:labelsets
     assert G.evidence("F6") == ("F6", "tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets")
+    assert G.evidence("F6-ft") == ("F6-ft", "tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets")
     # the binned mass figure's quantity has a table over all jets (tab:mass's head block), the bins in the supplement
     assert G.evidence("F9b") == ("F9b", "tab:mass", "tab:massdetail") and "[[F9b]]" in dict((k, s) for k, _, s in G._TABLES)["tab:mass"]
     # the two tables that rest on the comparison table: the 188-class and from-scratch rows, ParT's published row
@@ -180,10 +205,11 @@ def test_every_sentence_names_its_evidence():
     # the per-class and training-size families point at their tables
     assert G.evidence("PC-jc2") == ("PC-jc2", "tab:summaryauc", "tab:perclass")
     assert G.evidence("A8") == ("A8", "tab:ft", "tab:summary") and G.evidence("A10") == ("A10", "tab:probesn", "tab:summary")
-    # the jet-pT family (round 2): its sentence rests on the per-bin table; the two supplement slices share one sentence
-    assert G.evidence("PT") == ("PT", "tab:ptbins") and G.TIER["tab:ptbins"] == G.SUPPLEMENT
-    assert G.BACKS["PT-part"] == G.BACKS["PT-bbcc"] == (f"{G.number('PT-part')} and {G.number('PT-bbcc')} show "
-                                                        f"{G.number('PT')} for the partitions and for X→bb̄ vs cc̄.")
+    # the jet-pT family: its values are the data release's jet_pt_bins.csv (L18), no table, so the figure is its own
+    # evidence; the three supplement slices share one sentence
+    assert G.evidence("PT") == ("PT",) and "tab:ptbins" not in G.TIER
+    assert G.BACKS["PT-part"] == G.BACKS["PT-bbcc"] == G.BACKS["PT-bbcc-part"] == (
+        f"{G.number('PT-part')} to {G.number('PT-bbcc-part')} repeat {G.number('PT')} for the partitions and X→bb̄ vs cc̄.")
     assert G.BACKS["tab:jc1conf"] == (f"The percentages of {G.number('PC-conf')} to {G.number('PC-conf-mass')} are in "
                                       f"{G.number('tab:jc1conf')}.")
 

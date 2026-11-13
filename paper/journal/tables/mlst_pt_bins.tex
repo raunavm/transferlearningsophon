@@ -5,7 +5,7 @@
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \setlength{\abovecaptionskip}{0pt}
-\captionof{table}{Accuracy on class-balanced JetClass-II and on JetClass, and the AUC of $X\to b\bar b$ against $X\to c\bar c$ on JetClass-II, in bins of jet $p_{\mathrm{T}}$, for linear probes on the frozen features and for fine-tuned networks, each trained on one million jets. The AUC is the area under the receiver operating characteristic curve of the discriminant $p_{b\bar b}/(p_{b\bar b}+p_{c\bar c})$. Fine-tuning on JetClass-II had a cap of 40 epochs, and of 160 for the first run of \Kcoarse{} classes, both runs of \Kcoarse{} classes + mass and every partition. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions of one run each.}
+\captionof{table}{Accuracy on class-balanced JetClass-II and on JetClass, and the AUC of $X\to b\bar b$ against $X\to c\bar c$ on JetClass-II, in bins of jet $p_{\mathrm{T}}$, for linear probes on the frozen features and for fine-tuned networks, each trained on one million jets. The AUC is the area under the receiver operating characteristic curve of the discriminant $p_{b\bar b}/(p_{b\bar b}+p_{c\bar c})$. Fine-tuning on JetClass-II had a cap of 40 epochs, and of 160 for the first run of \Kcoarse{} classes, both runs of \Kcoarse{} classes + mass and every partition. Top and quark/gluon tagging are not binned, because their samples span only about 50 to 100~GeV of jet $p_{\mathrm{T}}$, and the random network was not read out per bin on JetClass-II. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and per partition with no, a $b$-quark or a random flavor boundary, and over five random partitions of one run each.}
 \label{tab:ptbins}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
@@ -78,6 +78,7 @@
 \quad $b$-quark boundary & 0.3329\,$\pm$\,0.0012 & 0.36747\,$\pm$\,0.00196 & 0.3921\,$\pm$\,0.0010 & 0.4098\,$\pm$\,0.0014 & 0.4162\,$\pm$\,0.0005 \\
 \quad random flavor boundary & 0.3331\,$\pm$\,0.0027 & 0.36912\,$\pm$\,0.00242 & 0.3938\,$\pm$\,0.0017 & 0.4112\,$\pm$\,0.0030 & 0.4196\,$\pm$\,0.0027 \\
 \quad random partitions & 0.3373\,$\pm$\,0.0021 & 0.37296\,$\pm$\,0.00177 & 0.3988\,$\pm$\,0.0016 & 0.4154\,$\pm$\,0.0017 & 0.4227\,$\pm$\,0.0014 \\
+from scratch & 0.2973\,$\pm$\,0.0020 & 0.33092\,$\pm$\,0.00071 & 0.3522\,$\pm$\,0.0012 & 0.3677\,$\pm$\,0.0017 & 0.3732\,$\pm$\,0.0024 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -104,6 +105,7 @@
 \quad $b$-quark boundary & 0.4255\,$\pm$\,0.0001 & 0.4339\,$\pm$\,0.0012 & 0.4409\,$\pm$\,0.0021 & 0.4503\,$\pm$\,0.0012 & 0.4501\,$\pm$\,0.0031 \\
 \quad random flavor boundary & 0.4290\,$\pm$\,0.0005 & 0.4365\,$\pm$\,0.0016 & 0.4439\,$\pm$\,0.0010 & 0.4559\,$\pm$\,0.0027 & 0.4555\,$\pm$\,0.0028 \\
 \quad random partitions & 0.4334\,$\pm$\,0.0012 & 0.4404\,$\pm$\,0.0010 & 0.4469\,$\pm$\,0.0023 & 0.4579\,$\pm$\,0.0018 & 0.4573\,$\pm$\,0.0032 \\
+from scratch & 0.3806\,$\pm$\,0.0003 & 0.3876\,$\pm$\,0.0017 & 0.3941\,$\pm$\,0.0016 & 0.4045\,$\pm$\,0.0008 & 0.4064\,$\pm$\,0.0008 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -119,17 +121,18 @@
  & 500--600 & 600--700 & 700--800 & 800--900 & 900--1{,}000 \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & 0.7743\,$\pm$\,0.0022 & 0.770\,$\pm$\,0.002 & 0.764\,$\pm$\,0.002 & 0.760\,$\pm$\,0.003 & 0.757\,$\pm$\,0.003 \\
-\Kres{} classes & 0.7745\,$\pm$\,0.0009 & 0.770\,$\pm$\,0.001 & 0.764\,$\pm$\,0.001 & 0.759\,$\pm$\,0.001 & 0.754\,$\pm$\,0.002 \\
-\Kres{} classes + mass & 0.7773\,$\pm$\,0.0031 & 0.774\,$\pm$\,0.003 & 0.767\,$\pm$\,0.003 & 0.762\,$\pm$\,0.003 & 0.758\,$\pm$\,0.002 \\
-\Kmid{} classes & 0.7729\,$\pm$\,0.0014 & 0.769\,$\pm$\,0.001 & 0.763\,$\pm$\,0.002 & 0.758\,$\pm$\,0.002 & 0.755\,$\pm$\,0.002 \\
-\Kcoarse{} classes & 0.7645\,$\pm$\,0.0024 & 0.761\,$\pm$\,0.003 & 0.753\,$\pm$\,0.004 & 0.746\,$\pm$\,0.005 & 0.740\,$\pm$\,0.002 \\
-\Kcoarse{} classes + mass & 0.7662\,$\pm$\,0.0002 & 0.762\,$\pm$\,0.001 & 0.754\,$\pm$\,0.002 & 0.747\,$\pm$\,0.002 & 0.738\,$\pm$\,0.002 \\
+\Kfull{} classes & 0.7743\,$\pm$\,0.0022 & 0.7704\,$\pm$\,0.0022 & 0.7642\,$\pm$\,0.0025 & 0.760\,$\pm$\,0.003 & 0.757\,$\pm$\,0.003 \\
+\Kres{} classes & 0.7745\,$\pm$\,0.0009 & 0.7704\,$\pm$\,0.0007 & 0.7637\,$\pm$\,0.0006 & 0.759\,$\pm$\,0.001 & 0.754\,$\pm$\,0.002 \\
+\Kres{} classes + mass & 0.7773\,$\pm$\,0.0031 & 0.7738\,$\pm$\,0.0028 & 0.7668\,$\pm$\,0.0028 & 0.762\,$\pm$\,0.003 & 0.758\,$\pm$\,0.002 \\
+\Kmid{} classes & 0.7729\,$\pm$\,0.0014 & 0.7692\,$\pm$\,0.0012 & 0.7626\,$\pm$\,0.0017 & 0.758\,$\pm$\,0.002 & 0.755\,$\pm$\,0.002 \\
+\Kcoarse{} classes & 0.7645\,$\pm$\,0.0024 & 0.7606\,$\pm$\,0.0026 & 0.7527\,$\pm$\,0.0036 & 0.746\,$\pm$\,0.005 & 0.740\,$\pm$\,0.002 \\
+\Kcoarse{} classes + mass & 0.7662\,$\pm$\,0.0002 & 0.7617\,$\pm$\,0.0013 & 0.7535\,$\pm$\,0.0024 & 0.747\,$\pm$\,0.002 & 0.738\,$\pm$\,0.002 \\
 \multicolumn{6}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.7555\,$\pm$\,0.0032 & 0.751\,$\pm$\,0.003 & 0.743\,$\pm$\,0.004 & 0.735\,$\pm$\,0.005 & 0.728\,$\pm$\,0.006 \\
-\quad $b$-quark boundary & 0.7665\,$\pm$\,0.0024 & 0.763\,$\pm$\,0.002 & 0.756\,$\pm$\,0.001 & 0.751\,$\pm$\,0.001 & 0.745\,$\pm$\,0.001 \\
-\quad random flavor boundary & 0.7618\,$\pm$\,0.0017 & 0.758\,$\pm$\,0.002 & 0.750\,$\pm$\,0.002 & 0.744\,$\pm$\,0.003 & 0.736\,$\pm$\,0.003 \\
-\quad random partitions & 0.7575\,$\pm$\,0.0010 & 0.754\,$\pm$\,0.001 & 0.747\,$\pm$\,0.001 & 0.743\,$\pm$\,0.001 & 0.740\,$\pm$\,0.001 \\
+\quad no flavor boundary & 0.7555\,$\pm$\,0.0032 & 0.7509\,$\pm$\,0.0030 & 0.7428\,$\pm$\,0.0039 & 0.735\,$\pm$\,0.005 & 0.728\,$\pm$\,0.006 \\
+\quad $b$-quark boundary & 0.7665\,$\pm$\,0.0024 & 0.7628\,$\pm$\,0.0019 & 0.7561\,$\pm$\,0.0011 & 0.751\,$\pm$\,0.001 & 0.745\,$\pm$\,0.001 \\
+\quad random flavor boundary & 0.7618\,$\pm$\,0.0017 & 0.7580\,$\pm$\,0.0025 & 0.7501\,$\pm$\,0.0023 & 0.744\,$\pm$\,0.003 & 0.736\,$\pm$\,0.003 \\
+\quad random partitions & 0.7575\,$\pm$\,0.0010 & 0.7536\,$\pm$\,0.0011 & 0.7471\,$\pm$\,0.0010 & 0.743\,$\pm$\,0.001 & 0.740\,$\pm$\,0.001 \\
+random network & 0.4223\,$\pm$\,0.0020 & 0.4171\,$\pm$\,0.0003 & 0.3762\,$\pm$\,0.0002 & 0.333\,$\pm$\,0.002 & 0.298\,$\pm$\,0.007 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -156,6 +159,7 @@
 \quad $b$-quark boundary & 0.8445\,$\pm$\,0.0003 & 0.84450\,$\pm$\,0.00118 & 0.8414\,$\pm$\,0.0004 & 0.8420\,$\pm$\,0.0020 & 0.8386\,$\pm$\,0.0025 \\
 \quad random flavor boundary & 0.8441\,$\pm$\,0.0001 & 0.84358\,$\pm$\,0.00049 & 0.8406\,$\pm$\,0.0001 & 0.8422\,$\pm$\,0.0006 & 0.8400\,$\pm$\,0.0024 \\
 \quad random partitions & 0.8450\,$\pm$\,0.0007 & 0.84469\,$\pm$\,0.00089 & 0.8419\,$\pm$\,0.0008 & 0.8426\,$\pm$\,0.0010 & 0.8400\,$\pm$\,0.0012 \\
+from scratch & 0.8281\,$\pm$\,0.0009 & 0.82718\,$\pm$\,0.00127 & 0.8239\,$\pm$\,0.0016 & 0.8216\,$\pm$\,0.0017 & 0.8151\,$\pm$\,0.0032 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -166,7 +170,7 @@
 \par\smallskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
 \toprule
- & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ vs $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
+ & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ against $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
 \cmidrule(lr){2-6}
  & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
 \midrule
@@ -192,7 +196,7 @@
 \par\smallskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
 \toprule
- & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ vs $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
+ & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ against $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
 \cmidrule(lr){2-6}
  & 850--1{,}000 & 1{,}000--1{,}250 & 1{,}250--1{,}500 & 1{,}500--2{,}000 & 2{,}000--2{,}500 \\
 \midrule
@@ -218,7 +222,7 @@
 \par\smallskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
 \toprule
- & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ vs $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
+ & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ against $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
 \cmidrule(lr){2-6}
  & 200--300 & 300--400 & 400--550 & 550--700 & 700--850 \\
 \midrule
@@ -234,6 +238,7 @@
 \quad $b$-quark boundary & 0.9947\,$\pm$\,0.0001 & 0.9923\,$\pm$\,0.0009 & 0.9924\,$\pm$\,0.0005 & 0.9966\,$\pm$\,0.0004 & 0.99404\,$\pm$\,0.00140 \\
 \quad random flavor boundary & 0.9934\,$\pm$\,0.0004 & 0.9915\,$\pm$\,0.0020 & 0.9923\,$\pm$\,0.0004 & 0.9949\,$\pm$\,0.0007 & 0.99367\,$\pm$\,0.00073 \\
 \quad random partitions & 0.9957\,$\pm$\,0.0011 & 0.9926\,$\pm$\,0.0012 & 0.9934\,$\pm$\,0.0010 & 0.9964\,$\pm$\,0.0006 & 0.99490\,$\pm$\,0.00025 \\
+from scratch & 0.9881\,$\pm$\,0.0022 & 0.9871\,$\pm$\,0.0007 & 0.9871\,$\pm$\,0.0012 & 0.9911\,$\pm$\,0.0008 & 0.99030\,$\pm$\,0.00071 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -244,7 +249,7 @@
 \par\smallskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
 \toprule
- & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ vs $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
+ & \multicolumn{5}{c}{JetClass-II, AUC of $X\to b\bar b$ against $X\to c\bar c$, by jet $p_{\mathrm{T}}$ (GeV)} \\
 \cmidrule(lr){2-6}
  & 850--1{,}000 & 1{,}000--1{,}250 & 1{,}250--1{,}500 & 1{,}500--2{,}000 & 2{,}000--2{,}500 \\
 \midrule
@@ -260,6 +265,7 @@
 \quad $b$-quark boundary & 0.9962\,$\pm$\,0.0001 & 0.9955\,$\pm$\,0.0005 & 0.9982\,$\pm$\,0.0001 & 0.9960\,$\pm$\,0.0010 & 0.99777\,$\pm$\,0.00024 \\
 \quad random flavor boundary & 0.9965\,$\pm$\,0.0006 & 0.9959\,$\pm$\,0.0005 & 0.9979\,$\pm$\,0.0001 & 0.9955\,$\pm$\,0.0007 & 0.99706\,$\pm$\,0.00049 \\
 \quad random partitions & 0.9969\,$\pm$\,0.0007 & 0.9962\,$\pm$\,0.0005 & 0.9984\,$\pm$\,0.0001 & 0.9960\,$\pm$\,0.0004 & 0.99732\,$\pm$\,0.00046 \\
+from scratch & 0.9942\,$\pm$\,0.0003 & 0.9923\,$\pm$\,0.0006 & 0.9948\,$\pm$\,0.0005 & 0.9906\,$\pm$\,0.0008 & 0.99391\,$\pm$\,0.00160 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

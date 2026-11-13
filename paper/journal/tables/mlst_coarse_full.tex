@@ -3,7 +3,7 @@
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \addtolength{\belowcaptionskip}{\medskipamount}
 \begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\caption{Linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with every 17-class partition, of the random networks and of the released Sophon checkpoint, trained on one million class-balanced JetClass-II jets whose classes are merged into coarser targets, the 43 and the 17 classes of the pretraining label sets and the 17 classes of the partition with no flavor boundary. AUC is the area under the receiver operating characteristic curve, averaged over the target's groups, each against the rest. The released Sophon checkpoint, set apart by a rule, is outside the controlled comparison. The random network with BatchNorm recomputed re-estimates its BatchNorm statistics on \DesignBnJets{} training jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:coarsefull}\\
+\caption{Linear probes of the networks of table~\ref{tab:probesfull} on one million class-balanced JetClass-II jets whose classes are merged into the 43 or 17 classes of the label sets or the 17 of the partition with no flavor boundary. AUC is the area under the receiver operating characteristic curve, averaged over the target's groups, each against the rest. The batch-normalization (BatchNorm) statistics of the random network with BatchNorm recomputed are re-estimated on \DesignBnJets{} training jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. Each random partition is a single run on its own row. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:coarsefull}\\
 \toprule
 & \multicolumn{2}{c}{43 groups} & \multicolumn{2}{c}{17 groups} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
@@ -17,28 +17,27 @@
  & accuracy & AUC & accuracy & AUC \\
 \midrule
 \endhead
-\bottomrule
-\endlastfoot
-\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\*
 \Kfull{} classes & 0.6498\,$\pm$\,0.0001 & 0.98423\,$\pm$\,0.00002 & 0.71658\,$\pm$\,0.00022 & 0.97861\,$\pm$\,0.00005 \\
 \Kres{} classes & 0.6496\,$\pm$\,0.0007 & 0.98419\,$\pm$\,0.00008 & 0.71623\,$\pm$\,0.00061 & 0.97857\,$\pm$\,0.00008 \\
 \Kres{} classes + mass & 0.6473\,$\pm$\,0.0021 & 0.98386\,$\pm$\,0.00019 & 0.71612\,$\pm$\,0.00083 & 0.97845\,$\pm$\,0.00013 \\
 \Kmid{} classes & 0.6501\,$\pm$\,0.0009 & 0.98433\,$\pm$\,0.00007 & 0.71758\,$\pm$\,0.00114 & 0.97884\,$\pm$\,0.00014 \\
 \Kcoarse{} classes & 0.6173\,$\pm$\,0.0015 & 0.97967\,$\pm$\,0.00015 & 0.71634\,$\pm$\,0.00126 & 0.97864\,$\pm$\,0.00018 \\
 \Kcoarse{} classes + mass & 0.6129\,$\pm$\,0.0003 & 0.97912\,$\pm$\,0.00002 & 0.71424\,$\pm$\,0.00015 & 0.97830\,$\pm$\,0.00005 \\
-\multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.6111\,$\pm$\,0.0060 & 0.97866\,$\pm$\,0.00056 & 0.71510\,$\pm$\,0.00003 & 0.97836\,$\pm$\,0.00004 \\
-\quad $b$-quark boundary & 0.6361\,$\pm$\,0.0008 & 0.98202\,$\pm$\,0.00002 & 0.71609\,$\pm$\,0.00046 & 0.97859\,$\pm$\,0.00008 \\
-\quad random flavor boundary & 0.6343\,$\pm$\,0.0001 & 0.98147\,$\pm$\,0.00005 & 0.71620\,$\pm$\,0.00039 & 0.97855\,$\pm$\,0.00005 \\
-\quad random partition 1, seed 1 & 0.6386$^{\S}$ & 0.98277$^{\S}$ & 0.70927$^{\S}$ & 0.97743$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.6388$^{\S}$ & 0.98271$^{\S}$ & 0.71024$^{\S}$ & 0.97745$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.6411$^{\S}$ & 0.98294$^{\S}$ & 0.71074$^{\S}$ & 0.97756$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.6409$^{\S}$ & 0.98306$^{\S}$ & 0.71092$^{\S}$ & 0.97763$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.6391$^{\S}$ & 0.98275$^{\S}$ & 0.71109$^{\S}$ & 0.97765$^{\S}$ \\
-random network & 0.2096\,$\pm$\,0.0034 & 0.79942\,$\pm$\,0.00292 & 0.34046\,$\pm$\,0.00319 & 0.81991\,$\pm$\,0.00293 \\
-random network, BatchNorm recomputed & 0.2470\,$\pm$\,0.0030 & 0.85048\,$\pm$\,0.00537 & 0.37998\,$\pm$\,0.00994 & 0.85874\,$\pm$\,0.00833 \\
-\midrule
+\multicolumn{5}{@{}l}{17-class partitions} \\*
+\quad no flavor boundary & 0.6111\,$\pm$\,0.0060 & 0.97866\,$\pm$\,0.00056 & 0.71510\,$\pm$\,0.00003 & 0.97836\,$\pm$\,0.00004 \\*
+\quad $b$-quark boundary & 0.6361\,$\pm$\,0.0008 & 0.98202\,$\pm$\,0.00002 & 0.71609\,$\pm$\,0.00046 & 0.97859\,$\pm$\,0.00008 \\*
+\quad random flavor boundary & 0.6343\,$\pm$\,0.0001 & 0.98147\,$\pm$\,0.00005 & 0.71620\,$\pm$\,0.00039 & 0.97855\,$\pm$\,0.00005 \\*
+\quad random partition 1, seed 1 & 0.6386$^{\S}$ & 0.98277$^{\S}$ & 0.70927$^{\S}$ & 0.97743$^{\S}$ \\*
+\quad random partition 2, seed 2 & 0.6388$^{\S}$ & 0.98271$^{\S}$ & 0.71024$^{\S}$ & 0.97745$^{\S}$ \\*
+\quad random partition 3, seed 1 & 0.6411$^{\S}$ & 0.98294$^{\S}$ & 0.71074$^{\S}$ & 0.97756$^{\S}$ \\*
+\quad random partition 4, seed 2 & 0.6409$^{\S}$ & 0.98306$^{\S}$ & 0.71092$^{\S}$ & 0.97763$^{\S}$ \\*
+\quad random partition 5, seed 2 & 0.6391$^{\S}$ & 0.98275$^{\S}$ & 0.71109$^{\S}$ & 0.97765$^{\S}$ \\*
+random network & 0.2096\,$\pm$\,0.0034 & 0.79942\,$\pm$\,0.00292 & 0.34046\,$\pm$\,0.00319 & 0.81991\,$\pm$\,0.00293 \\*
+random network, BatchNorm recomputed & 0.2470\,$\pm$\,0.0030 & 0.85048\,$\pm$\,0.00537 & 0.37998\,$\pm$\,0.00994 & 0.85874\,$\pm$\,0.00833 \\*
+\noalign{\nobreak\vskip\aboverulesep\hrule height\lightrulewidth\nobreak\vskip\belowrulesep\nobreak}
 released Sophon checkpoint & 0.6493$^{\S}$ & 0.98405$^{\S}$ & 0.71600$^{\S}$ & 0.97836$^{\S}$ \\
+\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
 \end{longtable}
 \begin{center}
 \begin{minipage}{\linewidth}\centering

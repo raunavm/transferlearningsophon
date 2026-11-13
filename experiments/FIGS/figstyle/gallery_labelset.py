@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The gallery's label-set mock-ups: F2, F2a, F2b, the training-size family (A8, A10, F8, their AUC versions, A8-part, A10-part), UMAP-jc1, UMAP-jc2-had, UMAP-jc2-lep, UMAP-top, UMAP-qg, VAL (docs/figstyle/PLAN.md), in
+"""The gallery's label-set mock-ups: F2, F2-ft, F2a, F2b, the training-size family (A8, A10, F8, their AUC versions, A8-part, A10-part), UMAP-jc1, UMAP-jc2-had, UMAP-jc2-lep, UMAP-top, UMAP-qg, VAL (docs/figstyle/PLAN.md), in
 style_v4 only. The numbers come through the selection code of paper_figures and mlst_results; the drawing
 is written here. All work happens inside the draw functions."""
 from __future__ import annotations
@@ -58,18 +58,23 @@ def _empty_panel(ax) -> None:
     ax.set_yticks([])
 
 
-# ------------------------------------------------------------------ F2, F2a, F2b: the headline value
+# ------------------------------------------------------------------ F2, F2-ft, F2a, F2b: the headline value
 # PI 2026-11-12/13 (L1, L5): the label set is a category, so a horizontal dot plot, one row a network, on the metric
-# itself, one column a task (HV_PANELS, Herwig included). F2 (main text): the linear probes over the fine-tuned
-# networks, headline metric only. F2a and F2b (appendix, the full versions): one mode each, the headline metric over the task's
-# AUC. Network rows in the one order of every figure and table (L5): the label sets, each mass network under its own;
+# itself, one panel a task (HV_PANELS, Herwig included). L20 (2026-11-13) splits the family one mode a figure: F2 (main
+# text) the linear probes and F2-ft (main text) the fine-tuned networks, headline metric only; F2a and F2b (appendix)
+# the same in the task's AUC. Network rows in the one order of every figure and table (L5): the label sets, each mass network under its own;
 # the 17-class partitions under an italic subheading; the mode's references (HV_REFS). Each row: the mean over its runs
 # a filled circle in the network's colour, a horizontal bar its SD (the five random partitions: mean and SD over the
 # five). The 188-class mean is a vertical line with a light band of its SD down the panel. A reference far from every
 # other row (the random network) sits beyond an axis break, on the scale of the rest. Nothing printed, nothing clipped.
 HV_PANELS = (("jc2", 1_000_000, "jc2_188", "accuracy", "JetClass-II"),
-             ("jc1", 1_000_000, "jc1", "accuracy", "JetClass"), ("top", 1_200_000, "top", "r30", "Top tagging"), ("qg", 1_600_000, "qg", "r30", "Quark/gluon\nPythia"),
-             ("qg_herwig", 1_600_000, "qg_herwig", "r30", "Quark/gluon\nHerwig"))
+             ("jc1", 1_000_000, "jc1", "accuracy", "JetClass"), ("top", 1_200_000, "top", "r30", "Top tagging"),
+             ("qg", 1_600_000, "qg", "r30", "Quark/gluon, Pythia"),
+             ("qg_herwig", 1_600_000, "qg_herwig", "r30", "Quark/gluon, Herwig"))
+# L20 (PI 2026-11-13: points-only panels at least 4.5 cm): two panels a row, one mode a figure (F2 and F2-ft the
+# headline metric, F2a and F2b the AUC), the training-size family's slots, the legend in the sixth
+HV_SLOTS = ((0, 0), (0, 1), (1, 0), (1, 1), (2, 0))
+HV_LEGEND_SLOT = (2, 1)
 # beside each task's headline metric its AUC (averaged over the classes, each against the rest, on JetClass-II and
 # JetClass; of the binary task on top and quark/gluon); F2_GRID is every cell of the family. Table 1 and its AUC
 # table read the same value functions (mlst_results.summary_probe, summary_ft, summary_scratch) over SUMMARY_GRID
@@ -86,14 +91,14 @@ HV_KEY = {M.INIT: "INIT_BN", M.SOPHON: "SOPHON"}            # their colour and n
 X_F2 = {"accuracy": "Accuracy", "r30": "$R_{30}$", "macro_auc_ovr": "AUC", "auc": "AUC"}
 MEAN_DOT = 4.6                   # pt: the mean over runs
 HV_UNIT = 0.31                   # cm per network row: a name with $b$ (0.36 cm) clears its neighbours (0.25 cm)
-HV_WGAP, HV_RIGHT = 0.3, 0.12    # cm between panels; right of the last
+HV_ASPECT = 0.72                 # a panel's least height over its width
+HV_WGAP, HV_RIGHT = 0.45, 0.12   # cm between panels (beyond figcheck's 3 mm to a break piece); right of the last
 HV_STUB, HV_STUB_GAP = 0.55, 0.1  # cm: the part of a panel beyond an axis break, and the break
 HV_BREAK = 1.5                   # a reference further from the other rows than this many times their span: a break
 HV_INDENT = "   "                # the partitions under their subheading, as in the tables
-# the panel titles half a point under the style's 9 pt: "(d) Quark/gluon" (2.33 cm at 9 pt) is wider than a panel
-# and its gap
-HV_TITLE_PT = 8.5
-HV_TICK_GAP, HV_TICK_PANEL = 0.06, 0.12      # cm at least between two x tick labels; a label and another panel
+HV_TITLE_PT = S.TITLE_PT5
+HV_TICK_GAP, HV_TICK_PANEL = 0.15, 0.12      # cm at least between two x tick labels; a label and another panel
+HV_WIDEN = (0.0, 0.15, 0.3, 0.45, 0.6)        # the widenings of a main part's range tried for its second label
 
 
 def _hv_rows(refs: tuple) -> tuple[dict, float, list]:
@@ -263,76 +268,66 @@ def _sd_ends(vals: list) -> list:
     return [m - sd, m + sd]
 
 
-def _draw_hv(path, grid: list, absent: str, mode_names: tuple = ()) -> None:
-    """grid: two rows of five cells, each row (value function, its references, [(task key, n, data set, metric)]).
-    mode_names: the use of each row of panels, written turned on the left (F2), or none (F2a, F2b: one use)."""
+def _draw_hv(path, value, refs: tuple, cells: list, absent: str) -> None:
+    """One mode a figure (L20: points-only panels at least 4.5 cm, so two a row): cells, the five tasks' (task key, n,
+    data set, metric), in HV_SLOTS, the row names left of each row's first panel, the legend in the sixth slot.
+    value(*cell): the values of a network (_hv_values); refs: the mode's references (HV_REFS)."""
     from matplotlib.patches import Patch
-    cells = [[(value, refs, cell, value(*cell)) for cell in row] for value, refs, row in grid]
-    if not any(v for row in cells for *_, v in row):
+    gets = [value(*cell) for cell in cells]
+    if not any(gets):
         raise C.Absent(absent)
-    refs_all = tuple(dict.fromkeys(r for _, refs, _ in grid for r in refs))
     # the row names: measured at the tick size, the partitions indented, the subheading in italic
     probe = plt.figure()
     rend = probe.canvas.get_renderer()
-    names = [_hv_name(r) for r in HV_ROWS + HV_PARTITIONS + refs_all]
+    names = [_hv_name(r) for r in HV_ROWS + HV_PARTITIONS + refs]
     width = max([probe.text(0, 0, t, fontsize=S.TICK_PT5).get_window_extent(rend).width for t in names]
                 + [probe.text(0, 0, HV_HEAD, fontsize=S.TICK_PT5, fontstyle="italic").get_window_extent(rend).width])
     plt.close(probe)
-    name_x = 0.45 if mode_names else 0.1                           # cm: the turned mode names before the row names
+    name_x = 0.1                                                    # cm: the row names' left edge
     left = name_x + width / probe.dpi * 2.54 + 0.2
-    w = (S.PRINT_W - left - HV_RIGHT - 4 * HV_WGAP) / 5
-    heights, dividers = [], []
-    rows_of = []
-    for _, refs, _ in grid:
-        rows, head, div = _hv_rows(refs)
-        rows_of.append((rows, head))
-        heights.append((max(rows.values()) + 1.2) * HV_UNIT)
-        dividers.append(div)
-    two_line = any("\n" in t for *_, t in HV_PANELS)
-    top = S.LEGEND_TOP + 0.45 + (0.85 if two_line else 0.5)
-    hgap = 0.95 + (0.85 if two_line else 0.5)
-    fig = S.figure_cm(S.PRINT_W, top + sum(heights) + hgap + 0.95)
+    w = (S.PRINT_W - left - HV_RIGHT - HV_WGAP) / 2
+    rows, head, dividers = _hv_rows(refs)
+    # at least HV_UNIT a row, and the panel at least HV_ASPECT of its width high (figcheck's aspect rule)
+    h = max((max(rows.values()) + 1.2) * HV_UNIT, HV_ASPECT * w)
+    top, hgap = 0.6, 0.95 + 0.5                       # a title; under a row its x tick labels and label, then a title
+    nrows = max(i for i, _ in HV_SLOTS + (HV_LEGEND_SLOT,)) + 1
+    fig = S.figure_cm(S.PRINT_W, top + nrows * h + (nrows - 1) * hgap + 0.95)
     hidden = bars = 0
-    panels, k = [], 0
-    for i, (row, (rows, head), h, div) in enumerate(zip(cells, rows_of, heights, dividers)):
-        y0 = top + sum(heights[:i]) + i * hgap
-        for j, ((value, refs, cell, get), (key, n, ds, met, title)) in enumerate(zip(row, HV_PANELS)):
-            series = [(r, _hv_values(r, get, cell), _hv_colour(r), r in refs) for r in HV_ROWS + HV_PARTITIONS + refs]
-            x = left + j * (w + HV_WGAP)
-            if not any(vals for _, vals, _, _ in series):
-                ax = S.axes_cm(fig, x, y0, w, h)
-                _empty_panel(ax)
-                parts, main = [ax], ax
-            else:
-                parts, main, b, hd = _hv_panel(fig, x, y0, w, h, rows, div, series, _hv_values("L188", get, cell),
-                                               cell[3])
-                bars, hidden = bars + b, hidden + hd
-            # the title centred over the whole panel, both parts of a broken axis
-            fx0, fx1 = main.get_position().x0, main.get_position().x1
-            xc = ((x + w / 2) / S.PRINT_W - fx0) / (fx1 - fx0)
-            main.set_title(f"({'abcdefghij'[k]}) {title}", fontsize=HV_TITLE_PT, pad=4.0, x=xc)
-            k += 1
-            if j == 0:                                   # the row names on the panel's leftmost part, left-aligned
-                ax = parts[0]
-                ax.yaxis.set_major_formatter(ticker.FixedFormatter([_hv_name(r) for r in rows]))
-                ax.yaxis.set_minor_locator(ticker.FixedLocator([head]))
-                ax.yaxis.set_minor_formatter(ticker.FixedFormatter([HV_HEAD]))
-                pad = (ax.get_position().x0 * S.PRINT_W - name_x) / 2.54 * 72
-                ax.tick_params(axis="y", which="both", pad=pad, labelsize=S.TICK_PT5)
-                for lab in ax.get_yticklabels() + ax.get_yticklabels(minor=True):
-                    lab.set_horizontalalignment("left")
-                for lab in ax.get_yticklabels(minor=True):
-                    lab.set_fontstyle("italic")
-            panels.append((parts, x, w))
-        if mode_names:
-            fig.text(0.18 / S.PRINT_W, 1 - (y0 + h / 2) / (fig.get_figheight() / S.CM), mode_names[i], rotation=90,
-                     ha="center", va="center", fontsize=S.LABEL_PT5)
+    panels = []
+    for k, ((i, j), cell, get, (key, n, ds, met, title)) in enumerate(zip(HV_SLOTS, cells, gets, HV_PANELS)):
+        y0, x = top + i * (h + hgap), left + j * (w + HV_WGAP)
+        series = [(r, _hv_values(r, get, cell), _hv_colour(r), r in refs) for r in HV_ROWS + HV_PARTITIONS + refs]
+        if not any(vals for _, vals, _, _ in series):
+            ax = S.axes_cm(fig, x, y0, w, h)
+            _empty_panel(ax)
+            parts, main = [ax], ax
+        else:
+            parts, main, b, hd = _hv_panel(fig, x, y0, w, h, rows, dividers, series, _hv_values("L188", get, cell),
+                                           cell[3])
+            bars, hidden = bars + b, hidden + hd
+        # the title centred over the whole panel, both parts of a broken axis
+        fx0, fx1 = main.get_position().x0, main.get_position().x1
+        xc = ((x + w / 2) / S.PRINT_W - fx0) / (fx1 - fx0)
+        main.set_title(f"({'abcdefghij'[k]}) {title}", fontsize=HV_TITLE_PT, pad=4.0, x=xc)
+        if j == 0:                                   # the row names on the panel's leftmost part, left-aligned
+            ax = parts[0]
+            ax.yaxis.set_major_formatter(ticker.FixedFormatter([_hv_name(r) for r in rows]))
+            ax.yaxis.set_minor_locator(ticker.FixedLocator([head]))
+            ax.yaxis.set_minor_formatter(ticker.FixedFormatter([HV_HEAD]))
+            pad = (ax.get_position().x0 * S.PRINT_W - name_x) / 2.54 * 72
+            ax.tick_params(axis="y", which="both", pad=pad, labelsize=S.TICK_PT5)
+            for lab in ax.get_yticklabels() + ax.get_yticklabels(minor=True):
+                lab.set_horizontalalignment("left")
+            for lab in ax.get_yticklabels(minor=True):
+                lab.set_fontstyle("italic")
+        panels.append((parts, x, w))
     handles = [Line2D([], [], color="#000000", linewidth=L.BAR, marker="o", markersize=MEAN_DOT,
                       markerfacecolor="#000000", markeredgecolor="white", markeredgewidth=0.5),
                (Patch(facecolor=S.SERIES["L188"], alpha=L.BAND, linewidth=0),
                 Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_THIN))]
-    S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=2,
-                 labels=["mean and standard deviation over pretraining runs", "188 classes, mean and standard deviation"])
+    i, j = HV_LEGEND_SLOT
+    S.slot_legend(fig, handles, left + j * (w + HV_WGAP), top + i * (h + hgap), w, h,
+                  labels=["mean and standard deviation\nover pretraining runs", "188 classes, mean and\nstandard deviation"])
     _hv_ticks(fig, panels)
     print(f"{path.name}: {hidden} of {bars} SD bars are shorter than the mean's circle")
     S.save(fig, path)
@@ -340,10 +335,14 @@ def _draw_hv(path, grid: list, absent: str, mode_names: tuple = ()) -> None:
 
 def _hv_ticks(fig, panels: list) -> None:
     """The x ticks of every panel, labels at least HV_TICK_GAP from each other and HV_TICK_PANEL from another panel
-    (figcheck: within 1 mm) and on the page, row by row from left to right: the one tick beyond an axis break first,
-    then on each panel's main part the multiples of the coarsest round step (5, 2, 1 times a power of ten) that leaves
-    two labels, a label dropped where it would come too close to one already placed. panels: [(parts, x cm, width cm)]."""
+    (figcheck: within 1 mm) and on the page, row by row and panel by panel from left to right: the one tick beyond an
+    axis break first, then on the panel's main part the multiples of the coarsest round step (5, 2, 1 times a power of
+    ten) that leaves two labels, a label dropped where it would come too close to one already placed. The main part
+    holds every pretrained network, so its scale must be readable from two labels: where it gets one, the label beyond
+    the break moves away from it by a quarter, then half its width, then the main part's range widens about its
+    centre (HV_WIDEN) and, last, the label beyond the break is left out. panels: [(parts, x cm, width cm)]."""
     from matplotlib.text import Text
+    from matplotlib.transforms import ScaledTranslation
     fig.canvas.draw()
     r = fig.canvas.get_renderer()
     px = fig.dpi / 2.54
@@ -359,67 +358,114 @@ def _hv_ticks(fig, panels: list) -> None:
     for row in rows.values():
         taken = []
         extent = {a: (x * px, (x + w) * px) for parts, x, w in row for a in parts}
-        for ax in sorted(extent, key=lambda a: a.get_label() != "<break>"):
-            others = [e for e in set(extent.values()) if e != extent[ax]]
+        for parts, x, w in sorted(row, key=lambda p: p[1]):
+            # another panel: not a part of this one (a label of the main part may reach toward its own break)
+            others = [(x_ * px, (x_ + w_) * px) for parts_, x_, w_ in row if parts_ is not parts]
 
-            def place(locs, fmt) -> list:
+            def place(ax, locs, fmt, before, shift=0.0) -> tuple:
                 out, boxes = [], []
                 for v in locs:
-                    c, half = ax.transData.transform((v, 0))[0], width(fmt(v)) / 2
+                    c, half = ax.transData.transform((v, 0))[0] + shift, width(fmt(v)) / 2
                     if c - half >= 0 and c + half <= S.PRINT_W * px and not any(
                             c - half < b1 + g * px and b0 < c + half + g * px
-                            for (b0, b1), g in [(b, HV_TICK_GAP) for b in taken + boxes]
+                            for (b0, b1), g in [(b, HV_TICK_GAP) for b in before + boxes]
                             + [(b, HV_TICK_PANEL) for b in others]):
                         out.append(v)
                         boxes.append((c - half, c + half))
                 return out, boxes
 
-            if ax.get_label() == "<break>":
-                fmt = lambda v: f"{v:g}"
-                keep = list(ax.get_xticks())
-                boxes = [(ax.transData.transform((v, 0))[0] - width(fmt(v)) / 2,
-                          ax.transData.transform((v, 0))[0] + width(fmt(v)) / 2) for v in keep]
-            else:
+            def main_ticks(ax, before, halves) -> tuple:
                 lo, hi = ax.get_xlim()
                 e = int(np.floor(np.log10(hi - lo)))
                 keep, boxes, fmt = [], [], None
-                for step in (m * 10.0 ** k for k in range(e, e - 4, -1) for m in (5, 2, 1)):
-                    locs = [k * step for k in range(int(np.ceil(lo / step)), int(np.floor(hi / step)) + 1)]
+                steps = [m * 10.0 ** k for k in range(e, e - 4, -1) for m in (5, 2, 1)]
+                for off_share, step in [(0.0, s_) for s_ in steps] + ([(0.5, s_) for s_ in steps] if halves else []):
+                    off = off_share * step          # the multiples of a step, then (halves) those halfway between them
+                    locs = [off + k * step for k in range(int(np.ceil((lo - off) / step)),
+                                                           int(np.floor((hi - off) / step)) + 1)]
                     if not 2 <= len(locs) <= 12:
                         continue
-                    f = (lambda d: lambda v: f"{v:.{d}f}")(max(0, -int(np.floor(np.log10(step) + 1e-9))))
-                    got, bx = place(locs, f)
+                    unit = step / 2 if off else step
+                    f = (lambda d: lambda v: f"{v:.{d}f}")(max(0, -int(np.floor(np.log10(unit) + 1e-9))))
+                    got, bx = place(ax, locs, f, before)
+                    if len(got) >= 2 and not _nice_spacing(got, unit):      # labels a round interval apart only
+                        got, bx = got[:1], bx[:1]
                     if len(got) > len(keep):
                         keep, boxes, fmt = got, bx, f
                     if len(keep) >= 2:
-                        break
-            ax.xaxis.set_major_locator(ticker.FixedLocator(keep))
-            ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _, fmt=fmt: fmt(v)))
-            taken += boxes
+                        return keep, boxes, fmt
+                return keep, boxes, fmt
+
+            stub = next((a for a in parts if a.get_label() == "<break>"), None)
+            main = next(a for a in parts if a.get_label() != "<break>")
+            sfmt = lambda v: f"{v:g}"
+            best, xlim = None, main.get_xlim()
+            shares = (0.0, 0.25, 0.5) if stub is not None else (0.0,)
+            configs = [(s_, e_) for s_ in shares for e_ in HV_WIDEN] + (
+                [(None, e_) for e_ in HV_WIDEN] if stub is not None else [])
+            for share, widen, halves in [(s_, e_, False) for s_, e_ in configs] + [(s_, e_, True) for s_, e_ in configs]:
+                main.set_xlim(xlim[0] - widen * (xlim[1] - xlim[0]) / 2, xlim[1] + widen * (xlim[1] - xlim[0]) / 2)
+                sboxes, shift = [], 0.0
+                if stub is not None and share is not None:
+                    away = -1.0 if stub.get_position().x0 < main.get_position().x0 else 1.0
+                    v = list(stub.get_xticks())
+                    shift = away * share * (width(sfmt(v[0])) if v else 0.0)
+                    if share:                      # moved: it must clear what is placed, as any other label
+                        got, sboxes = place(stub, v, sfmt, taken, shift)
+                        if len(got) < len(v):
+                            continue
+                    else:
+                        sboxes = [(stub.transData.transform((t, 0))[0] - width(sfmt(t)) / 2,
+                                   stub.transData.transform((t, 0))[0] + width(sfmt(t)) / 2) for t in v]
+                keep, boxes, fmt = main_ticks(main, taken + sboxes, halves)
+                if best is None or len(keep) > len(best[2]):
+                    best = (shift, sboxes, keep, boxes, fmt, share, main.get_xlim())
+                if len(keep) >= 2:
+                    break
+            shift, sboxes, keep, boxes, fmt, share, lim = best
+            main.set_xlim(*lim)
+            if stub is not None:
+                if share is None:
+                    stub.xaxis.set_major_formatter(ticker.NullFormatter())
+                else:
+                    stub.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: sfmt(v)))
+                if shift:
+                    for lab in stub.get_xticklabels():
+                        lab.set_transform(lab.get_transform() + ScaledTranslation(shift / fig.dpi, 0,
+                                                                                  fig.dpi_scale_trans))
+            main.xaxis.set_major_locator(ticker.FixedLocator(keep))
+            main.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _, fmt=fmt: fmt(v)))
+            taken += sboxes + boxes
+
+
+def _nice_spacing(vals: list, step: float) -> bool:
+    """True where vals, multiples of step, are evenly spaced by 1, 2, 4 or 5 steps (not 0.961 and 0.968)."""
+    d = np.diff(vals)
+    return bool(np.allclose(d, d[0], rtol=1e-6)) and any(abs(d[0] / step - n) < 1e-6 for n in (1, 2, 4, 5))
+
+
+def _head(auc: bool = False) -> list:
+    return [(key, n, ds, F2_AUC[key] if auc else met) for key, n, ds, met, _ in HV_PANELS]
 
 
 def draw_f2(path) -> None:
-    """Fig. 2: the linear probes over the fine-tuned networks, each task's headline metric."""
-    head = [(key, n, ds, met) for key, n, ds, met, _ in HV_PANELS]
-    _draw_hv(path, [(_probe_value, HV_REFS["probe"], head), (_ft_value, HV_REFS["ft"], head)],
-             "no linear probes or fine-tuning read-outs (linprobe/fits_v4, ft_mlst)",
-             mode_names=("Linear probe", "Fine-tuned"))
+    """Fig. 2: the linear probes, each task's headline metric (L20: the fine-tuned networks are F2-ft)."""
+    _draw_hv(path, _probe_value, HV_REFS["probe"], _head(), "no linear probes (linprobe/fits_v4)")
 
 
-def _full(value, refs, path, absent: str) -> None:
-    grid = [[(key, n, ds, met) for key, n, ds, met, _ in HV_PANELS],
-            [(key, n, ds, F2_AUC[key]) for key, n, ds, *_ in HV_PANELS]]
-    _draw_hv(path, [(value, refs, row) for row in grid], absent)
+def draw_f2_ft(path) -> None:
+    """The fine-tuned networks, each task's headline metric."""
+    _draw_hv(path, _ft_value, HV_REFS["ft"], _head(), "no fine-tuning read-outs (ft_mlst, budget)")
 
 
 def draw_f2a(path) -> None:
-    """Fig. 2's linear probes in full: headline metric over AUC, with the released Sophon checkpoint."""
-    _full(_probe_value, HV_REFS["probe_all"], path, "no linear probes (linprobe/fits_v4)")
+    """F2's linear probes in the AUC, with the released Sophon checkpoint."""
+    _draw_hv(path, _probe_value, HV_REFS["probe_all"], _head(auc=True), "no linear probes (linprobe/fits_v4)")
 
 
 def draw_f2b(path) -> None:
-    """Fig. 2's fine-tuned networks in full: headline metric over AUC."""
-    _full(_ft_value, HV_REFS["ft"], path, "no fine-tuning read-outs (ft_mlst, budget)")
+    """F2-ft's fine-tuned networks in the AUC."""
+    _draw_hv(path, _ft_value, HV_REFS["ft"], _head(auc=True), "no fine-tuning read-outs (ft_mlst, budget)")
 
 
 # ------------------------------------------------------------------ the training-size family: metric against the number of jets
@@ -427,20 +473,25 @@ def draw_f2b(path) -> None:
 # x the training jets (log), y the task's headline metric (or its AUC), the mean over runs with an SD band (lines_v6 C).
 # Curves in the common order (L5), the mass networks in their lighter shade, all solid (one mode a figure, L6); the
 # mode's reference: from scratch (grey) beside fine-tuned networks, the random network (dark grey) beside linear probes.
-# Five panels: the two multi-class tasks (accuracy) over the three binary ones (R30), three 3.9 cm panels a row, the
-# legend in the slot beside the upper two (five panels in one row of 15 cm leave 2 cm each, too narrow for seven curves).
+# Five panels, two a row at 6.3 cm (L20: no curve panel under 6.1 cm, PI 2026-11-13 "Panels can't be so small, e.g.
+# figure 5"): the two multi-class tasks (accuracy), top and quark/gluon on Pythia, quark/gluon on Herwig (R30), the
+# legend in the sixth slot beside the last.
 SIZE5 = (("jc2", "jc2_188", "accuracy", "JetClass-II"), ("jc1", "jc1", "accuracy", "JetClass"),
          ("top", "top", "r30", "Top tagging"), ("qg", "qg", "r30", "Quark/gluon, Pythia"),
          ("qg_herwig", "qg_herwig", "r30", "Quark/gluon, Herwig"))
 SIZE5_AUC = tuple((key, ds, "macro_auc_ovr" if key in ("jc2", "jc1") else "auc", title) for key, ds, _, title in SIZE5)
-SIZE_SLOTS = ((0, 0), (0, 1), (1, 0), (1, 1), (1, 2))        # the legend in (0, 2)
+SIZE_SLOTS = ((0, 0), (0, 1), (1, 0), (1, 1), (2, 0))        # the legend in (2, 1)
+SIZE_LEGEND_SLOT = (2, 1)
 SIZE_ROWS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")
 SIZE_PARTITIONS = ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")     # 188 and 17 classes for reference
-SIZE_W, SIZE_LEFT, SIZE_WGAP, SIZE_HGAP = 3.9, 1.35, 0.85, 1.0      # cm
+SIZE_LEFT, SIZE_WGAP, SIZE_HGAP, SIZE_RIGHT = 1.35, 0.85, 1.0, 0.15      # cm
+SIZE_W = (S.PRINT_W - SIZE_LEFT - SIZE_WGAP - SIZE_RIGHT) / 2              # 6.3 cm
+SIZE_ASPECT = 0.72          # three rows and the caption on one page (make_results_book.MAX_H_CM)
+SIZE_XLABEL = 0.45          # cm: an x label under a panel with another below it
 POOLED = M._pooled(RUNS)
 
 
-def _curve(ax, series: dict, line: dict, mark: dict, label: str, band: bool, style: str = L.SCAN, k: int = 0,
+def _curve(ax, series: dict, line: dict, mark: dict, label: str, band: bool, style: str = L.SIZE, k: int = 0,
            n: int = 1) -> None:
     """Mean over runs; line the colour and line style, mark the marker and its fill (style_v5.marker); with band,
     Golling's: the SD, same colour, no edge. style B or C: lines_v6.scan, the k-th of n series."""
@@ -464,21 +515,27 @@ def _model(series: dict, key: str, mode: str, label: str) -> tuple:
 
 
 STAR = 8.0                  # pt, ParT's published value: larger than a point, small enough to leave the curves' ends
+PUBLISHED_LABEL = "published Particle\nTransformer"      # L7: no abbreviation in a legend
 SIZE_PAD = 1.7              # a panel's x axis runs from its smallest training set over SIZE_PAD to its largest times it
 
 
-def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.SCAN) -> None:
+def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.SIZE) -> None:
     """series_of(key, ds, met): [(series, line, mark, label)] of a panel, in the legend's order; drawn in reverse, so
     the first (188 classes) lies on top. auc: the same five tasks in AUC (SIZE5_AUC) with ParT's published AUCs."""
     spec, published = (SIZE5_AUC, PUBLISHED_AUC) if auc else (SIZE5, PUBLISHED)
     panels = [series_of(key, ds, met) for key, ds, met, _ in spec]
     if not any(s for p in panels for s, *_ in p):
         raise C.Absent(absent)
-    w, h, top = SIZE_W, 0.9 * SIZE_W, 0.6
-    fig = S.figure_cm(S.PRINT_W, top + 2 * h + SIZE_HGAP + 1.0)
+    w, h, top = SIZE_W, SIZE_ASPECT * SIZE_W, 0.6
+    nrows = max(i for i, _ in SIZE_SLOTS + (SIZE_LEGEND_SLOT,)) + 1
+    # the lowest panel of each column carries the x label; one with a panel below it needs the room for it
+    lowest = {j: max(i for i, j_ in SIZE_SLOTS if j_ == j) for _, j in SIZE_SLOTS}
+    gaps = [SIZE_HGAP + (SIZE_XLABEL if any(lowest[j] == i for j in lowest) else 0) for i in range(nrows - 1)]
+    y_of = [top + i * h + sum(gaps[:i]) for i in range(nrows)]
+    fig = S.figure_cm(S.PRINT_W, y_of[-1] + h + 1.0)
     axes, handles = [], {}
     for k, ((i, j), panel, (key, _, met, title)) in enumerate(zip(SIZE_SLOTS, panels, spec)):
-        ax = S.axes_cm(fig, SIZE_LEFT + j * (w + SIZE_WGAP), top + i * (h + SIZE_HGAP), w, h)
+        ax = S.axes_cm(fig, SIZE_LEFT + j * (w + SIZE_WGAP), y_of[i], w, h)
         axes.append(ax)
         ax.set_xscale("log")
         ns = [n for s_, *_ in panel for n in s_] + ([published[key][0]] if key in published else [])
@@ -487,16 +544,17 @@ def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.S
         ax.xaxis.set_major_formatter(ticker.FuncFormatter(S.pow10))
         ax.xaxis.set_minor_formatter(ticker.NullFormatter())
         S.title(ax, title)
-        S.labels(ax, X_JETS if i == 1 else None, Y_OF[met] if j == 0 else None)
+        S.labels(ax, X_JETS if i == lowest[j] else None, Y_OF[met] if j == 0 else None)
         if not any(s for s, *_ in panel):
             _empty_panel(ax)
             continue
         S.fine_grid(ax)
         for n_, (series, line, mark, label) in reversed(list(enumerate(panel))):
             _curve(ax, series, line, mark, label, True, style, n_, len(panel))
-        if key in published:
-            ax.plot(*published[key], color="#000000", marker="*", markersize=STAR, markeredgecolor="white", markeredgewidth=0.5,
-                    linestyle="none", label="ParT, published", zorder=10)    # on top of every marker
+        if key in published:      # open, over the error bars (2.4) and under the points (2.6): a network's point where
+            # the curves end at the published size stays visible inside the star instead of under its outline
+            ax.plot(*published[key], color="#000000", marker="*", markersize=STAR, markerfacecolor="none",
+                    markeredgecolor="#000000", markeredgewidth=0.8, linestyle="none", label=PUBLISHED_LABEL, zorder=2.5)
         if met == "r30":
             _log_y(ax)
         else:
@@ -504,15 +562,14 @@ def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.S
             ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))     # labels of two decimals
         for h_, l_ in zip(*ax.get_legend_handles_labels()):
             handles.setdefault(l_, h_)
-    labels = [lab for *_, lab in max(panels, key=len)] + ["ParT, published"]
-    if "ParT, published" in handles:        # the legend enlarges markers (fig_legend): the star at its plotted size
-        handles["ParT, published"] = Line2D([], [], color="#000000", marker="*", markersize=STAR / 1.6, linestyle="none")
-    # the legend in the slot right of the upper two panels, one entry a line, centred in the slot
-    W, H = S.PRINT_W, fig.get_figheight() / S.CM
-    x0 = SIZE_LEFT + 2 * w + SIZE_WGAP + 0.2            # 0.2 cm right of the second panel
-    fig.legend(handles=[handles[lab] for lab in labels if lab in handles], labels=[lab for lab in labels if lab in handles],
-               loc="center left", bbox_to_anchor=(x0 / W, 1 - (top + h / 2) / H), ncol=1, frameon=False,
-               fontsize=S.LEGEND_PT5, borderpad=0.2, labelspacing=0.3, handlelength=S.HANDLE, markerscale=1.0)
+    labels = [lab for *_, lab in max(panels, key=len)] + [PUBLISHED_LABEL]
+    if PUBLISHED_LABEL in handles:        # the star at its plotted size (markerscale 1 below)
+        handles[PUBLISHED_LABEL] = Line2D([], [], color="#000000", marker="*", markersize=STAR, linestyle="none",
+                                          markerfacecolor="none", markeredgewidth=0.8)
+    # the legend in the free slot, one entry a line, centred in the slot
+    i, j = SIZE_LEGEND_SLOT
+    S.slot_legend(fig, [handles[lab] for lab in labels if lab in handles], SIZE_LEFT + j * (w + SIZE_WGAP), y_of[i], w, h,
+                  labels=[lab for lab in labels if lab in handles])
     S.letter_panels(axes)
     S.save(fig, path)
 
@@ -533,7 +590,7 @@ def _tuned(row: str, tag: bool = False):
                                      S.LEGEND[row] + (f" {S.FINE_TUNED}" if tag else ""))
 
 
-def _size(path, makers: list, absent: str, auc: bool, style: str = L.SCAN) -> None:
+def _size(path, makers: list, absent: str, auc: bool, style: str = L.SIZE) -> None:
     _draw_size(path, lambda key, ds, met: [m(key, ds, met) for m in makers], absent, auc=auc, style=style)
 
 
@@ -549,7 +606,7 @@ def draw_a10(path, auc: bool = False) -> None:
     _size(path, [_probe(r) for r in SIZE_ROWS] + [_probe(M.INIT)], "no linear probes (linprobe/fits_v4)", auc)
 
 
-def draw_a8(path, auc: bool = False, style: str = L.SCAN) -> None:
+def draw_a8(path, auc: bool = False, style: str = L.SIZE) -> None:
     """A10's form after fine-tuning: the label sets, the mass networks and from scratch."""
     _size(path, [_tuned(r) for r in SIZE_ROWS] + [_tuned("SCRATCH")], "no fine-tuning read-outs", auc, style)
 
@@ -565,11 +622,20 @@ def draw_a8_part(path) -> None:
 # ------------------------------------------------------------------ the UMAP and the pretraining curve
 EMBED_NAMES = {"bb": r"$X\to b\bar{b}$", "cc": r"$X\to c\bar{c}$", "qq": r"$X\to q\bar{q}$", "QCD": "QCD",
                "ee": r"$X\to ee$", "mm": r"$X\to \mu\mu$", "top": "top", "gluon": "gluon", "quark": "quark",
+               "bs": r"$X\to bs$",
                **{c.removeprefix("label_"): S.JC1_TEX[c] for c in S.JC1_CLASSES if c != "label_QCD"}}
-EMBED_MODELS = (("mtx-l188-s1", "L188"), ("mtx-r16q1-s1", "R16_Q1"))
+# L12: rows 188, 162, 43, 17 classes, pretraining run 1 (umap_v3 holds all four; the same jets as umap_v2, rows_sha256)
+EMBED_MODELS = (("mtx-l188-s1", "L188"), ("mtx-l162-s1", "L162"), ("mtx-r42q1-s1", "R42_Q1"), ("mtx-r16q1-s1", "R16_Q1"))
+# Brief B / L12: the mass networks' grids, each directly under its own label set (L5), run 1 as above
+EMBED_MASS = (("mtx-l162-s1", "L162"), ("mtx-l162mass-s1", "L162_MASS"), ("mtx-r16q1-s1", "R16_Q1"),
+              ("mtx-r16q1mass-s1", "R16_Q1_MASS"))
+# X->bb and X->bs against QCD on Sophon's samples: frozen only (L11, L12), one column a signal
+EMBED_XBX = (("xbb", r"$X\to b\bar{b}$"), ("xbs", r"$X\to bs$"))
+# X->bb its colour of the hadronic JetClass-II grid, QCD black, X->bs a third CLASS10 colour (brown, not an X decay there)
+XBX_COLOURS = [S.TAB10[0], S.TAB10[1], S.TAB10[7]]      # _draw_embeddings' group order: QCD, X->bb, X->bs
 
 
-UMAP_DIRS = ("umap_v2", "umap", "umap_preview")     # round 3 (all four tasks); the long-budget jc1 run; the preview
+UMAP_DIRS = ("umap_v3", "umap_v2", "umap", "umap_preview")     # four label sets (2026-11-13); round 3; the long-budget jc1 run; the preview
 UMAP_SETTINGS = {"n_neighbors": 15, "min_dist": 0.1, "metric": "euclidean", "random_state": 1, "standardized": True}
 UMAP_READ = {      # one sentence per figure on what its panels show, written after looking at them (round 4); for the text
     "UMAP-jc1": "Both models' frozen features set the leptonic decays apart, in two islands for 188 classes; "
@@ -614,27 +680,37 @@ def _embedding(ax, d: dict, colours: list) -> None:
     ax.set_yticks([])
 
 
-def _draw_embeddings(path, grid: list, colours=None) -> None:
-    """grid: rows of (file stem, title). Round 4: 6.5 cm square panels, the class legend above them at 8.5 pt."""
+def _draw_embeddings(path, grid: list, colours=None, wgap: float = 0.3) -> None:
+    """grid: rows of (file stem, title). Round 4: 6.5 cm square panels, the class legend above them at 8.5 pt. wgap:
+    the gap between columns (the mass networks' longer titles need more)."""
     from matplotlib.lines import Line2D
     root = _umap_root([stem for row in grid for stem, _ in row])
     docs = [[json.loads((root / f"{stem}.json").read_text()) for stem, _ in row] for row in grid]
     if any(d.get("umap", UMAP_SETTINGS) != UMAP_SETTINGS for row in docs for d in row):
         raise SystemExit(f"FATAL: {root}: UMAP settings other than the caption's {UMAP_SETTINGS}")
-    groups = docs[0][0]["groups"]
+    # the groups of every panel in order of appearance (the X->bb and X->bs columns share QCD), one colour a group
+    groups = list(dict.fromkeys(name for row in docs for d in row for name in d["groups"]))
+    if len(groups) > len(docs[0][0]["groups"]) and "QCD" in groups:        # the shared background first
+        groups = ["QCD"] + [g for g in groups if g != "QCD"]
     ncol = 5 if len(groups) > 5 else len(groups)
     legend_rows_n = math.ceil(len(groups) / ncol)
-    fig, axes, _ = S.grid_cm(len(grid), len(grid[0]), aspect=1.0, w=7.0, left=0.35, wgap=0.3, hgap=0.6, bottom=0.3,
+    # four label-set rows: the grid and its caption on one page, so the panels flatter than square (the UMAP plane has no
+    # scale to keep) and at least 4.5 cm wide (L20, points only)
+    w, aspect = (7.0, 1.0) if len(grid) <= 2 else (4.8, 0.72)
+    left = 0.35 if len(grid) <= 2 else (S.PRINT_W - len(grid[0]) * w - (len(grid[0]) - 1) * wgap) / 2     # centred
+    fig, axes, _ = S.grid_cm(len(grid), len(grid[0]), aspect=aspect, w=w, left=left, wgap=wgap, hgap=0.6, bottom=0.3,
                              top=0.95 + 0.5 * legend_rows_n)
     if colours is None:         # QCD black, as in every class figure; the other classes take the colours after it
         rest = iter(S.TAB10[1:])
         colours = [S.TAB10[0] if name == "QCD" else next(rest) for name in groups]
-        if len(groups) == 2:    # black and vermillion, which stand apart in small translucent dots
+        if len(groups) <= 3:    # black and vermillion (and purple), which stand apart in small translucent dots
             first = "QCD" if "QCD" in groups else groups[0]
-            colours = [S.TAB10[0] if name == first else S.TAB10[2] for name in groups]
+            rest = iter((S.TAB10[2], S.TAB10[3]))
+            colours = [S.TAB10[0] if name == first else next(rest) for name in groups]
+    colour = dict(zip(groups, colours))
     for r, (row, drow) in enumerate(zip(grid, docs)):
         for ax, (_, title), d in zip(axes[r], row, drow):
-            _embedding(ax, d, colours)
+            _embedding(ax, d, [colour[name] for name in d["groups"]])
             S.title(ax, title)
     handles = [Line2D([], [], color=colours[k], marker="o", markersize=5, linestyle="none",
                       label=EMBED_NAMES[name]) for k, name in enumerate(groups)]
@@ -652,6 +728,65 @@ def _draw_umap(path, page: str) -> None:
     _draw_embeddings(path, grid, colours=colours)
 
 
+# the supplement's further grids (L12, L19): page -> (rows, columns as (file stem prefix, kind, panel word), heading)
+UMAP_MORE = {
+    "UMAP-xbx": (EMBED_MODELS, [(name, "frozen", word) for name, word in EMBED_XBX],
+                 r"$X\to b\bar b$ and $X\to bs$ against QCD, frozen"),
+    **{f"UMAP-mass-{page.removeprefix('UMAP-')}": (EMBED_MASS, [(UMAP_PAGES[page][0], kind, word) for kind, word in
+                                                               (("frozen", "frozen"), ("ft", "fine-tuned"))],
+                                                  f"mass networks, {UMAP_PAGES[page][1]}")
+       for page in ("UMAP-jc2-had", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg")},
+    "UMAP-mass-xbx": (EMBED_MASS, [(name, "frozen", word) for name, word in EMBED_XBX],
+                      r"mass networks, $X\to b\bar b$ and $X\to bs$ against QCD, frozen"),
+}
+XBX_JETS = ("2,000 X→bb̄ and 2,000 QCD test jets (left) and 2,000 X→bs and 2,000 QCD test jets (right), all with "
+            "soft-drop mass 150 to 230 GeV, from the samples of table {tab:xbx}")
+QUALITATIVE = ("Every panel uses pretraining run 1, the same UMAP settings (15 neighbours, minimum distance 0.1) and seed, "
+               "and the same jets as {}. The plots are qualitative: each panel is fitted separately, so positions "
+               "cannot be compared between panels.")
+
+
+def _draw_umap_more(path, page: str) -> None:
+    rows, cols, _ = UMAP_MORE[page]
+    grid = [[(f"{name}_{m}_{kind}", f"{S.LEGEND[level]}, {word}") for name, kind, word in cols] for m, level in rows]
+    colours = {"jc1": [S.JC1_COLOUR[c] for c in S.JC1_CLASSES], "xbb": XBX_COLOURS}.get(cols[0][0])
+    _draw_embeddings(path, grid, colours=colours, wgap=1.4 if rows == EMBED_MASS else 0.3)
+
+
+def _umap_more_caption(page: str) -> str:
+    """The supplement caption of a UMAP_MORE grid, with {fig:...} and {tab:...} for gallery_captions.fill."""
+    rows, cols, _ = UMAP_MORE[page]
+    xbx, mass = cols[0][0] == "xbb", rows == EMBED_MASS
+    task = next((p for p in UMAP_PAGES if page == f"UMAP-mass-{p.removeprefix('UMAP-')}"), None)
+    nets = ("of the networks pretrained with 162 classes, 162 classes + mass, 17 classes and 17 classes + mass (rows), "
+            "each mass network under its own label set" if mass else
+            "of the networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (rows)")
+    what = (f"frozen, for {XBX_JETS}. The pretrained networks are not fine-tuned on these samples."
+            if xbx else f"frozen (left) and fine-tuned on {UMAP_PAGES[task][3]} (right), for {UMAP_PAGES[task][2]}.")
+    see = ("Figure {fig:UMAP-xbx} shows the label sets on the same jets." if xbx and mass else
+           f"Figure {{fig:{task}}} shows the label sets on the same jets." if mass else "")
+    return ("Two-dimensional embeddings, computed with uniform manifold approximation and projection (UMAP), of the "
+            f"class token {nets}, {what} "
+            + QUALITATIVE.format("the other panels of its column" if xbx else "every other panel") + f" {see}").rstrip()
+
+
+def _umap_more_page(page: str) -> C.Page:
+    rows, cols, heading = UMAP_MORE[page]
+    xbx = cols[0][0] == "xbb"
+    return C.Page(
+        id=page,
+        title=f"UMAP of the class token: {heading} (supplement)",
+        precedent=["map2026_poster/fig5.png", "2610.36121/fig3.png"],
+        precedent_label="MAP 2026 poster (frozen against fine-tuned), SuperJEPA Fig. 3",
+        caption=_umap_more_caption(page),
+        differs="The UMAP family's 4x2 grid (L12): " + ("the mass networks, each under its own label set (Brief B); "
+                                                        if rows == EMBED_MASS else "")
+                + ("X→bb̄ and X→bs against QCD as the two columns, frozen only (L11)." if xbx
+                   else "columns frozen and fine-tuned."),
+        draw=lambda path: _draw_umap_more(path, page),
+        data_note="From umap_v3 (L19).")
+
+
 def _umap_page(page: str) -> C.Page:
     _, heading, jets, ft = UMAP_PAGES[page]
     u = UMAP_SETTINGS
@@ -660,9 +795,12 @@ def _umap_page(page: str) -> C.Page:
         title=f"UMAP of the class token, frozen and fine-tuned: {heading} (appendix)",
         precedent=["map2026_poster/fig5.png", "2610.36121/fig3.png"],
         precedent_label="MAP 2026 poster (frozen against fine-tuned), SuperJEPA Fig. 3",
-        caption=f"UMAP of the class token of networks pretrained on JetClass-II with 188 classes (upper) and 17 (lower), "
-                f"frozen (left) and fine-tuned on {ft} (right), for {jets} in every panel; the plots are qualitative, "
-                "without axis scales.",      # PI 2026-11-12: no result sentences; the reading is for the text
+        caption=f"Two-dimensional embeddings, computed with uniform manifold approximation and projection (UMAP), "
+                f"of the class token of the networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (rows), "
+                f"frozen (left) and fine-tuned on {ft} (right), for {jets} in every panel. Every "
+                f"panel uses pretraining run 1, the same jets and the same UMAP settings ({u['n_neighbors']} "
+                f"neighbours, minimum distance {u['min_dist']}) and random seed. The plots are qualitative, and "
+                "positions cannot be compared between panels.",      # PI 2026-11-12: no result sentences
         differs="One 2x2 layout for every task (PI, round 3): rows label sets, columns frozen and fine-tuned, the "
                 "poster's pairing. " + ("Ten class colours, JetClass's fixed tab10. " if page == "UMAP-jc1" else "tab10 in group order. ")
                 + "One legend, first panel. " + (f"UMAP with {u['n_neighbors']} neighbours, minimum distance "
@@ -732,69 +870,77 @@ SUPPLEMENT_CAPTIONS = {
     "VAL-part": (
         "The curves show the validation accuracy on JetClass-II against pretraining epoch for the 17-class partitions, "
         "with the network pretrained with 17 classes for reference, every network scored on its own 17 classes. Each "
-        "curve is the mean, and its band ±1 standard deviation, over two pretraining runs per flavor-boundary "
-        "partition, three for 17 classes, or the five random partitions. The learning rate decays from epoch 57, "
+        "curve is the mean, and its band ±1 standard deviation, over two pretraining runs per partition with a named "
+        "flavor boundary, three for 17 classes, or the five random partitions. The learning rate decays from epoch 57, "
         "where every curve rises slightly. The values at the last epoch are in table {tab:compute}."
     ),
     "F8": (
-        "Fine-tuning the network pretrained with 188 classes is more accurate than training from scratch on JetClass-II "
-        "and JetClass at every training-set size. On top tagging its mean rejection is higher at 1,000 and 100,000 jets "
-        "(R30 127 ± 21 against 49 ± 12, and 850 ± 90 against 560 ± 90), differences within four standard deviations of "
-        "the spread over three runs. The panels show accuracy or R30, the inverse background efficiency at 30% signal "
-        "efficiency, against the number of training jets, for that network fine-tuned (solid) or as a linear probe on "
-        "its frozen features (dashed) and for training from scratch (grey). Points are means and bands ±1 standard "
-        "deviation over three pretraining runs or three trainings from scratch, stars mark the published Particle "
-        "Transformer (ParT), and the values are in tables {tab:ftfull} and {tab:probesnfull}."
+        'Fine-tuning the network pretrained with 188 classes is more accurate than training from scratch on JetClass-II'
+        ' and JetClass at every training-set size. The panels show accuracy or R30, the inverse background efficiency '
+        'at 30% signal efficiency, against the number of training jets, for that network fine-tuned (solid) or as a '
+        'linear probe on its frozen features (dashed) and for training from scratch (grey). Points, offset slightly in '
+        'size, are means and error bars ±1 standard deviation over three pretraining runs or three trainings from '
+        'scratch, and open stars mark the published Particle Transformer, trained from scratch, at its training-set '
+        'size. Fine-tuning and training from scratch on JetClass-II and JetClass start at 10,000 jets, and the linear '
+        'probes fill the missing top inputs with random draws and the quark/gluon inputs with the training mean, as in '
+        'table {tab:probesnfull}. The values are in tables {tab:ftfull} and {tab:probesnfull}.'
     ),
     "F8-auc": (
-        "The panels of figure {fig:F8} in the area under the ROC curve (AUC), averaged over the classes, each against "
-        "the rest, on class-balanced JetClass-II and JetClass, and of the binary task on top and quark/gluon tagging, "
-        "scored on Pythia and on Herwig jets, against the number of training jets. The network pretrained with 188 "
-        "classes is fine-tuned (solid) or a linear probe on its frozen features (dashed), and training from scratch is "
-        "grey. Points are means and bands ±1 standard deviation over three pretraining runs or three trainings from "
-        "scratch, and stars mark the published Particle Transformer (ParT). Values are in tables {tab:ftfull} and "
-        "{tab:probesnfull}."
+        'The panels of figure {fig:F8} in the area under the receiver operating characteristic curve (AUC), averaged '
+        'over the classes, each against the rest, on class-balanced JetClass-II and JetClass, and of the binary task on'
+        ' top and quark/gluon tagging, scored on Pythia and on Herwig jets, against the number of training jets. The '
+        'network pretrained with 188 classes is fine-tuned (solid) or a linear probe on its frozen features (dashed), '
+        'and training from scratch is grey. Points, offset slightly in size, are means and error bars ±1 standard '
+        'deviation over three pretraining runs or three trainings from scratch, and open stars mark the published '
+        'Particle Transformer. Fine-tuning and training from scratch on JetClass-II and JetClass start at 10,000 jets, '
+        'and the linear probes fill the missing top inputs with random draws and the quark/gluon inputs with the '
+        'training mean, as in table {tab:probesnfull}. Values are in tables {tab:ftfull} and {tab:probesnfull}.'
     ),
     "A8-auc": (
-        "The panels of figure {fig:A8} in the area under the ROC curve (AUC), averaged over the classes, each against "
-        "the rest, on class-balanced JetClass-II and JetClass, and of the binary task on top and quark/gluon tagging, "
-        "scored on Pythia and on Herwig jets, for the fine-tuned networks of each label set, with and without the mass "
-        "regression (+ mass), and training from scratch (grey). Points are means and bands ±1 standard deviation over "
-        "three pretraining runs, two for + mass, or three trainings from scratch, and stars mark the published "
-        "Particle Transformer (ParT). JetClass-II and JetClass start at 10,000 jets, and the values are in table "
-        "{tab:ftfull}."
+        'The panels of figure {fig:A8} in the area under the receiver operating characteristic curve (AUC), averaged '
+        'over the classes, each against the rest, on class-balanced JetClass-II and JetClass, and of the binary task on'
+        ' top and quark/gluon tagging, scored on Pythia and on Herwig jets, for the fine-tuned networks of each label '
+        'set, with and without the mass regression (+ mass), and training from scratch (grey). Points, offset slightly '
+        'in size, are means and error bars ±1 standard deviation over three pretraining runs, two for + mass, or three '
+        'trainings from scratch, and open stars mark the published Particle Transformer. JetClass-II and JetClass start'
+        ' at 10,000 jets, and the values are in table {tab:ftfull}.'
     ),
     "A10-auc": (
-        "The panels of figure {fig:A10} in the area under the ROC curve (AUC), averaged over the classes, each against "
-        "the rest, on class-balanced JetClass-II and JetClass, and of the binary task on top and quark/gluon tagging, "
-        "scored on Pythia and on Herwig jets, for linear probes on the frozen features of each label set, with and "
-        "without the mass regression (+ mass), and of the random network (dark grey). Points are means and bands ±1 "
-        "standard deviation over three pretraining runs, two for + mass, or three random initializations, and stars "
-        "mark the published Particle Transformer (ParT). Values are in table {tab:probesnfull}."
+        'The panels of figure {fig:A10} in the area under the receiver operating characteristic curve (AUC), averaged '
+        'over the classes, each against the rest, on class-balanced JetClass-II and JetClass, and of the binary task on'
+        ' top and quark/gluon tagging, scored on Pythia and on Herwig jets, for linear probes on the frozen features of'
+        ' each label set, with and without the mass regression (+ mass), and of the random network (dark grey). Points,'
+        ' offset slightly in size, are means and error bars ±1 standard deviation over three pretraining runs, two for '
+        '+ mass, or three random initializations, and open stars mark the published Particle Transformer. The linear '
+        'probes fill the missing top inputs with random draws and the quark/gluon inputs with the training mean, as in '
+        'table {tab:probesnfull}, where the values are.'
     ),
     "A8-part": (
-        "The networks pretrained with the four 17-class partitions in the form of figure {fig:A8}, fine-tuned and "
-        "scored on class-balanced JetClass-II and JetClass (accuracy) and on top and quark/gluon tagging, Pythia and "
-        "Herwig (R30), against the number of training jets, with 188 and 17 classes for reference. The partitions were "
-        "fine-tuned on JetClass-II at one million jets only, so that panel shows one point for each. Points are means "
-        "and bands ±1 standard deviation over two pretraining runs for each flavor-boundary partition, the five random "
-        "partitions with one run each, and three runs for 188 and 17 classes. Stars mark the published Particle "
-        "Transformer (ParT), and the values are in tables {tab:ft} and {tab:summary}."
+        'The networks pretrained with the four 17-class partitions in the form of figure {fig:A8}, fine-tuned and '
+        'scored on class-balanced JetClass-II and JetClass (accuracy) and on top and quark/gluon tagging, Pythia and '
+        'Herwig, in R30, the inverse background efficiency at 30% signal efficiency, against the number of training '
+        'jets, with 188 and 17 classes for reference. The partitions were fine-tuned on JetClass-II at one million jets'
+        ' only, so that panel shows one point for each, fine-tuning on JetClass starts at 10,000 jets, and the particle'
+        ' inputs that the top and quark/gluon data lack are set to zero. Points, offset slightly in size, are means and'
+        ' error bars ±1 standard deviation over two pretraining runs for each flavor-boundary partition, the five '
+        'random partitions with one run each, and three runs for 188 and 17 classes. Open stars mark the published '
+        'Particle Transformer, and the values are in tables {tab:ft} and {tab:summary}.'
     ),
     "A10-part": (
-        "The networks pretrained with the four 17-class partitions in the form of figure {fig:A10}, as linear probes on "
-        "their frozen features, trained and scored on class-balanced JetClass-II and JetClass (accuracy) and on top and "
-        "quark/gluon tagging, Pythia and Herwig (R30), against the number of training jets, with 188 and 17 classes for "
-        "reference. Points are means and bands ±1 standard deviation over two pretraining runs for each "
-        "flavor-boundary partition, the five random partitions with one run each, and three runs for 188 and 17 "
-        "classes. Stars mark the published Particle Transformer (ParT), and the values are in tables {tab:probesn} "
-        "and {tab:summary}."
+        'The networks pretrained with the four 17-class partitions in the form of figure {fig:A10}, as linear probes on'
+        ' their frozen features, trained and scored on class-balanced JetClass-II and JetClass (accuracy) and on top '
+        'and quark/gluon tagging, Pythia and Herwig, in R30, the background rejection at 30% signal efficiency, against'
+        ' the number of training jets, with 188 and 17 classes for reference. Points, offset slightly in size, are '
+        'means and error bars ±1 standard deviation over two pretraining runs for each flavor-boundary partition, the '
+        'five random partitions with one run each, and three runs for 188 and 17 classes. Open stars mark the published'
+        ' Particle Transformer, and the values are in tables {tab:probesn} and {tab:summary}.'
     ),
 }
+SUPPLEMENT_CAPTIONS.update({page: _umap_more_caption(page) for page in UMAP_MORE})
 PAGES = [
     C.Page(
         id="F2",
-        title="Label granularity, linear probes and fine-tuned",
+        title="Label granularity, linear probes",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
         caption="Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with the mass regression, and "
@@ -804,9 +950,20 @@ PAGES = [
                 "and Herwig. " + F2_KEY + "Values: " + G.number("tab:summary") + ".",
         differs="Hong plots accuracy against the number of classes; here the label set is a category (PI 2026-11-11), "
                 "one row a network, on the metric itself (PI 2026-11-12: actual values only), mean and SD; the two "
-                "modes as two rows of five tasks, headline metric only (PI 2026-11-13, L1).",
+                "modes as two rows of five tasks, headline metric only (PI 2026-11-13, L1); L20: two panels a row, so "
+                "one mode a figure, the fine-tuned networks in F2-ft.",
         draw=draw_f2,
         data_note=f"{HV_NOTE}{SUBST_NOTE} Herwig: the quark/gluon probes and networks scored on Herwig jets."),
+    C.Page(
+        id="F2-ft",
+        title="Label granularity, fine-tuned",
+        precedent=HONG,
+        precedent_label="Hong Fig. 2",
+        caption="",
+        differs="F2's form for the fine-tuned networks, beside training from scratch (L20: the old F2's lower row).",
+        draw=draw_f2_ft,
+        data_note="JetClass-II at 1,000,000 class-balanced jets. JetClass at 1,000,000 jets, top at 1,200,000, "
+                  f"quark/gluon (Pythia and Herwig) at 1,600,000. {HV_NOTE}"),
     C.Page(
         id="F2a",
         title="Label granularity, linear probes, with AUC",
@@ -816,7 +973,7 @@ PAGES = [
                 "Sophon checkpoint, at each task's largest training set: upper row the headline metric (accuracy, "
                 "R30), lower row the AUC. " + F2_KEY + "Values: " + G.number("tab:summary") + " and "
                 + G.number("tab:summaryauc") + ".",
-        differs="As F2; one mode, its headline metric over its AUC.",
+        differs="F2's form in the AUC (L20: the old F2a's lower row; its upper row is F2).",
         draw=draw_f2a,
         data_note=f"{HV_NOTE}{SUBST_NOTE} The released Sophon checkpoint (one network) is drawn on JetClass-II and "
                   "JetClass only: its top and quark/gluon probes have the missing inputs set to zero (no substitution "
@@ -831,7 +988,7 @@ PAGES = [
                 "JetClass-II and a million JetClass jets and the full top and quark/gluon sets (also scored on Herwig "
                 "jets): upper row the headline metric (accuracy, R30), lower row the AUC. " + F2_KEY + "Values: "
                 + G.number("tab:summary") + " and " + G.number("tab:summaryauc") + ".",
-        differs="As F2; one mode, its headline metric over its AUC.",
+        differs="F2-ft's form in the AUC (L20: the old F2b's lower row; its upper row is F2-ft).",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets. JetClass at 1,000,000 jets, top at 1,200,000, "
                   f"quark/gluon (Pythia and Herwig) at 1,600,000. {HV_NOTE}"),
@@ -910,6 +1067,7 @@ PAGES = [
         draw=draw_a10_part,
         data_note=SUBST_NOTE),
     *[_umap_page(page) for page in UMAP_PAGES],
+    *[_umap_more_page(page) for page in UMAP_MORE],
     C.Page(
         id="VAL",
         title="Pretraining validation accuracy against epoch (appendix)",

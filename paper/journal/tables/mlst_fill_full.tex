@@ -3,7 +3,7 @@
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \addtolength{\belowcaptionskip}{\medskipamount}
 \begin{longtable}{@{\extracolsep{\fill}}lcccccc@{}}
-\caption{Linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, with an added mass output and with every 17-class partition and of the random network with BatchNorm recomputed, with the inputs a data set lacks set to zero, to the training mean or to random draws of a real particle. The columns give the relative drop in JetClass-II accuracy, in percent, when the slots that the top or the quark/gluon data lack are substituted, and $R_{30}$, the inverse background efficiency at 30\% signal efficiency, on top and quark/gluon tagging. The network with kinematic inputs is pretrained on those inputs only and lacks nothing. The random network with BatchNorm recomputed re-estimates its BatchNorm statistics on \DesignBnJets{} training jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. $^{\S}$~marks a value from a single run.}\label{tab:fillfull}\\
+\caption{Linear probes on the frozen features of every pretrained network and of the random network with BatchNorm recomputed, with the missing inputs set to zero, the training mean or random draws of a real particle. The columns give the relative drop in JetClass-II accuracy when the slots that the top or the quark/gluon data lack are substituted, and $R_{30}$, the inverse background efficiency at 30\% signal efficiency, on top and quark/gluon tagging. The network on kinematic inputs only lacks nothing and is scored on top tagging only. Herwig jets are not shown, as the substitution is chosen on Pythia jets. The batch-normalization (BatchNorm) statistics of the random network with BatchNorm recomputed are re-estimated on \DesignBnJets{} training jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition. Each random partition is a single run on its own row. $^{\S}$~marks a value from a single run.}\label{tab:fillfull}\\
 \toprule
 & \multicolumn{3}{c}{JetClass-II, top slots} & \multicolumn{3}{c}{JetClass-II, quark/gluon slots} \\
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
@@ -17,25 +17,24 @@
  & zero & mean & draws & zero & mean & draws \\
 \midrule
 \endhead
-\bottomrule
-\endlastfoot
-\multicolumn{7}{@{}l}{\textit{linear probe on the frozen features}} \\
+\multicolumn{7}{@{}l}{\textit{linear probe on the frozen features}} \\*
 \Kfull{} classes & 88.9\,$\pm$\,1.0\% & 87.9\,$\pm$\,1.1\% & 85.98\,$\pm$\,0.07\% & 61.2\,$\pm$\,3.0\% & 48.8\,$\pm$\,1.1\% & 54.3\,$\pm$\,0.2\% \\
 \Kres{} classes & 89.0\,$\pm$\,0.9\% & 87.8\,$\pm$\,0.7\% & 85.89\,$\pm$\,0.11\% & 64.1\,$\pm$\,5.2\% & 49.5\,$\pm$\,0.5\% & 54.6\,$\pm$\,0.6\% \\
 \Kres{} classes + mass & 88.7\,$\pm$\,0.6\% & 88.1\,$\pm$\,0.5\% & 85.36\,$\pm$\,0.01\% & 64.9\,$\pm$\,4.3\% & 51.0\,$\pm$\,1.8\% & 54.7\,$\pm$\,0.6\% \\
 \Kmid{} classes & 87.8\,$\pm$\,0.3\% & 86.7\,$\pm$\,0.9\% & 83.17\,$\pm$\,0.29\% & 67.6\,$\pm$\,4.8\% & 47.6\,$\pm$\,1.6\% & 53.5\,$\pm$\,1.4\% \\
 \Kcoarse{} classes & 86.7\,$\pm$\,0.7\% & 86.1\,$\pm$\,0.8\% & 81.42\,$\pm$\,0.53\% & 70.9\,$\pm$\,2.3\% & 50.0\,$\pm$\,1.0\% & 51.7\,$\pm$\,0.4\% \\
 \Kcoarse{} classes + mass & 86.1\,$\pm$\,1.9\% & 86.4\,$\pm$\,0.7\% & 80.42\,$\pm$\,1.81\% & 66.1\,$\pm$\,0.9\% & 49.3\,$\pm$\,0.4\% & 50.9\,$\pm$\,0.2\% \\
-\multicolumn{7}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 88.7\,$\pm$\,0.3\% & 87.6\,$\pm$\,0.9\% & 83.57\,$\pm$\,0.44\% & 62.5\,$\pm$\,0.3\% & 51.6\,$\pm$\,0.4\% & 53.7\,$\pm$\,0.3\% \\
-\quad $b$-quark boundary & 87.7\,$\pm$\,0.1\% & 87.9\,$\pm$\,1.4\% & 84.83\,$\pm$\,0.55\% & 64.5\,$\pm$\,2.4\% & 52.7\,$\pm$\,0.1\% & 56.0\,$\pm$\,0.6\% \\
-\quad random flavor boundary & 89.9\,$\pm$\,0.5\% & 89.5\,$\pm$\,0.2\% & 85.26\,$\pm$\,0.45\% & 68.1\,$\pm$\,1.3\% & 52.4\,$\pm$\,0.8\% & 56.3\,$\pm$\,1.3\% \\
-\quad random partition 1, seed 1 & 90.2$^{\S}$\% & 88.6$^{\S}$\% & 85.68$^{\S}$\% & 66.5$^{\S}$\% & 51.6$^{\S}$\% & 56.3$^{\S}$\% \\
-\quad random partition 2, seed 2 & 90.4$^{\S}$\% & 88.8$^{\S}$\% & 85.93$^{\S}$\% & 69.5$^{\S}$\% & 52.4$^{\S}$\% & 56.3$^{\S}$\% \\
-\quad random partition 3, seed 1 & 90.8$^{\S}$\% & 89.5$^{\S}$\% & 86.24$^{\S}$\% & 63.7$^{\S}$\% & 52.8$^{\S}$\% & 57.8$^{\S}$\% \\
-\quad random partition 4, seed 2 & 89.9$^{\S}$\% & 88.7$^{\S}$\% & 87.12$^{\S}$\% & 72.9$^{\S}$\% & 53.4$^{\S}$\% & 55.5$^{\S}$\% \\
-\quad random partition 5, seed 2 & 89.5$^{\S}$\% & 89.7$^{\S}$\% & 86.13$^{\S}$\% & 69.5$^{\S}$\% & 53.9$^{\S}$\% & 56.3$^{\S}$\% \\
+\multicolumn{7}{@{}l}{17-class partitions} \\*
+\quad no flavor boundary & 88.7\,$\pm$\,0.3\% & 87.6\,$\pm$\,0.9\% & 83.57\,$\pm$\,0.44\% & 62.5\,$\pm$\,0.3\% & 51.6\,$\pm$\,0.4\% & 53.7\,$\pm$\,0.3\% \\*
+\quad $b$-quark boundary & 87.7\,$\pm$\,0.1\% & 87.9\,$\pm$\,1.4\% & 84.83\,$\pm$\,0.55\% & 64.5\,$\pm$\,2.4\% & 52.7\,$\pm$\,0.1\% & 56.0\,$\pm$\,0.6\% \\*
+\quad random flavor boundary & 89.9\,$\pm$\,0.5\% & 89.5\,$\pm$\,0.2\% & 85.26\,$\pm$\,0.45\% & 68.1\,$\pm$\,1.3\% & 52.4\,$\pm$\,0.8\% & 56.3\,$\pm$\,1.3\% \\*
+\quad random partition 1, seed 1 & 90.2\%$^{\S}$ & 88.6\%$^{\S}$ & 85.68\%$^{\S}$ & 66.5\%$^{\S}$ & 51.6\%$^{\S}$ & 56.3\%$^{\S}$ \\*
+\quad random partition 2, seed 2 & 90.4\%$^{\S}$ & 88.8\%$^{\S}$ & 85.93\%$^{\S}$ & 69.5\%$^{\S}$ & 52.4\%$^{\S}$ & 56.3\%$^{\S}$ \\*
+\quad random partition 3, seed 1 & 90.8\%$^{\S}$ & 89.5\%$^{\S}$ & 86.24\%$^{\S}$ & 63.7\%$^{\S}$ & 52.8\%$^{\S}$ & 57.8\%$^{\S}$ \\*
+\quad random partition 4, seed 2 & 89.9\%$^{\S}$ & 88.7\%$^{\S}$ & 87.12\%$^{\S}$ & 72.9\%$^{\S}$ & 53.4\%$^{\S}$ & 55.5\%$^{\S}$ \\*
+\quad random partition 5, seed 2 & 89.5\%$^{\S}$ & 89.7\%$^{\S}$ & 86.13\%$^{\S}$ & 69.5\%$^{\S}$ & 53.9\%$^{\S}$ & 56.3\%$^{\S}$ \\*
 random network, BatchNorm recomputed & 56.4\,$\pm$\,1.4\% & 59.8\,$\pm$\,0.8\% & 59.82\,$\pm$\,1.17\% & 8.7\,$\pm$\,2.6\% & 10.4\,$\pm$\,1.4\% & 11.4\,$\pm$\,2.1\% \\
+\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
 \end{longtable}
 \begin{center}
 \begin{minipage}{\linewidth}\centering
@@ -43,7 +42,7 @@ random network, BatchNorm recomputed & 56.4\,$\pm$\,1.4\% & 59.8\,$\pm$\,0.8\% &
 \par\smallskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
- & \multicolumn{3}{c}{top, $R_{30}$} & \multicolumn{3}{c}{quark/gluon, $R_{30}$} \\
+ & \multicolumn{3}{c}{top, $R_{30}$} & \multicolumn{3}{c}{quark/gluon (Pythia), $R_{30}$} \\
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}
  & zero & mean & draws & zero & mean & draws \\
 \midrule
@@ -64,7 +63,7 @@ random network, BatchNorm recomputed & 56.4\,$\pm$\,1.4\% & 59.8\,$\pm$\,0.8\% &
 \quad random partition 4, seed 2 & 30.2$^{\S}$ & 56$^{\S}$ & 152$^{\S}$ & 51.0$^{\S}$ & 64.7$^{\S}$ & 61.6$^{\S}$ \\
 \quad random partition 5, seed 2 & 73.9$^{\S}$ & 45$^{\S}$ & 173$^{\S}$ & 54.9$^{\S}$ & 69.6$^{\S}$ & 68.2$^{\S}$ \\
 random network, BatchNorm recomputed & 57.6\,$\pm$\,12.7 & 60\,$\pm$\,2 & 49\,$\pm$\,3 & 54.2\,$\pm$\,2.4 & 52.2\,$\pm$\,0.8 & 52.4\,$\pm$\,0.4 \\
-\Kfull{} classes, kinematic inputs & \multicolumn{3}{c}{231$^{\S}$ (nothing missing)} & -- & -- & -- \\
+\Kfull{} classes, kinematic inputs only & \multicolumn{3}{c}{231$^{\S}$ (nothing missing)} & -- & -- & -- \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

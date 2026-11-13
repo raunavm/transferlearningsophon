@@ -1,151 +1,103 @@
-\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\begin{landscape}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\addtolength{\belowcaptionskip}{\medskipamount}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\caption{Fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, and the network trained from scratch, on the full training sets of top and quark/gluon (also scored on Herwig jets): accuracy, AUC and the background rejections $R_{50}$ and $R_{30}$, $1/\epsB$ at 50\% and 30\% signal efficiency. Mean $\pm$ SD over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs: over those. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations. From scratch: three training seeds. Every rejection rests on at least 98 background jets passing the cut. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:ftrej}\\
+\toprule
+& \multicolumn{4}{c}{top} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:ftrej} (continued)}} \\[\smallskipamount]
+\toprule
+& \multicolumn{4}{c}{top} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\endhead
+\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\*
+\Kfull{} classes & 0.9400\,$\pm$\,0.0002 & 0.98606\,$\pm$\,0.00007 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
+\Kres{} classes & 0.9401\,$\pm$\,0.0002 & 0.98610\,$\pm$\,0.00008 & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 \\
+\Kres{} classes + mass & 0.9404\,$\pm$\,0.0003 & 0.98603\,$\pm$\,0.00003 & 428\,$\pm$\,12 & 1{,}770\,$\pm$\,250 \\
+\Kmid{} classes & 0.9402\,$\pm$\,0.0004 & 0.98610\,$\pm$\,0.00005 & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 \\
+\Kcoarse{} classes & 0.9398\,$\pm$\,0.0001 & 0.98590\,$\pm$\,0.00006 & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 \\
+\Kcoarse{} classes + mass & 0.9398\,$\pm$\,0.0001 & 0.98583\,$\pm$\,0.00007 & 428\,$\pm$\,10 & 1{,}660\,$\pm$\,40 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\*
+\quad no flavor boundary & 0.9401\,$\pm$\,0.0001 & 0.98604\,$\pm$\,0.00007 & 445\,$\pm$\,26 & 1{,}790\,$\pm$\,90 \\*
+\quad $b$-quark boundary & 0.9403\,$\pm$\,0.0003 & 0.98604\,$\pm$\,0.00007 & 438\,$\pm$\,8 & 1{,}830\,$\pm$\,330 \\*
+\quad random flavor boundary & 0.9402\,$\pm$\,0.0007 & 0.98597\,$\pm$\,0.00019 & 420\,$\pm$\,38 & 1{,}610\,$\pm$\,60 \\*
+\quad random partition 1, seed 1 & 0.9402$^{\S}$ & 0.98590$^{\S}$ & 432$^{\S}$ & 1{,}660$^{\S}$ \\*
+\quad random partition 2, seed 2 & 0.9404$^{\S}$ & 0.98611$^{\S}$ & 430$^{\S}$ & 1{,}900$^{\S}$ \\*
+\quad random partition 3, seed 1 & 0.9402$^{\S}$ & 0.98597$^{\S}$ & 421$^{\S}$ & 1{,}640$^{\S}$ \\*
+\quad random partition 4, seed 2 & 0.9397$^{\S}$ & 0.98592$^{\S}$ & 458$^{\S}$ & 1{,}820$^{\S}$ \\*
+\quad random partition 5, seed 2 & 0.9402$^{\S}$ & 0.98603$^{\S}$ & 431$^{\S}$ & 1{,}740$^{\S}$ \\*
+\Kfull{} classes, kinematic inputs only & 0.9407$^{\S}$ & 0.98620$^{\S}$ & 443$^{\S}$ & 1{,}800$^{\S}$ \\*
+from scratch & 0.9387\,$\pm$\,0.0002 & 0.98524\,$\pm$\,0.00008 & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 \\
+\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
+\end{longtable}
 \begin{center}
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, and the network trained from scratch, on the full training sets of top and quark/gluon (also scored on Herwig jets): accuracy, AUC and the background rejections $R_{50}$ and $R_{30}$, $1/\epsB$ at 50\% and 30\% signal efficiency. Mean $\pm$ SD over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs: over those. Every random partition has 17 classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the \Kfull-class run of that seed. The random network without pretraining: three initializations. From scratch: three training seeds. Every rejection rests on at least 98 background jets passing the cut. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}
-\label{tab:ftrej}
-\par\medskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ftrej} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
- & \multicolumn{2}{c}{top} \\
-\cmidrule(lr){2-3}
- & accuracy & AUC \\
+ & \multicolumn{4}{c}{quark/gluon} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-\multicolumn{3}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 0.9400\,$\pm$\,0.0002 & 0.98606\,$\pm$\,0.00007 \\
-\Kres{} classes & 0.9401\,$\pm$\,0.0002 & 0.98610\,$\pm$\,0.00008 \\
-\Kres{} classes + mass & 0.9404\,$\pm$\,0.0003 & 0.98603\,$\pm$\,0.00003 \\
-\Kmid{} classes & 0.9402\,$\pm$\,0.0004 & 0.98610\,$\pm$\,0.00005 \\
-\Kcoarse{} classes & 0.9398\,$\pm$\,0.0001 & 0.98590\,$\pm$\,0.00006 \\
-\Kcoarse{} classes + mass & 0.9398\,$\pm$\,0.0001 & 0.98583\,$\pm$\,0.00007 \\
-\multicolumn{3}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.9401\,$\pm$\,0.0001 & 0.98604\,$\pm$\,0.00007 \\
-\quad $b$-quark boundary & 0.9403\,$\pm$\,0.0003 & 0.98604\,$\pm$\,0.00007 \\
-\quad random flavor boundary & 0.9402\,$\pm$\,0.0007 & 0.98597\,$\pm$\,0.00019 \\
-\quad random partition 1, seed 1 & 0.9402$^{\S}$ & 0.98590$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.9404$^{\S}$ & 0.98611$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.9402$^{\S}$ & 0.98597$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.9397$^{\S}$ & 0.98592$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.9402$^{\S}$ & 0.98603$^{\S}$ \\
-\Kfull{} classes, kinematic inputs & 0.9407$^{\S}$ & 0.98620$^{\S}$ \\
-from scratch & 0.9387\,$\pm$\,0.0002 & 0.98524\,$\pm$\,0.00008 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:ftrej}{tab:ftrej:2}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
-\toprule
- & \multicolumn{2}{c}{top} & \multicolumn{1}{c}{quark/gluon} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-4}
- & $R_{50}$ & $R_{30}$ & accuracy \\
-\midrule
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 & 0.84329\,$\pm$\,0.00020 \\
-\Kres{} classes & 443\,$\pm$\,17 & 1{,}790\,$\pm$\,60 & 0.84318$^{\P}$ \\
-\Kres{} classes + mass & 428\,$\pm$\,12 & 1{,}770\,$\pm$\,250 & 0.84264\,$\pm$\,0.00014 \\
-\Kmid{} classes & 450\,$\pm$\,13 & 1{,}780\,$\pm$\,150 & 0.84296\,$\pm$\,0.00055 \\
-\Kcoarse{} classes & 429\,$\pm$\,10 & 1{,}740\,$\pm$\,140 & 0.84265\,$\pm$\,0.00035 \\
-\Kcoarse{} classes + mass & 428\,$\pm$\,10 & 1{,}660\,$\pm$\,40 & 0.84245\,$\pm$\,0.00001 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 445\,$\pm$\,26 & 1{,}790\,$\pm$\,90 & 0.84284\,$\pm$\,0.00079 \\
-\quad $b$-quark boundary & 438\,$\pm$\,8 & 1{,}830\,$\pm$\,330 & 0.84308\,$\pm$\,0.00007 \\
-\quad random flavor boundary & 420\,$\pm$\,38 & 1{,}610\,$\pm$\,60 & 0.84272\,$\pm$\,0.00010 \\
-\quad random partition 1, seed 1 & 432$^{\S}$ & 1{,}660$^{\S}$ & 0.84343$^{\S}$ \\
-\quad random partition 2, seed 2 & 430$^{\S}$ & 1{,}900$^{\S}$ & 0.84345$^{\S}$ \\
-\quad random partition 3, seed 1 & 421$^{\S}$ & 1{,}640$^{\S}$ & 0.84279$^{\S}$ \\
-\quad random partition 4, seed 2 & 458$^{\S}$ & 1{,}820$^{\S}$ & 0.84306$^{\S}$ \\
-\quad random partition 5, seed 2 & 431$^{\S}$ & 1{,}740$^{\S}$ & 0.84312$^{\S}$ \\
-\Kfull{} classes, kinematic inputs & 443$^{\S}$ & 1{,}800$^{\S}$ & -- \\
-from scratch & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 & 0.83966\,$\pm$\,0.00069 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:ftrej}{tab:ftrej:3}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
-\toprule
- & \multicolumn{3}{c}{quark/gluon} \\
-\cmidrule(lr){2-4}
- & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 0.91482\,$\pm$\,0.00014 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 \\
-\Kres{} classes & 0.91478\,$\pm$\,0.00008 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 \\
-\Kres{} classes + mass & 0.91461\,$\pm$\,0.00011 & 42.34\,$\pm$\,0.18 & 106.8\,$\pm$\,0.2 \\
-\Kmid{} classes & 0.91456\,$\pm$\,0.00032 & 42.25\,$\pm$\,0.77 & 108.3\,$\pm$\,1.0 \\
-\Kcoarse{} classes & 0.91440\,$\pm$\,0.00003 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 \\
-\Kcoarse{} classes + mass & 0.91409\,$\pm$\,0.00013 & 41.58\,$\pm$\,0.27 & 105.3\,$\pm$\,0.5 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.91446\,$\pm$\,0.00013 & 41.81\,$\pm$\,0.20 & 109.1\,$\pm$\,0.2 \\
-\quad $b$-quark boundary & 0.91472$^{\P}$ & 42.60\,$\pm$\,0.24 & 106.7\,$\pm$\,0.2 \\
-\quad random flavor boundary & 0.91460\,$\pm$\,0.00016 & 42.11\,$\pm$\,0.03 & 106.3\,$\pm$\,2.7 \\
-\quad random partition 1, seed 1 & 0.91456$^{\S}$ & 42.14$^{\S}$ & 107.3$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.91471$^{\S}$ & 42.46$^{\S}$ & 108.6$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.91446$^{\S}$ & 42.14$^{\S}$ & 106.5$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.91459$^{\S}$ & 41.84$^{\S}$ & 106.6$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.91461$^{\S}$ & 42.14$^{\S}$ & 106.0$^{\S}$ \\
-from scratch & 0.91212\,$\pm$\,0.00022 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:ftrej}{tab:ftrej:4}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lc@{}}
-\toprule
- & \multicolumn{1}{c}{quark/gluon, Herwig} \\
-\cmidrule(lr){2-2}
- & accuracy \\
-\midrule
-\multicolumn{2}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 0.712\,$\pm$\,0.005 \\
-\Kres{} classes & 0.710\,$\pm$\,0.002 \\
-\Kres{} classes + mass & 0.715\,$\pm$\,0.004 \\
-\Kmid{} classes & 0.713\,$\pm$\,0.006 \\
-\Kcoarse{} classes & 0.718\,$\pm$\,0.003 \\
-\Kcoarse{} classes + mass & 0.713\,$\pm$\,0.004 \\
-\multicolumn{2}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.711\,$\pm$\,0.002 \\
-\quad $b$-quark boundary & 0.713\,$\pm$\,0.003 \\
-\quad random flavor boundary & 0.714\,$\pm$\,0.004 \\
-\quad random partition 1, seed 1 & 0.712$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.712$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.711$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.714$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.713$^{\S}$ \\
-from scratch & 0.715\,$\pm$\,0.002 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\par\bigskip
-\begin{minipage}{\linewidth}\centering
-\TableContinued{tab:ftrej}{tab:ftrej:5}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
-\toprule
- & \multicolumn{3}{c}{quark/gluon, Herwig} \\
-\cmidrule(lr){2-4}
- & AUC & $R_{50}$ & $R_{30}$ \\
-\midrule
-\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 0.808\,$\pm$\,0.002 & 12.3\,$\pm$\,0.4 & 35\,$\pm$\,2 \\
-\Kres{} classes & 0.807\,$\pm$\,0.001 & 12.3\,$\pm$\,0.3 & 35\,$\pm$\,2 \\
-\Kres{} classes + mass & 0.809\,$\pm$\,0.002 & 12.6\,$\pm$\,0.6 & 36\,$\pm$\,2 \\
-\Kmid{} classes & 0.809\,$\pm$\,0.005 & 12.5\,$\pm$\,0.6 & 36\,$\pm$\,3 \\
-\Kcoarse{} classes & 0.810\,$\pm$\,0.002 & 12.8\,$\pm$\,0.2 & 37\,$\pm$\,1 \\
-\Kcoarse{} classes + mass & 0.808\,$\pm$\,0.003 & 12.3\,$\pm$\,0.4 & 35\,$\pm$\,3 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.807\,$\pm$\,0.003 & 12.5\,$\pm$\,0.6 & 37\,$\pm$\,4 \\
-\quad $b$-quark boundary & 0.809\,$\pm$\,0.003 & 12.6\,$\pm$\,0.5 & 36\,$\pm$\,2 \\
-\quad random flavor boundary & 0.808\,$\pm$\,0.004 & 12.5\,$\pm$\,0.4 & 36\,$\pm$\,2 \\
-\quad random partition 1, seed 1 & 0.807$^{\S}$ & 12.2$^{\S}$ & 33$^{\S}$ \\
-\quad random partition 2, seed 2 & 0.808$^{\S}$ & 12.3$^{\S}$ & 35$^{\S}$ \\
-\quad random partition 3, seed 1 & 0.807$^{\S}$ & 12.2$^{\S}$ & 35$^{\S}$ \\
-\quad random partition 4, seed 2 & 0.809$^{\S}$ & 12.7$^{\S}$ & 37$^{\S}$ \\
-\quad random partition 5, seed 2 & 0.808$^{\S}$ & 12.2$^{\S}$ & 35$^{\S}$ \\
-from scratch & 0.806\,$\pm$\,0.001 & 12.2\,$\pm$\,0.1 & 35\,$\pm$\,1 \\
+\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 0.84329\,$\pm$\,0.00020 & 0.91482\,$\pm$\,0.00014 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 \\
+\Kres{} classes & 0.84318$^{\P}$ & 0.91478\,$\pm$\,0.00008 & 42.39\,$\pm$\,0.22 & 108.0\,$\pm$\,1.4 \\
+\Kres{} classes + mass & 0.84264\,$\pm$\,0.00014 & 0.91461\,$\pm$\,0.00011 & 42.34\,$\pm$\,0.18 & 106.8\,$\pm$\,0.2 \\
+\Kmid{} classes & 0.84296\,$\pm$\,0.00055 & 0.91456\,$\pm$\,0.00032 & 42.25\,$\pm$\,0.77 & 108.3\,$\pm$\,1.0 \\
+\Kcoarse{} classes & 0.84265\,$\pm$\,0.00035 & 0.91440\,$\pm$\,0.00003 & 41.97\,$\pm$\,0.25 & 106.5\,$\pm$\,0.8 \\
+\Kcoarse{} classes + mass & 0.84245\,$\pm$\,0.00001 & 0.91409\,$\pm$\,0.00013 & 41.58\,$\pm$\,0.27 & 105.3\,$\pm$\,0.5 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.84284\,$\pm$\,0.00079 & 0.91446\,$\pm$\,0.00013 & 41.81\,$\pm$\,0.20 & 109.1\,$\pm$\,0.2 \\
+\quad $b$-quark boundary & 0.84308\,$\pm$\,0.00007 & 0.91472$^{\P}$ & 42.60\,$\pm$\,0.24 & 106.7\,$\pm$\,0.2 \\
+\quad random flavor boundary & 0.84272\,$\pm$\,0.00010 & 0.91460\,$\pm$\,0.00016 & 42.11\,$\pm$\,0.03 & 106.3\,$\pm$\,2.7 \\
+\quad random partition 1, seed 1 & 0.84343$^{\S}$ & 0.91456$^{\S}$ & 42.14$^{\S}$ & 107.3$^{\S}$ \\
+\quad random partition 2, seed 2 & 0.84345$^{\S}$ & 0.91471$^{\S}$ & 42.46$^{\S}$ & 108.6$^{\S}$ \\
+\quad random partition 3, seed 1 & 0.84279$^{\S}$ & 0.91446$^{\S}$ & 42.14$^{\S}$ & 106.5$^{\S}$ \\
+\quad random partition 4, seed 2 & 0.84306$^{\S}$ & 0.91459$^{\S}$ & 41.84$^{\S}$ & 106.6$^{\S}$ \\
+\quad random partition 5, seed 2 & 0.84312$^{\S}$ & 0.91461$^{\S}$ & 42.14$^{\S}$ & 106.0$^{\S}$ \\
+from scratch & 0.83966\,$\pm$\,0.00069 & 0.91212\,$\pm$\,0.00022 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
 \end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:ftrej} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\toprule
+ & \multicolumn{4}{c}{quark/gluon, Herwig} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 0.712\,$\pm$\,0.005 & 0.808\,$\pm$\,0.002 & 12.3\,$\pm$\,0.4 & 35\,$\pm$\,2 \\
+\Kres{} classes & 0.710\,$\pm$\,0.002 & 0.807\,$\pm$\,0.001 & 12.3\,$\pm$\,0.3 & 35\,$\pm$\,2 \\
+\Kres{} classes + mass & 0.715\,$\pm$\,0.004 & 0.809\,$\pm$\,0.002 & 12.6\,$\pm$\,0.6 & 36\,$\pm$\,2 \\
+\Kmid{} classes & 0.713\,$\pm$\,0.006 & 0.809\,$\pm$\,0.005 & 12.5\,$\pm$\,0.6 & 36\,$\pm$\,3 \\
+\Kcoarse{} classes & 0.718\,$\pm$\,0.003 & 0.810\,$\pm$\,0.002 & 12.8\,$\pm$\,0.2 & 37\,$\pm$\,1 \\
+\Kcoarse{} classes + mass & 0.713\,$\pm$\,0.004 & 0.808\,$\pm$\,0.003 & 12.3\,$\pm$\,0.4 & 35\,$\pm$\,3 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.711\,$\pm$\,0.002 & 0.807\,$\pm$\,0.003 & 12.5\,$\pm$\,0.6 & 37\,$\pm$\,4 \\
+\quad $b$-quark boundary & 0.713\,$\pm$\,0.003 & 0.809\,$\pm$\,0.003 & 12.6\,$\pm$\,0.5 & 36\,$\pm$\,2 \\
+\quad random flavor boundary & 0.714\,$\pm$\,0.004 & 0.808\,$\pm$\,0.004 & 12.5\,$\pm$\,0.4 & 36\,$\pm$\,2 \\
+\quad random partition 1, seed 1 & 0.712$^{\S}$ & 0.807$^{\S}$ & 12.2$^{\S}$ & 33$^{\S}$ \\
+\quad random partition 2, seed 2 & 0.712$^{\S}$ & 0.808$^{\S}$ & 12.3$^{\S}$ & 35$^{\S}$ \\
+\quad random partition 3, seed 1 & 0.711$^{\S}$ & 0.807$^{\S}$ & 12.2$^{\S}$ & 35$^{\S}$ \\
+\quad random partition 4, seed 2 & 0.714$^{\S}$ & 0.809$^{\S}$ & 12.7$^{\S}$ & 37$^{\S}$ \\
+\quad random partition 5, seed 2 & 0.713$^{\S}$ & 0.808$^{\S}$ & 12.2$^{\S}$ & 35$^{\S}$ \\
+from scratch & 0.715\,$\pm$\,0.002 & 0.806\,$\pm$\,0.001 & 12.2\,$\pm$\,0.1 & 35\,$\pm$\,1 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+}
+\end{landscape}
