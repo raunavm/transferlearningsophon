@@ -522,6 +522,14 @@ def build(signals=SIGNALS, mx=MX) -> dict[str, str]:
             specs[f"job-xbx-ihep-scratch-{s}-s{seed}-raunav.yaml"] = scratch_spec(
                 s, seed, name=f"xbx-ihep-scratch-{s}-s{seed}-raunav", pin=PIN_IHEP, out_root=SCRATCH_ROOT_IHEP, mx=mx,
                 gpus=LAUNCH.V2_FT_GPU, gates=(f"{CLOSURE_ROOT}/{s}/PASS",))
+    # 2026-11-12: the X->bb runs waited an hour for nvidia.com/gpu on a full cluster; the same runs on NRP's separate A100
+    # pool (nvidia.com/a100, which picks the product itself), the same output folders, launched instead of the waiting ones
+    for seed in SCRATCH_SEEDS:
+        spec = specs[f"job-xbx-ihep-scratch-xbb-s{seed}-raunav.yaml"].replace(
+            f"xbx-ihep-scratch-xbb-s{seed}-raunav", f"xbx-ihep-scratch-xbb-a100-s{seed}-raunav")
+        spec = spec.replace('nvidia.com/gpu: "1"', 'nvidia.com/a100: "1"')
+        spec = re.sub(r"\n\s+- key: nvidia\.com/gpu\.product\n\s+operator: In\n\s+values: \[[^\]]*\]", "", spec)
+        specs[f"job-xbx-ihep-scratch-xbb-a100-s{seed}-raunav.yaml"] = spec
     # the from-scratch chain proven on the stand-in: Sophon's own window (mX = 200)
     specs["job-xbx-scratch-dryrun-raunav.yaml"] = scratch_spec(
         "xbb_jc2", 1, name="xbx-scratch-dryrun-raunav", pin=PIN_DRYRUN, out_root=DRYRUN_ROOT, epochs=2,

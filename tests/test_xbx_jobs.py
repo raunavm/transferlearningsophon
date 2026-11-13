@@ -44,7 +44,8 @@ def test_every_paper_model_and_untrained_network_has_an_extraction_and_a_fit():
     # the stand-in chain (and the two superseded IHEP specs) as written, the real samples (one
     # extraction and one fit per sample and model), the dry run, the two report jobs
     ihep_scratch = len(B.IHEP_SCRATCH_SIGNALS) * len(B.SCRATCH_SEEDS)
-    assert len(SPECS) == (2 + 2 * len(models) + scratch) + (1 + 4 * len(models) + ihep_scratch) + 1 + 2
+    a100 = len(B.SCRATCH_SEEDS)          # X->bb from scratch on the A100 pool (2026-11-12)
+    assert len(SPECS) == (2 + 2 * len(models) + scratch) + (1 + 4 * len(models) + ihep_scratch + a100) + 1 + 2
 
 
 @pytest.mark.parametrize("model,run,arm,k,reg,ckpt", B.models())
