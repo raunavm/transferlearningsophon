@@ -32,6 +32,10 @@ GREY, INK, LG = "#6B6B6B", "#4A4A4A", "#C9C9C9"
 # the one accent (PI 2026-11-12: "a pop of colour that goes with the theme"): the wine of the Tol muted palette our
 # other figures use, which no label set has; it marks the pretrained network and what is taken from it
 ACC, ACC_TINT = "#882255", "#F3E6EC"
+# the jets, colour-coded by detector region (PI 2026-11-12), in Tol muted colours that no label set uses:
+# tracks in the tracker, deposits in the inner (electromagnetic) and the outer (hadronic) calorimeter band
+TRK, ECAL, HCAL = "#117733", "#CC6677", "#4C9FCB"
+ECAL_BAND, HCAL_BAND = "#F8ECEE", "#E9F3FA"
 W, H = 13.0, 12.55
 FS, FS_T = 8, 9
 
@@ -68,14 +72,14 @@ def build():
         ax.add_patch(Wedge((ox, oy), rt, a0, a1, fc="#FAFAFA", ec=LG, lw=0.5, zorder=0))
         for k in range(1, layers + 1):
             ax.add_patch(Wedge((ox, oy), rt * k / (layers + 0.6), a0, a1, fc="none", ec="#DCDCDC", lw=0.4, zorder=0))
-        ax.add_patch(Wedge((ox, oy), 0.78 * R, a0, a1, width=0.13 * R, fc="#EEEEEE", ec=LG, lw=0.5, zorder=0))
-        ax.add_patch(Wedge((ox, oy), R, a0, a1, width=0.18 * R, fc="#F3F3F3", ec=LG, lw=0.5, zorder=0))
+        ax.add_patch(Wedge((ox, oy), 0.78 * R, a0, a1, width=0.13 * R, fc=ECAL_BAND, ec=LG, lw=0.5, zorder=0))
+        ax.add_patch(Wedge((ox, oy), R, a0, a1, width=0.18 * R, fc=HCAL_BAND, ec=LG, lw=0.5, zorder=0))
         lim = np.radians(half) - 0.03
         clip = lambda v: float(np.clip(v, np.pi / 2 - lim, np.pi / 2 + lim))
 
-        def square(r, ang, size):
+        def square(r, ang, size, colour):
             ax.add_patch(Rectangle((ox + r * np.cos(ang) - size / 2, oy + r * np.sin(ang) - size / 2), size, size,
-                                   fc=INK, ec="none", zorder=2))
+                                   fc=colour, ec="none", zorder=2))
 
         for pr in prongs:
             off, n, sig, dv = pr[:4]; kind = pr[4] if len(pr) > 4 else "h"
@@ -96,7 +100,7 @@ def build():
                 y = vy + (ey - vy) * t + bend * ny / nn * 2 * t * (1 - t)
                 if kind == "m":                      # a muon crosses the calorimeters and leaves
                     x = np.append(x, ox + 1.13 * R * np.cos(aend)); y = np.append(y, oy + 1.13 * R * np.sin(aend))
-                ax.plot(x, y, color=INK, lw=lw * (1.6 if kind != "h" else 1.0), alpha=0.9, zorder=1, solid_capstyle="round")
+                ax.plot(x, y, color=TRK, lw=lw * (1.6 if kind != "h" else 1.0), alpha=0.95, zorder=1, solid_capstyle="round")
                 if hits:
                     r = np.hypot(x - ox, y - oy)
                     for k in range(1, layers + 1):
@@ -104,11 +108,13 @@ def build():
                         ax.add_patch(Circle((x[j], y[j]), 0.008 * R, fc=INK, ec="none", zorder=2))
                 if kind == "e":                      # an electron stops in the inner calorimeter
                     for _ in range(6):
-                        square(R * rng.uniform(0.68, 0.75), clip(aend + rng.normal(0, 0.02)), R * 0.026 * sq)
+                        square(R * rng.uniform(0.68, 0.75), clip(aend + rng.normal(0, 0.02)), R * 0.026 * sq, ECAL)
                 elif kind == "h":
-                    for (r0, r1), sizes, nmax in (((0.665, 0.765), (0.016, 0.022), 3), ((0.84, 0.98), (0.024, 0.034), 4)):
+                    for (r0, r1), sizes, nmax, colour in (((0.665, 0.765), (0.016, 0.022), 3, ECAL),
+                                                          ((0.84, 0.98), (0.024, 0.034), 4, HCAL)):
                         for _ in range(rng.integers(1, nmax)):
-                            square(R * rng.uniform(r0, r1), clip(aend + rng.normal(0, dep)), R * rng.choice(sizes) * sq)
+                            square(R * rng.uniform(r0, r1), clip(aend + rng.normal(0, dep)), R * rng.choice(sizes) * sq,
+                                   colour)
         ax.add_patch(Circle((ox, oy), 0.018 * R + 0.012, fc=INK, ec="none", zorder=5))
 
     # ------------------------------------------------------------------ label map (the released label maps)
