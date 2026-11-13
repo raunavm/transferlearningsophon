@@ -36,7 +36,7 @@ ACC, ACC_TINT = "#882255", "#F3E6EC"
 # tracks in the tracker, deposits in the inner (electromagnetic) and the outer (hadronic) calorimeter band
 TRK, ECAL, HCAL = "#117733", "#CC6677", "#4C9FCB"
 BAND = "#F3F3F3"                                   # the calorimeter bands themselves stay neutral
-W, H = 13.0, 12.55
+W, H = 13.0, 13.1
 FS, FS_T = 8, 9
 
 
@@ -160,11 +160,11 @@ def build():
     gf = [g17[i] for i in ei]
     assert len(set(ei)) == len(ei) and [k for _, k in runs(gf)] == [3, 3], "the examples must form two 17-class groups"
     xs = [e[2] for e in EX]
-    yjet, ylab = H - 1.82, H - 2.04
-    yfine, ycoarse = H - 2.42, H - 3.12
+    yjet, ylab = H - 2.3, H - 2.56
+    yfine, ycoarse = H - 2.98, H - 3.68
     SQ = 0.15
     for k, (_, lab, x, prongs, half) in enumerate(EX):
-        jet(x, yjet, 1.08, prongs, half=half, seed=20 + k, layers=3, lw=0.3)
+        jet(x, yjet, 1.4, prongs, half=half, seed=20 + k, layers=3, lw=0.3)
         ax.text(x, ylab, lab, ha="center", va="center", fontsize=FS)
         ax.add_patch(Rectangle((x - SQ / 2, yfine - SQ / 2), SQ, SQ, fc=C[188], ec="none", zorder=3))
     for s0, k in runs(gf):
