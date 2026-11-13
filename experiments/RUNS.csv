@@ -1790,3 +1790,9 @@ mtx2-tests-bookfull-6d1c16f-raunav,2026-11-12T23:50:00Z,deleted,"full suite at 6
 perf-pt-jc2ft-jc1probe-jc1full-raunav,2026-11-13T09:17:30Z,launched,"accuracy per jet-pT bin: fine-tuned JetClass-II and linear-probe JetClass, from stored outputs (CPU, commit ab5f709)",experiments/EVAL/k8s/v2/perf_pt/job-perf-pt-jc2ft-jc1probe-jc1full-raunav.yaml
 umap-v3-raunav,2026-11-13T09:18:45Z,launched,"UMAP grids per task, six networks run 1, frozen and fine-tuned (CPU, 32 parts, about 2.3 GB; /data 87%)",experiments/EVAL/k8s/v2/umap/job-umap-v3-raunav.yaml
 boot-l3-raunav,2026-11-13T09:20:15Z,launched,"test-jet bootstraps for the claims and the mass pairs (CPU, 8 parts)",experiments/STATS/k8s/job-boot-l3-raunav.yaml
+perf-pt-jc2ft-jc1probe-jc1full-raunav,2026-11-13T09:17:30Z,complete,"jet-pT bins pulled to data/v2/perf_vs_pt/{jc2_ft,jc1_probe,jc1_fulldecay} and confusion_jc1_fulldecay",experiments/EVAL/k8s/v2/perf_pt/job-perf-pt-jc2ft-jc1probe-jc1full-raunav.yaml
+umap-v3-raunav,2026-11-13T09:18:45Z,complete,"32 of 32 parts; 72 UMAP panels pulled to data/v2/umap_v3",experiments/EVAL/k8s/v2/umap/job-umap-v3-raunav.yaml
+boot-l3-raunav,2026-11-13T09:20:15Z,complete,"8 of 8 parts (part 2 restarted once); 12 bootstrap files pulled to data/v2/bootstrap/l3; no printed number changed",experiments/STATS/k8s/job-boot-l3-raunav.yaml
+render-gallery-bc089e3-raunav,2026-11-13T20:40:00Z,complete,"94 of 94 pages; final paper PDF (60 p) and supplement (182 p) built from it; figcheck findings only on supplement caption lengths",experiments/FIGS/k8s/job-render-gallery-bc089e3-raunav.yaml
+mtx2-tests-bookfull-bc089e3-raunav,2026-11-13T20:39:00Z,launched,"full suite at the final commit",experiments/MTX/k8s/v2/tests/job-mtx2-tests-bookfull-bc089e3-raunav.yaml
+pull-host-raunav,2026-11-13T14:15:00Z,deleted,"recreated for the bootstrap, UMAP and render pulls; deleted after the final fetch",experiments/FIGS/k8s/job-pull-host-raunav.yaml
