@@ -63,7 +63,7 @@ def _empty_panel(ax) -> None:
 # ------------------------------------------------------------------ F2: metric against the number of classes
 # Figs. 2 and 3 (PI 2026-11-12: actual values only): the label set is a category, so a horizontal dot plot, one row a
 # network, on the metric itself. Each row: every pretraining run a small dot, the mean a larger filled circle in the
-# network's colour, a horizontal bar its SD over three runs (two runs: their dots and mean, no bar; the five random
+# network's colour, a horizontal bar its SD over its runs (the five random
 # partitions: five dots, mean and SD over the five). The 188-class mean is a vertical line with a light band of its SD
 # down the panel, and the first row. From scratch is the last row of Fig. 3 only. Nothing printed, nothing clipped.
 F2_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1")
@@ -110,12 +110,12 @@ def _f2_bracket(fig, ax, ys: list) -> None:
 
 def _f2_row(ax, y: float, v: list, color: str) -> list:
     """One network's row: each run a small dot just below the row, the mean a filled circle on it with its SD bar
-    (three or more runs). Returns the plotted values."""
+    (two or more runs). Returns the plotted values."""
     mean = float(np.mean(v))
     ax.plot(v, [y + RUN_DROP] * len(v), linestyle="none", marker="o", markersize=RUN_DOT, markerfacecolor=color,
             markeredgewidth=0, alpha=0.75, zorder=2.4)
     out = list(v) + [mean]
-    if len(v) > 2:
+    if len(v) > 1:
         sd = float(np.std(v, ddof=1))
         ax.errorbar([mean], [y], xerr=[[sd], [sd]], fmt="none", ecolor=color, elinewidth=L.BAR, capsize=0, zorder=2.5)
         out += [mean - sd, mean + sd]
@@ -329,7 +329,7 @@ def draw_f3_ft2(path) -> None:
 def _curve(ax, series: dict, line: dict, mark: dict, label: str, band: bool, style: str = L.SCAN, k: int = 0,
            n: int = 1) -> None:
     """Mean over runs; line the colour and line style, mark the marker and its fill (style_v5.marker); with band,
-    Golling's: the SD (range for two runs), same colour, no edge. style B or C: lines_v6.scan, the k-th of n series."""
+    Golling's: the SD, same colour, no edge. style B or C: lines_v6.scan, the k-th of n series."""
     xs = sorted(series)
     if not xs:
         return
@@ -571,8 +571,8 @@ SUBST_NOTE = ("Top-tagging linear probes fill the missing inputs with random dra
               "training mean: the substitution chosen for each task on validation, over all 30 models.")
 TWO_RUNS = "The three controlled partitions have two runs each, the four label sets three."
 
-F2_KEY = ("Small dots: pretraining runs; circles: their mean; bars: SD over three runs (two-run partitions: no "
-          "bar). Line and band: the 188-class mean and SD. ")
+F2_KEY = ("Small dots: pretraining runs; circles: their mean; bars: SD over runs. "
+          "Line and band: the 188-class mean and SD. ")
 PAGES = [
     C.Page(
         id="F2a",

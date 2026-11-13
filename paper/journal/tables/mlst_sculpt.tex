@@ -2,7 +2,7 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with 162 and 17 classes plus a mass regression, and with the three 17-class partitions with no, a $b$-quark and a random flavor boundary: Jensen--Shannon distance (base 2) $\times10^{2}$ between the $m_{\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on $1-g_{\mathrm{QCD}}$ at the QCD efficiency $\epsB$ given; lower is less sculpting. Last row: a random selection of as many QCD test jets. Mean $\pm$ SD over the pretraining runs; two values: the two runs of a configuration.}
+\caption{Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with 162 and 17 classes plus a mass regression, and with the three 17-class partitions with no, a $b$-quark and a random flavor boundary: Jensen--Shannon distance (base 2) $\times10^{2}$ between the $m_{\mathrm{SD}}$ distributions of all QCD test jets and of those passing a cut on $1-g_{\mathrm{QCD}}$ at the QCD efficiency $\epsB$ given; lower is less sculpting. Last row: a random selection of as many QCD test jets. Mean $\pm$ SD over the pretraining runs of each configuration.}
 \label{tab:sculpt}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
@@ -10,15 +10,15 @@
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
  & distance & $\varepsilon_S$ & distance & $\varepsilon_S$ & $R_{50}$ & distance \\
 \midrule
-\Kfull{} classes & 5.24\,$\pm$\,0.34 & 0.8178\,$\pm$\,0.0011 & 4.39\,$\pm$\,0.24 & 0.5483\,$\pm$\,0.0014 & 168.9\,$\pm$\,2.2 & 5.46\,$\pm$\,0.48 \\
-\Kres{} classes & 5.32\,$\pm$\,0.09 & 0.8181\,$\pm$\,0.0009 & 4.29\,$\pm$\,0.29 & 0.5490\,$\pm$\,0.0009 & 170.5\,$\pm$\,2.7 & 5.54\,$\pm$\,0.15 \\
-\Kmid{} classes & 5.60\,$\pm$\,0.27 & 0.8179\,$\pm$\,0.0004 & 5.05\,$\pm$\,0.74 & 0.5486\,$\pm$\,0.0007 & 169.2\,$\pm$\,1.7 & 6.37\,$\pm$\,0.23 \\
-\Kcoarse{} classes & 5.43\,$\pm$\,0.10 & 0.8147\,$\pm$\,0.0005 & 5.61\,$\pm$\,0.17 & 0.5437\,$\pm$\,0.0009 & 159.3\,$\pm$\,3.3 & 6.68\,$\pm$\,0.22 \\
-\Kres{} classes + mass & 4.22, 4.64 & 0.8145, 0.8167 & 4.24, 4.42 & 0.5439, 0.5455 & 157.9, 162.5 & 5.25, 5.71 \\
-\Kcoarse{} classes + mass & 5.22, 4.23 & 0.8132, 0.8115 & 4.05, 4.52 & 0.5396, 0.5377 & 152.9, 150.0 & 5.41, 4.82 \\
-no flavor boundary & 5.49, 5.47 & 0.8165, 0.8160 & 5.08, 5.10 & 0.5475, 0.5457 & 165.2, 162.8 & 6.30, 5.66 \\
-$b$-quark boundary & 5.72, 5.09 & 0.8171, 0.8177 & 5.16, 5.25 & 0.5464, 0.5480 & 163.7, 168.8 & 5.54, 6.31 \\
-random flavor boundary & 5.38, 5.27 & 0.8160, 0.8174 & 4.90, 4.81 & 0.5446, 0.5477 & 162.7, 169.3 & 5.76, 6.27 \\
+\Kfull{} classes & 5.24\,$\pm$\,0.34 & 0.8178\,$\pm$\,0.0011 & 4.39\,$\pm$\,0.24 & 0.5483\,$\pm$\,0.0014 & 168.9\,$\pm$\,2.2 & 5.5\,$\pm$\,0.5 \\
+\Kres{} classes & 5.32\,$\pm$\,0.09 & 0.8181\,$\pm$\,0.0009 & 4.29\,$\pm$\,0.29 & 0.5490\,$\pm$\,0.0009 & 170.5\,$\pm$\,2.7 & 5.5\,$\pm$\,0.1 \\
+\Kmid{} classes & 5.60\,$\pm$\,0.27 & 0.8179\,$\pm$\,0.0004 & 5.05\,$\pm$\,0.74 & 0.5486\,$\pm$\,0.0007 & 169.2\,$\pm$\,1.7 & 6.4\,$\pm$\,0.2 \\
+\Kcoarse{} classes & 5.43\,$\pm$\,0.10 & 0.8147\,$\pm$\,0.0005 & 5.61\,$\pm$\,0.17 & 0.5437\,$\pm$\,0.0009 & 159.3\,$\pm$\,3.3 & 6.7\,$\pm$\,0.2 \\
+\Kres{} classes + mass & 4.43\,$\pm$\,0.30 & 0.8156\,$\pm$\,0.0016 & 4.33\,$\pm$\,0.12 & 0.5447\,$\pm$\,0.0011 & 160.2\,$\pm$\,3.2 & 5.5\,$\pm$\,0.3 \\
+\Kcoarse{} classes + mass & 4.72\,$\pm$\,0.70 & 0.8124\,$\pm$\,0.0012 & 4.28\,$\pm$\,0.33 & 0.5387\,$\pm$\,0.0013 & 151.5\,$\pm$\,2.1 & 5.1\,$\pm$\,0.4 \\
+no flavor boundary & 5.48\,$\pm$\,0.02 & 0.8162\,$\pm$\,0.0004 & 5.09\,$\pm$\,0.01 & 0.5466\,$\pm$\,0.0013 & 164.0\,$\pm$\,1.7 & 6.0\,$\pm$\,0.4 \\
+$b$-quark boundary & 5.41\,$\pm$\,0.44 & 0.8174\,$\pm$\,0.0004 & 5.21\,$\pm$\,0.07 & 0.5472\,$\pm$\,0.0011 & 166.2\,$\pm$\,3.6 & 5.9\,$\pm$\,0.5 \\
+random flavor boundary & 5.33\,$\pm$\,0.08 & 0.8167\,$\pm$\,0.0010 & 4.86\,$\pm$\,0.06 & 0.5462\,$\pm$\,0.0022 & 166.0\,$\pm$\,4.7 & 6.0\,$\pm$\,0.4 \\
 \midrule
 random selection of as many QCD jets & 0.94 & -- & 3.13 & -- & -- & -- \\
 \bottomrule

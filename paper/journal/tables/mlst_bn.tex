@@ -2,7 +2,7 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, on JetClass-II at its natural composition, with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed; (LP): linear probe on the frozen features. Mean $\pm$ SD over the pretraining runs; two values: the two runs of a configuration.}
+\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, on JetClass-II at its natural composition, with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed; (LP): linear probe on the frozen features. Mean $\pm$ SD over the pretraining runs of each configuration.}
 \label{tab:bn}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
@@ -14,16 +14,16 @@
 \Kres{} classes (LP) & 0.9748\,$\pm$\,0.0003 & 1.049\,$\pm$\,0.014 & 0.9748\,$\pm$\,0.0003 & 1.050\,$\pm$\,0.014 \\
 \Kmid{} classes (LP) & 0.9719\,$\pm$\,0.0006 & 1.171\,$\pm$\,0.024 & 0.9719\,$\pm$\,0.0006 & 1.172\,$\pm$\,0.025 \\
 \Kcoarse{} classes (LP) & 0.9631\,$\pm$\,0.0006 & 1.538\,$\pm$\,0.025 & 0.9631\,$\pm$\,0.0006 & 1.537\,$\pm$\,0.026 \\
-\Kres{} classes + mass (LP) & 0.9735, 0.9740 & 1.106, 1.082 & 0.9735, 0.9740 & 1.105, 1.083 \\
-\Kcoarse{} classes + mass (LP) & 0.9623, 0.9632 & 1.571, 1.530 & 0.9623, 0.9632 & 1.572, 1.530 \\
+\Kres{} classes + mass (LP) & 0.9737\,$\pm$\,0.0003 & 1.094\,$\pm$\,0.017 & 0.9737\,$\pm$\,0.0003 & 1.094\,$\pm$\,0.016 \\
+\Kcoarse{} classes + mass (LP) & 0.9628\,$\pm$\,0.0006 & 1.551\,$\pm$\,0.029 & 0.9628\,$\pm$\,0.0006 & 1.551\,$\pm$\,0.029 \\
 random partition 1 (LP), seed 1 & 0.9719 & 1.173 & 0.9719 & 1.173 \\
 random partition 2 (LP), seed 2 & 0.9719 & 1.167 & 0.9719 & 1.167 \\
 random partition 3 (LP), seed 1 & 0.9724 & 1.153 & 0.9724 & 1.153 \\
 random partition 4 (LP), seed 2 & 0.9723 & 1.151 & 0.9723 & 1.152 \\
 random partition 5 (LP), seed 2 & 0.9720 & 1.164 & 0.9720 & 1.164 \\
-no flavor boundary (LP) & 0.9657, 0.9645 & 1.432, 1.477 & 0.9657, 0.9645 & 1.432, 1.477 \\
-$b$-quark boundary (LP) & 0.9698, 0.9701 & 1.260, 1.245 & 0.9698, 0.9701 & 1.260, 1.245 \\
-random flavor boundary (LP) & 0.9698, 0.9698 & 1.259, 1.254 & 0.9698, 0.9698 & 1.260, 1.254 \\
+no flavor boundary (LP) & 0.9651\,$\pm$\,0.0009 & 1.455\,$\pm$\,0.032 & 0.9651\,$\pm$\,0.0008 & 1.455\,$\pm$\,0.031 \\
+$b$-quark boundary (LP) & 0.9699\,$\pm$\,0.0002 & 1.253\,$\pm$\,0.011 & 0.9699\,$\pm$\,0.0002 & 1.252\,$\pm$\,0.010 \\
+random flavor boundary (LP) & 0.9698\,$\pm$\,$<$0.0001 & 1.257\,$\pm$\,0.004 & 0.9698\,$\pm$\,$<$0.0001 & 1.257\,$\pm$\,0.004 \\
 random network (LP) & 0.8058\,$\pm$\,0.0018 & -- & 0.8525\,$\pm$\,0.0019 & -- \\
 \bottomrule
 \end{tabular*}

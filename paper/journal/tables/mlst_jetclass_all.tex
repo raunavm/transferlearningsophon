@@ -4,7 +4,7 @@
 \begin{center}
 \begin{minipage}{\linewidth}\centering
 \normalsize
-\captionof{table}{JetClass fine-tuning as table~\ref{tab:jetclass} of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls; the row of all five random partitions gives the mean $\pm$ SD over them; (f.t.): fine-tuned. Mean $\pm$ SD over the pretraining runs; two values: the two runs of a configuration. $^\dagger$ and $^{\ddagger}$ as in table~\ref{tab:jetclassrej}.}
+\captionof{table}{JetClass fine-tuning as table~\ref{tab:jetclass} of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls; the row of all five random partitions gives the mean $\pm$ SD over them; (f.t.): fine-tuned. Mean $\pm$ SD over the pretraining runs of each configuration. $^\dagger$ and $^{\ddagger}$ as in table~\ref{tab:jetclassrej}.}
 \label{tab:jetclassall}
 \par\medskip
 \small
@@ -15,17 +15,17 @@
  & jets & \# params & accuracy & AUC & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ \\
  &  &  &  &  & $R_{50}$ & $R_{50}$ & $R_{50}$ \\
 \midrule
-from scratch & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 & 0.9818\,$\pm$\,0.0003 & 4{,}800\,$\pm$\,70 & 1{,}570\,$\pm$\,50 & 86.4\,$\pm$\,3.2 \\
-\Kfull{} classes (f.t.) & 1 M & 2.21\,M & 0.8468\,$\pm$\,0.0006 & 0.9854\,$\pm$\,0.0001 & 6{,}600\,$\pm$\,330 & 2{,}650\,$\pm$\,260 & 103.6\,$\pm$\,3.8 \\
-\Kres{} classes (f.t.) & 1 M & 2.21\,M & 0.8475\,$\pm$\,0.0009 & 0.9856\,$\pm$\,$<$0.0001 & 6{,}060$^{\ddagger}$ & 2{,}820\,$\pm$\,40 & 101.8\,$\pm$\,1.5 \\
-\Kmid{} classes (f.t.) & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 & 6{,}480\,$\pm$\,530 & 2{,}610\,$\pm$\,160 & 103.5\,$\pm$\,1.3 \\
-\Kcoarse{} classes (f.t.) & 1 M & 2.21\,M & 0.8422\,$\pm$\,0.0005 & 0.9847\,$\pm$\,0.0001 & 6{,}670\,$\pm$\,220 & 2{,}390\,$\pm$\,40 & 100.8\,$\pm$\,6.2 \\
-\Kres{} classes + mass (f.t.) & 1 M & 2.21\,M & 0.8459, 0.8471 & 0.9852, 0.9854 & 6{,}450, 6{,}670 & 2{,}530, 2{,}300 & 105.3, 101.9 \\
-\Kcoarse{} classes + mass (f.t.) & 1 M & 2.21\,M & 0.8400, 0.8398 & 0.9844, 0.9843 & 6{,}450, 5{,}560 & 2{,}300, 2{,}020 & 105.5, 102.7 \\
-random partitions (f.t.) & 1 M & 2.21\,M & 0.8443\,$\pm$\,0.0007 & 0.9851\,$\pm$\,0.0001 & 6{,}130\,$\pm$\,950 & 2{,}580\,$\pm$\,160 & 102.6\,$\pm$\,1.6 \\
-no flavor boundary (f.t.) & 1 M & 2.21\,M & 0.8434, 0.8431 & 0.9849, 0.9848 & 6{,}060, 6{,}060 & 2{,}150, 2{,}170 & 104.7, 106.3 \\
-$b$-quark boundary (f.t.) & 1 M & 2.21\,M & 0.8434, 0.8443 & 0.9849, 0.9850 & 5{,}710, 7{,}410 & 2{,}350, 2{,}410 & 104.9, 108.0 \\
-random flavor boundary (f.t.) & 1 M & 2.21\,M & 0.8432, 0.8436 & 0.9849, 0.9849 & 6{,}450, 5{,}880 & 2{,}860, 2{,}630 & 106.0, 96.8 \\
+from scratch & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 & 0.9818\,$\pm$\,0.0003 & 4{,}800\,$\pm$\,100 & 1{,}570\,$\pm$\,50 & 86.4\,$\pm$\,3.2 \\
+\Kfull{} classes (f.t.) & 1 M & 2.21\,M & 0.8468\,$\pm$\,0.0006 & 0.9854\,$\pm$\,0.0001 & 6{,}600\,$\pm$\,300 & 2{,}650\,$\pm$\,260 & 103.6\,$\pm$\,3.8 \\
+\Kres{} classes (f.t.) & 1 M & 2.21\,M & 0.8475\,$\pm$\,0.0009 & 0.9856\,$\pm$\,$<$0.0001 & 6{,}100$^{\ddagger}$ & 2{,}820\,$\pm$\,40 & 101.8\,$\pm$\,1.5 \\
+\Kmid{} classes (f.t.) & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 & 6{,}500\,$\pm$\,500 & 2{,}610\,$\pm$\,160 & 103.5\,$\pm$\,1.3 \\
+\Kcoarse{} classes (f.t.) & 1 M & 2.21\,M & 0.8422\,$\pm$\,0.0005 & 0.9847\,$\pm$\,0.0001 & 6{,}700\,$\pm$\,200 & 2{,}390\,$\pm$\,40 & 100.8\,$\pm$\,6.2 \\
+\Kres{} classes + mass (f.t.) & 1 M & 2.21\,M & 0.8465\,$\pm$\,0.0009 & 0.9853\,$\pm$\,0.0001 & 6{,}600\,$\pm$\,200 & 2{,}420\,$\pm$\,160 & 103.6\,$\pm$\,2.4 \\
+\Kcoarse{} classes + mass (f.t.) & 1 M & 2.21\,M & 0.8399\,$\pm$\,0.0002 & 0.9843\,$\pm$\,0.0001 & 6{,}000\,$\pm$\,600 & 2{,}160\,$\pm$\,200 & 104.1\,$\pm$\,2.0 \\
+random partitions (f.t.) & 1 M & 2.21\,M & 0.8443\,$\pm$\,0.0007 & 0.9851\,$\pm$\,0.0001 & 6{,}100\,$\pm$\,900 & 2{,}580\,$\pm$\,160 & 102.6\,$\pm$\,1.6 \\
+no flavor boundary (f.t.) & 1 M & 2.21\,M & 0.8433\,$\pm$\,0.0002 & 0.9848\,$\pm$\,$<$0.0001 & 6{,}100$^{\ddagger}$ & 2{,}160\,$\pm$\,20 & 105.5\,$\pm$\,1.1 \\
+$b$-quark boundary (f.t.) & 1 M & 2.21\,M & 0.8439\,$\pm$\,0.0007 & 0.9849\,$\pm$\,0.0001 & 6{,}600\,$\pm$\,1{,}200 & 2{,}380\,$\pm$\,40 & 106.5\,$\pm$\,2.2 \\
+random flavor boundary (f.t.) & 1 M & 2.21\,M & 0.8434\,$\pm$\,0.0003 & 0.9849\,$\pm$\,$<$0.0001 & 6{,}200\,$\pm$\,400 & 2{,}740\,$\pm$\,160 & 101.4\,$\pm$\,6.5 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
@@ -47,12 +47,12 @@ from scratch & 1 M & 636\,$\pm$\,45 & 1{,}290\,$\pm$\,100 & 6{,}400\,$\pm$\,200 
 \Kres{} classes (f.t.) & 1 M & 1{,}150\,$\pm$\,67 & 3{,}070\,$\pm$\,330 & 14{,}100\,$\pm$\,3{,}500$^\dagger$ & 7{,}800\,$\pm$\,300 & 389\,$\pm$\,9 & 308\,$\pm$\,1 \\
 \Kmid{} classes (f.t.) & 1 M & 1{,}034\,$\pm$\,40 & 3{,}160\,$\pm$\,280 & 14{,}200\,$\pm$\,2{,}100$^\dagger$ & 8{,}500\,$\pm$\,200 & 376\,$\pm$\,6 & 307\,$\pm$\,7 \\
 \Kcoarse{} classes (f.t.) & 1 M & 1{,}049\,$\pm$\,17 & 2{,}800\,$\pm$\,200 & 10{,}600\,$\pm$\,2{,}700$^\dagger$ & 8{,}600\,$\pm$\,1{,}300 & 378\,$\pm$\,22 & 285\,$\pm$\,11 \\
-\Kres{} classes + mass (f.t.) & 1 M & 1{,}099, 1{,}130 & 2{,}780, 2{,}940 & 11{,}100, 14{,}300$^\dagger$ & 8{,}300, 6{,}900 & 392, 380 & 303, 301 \\
-\Kcoarse{} classes + mass (f.t.) & 1 M & 966, 935 & 2{,}940, 2{,}900 & 10{,}500, 14{,}300$^\dagger$ & 8{,}000, 11{,}100$^\dagger$ & 363, 353 & 289, 276 \\
+\Kres{} classes + mass (f.t.) & 1 M & 1{,}114\,$\pm$\,22 & 2{,}860\,$\pm$\,120 & 12{,}700\,$\pm$\,2{,}200$^\dagger$ & 7{,}600\,$\pm$\,1{,}000 & 386\,$\pm$\,9 & 302\,$\pm$\,1 \\
+\Kcoarse{} classes + mass (f.t.) & 1 M & 950\,$\pm$\,22 & 2{,}920\,$\pm$\,30 & 12{,}400\,$\pm$\,2{,}700$^\dagger$ & 9{,}600\,$\pm$\,2{,}200$^\dagger$ & 358\,$\pm$\,7 & 283\,$\pm$\,10 \\
 random partitions (f.t.) & 1 M & 1{,}006\,$\pm$\,31 & 2{,}690\,$\pm$\,300 & 10{,}900\,$\pm$\,2{,}000$^\dagger$ & 7{,}700\,$\pm$\,1{,}300 & 379\,$\pm$\,18 & 299\,$\pm$\,7 \\
-no flavor boundary (f.t.) & 1 M & 1{,}176, 1{,}036 & 2{,}820, 2{,}820 & 13{,}300, 16{,}700$^\dagger$ & 6{,}700, 7{,}100 & 351, 351 & 292, 292 \\
-$b$-quark boundary (f.t.) & 1 M & 1{,}042, 1{,}031 & 2{,}560, 2{,}600 & 12{,}500, 14{,}300$^\dagger$ & 7{,}100, 7{,}100 & 366, 347 & 292, 298 \\
-random flavor boundary (f.t.) & 1 M & 1{,}000, 1{,}047 & 2{,}820, 2{,}670 & 11{,}800, 13{,}300$^\dagger$ & 7{,}100, 7{,}400 & 372, 371 & 296, 301 \\
+no flavor boundary (f.t.) & 1 M & 1{,}106\,$\pm$\,99 & 2{,}820$^{\ddagger}$ & 15{,}000\,$\pm$\,2{,}400$^\dagger$ & 6{,}900\,$\pm$\,300 & 351$^{\ddagger}$ & 292\,$\pm$\,$<$1 \\
+$b$-quark boundary (f.t.) & 1 M & 1{,}036\,$\pm$\,8 & 2{,}580\,$\pm$\,20 & 13{,}400\,$\pm$\,1{,}300$^\dagger$ & 7{,}100$^{\ddagger}$ & 356\,$\pm$\,14 & 295\,$\pm$\,4 \\
+random flavor boundary (f.t.) & 1 M & 1{,}024\,$\pm$\,33 & 2{,}740\,$\pm$\,110 & 12{,}500\,$\pm$\,1{,}100$^\dagger$ & 7{,}300\,$\pm$\,200 & 371\,$\pm$\,$<$1 & 299\,$\pm$\,4 \\
 \bottomrule
 \end{tabular*}
 \end{minipage}

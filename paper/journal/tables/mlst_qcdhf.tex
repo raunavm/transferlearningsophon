@@ -1,7 +1,7 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained on one million class-balanced JetClass-II jets: rejection $R_{50}$ of Sophon's $X\to b\bar b$ discriminant at 50\% $X\to b\bar b$ efficiency for QCD jets with two or more $b$ quarks, with one $b$ quark, and for all QCD jets; (LP): linear probe on the frozen features. Mean $\pm$ SD over the pretraining runs; two values: the two runs of a configuration. Random partitions: mean $\pm$ SD over the five partitions into 17 classes, one run each.}
+\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained on one million class-balanced JetClass-II jets: rejection $R_{50}$ of Sophon's $X\to b\bar b$ discriminant at 50\% $X\to b\bar b$ efficiency for QCD jets with two or more $b$ quarks, with one $b$ quark, and for all QCD jets; (LP): linear probe on the frozen features. Mean $\pm$ SD over the pretraining runs of each configuration. Random partitions: mean $\pm$ SD over the five partitions into 17 classes, one run each.}
 \label{tab:qcdhf}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
@@ -9,18 +9,18 @@
 \cmidrule(lr){2-4}
  & $b\bar b$ & $b$ & all QCD \\
 \midrule
-\Kfull{} classes (LP) & 66\,$\pm$\,5 & 1{,}101\,$\pm$\,151 & 1{,}450\,$\pm$\,110 \\
-\Kres{} classes (LP) & 74\,$\pm$\,5 & 1{,}134\,$\pm$\,117 & 1{,}616\,$\pm$\,107 \\
-\Kmid{} classes (LP) & 72\,$\pm$\,4 & 879\,$\pm$\,122 & 1{,}551\,$\pm$\,104 \\
-\Kcoarse{} classes (LP) & 65\,$\pm$\,4 & 714\,$\pm$\,201 & 1{,}337\,$\pm$\,72 \\
-\Kres{} classes + mass (LP) & 68, 67 & 914, 868 & 1{,}478, 1{,}431 \\
-\Kcoarse{} classes + mass (LP) & 60, 62 & 649, 523 & 1{,}271, 1{,}287 \\
-no flavor boundary (LP) & 61, 66 & 846, 638 & 1{,}257, 1{,}250 \\
-$b$-quark boundary (LP) & 66, 68 & 706, 915 & 1{,}419, 1{,}480 \\
-random flavor boundary (LP) & 67, 65 & 855, 689 & 1{,}433, 1{,}394 \\
-random partitions (LP) & 69\,$\pm$\,4 & 920\,$\pm$\,193 & 1{,}487\,$\pm$\,62 \\
-random network (LP) & 6\,$\pm$\,$<$1 & 7\,$\pm$\,1 & 14\,$\pm$\,2 \\
-random network, BatchNorm recomputed (LP) & 7\,$\pm$\,$<$1 & 10\,$\pm$\,1 & 34\,$\pm$\,4 \\
+\Kfull{} classes (LP) & 66.4\,$\pm$\,4.9 & 1{,}101\,$\pm$\,151 & 1{,}450\,$\pm$\,110 \\
+\Kres{} classes (LP) & 73.8\,$\pm$\,5.3 & 1{,}134\,$\pm$\,117 & 1{,}616\,$\pm$\,107 \\
+\Kmid{} classes (LP) & 72.4\,$\pm$\,4.0 & 879\,$\pm$\,122 & 1{,}551\,$\pm$\,104 \\
+\Kcoarse{} classes (LP) & 65.1\,$\pm$\,4.3 & 714\,$\pm$\,201 & 1{,}337\,$\pm$\,72 \\
+\Kres{} classes + mass (LP) & 67.4\,$\pm$\,0.4 & 891\,$\pm$\,33 & 1{,}454\,$\pm$\,33 \\
+\Kcoarse{} classes + mass (LP) & 60.7\,$\pm$\,1.3 & 586\,$\pm$\,89 & 1{,}279\,$\pm$\,12 \\
+no flavor boundary (LP) & 63.5\,$\pm$\,3.6 & 742\,$\pm$\,147 & 1{,}254\,$\pm$\,5 \\
+$b$-quark boundary (LP) & 66.8\,$\pm$\,1.6 & 810\,$\pm$\,148 & 1{,}449\,$\pm$\,43 \\
+random flavor boundary (LP) & 65.9\,$\pm$\,1.9 & 772\,$\pm$\,117 & 1{,}413\,$\pm$\,27 \\
+random partitions (LP) & 68.6\,$\pm$\,3.6 & 920\,$\pm$\,193 & 1{,}487\,$\pm$\,62 \\
+random network (LP) & 6.4\,$\pm$\,0.4 & 7\,$\pm$\,1 & 14\,$\pm$\,2 \\
+random network, BatchNorm recomputed (LP) & 7.2\,$\pm$\,0.4 & 10\,$\pm$\,1 & 34\,$\pm$\,4 \\
 \bottomrule
 \end{tabular*}
 \end{table}

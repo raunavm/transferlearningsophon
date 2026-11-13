@@ -112,9 +112,9 @@ def test_every_figure_is_drawn_from_the_papers_selections(tmp_path, monkeypatch,
     got = next(p for p in nums["ft_n_jc"]["jc2"]["values"]["R16_Q1"] if p["n"] == n)
     assert got["oma"] == pytest.approx(want)
     assert set(nums["ft_n_jc"]["jc2"]["values"]) == set(D.LEVELS) | {M.SCRATCH}
-    # the mass regression: two runs print both values, as the paper's tables do
+    # the mass regression: two runs print mean ± SD, as the paper's tables do
     assert nums["mass_resolution"]["rows"]["L162_MASS"]["n"] == 2
-    assert " ± " not in nums["mass_resolution"]["rows"]["L162_MASS"]["text"]
+    assert " ± " in nums["mass_resolution"]["rows"]["L162_MASS"]["text"]
     assert set(nums["batchnorm_ratio"]) == {f"{ds}/{met}" for ds, met, _ in M.TASKS}
     assert set(nums["probe_over_init"]) == {"top", "qg", "qg_herwig"}
     rej = nums["ft_rejection"]

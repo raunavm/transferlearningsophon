@@ -1353,7 +1353,7 @@ def test_the_long_budget_jetclass_table_replaces_both_old_trees_only_when_it_hol
 
 
 def test_the_probes_against_size_pool_the_random_partitions_and_add_the_controls_and_the_kinematic_model():
-    """tab:probesn (2026-11-07): the flavour-controlled partitions (two runs, both values), the five random
+    """tab:probesn (2026-11-07): the flavour-controlled partitions (two runs, mean +- SD), the five random
     partitions pooled into one row (mean +- SD over their runs) and the kinematic-only model on top only, in one
     longtable with a block per task."""
     rec = lambda a, r: {"macro_auc_ovr": a, "accuracy": a, "r30": r, "r30_is_bound": False, "converged": True}

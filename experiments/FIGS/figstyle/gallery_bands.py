@@ -29,10 +29,10 @@ def extend_to(lo: float, hi: float, ref, keep: float = 0.5) -> tuple | None:
 
 
 def spread_band(per) -> tuple | None:
-    """(lower, upper) of the spread over runs at each point, per (runs, points): mean -+ the SD (ddof 1) over three or
-    more runs, the range over two (F2a's rule); None for one run (F10b, F10b-flav, F10-ft)."""
+    """(lower, upper) of the spread over runs at each point, per (runs, points): mean -+ the SD (ddof 1) over two or
+    more runs (PI 2026-11-12: no range); None for one run (F10b, F10b-flav, F10-ft)."""
     per = np.asarray(per, float)
-    if len(per) > 2:
-        mean, sd = per.mean(axis=0), per.std(axis=0, ddof=1)
-        return mean - sd, mean + sd
-    return (per.min(axis=0), per.max(axis=0)) if len(per) == 2 else None
+    if len(per) < 2:
+        return None
+    mean, sd = per.mean(axis=0), per.std(axis=0, ddof=1)
+    return mean - sd, mean + sd

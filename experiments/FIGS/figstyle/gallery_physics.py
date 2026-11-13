@@ -422,7 +422,7 @@ F10C_ROWS = tuple(S.LEVELS) + S.MASS + tuple(S.CONTROLS)
 
 def draw_f10c(path: pathlib.Path) -> None:
     """One point per model: the mean over runs of R50 (x) and 1/JSD50 (y), with the spread over pretraining runs on
-    both axes (mlst_figures._spread: SD for three runs, range for two); DisCo Fig. 3's axes, both logarithmic."""
+    both axes (mlst_figures._spread: the SD over runs); DisCo Fig. 3's axes, both logarithmic."""
     sc = I["sculpt"]
     top, w = 0.95 + 0.45 * 3, S.PRINT_W - 1.5 - 0.2      # one panel across the text width, the legend just above it
     fig = S.figure_cm(S.PRINT_W, top + 0.7 * w + 1.0)
@@ -535,8 +535,8 @@ def _bb_cc(doc: dict) -> np.ndarray:
 
 
 def _pt_series(ax, e, values: list, key: str, label: str, band: bool = True, style: str = "A", probe: bool = False) -> None:
-    """Mean over runs per bin of edges e. Style A: joined at the bin centres, the series' marker, band the SD (range
-    for two runs), as F8. Styles B and C: binned points (lines_v6.binned)."""
+    """Mean over runs per bin of edges e. Style A: joined at the bin centres, the series' marker, band the SD,
+    as F8. Styles B and C: binned points (lines_v6.binned)."""
     st = [P.F._spread(list(v)) for v in np.asarray(values).T]
     mean = np.array([s[0] for s in st])
     if style != "A":
@@ -699,13 +699,13 @@ F9B_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs): median response r = m/m_gen (a, b) and resolution sigma_r, half the 15.9-84.1% "
     "quantile range of r over its median (c, d), against pT (a, c) and generator mass (b, d), with the soft-drop "
-    "mass (black). Points at bin centers; horizontal bars: the bin, vertical: range over runs. Lower panels: ratio to "
+    "mass (black). Points at bin centers; horizontal bars: the bin, vertical: SD over runs. Lower panels: ratio to "
     "the soft-drop mass.")
 A17_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression (two runs), on {group} test jets: median response r (a, b) and resolution sigma_r (c, d), as in "
     "the main-text figure, against pT (a, c) and generator mass (b, d; 20-500 GeV), with the soft-drop mass "
-    "(black); points at bin centers; horizontal bars: the bin, vertical: range over runs. Lower panels: ratio "
+    "(black); points at bin centers; horizontal bars: the bin, vertical: SD over runs. Lower panels: ratio "
     "to the soft-drop mass.")
 F10A_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, used "
@@ -726,26 +726,26 @@ F10B_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (solid, "
     "three runs) and with 162 and 17 classes plus mass regression (dashed, two runs), used without further "
     "training: Jensen-Shannon distance between the soft-drop mass of all QCD test jets and of those passing a "
-    "cut on 1 - g_QCD, against its QCD efficiency eps_B. Bands: SD over runs, range over two. Black dotted: a "
+    "cut on 1 - g_QCD, against its QCD efficiency eps_B. Bands: SD over runs. Black dotted: a "
     "random selection of as many QCD jets.")
 F10B_FLAV_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 17-class partitions with no, a "
     "b-quark and a random flavor boundary (two runs each), and with 188 classes for reference (three runs), used "
     "without further training: Jensen-Shannon distance between the soft-drop mass of all QCD test jets and of "
-    "those passing a cut on 1 - g_QCD, against its QCD efficiency eps_B. Bands: range over runs, SD over three. "
+    "those passing a cut on 1 - g_QCD, against its QCD efficiency eps_B. Bands: SD over runs. "
     "Black dotted: a random selection of as many QCD jets.")
 F10_FT_CAPTION = (
     "Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (three runs) and 162 and 17 classes plus "
     "mass regression (two runs), and the same network trained from scratch (three seeds) on one million "
     "class-balanced JetClass-II jets and scored on 2 million natural-mix test jets: Jensen-Shannon "
     "distance between QCD soft-drop mass before and after a cut on 1 - g_QCD, against QCD efficiency eps_B. Bands: "
-    "SD, range over two. Black dotted: random selection of as many QCD jets.")
+    "SD over runs. Black dotted: random selection of as many QCD jets.")
 F10C_CAPTION = (
     'Cuts on the pretraining head of networks pretrained on JetClass-II, used without further training, '
     "as in the DisCo paper's Fig. 3: the inverse Jensen-Shannon divergence (the squared distance) between "
     'the soft-drop mass of all QCD test jets and of those passing a cut on 1 - g_QCD, against the QCD '
     'rejection, both at the cut that keeps 50% of resonant test jets. Points are means (open: with mass '
-    'regression), bars the SD over pretraining runs (range over two).')
+    'regression), bars the SD over pretraining runs.')
 F11_CAPTION = (
     "Networks pretrained on JetClass-II, on Sophon's (a) X→bb̄ and (b) X→bs samples against QCD jets in the "
     "soft-drop mass window: signal efficiency over the square root of QCD efficiency, against QCD efficiency, for a "
@@ -756,8 +756,7 @@ PT_CAPTION = (
     "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on "
     "class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining classes; (b) the same for 17-class partitions with controlled flavor boundaries, with 188 and 17 classes for "
     "reference; (c) accuracy on JetClass after fine-tuning on one million jets; (d) the probes' AUC of X→bb̄ "
-    "against X→cc̄. Points: means at bin centers; horizontal bars: the bin, vertical: SD over pretraining runs "
-    "(partitions: range over two).")
+    "against X→cc̄. Points: means at bin centers; horizontal bars: the bin, vertical: SD over pretraining runs.")
 CONF_CAPTION = (
     "Networks pretrained on JetClass-II, fine-tuned on one million JetClass jets: (a) the percentage of each true "
     "class assigned to each predicted class with 188 pretraining classes; (b)-(d) the change in that percentage "
@@ -829,7 +828,7 @@ PAGES = [
          "The jet mass from networks pretrained on JetClass-II: an MLP probe (MLP) regressing it from the frozen "
          "features with 188, 162, 43 and 17 classes (open, three runs), and the mass output with 162 and 17 classes "
          "and a mass regression (filled, two runs): median response r (a, b) and resolution sigma_r (c, d) against "
-         "pT (a, c) and generator mass (b, d). Horizontal bars: the bin, vertical: range over runs. Below: ratio to the soft-drop mass.",
+         "pT (a, c) and generator mass (b, d). Horizontal bars: the bin, vertical: SD over runs. Below: ratio to the soft-drop mass.",
          "As F9b, with six series and the soft-drop mass (PI): the four probes in the label sets' colours, the two mass "
          "outputs in the 162- and 17-class colours as F10b, one marker shape per series at the bin centres and in the legend, "
          "since each mass output shares its label set's colour. Round 4: the 2x2 of F9b, legend above the panels. "
@@ -913,7 +912,7 @@ PAGES = [
          "Absolute values per pT bin (round 4): accuracy in (a)-(c) and the X→bb̄ against X→cc̄ AUC in (d), not the "
          "precedents' mistag rate or rejection at a working point, which would be a bound in every bin here (fewer "
          "than 20 X→cc̄ jets pass at 50% X→bb̄ efficiency in all bins of the 188-class runs). Markers at the bin centres "
-         "joined by lines with SD bands (range for two runs), as F9b, A17 and F8, instead of unjoined bin bars without "
+         "joined by lines with SD bands, as F9b, A17 and F8, instead of unjoined bin bars without "
          "uncertainty. Reconstructed jet pT in ten (JetClass-II) or five (JetClass) bins. Panel titles and a figure "
          "legend instead of the precedents' text block; no experiment label; from scratch not drawn.",
          draw_pt,

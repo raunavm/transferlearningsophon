@@ -2,7 +2,7 @@
 {\small
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2: }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
-\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained and scored on JetClass at the largest training set, in the columns of table~\ref{tab:jetclass}; (LP): linear probe on the frozen features. Below the rule, the released Sophon checkpoint, outside the controlled comparison. Mean $\pm$ SD over the pretraining runs; two values: the two runs of a configuration.}\label{tab:jetclassprobe}\\
+\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained and scored on JetClass at the largest training set, in the columns of table~\ref{tab:jetclass}; (LP): linear probe on the frozen features. Below the rule, the released Sophon checkpoint, outside the controlled comparison. Mean $\pm$ SD over the pretraining runs of each configuration.}\label{tab:jetclassprobe}\\
 \toprule
 &  &  & \multicolumn{3}{c}{rejection of QCD} \\
 \cmidrule(lr){4-6}
@@ -24,16 +24,16 @@
 \Kres{} classes (LP) & 0.7709\,$\pm$\,0.0005 & 0.9683\,$\pm$\,0.0002 & 797\,$\pm$\,131 & 415\,$\pm$\,52 & 20.7\,$\pm$\,0.8 \\
 \Kmid{} classes (LP) & 0.7695\,$\pm$\,0.0014 & 0.9680\,$\pm$\,0.0004 & 875\,$\pm$\,184 & 440\,$\pm$\,31 & 20.8\,$\pm$\,0.7 \\
 \Kcoarse{} classes (LP) & 0.7605\,$\pm$\,0.0027 & 0.9650\,$\pm$\,0.0008 & 831\,$\pm$\,16 & 294\,$\pm$\,20 & 21.6\,$\pm$\,0.7 \\
-\Kres{} classes + mass (LP) & 0.7718, 0.7760 & 0.9684, 0.9697 & 823, 806 & 377, 413 & 19.9, 22.5 \\
-\Kcoarse{} classes + mass (LP) & 0.7624, 0.7612 & 0.9655, 0.9651 & 637, 926 & 287, 261 & 21.9, 22.6 \\
+\Kres{} classes + mass (LP) & 0.7739\,$\pm$\,0.0030 & 0.9690\,$\pm$\,0.0009 & 815\,$\pm$\,12 & 395\,$\pm$\,25 & 21.2\,$\pm$\,1.8 \\
+\Kcoarse{} classes + mass (LP) & 0.7618\,$\pm$\,0.0009 & 0.9653\,$\pm$\,0.0003 & 781\,$\pm$\,204 & 274\,$\pm$\,19 & 22.2\,$\pm$\,0.5 \\
 random partition 1 (LP), seed 1 & 0.7528 & 0.9636 & 712 & 323 & 18.3 \\
 random partition 2 (LP), seed 2 & 0.7553 & 0.9641 & 658 & 357 & 18.7 \\
 random partition 3 (LP), seed 1 & 0.7546 & 0.9638 & 877 & 382 & 18.5 \\
 random partition 4 (LP), seed 2 & 0.7537 & 0.9636 & 797 & 348 & 17.7 \\
 random partition 5 (LP), seed 2 & 0.7538 & 0.9639 & 749 & 353 & 16.5 \\
-no flavor boundary (LP) & 0.7535, 0.7486 & 0.9633, 0.9622 & 775, 508 & 233, 244 & 21.5, 19.2 \\
-$b$-quark boundary (LP) & 0.7615, 0.7644 & 0.9661, 0.9665 & 990, 1{,}099 & 398, 301 & 20.6, 18.0 \\
-random flavor boundary (LP) & 0.7593, 0.7564 & 0.9654, 0.9645 & 758, 662 & 332, 318 & 18.9, 18.8 \\
+no flavor boundary (LP) & 0.7511\,$\pm$\,0.0034 & 0.9628\,$\pm$\,0.0008 & 641\,$\pm$\,189 & 239\,$\pm$\,8 & 20.3\,$\pm$\,1.6 \\
+$b$-quark boundary (LP) & 0.7630\,$\pm$\,0.0021 & 0.9663\,$\pm$\,0.0003 & 1{,}045\,$\pm$\,77 & 349\,$\pm$\,68 & 19.3\,$\pm$\,1.9 \\
+random flavor boundary (LP) & 0.7579\,$\pm$\,0.0021 & 0.9649\,$\pm$\,0.0006 & 710\,$\pm$\,67 & 325\,$\pm$\,10 & 18.8\,$\pm$\,$<$0.1 \\
 random network (LP) & 0.4077\,$\pm$\,0.0013 & 0.8280\,$\pm$\,0.0011 & 25\,$\pm$\,1 & 20\,$\pm$\,2 & 17.9\,$\pm$\,0.8 \\
 random network, BatchNorm recomputed (LP) & 0.4751\,$\pm$\,0.0054 & 0.8655\,$\pm$\,0.0040 & 46\,$\pm$\,2 & 14\,$\pm$\,1 & 15.4\,$\pm$\,0.5 \\
 \midrule
@@ -55,16 +55,16 @@ released Sophon checkpoint (LP) & 0.7679 & 0.9675 & 752 & 374 & 19.7 \\
 \Kres{} classes (LP) & 207\,$\pm$\,15 & 933\,$\pm$\,46 & 1{,}221\,$\pm$\,150 & 3{,}361\,$\pm$\,583 & 81.6\,$\pm$\,2.1 & 65.8\,$\pm$\,3.2 \\
 \Kmid{} classes (LP) & 207\,$\pm$\,13 & 919\,$\pm$\,75 & 1{,}298\,$\pm$\,203 & 3{,}682\,$\pm$\,484 & 79.1\,$\pm$\,1.6 & 69.5\,$\pm$\,0.9 \\
 \Kcoarse{} classes (LP) & 183\,$\pm$\,12 & 814\,$\pm$\,113 & 1{,}184\,$\pm$\,308 & 3{,}094\,$\pm$\,275 & 70.8\,$\pm$\,5.0 & 68.9\,$\pm$\,2.8 \\
-\Kres{} classes + mass (LP) & 210, 243 & 901, 957 & 980, 1{,}183 & 5{,}000, 4{,}878 & 77.9, 72.9 & 69.1, 67.6 \\
-\Kcoarse{} classes + mass (LP) & 170, 171 & 781, 800 & 873, 813 & 1{,}923, 2{,}381 & 69.7, 65.8 & 70.9, 68.1 \\
+\Kres{} classes + mass (LP) & 227\,$\pm$\,23 & 929\,$\pm$\,40 & 1{,}082\,$\pm$\,144 & 4{,}939\,$\pm$\,86 & 75.4\,$\pm$\,3.5 & 68.3\,$\pm$\,1.1 \\
+\Kcoarse{} classes + mass (LP) & 170\,$\pm$\,1 & 791\,$\pm$\,13 & 843\,$\pm$\,43 & 2{,}152\,$\pm$\,324 & 67.8\,$\pm$\,2.8 & 69.5\,$\pm$\,1.9 \\
 random partition 1 (LP), seed 1 & 161 & 557 & 847 & 2{,}247 & 67.2 & 56.1 \\
 random partition 2 (LP), seed 2 & 186 & 667 & 664 & 1{,}550 & 71.3 & 57.7 \\
 random partition 3 (LP), seed 1 & 180 & 617 & 1{,}117 & 2{,}020 & 72.4 & 58.7 \\
 random partition 4 (LP), seed 2 & 154 & 662 & 858 & 2{,}500 & 70.1 & 56.5 \\
 random partition 5 (LP), seed 2 & 164 & 610 & 840 & 2{,}326 & 69.0 & 56.0 \\
-no flavor boundary (LP) & 157, 154 & 683, 712 & 889, 909 & 1{,}449, 2{,}667 & 65.5, 69.2 & 69.2, 68.2 \\
-$b$-quark boundary (LP) & 205, 195 & 722, 690 & 837, 1{,}058 & 1{,}724, 2{,}222 & 75.0, 70.6 & 67.8, 66.1 \\
-random flavor boundary (LP) & 185, 175 & 660, 685 & 1{,}117, 758 & 2{,}083, 1{,}818 & 72.3, 75.0 & 66.3, 65.6 \\
+no flavor boundary (LP) & 156\,$\pm$\,2 & 697\,$\pm$\,21 & 899\,$\pm$\,14 & 2{,}058\,$\pm$\,861 & 67.3\,$\pm$\,2.6 & 68.7\,$\pm$\,0.7 \\
+$b$-quark boundary (LP) & 200\,$\pm$\,7 & 706\,$\pm$\,23 & 948\,$\pm$\,157 & 1{,}973\,$\pm$\,352 & 72.8\,$\pm$\,3.1 & 67.0\,$\pm$\,1.2 \\
+random flavor boundary (LP) & 180\,$\pm$\,7 & 672\,$\pm$\,18 & 937\,$\pm$\,254 & 1{,}951\,$\pm$\,187 & 73.7\,$\pm$\,1.9 & 66.0\,$\pm$\,0.5 \\
 random network (LP) & 16\,$\pm$\,1 & 1\,$\pm$\,$<$1 & 20\,$\pm$\,1 & 1\,$\pm$\,$<$1 & 17.3\,$\pm$\,1.3 & 14.3\,$\pm$\,1.0 \\
 random network, BatchNorm recomputed (LP) & 14\,$\pm$\,1 & 2\,$\pm$\,1 & 23\,$\pm$\,2 & 2\,$\pm$\,$<$1 & 13.5\,$\pm$\,0.3 & 11.0\,$\pm$\,0.6 \\
 \midrule

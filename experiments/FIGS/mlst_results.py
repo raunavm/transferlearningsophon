@@ -3,7 +3,7 @@
 Every value is the mean +- standard deviation over the pretraining runs of a configuration that the
 paper reports (configs/arms/v2_paper_runs.txt), PDG-rounded (make_tables.fmt_pm). A configuration
 with runs still missing prints the runs it has and a red marker "n of N runs". Configurations with
-two runs print both values (a standard deviation from two runs has one degree of freedom); a lone
+two runs print mean +- SD in tables too (PI 2026-11-12) and both values in a sentence; a lone
 run prints three significant figures. Never more than four significant figures in a table.
 
 Rules of the rewrite (PI decisions for Phase B, 2026-11-02, docs/PAPER_OUTLINE.md):
@@ -290,7 +290,7 @@ def _tab1(x: float) -> str:
 
 
 def _cell(values: list, n_expected: int, fmt_pm, scale: float = 1.0, sep: str = ", ", frac: bool = False) -> str:
-    """mean +- SD over three or more runs present; two runs print both values; a lone run
+    """mean +- SD over two or more runs present (PI 2026-11-12; in a sentence two runs print both values); a lone run
     prints alone; missing runs add a red marker; a lower limit among them a geq sign."""
     flag = any(isinstance(x, Unconverged) for x in values)
     bound = any(isinstance(x, Bound) for x in values)
@@ -298,10 +298,9 @@ def _cell(values: list, n_expected: int, fmt_pm, scale: float = 1.0, sep: str = 
     if not v:
         return r"\pending{no run yet}"
     if V4.tokens(fmt_pm) and sep != TEXT_SEP:       # a table cell: its column's precision is set later
-        sd = float(np.std(v, ddof=1)) if len(v) > 2 else 0.0
-        body = (V4.tok("p", float(np.mean(v)), sd) if sd else V4.tok("o", float(np.mean(v))) if len(v) != 2
-                else V4.tok("t", *v))
-    elif len(v) > 2:
+        sd = float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
+        body = V4.tok("p", float(np.mean(v)), sd) if sd else V4.tok("o", float(np.mean(v)))
+    elif len(v) > 2 or (len(v) == 2 and sep != TEXT_SEP):
         body = fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
     elif len(v) == 2:
         body = _two(v[0], v[1], sep)
@@ -326,7 +325,7 @@ class _TableFmt:
 
     @staticmethod
     def two(a, b, sep=", ") -> str:
-        return V4.tok("t", a, b)
+        return V4.tok("p", (a + b) / 2, abs(a - b) / math.sqrt(2)) if a != b else V4.tok("o", a)
 
 
 TAB = _TableFmt()
@@ -3722,14 +3721,14 @@ def table_per_run(fits, per, runs, fmt_pm, fill=None, chosen=None) -> str:
 
 # ------------------------------------------------------------------ captions and assembly
 SPREAD = ("Mean $\\pm$ SD over the \\MlstNRunsWord{} pretraining runs of each level of the class "
-          "hierarchy; configurations with \\RandFlavRuns{} runs give both values. Every random partition has 17 "
+          "hierarchy; configurations with \\RandFlavRuns{} runs: over those. Every random partition has 17 "
           "classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the "
           "\\Kfull-class run of that seed. The random network without pretraining: three initializations.")
 SPREAD3 = "Mean $\\pm$ SD over the \\MlstNRunsWord{} pretraining runs."
 # the paper's tables (PI 2026-11-12): the five random partitions as one row
 POOLED = "Random partitions: mean $\\pm$ SD over the five partitions into 17 classes, one run each."
 SPREAD_POOLED = ("Mean $\\pm$ SD over the \\MlstNRunsWord{} pretraining runs of each level of the class hierarchy; "
-                 "configurations with \\RandFlavRuns{} runs give both values. " + POOLED + " The random network "
+                 "configurations with \\RandFlavRuns{} runs: over those. " + POOLED + " The random network "
                  "without pretraining: three initializations.")
 SPREAD_MASS = (SPREAD3[:-1] + "; the models with the mass regression have \\MlstMassNRunsWord{} runs, and both "
                "values are given. The random network without pretraining: three initializations.")
@@ -3806,8 +3805,8 @@ CAPTIONS = {
               "set but the \\Kfull-class one merges all QCD classes. The random network without pretraining, as initialized and "
               "with its BatchNorm statistics recomputed, has no label set, and no fine-tuning. The $X\\to ee$ vs $\\mu\\mu$ probe is trained on the "
               "jets of the two classes in the class-balanced training set (\\MlstPairEemmNTrain{} jets) and scored on every "
-              "JetClass-II test jet of the two classes (\\MlstPairEemmNTestPerSide{} per side). A mark after two values "
-              "applies to the configuration.__ZERO__"),
+              "JetClass-II test jet of the two classes (\\MlstPairEemmNTestPerSide{} per side). A mark applies to the "
+              "configuration.__ZERO__"),
     "pairs_full": ("tab:pairsfull", "Pairs of JetClass-II classes separated by networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and by the controls, every random partition: "
               "(LP), a binary linear probe on the frozen features, trained on up to \\JcBalPairTrainPerSide{} jets of each "
               "side from held-out JetClass-II files and scored on up to \\JcBalPairTestPerSide{} of each side from the "
@@ -3824,8 +3823,8 @@ CAPTIONS = {
               "set but the \\Kfull-class one merges all QCD classes. The random network without pretraining, as initialized and "
               "with its BatchNorm statistics recomputed, has no label set, no $\\rho$ and no fine-tuning. The $X\\to ee$ vs $\\mu\\mu$ probe is trained on the "
               "jets of the two classes in the class-balanced training set (\\MlstPairEemmNTrain{} jets) and scored on every "
-              "JetClass-II test jet of the two classes (\\MlstPairEemmNTestPerSide{} per side). A mark after two values "
-              "applies to the configuration.__ZERO__"),
+              "JetClass-II test jet of the two classes (\\MlstPairEemmNTestPerSide{} per side). A mark applies to the "
+              "configuration.__ZERO__"),
     "mlp": ("tab:mlp", "Nonlinear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained and scored "
             "on each task (a multilayer perceptron with one hidden layer of \\LpMlpHidden{} units, "
             "\\LpMlpSeedsWord{} seeds averaged) at the largest training set: class-balanced JetClass-II AUC (all, resonant and QCD "
@@ -4005,7 +4004,7 @@ CAPTIONS = {
     "jetclass_all": ("tab:jetclassall", "JetClass fine-tuning as table~\\ref{tab:jetclass} of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the "
                      "controls. "
                      + SPREAD + " The row of all five random partitions gives the mean $\\pm$ SD over "
-                     "them. $^\\dagger$ and $^{\\ddagger}$ as in table~\\ref{tab:jetclassrej}; a mark after two values: in at least one of the two runs."),
+                     "them. $^\\dagger$ and $^{\\ddagger}$ as in table~\\ref{tab:jetclassrej}; a mark on a configuration with two runs: in at least one of them."),
     "jetclass_probe": ("tab:jetclassprobe", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, "
                        "trained and scored on JetClass, largest training set, in "
                        "the columns of table~\\ref{tab:jetclass} (AUC as there: on JetClass's equal class sizes the one-against-one and one-against-rest averages coincide). "
@@ -4174,7 +4173,7 @@ REQUIRED = (
 # The captions as printed (PI 2026-11-11: about six lines at most, the details moved into the text). CAPTIONS keeps
 # every table's full account, the source for the text when it is written; a table without an entry here prints its
 # CAPTIONS text. Placeholders (__X__) are filled as in CAPTIONS.
-SD_SHORT = "Mean $\\pm$ SD over the pretraining runs; two values: the two runs of a configuration."
+SD_SHORT = "Mean $\\pm$ SD over the pretraining runs of each configuration."
 SD_SHORT_POOLED = SD_SHORT + " " + POOLED
 NETS = "networks pretrained on JetClass-II with 188, 162, 43 and 17 classes"
 RHO_SHORT = "the ratio $\\rho$ of $1-\\mathrm{AUC}$ to the \\Kfull-class run of the same seed"

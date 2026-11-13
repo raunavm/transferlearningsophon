@@ -12687,7 +12687,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, R16_Q1_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "50.8, 51.1\\%"
+    "value": "50.92\\,\\ensuremath{\\pm}\\,0.21\\%"
   },
   "MlstLpJcTwoQgDrawAccDropCoarseMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, R16_Q1_MASS",
@@ -12705,7 +12705,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, FLAV_F1",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "55.6, 56.5\\%"
+    "value": "56.0\\,\\ensuremath{\\pm}\\,0.6\\%"
   },
   "MlstLpJcTwoQgDrawAccDropFonePr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, FLAV_F1",
@@ -12717,7 +12717,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, FLAV_F1R",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "57.2, 55.4\\%"
+    "value": "56.3\\,\\ensuremath{\\pm}\\,1.3\\%"
   },
   "MlstLpJcTwoQgDrawAccDropFonerPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, FLAV_F1R",
@@ -12741,7 +12741,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, FLAV_F0",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "53.9, 53.4\\%"
+    "value": "53.68\\,\\ensuremath{\\pm}\\,0.34\\%"
   },
   "MlstLpJcTwoQgDrawAccDropFzeroPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, FLAV_F0",
@@ -12783,7 +12783,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, L162_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "54.3, 55.1\\%"
+    "value": "54.7\\,\\ensuremath{\\pm}\\,0.6\\%"
   },
   "MlstLpJcTwoQgDrawAccDropResMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to draws, L162_MASS",
@@ -12807,7 +12807,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, R16_Q1_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "49.0, 49.6\\%"
+    "value": "49.3\\,\\ensuremath{\\pm}\\,0.4\\%"
   },
   "MlstLpJcTwoQgMeanAccDropCoarseMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, R16_Q1_MASS",
@@ -12825,7 +12825,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, FLAV_F1",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "52.7, 52.8\\%"
+    "value": "52.74\\,\\ensuremath{\\pm}\\,0.09\\%"
   },
   "MlstLpJcTwoQgMeanAccDropFonePr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, FLAV_F1",
@@ -12837,7 +12837,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, FLAV_F1R",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "52.9, 51.8\\%"
+    "value": "52.4\\,\\ensuremath{\\pm}\\,0.8\\%"
   },
   "MlstLpJcTwoQgMeanAccDropFonerPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, FLAV_F1R",
@@ -12861,7 +12861,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, FLAV_F0",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "51.9, 51.3\\%"
+    "value": "51.6\\,\\ensuremath{\\pm}\\,0.4\\%"
   },
   "MlstLpJcTwoQgMeanAccDropFzeroPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, FLAV_F0",
@@ -12903,7 +12903,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, L162_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "49.7, 52.2\\%"
+    "value": "51.0\\,\\ensuremath{\\pm}\\,1.8\\%"
   },
   "MlstLpJcTwoQgMeanAccDropResMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to mean, L162_MASS",
@@ -12927,7 +12927,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, R16_Q1_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "66.7, 65.4\\%"
+    "value": "66.1\\,\\ensuremath{\\pm}\\,0.9\\%"
   },
   "MlstLpJcTwoQgZeroAccDropCoarseMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, R16_Q1_MASS",
@@ -12945,7 +12945,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, FLAV_F1",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "66.2, 62.8\\%"
+    "value": "64.5\\,\\ensuremath{\\pm}\\,2.4\\%"
   },
   "MlstLpJcTwoQgZeroAccDropFonePr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, FLAV_F1",
@@ -12957,7 +12957,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, FLAV_F1R",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "67.2, 69.0\\%"
+    "value": "68.1\\,\\ensuremath{\\pm}\\,1.3\\%"
   },
   "MlstLpJcTwoQgZeroAccDropFonerPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, FLAV_F1R",
@@ -12981,7 +12981,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, FLAV_F0",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "62.7, 62.2\\%"
+    "value": "62.48\\,\\ensuremath{\\pm}\\,0.34\\%"
   },
   "MlstLpJcTwoQgZeroAccDropFzeroPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, FLAV_F0",
@@ -13023,7 +13023,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, L162_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "61.8, 67.9\\%"
+    "value": "65\\,\\ensuremath{\\pm}\\,4\\%"
   },
   "MlstLpJcTwoQgZeroAccDropResMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the qg data's missing slots set to zero, L162_MASS",
@@ -13047,7 +13047,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, R16_Q1_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "79.1, 81.7\\%"
+    "value": "80.4\\,\\ensuremath{\\pm}\\,1.8\\%"
   },
   "MlstLpJcTwoTopDrawAccDropCoarseMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, R16_Q1_MASS",
@@ -13065,7 +13065,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, FLAV_F1",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "84.4, 85.2\\%"
+    "value": "84.8\\,\\ensuremath{\\pm}\\,0.5\\%"
   },
   "MlstLpJcTwoTopDrawAccDropFonePr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, FLAV_F1",
@@ -13077,7 +13077,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, FLAV_F1R",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "84.9, 85.6\\%"
+    "value": "85.3\\,\\ensuremath{\\pm}\\,0.5\\%"
   },
   "MlstLpJcTwoTopDrawAccDropFonerPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, FLAV_F1R",
@@ -13101,7 +13101,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, FLAV_F0",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "83.3, 83.9\\%"
+    "value": "83.6\\,\\ensuremath{\\pm}\\,0.4\\%"
   },
   "MlstLpJcTwoTopDrawAccDropFzeroPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, FLAV_F0",
@@ -13143,7 +13143,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, L162_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "85.4, 85.4\\%"
+    "value": "85.36\\,\\ensuremath{\\pm}\\,0.01\\%"
   },
   "MlstLpJcTwoTopDrawAccDropResMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to draws, L162_MASS",
@@ -13167,7 +13167,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, R16_Q1_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "85.9, 86.9\\%"
+    "value": "86.4\\,\\ensuremath{\\pm}\\,0.7\\%"
   },
   "MlstLpJcTwoTopMeanAccDropCoarseMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, R16_Q1_MASS",
@@ -13185,7 +13185,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, FLAV_F1",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "88.9, 86.9\\%"
+    "value": "87.9\\,\\ensuremath{\\pm}\\,1.4\\%"
   },
   "MlstLpJcTwoTopMeanAccDropFonePr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, FLAV_F1",
@@ -13197,7 +13197,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, FLAV_F1R",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "89.4, 89.7\\%"
+    "value": "89.55\\,\\ensuremath{\\pm}\\,0.16\\%"
   },
   "MlstLpJcTwoTopMeanAccDropFonerPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, FLAV_F1R",
@@ -13221,7 +13221,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, FLAV_F0",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "88.3, 87.0\\%"
+    "value": "87.6\\,\\ensuremath{\\pm}\\,0.9\\%"
   },
   "MlstLpJcTwoTopMeanAccDropFzeroPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, FLAV_F0",
@@ -13263,7 +13263,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, L162_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "88.5, 87.8\\%"
+    "value": "88.1\\,\\ensuremath{\\pm}\\,0.5\\%"
   },
   "MlstLpJcTwoTopMeanAccDropResMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to mean, L162_MASS",
@@ -13287,7 +13287,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, R16_Q1_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "84.8, 87.4\\%"
+    "value": "86.1\\,\\ensuremath{\\pm}\\,1.9\\%"
   },
   "MlstLpJcTwoTopZeroAccDropCoarseMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, R16_Q1_MASS",
@@ -13305,7 +13305,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, FLAV_F1",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "87.8, 87.6\\%"
+    "value": "87.72\\,\\ensuremath{\\pm}\\,0.10\\%"
   },
   "MlstLpJcTwoTopZeroAccDropFonePr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, FLAV_F1",
@@ -13317,7 +13317,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, FLAV_F1R",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "89.6, 90.3\\%"
+    "value": "89.9\\,\\ensuremath{\\pm}\\,0.5\\%"
   },
   "MlstLpJcTwoTopZeroAccDropFonerPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, FLAV_F1R",
@@ -13341,7 +13341,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, FLAV_F0",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "88.9, 88.5\\%"
+    "value": "88.67\\,\\ensuremath{\\pm}\\,0.30\\%"
   },
   "MlstLpJcTwoTopZeroAccDropFzeroPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, FLAV_F0",
@@ -13383,7 +13383,7 @@
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, L162_MASS",
     "sha256": "609641fb1faecd8d94f1c00a076fc49efd16d6c70896415f3a9bc3bc517e1bca",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "89.2, 88.3\\%"
+    "value": "88.7\\,\\ensuremath{\\pm}\\,0.6\\%"
   },
   "MlstLpJcTwoTopZeroAccDropResMassPr": {
     "json_path": "linear probe JetClass-II, largest set: relative drop in accuracy (%) with the top data's missing slots set to zero, L162_MASS",
@@ -14875,7 +14875,7 @@
   },
   "MlstMinBkgPass": {
     "json_path": "JC1_MIN_BKG",
-    "sha256": "6082f2023344ca11bc110a4114f9e4ee9d68b3c15c39efa5e9f220ce11d78b37",
+    "sha256": "ae14de122acbeff8da501b3d424784859231066952b72753df9909e6735287ff",
     "source_file": "experiments/FIGS/mlst_v4.py",
     "value": "20"
   },
@@ -16657,19 +16657,19 @@
   },
   "MlstNParamsFt": {
     "json_path": "our_params(2, 17)",
-    "sha256": "6082f2023344ca11bc110a4114f9e4ee9d68b3c15c39efa5e9f220ce11d78b37",
+    "sha256": "ae14de122acbeff8da501b3d424784859231066952b72753df9909e6735287ff",
     "source_file": "experiments/FIGS/mlst_v4.py",
     "value": "2{,}209{,}270"
   },
   "MlstNParamsFtKin": {
     "json_path": "our_params(2, 7)",
-    "sha256": "6082f2023344ca11bc110a4114f9e4ee9d68b3c15c39efa5e9f220ce11d78b37",
+    "sha256": "ae14de122acbeff8da501b3d424784859231066952b72753df9909e6735287ff",
     "source_file": "experiments/FIGS/mlst_v4.py",
     "value": "2{,}207{,}950"
   },
   "MlstNParamsJc": {
     "json_path": "our_params(10, 17)",
-    "sha256": "6082f2023344ca11bc110a4114f9e4ee9d68b3c15c39efa5e9f220ce11d78b37",
+    "sha256": "ae14de122acbeff8da501b3d424784859231066952b72753df9909e6735287ff",
     "source_file": "experiments/FIGS/mlst_v4.py",
     "value": "2{,}213{,}374"
   },

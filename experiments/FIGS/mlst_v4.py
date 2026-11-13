@@ -326,15 +326,13 @@ def _rej_place(task: str) -> int:
 
 
 def _value_cell(vals: list, col: str, task: str, fmt_pm, two) -> str:
-    """mean +- SD (three or more), both values (two) or the value alone (one), at the precision of
+    """mean +- SD (two or more runs) or the value alone (one), at the precision of
     the field's tables: accuracy and AUC four decimals, rejection integers (top) or one decimal."""
     v = [x for x in vals if x is not None]
     if not v:
         return "--"
-    if len(v) >= 3:
+    if len(v) >= 2:
         return fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
-    if len(v) == 2:
-        return two(v[0], v[1], ", ")
     if tokens(fmt_pm):
         return tok("o", v[0])
     place = {"accuracy": 4, "auc": 4}.get(col, _rej_place(task))
@@ -520,17 +518,14 @@ SAME_PASS = r"$^{\ddagger}$"     # runs that pass the same QCD jets: one value, 
 def _jc_cell(vals, place, fmt_pm, two):
     v = [x for x in vals if x is not None]
     if tokens(fmt_pm) and v:
-        if len(v) >= 3 and float(np.std(v, ddof=1)) <= 1e-12 * max(1.0, abs(v[0])):
+        if len(v) >= 2 and float(np.std(v, ddof=1)) <= 1e-12 * max(1.0, abs(v[0])):
             return tok("o", v[0]) + SAME_PASS
-        return (tok("p", float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) >= 3
-                else tok("t", *v) if len(v) == 2 else tok("o", v[0]))
-    if len(v) >= 3:
+        return tok("p", float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) >= 2 else tok("o", v[0])
+    if len(v) >= 2:
         sd = float(np.std(v, ddof=1))
         if sd == 0:     # runs that agree exactly: the value at the column's precision, marked
             return f"{v[0]:,.{place}f}".replace(",", "{,}") + SAME_PASS
         return fmt_pm(float(np.mean(v)), sd)
-    if len(v) == 2:
-        return two(v[0], v[1], ", ")
     return f"{v[0]:,.{place}f}".replace(",", "{,}") if v else "--"
 
 

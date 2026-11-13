@@ -10,7 +10,7 @@ name it stands in for (xbb_jc2=xbb).
   figure   eps_S / sqrt(eps_B) against eps_B in the mass window, one panel per signal (Sophon,
            arXiv:2405.12972, Fig. 2, on our QCD background): Sophon's transfer classifier ("head",
            its seeds averaged per model) for every label set, mean over the pretraining runs with
-           the range of the runs, down to the QCD efficiency at which MIN_BKG_PASS QCD jets still
+           the SD of the runs, down to the QCD efficiency at which MIN_BKG_PASS QCD jets still
            pass; the direct discriminant (Sophon Eq. 4) dashed where it can be
            formed; for X->bs the X->bq class's output (Sophon's control) dotted; the untrained
            network's linear probe.
@@ -233,7 +233,8 @@ def figure(M, style, runs, fits: dict, outdir: pathlib.Path) -> list:
             ax.plot(x, y.mean(axis=0), color=c, linewidth=2, linestyle=":" if row == "INIT" else "-",
                     label=name[row])
             if len(y) > 1:
-                ax.fill_between(x, y.min(axis=0), y.max(axis=0), color=c, alpha=0.15, linewidth=0)
+                sd = y.std(axis=0, ddof=1)
+                ax.fill_between(x, y.mean(axis=0) - sd, y.mean(axis=0) + sd, color=c, alpha=0.15, linewidth=0)
         extra = (("zero_shot_xbb", "--", "direct"),) if s == "xbb" else (("zero_shot_xbq", (0, (1, 1)), r"$X\to bq$ class"),)
         for key, ls, lab in extra:
             for row in [r for r in ("L188", "L162") if key != "zero_shot_xbb" or direct_ok(M, r)]:

@@ -145,13 +145,11 @@ def _log_axis(axis, lo: float, hi: float) -> None:
 
 
 def _spread(v: list) -> tuple[float, float | None, float | None]:
-    """(mean, lower and upper error): the SD for three or more runs, the range for two."""
+    """(mean, lower and upper error): the SD over two or more runs (PI 2026-11-12: no range)."""
     m = float(np.mean(v))
-    if len(v) > 2:
+    if len(v) > 1:
         s = float(np.std(v, ddof=1))
         return m, s, s
-    if len(v) == 2:
-        return m, m - min(v), max(v) - m
     return m, None, None
 
 
