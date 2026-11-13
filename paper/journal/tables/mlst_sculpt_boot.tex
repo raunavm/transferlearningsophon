@@ -1,38 +1,44 @@
-\begin{table}[t]
-\centering
-\small
-\caption{Mass sculpting by the pretraining heads, differences between label sets: $\Delta$, the Jensen--Shannon distance of table~\ref{tab:sculpt} ($\times10^{2}$) of the configuration minus that of the reference, paired by pretraining seed; its SD over the seeds (run SD) and over 200 bootstrap replicas of the test jets (bootstrap SD); and $\Delta/\sigma$, $\sigma^{2}$ the sum of the two squares.}
+\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\begin{center}
+\setlength{\tabcolsep}{6pt}
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{Differences in mass sculpting between pairs of pretrained networks, each row the first network named minus the second. $\Delta$ is the difference of the Jensen--Shannon distances of table~\ref{tab:sculpt} ($\times10^{2}$), averaged over pairs of pretraining runs with the same seed. Run SD is the standard deviation of the paired differences over the seeds, bootstrap SD is that of $\Delta$ over 200 bootstrap replicas of the test jets, and $\sigma$ adds the two in quadrature. The blocks are the cuts of table~\ref{tab:sculpt}, which keep 1\% and 10\% of the QCD jets ($\epsB$) or half of the resonant jets ($\epsS = 50\%$). A flavor boundary is a class boundary between decays that differ only in quark flavor. There are \MlstNRunsWord{} pairs of runs for the first two rows of a block and two for the others.}
 \label{tab:sculptboot}
+\par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
  & $\Delta$ & run SD & bootstrap SD & $\Delta/\sigma$ \\
 \midrule
-\multicolumn{5}{l}{\textit{$\epsB = 1\%$}} \\
-\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.13 & 0.38 & 3.07 \\
+\multicolumn{5}{@{}l}{\textit{$\epsB = 1\%$}} \\
 \Kmid{} classes $-$ \Kfull{} classes & 0.67 & 0.52 & 0.35 & 1.06 \\
-\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.36 & 0.56 & 0.41 & $-$1.96 \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.13 & 0.38 & 3.07 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary $-$ \Kfull{} classes & 0.59 & 0.22 & 0.46 & 1.17 \\
+\quad $b$-quark boundary $-$ \Kfull{} classes & 0.70 & 0.27 & 0.44 & 1.35 \\
+\quad random flavor boundary $-$ \Kfull{} classes & 0.36 & 0.14 & 0.41 & 0.83 \\
 \Kres{} classes + mass $-$ \Kres{} classes & $-$0.12 & 0.06 & 0.43 & $-$0.28 \\
-no flavor boundary $-$ \Kfull{} classes & 0.59 & 0.22 & 0.46 & 1.17 \\
-$b$-quark boundary $-$ \Kfull{} classes & 0.70 & 0.27 & 0.44 & 1.35 \\
-random flavor boundary $-$ \Kfull{} classes & 0.36 & 0.14 & 0.41 & 0.83 \\
+\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.36 & 0.56 & 0.41 & $-$1.96 \\
 \midrule
-\multicolumn{5}{l}{\textit{$\epsB = 10\%$}} \\
-\Kcoarse{} classes $-$ \Kfull{} classes & 0.19 & 0.26 & 0.08 & 0.71 \\
+\multicolumn{5}{@{}l}{\textit{$\epsB = 10\%$}} \\
 \Kmid{} classes $-$ \Kfull{} classes & 0.36 & 0.09 & 0.07 & 3.16 \\
-\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$0.73 & 0.57 & 0.08 & $-$1.27 \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 0.19 & 0.26 & 0.08 & 0.71 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary $-$ \Kfull{} classes & 0.09 & 0.31 & 0.09 & 0.29 \\
+\quad $b$-quark boundary $-$ \Kfull{} classes & 0.02 & 0.12 & 0.08 & 0.12 \\
+\quad random flavor boundary $-$ \Kfull{} classes & $-$0.06 & 0.25 & 0.09 & $-$0.23 \\
 \Kres{} classes + mass $-$ \Kres{} classes & $-$0.94 & 0.26 & 0.09 & $-$3.38 \\
-no flavor boundary $-$ \Kfull{} classes & 0.09 & 0.31 & 0.09 & 0.29 \\
-$b$-quark boundary $-$ \Kfull{} classes & 0.02 & 0.12 & 0.08 & 0.12 \\
-random flavor boundary $-$ \Kfull{} classes & $-$0.06 & 0.25 & 0.09 & $-$0.23 \\
+\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$0.73 & 0.57 & 0.08 & $-$1.27 \\
 \midrule
-\multicolumn{5}{l}{\textit{$\epsS = 50\%$}} \\
-\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.27 & 0.52 & 2.10 \\
+\multicolumn{5}{@{}l}{\textit{$\epsS = 50\%$}} \\
 \Kmid{} classes $-$ \Kfull{} classes & 0.91 & 0.58 & 0.43 & 1.26 \\
-\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.58 & 0.11 & 0.60 & $-$2.59 \\
+\Kcoarse{} classes $-$ \Kfull{} classes & 1.22 & 0.27 & 0.52 & 2.10 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary $-$ \Kfull{} classes & 0.41 & 0.18 & 0.61 & 0.65 \\
+\quad $b$-quark boundary $-$ \Kfull{} classes & 0.36 & 1.18 & 0.57 & 0.28 \\
+\quad random flavor boundary $-$ \Kfull{} classes & 0.45 & 0.98 & 0.56 & 0.40 \\
 \Kres{} classes + mass $-$ \Kres{} classes & $-$0.10 & 0.51 & 0.54 & $-$0.14 \\
-no flavor boundary $-$ \Kfull{} classes & 0.41 & 0.18 & 0.61 & 0.65 \\
-$b$-quark boundary $-$ \Kfull{} classes & 0.36 & 1.18 & 0.57 & 0.28 \\
-random flavor boundary $-$ \Kfull{} classes & 0.45 & 0.98 & 0.56 & 0.40 \\
+\Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$1.58 & 0.11 & 0.60 & $-$2.59 \\
 \bottomrule
 \end{tabular*}
-\end{table}
+\end{minipage}
+\end{center}

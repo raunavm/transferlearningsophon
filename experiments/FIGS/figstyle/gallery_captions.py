@@ -131,8 +131,8 @@ CAPTIONS = {
         "the networks of panel (b) on Herwig jets. Curves are means over three runs, except the dotted curve, "
         "which is one run. The lower panels show the ratio to the 188-class curve, and each curve's band "
         "combines its standard deviation over runs with the 68% binomial uncertainty of its passing "
-        "background count. Values at 50% and 30% signal efficiency are in tables {tab:benchtop}, "
-        "{tab:benchqg} and {tab:benchqgherwig}."
+        "background count. Values at 50% and 30% signal efficiency are in tables {tab:published} and "
+        "{tab:labelsets}."
     ),
     "A10": (
         "On JetClass-II the linear probes of the networks pretrained with 43 and 17 classes are less accurate "

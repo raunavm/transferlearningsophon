@@ -1,0 +1,59 @@
+\begin{landscape}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\setlength{\tabcolsep}{6pt}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{Comparison with published models on JetClass, top tagging and quark/gluon tagging. The rows of this work are the mean $\pm$ standard deviation over three runs, trained from scratch or fine-tuned from the network pretrained with \Kfull{} classes, with the inputs that the top and quark/gluon data lack set to zero. The row with kinematic inputs is pretrained and fine-tuned on kinematic inputs only. The names ending in f.t., and OmniLearned-l, are models pretrained on other data. AUC is the area under the receiver operating characteristic curve, on JetClass averaged over the classes, each against the rest, which with JetClass's equal class sizes equals the average over class pairs that ParT reports. $R_{50}$ and $R_{30}$ are the inverse background efficiencies at 50\% and 30\% signal efficiency, with quarks as the signal in quark/gluon tagging. $^{\S}$ marks a value from a single run.}
+\label{tab:published}
+\par\medskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
+\toprule
+ & parameters & training jets & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\multicolumn{7}{@{}l}{JetClass} \\
+ParticleNet~\cite{part} & 366\,k & 2\,M & 0.828 & 0.9820 & -- & -- \\
+ParT~\cite{part} & 2.14\,M & 2\,M & 0.836 & 0.9834 & -- & -- \\
+from scratch (this work) & 2.21\,M & 1\,M & 0.8267\,$\pm$\,0.0011 & 0.98177\,$\pm$\,0.00026 & -- & -- \\
+fine-tuned from \Kfull{} classes (this work) & 2.21\,M & 1\,M & 0.8468\,$\pm$\,0.0006 & 0.98538\,$\pm$\,0.00007 & -- & -- \\
+\midrule
+\multicolumn{7}{@{}l}{top tagging} \\
+linear EFP~\cite{toptag} & 1\,k & 1.2\,M & 0.932 & 0.980 & -- & 384 \\
+ParticleNet~\cite{particlenet} & 366\,k & 1.2\,M & 0.940 & 0.9858 & 397\,$\pm$\,7 & 1{,}615\,$\pm$\,93 \\
+ParT~\cite{part} & 2.14\,M & 1.2\,M & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1{,}602\,$\pm$\,81 \\
+ParT-f.t.~\cite{part} & 2.14\,M & 1.2\,M & 0.944 & 0.9877 & 691\,$\pm$\,15 & 2{,}766\,$\pm$\,130 \\
+MIParT-L-f.t.~\cite{mipart} & 2.38\,M & 1.2\,M & 0.944 & 0.9878 & 640\,$\pm$\,10 & 2{,}789\,$\pm$\,133 \\
+L-GATr-f.t.~\cite{lgatr} & 1.1\,M & 1.2\,M & 0.9446 & 0.9879 & 651\,$\pm$\,11 & 2{,}894\,$\pm$\,84 \\
+OmniLearned-l~\cite{omnilearned} & 423\,M & 1.2\,M & 0.944 & 0.9880 & 688\,$\pm$\,9 & 3{,}486\,$\pm$\,157 \\
+from scratch (this work) & 2.21\,M & 1.2\,M & 0.93875\,$\pm$\,0.00016 & 0.98524\,$\pm$\,0.00008 & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 \\
+fine-tuned from \Kfull{} classes (this work) & 2.21\,M & 1.2\,M & 0.94001\,$\pm$\,0.00023 & 0.98606\,$\pm$\,0.00007 & 461\,$\pm$\,4 & 1{,}800\,$\pm$\,60 \\
+\Kfull{} classes, kinematic inputs & 2.21\,M & 1.2\,M & 0.94072$^{\S}$ & 0.98620$^{\S}$ & 443$^{\S}$ & 1{,}800$^{\S}$ \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:published} (continued)}}
+\par\smallskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
+\toprule
+ & parameters & training jets & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\multicolumn{7}{@{}l}{quark/gluon tagging} \\
+constituent multiplicity~\cite{efn} & -- & -- & -- & 0.8401 & 19.0 & -- \\
+linear EFP~\cite{efn} & -- & 1.6\,M & -- & 0.8919 & 29.7 & -- \\
+PFN-Ex~\cite{efn} & -- & 1.6\,M & -- & 0.9005 & 34.7\,$\pm$\,0.4 & -- \\
+ParticleNet~\cite{particlenet} & 366\,k & 1.6\,M & 0.840 & 0.9116 & 39.8\,$\pm$\,0.2 & 98.6\,$\pm$\,1.3 \\
+ParT~\cite{part} & 2.14\,M & 1.6\,M & 0.840 & 0.9121 & 41.3\,$\pm$\,0.3 & 101.2\,$\pm$\,1.1 \\
+ParticleNet-f.t.~\cite{part} & 370\,k & 1.6\,M & 0.839 & 0.9115 & 40.1\,$\pm$\,0.2 & 100.3\,$\pm$\,1.0 \\
+ParT-f.t.~\cite{part} & 2.14\,M & 1.6\,M & 0.843 & 0.9151 & 42.4\,$\pm$\,0.2 & 107.9\,$\pm$\,0.5 \\
+OmniLearned-m~\cite{omnilearned} & 58\,M & 1.6\,M & 0.845 & 0.9162 & 43.2\,$\pm$\,0.1 & 111.2\,$\pm$\,1.5 \\
+from scratch (this work) & 2.21\,M & 1.6\,M & 0.8397\,$\pm$\,0.0007 & 0.91212\,$\pm$\,0.00022 & 41.47\,$\pm$\,0.29 & 104.0\,$\pm$\,1.0 \\
+fine-tuned from \Kfull{} classes (this work) & 2.21\,M & 1.6\,M & 0.8433\,$\pm$\,0.0002 & 0.91482\,$\pm$\,0.00014 & 42.56\,$\pm$\,0.10 & 107.3\,$\pm$\,2.2 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+}
+\end{landscape}

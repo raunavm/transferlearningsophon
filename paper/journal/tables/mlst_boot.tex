@@ -1,29 +1,52 @@
 \begin{table*}[t]
 \centering
-\small
 \caption{Linear probes on the frozen features and fine-tuning of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes: uncertainty (percent) of the comparisons between their label sets at the largest training set, as the SD of the logarithm of the ratio over the pretraining runs / that from the finite test sample. JetClass-II: the ratio of $1-\mathrm{AUC}$; top and quark/gluon: the ratio of $R_{30}$.}
 \label{tab:boot}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lc@{}}
 \toprule
- & \multicolumn{3}{c}{linear probe on frozen features} \\
-\cmidrule(lr){2-4}
-ratio & JetClass-II, $1-\mathrm{AUC}$ & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
+ & \multicolumn{1}{c}{linear probe on frozen features} \\
+\cmidrule(lr){2-2}
+ratio & JetClass-II, $1-\mathrm{AUC}$ \\
 \midrule
-\Kres{} classes / \Kfull{} classes & 0.45 / 0.15 & 25 / 2.6 & 24 / 3.5 \\
-\Kmid{} classes / \Kfull{} classes & 0.70 / 0.16 & 29 / 2.4 & 20 / 3.6 \\
-\Kcoarse{} classes / \Kfull{} classes & 1.3 / 0.21 & 16 / 2.4 & 9.8 / 3.6 \\
+\Kres{} classes / \Kfull{} classes & 0.45 / 0.15 \\
+\Kmid{} classes / \Kfull{} classes & 0.70 / 0.16 \\
+\Kcoarse{} classes / \Kfull{} classes & 1.3 / 0.21 \\
 \bottomrule
 \end{tabular*}
 \par\bigskip
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
 \toprule
- & \multicolumn{3}{c}{Sophon's network, fine-tuned} \\
-\cmidrule(lr){2-4}
-ratio & JetClass-II, $1-\mathrm{AUC}$ & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
+ & \multicolumn{2}{c}{linear probe on frozen features} \\
+\cmidrule(lr){2-3}
+ratio & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
 \midrule
-\Kres{} classes / \Kfull{} classes & 1.1 / 0.13 & 3.2 / 13 & 2.6 / 4.6 \\
-\Kmid{} classes / \Kfull{} classes & 0.20 / 0.13 & 7.3 / 13 & 2.8 / 4.6 \\
-\Kcoarse{} classes / \Kfull{} classes & 0.29 / 0.15 & 9.9 / 13 & 2.6 / 4.6 \\
+\Kres{} classes / \Kfull{} classes & 25 / 2.6 & 24 / 3.5 \\
+\Kmid{} classes / \Kfull{} classes & 29 / 2.4 & 20 / 3.6 \\
+\Kcoarse{} classes / \Kfull{} classes & 16 / 2.4 & 9.8 / 3.6 \\
+\bottomrule
+\end{tabular*}
+\par\bigskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lc@{}}
+\toprule
+ & \multicolumn{1}{c}{Sophon's network, fine-tuned} \\
+\cmidrule(lr){2-2}
+ratio & JetClass-II, $1-\mathrm{AUC}$ \\
+\midrule
+\Kres{} classes / \Kfull{} classes & 1.1 / 0.13 \\
+\Kmid{} classes / \Kfull{} classes & 0.20 / 0.13 \\
+\Kcoarse{} classes / \Kfull{} classes & 0.29 / 0.15 \\
+\bottomrule
+\end{tabular*}
+\par\bigskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
+\toprule
+ & \multicolumn{2}{c}{Sophon's network, fine-tuned} \\
+\cmidrule(lr){2-3}
+ratio & top, $R_{30}$ & quark/gluon, $R_{30}$ \\
+\midrule
+\Kres{} classes / \Kfull{} classes & 3.2 / 13 & 2.6 / 4.6 \\
+\Kmid{} classes / \Kfull{} classes & 7.3 / 13 & 2.8 / 4.6 \\
+\Kcoarse{} classes / \Kfull{} classes & 9.9 / 13 & 2.6 / 4.6 \\
 \bottomrule
 \end{tabular*}
 \end{table*}

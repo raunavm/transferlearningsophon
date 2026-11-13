@@ -1,21 +1,25 @@
 \begin{table}[t]
 \centering
-\small
-\caption{Jet mass regressed from the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (two also with a mass regression) and of the random network, beside the soft-drop mass; (MLP): multilayer-perceptron probe on the frozen features. Resolution $\sigma_r$: half the 15.9--84.1\% quantile range of $r = m/m_{\mathrm{gen}}$ over its median; median response of $r$. Mean $\pm$ SD over the pretraining runs of each configuration.}
+\caption{Jet-mass resolution and median response on JetClass-II, compared between the soft-drop mass, the mass output of the pretraining head and a multilayer perceptron that regresses the mass from the frozen features. The response $r = m/m_{\mathrm{gen}}$ is the estimated mass over the generator-level soft-drop mass, and the resolution is half the range between the 15.9\% and 84.1\% quantiles of $r$ divided by its median, over all test jets with a generator-level match. The perceptron's target is centered on the training median of the jet's true class, which the other two estimates are not. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \MlstMassNRunsWord{} per network with an added mass output and three initializations of the random network.}
 \label{tab:mass}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
 \toprule
  & resolution & median response \\
 \midrule
-soft-drop mass & 0.2448 & 0.929 \\
+soft-drop mass & 0.2448 & 0.9294 \\
 \midrule
-random network (MLP) & 0.2421\,$\pm$\,0.0018 & 0.983\,$\pm$\,0.005 \\
-\Kfull{} classes (MLP) & 0.2200\,$\pm$\,0.0014 & 0.991\,$\pm$\,0.005 \\
-\Kres{} classes (MLP) & 0.2195\,$\pm$\,0.0017 & 0.988\,$\pm$\,0.001 \\
-\Kmid{} classes (MLP) & 0.2158\,$\pm$\,0.0029 & 0.991\,$\pm$\,0.005 \\
-\Kcoarse{} classes (MLP) & 0.2098\,$\pm$\,0.0031 & 0.991\,$\pm$\,0.004 \\
-\Kres{} classes + mass (MLP) & 0.1589\,$\pm$\,0.0003 & 1.005\,$\pm$\,0.002 \\
-\Kcoarse{} classes + mass (MLP) & 0.1585\,$\pm$\,0.0003 & 1.008\,$\pm$\,0.002 \\
+\multicolumn{3}{@{}l}{\textit{mass output of the pretraining head}} \\
+\Kres{} classes + mass & 0.1467\,$\pm$\,0.0006 & 0.9992\,$\pm$\,0.0055 \\
+\Kcoarse{} classes + mass & 0.1455\,$\pm$\,0.0008 & 1.0052\,$\pm$\,0.0002 \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{multilayer-perceptron probe on the frozen features}} \\
+\Kfull{} classes & 0.2200\,$\pm$\,0.0014 & 0.9912\,$\pm$\,0.0047 \\
+\Kres{} classes & 0.2195\,$\pm$\,0.0017 & 0.9876\,$\pm$\,0.0014 \\
+\Kmid{} classes & 0.2158\,$\pm$\,0.0029 & 0.9908\,$\pm$\,0.0049 \\
+\Kcoarse{} classes & 0.2098\,$\pm$\,0.0031 & 0.9908\,$\pm$\,0.0041 \\
+\Kres{} classes + mass & 0.1589\,$\pm$\,0.0003 & 1.0049\,$\pm$\,0.0015 \\
+\Kcoarse{} classes + mass & 0.1585\,$\pm$\,0.0003 & 1.0077\,$\pm$\,0.0022 \\
+random network & 0.2421\,$\pm$\,0.0018 & 0.9833\,$\pm$\,0.0049 \\
 \bottomrule
 \end{tabular*}
 \end{table}

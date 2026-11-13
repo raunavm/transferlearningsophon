@@ -67,6 +67,8 @@ GENERATED = {"results_generated.tex",
              "tables/mlst_summary.tex", "tables/mlst_jetclass_rej.tex", "tables/mlst_bench_qg_herwig.tex",
              "tables/mlst_probes_full.tex", "tables/mlst_pairs_full.tex", "tables/mlst_coarse_full.tex",
              "tables/mlst_qcdhf_full.tex", "tables/mlst_fill_full.tex",
+             # 2026-11-12 (PI, the table fix): the comparison with published models and the other label sets' rows
+             "tables/mlst_published.tex", "tables/mlst_labelsets.tex",
              # the review books (experiments/FIGS/make_results_book.py writes them): the gallery's figures with
              # its captions and the generated tables above, for review; not the manuscript, which main.tex inputs
              "results_book.tex", "results_supplement.tex", "results_book_all.tex"}

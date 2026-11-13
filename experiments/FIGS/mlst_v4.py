@@ -280,10 +280,8 @@ def gpu_bound_macro(em, fits: dict, runs: dict, comp: dict, index) -> None:
 LIT = REPO / "experiments/FIGS/data/literature_benchmarks.json"
 BENCH_COLS = (("acc", "accuracy", 3), ("auc", "auc", 4), ("r50", "r50", None), ("r30", "r30", None))
 METHOD_TEX = {"MIParT-L-f.t.": "MIParT-L-f.t.", "L-GATr-f.t.": "L-GATr-f.t."}
-# the heading over our rows: how the network was used downstream (PI, 2026-11-07)
-MODE_FT = "this work"      # the heading over our rows; each row names its network and how it was used
 SCRATCH_LABEL = "from scratch"     # trained, not fine-tuned: no mode tag (PI 2026-11-11)
-PARAMS_HEAD = r"\# params"
+PARAMS_HEAD = "parameters"
 
 
 def our_params(k_out: int, n_inputs: int = 17) -> int:
@@ -299,7 +297,8 @@ def _params_cell(n: int) -> str:
 
 
 # A cell of a generated table carries its runs' values as a token until mlst_results.uniform_columns prints the
-# whole column at one precision: kind p (mean, SD), t (two runs), o (one value).
+# whole column at one precision: kind p (mean, SD over two or more runs), s (a single run), o (a number that is
+# not a run's).
 TOK_OPEN, TOK_CLOSE = "\x02", "\x03"
 
 
@@ -334,7 +333,7 @@ def _value_cell(vals: list, col: str, task: str, fmt_pm, two) -> str:
     if len(v) >= 2:
         return fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
     if tokens(fmt_pm):
-        return tok("o", v[0])
+        return tok("s", v[0])
     place = {"accuracy": 4, "auc": 4}.get(col, _rej_place(task))
     return f"{v[0]:,.{place}f}".replace(",", "{,}")
 
@@ -354,24 +353,23 @@ def _lit_cell(x) -> str:
     return r"\,$\pm$\,".join(parts)
 
 
-def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scratch: str, fmt_pm, two,
-                kin: tuple | None = None, herwig: bool = False) -> str:
-    """T3 (task 'top') and T4 ('qg', ParT's exp inputs; herwig=True adds the Herwig columns): the
-    published rows of LIT_ROWS, then ours on the full training set: from scratch, the label sets of
-    rows fine-tuned, and (kin = (row label, init)) the kinematic-only model. Columns: accuracy, AUC,
-    R50, R30 (the caption says which inputs are set to zero). A first column gives the
-    trainable parameters: the published as the model's paper gives them, ours our_params (two outputs; the
-    kinematic-only model on 7 inputs). No bold (PI 2026-11-12)."""
+def bench_rows(task: str, per: dict, runs: dict, rows: tuple, label: dict, scratch: str, fmt_pm, two,
+               kin: tuple | None = None, herwig: bool = False, published: bool = False) -> tuple[list, list]:
+    """The rows of a benchmark table on task ('top', 'qg'; 'qg_herwig': quark/gluon networks scored on Herwig jets,
+    no published rows), each (label, the BENCH_COLS cells, parameters): the published rows of LIT_ROWS, and ours
+    at the full training set: the label sets of rows fine-tuned, (kin = (row label, init)) the kinematic-only
+    model, from scratch last. published: each published row's fourth entry is its literature_benchmarks.json kind
+    ('scratch', 'pretrained', 'observable')."""
     lit_all = {r["method"]: r for r in json.loads(LIT.read_text())["top" if task == "top" else "qg_exp"]}
     tasks = [task] + (["qg_herwig"] if herwig else [])
-    nc = len(BENCH_COLS) * len(tasks)
     lit_rows = []
-    for name in LIT_ROWS[task]:
+    for name in LIT_ROWS.get(task, ()):
         if name not in lit_all:
             continue
         r = lit_all[name]
         cells = [_lit_cell(r[k]) for k, _, _ in BENCH_COLS] + ["--"] * len(BENCH_COLS) * (len(tasks) - 1)
-        lit_rows.append((METHOD_TEX.get(name, name) + rf"~\cite{{{r['cite']}}}", cells, r.get("params") or "--"))
+        lit_rows.append((METHOD_TEX.get(name, name) + rf"~\cite{{{r['cite']}}}", cells, r.get("params") or "--")
+                        + ((r["kind"],) if published else ()))
     ours = []
 
     def recs_of(t, init):
@@ -380,8 +378,6 @@ def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scra
             return []
         nmax = max(n for i, bn in by.items() for n in bn)
         return by.get(init, {}).get(nmax, [])
-    ours.append((SCRATCH_LABEL, [_value_cell([r[c] for r in recs_of(t, scratch)], c, t, fmt_pm, two)
-                                 for t in tasks for _, c, _ in BENCH_COLS], _params_cell(our_params(2))))
     for arm in rows:
         cells = []
         for t in tasks:
@@ -394,8 +390,25 @@ def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scra
         kin_row = (kin[0], [_value_cell([recs[0][c]], c, task, fmt_pm, two) if recs else r"\pending{run}"
                             for _, c, _ in BENCH_COLS] + ["--"] * len(BENCH_COLS) * (len(tasks) - 1),
                    _params_cell(our_params(2, 7)))
-    every = lit_rows + ours + ([kin_row] if kin_row else [])
-    allrows = [(n, [p] + c) for n, c, p in every]       # no bold (PI 2026-11-12: the 3-sigma rule does not support it)
+    ours += [kin_row] if kin_row else []
+    ours.append((SCRATCH_LABEL, [_value_cell([r[c] for r in recs_of(t, scratch)], c, t, fmt_pm, two)
+                                 for t in tasks for _, c, _ in BENCH_COLS], _params_cell(our_params(2))))
+    return lit_rows, ours
+
+
+def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scratch: str, fmt_pm, two,
+                kin: tuple | None = None, herwig: bool = False) -> str:
+    """T3 (task 'top') and T4 ('qg', ParT's exp inputs; herwig=True adds the Herwig columns): the
+    published rows of LIT_ROWS, then ours on the full training set below a rule: the label sets of rows
+    fine-tuned, (kin = (row label, init)) the kinematic-only model, and from scratch last (the one row order of
+    the tables, PI 2026-11-12; mlst_results._headings writes the "fine-tuned" heading over them). Columns: accuracy, AUC,
+    R50, R30 (the caption says which inputs are set to zero). A first column gives the
+    trainable parameters: the published as the model's paper gives them, ours our_params (two outputs; the
+    kinematic-only model on 7 inputs). No bold (PI 2026-11-12)."""
+    tasks = [task] + (["qg_herwig"] if herwig else [])
+    nc = len(BENCH_COLS) * len(tasks)
+    lit_rows, ours = bench_rows(task, per, runs, rows, label, scratch, fmt_pm, two, kin, herwig)
+    allrows = [(n, [p] + c) for n, c, p in lit_rows + ours]       # no bold (PI 2026-11-12: the 3-sigma rule does not support it)
     head = [r"\begin{tabular}{lc" + "c" * nc + "}", r"\toprule"]
     if herwig:
         head += [r" & & \multicolumn{4}{c}{Pythia} & \multicolumn{4}{c}{Herwig} \\",
@@ -403,8 +416,7 @@ def table_bench(task: str, per: dict, runs: dict, rows: tuple, label: dict, scra
     head += [rf" & {PARAMS_HEAD} & " + " & ".join(["accuracy & AUC & $R_{50}$ & $R_{30}$"] * len(tasks)) + r" \\",
              r"\midrule"]
     lines = head + [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[:len(lit_rows)]]
-    lines += [r"\midrule", r"\multicolumn{" + str(2 + nc) + r"}{l}{\textit{" + MODE_FT + r"}} \\"]
-    lines += [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[len(lit_rows):]]
+    lines += [r"\midrule"] + [f"{n} & " + " & ".join(c) + r" \\" for n, c in allrows[len(lit_rows):]]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -420,13 +432,13 @@ def table_bench_herwig(per: dict, runs: dict, rows: tuple, label: dict, scratch:
         nmax = max(n for i, bn in by.items() for n in bn)
         return by.get(init, {}).get(nmax, [])
     lines = [r"\begin{tabular}{l" + "c" * len(BENCH_COLS) + "}", r"\toprule",
-             r" & accuracy & AUC & $R_{50}$ & $R_{30}$ \\", r"\midrule",
-             f"{SCRATCH_LABEL} & " + " & ".join(_value_cell([r[c] for r in recs_of(scratch)], c, "qg_herwig", fmt_pm, two)
-                                              for _, c, _ in BENCH_COLS) + r" \\"]
+             r" & accuracy & AUC & $R_{50}$ & $R_{30}$ \\", r"\midrule"]
     for arm in rows:
         recs = [(recs_of(m[len("mtx-"):]) or [None])[0] for m in runs[arm]]
         lines.append(f"{label[arm]} & " + " & ".join(_value_cell([r[c] if r else None for r in recs], c, "qg_herwig",
                                                                   fmt_pm, two) for _, c, _ in BENCH_COLS) + r" \\")
+    lines.append(f"{SCRATCH_LABEL} & " + " & ".join(_value_cell([r[c] for r in recs_of(scratch)], c, "qg_herwig", fmt_pm, two)
+                                                   for _, c, _ in BENCH_COLS) + r" \\")
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -517,10 +529,8 @@ SAME_PASS = r"$^{\ddagger}$"     # runs that pass the same QCD jets: one value, 
 
 def _jc_cell(vals, place, fmt_pm, two):
     v = [x for x in vals if x is not None]
-    if tokens(fmt_pm) and v:
-        if len(v) >= 2 and float(np.std(v, ddof=1)) <= 1e-12 * max(1.0, abs(v[0])):
-            return tok("o", v[0]) + SAME_PASS
-        return tok("p", float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) >= 2 else tok("o", v[0])
+    if tokens(fmt_pm) and v:        # runs that agree are an SD of zero, which mlst_results._render marks
+        return tok("p", float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) >= 2 else tok("s", v[0])
     if len(v) >= 2:
         sd = float(np.std(v, ddof=1))
         if sd == 0:     # runs that agree exactly: the value at the column's precision, marked
@@ -529,35 +539,12 @@ def _jc_cell(vals, place, fmt_pm, two):
     return f"{v[0]:,.{place}f}".replace(",", "{,}") if v else "--"
 
 
-def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
-                   fmt_pm, two, literature: bool = True, part: str = "all") -> str:
-    """JetClass in the form of ParT's Table 1 (T2): accuracy, AUC averaged over class pairs (one-vs-one,
-    ParT's convention, which equals the one-vs-rest average on JetClass's equal class sizes, checked
-    here), and each signal class's rejection of QCD at ParT's working point, marked where fewer than
-    JC1_MIN_BKG QCD jets pass in any run. Published rows: those trained on 2 M jets (literature_benchmarks.json
-    entries with n_train; MIParT and L-GATr when the file has them), the training size beside each
-    row; ours fine-tuned on nmax jets (ft_curves.py cells: pre the pretrained runs' tree, ref the
-    from-scratch reference's), mean +- SD over the runs. No bold (PI 2026-11-12). part: "all" every column;
-    "summary" jets, parameters, accuracy and AUC (the main text); "rej" jets and the per-class rejections (the
-    appendix). A rejection that is the same in every run is printed once with SAME_PASS."""
+def jetclass_rows(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
+                  fmt_pm, two, literature: bool = True) -> tuple[list, list]:
+    """The rows of the JetClass tables, each (label & training jets & parameters, the cells accuracy, AUC and
+    the JC1_COLS rejections, the mark after each cell): the published rows trained on 2 M jets, and ours
+    fine-tuned on nmax jets, from scratch last (table_jetclass)."""
     n = f"N{nmax}"
-    if part == "summary":
-        head = (r"\begin{tabular}{llccc}", r"\toprule", rf" & jets & {PARAMS_HEAD} & accuracy & AUC \\", r"\midrule")
-    elif part == "rej":
-        head = (r"\begin{tabular}{ll" + "c" * len(JC1_COLS) + "}", r"\toprule",
-                r" & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
-                r"\cmidrule(lr){3-" + str(2 + len(JC1_COLS)) + "}",
-                r" & jets & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
-                r" & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
-                r"\midrule")
-    else:
-        head = (r"\begin{tabular}{ll" + "c" * (3 + len(JC1_COLS)) + "}", r"\toprule",
-                r" & & & & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
-                r"\cmidrule(lr){6-" + str(5 + len(JC1_COLS)) + "}",
-                rf" & jets & {PARAMS_HEAD} & accuracy & AUC & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
-                r" & & & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
-                r"\midrule")
-    lines = list(head)
     ncol = 2 + len(JC1_COLS)
     lit = []                                   # (row prefix, value cells, marks after the values)
     if literature:
@@ -582,24 +569,54 @@ def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, s
             cols.append(_jc_cell([w["rejection"] for w in wp], 0, fmt_pm, two))
         return f"{name} & {nmax / 1e6:g} M & {_params_cell(our_params(len(JC1_COLS) + 1))}", cols, marks
     ours = []
-    seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
-    blocks = _jc1_cells(ref, scratch, n, seeds)
-    if blocks:
-        ours.append(row(SCRATCH_LABEL, blocks))
     for arm in rows:
         blocks = [b for m in runs[arm] for b in _jc1_cells(pre, m[len("mtx-"):], n, ["s1"])]
         if blocks:
             ours.append(row(label[arm], blocks))
+    seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
+    blocks = _jc1_cells(ref, scratch, n, seeds)
+    if blocks:          # from scratch last, as in every fine-tuning table
+        ours.append(row(SCRATCH_LABEL, blocks))
+    return lit, ours
+
+
+def table_jetclass(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
+                   fmt_pm, two, literature: bool = True, part: str = "all") -> str:
+    """JetClass in the form of ParT's Table 1 (T2): accuracy, AUC averaged over class pairs (one-vs-one,
+    ParT's convention, which equals the one-vs-rest average on JetClass's equal class sizes, checked
+    here), and each signal class's rejection of QCD at ParT's working point, marked where fewer than
+    JC1_MIN_BKG QCD jets pass in any run. Published rows: those trained on 2 M jets (literature_benchmarks.json
+    entries with n_train; MIParT and L-GATr when the file has them), the training size beside each
+    row; ours fine-tuned on nmax jets (ft_curves.py cells: pre the pretrained runs' tree, ref the
+    from-scratch reference's), mean +- SD over the runs. No bold (PI 2026-11-12). part: "all" every column;
+    "summary" jets, parameters, accuracy and AUC (the main text); "rej" jets and the per-class rejections (the
+    appendix). A rejection that is the same in every run is printed once with SAME_PASS."""
+    if part == "summary":
+        head = (r"\begin{tabular}{llccc}", r"\toprule", rf" & training jets & {PARAMS_HEAD} & accuracy & AUC \\", r"\midrule")
+    elif part == "rej":
+        head = (r"\begin{tabular}{ll" + "c" * len(JC1_COLS) + "}", r"\toprule",
+                r" & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
+                r"\cmidrule(lr){3-" + str(2 + len(JC1_COLS)) + "}",
+                r" & training & " + " & ".join(h for _, h in JC1_COLS) + r" \\",       # over two header rows: the
+                r" & jets & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",  # page is full
+                r"\midrule")
+    else:
+        head = (r"\begin{tabular}{ll" + "c" * (3 + len(JC1_COLS)) + "}", r"\toprule",
+                r" & & & & & \multicolumn{" + str(len(JC1_COLS)) + r"}{c}{rejection of QCD} \\",
+                r"\cmidrule(lr){6-" + str(5 + len(JC1_COLS)) + "}",
+                rf" & training jets & {PARAMS_HEAD} & accuracy & AUC & " + " & ".join(h for _, h in JC1_COLS) + r" \\",
+                r" & & & & & " + " & ".join(r"$R_{%g}$" % (100 * LPV_EPS.get(c, 0.5)) for c, _ in JC1_COLS) + r" \\",
+                r"\midrule")
+    lines = list(head)
+    ncol = 2 + len(JC1_COLS)
+    lit, ours = jetclass_rows(pre, ref, runs, rows, label, scratch, nmax, fmt_pm, two, literature)
     keep = (list(range(2)) if part == "summary" else list(range(2, ncol)) if part == "rej" else list(range(ncol)))
-    width = len(head[-2].split("&"))      # columns of the tabular
     for i, (prefix, cells, marks) in enumerate(lit + ours):
         if part == "rej":          # jets only: the parameters belong to the main-text table
             prefix = " & ".join(_depth0(prefix)[:2])
         if literature and i == len(lit):
-            lines += [r"\midrule", r"\multicolumn{" + str(width) + r"}{l}{\textit{" + MODE_FT + r"}} \\"]
+            lines += [r"\midrule"]
         lines.append(prefix + " & " + " & ".join(cells[j] + marks[j] for j in keep) + r" \\")
-    if literature and not ours:
-        lines += [r"\midrule", r"\multicolumn{" + str(width) + r"}{l}{\textit{" + MODE_FT + r"}} \\"]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -625,14 +642,14 @@ def table_jetclass_nbkg(pre: dict, ref: dict, runs: dict, rows: tuple, label: di
     def row(name, blocks):
         return name + " & " + " & ".join(_sep_int(min(b["per_class"][c]["rejection"]["n_bkg_pass"] for b in blocks))
                                          for c, _ in JC1_COLS) + r" \\"
-    seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
-    blocks = _jc1_cells(ref, scratch, n, seeds)
-    if blocks:
-        lines.append(row(SCRATCH_LABEL, blocks))
     for arm in rows:
         blocks = [b for m in runs[arm] for b in _jc1_cells(pre, m[len("mtx-"):], n, ["s1"])]
         if blocks:
             lines.append(row(label[arm], blocks))
+    seeds = sorted({s for nn in ref.get(scratch, {}).values() for s in nn})
+    blocks = _jc1_cells(ref, scratch, n, seeds)
+    if blocks:
+        lines.append(row(SCRATCH_LABEL, blocks))
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 

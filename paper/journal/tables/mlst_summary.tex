@@ -1,33 +1,33 @@
 \begin{table}[t]
 \centering
-\small
 \setlength{\tabcolsep}{4pt}
-\caption{Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and 17-class partitions, as linear probes on their frozen features (upper part) and fine-tuned (lower part): accuracy on class-balanced JetClass-II and on JetClass, and $R_{30}$, $1/\epsB$ at 30\% signal efficiency, on top and quark/gluon (Pythia) tagging. Linear probes at each task's largest training set, on top and quark/gluon with the missing inputs substituted as chosen on validation (\LpSubstitutionTop{} for top, \LpSubstitutionQg{} for quark/gluon); fine-tuning on one million JetClass-II and JetClass jets and on the full top (\LitPartTopNTrainMillion{} million) and quark/gluon (\LitQgTrainMillion{} million) training sets. Mean $\pm$ SD over the \MlstNRunsWord{} pretraining runs of each level of the class hierarchy; configurations with \RandFlavRuns{} runs: over those. Random partitions: mean $\pm$ SD over the five partitions into 17 classes, one run each. The random network without pretraining: three initializations. From scratch: three seeds.}
+\caption{Linear probes on the frozen features and fine-tuning of the networks pretrained with 188, 162, 43 and 17 classes and with the 17-class partitions, compared on class-balanced JetClass-II, JetClass, top tagging and quark/gluon tagging. A flavor boundary is a class boundary between decays that differ only in quark flavor. $R_{30}$ is the inverse background efficiency at 30\% signal efficiency. Linear probes use each task's largest training set, and fine-tuning uses one million JetClass-II jets, one million JetClass jets and the full top and quark/gluon training sets. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, one for each of five random partitions, three initializations of the random network and three training seeds from scratch.}
 \label{tab:summary}
+\small
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
  & \multicolumn{2}{c}{accuracy} & \multicolumn{2}{c}{$R_{30}$} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & JetClass-II & JetClass & top & quark/gluon \\
 \midrule
-\multicolumn{5}{l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & 0.4348\,$\pm$\,0.0003 & 0.7709\,$\pm$\,0.0023 & 228\,$\pm$\,25 & 72.7\,$\pm$\,2.4 \\
-\Kres{} classes & 0.4328\,$\pm$\,0.0008 & 0.7709\,$\pm$\,0.0005 & 199\,$\pm$\,25 & 71.0\,$\pm$\,0.3 \\
-\Kmid{} classes & 0.3609\,$\pm$\,0.0046 & 0.7695\,$\pm$\,0.0014 & 231\,$\pm$\,8 & 70.8\,$\pm$\,1.8 \\
-\Kcoarse{} classes & 0.3341\,$\pm$\,0.0067 & 0.7605\,$\pm$\,0.0027 & 255\,$\pm$\,17 & 74.3\,$\pm$\,1.9 \\
-\multicolumn{5}{l}{17-class partitions} \\
-\quad no flavor boundary & 0.3746\,$\pm$\,0.0033 & 0.7511\,$\pm$\,0.0034 & 253\,$\pm$\,13 & 72.8\,$\pm$\,1.5 \\
-\quad $b$-quark boundary & 0.3954\,$\pm$\,0.0013 & 0.7630\,$\pm$\,0.0021 & 207\,$\pm$\,6 & 72.4\,$\pm$\,0.2 \\
-\quad random flavor boundary & 0.4080\,$\pm$\,0.0013 & 0.7579\,$\pm$\,0.0021 & 224\,$\pm$\,13 & 72.0\,$\pm$\,1.2 \\
-\quad random partitions & 0.4216\,$\pm$\,0.0014 & 0.7541\,$\pm$\,0.0009 & 163\,$\pm$\,11 & 68.3\,$\pm$\,2.1 \\
-random network & 0.0724\,$\pm$\,0.0015 & 0.4077\,$\pm$\,0.0013 & 57\,$\pm$\,3 & 56.4\,$\pm$\,1.0 \\
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.4348\,$\pm$\,0.0003 & 0.771\,$\pm$\,0.002 & 228\,$\pm$\,25 & 72.7\,$\pm$\,2.4 \\
+\Kres{} classes & 0.4328\,$\pm$\,0.0008 & 0.771\,$\pm$\,0.001 & 199\,$\pm$\,25 & 71.0\,$\pm$\,0.3 \\
+\Kmid{} classes & 0.3609\,$\pm$\,0.0046 & 0.770\,$\pm$\,0.001 & 231\,$\pm$\,8 & 70.8\,$\pm$\,1.8 \\
+\Kcoarse{} classes & 0.3341\,$\pm$\,0.0067 & 0.761\,$\pm$\,0.003 & 255\,$\pm$\,17 & 74.3\,$\pm$\,1.9 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.3746\,$\pm$\,0.0033 & 0.751\,$\pm$\,0.003 & 253\,$\pm$\,13 & 72.8\,$\pm$\,1.5 \\
+\quad $b$-quark boundary & 0.3954\,$\pm$\,0.0013 & 0.763\,$\pm$\,0.002 & 207\,$\pm$\,6 & 72.4\,$\pm$\,0.2 \\
+\quad random flavor boundary & 0.4080\,$\pm$\,0.0013 & 0.758\,$\pm$\,0.002 & 224\,$\pm$\,13 & 72.0\,$\pm$\,1.2 \\
+\quad random partitions & 0.4216\,$\pm$\,0.0014 & 0.754\,$\pm$\,0.001 & 163\,$\pm$\,11 & 68.3\,$\pm$\,2.1 \\
+random network & 0.0724\,$\pm$\,0.0015 & 0.408\,$\pm$\,0.001 & 57\,$\pm$\,3 & 56.4\,$\pm$\,1.0 \\
 \midrule
-\multicolumn{5}{l}{\textit{fine-tuned}} \\
+\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\
 \Kfull{} classes & 0.4263\,$\pm$\,0.0005 & 0.8468\,$\pm$\,0.0006 & 1{,}800\,$\pm$\,60 & 107.3\,$\pm$\,2.2 \\
 \Kres{} classes & 0.4249\,$\pm$\,0.0021 & 0.8475\,$\pm$\,0.0009 & 1{,}790\,$\pm$\,60 & 108.0\,$\pm$\,1.4 \\
 \Kmid{} classes & 0.4166\,$\pm$\,0.0011 & 0.8459\,$\pm$\,0.0002 & 1{,}780\,$\pm$\,150 & 108.3\,$\pm$\,1.0 \\
 \Kcoarse{} classes & 0.4054\,$\pm$\,0.0020 & 0.8422\,$\pm$\,0.0005 & 1{,}740\,$\pm$\,140 & 106.5\,$\pm$\,0.8 \\
-\multicolumn{5}{l}{17-class partitions} \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
 \quad no flavor boundary & 0.4078\,$\pm$\,0.0005 & 0.8433\,$\pm$\,0.0002 & 1{,}790\,$\pm$\,90 & 109.1\,$\pm$\,0.2 \\
 \quad $b$-quark boundary & 0.4101\,$\pm$\,0.0013 & 0.8439\,$\pm$\,0.0007 & 1{,}830\,$\pm$\,330 & 106.7\,$\pm$\,0.2 \\
 \quad random flavor boundary & 0.4128\,$\pm$\,0.0021 & 0.8434\,$\pm$\,0.0003 & 1{,}610\,$\pm$\,60 & 106.3\,$\pm$\,2.7 \\

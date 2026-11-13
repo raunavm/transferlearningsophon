@@ -1,31 +1,41 @@
 \begin{landscape}
-\begin{table}[t]
-\centering
-\small
-\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, on JetClass-II at its natural composition, with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC averaged over the classes and the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed; (LP): linear probe on the frozen features. Mean $\pm$ SD over the pretraining runs of each configuration.}
-\label{tab:bn}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\addtolength{\belowcaptionskip}{\abovecaptionskip}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, on JetClass-II at its natural composition, with the BatchNorm statistics as accumulated in pretraining and recomputed on training jets: the AUC and the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. Mean $\pm$ SD over the pretraining runs of each configuration. $^{\S}$ marks a value from a single run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}\label{tab:bn}\\
 \toprule
- & \multicolumn{2}{c}{BatchNorm as trained} & \multicolumn{2}{c}{BatchNorm recomputed} \\
+& \multicolumn{2}{c}{BatchNorm as trained} & \multicolumn{2}{c}{BatchNorm recomputed} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & AUC & $\rho$ & AUC & $\rho$ \\
 \midrule
-\Kfull{} classes (LP) & 0.9760\,$\pm$\,$<$0.0001 & 1.000 & 0.9760\,$\pm$\,$<$0.0001 & 1.000 \\
-\Kres{} classes (LP) & 0.9748\,$\pm$\,0.0003 & 1.049\,$\pm$\,0.014 & 0.9748\,$\pm$\,0.0003 & 1.050\,$\pm$\,0.014 \\
-\Kmid{} classes (LP) & 0.9719\,$\pm$\,0.0006 & 1.171\,$\pm$\,0.024 & 0.9719\,$\pm$\,0.0006 & 1.172\,$\pm$\,0.025 \\
-\Kcoarse{} classes (LP) & 0.9631\,$\pm$\,0.0006 & 1.538\,$\pm$\,0.025 & 0.9631\,$\pm$\,0.0006 & 1.537\,$\pm$\,0.026 \\
-\Kres{} classes + mass (LP) & 0.9737\,$\pm$\,0.0003 & 1.094\,$\pm$\,0.017 & 0.9737\,$\pm$\,0.0003 & 1.094\,$\pm$\,0.016 \\
-\Kcoarse{} classes + mass (LP) & 0.9628\,$\pm$\,0.0006 & 1.551\,$\pm$\,0.029 & 0.9628\,$\pm$\,0.0006 & 1.551\,$\pm$\,0.029 \\
-random partition 1 (LP), seed 1 & 0.9719 & 1.173 & 0.9719 & 1.173 \\
-random partition 2 (LP), seed 2 & 0.9719 & 1.167 & 0.9719 & 1.167 \\
-random partition 3 (LP), seed 1 & 0.9724 & 1.153 & 0.9724 & 1.153 \\
-random partition 4 (LP), seed 2 & 0.9723 & 1.151 & 0.9723 & 1.152 \\
-random partition 5 (LP), seed 2 & 0.9720 & 1.164 & 0.9720 & 1.164 \\
-no flavor boundary (LP) & 0.9651\,$\pm$\,0.0009 & 1.455\,$\pm$\,0.032 & 0.9651\,$\pm$\,0.0008 & 1.455\,$\pm$\,0.031 \\
-$b$-quark boundary (LP) & 0.9699\,$\pm$\,0.0002 & 1.253\,$\pm$\,0.011 & 0.9699\,$\pm$\,0.0002 & 1.252\,$\pm$\,0.010 \\
-random flavor boundary (LP) & 0.9698\,$\pm$\,$<$0.0001 & 1.257\,$\pm$\,0.004 & 0.9698\,$\pm$\,$<$0.0001 & 1.257\,$\pm$\,0.004 \\
-random network (LP) & 0.8058\,$\pm$\,0.0018 & -- & 0.8525\,$\pm$\,0.0019 & -- \\
+\endfirsthead
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:bn} (continued)}} \\[\smallskipamount]
+\toprule
+& \multicolumn{2}{c}{BatchNorm as trained} & \multicolumn{2}{c}{BatchNorm recomputed} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & AUC & $\rho$ & AUC & $\rho$ \\
+\midrule
+\endhead
 \bottomrule
-\end{tabular*}
-\end{table}
+\endlastfoot
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.97599\,$\pm$\,0.00004 & 1.000$^{\P}$ & 0.97600\,$\pm$\,0.00004 & 1.000$^{\P}$ \\
+\Kres{} classes & 0.97481\,$\pm$\,0.00031 & 1.049\,$\pm$\,0.014 & 0.97481\,$\pm$\,0.00032 & 1.050\,$\pm$\,0.014 \\
+\Kmid{} classes & 0.97188\,$\pm$\,0.00061 & 1.171\,$\pm$\,0.024 & 0.97188\,$\pm$\,0.00060 & 1.172\,$\pm$\,0.025 \\
+\Kcoarse{} classes & 0.96308\,$\pm$\,0.00061 & 1.538\,$\pm$\,0.025 & 0.96310\,$\pm$\,0.00061 & 1.537\,$\pm$\,0.026 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.96507\,$\pm$\,0.00085 & 1.455\,$\pm$\,0.032 & 0.96508\,$\pm$\,0.00082 & 1.455\,$\pm$\,0.031 \\
+\quad $b$-quark boundary & 0.96992\,$\pm$\,0.00018 & 1.253\,$\pm$\,0.011 & 0.96994\,$\pm$\,0.00019 & 1.252\,$\pm$\,0.010 \\
+\quad random flavor boundary & 0.96983\,$\pm$\,0.00002 & 1.257\,$\pm$\,0.004 & 0.96982\,$\pm$\,0.00004 & 1.257\,$\pm$\,0.004 \\
+\quad random partition 1, seed 1 & 0.97189$^{\S}$ & 1.173$^{\S}$ & 0.97189$^{\S}$ & 1.173$^{\S}$ \\
+\quad random partition 2, seed 2 & 0.97194$^{\S}$ & 1.167$^{\S}$ & 0.97193$^{\S}$ & 1.167$^{\S}$ \\
+\quad random partition 3, seed 1 & 0.97236$^{\S}$ & 1.153$^{\S}$ & 0.97236$^{\S}$ & 1.153$^{\S}$ \\
+\quad random partition 4, seed 2 & 0.97233$^{\S}$ & 1.151$^{\S}$ & 0.97231$^{\S}$ & 1.152$^{\S}$ \\
+\quad random partition 5, seed 2 & 0.97201$^{\S}$ & 1.164$^{\S}$ & 0.97201$^{\S}$ & 1.164$^{\S}$ \\
+\Kres{} classes + mass & 0.97373\,$\pm$\,0.00034 & 1.094\,$\pm$\,0.017 & 0.97373\,$\pm$\,0.00033 & 1.094\,$\pm$\,0.016 \\
+\Kcoarse{} classes + mass & 0.96277\,$\pm$\,0.00060 & 1.551\,$\pm$\,0.029 & 0.96277\,$\pm$\,0.00063 & 1.551\,$\pm$\,0.029 \\
+random network & 0.80584\,$\pm$\,0.00179 & -- & 0.85252\,$\pm$\,0.00187 & -- \\
+\end{longtable}
+}
 \end{landscape}

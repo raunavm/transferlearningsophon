@@ -1,24 +1,25 @@
 \begin{landscape}
 \begin{table*}[t]
 \centering
-\small
-\caption{QCD jets passing each signal class's working point after fine-tuning networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and the controls on JetClass (50\% signal efficiency; 99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$), the fewest over the runs of each row: the counts behind the rejections of tables~\ref{tab:jetclass} and~\ref{tab:jetclassall}; (f.t.): fine-tuned.}
+\caption{QCD jets passing each signal class's working point after fine-tuning networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and the controls on JetClass (50\% signal efficiency; 99\% for $H\to\ell\nu qq'$, 99.5\% for $t\to b\ell\nu$), the fewest over the runs of each row: the counts behind the rejections of tables~\ref{tab:jetclassrej} and~\ref{tab:jetclassall}.}
 \label{tab:jetclassnbkg}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccccccc@{}}
 \toprule
  & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
 \midrule
+\multicolumn{10}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 29 & 68 & 1{,}884 & 181 & 57 & 14 & 19 & 524 & 628 \\
+\Kres{} classes & 33 & 70 & 1{,}933 & 166 & 58 & 11 & 25 & 508 & 648 \\
+\Kmid{} classes & 29 & 72 & 1{,}914 & 187 & 58 & 13 & 23 & 525 & 636 \\
+\Kcoarse{} classes & 29 & 82 & 1{,}873 & 188 & 66 & 15 & 21 & 503 & 679 \\
+\multicolumn{10}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 33 & 92 & 1{,}882 & 170 & 71 & 12 & 28 & 569 & 685 \\
+\quad $b$-quark boundary & 27 & 83 & 1{,}851 & 192 & 77 & 14 & 28 & 546 & 672 \\
+\quad random flavor boundary & 31 & 70 & 1{,}886 & 191 & 71 & 15 & 27 & 538 & 664 \\
+\quad random partitions & 26 & 71 & 1{,}921 & 194 & 64 & 15 & 22 & 492 & 649 \\
+\Kres{} classes + mass & 30 & 79 & 1{,}899 & 177 & 68 & 14 & 24 & 510 & 661 \\
+\Kcoarse{} classes + mass & 31 & 87 & 1{,}896 & 207 & 68 & 14 & 18 & 551 & 691 \\
 from scratch & 41 & 124 & 2{,}221 & 292 & 145 & 30 & 48 & 724 & 897 \\
-\Kfull{} classes (f.t.) & 29 & 68 & 1{,}884 & 181 & 57 & 14 & 19 & 524 & 628 \\
-\Kres{} classes (f.t.) & 33 & 70 & 1{,}933 & 166 & 58 & 11 & 25 & 508 & 648 \\
-\Kmid{} classes (f.t.) & 29 & 72 & 1{,}914 & 187 & 58 & 13 & 23 & 525 & 636 \\
-\Kcoarse{} classes (f.t.) & 29 & 82 & 1{,}873 & 188 & 66 & 15 & 21 & 503 & 679 \\
-\Kres{} classes + mass (f.t.) & 30 & 79 & 1{,}899 & 177 & 68 & 14 & 24 & 510 & 661 \\
-\Kcoarse{} classes + mass (f.t.) & 31 & 87 & 1{,}896 & 207 & 68 & 14 & 18 & 551 & 691 \\
-random partitions (f.t.) & 26 & 71 & 1{,}921 & 194 & 64 & 15 & 22 & 492 & 649 \\
-no flavor boundary (f.t.) & 33 & 92 & 1{,}882 & 170 & 71 & 12 & 28 & 569 & 685 \\
-$b$-quark boundary (f.t.) & 27 & 83 & 1{,}851 & 192 & 77 & 14 & 28 & 546 & 672 \\
-random flavor boundary (f.t.) & 31 & 70 & 1{,}886 & 191 & 71 & 15 & 27 & 538 & 664 \\
 \bottomrule
 \end{tabular*}
 \end{table*}

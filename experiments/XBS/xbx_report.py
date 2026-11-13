@@ -34,9 +34,9 @@ import numpy as np
 REPO = pathlib.Path(__file__).resolve().parents[2]
 SIGNALS = (("xbb", r"$X\to b\bar b$"), ("xbs", r"$X\to bs$"))
 # the rows of the efficiency table, in mlst_results.XBX_ROWS's order (the rejection table's; PI 2026-11-12): the label
-# sets, the mass-regression models, the flavor-boundary partitions, the five random partitions as one row, the random
+# sets, the flavor-boundary partitions, the five random partitions as one row, the mass-regression models, the random
 # network; from scratch follows
-ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "L162_MASS", "R16_Q1_MASS", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND",
+ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND", "L162_MASS", "R16_Q1_MASS",
         "INIT")
 CURVE_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "INIT")
 WORD = {"xbb": "Xbb", "xbs": "Xbs"}

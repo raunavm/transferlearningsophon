@@ -170,3 +170,40 @@ def test_f3_main_puts_both_panels_on_one_range(monkeypatch):
     lo = 0.80 - 0.04 * (1 - 0.80)
     assert a.get_xlim() == b.get_xlim() == a.get_ylim() == b.get_ylim() and a.get_xlim()[0] == pytest.approx(lo)
     matplotlib.pyplot.close(figs[0])
+
+
+def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_placed():
+    """gallery_captions (PI 2026-11-12): one caption for each figure of the main text and the appendix, set on the
+    gallery's pages; a table is named by its label and printed with its number of the day, so every label must be a
+    placed table (tab:benchtop, tab:benchqg and tab:benchqgherwig left the paper: Fig. A4 points to tab:published and
+    tab:labelsets)."""
+    import re
+    import gallery_captions as K
+    paper = [k for k, t, _ in G.FIGURES if t in (G.MAIN, G.APPENDIX)]
+    assert sorted(K.CAPTIONS) == sorted(paper) and len(paper) == 17
+    for pid, raw in K.CAPTIONS.items():
+        labels = re.findall(r"\{(tab:[a-z_0-9]+)\}", raw)
+        assert set(labels) <= set(G.TIER) and not set(labels) & set(G.DROPPED_TABLES), pid
+        text = K.text(pid)
+        assert "{tab:" not in text and "Table " not in text and len(text.split()) >= 40, pid
+    assert re.findall(r"\{(tab:[a-z_0-9]+)\}", K.CAPTIONS["F6"]) == ["tab:published", "tab:labelsets"]
+    number = lambda k: G.number(k).removeprefix("Table ")      # noqa: E731
+    assert K.text("F6").endswith(f"are in tables {number('tab:published')} and {number('tab:labelsets')}.")
+    assert (number("tab:published"), number("tab:labelsets")) == ("2", "A9")
+    # the pages of the gallery carry these captions (apply at the end of each module)
+    for mod in (L, R):
+        for page in mod.PAGES:
+            if page.id in K.CAPTIONS:
+                assert page.caption == K.text(page.id), page.id
+    # no text is drawn in a pair panel for a network that separates the pair: the caption says it
+    assert "have no curve" in K.text("F4-other") or "no curve" in K.text("F4-other")
+
+
+@pytest.mark.xfail(strict=True, reason="Fig. 3 (F2b) has 171 words since its AUC panels were added (68bf1b3) and figcheck "
+                                       "allows 145: the caption is to be shortened or the range widened (lead, PI); "
+                                       "remove this mark with that change")
+def test_every_paper_caption_is_within_the_length_figcheck_allows():
+    """figcheck.caption_findings: 40 to 145 words (PI 2026-11-12)."""
+    import gallery_captions as K
+    words = {pid: len(K.text(pid).split()) for pid in K.CAPTIONS}
+    assert {pid: n for pid, n in words.items() if not 40 <= n <= 145} == {}

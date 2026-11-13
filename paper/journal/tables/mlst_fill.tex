@@ -1,28 +1,33 @@
 \begin{landscape}
-\begin{table*}[t]
-\centering
-\small
-\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls: $R_{30}$ on top and quark/gluon tagging with the inputs a data set lacks set to zero, to the training mean or to random draws of a real particle; the model with kinematic inputs only has nothing missing; (LP): linear probe on the frozen features. Mean $\pm$ SD over the pretraining runs of each configuration. Random partitions: mean $\pm$ SD over the five partitions into 17 classes, one run each.}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{Linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes and of the control networks, compared between substitutions for the inputs that the top and quark/gluon data lack. $R_{30}$ is the inverse background efficiency at 30\% signal efficiency. The missing inputs are set to zero, to the training mean (mean) or to random draws of a real particle (draws), and the substitution chosen on validation for each task is in table~\ref{tab:probes}. The random network with BatchNorm recomputed has the running mean and variance of its BatchNorm layers re-estimated on \DesignBnJets{} training jets. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions and three initializations of the random network.}
 \label{tab:fill}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
+\par\medskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
- & \multicolumn{3}{c}{top, $R_{30}$} & \multicolumn{3}{c}{quark/gluon, $R_{30}$} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}
- & zero & mean & draws & zero & mean & draws \\
+ & \multicolumn{2}{c}{top, $R_{30}$} & \multicolumn{2}{c}{quark/gluon, $R_{30}$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & zero & mean & zero & draws \\
 \midrule
-\Kfull{} classes (LP) & 60\,$\pm$\,12 & 73\,$\pm$\,15 & 228\,$\pm$\,25 & 66\,$\pm$\,7 & 72.7\,$\pm$\,2.4 & 68.1\,$\pm$\,1.8 \\
-\Kres{} classes (LP) & 76\,$\pm$\,17 & 64\,$\pm$\,11 & 199\,$\pm$\,25 & 58\,$\pm$\,9 & 71.0\,$\pm$\,0.3 & 66.8\,$\pm$\,0.4 \\
-\Kmid{} classes (LP) & 57\,$\pm$\,13 & 58\,$\pm$\,14 & 231\,$\pm$\,8 & 61\,$\pm$\,9 & 70.8\,$\pm$\,1.8 & 69.0\,$\pm$\,1.1 \\
-\Kcoarse{} classes (LP) & 55\,$\pm$\,5 & 55\,$\pm$\,5 & 255\,$\pm$\,17 & 62\,$\pm$\,7 & 74.3\,$\pm$\,1.9 & 71.6\,$\pm$\,2.8 \\
-\Kres{} classes + mass (LP) & 86\,$\pm$\,13 & 68\,$\pm$\,15 & 283\,$\pm$\,33 & 63\,$\pm$\,3 & 72.3\,$\pm$\,2.3 & 71.2\,$\pm$\,1.2 \\
-\Kcoarse{} classes + mass (LP) & 86\,$\pm$\,25 & 68\,$\pm$\,18 & 342\,$\pm$\,51 & 66\,$\pm$\,$<$1 & 70.3\,$\pm$\,2.7 & 73.3\,$\pm$\,2.8 \\
-no flavor boundary (LP) & 69\,$\pm$\,$<$1 & 54\,$\pm$\,15 & 253\,$\pm$\,13 & 65\,$\pm$\,2 & 72.8\,$\pm$\,1.5 & 71.3\,$\pm$\,0.3 \\
-$b$-quark boundary (LP) & 77\,$\pm$\,5 & 57\,$\pm$\,16 & 207\,$\pm$\,6 & 57\,$\pm$\,3 & 72.4\,$\pm$\,0.2 & 70.7\,$\pm$\,0.3 \\
-random flavor boundary (LP) & 53\,$\pm$\,17 & 37\,$\pm$\,5 & 224\,$\pm$\,13 & 60\,$\pm$\,8 & 72.0\,$\pm$\,1.2 & 70.5\,$\pm$\,1.0 \\
-random partitions (LP) & 52\,$\pm$\,17 & 51\,$\pm$\,6 & 163\,$\pm$\,11 & 59\,$\pm$\,6 & 68.3\,$\pm$\,2.1 & 64.7\,$\pm$\,2.8 \\
-random network, BatchNorm recomputed (LP) & 58\,$\pm$\,13 & 60\,$\pm$\,2 & 49\,$\pm$\,3 & 54\,$\pm$\,2 & 52.2\,$\pm$\,0.8 & 52.4\,$\pm$\,0.4 \\
-\Kfull{} classes, kinematic inputs only (LP) & \multicolumn{3}{c}{231 (nothing missing)} & -- & -- & -- \\
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 59.6\,$\pm$\,11.6 & 73\,$\pm$\,15 & 65.6\,$\pm$\,7.3 & 68.1\,$\pm$\,1.8 \\
+\Kres{} classes & 75.5\,$\pm$\,16.9 & 64\,$\pm$\,11 & 57.9\,$\pm$\,9.3 & 66.8\,$\pm$\,0.4 \\
+\Kmid{} classes & 56.9\,$\pm$\,12.6 & 58\,$\pm$\,14 & 60.9\,$\pm$\,8.5 & 69.0\,$\pm$\,1.1 \\
+\Kcoarse{} classes & 54.6\,$\pm$\,4.6 & 55\,$\pm$\,5 & 62.0\,$\pm$\,7.0 & 71.6\,$\pm$\,2.8 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 69.5\,$\pm$\,0.2 & 54\,$\pm$\,15 & 64.8\,$\pm$\,2.3 & 71.3\,$\pm$\,0.3 \\
+\quad $b$-quark boundary & 77.2\,$\pm$\,5.0 & 57\,$\pm$\,16 & 57.0\,$\pm$\,3.4 & 70.7\,$\pm$\,0.3 \\
+\quad random flavor boundary & 52.7\,$\pm$\,16.7 & 37\,$\pm$\,5 & 59.9\,$\pm$\,8.0 & 70.5\,$\pm$\,1.0 \\
+\quad random partitions & 51.8\,$\pm$\,16.5 & 51\,$\pm$\,6 & 59.2\,$\pm$\,6.5 & 64.7\,$\pm$\,2.8 \\
+\Kres{} classes + mass & 85.7\,$\pm$\,12.9 & 68\,$\pm$\,15 & 63.2\,$\pm$\,3.1 & 71.2\,$\pm$\,1.2 \\
+\Kcoarse{} classes + mass & 85.9\,$\pm$\,24.6 & 68\,$\pm$\,18 & 65.8\,$\pm$\,0.3 & 73.3\,$\pm$\,2.8 \\
+random network, BatchNorm recomputed & 57.6\,$\pm$\,12.7 & 60\,$\pm$\,2 & 54.2\,$\pm$\,2.4 & 52.4\,$\pm$\,0.4 \\
 \bottomrule
 \end{tabular*}
-\end{table*}
+\end{minipage}
+\end{center}
+}
 \end{landscape}

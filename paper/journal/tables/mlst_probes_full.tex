@@ -1,15 +1,16 @@
 \begin{landscape}
-{\small
-\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2: }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\addtolength{\belowcaptionskip}{\abovecaptionskip}
 \begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls (every random partition), at each task's largest training set; (LP): linear probe on the frozen features. Upper part: JetClass-II (class-balanced test set) and JetClass. Lower part: top and quark/gluon tagging (also on Herwig jets). Accuracy, AUC averaged over the classes, the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed, and the background rejections $R_{50}$ and $R_{30}$. Below the rule: the released Sophon checkpoint, outside the controlled comparison. Mean $\pm$ SD over the pretraining runs of each configuration.}\label{tab:probesfull}\\
+\caption{Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls (every random partition), at each task's largest training set. Upper part: JetClass-II (class-balanced test set) and JetClass. Lower part: top and quark/gluon tagging (also on Herwig jets). Accuracy, AUC, the ratio $\rho$ of $1-\mathrm{AUC}$ to the \Kfull-class run of the same seed, and the background rejections $R_{50}$ and $R_{30}$. On JetClass-II and JetClass the AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. With JetClass's equal class sizes this equals the average over class pairs that ParT reports. On JetClass-II the average is also given over the classes with the full \JcBalTestPerClass{} test jets (full count), over the resonant classes and over the QCD classes. Below the rule: the released Sophon checkpoint, outside the controlled comparison. Mean $\pm$ SD over the pretraining runs of each configuration. $^{\S}$ marks a value from a single run. $^{\P}$ marks a value whose standard deviation over the runs rounds to zero at the digits shown.}\label{tab:probesfull}\\
 \toprule
 & \multicolumn{4}{c}{JetClass-II} \\
 \cmidrule(lr){2-5}
  & accuracy & AUC & $\rho$ & AUC, full count \\
 \midrule
 \endfirsthead
-\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:probesfull} (continued)}} \\
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:probesfull} (continued)}} \\[\smallskipamount]
 \toprule
 & \multicolumn{4}{c}{JetClass-II} \\
 \cmidrule(lr){2-5}
@@ -18,160 +19,187 @@
 \endhead
 \bottomrule
 \endlastfoot
-\Kfull{} classes (LP) & 0.4348\,$\pm$\,0.0003 & 0.9801\,$\pm$\,$<$0.0001 & 1.000 & 0.9813\,$\pm$\,$<$0.0001 \\
-\Kres{} classes (LP) & 0.4328\,$\pm$\,0.0008 & 0.9796\,$\pm$\,0.0001 & 1.026\,$\pm$\,0.005 & 0.9810\,$\pm$\,0.0001 \\
-\Kmid{} classes (LP) & 0.3609\,$\pm$\,0.0046 & 0.9756\,$\pm$\,0.0002 & 1.227\,$\pm$\,0.009 & 0.9769\,$\pm$\,0.0002 \\
-\Kcoarse{} classes (LP) & 0.3341\,$\pm$\,0.0067 & 0.9691\,$\pm$\,0.0004 & 1.557\,$\pm$\,0.019 & 0.9708\,$\pm$\,0.0005 \\
-\Kres{} classes + mass (LP) & 0.4288\,$\pm$\,0.0024 & 0.9792\,$\pm$\,0.0002 & 1.045\,$\pm$\,0.011 & 0.9806\,$\pm$\,0.0002 \\
-\Kcoarse{} classes + mass (LP) & 0.3311\,$\pm$\,0.0264 & 0.9688\,$\pm$\,0.0013 & 1.573\,$\pm$\,0.063 & 0.9705\,$\pm$\,0.0013 \\
-random partition 1 (LP), seed 1 & 0.4201 & 0.9776 & 1.129 & 0.9792 \\
-random partition 2 (LP), seed 2 & 0.4213 & 0.9776 & 1.130 & 0.9791 \\
-random partition 3 (LP), seed 1 & 0.4231 & 0.9779 & 1.115 & 0.9795 \\
-random partition 4 (LP), seed 2 & 0.4228 & 0.9778 & 1.117 & 0.9794 \\
-random partition 5 (LP), seed 2 & 0.4204 & 0.9775 & 1.134 & 0.9791 \\
-no flavor boundary (LP) & 0.3746\,$\pm$\,0.0033 & 0.9713\,$\pm$\,0.0005 & 1.443\,$\pm$\,0.027 & 0.9733\,$\pm$\,0.0005 \\
-$b$-quark boundary (LP) & 0.3954\,$\pm$\,0.0013 & 0.9759\,$\pm$\,0.0001 & 1.215\,$\pm$\,0.004 & 0.9774\,$\pm$\,0.0001 \\
-random flavor boundary (LP) & 0.4080\,$\pm$\,0.0013 & 0.9760\,$\pm$\,$<$0.0001 & 1.207\,$\pm$\,0.001 & 0.9777\,$\pm$\,$<$0.0001 \\
-random network (LP) & 0.0724\,$\pm$\,0.0015 & 0.8121\,$\pm$\,0.0019 & -- & 0.8123\,$\pm$\,0.0021 \\
-random network, BatchNorm recomputed (LP) & 0.1017\,$\pm$\,0.0017 & 0.8664\,$\pm$\,0.0036 & -- & 0.8688\,$\pm$\,0.0039 \\
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.4348\,$\pm$\,0.0003 & 0.98014\,$\pm$\,0.00001 & 1.000$^{\P}$ & 0.98135\,$\pm$\,0.00001 \\
+\Kres{} classes & 0.4328\,$\pm$\,0.0008 & 0.97963\,$\pm$\,0.00010 & 1.026\,$\pm$\,0.005 & 0.98102\,$\pm$\,0.00010 \\
+\Kmid{} classes & 0.3609\,$\pm$\,0.0046 & 0.97562\,$\pm$\,0.00016 & 1.227\,$\pm$\,0.009 & 0.97694\,$\pm$\,0.00018 \\
+\Kcoarse{} classes & 0.3341\,$\pm$\,0.0067 & 0.96908\,$\pm$\,0.00038 & 1.557\,$\pm$\,0.019 & 0.97084\,$\pm$\,0.00048 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.3746\,$\pm$\,0.0033 & 0.97134\,$\pm$\,0.00053 & 1.443\,$\pm$\,0.027 & 0.97328\,$\pm$\,0.00050 \\
+\quad $b$-quark boundary & 0.3954\,$\pm$\,0.0013 & 0.97586\,$\pm$\,0.00010 & 1.215\,$\pm$\,0.004 & 0.97745\,$\pm$\,0.00009 \\
+\quad random flavor boundary & 0.4080\,$\pm$\,0.0013 & 0.97602\,$\pm$\,0.00002 & 1.207\,$\pm$\,0.001 & 0.97769\,$\pm$\,0.00001 \\
+\quad random partition 1, seed 1 & 0.4201$^{\S}$ & 0.97757$^{\S}$ & 1.129$^{\S}$ & 0.97921$^{\S}$ \\
+\quad random partition 2, seed 2 & 0.4213$^{\S}$ & 0.97757$^{\S}$ & 1.130$^{\S}$ & 0.97915$^{\S}$ \\
+\quad random partition 3, seed 1 & 0.4231$^{\S}$ & 0.97785$^{\S}$ & 1.115$^{\S}$ & 0.97946$^{\S}$ \\
+\quad random partition 4, seed 2 & 0.4228$^{\S}$ & 0.97781$^{\S}$ & 1.117$^{\S}$ & 0.97938$^{\S}$ \\
+\quad random partition 5, seed 2 & 0.4204$^{\S}$ & 0.97748$^{\S}$ & 1.134$^{\S}$ & 0.97912$^{\S}$ \\
+\Kres{} classes + mass & 0.4288\,$\pm$\,0.0024 & 0.97924\,$\pm$\,0.00023 & 1.045\,$\pm$\,0.011 & 0.98064\,$\pm$\,0.00021 \\
+\Kcoarse{} classes + mass & 0.3311\,$\pm$\,0.0264 & 0.96875\,$\pm$\,0.00126 & 1.573\,$\pm$\,0.063 & 0.97046\,$\pm$\,0.00132 \\
+random network & 0.0724\,$\pm$\,0.0015 & 0.81212\,$\pm$\,0.00190 & -- & 0.81228\,$\pm$\,0.00210 \\
+random network, BatchNorm recomputed & 0.1017\,$\pm$\,0.0017 & 0.86641\,$\pm$\,0.00362 & -- & 0.86879\,$\pm$\,0.00390 \\
 \midrule
-released Sophon checkpoint (LP) & 0.4340 & 0.9799 & -- & 0.9812 \\
+released Sophon checkpoint & 0.4340$^{\S}$ & 0.97990$^{\S}$ & -- & 0.98117$^{\S}$ \\
 \end{longtable}
 \begin{center}
 \begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\small\textit{Table~\ref{tab:probesfull} (continued)}}
+\makebox[\linewidth][l]{\textit{Table~\ref{tab:probesfull} (continued)}}
 \par\smallskip
-\small
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
  & \multicolumn{2}{c}{JetClass-II} & \multicolumn{2}{c}{JetClass} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
  & AUC, resonant & AUC, QCD & accuracy & AUC \\
 \midrule
-\Kfull{} classes (LP) & 0.9830\,$\pm$\,$<$0.0001 & 0.9632\,$\pm$\,$<$0.0001 & 0.7709\,$\pm$\,0.0023 & 0.9682\,$\pm$\,0.0006 \\
-\Kres{} classes (LP) & 0.9829\,$\pm$\,0.0001 & 0.9600\,$\pm$\,0.0002 & 0.7709\,$\pm$\,0.0005 & 0.9683\,$\pm$\,0.0002 \\
-\Kmid{} classes (LP) & 0.9785\,$\pm$\,0.0002 & 0.9583\,$\pm$\,0.0003 & 0.7695\,$\pm$\,0.0014 & 0.9680\,$\pm$\,0.0004 \\
-\Kcoarse{} classes (LP) & 0.9729\,$\pm$\,0.0005 & 0.9460\,$\pm$\,0.0006 & 0.7605\,$\pm$\,0.0027 & 0.9650\,$\pm$\,0.0008 \\
-\Kres{} classes + mass (LP) & 0.9825\,$\pm$\,0.0002 & 0.9595\,$\pm$\,0.0004 & 0.7739\,$\pm$\,0.0030 & 0.9690\,$\pm$\,0.0009 \\
-\Kcoarse{} classes + mass (LP) & 0.9726\,$\pm$\,0.0015 & 0.9458\,$\pm$\,$<$0.0001 & 0.7618\,$\pm$\,0.0009 & 0.9653\,$\pm$\,0.0003 \\
-random partition 1 (LP), seed 1 & 0.9813 & 0.9556 & 0.7528 & 0.9636 \\
-random partition 2 (LP), seed 2 & 0.9812 & 0.9558 & 0.7553 & 0.9641 \\
-random partition 3 (LP), seed 1 & 0.9815 & 0.9561 & 0.7546 & 0.9638 \\
-random partition 4 (LP), seed 2 & 0.9814 & 0.9564 & 0.7537 & 0.9636 \\
-random partition 5 (LP), seed 2 & 0.9812 & 0.9554 & 0.7538 & 0.9639 \\
-no flavor boundary (LP) & 0.9757\,$\pm$\,0.0005 & 0.9454\,$\pm$\,0.0008 & 0.7511\,$\pm$\,0.0034 & 0.9628\,$\pm$\,0.0008 \\
-$b$-quark boundary (LP) & 0.9795\,$\pm$\,0.0001 & 0.9544\,$\pm$\,0.0002 & 0.7630\,$\pm$\,0.0021 & 0.9663\,$\pm$\,0.0003 \\
-random flavor boundary (LP) & 0.9798\,$\pm$\,$<$0.0001 & 0.9535\,$\pm$\,0.0001 & 0.7579\,$\pm$\,0.0021 & 0.9649\,$\pm$\,0.0006 \\
-random network (LP) & 0.8152\,$\pm$\,0.0024 & 0.7936\,$\pm$\,0.0054 & 0.4077\,$\pm$\,0.0013 & 0.8280\,$\pm$\,0.0011 \\
-random network, BatchNorm recomputed (LP) & 0.8737\,$\pm$\,0.0044 & 0.8232\,$\pm$\,0.0012 & 0.4751\,$\pm$\,0.0054 & 0.8655\,$\pm$\,0.0040 \\
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.98298\,$\pm$\,0.00001 & 0.96316\,$\pm$\,0.00001 & 0.771\,$\pm$\,0.002 & 0.9682\,$\pm$\,0.0006 \\
+\Kres{} classes & 0.98293\,$\pm$\,0.00009 & 0.95995\,$\pm$\,0.00022 & 0.771\,$\pm$\,0.001 & 0.9683\,$\pm$\,0.0002 \\
+\Kmid{} classes & 0.97852\,$\pm$\,0.00019 & 0.95833\,$\pm$\,0.00029 & 0.770\,$\pm$\,0.001 & 0.9680\,$\pm$\,0.0004 \\
+\Kcoarse{} classes & 0.97294\,$\pm$\,0.00054 & 0.94601\,$\pm$\,0.00063 & 0.761\,$\pm$\,0.003 & 0.9650\,$\pm$\,0.0008 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.97568\,$\pm$\,0.00048 & 0.94544\,$\pm$\,0.00081 & 0.751\,$\pm$\,0.003 & 0.9628\,$\pm$\,0.0008 \\
+\quad $b$-quark boundary & 0.97945\,$\pm$\,0.00008 & 0.95441\,$\pm$\,0.00018 & 0.763\,$\pm$\,0.002 & 0.9663\,$\pm$\,0.0003 \\
+\quad random flavor boundary & 0.97979\,$\pm$\,0.00001 & 0.95354\,$\pm$\,0.00008 & 0.758\,$\pm$\,0.002 & 0.9649\,$\pm$\,0.0006 \\
+\quad random partition 1, seed 1 & 0.98125$^{\S}$ & 0.95565$^{\S}$ & 0.753$^{\S}$ & 0.9636$^{\S}$ \\
+\quad random partition 2, seed 2 & 0.98122$^{\S}$ & 0.95577$^{\S}$ & 0.755$^{\S}$ & 0.9641$^{\S}$ \\
+\quad random partition 3, seed 1 & 0.98150$^{\S}$ & 0.95610$^{\S}$ & 0.755$^{\S}$ & 0.9638$^{\S}$ \\
+\quad random partition 4, seed 2 & 0.98140$^{\S}$ & 0.95643$^{\S}$ & 0.754$^{\S}$ & 0.9636$^{\S}$ \\
+\quad random partition 5, seed 2 & 0.98119$^{\S}$ & 0.95537$^{\S}$ & 0.754$^{\S}$ & 0.9639$^{\S}$ \\
+\Kres{} classes + mass & 0.98255\,$\pm$\,0.00020 & 0.95950\,$\pm$\,0.00039 & 0.774\,$\pm$\,0.003 & 0.9690\,$\pm$\,0.0009 \\
+\Kcoarse{} classes + mass & 0.97261\,$\pm$\,0.00148 & 0.94576\,$\pm$\,0.00003 & 0.762\,$\pm$\,0.001 & 0.9653\,$\pm$\,0.0003 \\
+random network & 0.81522\,$\pm$\,0.00238 & 0.79360\,$\pm$\,0.00544 & 0.408\,$\pm$\,0.001 & 0.8280\,$\pm$\,0.0011 \\
+random network, BatchNorm recomputed & 0.87365\,$\pm$\,0.00437 & 0.82322\,$\pm$\,0.00121 & 0.475\,$\pm$\,0.005 & 0.8655\,$\pm$\,0.0040 \\
 \midrule
-released Sophon checkpoint (LP) & 0.9828 & 0.9624 & 0.7679 & 0.9675 \\
+released Sophon checkpoint & 0.98284$^{\S}$ & 0.96238$^{\S}$ & 0.768$^{\S}$ & 0.9675$^{\S}$ \\
 \bottomrule
 \end{tabular*}
 \end{minipage}
 \end{center}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\small\textit{Table~\ref{tab:probesfull} (continued)}}
-\par\smallskip
-\small
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:probesfull} (continued)}} \\[\smallskipamount]
 \toprule
- & \multicolumn{4}{c}{top} \\
+& \multicolumn{4}{c}{top} \\
  & \multicolumn{4}{c}{missing inputs: random draws} \\
 \cmidrule(lr){2-5}
  & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-\Kfull{} classes (LP) & 0.9112\,$\pm$\,0.0015 & 0.9686\,$\pm$\,0.0007 & 87\,$\pm$\,4 & 228\,$\pm$\,25 \\
-\Kres{} classes (LP) & 0.9098\,$\pm$\,0.0031 & 0.9671\,$\pm$\,0.0020 & 79\,$\pm$\,9 & 199\,$\pm$\,25 \\
-\Kmid{} classes (LP) & 0.9101\,$\pm$\,0.0019 & 0.9681\,$\pm$\,0.0013 & 88\,$\pm$\,3 & 231\,$\pm$\,8 \\
-\Kcoarse{} classes (LP) & 0.9152\,$\pm$\,0.0010 & 0.9710\,$\pm$\,0.0006 & 97\,$\pm$\,4 & 255\,$\pm$\,17 \\
-\Kres{} classes + mass (LP) & 0.9145\,$\pm$\,0.0030 & 0.9709\,$\pm$\,0.0009 & 100\,$\pm$\,5 & 283\,$\pm$\,33 \\
-\Kcoarse{} classes + mass (LP) & 0.9196\,$\pm$\,0.0015 & 0.9741\,$\pm$\,0.0010 & 118\,$\pm$\,9 & 342\,$\pm$\,51 \\
-random partition 1 (LP), seed 1 & 0.9065 & 0.9645 & 69 & 174 \\
-random partition 2 (LP), seed 2 & 0.9015 & 0.9615 & 62 & 151 \\
-random partition 3 (LP), seed 1 & 0.9051 & 0.9635 & 66 & 164 \\
-random partition 4 (LP), seed 2 & 0.8976 & 0.9598 & 59 & 152 \\
-random partition 5 (LP), seed 2 & 0.9040 & 0.9634 & 66 & 173 \\
-no flavor boundary (LP) & 0.9124\,$\pm$\,0.0029 & 0.9696\,$\pm$\,0.0018 & 93\,$\pm$\,8 & 253\,$\pm$\,13 \\
-$b$-quark boundary (LP) & 0.9075\,$\pm$\,0.0017 & 0.9665\,$\pm$\,0.0011 & 80\,$\pm$\,6 & 207\,$\pm$\,6 \\
-random flavor boundary (LP) & 0.9088\,$\pm$\,0.0004 & 0.9672\,$\pm$\,0.0002 & 84\,$\pm$\,1 & 224\,$\pm$\,13 \\
-random network (LP) & 0.8867\,$\pm$\,0.0013 & 0.9408\,$\pm$\,0.0012 & 25\,$\pm$\,1 & 57\,$\pm$\,3 \\
-random network, BatchNorm recomputed (LP) & 0.8783\,$\pm$\,0.0021 & 0.9354\,$\pm$\,0.0017 & 23\,$\pm$\,1 & 49\,$\pm$\,3 \\
-\Kfull{} classes, kinematic inputs only (LP) & 0.9163 & 0.9713 & 94 & 231 \\
-\midrule
-released Sophon checkpoint (LP) & 0.8882 & 0.9509 & 39 & 97 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\small\textit{Table~\ref{tab:probesfull} (continued)}}
-\par\smallskip
-\small
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\endfirsthead
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:probesfull} (continued)}} \\[\smallskipamount]
 \toprule
- & \multicolumn{4}{c}{quark/gluon} \\
+& \multicolumn{4}{c}{top} \\
+ & \multicolumn{4}{c}{missing inputs: random draws} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.9112\,$\pm$\,0.0015 & 0.9686\,$\pm$\,0.0007 & 87\,$\pm$\,4 & 228\,$\pm$\,25 \\
+\Kres{} classes & 0.9098\,$\pm$\,0.0031 & 0.9671\,$\pm$\,0.0020 & 79\,$\pm$\,9 & 199\,$\pm$\,25 \\
+\Kmid{} classes & 0.9101\,$\pm$\,0.0019 & 0.9681\,$\pm$\,0.0013 & 88\,$\pm$\,3 & 231\,$\pm$\,8 \\
+\Kcoarse{} classes & 0.9152\,$\pm$\,0.0010 & 0.9710\,$\pm$\,0.0006 & 97\,$\pm$\,4 & 255\,$\pm$\,17 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.9124\,$\pm$\,0.0029 & 0.9696\,$\pm$\,0.0018 & 93\,$\pm$\,8 & 253\,$\pm$\,13 \\
+\quad $b$-quark boundary & 0.9075\,$\pm$\,0.0017 & 0.9665\,$\pm$\,0.0011 & 80\,$\pm$\,6 & 207\,$\pm$\,6 \\
+\quad random flavor boundary & 0.9088\,$\pm$\,0.0004 & 0.9672\,$\pm$\,0.0002 & 84\,$\pm$\,1 & 224\,$\pm$\,13 \\
+\quad random partition 1, seed 1 & 0.9065$^{\S}$ & 0.9645$^{\S}$ & 69$^{\S}$ & 174$^{\S}$ \\
+\quad random partition 2, seed 2 & 0.9015$^{\S}$ & 0.9615$^{\S}$ & 62$^{\S}$ & 151$^{\S}$ \\
+\quad random partition 3, seed 1 & 0.9051$^{\S}$ & 0.9635$^{\S}$ & 66$^{\S}$ & 164$^{\S}$ \\
+\quad random partition 4, seed 2 & 0.8976$^{\S}$ & 0.9598$^{\S}$ & 59$^{\S}$ & 152$^{\S}$ \\
+\quad random partition 5, seed 2 & 0.9040$^{\S}$ & 0.9634$^{\S}$ & 66$^{\S}$ & 173$^{\S}$ \\
+\Kres{} classes + mass & 0.9145\,$\pm$\,0.0030 & 0.9709\,$\pm$\,0.0009 & 100\,$\pm$\,5 & 283\,$\pm$\,33 \\
+\Kcoarse{} classes + mass & 0.9196\,$\pm$\,0.0015 & 0.9741\,$\pm$\,0.0010 & 118\,$\pm$\,9 & 342\,$\pm$\,51 \\
+\Kfull{} classes, kinematic inputs & 0.9163$^{\S}$ & 0.9713$^{\S}$ & 94$^{\S}$ & 231$^{\S}$ \\
+random network & 0.8867\,$\pm$\,0.0013 & 0.9408\,$\pm$\,0.0012 & 25\,$\pm$\,1 & 57\,$\pm$\,3 \\
+random network, BatchNorm recomputed & 0.8783\,$\pm$\,0.0021 & 0.9354\,$\pm$\,0.0017 & 23\,$\pm$\,1 & 49\,$\pm$\,3 \\
+\midrule
+released Sophon checkpoint & 0.8882$^{\S}$ & 0.9509$^{\S}$ & 39$^{\S}$ & 97$^{\S}$ \\
+\end{longtable}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:probesfull} (continued)}} \\[\smallskipamount]
+\toprule
+& \multicolumn{4}{c}{quark/gluon} \\
  & \multicolumn{4}{c}{missing inputs: the training mean} \\
 \cmidrule(lr){2-5}
  & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-\Kfull{} classes (LP) & 0.8076\,$\pm$\,0.0004 & 0.8835\,$\pm$\,0.0002 & 26.17\,$\pm$\,0.35 & 72.7\,$\pm$\,2.4 \\
-\Kres{} classes (LP) & 0.8051\,$\pm$\,0.0015 & 0.8818\,$\pm$\,0.0018 & 25.59\,$\pm$\,0.41 & 71.0\,$\pm$\,0.3 \\
-\Kmid{} classes (LP) & 0.8055\,$\pm$\,0.0009 & 0.8821\,$\pm$\,0.0011 & 25.68\,$\pm$\,0.64 & 70.8\,$\pm$\,1.8 \\
-\Kcoarse{} classes (LP) & 0.8064\,$\pm$\,0.0014 & 0.8821\,$\pm$\,0.0015 & 25.79\,$\pm$\,0.73 & 74.3\,$\pm$\,1.9 \\
-\Kres{} classes + mass (LP) & 0.8074\,$\pm$\,0.0002 & 0.8834\,$\pm$\,0.0005 & 25.61\,$\pm$\,0.11 & 72.3\,$\pm$\,2.3 \\
-\Kcoarse{} classes + mass (LP) & 0.8051\,$\pm$\,0.0016 & 0.8801\,$\pm$\,0.0006 & 25.84\,$\pm$\,0.02 & 70.3\,$\pm$\,2.7 \\
-random partition 1 (LP), seed 1 & 0.8054 & 0.8810 & 24.98 & 69.6 \\
-random partition 2 (LP), seed 2 & 0.8029 & 0.8791 & 24.53 & 69.3 \\
-random partition 3 (LP), seed 1 & 0.8049 & 0.8803 & 24.00 & 68.4 \\
-random partition 4 (LP), seed 2 & 0.7977 & 0.8747 & 22.84 & 64.7 \\
-random partition 5 (LP), seed 2 & 0.8026 & 0.8790 & 24.05 & 69.6 \\
-no flavor boundary (LP) & 0.8031\,$\pm$\,0.0036 & 0.8798\,$\pm$\,0.0035 & 25.09\,$\pm$\,0.65 & 72.8\,$\pm$\,1.5 \\
-$b$-quark boundary (LP) & 0.8034\,$\pm$\,0.0013 & 0.8805\,$\pm$\,0.0012 & 24.77\,$\pm$\,0.28 & 72.4\,$\pm$\,0.2 \\
-random flavor boundary (LP) & 0.8050\,$\pm$\,0.0011 & 0.8818\,$\pm$\,0.0016 & 25.34\,$\pm$\,0.22 & 72.0\,$\pm$\,1.2 \\
-random network (LP) & 0.7851\,$\pm$\,0.0018 & 0.8612\,$\pm$\,0.0016 & 19.40\,$\pm$\,0.28 & 56.4\,$\pm$\,1.0 \\
-random network, BatchNorm recomputed (LP) & 0.7845\,$\pm$\,0.0013 & 0.8600\,$\pm$\,0.0009 & 18.70\,$\pm$\,0.18 & 52.2\,$\pm$\,0.8 \\
-\midrule
-released Sophon checkpoint (LP) & 0.7917 & 0.8656 & 19.30 & 54.3 \\
-\bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\makebox[\linewidth][l]{\small\textit{Table~\ref{tab:probesfull} (continued)}}
-\par\smallskip
-\small
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\endfirsthead
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:probesfull} (continued)}} \\[\smallskipamount]
 \toprule
- & \multicolumn{4}{c}{quark/gluon, Herwig} \\
+& \multicolumn{4}{c}{quark/gluon} \\
  & \multicolumn{4}{c}{missing inputs: the training mean} \\
 \cmidrule(lr){2-5}
  & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
 \midrule
-\Kfull{} classes (LP) & 0.7229\,$\pm$\,0.0033 & 0.8075\,$\pm$\,0.0006 & 11.81\,$\pm$\,0.10 & 35.0\,$\pm$\,2.6 \\
-\Kres{} classes (LP) & 0.7234\,$\pm$\,0.0022 & 0.8068\,$\pm$\,0.0022 & 11.63\,$\pm$\,0.43 & 35.9\,$\pm$\,1.7 \\
-\Kmid{} classes (LP) & 0.7206\,$\pm$\,0.0005 & 0.8058\,$\pm$\,0.0011 & 11.52\,$\pm$\,0.23 & 34.4\,$\pm$\,1.7 \\
-\Kcoarse{} classes (LP) & 0.7201\,$\pm$\,0.0028 & 0.8053\,$\pm$\,0.0020 & 11.50\,$\pm$\,0.16 & 35.5\,$\pm$\,1.0 \\
-\Kres{} classes + mass (LP) & 0.7223\,$\pm$\,0.0006 & 0.8071\,$\pm$\,0.0010 & 11.83\,$\pm$\,0.17 & 35.3\,$\pm$\,0.5 \\
-\Kcoarse{} classes + mass (LP) & 0.7248\,$\pm$\,0.0011 & 0.8079\,$\pm$\,0.0001 & 11.92\,$\pm$\,0.01 & 35.5\,$\pm$\,1.1 \\
-random partition 1 (LP), seed 1 & 0.7262 & 0.8086 & 11.85 & 36.2 \\
-random partition 2 (LP), seed 2 & 0.7171 & 0.8029 & 11.19 & 34.0 \\
-random partition 3 (LP), seed 1 & 0.7194 & 0.8039 & 10.92 & 32.1 \\
-random partition 4 (LP), seed 2 & 0.7224 & 0.8052 & 11.51 & 33.8 \\
-random partition 5 (LP), seed 2 & 0.7208 & 0.8023 & 11.23 & 34.1 \\
-no flavor boundary (LP) & 0.7206\,$\pm$\,0.0009 & 0.8057\,$\pm$\,0.0002 & 11.47\,$\pm$\,0.16 & 34.6\,$\pm$\,0.4 \\
-$b$-quark boundary (LP) & 0.7214\,$\pm$\,0.0007 & 0.8058\,$\pm$\,0.0002 & 11.56\,$\pm$\,0.13 & 34.9\,$\pm$\,0.5 \\
-random flavor boundary (LP) & 0.7216\,$\pm$\,0.0022 & 0.8062\,$\pm$\,0.0003 & 11.66\,$\pm$\,0.08 & 35.3\,$\pm$\,0.4 \\
-random network (LP) & 0.7205\,$\pm$\,0.0021 & 0.7965\,$\pm$\,0.0009 & 10.58\,$\pm$\,0.11 & 31.6\,$\pm$\,0.8 \\
-random network, BatchNorm recomputed (LP) & 0.7194\,$\pm$\,0.0034 & 0.7972\,$\pm$\,0.0019 & 10.48\,$\pm$\,0.21 & 30.7\,$\pm$\,0.5 \\
-\midrule
-released Sophon checkpoint (LP) & 0.7153 & 0.7964 & 10.32 & 29.9 \\
+\endhead
 \bottomrule
-\end{tabular*}
-\end{minipage}
-\end{center}
+\endlastfoot
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.8076\,$\pm$\,0.0004 & 0.8835\,$\pm$\,0.0002 & 26.17\,$\pm$\,0.35 & 72.7\,$\pm$\,2.4 \\
+\Kres{} classes & 0.8051\,$\pm$\,0.0015 & 0.8818\,$\pm$\,0.0018 & 25.59\,$\pm$\,0.41 & 71.0\,$\pm$\,0.3 \\
+\Kmid{} classes & 0.8055\,$\pm$\,0.0009 & 0.8821\,$\pm$\,0.0011 & 25.68\,$\pm$\,0.64 & 70.8\,$\pm$\,1.8 \\
+\Kcoarse{} classes & 0.8064\,$\pm$\,0.0014 & 0.8821\,$\pm$\,0.0015 & 25.79\,$\pm$\,0.73 & 74.3\,$\pm$\,1.9 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.8031\,$\pm$\,0.0036 & 0.8798\,$\pm$\,0.0035 & 25.09\,$\pm$\,0.65 & 72.8\,$\pm$\,1.5 \\
+\quad $b$-quark boundary & 0.8034\,$\pm$\,0.0013 & 0.8805\,$\pm$\,0.0012 & 24.77\,$\pm$\,0.28 & 72.4\,$\pm$\,0.2 \\
+\quad random flavor boundary & 0.8050\,$\pm$\,0.0011 & 0.8818\,$\pm$\,0.0016 & 25.34\,$\pm$\,0.22 & 72.0\,$\pm$\,1.2 \\
+\quad random partition 1, seed 1 & 0.8054$^{\S}$ & 0.8810$^{\S}$ & 24.98$^{\S}$ & 69.6$^{\S}$ \\
+\quad random partition 2, seed 2 & 0.8029$^{\S}$ & 0.8791$^{\S}$ & 24.53$^{\S}$ & 69.3$^{\S}$ \\
+\quad random partition 3, seed 1 & 0.8049$^{\S}$ & 0.8803$^{\S}$ & 24.00$^{\S}$ & 68.4$^{\S}$ \\
+\quad random partition 4, seed 2 & 0.7977$^{\S}$ & 0.8747$^{\S}$ & 22.84$^{\S}$ & 64.7$^{\S}$ \\
+\quad random partition 5, seed 2 & 0.8026$^{\S}$ & 0.8790$^{\S}$ & 24.05$^{\S}$ & 69.6$^{\S}$ \\
+\Kres{} classes + mass & 0.8074\,$\pm$\,0.0002 & 0.8834\,$\pm$\,0.0005 & 25.61\,$\pm$\,0.11 & 72.3\,$\pm$\,2.3 \\
+\Kcoarse{} classes + mass & 0.8051\,$\pm$\,0.0016 & 0.8801\,$\pm$\,0.0006 & 25.84\,$\pm$\,0.02 & 70.3\,$\pm$\,2.7 \\
+random network & 0.7851\,$\pm$\,0.0018 & 0.8612\,$\pm$\,0.0016 & 19.40\,$\pm$\,0.28 & 56.4\,$\pm$\,1.0 \\
+random network, BatchNorm recomputed & 0.7845\,$\pm$\,0.0013 & 0.8600\,$\pm$\,0.0009 & 18.70\,$\pm$\,0.18 & 52.2\,$\pm$\,0.8 \\
+\midrule
+released Sophon checkpoint & 0.7917$^{\S}$ & 0.8656$^{\S}$ & 19.30$^{\S}$ & 54.3$^{\S}$ \\
+\end{longtable}
+\newpage
+\addtocounter{table}{-1}
+\begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:probesfull} (continued)}} \\[\smallskipamount]
+\toprule
+& \multicolumn{4}{c}{quark/gluon, Herwig} \\
+ & \multicolumn{4}{c}{missing inputs: the training mean} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:probesfull} (continued)}} \\[\smallskipamount]
+\toprule
+& \multicolumn{4}{c}{quark/gluon, Herwig} \\
+ & \multicolumn{4}{c}{missing inputs: the training mean} \\
+\cmidrule(lr){2-5}
+ & accuracy & AUC & $R_{50}$ & $R_{30}$ \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.7229\,$\pm$\,0.0033 & 0.8075\,$\pm$\,0.0006 & 11.81\,$\pm$\,0.10 & 35.0\,$\pm$\,2.6 \\
+\Kres{} classes & 0.7234\,$\pm$\,0.0022 & 0.8068\,$\pm$\,0.0022 & 11.63\,$\pm$\,0.43 & 35.9\,$\pm$\,1.7 \\
+\Kmid{} classes & 0.7206\,$\pm$\,0.0005 & 0.8058\,$\pm$\,0.0011 & 11.52\,$\pm$\,0.23 & 34.4\,$\pm$\,1.7 \\
+\Kcoarse{} classes & 0.7201\,$\pm$\,0.0028 & 0.8053\,$\pm$\,0.0020 & 11.50\,$\pm$\,0.16 & 35.5\,$\pm$\,1.0 \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.7206\,$\pm$\,0.0009 & 0.8057\,$\pm$\,0.0002 & 11.47\,$\pm$\,0.16 & 34.6\,$\pm$\,0.4 \\
+\quad $b$-quark boundary & 0.7214\,$\pm$\,0.0007 & 0.8058\,$\pm$\,0.0002 & 11.56\,$\pm$\,0.13 & 34.9\,$\pm$\,0.5 \\
+\quad random flavor boundary & 0.7216\,$\pm$\,0.0022 & 0.8062\,$\pm$\,0.0003 & 11.66\,$\pm$\,0.08 & 35.3\,$\pm$\,0.4 \\
+\quad random partition 1, seed 1 & 0.7262$^{\S}$ & 0.8086$^{\S}$ & 11.85$^{\S}$ & 36.2$^{\S}$ \\
+\quad random partition 2, seed 2 & 0.7171$^{\S}$ & 0.8029$^{\S}$ & 11.19$^{\S}$ & 34.0$^{\S}$ \\
+\quad random partition 3, seed 1 & 0.7194$^{\S}$ & 0.8039$^{\S}$ & 10.92$^{\S}$ & 32.1$^{\S}$ \\
+\quad random partition 4, seed 2 & 0.7224$^{\S}$ & 0.8052$^{\S}$ & 11.51$^{\S}$ & 33.8$^{\S}$ \\
+\quad random partition 5, seed 2 & 0.7208$^{\S}$ & 0.8023$^{\S}$ & 11.23$^{\S}$ & 34.1$^{\S}$ \\
+\Kres{} classes + mass & 0.7223\,$\pm$\,0.0006 & 0.8071\,$\pm$\,0.0010 & 11.83\,$\pm$\,0.17 & 35.3\,$\pm$\,0.5 \\
+\Kcoarse{} classes + mass & 0.7248\,$\pm$\,0.0011 & 0.8079\,$\pm$\,0.0001 & 11.92\,$\pm$\,0.01 & 35.5\,$\pm$\,1.1 \\
+random network & 0.7205\,$\pm$\,0.0021 & 0.7965\,$\pm$\,0.0009 & 10.58\,$\pm$\,0.11 & 31.6\,$\pm$\,0.8 \\
+random network, BatchNorm recomputed & 0.7194\,$\pm$\,0.0034 & 0.7972\,$\pm$\,0.0019 & 10.48\,$\pm$\,0.21 & 30.7\,$\pm$\,0.5 \\
+\midrule
+released Sophon checkpoint & 0.7153$^{\S}$ & 0.7964$^{\S}$ & 10.32$^{\S}$ & 29.9$^{\S}$ \\
+\end{longtable}
 }
 \end{landscape}

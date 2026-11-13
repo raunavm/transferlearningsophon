@@ -86,3 +86,13 @@ def test_an_error_bar_beyond_the_axes_is_reported():
     ax.set_ylim(-1.5, 1.5)
     assert not figcheck.outside(ax)
     plt.close(fig)
+
+
+def test_a_caption_of_40_to_145_words_passes_the_check():
+    """PI 2026-11-12: the paper's figure captions run to five sentences; the check's range is 40 to 145 words."""
+    import types
+    page = lambda n: types.SimpleNamespace(caption=" ".join(["word"] * n))      # noqa: E731
+    assert figcheck.caption_findings(page(40)) == [] and figcheck.caption_findings(page(145)) == []
+    assert figcheck.caption_findings(page(39)) == ["caption has 39 words (40-145)"]
+    assert figcheck.caption_findings(page(146)) == ["caption has 146 words (40-145)"]
+    assert figcheck.caption_findings(page(81)) == []                           # the old limit of 80 is gone

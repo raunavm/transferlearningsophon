@@ -1,28 +1,33 @@
 \begin{landscape}
-\begin{table*}[t]
-\centering
-\small
-\caption{Resonance tagging in the mass window: rejection $1/\epsB$ of QCD jets at 50\% and 30\% signal efficiency. Transfer: the classifier on frozen features; direct: Sophon's discriminant from the output scores; closest node: the pretrained $X\to bq$ output against QCD; from scratch: the network trained on each signal, three seeds. A dash: the read-out cannot be formed. Mean $\pm$ SD over the pretraining runs of each configuration. Random partitions: mean $\pm$ SD over the five partitions into 17 classes, one run each.}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{Rejection of QCD jets when tagging $X\to b\bar b$ and $X\to bs$ jets in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV, for the networks of table~\ref{tab:xbx}. $R_{50}$ and $R_{30}$ are the inverse QCD efficiencies at 50\% and 30\% signal efficiency. Transfer is a classifier trained on the frozen features, direct is the pretrained $X\to b\bar b$ output against the QCD outputs, and closest node is the pretrained output of the class that contains $X\to bq$ against the QCD outputs. A dash marks a score that cannot be formed. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions, three initializations of the random network and three training seeds from scratch on $X\to bs$. $^{\S}$ marks a value from a single run.}
 \label{tab:xbxrej}
+\par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccccc@{}}
 \toprule
  & \multicolumn{2}{c}{$X\to b\bar b$, transfer} & \multicolumn{2}{c}{$X\to b\bar b$, direct} & \multicolumn{2}{c}{$X\to bs$, transfer} & \multicolumn{2}{c}{$X\to bs$, closest node} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
  & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ & $R_{50}$ & $R_{30}$ \\
 \midrule
-\Kfull{} classes & 350\,$\pm$\,4 & 1{,}010\,$\pm$\,40 & 288.8\,$\pm$\,3.2 & 792\,$\pm$\,27 & 435\,$\pm$\,27 & 2{,}070\,$\pm$\,150 & 144.1\,$\pm$\,3.5 & 377\,$\pm$\,19 \\
-\Kres{} classes & 332\,$\pm$\,10 & 920\,$\pm$\,40 & 289.1\,$\pm$\,1.7 & 776\,$\pm$\,7 & 425\,$\pm$\,4 & 2{,}020\,$\pm$\,170 & 142.0\,$\pm$\,2.8 & 366\,$\pm$\,10 \\
-\Kmid{} classes & 321\,$\pm$\,10 & 890\,$\pm$\,50 & -- & -- & 357\,$\pm$\,16 & 1{,}610\,$\pm$\,60 & 91.9\,$\pm$\,3.5 & 238\,$\pm$\,10 \\
-\Kcoarse{} classes & 258\,$\pm$\,19 & 770\,$\pm$\,80 & -- & -- & 191\,$\pm$\,26 & 690\,$\pm$\,90 & 38.0\,$\pm$\,0.8 & 112.2\,$\pm$\,3.1 \\
-\Kres{} classes + mass & 325\,$\pm$\,11 & 940\,$\pm$\,100 & 290.0\,$\pm$\,1.8 & 796\,$\pm$\,15 & 372.4\,$\pm$\,3.3 & 1{,}750\,$\pm$\,50 & 139.5\,$\pm$\,1.8 & 369.3\,$\pm$\,1.0 \\
-\Kcoarse{} classes + mass & 263.4\,$\pm$\,3.4 & 770\,$\pm$\,40 & -- & -- & 195\,$\pm$\,23 & 770\,$\pm$\,80 & 38.8\,$\pm$\,1.0 & 116.8\,$\pm$\,0.5 \\
-no flavor boundary & 218\,$\pm$\,7 & 693\,$\pm$\,6 & -- & -- & 194\,$\pm$\,8 & 767\,$\pm$\,10 & 39.1\,$\pm$\,1.2 & 115\,$\pm$\,4 \\
-$b$-quark boundary & 264.5\,$\pm$\,3.1 & 747\,$\pm$\,8 & -- & -- & 211\,$\pm$\,19 & 720\,$\pm$\,80 & 38.5\,$\pm$\,1.8 & 111\,$\pm$\,7 \\
-random flavor boundary & 277.1\,$\pm$\,3.4 & 809\,$\pm$\,30 & -- & -- & 256.8\,$\pm$\,1.6 & 1{,}030\,$\pm$\,60 & 39.5\,$\pm$\,1.1 & 115\,$\pm$\,5 \\
-random partitions & 290\,$\pm$\,18 & 790\,$\pm$\,40 & -- & -- & 310\,$\pm$\,40 & 1{,}360\,$\pm$\,310 & 34\,$\pm$\,8 & 94\,$\pm$\,19 \\
-random network & 15.9\,$\pm$\,0.9 & 42.8\,$\pm$\,3.5 & -- & -- & 12.9\,$\pm$\,0.6 & 31.5\,$\pm$\,1.8 & -- & -- \\
-from scratch & 92.1 & 191 & -- & -- & 146\,$\pm$\,11 & 610\,$\pm$\,40 & -- & -- \\
+\Kfull{} classes & 350\,$\pm$\,4 & 1{,}011\,$\pm$\,37 & 288.8\,$\pm$\,3.2 & 792\,$\pm$\,27 & 435\,$\pm$\,27 & 2{,}068\,$\pm$\,154 & 144.1\,$\pm$\,3.5 & 377.0\,$\pm$\,18.5 \\
+\Kres{} classes & 332\,$\pm$\,10 & 920\,$\pm$\,39 & 289.1\,$\pm$\,1.7 & 776\,$\pm$\,7 & 425\,$\pm$\,4 & 2{,}021\,$\pm$\,172 & 142.0\,$\pm$\,2.8 & 365.5\,$\pm$\,10.1 \\
+\Kmid{} classes & 321\,$\pm$\,10 & 891\,$\pm$\,51 & -- & -- & 357\,$\pm$\,16 & 1{,}615\,$\pm$\,59 & 91.9\,$\pm$\,3.5 & 238.0\,$\pm$\,9.5 \\
+\Kcoarse{} classes & 258\,$\pm$\,19 & 772\,$\pm$\,83 & -- & -- & 191\,$\pm$\,26 & 691\,$\pm$\,87 & 38.0\,$\pm$\,0.8 & 112.2\,$\pm$\,3.1 \\
+\multicolumn{9}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 218\,$\pm$\,7 & 693\,$\pm$\,6 & -- & -- & 194\,$\pm$\,8 & 767\,$\pm$\,10 & 39.1\,$\pm$\,1.2 & 115.0\,$\pm$\,4.0 \\
+\quad $b$-quark boundary & 264\,$\pm$\,3 & 747\,$\pm$\,8 & -- & -- & 211\,$\pm$\,19 & 720\,$\pm$\,79 & 38.5\,$\pm$\,1.8 & 110.5\,$\pm$\,6.6 \\
+\quad random flavor boundary & 277\,$\pm$\,3 & 809\,$\pm$\,30 & -- & -- & 257\,$\pm$\,2 & 1{,}027\,$\pm$\,62 & 39.5\,$\pm$\,1.1 & 115.0\,$\pm$\,5.3 \\
+\quad random partitions & 290\,$\pm$\,18 & 788\,$\pm$\,36 & -- & -- & 312\,$\pm$\,38 & 1{,}359\,$\pm$\,313 & 34.0\,$\pm$\,8.0 & 93.9\,$\pm$\,19.0 \\
+\Kres{} classes + mass & 325\,$\pm$\,11 & 935\,$\pm$\,99 & 290.0\,$\pm$\,1.8 & 796\,$\pm$\,15 & 372\,$\pm$\,3 & 1{,}751\,$\pm$\,53 & 139.5\,$\pm$\,1.8 & 369.3\,$\pm$\,1.0 \\
+\Kcoarse{} classes + mass & 263\,$\pm$\,3 & 771\,$\pm$\,44 & -- & -- & 195\,$\pm$\,23 & 766\,$\pm$\,76 & 38.8\,$\pm$\,1.0 & 116.8\,$\pm$\,0.5 \\
+random network & 16\,$\pm$\,1 & 43\,$\pm$\,3 & -- & -- & 13\,$\pm$\,1 & 31\,$\pm$\,2 & -- & -- \\
+from scratch & 92$^{\S}$ & 191$^{\S}$ & -- & -- & 146\,$\pm$\,11 & 608\,$\pm$\,38 & -- & -- \\
 \bottomrule
 \end{tabular*}
-\end{table*}
+\end{minipage}
+\end{center}
+}
 \end{landscape}

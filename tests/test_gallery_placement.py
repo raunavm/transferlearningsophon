@@ -46,8 +46,14 @@ def test_the_gallery_order_is_the_placement_tier_by_tier():
 def test_the_main_text_is_the_pis_list_in_order():
     main = [k for k, t, _ in G.FIGURES if t == G.MAIN]
     assert main == ["F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11"]
-    assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:summary", "tab:jetclass", "tab:benchtop", "tab:benchqg",
-                                                          "tab:mass", "tab:xbx"]
+    # PI 2026-11-12: one table beside the published models (tab:published) in place of the JetClass, top and
+    # quark/gluon tables; the other label sets' fine-tuned rows in one appendix table (tab:labelsets), which also takes
+    # in the Herwig table
+    assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:summary", "tab:published", "tab:mass", "tab:xbx"]
+    assert [k for k, t, _ in G.TABLES if t == G.APPENDIX] == [
+        "tab:probes", "tab:coarse", "tab:qcdhf", "tab:fill", "tab:inputs", "tab:partrepro", "tab:lrsweep", "tab:jetclassrej",
+        "tab:labelsets", "tab:pairs", "tab:sculpt", "tab:sculptboot", "tab:xbxrej"]
+    assert not {"tab:jetclass", "tab:benchtop", "tab:benchqg", "tab:benchqgherwig"} & set(G.TIER)
     # the fine-tuned read-out (2026-11-09) and X->bb/X->bs on Sophon's samples (2026-11-11) are in: nothing waits
     assert G.PROVISIONAL == {}
     assert set(G.PROVISIONAL) <= set(G.TIER) and all(v.isascii() for v in G.PROVISIONAL.values())    # the book's boxes
@@ -78,7 +84,9 @@ def test_the_dropped_pages_are_gone():
     order, paper = _assigned(FIG / "gallery_figures.py", "ORDER"), _assigned(FIG / "gallery_figures.py", "PAPER")
     assert not set(G.DROPPED) & (set(order) | set(paper) | set(G.TIER)) and set(paper) <= set(order)
     # the tables the plan places nowhere; its "missing inputs (fill)" and "fine-tuning vs size" are placed
-    assert G.DROPPED_TABLES == ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:perclass", "tab:probesn", "tab:boot")
+    # and the task tables whose rows are now in tab:published and tab:labelsets (PI 2026-11-12)
+    assert G.DROPPED_TABLES == ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:perclass", "tab:probesn", "tab:boot",
+                                "tab:jetclass", "tab:benchtop", "tab:benchqg", "tab:benchqgherwig")
     assert not set(G.DROPPED_TABLES) & set(G.TIER) and G.TIER["tab:fill"] == G.APPENDIX and G.TIER["tab:ft"] == G.SUPPLEMENT
 
 
@@ -88,6 +96,9 @@ def test_numbers_count_within_each_tier_and_kind():
     assert G.number("FJ") == "Fig. S1" and G.number("tab:perrun") == "Table S1"
     assert G.place("F10b") == "Appendix, Fig. A6" and G.place("F11") == "Main text, Fig. 9"
     assert G.number("tab:sculptboot") == "Table A12" and G.number("tab:xbxrej") == "Table A13"
+    # four main-text tables (PI 2026-11-12); tab:labelsets has the appendix number the Herwig table had
+    assert [G.number(k) for k in ("tab:published", "tab:mass", "tab:xbx")] == ["Table 2", "Table 3", "Table 4"]
+    assert G.number("tab:labelsets") == "Table A9" and G.number("tab:jetclassrej") == "Table A8" and G.number("tab:pairs") == "Table A10"
 
 
 def test_f10b_goes_to_the_main_text_only_with_the_signs_of_the_rule():
@@ -120,6 +131,15 @@ def test_every_number_in_a_sentence_comes_from_number():
 def test_every_sentence_names_its_evidence():
     assert all(set(v) <= set(G.TIER) and k in G.TIER for k, v in G.EVIDENCE.items())
     assert G.evidence("F2a") == ("F2a", "tab:summary", "tab:probes") and G.evidence("F1") == ("F1",)
+    # the fine-tuned values of Figs. 3 and A4 are in the comparison table and the label-set table (PI 2026-11-12)
+    assert G.evidence("F2b") == ("F2b", "tab:summary", "tab:published", "tab:labelsets")
+    assert G.evidence("F6") == ("F6", "tab:published", "tab:labelsets")
+    # the binned mass figure's quantity has a table over all jets (tab:mass's head block), the bins in the supplement
+    assert G.evidence("F9b") == ("F9b", "tab:mass", "tab:massdetail") and "[[F9b]]" in dict((k, s) for k, _, s in G._TABLES)["tab:mass"]
+    # the two tables that rest on the comparison table: the 188-class and from-scratch rows, ParT's published row
+    assert G.evidence("tab:labelsets") == ("tab:labelsets", "tab:published")
+    assert G.evidence("tab:partrepro") == ("tab:partrepro", "tab:published")
+    assert G.BACKS["CONF"] == f"Cited beside {G.number('tab:jetclassrej')}: JetClass confusion matrices."
 
 
 def test_the_new_pages_are_marked_new():

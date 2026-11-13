@@ -98,3 +98,24 @@ def test_the_curve_stops_where_too_few_qcd_jets_pass():
     x, keep = XR._kept({"n_b": 100_000, "curve": {"eps_b": EPS_B}})
     assert list(x) == EPS_B[1:] and keep.tolist() == [False, True, True, True]
     assert XR._kept({"n_b": 500_000, "curve": {"eps_b": EPS_B}})[1].tolist() == [True] * 4
+
+
+def test_the_rows_follow_the_tables_one_order_and_a_single_from_scratch_seed_is_marked(fits_dir):
+    """PI 2026-11-12: the efficiency table in the row order of every table (label sets, 17-class partitions, the
+    networks with a mass output, the random network, from scratch last); with the tables' formatter a from-scratch
+    signal with one seed is a single-run cell, printed with the single-run mark, and three seeds are not."""
+    import types
+    runs = M._paper(REPO)
+    fits = XR.load(fits_dir, {"xbb_jc2": "xbb"})
+    assert tuple(XR.ROWS) == M.XBX_ROWS == M.MAIN + M.FLAV + (M.RAND_POOLED,) + M.MASS + (M.INIT,)
+    tab = types.SimpleNamespace(fmt_pm=M.TAB)
+    tex = XR.table(M, tab, runs, fits, {"xbb": [_end(0.477)]})
+    lines = tex.splitlines()
+    assert [ln.split(" & ")[0] for ln in lines[lines.index(r"\midrule") + 1:-2]] == [M.LABEL[r] for r in XR.ROWS] + [M.SCRATCH_LABEL]
+    assert lines[-3] == f"{M.SCRATCH_LABEL} & " + M.V4.tok("s", 0.477 * 100.0) + r" & -- \\"
+    printed = M.uniform_columns(tex).splitlines()
+    assert M.V4.TOK_OPEN not in "".join(printed) and printed[-3].split(" & ")[1].endswith(M.SINGLE)
+    assert sum(M.SINGLE in ln for ln in printed) == 1 and "$<$" not in "".join(printed)
+    three = M.uniform_columns(XR.table(M, tab, runs, fits, {"xbb": [_end(0.47), _end(0.48), _end(0.49)]}))
+    assert M.SINGLE not in three and three.splitlines()[-3].startswith(M.SCRATCH_LABEL + r" & 48.")
+    assert "pretraining & transfer & direct" in tex                # the header is unchanged

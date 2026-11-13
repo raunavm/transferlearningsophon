@@ -1,22 +1,20 @@
 \begin{table*}[t]
 \centering
-\small
-\caption{JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on one million JetClass jets, beside published models (2 million jets, from scratch): the number of trainable parameters, accuracy and AUC averaged over class pairs. Ours: mean $\pm$ SD over three pretraining runs; from scratch: three seeds. Per-class rejections in table~\ref{tab:jetclassrej}.}
+\caption{JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or trained from scratch, on one million JetClass jets, beside published models (2 million jets, from scratch): the number of trainable parameters, accuracy and AUC. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. With JetClass's equal class sizes this equals the average over class pairs that ParT reports. Ours: mean $\pm$ SD over three pretraining runs; from scratch: three seeds. Per-class rejections in table~\ref{tab:jetclassrej}.}
 \label{tab:jetclass}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llccc@{}}
 \toprule
- & jets & \# params & accuracy & AUC \\
+ & training jets & parameters & accuracy & AUC \\
 \midrule
 ParticleNet~\cite{part} & 2 M & 366\,k & 0.828 & 0.9820 \\
 ParT~\cite{part} & 2 M & 2.14\,M & 0.836 & 0.9834 \\
 \midrule
-\multicolumn{5}{l}{\textit{this work}} \\
-from scratch & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 & 0.9818\,$\pm$\,0.0003 \\
-\multicolumn{5}{l}{\textit{fine-tuned}} \\
-\Kfull{} classes & 1 M & 2.21\,M & 0.8468\,$\pm$\,0.0006 & 0.9854\,$\pm$\,0.0001 \\
-\Kres{} classes & 1 M & 2.21\,M & 0.8475\,$\pm$\,0.0009 & 0.9856\,$\pm$\,$<$0.0001 \\
-\Kmid{} classes & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 & 0.9853\,$\pm$\,0.0001 \\
-\Kcoarse{} classes & 1 M & 2.21\,M & 0.8422\,$\pm$\,0.0005 & 0.9847\,$\pm$\,0.0001 \\
+\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 1 M & 2.21\,M & 0.8468\,$\pm$\,0.0006 & 0.98538\,$\pm$\,0.00007 \\
+\Kres{} classes & 1 M & 2.21\,M & 0.8475\,$\pm$\,0.0009 & 0.98556\,$\pm$\,0.00001 \\
+\Kmid{} classes & 1 M & 2.21\,M & 0.8459\,$\pm$\,0.0002 & 0.98531\,$\pm$\,0.00009 \\
+\Kcoarse{} classes & 1 M & 2.21\,M & 0.8422\,$\pm$\,0.0005 & 0.98468\,$\pm$\,0.00011 \\
+from scratch & 1 M & 2.21\,M & 0.8267\,$\pm$\,0.0011 & 0.98177\,$\pm$\,0.00026 \\
 \bottomrule
 \end{tabular*}
 \end{table*}

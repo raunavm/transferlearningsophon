@@ -1,21 +1,59 @@
-\begin{landscape}
-\begin{table*}[t]
-\centering
-\small
-\caption{Networks pretrained on JetClass-II with random partitions into 17 classes, fine-tuned on JetClass: none keeps a boundary between two, three and four prongs (for each pair of these prong counts, every partition has a group holding classes of both); the groups that mix prong counts, and each partition's fine-tuned rejection of QCD per signal class over that of the \Kfull-class run of the same seed; (f.t.): fine-tuned. $^\dagger$: fewer than $\nmin$ QCD jets pass in the partition's run or in that \Kfull-class run (equation~(\ref{eq:cut})).}
+\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnumber{#2}>\getpagerefnumber{#1}\relax\makebox[\linewidth][l]{\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\captionof{table}{Networks pretrained on JetClass-II with random partitions into 17 classes, fine-tuned on JetClass: none keeps a boundary between two, three and four prongs (for each pair of these prong counts, every partition has a group holding classes of both); the groups that mix prong counts, and each partition's fine-tuned rejection of QCD per signal class over that of the \Kfull-class run of the same seed. $^\dagger$: fewer than $\nmin$ QCD jets pass in the partition's run or in that \Kfull-class run (equation~(\ref{eq:cut})).}
 \label{tab:randprong}
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccccccc@{}}
+\par\medskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lc@{}}
 \toprule
- & & \multicolumn{9}{c}{rejection over \Kfull{} classes} \\
-\cmidrule(lr){3-11}
-partition & mixed groups & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+partition & mixed groups \\
 \midrule
-random partition 1 (f.t.), seed 1 & 12 & 0.842 & 1.04 & 0.984 & 0.862 & 1.12 & 0.652$^\dagger$ & 1.13 & 0.991 & 0.929 \\
-random partition 2 (f.t.), seed 2 & 12 & 0.853 & 1.10 & 0.944 & 0.935 & 0.958 & 0.875$^\dagger$ & 0.606 & 1.03 & 0.929 \\
-random partition 3 (f.t.), seed 1 & 13 & 0.889 & 1.09 & 0.966 & 0.928 & 0.935 & 1.00$^\dagger$ & 1.18 & 0.934 & 0.939 \\
-random partition 4 (f.t.), seed 2 & 12 & 0.906 & 0.940 & 0.966 & 0.959 & 0.908 & 0.636$^\dagger$ & 0.667 & 1.11 & 0.971 \\
-random partition 5 (f.t.), seed 2 & 11 & 1.12 & 0.963 & 0.981 & 0.944 & 0.793 & 0.778$^\dagger$ & 0.800 & 1.03 & 0.991 \\
+\multicolumn{2}{@{}l}{\textit{fine-tuned}} \\
+\multicolumn{2}{@{}l}{17-class partitions} \\
+\quad random partition 1, seed 1 & 12 \\
+\quad random partition 2, seed 2 & 12 \\
+\quad random partition 3, seed 1 & 13 \\
+\quad random partition 4, seed 2 & 12 \\
+\quad random partition 5, seed 2 & 11 \\
 \bottomrule
 \end{tabular*}
-\end{table*}
-\end{landscape}
+\end{minipage}
+\par\bigskip
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:randprong}{tab:randprong:2}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
+\toprule
+ & \multicolumn{5}{c}{rejection over \Kfull{} classes} \\
+\cmidrule(lr){2-6}
+partition & $H\to b\bar b$ & $H\to c\bar c$ & $H\to gg$ & $H\to 4q$ & $H\to \ell\nu qq'$ \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{fine-tuned}} \\
+\multicolumn{6}{@{}l}{17-class partitions} \\
+\quad random partition 1, seed 1 & 0.842 & 1.04 & 0.984 & 0.862 & 1.12 \\
+\quad random partition 2, seed 2 & 0.853 & 1.10 & 0.944 & 0.935 & 0.958 \\
+\quad random partition 3, seed 1 & 0.889 & 1.09 & 0.966 & 0.928 & 0.935 \\
+\quad random partition 4, seed 2 & 0.906 & 0.940 & 0.966 & 0.959 & 0.908 \\
+\quad random partition 5, seed 2 & 1.12 & 0.963 & 0.981 & 0.944 & 0.793 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\par\bigskip
+\begin{minipage}{\linewidth}\centering
+\TableContinued{tab:randprong}{tab:randprong:3}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\toprule
+ & \multicolumn{4}{c}{rejection over \Kfull{} classes} \\
+\cmidrule(lr){2-5}
+partition & $t\to bqq'$ & $t\to b\ell\nu$ & $W\to qq'$ & $Z\to q\bar q$ \\
+\midrule
+\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad random partition 1, seed 1 & 0.652$^\dagger$ & 1.13 & 0.991 & 0.929 \\
+\quad random partition 2, seed 2 & 0.875$^\dagger$ & 0.606 & 1.03 & 0.929 \\
+\quad random partition 3, seed 1 & 1.00$^\dagger$ & 1.18 & 0.934 & 0.939 \\
+\quad random partition 4, seed 2 & 0.636$^\dagger$ & 0.667 & 1.11 & 0.971 \\
+\quad random partition 5, seed 2 & 0.778$^\dagger$ & 0.800 & 1.03 & 0.991 \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}

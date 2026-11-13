@@ -1,18 +1,15 @@
 \begin{landscape}
 \begin{table}[t]
 \centering
-\small
-\caption{Networks trained from scratch on the top-tagging data: ParT's training script on our cluster, then with Sophon's output head, then also with Sophon's rescaling of every jet's four-momenta to $p_{\mathrm{T}}=500$~GeV (cumulative, one run each), beside ParT's published row and Sophon's network trained from scratch, which uses the rescaling.}
+\caption{ParT's top-tagging training script run from scratch, compared unchanged and with one of two changes taken from Sophon, which are not combined. The changes are Sophon's output head and Sophon's rescaling of every jet's four-momenta to $p_{\mathrm{T}}=500$~GeV. AUC is the area under the receiver operating characteristic curve. $R_{50}$ and $R_{30}$ are the inverse background efficiencies at 50\% and 30\% signal efficiency, and the last column counts the background jets that pass the selection of $R_{30}$. ParT's published result and the network of this work trained from scratch, which has both changes and the missing inputs set to zero, are in table~\ref{tab:published}. $^{\S}$ marks a value from a single run.}
 \label{tab:partrepro}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}
 \toprule
  & accuracy & AUC & $R_{50}$ & $R_{30}$ & background jets passing at $R_{30}$ \\
 \midrule
-ParT's script, unchanged & 0.9398 & 0.9858 & 424 & 1{,}711 & 118 \\
-\quad + Sophon's output head & 0.9403 & 0.9859 & 416 & 1{,}577 & 128 \\
-\quad + Sophon's jet-$p_{\mathrm{T}}$ rescaling & 0.9385 & 0.9850 & 357 & 1{,}224 & 165 \\
-ParT, published~\cite{part} & 0.940 & 0.9858 & 413\,$\pm$\,16 & 1{,}602\,$\pm$\,81 & -- \\
-\midrule Sophon's network, trained from scratch & 0.9387\,$\pm$\,0.0002 & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11 & 1{,}410\,$\pm$\,20 & -- \\
+ParT's training script, unchanged & 0.93979$^{\S}$ & 0.98585$^{\S}$ & 424$^{\S}$ & 1{,}710$^{\S}$ & 118$^{\S}$ \\
+ParT's script with Sophon's output head & 0.94033$^{\S}$ & 0.98586$^{\S}$ & 416$^{\S}$ & 1{,}580$^{\S}$ & 128$^{\S}$ \\
+ParT's script with Sophon's jet-$p_{\mathrm{T}}$ rescaling & 0.93852$^{\S}$ & 0.98504$^{\S}$ & 357$^{\S}$ & 1{,}220$^{\S}$ & 165$^{\S}$ \\
 \bottomrule
 \end{tabular*}
 \end{table}

@@ -1,97 +1,102 @@
 \begin{landscape}
-{\small
-\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2: }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\addtolength{\belowcaptionskip}{\abovecaptionskip}
 \begin{longtable}{@{\extracolsep{\fill}}lcccc@{}}
-\caption{Pairs of JetClass-II classes separated by networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and by the controls: the AUC of a binary linear probe on the frozen features (LP) and of the network fine-tuned on $10^{6}$ class-balanced JetClass-II jets (f.t.); the two modes are scored on different test jets. $^{\dagger}$: the label set merges the two sides into one class; $^{\ddagger}$: it merges the first side with part of the second; $^{\S}$: some of the five random partitions merge the two sides; $^{\P}$: every run gives the same AUC. Mean $\pm$ SD over the pretraining runs of each configuration. Random partitions: mean $\pm$ SD over the five partitions into 17 classes, one run each.}\label{tab:pairs}\\
+\caption{Separation of pairs of JetClass-II classes by the networks pretrained with 188, 162, 43 and 17 classes and by the control networks, as the area under the receiver operating characteristic curve (AUC). The fine-tuned networks are trained on $10^{6}$ class-balanced JetClass-II jets and scored on other test jets than the linear probes, by the summed outputs of the first side's classes over those of both sides. An entry $>0.9999$ is a mean AUC that rounds to 1.0000. The random network with BatchNorm recomputed has the running mean and variance of its BatchNorm layers re-estimated on \DesignBnJets{} training jets, which the other random network leaves at their untrained defaults. A flavor boundary is a class boundary between decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} pretraining runs per label set, \RandFlavRuns{} per flavor-boundary partition, \MlstMassNRunsWord{} per network with an added mass output, one for each of five random partitions, three initializations of the random network and three training seeds from scratch. In the linear-probe rows, $^{\dagger}$ marks a pair that the label set merges into one class. $^{\ddagger}$ marks a pair whose first side it merges with part of the second. $^{\parallel}$ marks a pair that some of the random partitions merge.}\label{tab:pairs}\\
 \toprule
-& \multicolumn{1}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{1}{c}{$X\to b\bar b$ vs $c\bar c$} & \multicolumn{1}{c}{$X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$} & \multicolumn{1}{c}{$X\to ee$ vs $\mu\mu$} \\
-\cmidrule(lr){2-2}\cmidrule(lr){3-3}\cmidrule(lr){4-4}\cmidrule(lr){5-5}
- & AUC & AUC & AUC & AUC \\
+& \multicolumn{4}{c}{AUC} \\
+\cmidrule(lr){2-5}
+ & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$ & $X\to ee$ vs $\mu\mu$ \\
 \midrule
 \endfirsthead
-\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:pairs} (continued)}} \\
+\multicolumn{5}{@{}l}{\textit{Table~\ref{tab:pairs} (continued)}} \\[\smallskipamount]
 \toprule
-& \multicolumn{1}{c}{$X\to bc$ vs $bq$, $cs$} & \multicolumn{1}{c}{$X\to b\bar b$ vs $c\bar c$} & \multicolumn{1}{c}{$X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$} & \multicolumn{1}{c}{$X\to ee$ vs $\mu\mu$} \\
-\cmidrule(lr){2-2}\cmidrule(lr){3-3}\cmidrule(lr){4-4}\cmidrule(lr){5-5}
- & AUC & AUC & AUC & AUC \\
+& \multicolumn{4}{c}{AUC} \\
+\cmidrule(lr){2-5}
+ & $X\to bc$ vs $bq$, $cs$ & $X\to b\bar b$ vs $c\bar c$ & $X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$ & $X\to ee$ vs $\mu\mu$ \\
 \midrule
 \endhead
 \bottomrule
 \endlastfoot
-\multicolumn{5}{l}{\textit{(LP): linear probe on the frozen features}} \\
-\Kfull{} classes & 0.9409\,$\pm$\,0.0003 & 0.9977\,$\pm$\,$<$0.0001 & 0.9939\,$\pm$\,$<$0.0001 & 1.0000\,$\pm$\,$<$0.0001 \\
-\Kres{} classes & 0.9410\,$\pm$\,0.0002 & 0.9976\,$\pm$\,0.0001 & 0.9939\,$\pm$\,0.0002 & 1.0000\,$\pm$\,$<$0.0001 \\
-\Kmid{} classes & 0.9319\,$\pm$\,0.0014$^{\ddagger}$ & 0.9974\,$\pm$\,$<$0.0001 & 0.9932\,$\pm$\,$<$0.0001 & 0.9610\,$\pm$\,0.0030$^{\dagger}$ \\
-\Kcoarse{} classes & 0.8845\,$\pm$\,0.0039$^{\dagger}$ & 0.9902\,$\pm$\,0.0007$^{\dagger}$ & 0.9716\,$\pm$\,0.0033$^{\dagger}$ & 0.9602\,$\pm$\,0.0202$^{\dagger}$ \\
-\Kres{} classes + mass & 0.9388\,$\pm$\,0.0017 & 0.9974\,$\pm$\,0.0001 & 0.9932\,$\pm$\,0.0003 & 1.0000\,$\pm$\,$<$0.0001 \\
-\Kcoarse{} classes + mass & 0.8820\,$\pm$\,0.0018$^{\dagger}$ & 0.9897\,$\pm$\,0.0009$^{\dagger}$ & 0.9691\,$\pm$\,0.0021$^{\dagger}$ & 0.9838\,$\pm$\,0.0205$^{\dagger}$ \\
-no flavor boundary & 0.8758\,$\pm$\,0.0086$^{\dagger}$ & 0.9776\,$\pm$\,0.0125$^{\dagger}$ & 0.9520\,$\pm$\,0.0133$^{\dagger}$ & 1.0000\,$\pm$\,$<$0.0001 \\
-$b$-quark boundary & 0.9097\,$\pm$\,0.0009$^{\dagger}$ & 0.9958\,$\pm$\,0.0001$^{\dagger}$ & 0.9910\,$\pm$\,0.0002 & 1.0000\,$\pm$\,$<$0.0001 \\
-random flavor boundary & 0.9098\,$\pm$\,0.0003$^{\dagger}$ & 0.9932\,$\pm$\,0.0011$^{\dagger}$ & 0.9862\,$\pm$\,0.0002$^{\dagger}$ & 1.0000\,$\pm$\,$<$0.0001 \\
-random partitions & 0.9321\,$\pm$\,0.0043$^{\S}$ & 0.9964\,$\pm$\,0.0002$^{\S}$ & 0.9913\,$\pm$\,0.0004$^{\S}$ & 1.0000\,$\pm$\,$<$0.0001$^{\S}$ \\
-random network & 0.6011\,$\pm$\,0.0028 & 0.7012\,$\pm$\,0.0122 & 0.6803\,$\pm$\,0.0068 & 0.9995\,$\pm$\,0.0003 \\
-random network, BatchNorm recomputed & 0.6528\,$\pm$\,0.0090 & 0.8169\,$\pm$\,0.0204 & 0.7822\,$\pm$\,0.0189 & 1.0000\,$\pm$\,$<$0.0001 \\
+\multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.9409\,$\pm$\,0.0003 & 0.99768\,$\pm$\,0.00001 & 0.99393\,$\pm$\,0.00004 & $>0.9999$ \\
+\Kres{} classes & 0.9410\,$\pm$\,0.0002 & 0.99765\,$\pm$\,0.00005 & 0.99390\,$\pm$\,0.00016 & $>0.9999$ \\
+\Kmid{} classes & 0.9319\,$\pm$\,0.0014$^{\ddagger}$ & 0.99744\,$\pm$\,0.00003 & 0.99322\,$\pm$\,0.00001 & 0.9610\,$\pm$\,0.0030$^{\dagger}$ \\
+\Kcoarse{} classes & 0.8845\,$\pm$\,0.0039$^{\dagger}$ & 0.99021\,$\pm$\,0.00069$^{\dagger}$ & 0.97159\,$\pm$\,0.00330$^{\dagger}$ & 0.9602\,$\pm$\,0.0202$^{\dagger}$ \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.8758\,$\pm$\,0.0086$^{\dagger}$ & 0.97756\,$\pm$\,0.01248$^{\dagger}$ & 0.95199\,$\pm$\,0.01327$^{\dagger}$ & $>0.9999$ \\
+\quad $b$-quark boundary & 0.9097\,$\pm$\,0.0009$^{\dagger}$ & 0.99583\,$\pm$\,0.00013$^{\dagger}$ & 0.99101\,$\pm$\,0.00020 & $>0.9999$ \\
+\quad random flavor boundary & 0.9098\,$\pm$\,0.0003$^{\dagger}$ & 0.99322\,$\pm$\,0.00113$^{\dagger}$ & 0.98616\,$\pm$\,0.00016$^{\dagger}$ & $>0.9999$ \\
+\quad random partitions & 0.9321\,$\pm$\,0.0043$^{\parallel}$ & 0.99645\,$\pm$\,0.00025$^{\parallel}$ & 0.99134\,$\pm$\,0.00037$^{\parallel}$ & $>0.9999$$^{\parallel}$ \\
+\Kres{} classes + mass & 0.9388\,$\pm$\,0.0017 & 0.99736\,$\pm$\,0.00015 & 0.99321\,$\pm$\,0.00035 & $>0.9999$ \\
+\Kcoarse{} classes + mass & 0.8820\,$\pm$\,0.0018$^{\dagger}$ & 0.98974\,$\pm$\,0.00089$^{\dagger}$ & 0.96909\,$\pm$\,0.00207$^{\dagger}$ & 0.9838\,$\pm$\,0.0205$^{\dagger}$ \\
+random network & 0.6011\,$\pm$\,0.0028 & 0.70117\,$\pm$\,0.01221 & 0.68030\,$\pm$\,0.00684 & 0.9995\,$\pm$\,0.0003 \\
+random network, BatchNorm recomputed & 0.6528\,$\pm$\,0.0090 & 0.81695\,$\pm$\,0.02043 & 0.78222\,$\pm$\,0.01888 & $>0.9999$ \\
 \midrule
 \newpage
-\multicolumn{5}{l}{\textit{(f.t.): fine-tuned}} \\
-\Kfull{} classes & 0.9380\,$\pm$\,0.0011 & 0.9970\,$\pm$\,0.0002 & 0.9925\,$\pm$\,0.0003 & 1.0000\,$\pm$\,$<$0.0001 \\
-\Kres{} classes & 0.9377\,$\pm$\,0.0007 & 0.9968\,$\pm$\,0.0001 & 0.9925\,$\pm$\,0.0003 & 1.0000\,$\pm$\,$<$0.0001 \\
-\Kmid{} classes & 0.9339\,$\pm$\,0.0004 & 0.9966\,$\pm$\,0.0002 & 0.9918\,$\pm$\,0.0001 & 1.0000\,$\pm$\,$<$0.0001 \\
-\Kcoarse{} classes & 0.9238\,$\pm$\,0.0014 & 0.9943\,$\pm$\,0.0003 & 0.9884\,$\pm$\,0.0009 & 1.0000$^{\P}$ \\
-\Kres{} classes + mass & 0.9369\,$\pm$\,0.0009 & 0.9967\,$\pm$\,0.0001 & 0.9917\,$\pm$\,0.0003 & 1.0000\,$\pm$\,$<$0.0001 \\
-\Kcoarse{} classes + mass & 0.9226\,$\pm$\,0.0002 & 0.9942\,$\pm$\,0.0002 & 0.9878\,$\pm$\,0.0001 & 1.0000\,$\pm$\,$<$0.0001 \\
-no flavor boundary & 0.9242\,$\pm$\,0.0006 & 0.9949\,$\pm$\,0.0001 & 0.9889\,$\pm$\,0.0005 & 1.0000\,$\pm$\,0 \\
-$b$-quark boundary & 0.9256\,$\pm$\,0.0027 & 0.9954\,$\pm$\,$<$0.0001 & 0.9908\,$\pm$\,0.0003 & 1.0000 \\
-random flavor boundary & 0.9263\,$\pm$\,0.0011 & 0.9951\,$\pm$\,0.0002 & 0.9895\,$\pm$\,0.0007 & 1.0000 \\
-random partitions & 0.9315\,$\pm$\,0.0022 & 0.9958\,$\pm$\,0.0002 & 0.9906\,$\pm$\,0.0003 & 1.0000\,$\pm$\,$<$0.0001 \\
-from scratch & 0.9163\,$\pm$\,0.0006 & 0.9910\,$\pm$\,0.0003 & 0.9826\,$\pm$\,0.0005 & 1.0000\,$\pm$\,$<$0.0001 \\
+\multicolumn{5}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 0.9380\,$\pm$\,0.0011 & 0.99699\,$\pm$\,0.00017 & 0.99252\,$\pm$\,0.00029 & $>0.9999$ \\
+\Kres{} classes & 0.9377\,$\pm$\,0.0007 & 0.99685\,$\pm$\,0.00010 & 0.99245\,$\pm$\,0.00032 & $>0.9999$ \\
+\Kmid{} classes & 0.9339\,$\pm$\,0.0004 & 0.99660\,$\pm$\,0.00021 & 0.99178\,$\pm$\,0.00009 & $>0.9999$ \\
+\Kcoarse{} classes & 0.9238\,$\pm$\,0.0014 & 0.99430\,$\pm$\,0.00032 & 0.98844\,$\pm$\,0.00094 & $>0.9999$ \\
+\multicolumn{5}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.9242\,$\pm$\,0.0006 & 0.99488\,$\pm$\,0.00008 & 0.98892\,$\pm$\,0.00047 & $>0.9999$ \\
+\quad $b$-quark boundary & 0.9256\,$\pm$\,0.0027 & 0.99541\,$\pm$\,0.00005 & 0.99078\,$\pm$\,0.00027 & $>0.9999$ \\
+\quad random flavor boundary & 0.9263\,$\pm$\,0.0011 & 0.99512\,$\pm$\,0.00015 & 0.98953\,$\pm$\,0.00074 & $>0.9999$ \\
+\quad random partitions & 0.9315\,$\pm$\,0.0022 & 0.99582\,$\pm$\,0.00020 & 0.99055\,$\pm$\,0.00032 & $>0.9999$ \\
+\Kres{} classes + mass & 0.9369\,$\pm$\,0.0009 & 0.99671\,$\pm$\,0.00010 & 0.99169\,$\pm$\,0.00026 & $>0.9999$ \\
+\Kcoarse{} classes + mass & 0.9226\,$\pm$\,0.0002 & 0.99421\,$\pm$\,0.00016 & 0.98783\,$\pm$\,0.00009 & $>0.9999$ \\
+from scratch & 0.9163\,$\pm$\,0.0006 & 0.99103\,$\pm$\,0.00032 & 0.98264\,$\pm$\,0.00048 & $>0.9999$ \\
 \end{longtable}
 \newpage
 \addtocounter{table}{-1}
 \begin{longtable}{@{\extracolsep{\fill}}lccc@{}}
-\multicolumn{4}{@{}l}{\textit{Table~\ref{tab:pairs} (continued)}} \\
+\multicolumn{4}{@{}l}{\textit{Table~\ref{tab:pairs} (continued)}} \\[\smallskipamount]
 \toprule
-& \multicolumn{1}{c}{QCD $b\bar{b}$ vs $c\bar{c}$} & \multicolumn{1}{c}{QCD with $b$ vs light} & \multicolumn{1}{c}{QCD with $c$, no $b$, vs light} \\
-\cmidrule(lr){2-2}\cmidrule(lr){3-3}\cmidrule(lr){4-4}
- & AUC & AUC & AUC \\
+& \multicolumn{3}{c}{AUC} \\
+\cmidrule(lr){2-4}
+ & QCD $b\bar{b}$ vs $c\bar{c}$ & QCD with $b$ vs light & QCD with $c$, no $b$, vs light \\
 \midrule
 \endfirsthead
-\multicolumn{4}{@{}l}{\textit{Table~\ref{tab:pairs} (continued)}} \\
+\multicolumn{4}{@{}l}{\textit{Table~\ref{tab:pairs} (continued)}} \\[\smallskipamount]
 \toprule
-& \multicolumn{1}{c}{QCD $b\bar{b}$ vs $c\bar{c}$} & \multicolumn{1}{c}{QCD with $b$ vs light} & \multicolumn{1}{c}{QCD with $c$, no $b$, vs light} \\
-\cmidrule(lr){2-2}\cmidrule(lr){3-3}\cmidrule(lr){4-4}
- & AUC & AUC & AUC \\
+& \multicolumn{3}{c}{AUC} \\
+\cmidrule(lr){2-4}
+ & QCD $b\bar{b}$ vs $c\bar{c}$ & QCD with $b$ vs light & QCD with $c$, no $b$, vs light \\
 \midrule
 \endhead
 \bottomrule
 \endlastfoot
-\multicolumn{4}{l}{\textit{(LP): linear probe on the frozen features}} \\
-\Kfull{} classes & 0.9867\,$\pm$\,0.0001 & 0.9880\,$\pm$\,0.0001 & 0.9324\,$\pm$\,0.0003 \\
-\Kres{} classes & 0.9848\,$\pm$\,0.0004$^{\dagger}$ & 0.9870\,$\pm$\,0.0001$^{\dagger}$ & 0.9282\,$\pm$\,0.0001$^{\dagger}$ \\
-\Kmid{} classes & 0.9846\,$\pm$\,0.0001$^{\dagger}$ & 0.9870\,$\pm$\,0.0001$^{\dagger}$ & 0.9275\,$\pm$\,0.0003$^{\dagger}$ \\
-\Kcoarse{} classes & 0.9563\,$\pm$\,0.0003$^{\dagger}$ & 0.9815\,$\pm$\,0.0007$^{\dagger}$ & 0.9048\,$\pm$\,0.0010$^{\dagger}$ \\
-\Kres{} classes + mass & 0.9835\,$\pm$\,0.0009$^{\dagger}$ & 0.9869\,$\pm$\,0.0001$^{\dagger}$ & 0.9268\,$\pm$\,0.0007$^{\dagger}$ \\
-\Kcoarse{} classes + mass & 0.9506\,$\pm$\,0.0035$^{\dagger}$ & 0.9802\,$\pm$\,0.0003$^{\dagger}$ & 0.9024\,$\pm$\,0.0031$^{\dagger}$ \\
-no flavor boundary & 0.9373\,$\pm$\,0.0099$^{\dagger}$ & 0.9819\,$\pm$\,0.0008$^{\dagger}$ & 0.9105\,$\pm$\,0.0024$^{\dagger}$ \\
-$b$-quark boundary & 0.9795\,$\pm$\,$<$0.0001$^{\dagger}$ & 0.9854\,$\pm$\,0.0001$^{\dagger}$ & 0.9168\,$\pm$\,0.0004$^{\dagger}$ \\
-random flavor boundary & 0.9714\,$\pm$\,0.0010$^{\dagger}$ & 0.9846\,$\pm$\,0.0002$^{\dagger}$ & 0.9208\,$\pm$\,0.0005$^{\dagger}$ \\
-random partitions & 0.9796\,$\pm$\,0.0009$^{\dagger}$ & 0.9857\,$\pm$\,0.0002$^{\dagger}$ & 0.9224\,$\pm$\,0.0011$^{\dagger}$ \\
-random network & 0.6550\,$\pm$\,0.0048 & 0.7419\,$\pm$\,0.0077 & 0.6561\,$\pm$\,0.0049 \\
-random network, BatchNorm recomputed & 0.7653\,$\pm$\,0.0162 & 0.8294\,$\pm$\,0.0116 & 0.6821\,$\pm$\,0.0003 \\
+\multicolumn{4}{@{}l}{\textit{linear probe on the frozen features}} \\
+\Kfull{} classes & 0.98672\,$\pm$\,0.00013 & 0.98802\,$\pm$\,0.00007 & 0.93238\,$\pm$\,0.00026 \\
+\Kres{} classes & 0.98477\,$\pm$\,0.00036$^{\dagger}$ & 0.98701\,$\pm$\,0.00009$^{\dagger}$ & 0.92823\,$\pm$\,0.00010$^{\dagger}$ \\
+\Kmid{} classes & 0.98456\,$\pm$\,0.00013$^{\dagger}$ & 0.98705\,$\pm$\,0.00007$^{\dagger}$ & 0.92748\,$\pm$\,0.00029$^{\dagger}$ \\
+\Kcoarse{} classes & 0.95627\,$\pm$\,0.00029$^{\dagger}$ & 0.98150\,$\pm$\,0.00075$^{\dagger}$ & 0.90483\,$\pm$\,0.00103$^{\dagger}$ \\
+\multicolumn{4}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.93730\,$\pm$\,0.00986$^{\dagger}$ & 0.98194\,$\pm$\,0.00076$^{\dagger}$ & 0.91049\,$\pm$\,0.00241$^{\dagger}$ \\
+\quad $b$-quark boundary & 0.97952\,$\pm$\,0.00001$^{\dagger}$ & 0.98545\,$\pm$\,0.00011$^{\dagger}$ & 0.91684\,$\pm$\,0.00040$^{\dagger}$ \\
+\quad random flavor boundary & 0.97143\,$\pm$\,0.00096$^{\dagger}$ & 0.98462\,$\pm$\,0.00019$^{\dagger}$ & 0.92077\,$\pm$\,0.00047$^{\dagger}$ \\
+\quad random partitions & 0.97961\,$\pm$\,0.00094$^{\dagger}$ & 0.98565\,$\pm$\,0.00022$^{\dagger}$ & 0.92242\,$\pm$\,0.00112$^{\dagger}$ \\
+\Kres{} classes + mass & 0.98352\,$\pm$\,0.00091$^{\dagger}$ & 0.98689\,$\pm$\,0.00015$^{\dagger}$ & 0.92677\,$\pm$\,0.00074$^{\dagger}$ \\
+\Kcoarse{} classes + mass & 0.95062\,$\pm$\,0.00353$^{\dagger}$ & 0.98020\,$\pm$\,0.00034$^{\dagger}$ & 0.90238\,$\pm$\,0.00312$^{\dagger}$ \\
+random network & 0.65497\,$\pm$\,0.00479 & 0.74189\,$\pm$\,0.00766 & 0.65609\,$\pm$\,0.00488 \\
+random network, BatchNorm recomputed & 0.76532\,$\pm$\,0.01625 & 0.82940\,$\pm$\,0.01164 & 0.68213\,$\pm$\,0.00029 \\
 \midrule
 \newpage
-\multicolumn{4}{l}{\textit{(f.t.): fine-tuned}} \\
-\Kfull{} classes & 0.9841\,$\pm$\,0.0001 & 0.9882\,$\pm$\,0.0003 & 0.9285\,$\pm$\,0.0006 \\
-\Kres{} classes & 0.9826\,$\pm$\,0.0007 & 0.9879\,$\pm$\,0.0004 & 0.9268\,$\pm$\,0.0001 \\
-\Kmid{} classes & 0.9824\,$\pm$\,0.0003 & 0.9878\,$\pm$\,0.0002 & 0.9253\,$\pm$\,0.0006 \\
-\Kcoarse{} classes & 0.9765\,$\pm$\,0.0006 & 0.9870\,$\pm$\,0.0003 & 0.9219\,$\pm$\,0.0011 \\
-\Kres{} classes + mass & 0.9816\,$\pm$\,0.0004 & 0.9880\,$\pm$\,0.0003 & 0.9259\,$\pm$\,0.0008 \\
-\Kcoarse{} classes + mass & 0.9754\,$\pm$\,0.0001 & 0.9871\,$\pm$\,0.0004 & 0.9203\,$\pm$\,0.0004 \\
-no flavor boundary & 0.9769\,$\pm$\,0.0006 & 0.9875\,$\pm$\,$<$0.0001 & 0.9231\,$\pm$\,$<$0.0001 \\
-$b$-quark boundary & 0.9803\,$\pm$\,0.0009 & 0.9873\,$\pm$\,0.0001 & 0.9228\,$\pm$\,0.0005 \\
-random flavor boundary & 0.9777\,$\pm$\,0.0014 & 0.9874\,$\pm$\,0.0001 & 0.9230\,$\pm$\,0.0010 \\
-random partitions & 0.9801\,$\pm$\,0.0008 & 0.9873\,$\pm$\,0.0002 & 0.9235\,$\pm$\,0.0008 \\
-from scratch & 0.9707\,$\pm$\,0.0014 & 0.9864\,$\pm$\,0.0001 & 0.9166\,$\pm$\,0.0006 \\
+\multicolumn{4}{@{}l}{\textit{fine-tuned}} \\
+\Kfull{} classes & 0.98411\,$\pm$\,0.00012 & 0.98819\,$\pm$\,0.00026 & 0.92851\,$\pm$\,0.00055 \\
+\Kres{} classes & 0.98257\,$\pm$\,0.00068 & 0.98792\,$\pm$\,0.00041 & 0.92679\,$\pm$\,0.00012 \\
+\Kmid{} classes & 0.98244\,$\pm$\,0.00030 & 0.98779\,$\pm$\,0.00019 & 0.92529\,$\pm$\,0.00058 \\
+\Kcoarse{} classes & 0.97646\,$\pm$\,0.00064 & 0.98698\,$\pm$\,0.00025 & 0.92185\,$\pm$\,0.00115 \\
+\multicolumn{4}{@{}l}{17-class partitions} \\
+\quad no flavor boundary & 0.97694\,$\pm$\,0.00059 & 0.98746\,$\pm$\,0.00003 & 0.92307\,$\pm$\,0.00005 \\
+\quad $b$-quark boundary & 0.98026\,$\pm$\,0.00087 & 0.98730\,$\pm$\,0.00010 & 0.92285\,$\pm$\,0.00045 \\
+\quad random flavor boundary & 0.97774\,$\pm$\,0.00137 & 0.98739\,$\pm$\,0.00006 & 0.92300\,$\pm$\,0.00097 \\
+\quad random partitions & 0.98012\,$\pm$\,0.00081 & 0.98733\,$\pm$\,0.00019 & 0.92355\,$\pm$\,0.00081 \\
+\Kres{} classes + mass & 0.98158\,$\pm$\,0.00035 & 0.98797\,$\pm$\,0.00027 & 0.92591\,$\pm$\,0.00077 \\
+\Kcoarse{} classes + mass & 0.97538\,$\pm$\,0.00007 & 0.98712\,$\pm$\,0.00038 & 0.92028\,$\pm$\,0.00044 \\
+from scratch & 0.97073\,$\pm$\,0.00137 & 0.98645\,$\pm$\,0.00012 & 0.91657\,$\pm$\,0.00060 \\
 \end{longtable}
 }
 \end{landscape}
