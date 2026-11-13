@@ -302,7 +302,7 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
 
 
 # PI 2026-11-12: panel titles say what each panel shows
-F9B_TITLE = {"median": "Median response", "resolution": "Resolution", "vs_pt": r"jet $p_{\mathrm{T}}$",
+F9B_TITLE = {"median": "Response", "resolution": "Resolution", "vs_pt": r"jet $p_{\mathrm{T}}$",
              "vs_mgen": "generator mass"}
 X_PT, X_MGEN = r"Jet $p_{\mathrm{T}}$ [GeV]", r"Generator mass ($m_{\mathrm{gen}}$) [GeV]"
 
@@ -485,7 +485,7 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs
     ref = _floor(sc, next(m for m in runs[drawn[0]] if m in sc))
     eff = np.array(sorted(ref))
     keep = eff >= F10B_FROM
-    ax.plot(eff[keep], [ref[e] for e in eff[keep]], **S.REFERENCE, zorder=1.5, label="random selection of as many QCD jets")
+    ax.plot(eff[keep], [ref[e] for e in eff[keep]], **S.REFERENCE, zorder=1.5, label="random selection")
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.autoscale_view()
@@ -507,7 +507,7 @@ def draw_f10b_flav(path: pathlib.Path) -> None:
     if not any(m in sc for a in S.CONTROLS for m in RUNS[a]):
         raise Absent("no mass sculpting curve of the flavor-boundary partitions")
     _sculpt_curves(path, sc, ("L188",) + tuple(S.CONTROLS),
-                   "Mass sculpting of QCD jets by cuts on the pretraining head, flavor boundaries")
+                   "QCD mass sculpting, flavor boundaries")
 
 
 SCULPT_FT = "head/sculpting_ft"     # the fine-tuned networks' sculpting files, <model>.json (EVAL/sculpting_ft.py)

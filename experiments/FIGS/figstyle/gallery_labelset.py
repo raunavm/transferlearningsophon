@@ -74,7 +74,7 @@ F2_NAMES = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes"
 F2_LEFT, F2_W, F2_H, F2_WGAP, F2_HGAP = 4.2, 5.0, 5.0, 0.45, 1.35
 X_F2 = {"accuracy": "Accuracy", "r30": "Rejection ($R_{30}$)"}
 RUN_DOT, MEAN_DOT = 2.2, 4.6     # pt: one pretraining run; the mean over runs
-RUN_DROP = 0.2                   # rows a run's dots sit below its row's mean, clear of the mean's circle
+RUN_DROP = 0.3                   # rows a run's dots sit below its row's mean, clear of the mean's circle
 
 
 def _range(ax, ys: list, log: bool, pad: float = 0.12) -> tuple:
@@ -550,8 +550,8 @@ def draw_val(path) -> None:
     """Exact size, one panel SINGLE_W wide (PI 2026-11-12), the legend above it."""
     docs = M._load(P.DATA / "compute")
     w = S.SINGLE_W - 1.5 - 0.25
-    fig = S.figure_cm(S.SINGLE_W, 2.05 + 0.85 * w + 1.0)
-    ax = S.axes_cm(fig, 1.5, 2.05, w, 0.85 * w)
+    fig = S.figure_cm(S.SINGLE_W, 1.75 + 0.85 * w + 1.0)
+    ax = S.axes_cm(fig, 1.5, 1.75, w, 0.85 * w)
     S.fine_grid(ax)
     for level in S.LEVELS:
         have = [[e["val_acc"] for e in docs[m]["epochs"]] for m in RUNS[level] if m in docs and "val_acc" in docs[m]["epochs"][0]]

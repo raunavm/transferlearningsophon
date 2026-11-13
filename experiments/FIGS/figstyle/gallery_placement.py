@@ -124,9 +124,9 @@ _TABLES = (
     ("tab:ft", SUPPLEMENT, "Cited beside [[F8]] and [[A8]]: every label set fine-tuned at every training-set size."),
     ("tab:randprong", SUPPLEMENT, "Cited beside [[tab:summary]]: the prong counts each random partition mixes."),
     ("tab:compute", SUPPLEMENT, "Cited from the methods: each run's GPU types and GPU-hours."),
-    *((k, SUPPLEMENT, f"Cited beside [[{k.removesuffix('full')}]]: every random partition, and the ratio to 188 classes.")
-      for k in ("tab:probesfull", "tab:coarsefull", "tab:qcdhffull", "tab:pairsfull")),
-    ("tab:fillfull", SUPPLEMENT, "Cited beside [[tab:fill]]: every block and every random partition."),
+    *((k, SUPPLEMENT, "Cited beside the appendix table of the same name: every random partition, the ratio to 188 "
+                      "classes and every block.")
+      for k in ("tab:probesfull", "tab:coarsefull", "tab:qcdhffull", "tab:pairsfull", "tab:fillfull")),
 )
 # what a sentence rests on beyond its own item
 EVIDENCE = {
