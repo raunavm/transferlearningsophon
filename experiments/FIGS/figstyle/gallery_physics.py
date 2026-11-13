@@ -12,8 +12,6 @@ import pathlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter, MaxNLocator
-from matplotlib.colors import to_rgba
-from matplotlib.patches import Circle, FancyBboxPatch, Polygon, Rectangle
 
 from gallery_bands import spread_band
 from gallery_common import HERE, RUNS, Absent, I, M, P, Page, S
@@ -76,121 +74,12 @@ def draw_sophon_fig2(path: pathlib.Path) -> None:
 
 
 # ------------------------------------------------------------------ F1
-# Schematic rows of the four label sets, top to bottom, not to scale: each level's boxes are unions of the boxes
-# to its left, the last row group is the QCD jets
-BOXES = {"L188": (1,) * 14, "L162": (1,) * 11 + (3,), "R42_Q1": (2, 2, 2, 2, 2, 1, 3), "R16_Q1": (4, 4, 3, 3)}
-# each no wider than the step it sits under (0.84 in)
-MERGES = ("QCD quark\ncontent", "flavor beyond\nheaviest quark,\n$s$ vs $u,d$,\nquark counts,\ngluon vs quark,\n$e$ vs $\\mu$",
-          "$b$, $c$, light")
-TRAINED, FROZEN = "#f2ead0", "#e6e6e6"     # round 4: no label-set hue outside the label-set columns (a warm neutral)
-FAN = "#cccccc"
-NEW_LAYER = "#8c8c8c"                       # the new head's weights: grey, not a model colour
-
-
-def _network(ax, x: float, y: float, w: float, h: float, fill: str, words: str, size: float) -> list:
-    """Sophon's network box with its feature column on the right edge; the column's node centres."""
-    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.06", fc=fill, ec="black", lw=0.8,
-                                zorder=2))
-    ax.text(x + (w - 0.12) / 2, y + h / 2, words, ha="center", va="center", fontsize=size, zorder=3)
-    ax.add_patch(FancyBboxPatch((x + w - 0.14, y + 0.02), 0.14, h - 0.04, boxstyle="round,pad=0,rounding_size=0.05",
-                                fc=fill, ec="black", lw=0.8, zorder=3))
-    nodes = [(x + w - 0.07, v) for v in np.linspace(y + 0.12, y + h - 0.12, max(int(h / 0.14), 3))]
-    for xy in nodes:
-        ax.add_patch(Circle(xy, 0.04, fc="white", ec="black", lw=0.4, zorder=4))
-    return nodes
-
-
-def _hidden(ax, x: float, y0: float, y1: float, fill: str) -> list:
-    """The head's hidden layer of 512 units (fc_params [(512, 0.1)], ReLU), drawn as a column of nodes."""
-    nodes = [(x, v) for v in np.linspace(y0, y1, 6)]
-    for xy in nodes:
-        ax.add_patch(Circle(xy, 0.04, fc=fill, ec="black", lw=0.4, zorder=4))
-    return nodes
-
-
-def _fan(ax, a: list, b: list, colour: str, width: float) -> None:
-    for p in a:
-        for q in b:
-            ax.plot(*zip(p, q), color=colour, linewidth=width, zorder=1.5)
-
-
-def _use(ax, x: float, fill: str, word: str, action: str, name: str, hidden: bool) -> None:
-    """One use of the features in (b): the network, a new head of two outputs (with a new 512-unit hidden layer
-    when fine-tuning, as the fine-tuned network has one; a linear probe is one layer), what is trained, the name."""
-    nodes = _network(ax, x, 0.72, 0.92, 0.84, fill, word, S.LEGEND_PT5)
-    outs = [(x + 1.8, 0.92), (x + 1.8, 1.36)]
-    if hidden:
-        mid = _hidden(ax, x + 1.36, 0.84, 1.44, "white")
-        _fan(ax, nodes, mid, NEW_LAYER, 0.3)
-        _fan(ax, mid, outs, NEW_LAYER, 0.3)
-        ax.text(x + 1.36, 1.56, "512", ha="center", va="bottom", fontsize=S.LEGEND_PT5, zorder=5)
-    else:
-        _fan(ax, nodes, outs, NEW_LAYER, 0.4)
-    for xy in outs:
-        ax.add_patch(Circle(xy, 0.05, fc="white", ec="black", lw=0.5, zorder=4))
-    ax.text(x + 1.36, 0.6, action, ha="center", va="center", fontsize=S.LEGEND_PT5, zorder=5,
-            bbox=dict(boxstyle="square,pad=0.25", fc="white", ec="#808080", lw=0.5))
-    ax.text(x + 1.0, 0.3, name, ha="center", va="center", fontsize=S.LABEL_PT, zorder=5)
-
-
 def draw_f1(path: pathlib.Path) -> None:
-    # one data unit is 1.03 in on the page (the 5.72 in of content across the 15 cm text width), saved at that size.
-    # (a) is drawn RAISE inches above (b), which leaves the room each merge's words need under its own arrow
-    w, h, RAISE, CONTENT_W = S.FULL, 5.35, 0.45, 5.72
-    fig = plt.figure(figsize=(w, h))
+    """The PI's drawing (2026-11-12), experiments/FIGS/fig1_design.py: 13 cm wide, its label sets read from the label
+    maps."""
+    import fig1_design
+    fig = fig1_design.build()
     fig.exact_size = True
-    low = fig.add_axes((0, 0, 1, 1))
-    low.set_xlim(0, CONTENT_W)        # the content from the text block's left edge to its right edge
-    low.set_ylim(0, h)
-    low.set_axis_off()
-    ax = fig.add_axes((0, RAISE / h, 1, (h - RAISE) / h))
-    ax.set_xlim(0, CONTENT_W)
-    ax.set_ylim(0, h - RAISE)
-    ax.set_axis_off()
-    bold = dict(fontsize=S.LABEL_PT, fontweight="bold", va="center")
-    ax.text(0, 4.72, "(a) Pretraining", **bold)
-    ax.text(3.9, 4.68, "Four nested label sets, one pretraining each", ha="center", va="center", fontsize=S.LABEL_PT)
-    # the jets go into the one network
-    ax.add_patch(Polygon([(0.05, 3.82), (0.05, 3.2), (0.5, 3.5)], fc="#d0d0d0", ec="none", zorder=2))
-    ax.text(0.28, 3.05, "same jets", ha="center", va="center", fontsize=S.LEGEND_PT5)
-    ax.annotate("", xy=(0.72, 3.5), xytext=(0.5, 3.5),
-                arrowprops=dict(arrowstyle="-|>", color="black", lw=1.0, shrinkA=0, shrinkB=0))
-    nodes = _network(ax, 0.72, 2.95, 1.14, 1.1, TRAINED, "One network", S.LABEL_PT)
-    ax.text(0.72 + 0.51, 3.2, "same initial\nweights", ha="center", va="center", fontsize=S.LEGEND_PT5, zorder=3)
-    ax.text(1.79, 4.13, "features", ha="center", va="center", fontsize=S.LEGEND_PT5)
-    # the label sets: one column each, a merged class spans the rows it merges
-    # the head's hidden layer, between the features and every label set's outputs (fc_params [(512, 0.1)])
-    hid = _hidden(ax, 2.2, 3.06, 3.94, TRAINED)
-    ax.text(2.2, 4.13, "512", ha="center", va="center", fontsize=S.LEGEND_PT5)     # as in (b); "512 hidden" ran into "features"
-    _fan(ax, nodes, hid, FAN, 0.3)
-    top, bottom, cw, pitch, x0 = 4.35, 2.75, 0.56, 0.84, 2.60     # the 17-class column ends at 5.68 in, inside the canvas (5.81 in)
-    rows = (top - bottom) / sum(BOXES["L188"])
-    for k, (row, spans) in enumerate(BOXES.items()):
-        x = x0 + k * pitch
-        ax.text(x + cw / 2, top + 0.11, S.NAME[row], ha="center", va="center", fontsize=S.LABEL_PT)
-        y = top
-        for n in spans:
-            ax.add_patch(Rectangle((x, y - n * rows), cw, n * rows, fc=to_rgba(S.SERIES[row], 0.25), ec="black", lw=0.5,
-                                   zorder=2))
-            y -= n * rows
-        if spans[-1] > 1:
-            ax.text(x + cw / 2, bottom + spans[-1] * rows / 2, "QCD", ha="center", va="center",
-                    fontsize=S.LEGEND_PT5, zorder=3)
-    for a in hid:
-        for r in range(sum(BOXES["L188"])):
-            ax.plot(*zip(a, (x0, top - (r + 0.5) * rows)), color=FAN, linewidth=0.3, zorder=1)
-    # what each merge removes
-    ax.text(x0 + cw / 2 - 0.06, 2.62, "Each merge\nremoves:", ha="right", va="center", fontsize=S.LEGEND_PT5)   # left of the first arrow
-    for k, words in enumerate(MERGES):
-        x = x0 + k * pitch + cw / 2
-        ax.annotate("", xy=(x + pitch, 2.69), xytext=(x, 2.69),
-                    arrowprops=dict(arrowstyle="-|>", color="black", lw=0.7, shrinkA=0, shrinkB=0))
-        ax.text(x + pitch / 2, 2.63, words, ha="center", va="top", fontsize=S.LEGEND_PT5)
-    # the uses, on one card, since both start from the features
-    low.text(0, 2.02, "(b) Use", **bold)
-    low.add_patch(Rectangle((0.25, 0.15), 5.4, 1.7, fc="#f0f0f0", ec="#808080", lw=0.6, zorder=0.5))
-    _use(low, 0.45, FROZEN, "frozen", "Train a linear layer", "Frozen features, linear probe", hidden=False)
-    _use(low, 3.2, TRAINED, "trained", "Train all weights", "Fine-tuning", hidden=True)
     S.save(fig, path)
 
 
@@ -796,10 +685,11 @@ SOPHON_FIG2_CAPTION = (
     "performance when trained by large-scale classification. [Validation page, not one of our figures: Sophon's "
     "own caption, verbatim.]")
 F1_CAPTION = (
-    "Design of the study. (a) One network is pretrained on the same JetClass-II jets four times, once for each of "
-    "four nested label sets with 188, 162, 43 and 17 classes, through a hidden layer of 512 units; below each "
-    "merge is the distinction it removes. (b) The pretrained network is used downstream in two ways: a linear "
-    "probe on its frozen features, or a new head with its own 512-unit hidden layer and all weights fine-tuned.")
+    "(a) Six example classes as schematic jets and the 17-class group holding each (j: a quark "
+    "or gluon); below, the 188 classes as cells, a bar spanning several cells being one class of that label set: 162 "
+    "classes merge the QCD classes, 43 keep the heaviest quark flavor, 17 merge flavors. (b) One network is "
+    "pretrained per label set on the same jets from the same initial weights, with three seeds, then used frozen "
+    "or fine-tuned on five tasks.")
 F9A_CAPTION = (
     "The mass output of networks pretrained on JetClass-II with 162 and 17 classes and an auxiliary mass "
     "regression, used without further training: distribution of the response r = m/m_gen, a jet's mass over its "
@@ -906,18 +796,11 @@ PAGES = [
          "rules on purpose (dotted series, long caption), because this page checks the style against Sophon.",
          draw_sophon_fig2,
          "The points are those of the native PDF after its path simplification; a curve starts where the PDF's does."),
-    Page("F1", "Design of the study", ["2405.12972/fig1.png"], "Sophon Fig. 1", F1_CAPTION,
-         "Our content in Sophon's shape: (a) above (b), jets into a network box with its feature column, grey fan, "
-         "shadowed card and callout. Panels named Pretraining and Use, not Pre-training and Usage. Four output columns "
-         "instead of Sophon's one, with a merged class spanning the rows it merges, to show the nesting; rows are "
-         "schematic, not to scale. A heading and merge arrows added. The 512-unit hidden layer is drawn between the features and the "
-         "outputs, as the real network has it (PI), and in the fine-tuning head; the linear probe has none. The fan from "
-         "the hidden layer reaches the 188-class column only. Pill labels (resonant 2 prongs, resonant 3-4 prongs, QCD) removed; "
-         "QCD is marked in the columns. One card with two uses and one callout "
-         "instead of two cards, because both uses start from the features (Sophon's discriminants start from the output "
-         "layer). Drawn with matplotlib patches in STIX instead of a vector drawing with jet icons, and "
-         "no latent or output size formulae, which belong to the methods.",
-         draw_f1),
+    Page("F1", "Design of the study", ["2405.12972/fig1.png"], "Sophon Fig. 1; finish after arXiv:2610.41889 Fig. 1", F1_CAPTION,
+         "The PI's drawing (2026-11-12), replacing the Sophon-shaped card: example jets with a fine-to-coarse tree, all "
+         "188 classes as a strip of cells read from the label maps, and a pipeline with a task matrix (open: frozen "
+         "features, filled: fine-tuned). Drawn 13 cm wide.", draw_f1,
+         data_note="X→bb̄ and X→bs use frozen features only. The jets are drawings, not events."),
     Page("F9a", "Mass regression: response", ["ATL-PHYS-PUB-2024-015/fig7.png"], "ATLAS 2024-015 Fig. 7", F9A_CAPTION,
          "Two jet groups instead of mass and pT responses, as we regress mass only, with panel titles ATLAS lacks. Three "
          "series instead of two: a thin solid black reference and the 162- and 17-class colours, solid, instead of purple dashed and green. "
