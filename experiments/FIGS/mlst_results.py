@@ -3309,7 +3309,7 @@ PARTREPRO = (("part", "ParT's script, unchanged"), ("head", r"\quad + Sophon's o
              ("rescale", r"\quad + Sophon's jet-$p_{\mathrm{T}}$ rescaling"))
 
 
-def partrepro(em, data: pathlib.Path, per, fmt_pm, missing: list) -> str | None:
+def partrepro(em, data: pathlib.Path, per, fmt_pm, missing: list, runs: dict | None = None) -> str | None:
     """A9 and its macros: ParT's top-tagging script on our cluster, then with Sophon's output head and
     with the head and Sophon's rescaling of the four-momenta (cumulative, one run each), beside ParT's
     published row and our network trained from scratch."""
@@ -3343,8 +3343,17 @@ def partrepro(em, data: pathlib.Path, per, fmt_pm, missing: list) -> str | None:
         n = _sizes(per, "top")[-1]
         recs = per["top"].get(SCRATCH, {}).get(n, [])
         if recs:
+            # printed at the place the top table's column gives it (one number, one print; 2026-11-12 review)
+            def cell(k):
+                v = [r[k] for r in recs]
+                items = [("p", [float(np.mean(v)), float(np.std(v, ddof=1))])]
+                for a in (runs or {}).get("__bench__", ()):
+                    w = [x for m in runs[a] if (x := _ft(per, "top", m, n, k)) is not None]
+                    if len(w) > 2:
+                        items.append(("p", [float(np.mean(w)), float(np.std(w, ddof=1))]))
+                return _render("p", items[0][1], _column_place(items))
             out.append(r"\midrule Sophon's network, trained from scratch & " + " & ".join(
-                _cell([r[k] for r in recs], len(recs), fmt_pm, frac=k in ("accuracy", "auc")) for k in ("accuracy", "auc", "r50", "r30")) + r" & -- \\")
+                cell(k) for k in ("accuracy", "auc", "r50", "r30")) + r" & -- \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -4261,8 +4270,8 @@ CAPTION_SHORT = {
                  "trained from scratch, on the full top training set (\\LitPartTopNTrainMillion{} million jets), "
                  "beside published models: accuracy, AUC, the background rejections $R_{50}$ and $R_{30}$ "
                  "($1/\\epsB$ at 50\\% and 30\\% signal efficiency) and the number of trainable parameters. Ours: "
-                 "mean $\\pm$ SD over the pretraining runs, three seeds from scratch; published "
-                 "uncertainties as given there.",
+                 "mean $\\pm$ SD over the pretraining runs, three seeds from scratch, one run with kinematic inputs "
+                 "only; published uncertainties as given there.",
     "bench_qg": "Quark/gluon tagging: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes "
                 "and fine-tuned, or trained from scratch, on the full training set (\\LitQgTrainMillion{} million Pythia jets; "
                 "particle type as five flags and the charge) and scored on Pythia jets, beside "
@@ -4641,6 +4650,14 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list) -> str:
         head, rows = inner.split(r"\midrule", 1)
         head = head.replace(r"\toprule", "").strip()
         rows = rows.rsplit(r"\bottomrule", 1)[0].strip()
+        # a second block heading (the fine-tuned rows after the probes) starts a page, so that its rows never continue on
+        # a page without it (2026-11-12 review: Table A10's fine-tuned rows read as probes after the break)
+        heads = [i for i, ln in enumerate(rows.split("\n")) if re.match(r"\\multicolumn\{\d+\}\{l\}\{\\textit\{", ln.strip())]
+        if len(heads) > 1:
+            lines = rows.split("\n")
+            for i in reversed(heads[1:]):
+                lines.insert(i, r"\newpage")
+            rows = "\n".join(lines)
         more = rf"\multicolumn{{{len(spec)}}}{{@{{}}l}}{{\textit{{Table~\ref{{{label}}} (continued)}}}} \\"
         out += ([r"\addtocounter{table}{-1}"] if k else []) + [      # a longtable steps the counter: one number a table
                 r"\begin{longtable}{@{\extracolsep{\fill}}" + spec + "@{}}",
@@ -4993,7 +5010,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     out["tables/mlst_per_run.tex"] = _longtable("per_run", table_per_run(fits, per if tag else {}, runs, TAB, fill,
                                                                          chosen))
     xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int)
-    t = partrepro(em, data, per if tag else {}, fmt_pm, missing)
+    t = partrepro(em, data, per if tag else {}, fmt_pm, missing, runs={**runs, "__bench__": MAIN})
     if t:
         out["tables/mlst_partrepro.tex"] = _float("partrepro", t)
     sweep = data / "budget" / "lrsweep_metrics.json"

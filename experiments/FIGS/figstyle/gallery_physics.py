@@ -293,7 +293,7 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
         v = v[np.isfinite(v) & (v > 0)]
         ax.set_ylim(v.min() / 1.3, v.max() * 1.15)
     else:
-        _fit_y(ax, ends)
+        _fit_y(ax, ends, pad=0.12)       # a point's marker clear of the frame (2026-11-12 review)
     _fit_y(rx, lows, pad=0.18)       # the reference at 1 clear of the frame, its tick labelled
     ax.set_xlim(e[0], e[-1])
     for a_ in (ax, rx):
@@ -866,7 +866,8 @@ PT_CAPTION = (
     "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on "
     "class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining classes; (b) the same for 17-class partitions with controlled flavor boundaries, with 188 and 17 classes for "
     "reference; (c) accuracy on JetClass after fine-tuning on one million jets; (d) the probes' AUC of X→bb̄ "
-    "against X→cc̄. Points: means at bin centers; horizontal bars: the bin, vertical: SD over pretraining runs.")
+    "against X→cc̄. Points: means at bin centers; horizontal bars: the bin, vertical: SD over pretraining runs "
+    "(partitions: range over two).")
 CONF_CAPTION = (
     "Networks pretrained on JetClass-II, fine-tuned on one million JetClass jets: (a) the percentage of each true "
     "class assigned to each predicted class with 188 pretraining classes; (b)-(d) the change in that percentage "

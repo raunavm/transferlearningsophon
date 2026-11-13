@@ -422,7 +422,7 @@ def _benchmarks(path: pathlib.Path, top, qg, word: str, kinematic: bool) -> None
         rx.set_xlim(0, 1)
         S.title(ax, f"({'abc'[k]}) {name}")
         if k == 0:
-            S.labels(ax, ylabel=r"Rejection ($1/\varepsilon_B$)")       # short: clear of the ratio label below
+            S.labels(ax, ylabel=S.Y_REJ)       # one wording with the other ROC figures (2026-11-12 review)
             S.labels(rx, ylabel="Ratio to 188")      # "classes" does not fit the ratio panel; the caption says it
         S.labels(rx, xlabel=S.X_EPS)        # under every panel, as in the other ROC figures
     handles, labels = axes[0].get_legend_handles_labels()
@@ -548,7 +548,7 @@ PAGES = [
                  "scored by the signal side's share of the pair's summed softmax on two class pairs differing only in "
                  "flavor (signal first), among 2 million natural-mix JetClass-II test jets: upper row, 188, "
                  "162, 43 and 17 classes; lower row, 17-class partitions with no, a b-quark and a random flavor "
-                 "boundary, and 188 classes. Means over three runs (partitions: two). Curves end where fewer than 20 "
+                 "boundary, and 188 classes. Means over three pretraining runs (partitions: two). Curves end where fewer than 20 "
                  "background jets remain.",
          differs="F4-mech's form after fine-tuning (PI, 2026-11-08), on F4-mech's axes (rejection 1 to 10^4); the main "
                  "text quotes these numbers from the pair table's fine-tuned columns.",

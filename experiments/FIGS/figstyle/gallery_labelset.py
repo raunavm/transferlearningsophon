@@ -613,8 +613,8 @@ PAGES = [
         caption="Networks pretrained on JetClass-II with 17 and with 188 classes, then (a) a linear probe (LP) on "
                 "their frozen features or (b) the whole network fine-tuned (f.t.), on one million class-balanced "
                 "JetClass-II jets: each class's area under the curve with 17 classes against the same with 188. "
-                "Both panels share one range. Below the dotted line the class does worse with 17 classes. Colors "
-                "are decay families; means over three pretraining runs.",
+                "Both panels share one range; dotted: equal AUC. Colors are decay families; means over three "
+                "pretraining runs.",
         differs="F3-scatter's (b) and F3-ft's (c) side by side (PI, 2026-11-08), on one axis range set by both panels, "
                 "so the shrink after fine-tuning shows; replaces the heatmap F3 and F3-scatter in the main text.",
         draw=draw_f3_main),
@@ -783,9 +783,8 @@ PAGES = [
         precedent=["2404.16091/fig1.png"],
         precedent_label="OmniLearn Fig. 1 (validation loss against epochs)",
         caption="Pretraining on JetClass-II with 188, 162, 43 and 17 classes: validation accuracy against epoch, "
-                "each network on its own classes, the mean over three runs. A coarser set of labels has fewer "
-                "classes to tell apart, so its accuracy is not comparable with a finer set's. The step near epoch "
-                "56 is where the learning rate starts to decay.",
+                "each network scored on its own classes (fewer classes for a coarser label set), the mean over three "
+                "pretraining runs. The learning rate is constant to epoch 56 and decays after it.",
         differs="Accuracy, not loss; one curve per label set; no marker for 80 points; theme grid.",
         draw=draw_val),
 ]
