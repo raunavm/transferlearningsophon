@@ -33,7 +33,9 @@ SCATTER_S = "Cited from [[F3-main]]: the other scatter panels."
 AUC_S = "[[F8]], [[A8]] and [[A10]] in AUC."
 XBX = "17 classes keep fewer X→bb̄ and X→bs signal jets than 188 on Sophon's samples."
 
-# (gallery id, tier, draft sentence), in paper order within each tier; items that share a sentence share a row on the map
+# (gallery id, tier, draft sentence), in paper order within each tier; items that share a sentence share a row on the map.
+# PI 2026-11-12: the paper keeps the main-text figures and, in the appendix, F4-other, F4-mech-ft, PT, F6, A10, F10b,
+# UMAP-jc2-had and VAL; everything else is in the supplement (nothing deleted).
 _FIGURES = (
     ("F1", MAIN, "We pretrain one network on the same jets, in the same order, and change only the label set."),
     ("F2a", MAIN, "On JetClass-II, frozen features lose with each coarser label set, most where quark flavor merges, "
@@ -50,7 +52,6 @@ _FIGURES = (
     ("F9b", MAIN, "An auxiliary mass regression gives a better jet-mass resolution than the soft-drop mass, shown in "
                   "bins of jet pT and generator mass."),
     ("F11", MAIN, XBX),
-    ("FJ", APPENDIX, "[[tab:jetclass]]'s rejections come from these per-class ROC curves."),
     ("F4-other", APPENDIX, "On QCD flavor pairs 17-class probes separate least; on X→ee vs μμ 43 classes fall below 188; 162 "
                            "loses on QCD bb̄ vs cc̄."),
     ("F4-mech-ft", APPENDIX, "Fine-tuned, 17 classes still separate quark-flavor pairs worse than 188, by less than "
@@ -58,47 +59,46 @@ _FIGURES = (
     ("PT", APPENDIX, "Per jet-pT bin, 43 and 17 classes fall behind 188 on JetClass-II probes; elsewhere they agree "
                      "but in the lowest JetClass bin."),
     ("F6", APPENDIX, "Fine-tuned on top and quark/gluon tagging, Pythia and Herwig, the label sets are consistent."),
-    ("F6-app", APPENDIX, "On the full top and quark/gluon sets every linear probe stays below fine-tuning."),
     ("A10", APPENDIX, "At every size the 43- and 17-class probes fall behind 188 on JetClass-II, 162 at all sizes but "
                       "10,000 jets; on JetClass 17 fall below 43 only."),
-    ("F8-auc", APPENDIX, AUC_S),
-    ("A8-auc", APPENDIX, AUC_S),
-    ("A10-auc", APPENDIX, AUC_S),
-    ("F9a", APPENDIX, "The mass output's response is narrower than the soft-drop mass's."),
-    ("F10a", APPENDIX, "Head cuts sculpt the QCD mass beyond a random selection at 10% QCD efficiency for all, at 1% only "
-                       "for 17 classes and two flavor partitions."),
     # PI 2026-11-09: the main text reports exactly the differences beyond 3 sigma (tab:sculptboot), nothing else
     ("F10b", APPENDIX, "17 classes sculpt the QCD mass more than 188 at 1% QCD efficiency, 43 at 10%; mass regression "
                        "reduces it for 162 classes at 10%; every other difference (17 + mass, flavor boundaries) is "
                        "within the uncertainty."),
-    ("F10b-flav", APPENDIX, SCULPT_FLAV),
-    ("F10c", APPENDIX, "At 50% resonant efficiency no label-set difference in QCD mass sculpting exceeds three times "
-                       "its uncertainty."),
-    ("F10a-flav", APPENDIX, SCULPT_FLAV),
-    ("F10-ft", APPENDIX, "Fine-tuned on class-balanced JetClass-II, every network sculpts the QCD mass several times "
-                         "more than the pretraining heads; the label sets and training from scratch are consistent."),
     ("UMAP-jc2-had", APPENDIX, "Qualitatively, 188-class frozen features separate X→bb̄, cc̄ and qq̄ and 17-class ones "
                                "only order them; after fine-tuning both separate them."),
     ("VAL", APPENDIX, "Validation accuracy levels off for every label set during pretraining."),
+    ("FJ", SUPPLEMENT, "Cited beside [[tab:jetclassrej]]: the per-class ROC curves its rejections come from."),
     *((k, SUPPLEMENT, FJ_S) for k in ("FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s")),
     ("CONF", SUPPLEMENT, "Cited beside [[tab:jetclass]]: JetClass confusion matrices."),
     *((k, SUPPLEMENT, SCATTER_S) for k in ("F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2")),
     *((k, SUPPLEMENT, "Cited from [[F3-main]]: every class's ROC curve.") for k in ("A3R", "A3R-ft")),
+    ("F6-app", SUPPLEMENT, "Cited beside [[F6]]: the linear probes' ROC curves on top and quark/gluon tagging."),
+    *((k, SUPPLEMENT, AUC_S) for k in ("F8-auc", "A8-auc", "A10-auc")),
+    ("F9a", SUPPLEMENT, "Cited beside [[F9b]]: the mass output's response distributions."),
+    ("F10a", SUPPLEMENT, "Cited beside [[F10b]]: the QCD mass before and after the head cuts."),
+    ("F10b-flav", SUPPLEMENT, "Cited beside [[F10b]]: the flavor-boundary partitions."),
+    ("F10c", SUPPLEMENT, "Cited beside [[F10b]]: sculpting against rejection at 50% resonant efficiency."),
+    ("F10a-flav", SUPPLEMENT, "Cited beside [[F10b]]: the QCD mass of the flavor-boundary partitions."),
+    ("F10-ft", SUPPLEMENT, "Cited beside [[F10b]]: sculpting after fine-tuning on JetClass-II."),
     *((k, SUPPLEMENT, "Cited from [[UMAP-jc2-had]]: the other tasks.")
       for k in ("UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg")),
     *((k, SUPPLEMENT, "Cited from [[F9b]]: by jet group; from frozen features.") for k in ("A17-res", "A17-qcd", "A17-probe")),
-    ("F10a-mass", SUPPLEMENT, "Cited beside [[F10a]]: the mass-regression models."),
+    ("F10a-mass", SUPPLEMENT, "Cited beside [[F10b]]: the mass-regression models."),
 )
-# (table label, tier, draft sentence); tab:benchtop and tab:benchqg become one table if it fits at the current type size
+# (table label, tier, draft sentence). PI 2026-11-12: one main-text table holds every value of Figs. 2 and 3
+# (tab:summary); the JetClass table keeps jets, parameters, accuracy and AUC, its per-class rejections in the appendix
+# (tab:jetclassrej); quark/gluon in the main text on Pythia only, Herwig in the appendix (tab:benchqgherwig); the
+# X->bb / X->bs rejections in the appendix; the trimmed appendix tables whole (every partition, rho) in the supplement
+# (tab:*full); tab:boot nowhere (its probe spreads disagree with tab:probes; the file is kept).
 _TABLES = (
-    ("tab:jetclass", MAIN, "Fine-tuned on a million JetClass jets, 17 classes give about 3% more errors than 188; per class the "
-                           "label sets are consistent."),
-    ("tab:benchtop + tab:benchqg", MAIN, "On top and quark/gluon tagging the label sets are consistent."),
+    ("tab:summary", MAIN, "Every value of [[F2a]] and [[F2b]]."),
+    ("tab:jetclass", MAIN, "Fine-tuned on a million JetClass jets, 17 classes give about 3% more errors than 188."),
+    ("tab:benchtop", MAIN, "On top tagging the label sets are consistent."),
+    ("tab:benchqg", MAIN, "On quark/gluon tagging the label sets are consistent."),
     ("tab:mass", MAIN, "An auxiliary mass regression puts the jet mass into the frozen features."),
     ("tab:xbx", MAIN, XBX),
-    ("tab:xbxrej", MAIN, XBX),
     ("tab:probes", APPENDIX, "Every probe behind [[F2a]], with the released Sophon checkpoint."),
-    ("tab:mlp", APPENDIX, "Nonlinear probes repeat the linear-probe comparisons."),
     ("tab:coarse", APPENDIX, "Scored on the 43 groups, 17-class features fall behind; on the 17 groups the label sets "
                              "are consistent."),
     ("tab:qcdhf", APPENDIX, "With the 27 QCD classes merged (162), the X→bb̄ discriminant's rejection of b-flavored QCD "
@@ -106,27 +106,34 @@ _TABLES = (
     ("tab:fill", APPENDIX, "Random draws for the missing top inputs beat zeros; the mean, and every quark/gluon fill, are "
                            "consistent with zeros."),
     ("tab:inputs", APPENDIX, "Top and quark/gluon data lack some inputs, which are set to zero."),
-    ("tab:bn", APPENDIX, "BatchNorm statistics recomputed, against the checkpoints as trained."),
     ("tab:partrepro", APPENDIX, "Our from-scratch training against ParT's published top-tagging result."),
     ("tab:lrsweep", APPENDIX, "The fine-tuning learning rate was chosen on validation."),
-    ("tab:ft", APPENDIX, "Every label set fine-tuned at every training-set size."),
-    ("tab:randprong", APPENDIX, "The prong counts each random partition mixes."),
+    ("tab:jetclassrej", APPENDIX, "Per class, the label sets are consistent on JetClass after fine-tuning."),
+    ("tab:benchqgherwig", APPENDIX, "On Herwig quark/gluon jets the label sets are consistent."),
     ("tab:pairs", APPENDIX, "Pair separations, linear probe and fine-tuned, quoted from this table."),
     ("tab:sculpt", APPENDIX, "Sculpting at 10% and 1% QCD efficiency, beside the random-selection floor."),
     ("tab:sculptboot", APPENDIX, "The sculpting differences and their combined uncertainties that decide [[F10b]]'s "
                                  "tier."),
-    ("tab:boot", APPENDIX, "Every \"consistent within uncertainty\" rests on these uncertainties."),
-    ("tab:compute", APPENDIX, "The paper reports each run's GPU types and GPU-hours."),
+    ("tab:xbxrej", APPENDIX, "Rejections at 50% and 30% signal efficiency for the configurations of [[tab:xbx]]."),
     ("tab:perrun", SUPPLEMENT, "Cited from the uncertainties section: every run."),
     *((k, SUPPLEMENT, "Cited beside [[tab:jetclass]]: all models, passing QCD jets, probes, class AUCs.")
       for k in ("tab:jetclassall", "tab:jetclassnbkg", "tab:jetclassprobe", "tab:jc1_class_auc")),
     ("tab:massdetail", SUPPLEMENT, "Cited beside [[tab:mass]]: per-bin mass detail."),
+    ("tab:mlp", SUPPLEMENT, "Cited beside [[tab:probes]]: nonlinear probes repeat the linear-probe comparisons."),
+    ("tab:bn", SUPPLEMENT, "Cited beside [[tab:probes]]: BatchNorm statistics recomputed, against the checkpoints as trained."),
+    ("tab:ft", SUPPLEMENT, "Cited beside [[F8]] and [[A8]]: every label set fine-tuned at every training-set size."),
+    ("tab:randprong", SUPPLEMENT, "Cited beside [[tab:summary]]: the prong counts each random partition mixes."),
+    ("tab:compute", SUPPLEMENT, "Cited from the methods: each run's GPU types and GPU-hours."),
+    *((k, SUPPLEMENT, f"Cited beside [[{k.removesuffix('full')}]]: every random partition, and the ratio to 188 classes.")
+      for k in ("tab:probesfull", "tab:coarsefull", "tab:qcdhffull", "tab:pairsfull")),
+    ("tab:fillfull", SUPPLEMENT, "Cited beside [[tab:fill]]: every block and every random partition."),
 )
 # what a sentence rests on beyond its own item
 EVIDENCE = {
-    "F2a": ("tab:probes",), "F2b": ("tab:jetclass", "tab:benchtop + tab:benchqg"), "F3-main": ("tab:ft",),
+    "F2a": ("tab:summary", "tab:probes"), "F2b": ("tab:summary", "tab:jetclass", "tab:benchtop", "tab:benchqg"),
+    "F3-main": ("tab:ft",),
     "F4-mech": ("tab:pairs",), "F8": ("tab:ft",), "F8-auc": ("tab:ft",), "A8": ("tab:ft",), "A8-auc": ("tab:ft",), "F9b": ("tab:massdetail",),
-    "F4-other": ("tab:pairs",), "F4-mech-ft": ("tab:pairs",), "F6": ("tab:benchtop + tab:benchqg", "tab:boot"),
+    "F4-other": ("tab:pairs",), "F4-mech-ft": ("tab:pairs",), "F6": ("tab:benchtop", "tab:benchqg", "tab:benchqgherwig"),
     "F6-app": ("tab:ft",), "A10": ("tab:probes",), "A10-auc": ("tab:probes",), "F9a": ("tab:massdetail",),
     **{k: ("tab:sculpt", "tab:sculptboot") for k in ("F10b", "F10b-flav", "F10c", "F10a-flav")}, "tab:mass": ("tab:massdetail",),
 }
@@ -139,7 +146,8 @@ BOOK_NAMES = (("F9", "F8"), ("F16", "A8"), ("F15", "A10"), ("F5", "FJ"), ("F7", 
 DROPPED = ("F3", "F4", "F4-app", "F3-scatter")      # F3-scatter: its panels are F3-main (a) and F3-app (b)
 # mlst_results tables the plan places nowhere: nothing cites them, so they are dropped (PI 2026-11-08); the plan's
 # "missing inputs (fill)" is tab:fill and its "fine-tuning vs size" tab:ft, both placed above
-DROPPED_TABLES = ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:perclass", "tab:probesn")
+DROPPED_TABLES = ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:perclass", "tab:probesn",
+                  "tab:boot")     # tab:boot: PI 2026-11-12, its probe spreads disagree with tab:probes
 COMPARE = ("CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-FONT-T", "CMP-FONT-LM")     # the PI's style comparison, 2026-11-11
 GALLERY_ONLY = ("INVENTORY", "SOPHON-FIG2", "PALETTE") + COMPARE    # gallery pages that are not figures of the paper
 REF = re.compile(r"\[\[(.+?)\]\]")

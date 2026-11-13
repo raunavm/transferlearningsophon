@@ -61,21 +61,20 @@ def _empty_panel(ax) -> None:
 
 
 # ------------------------------------------------------------------ F2: metric against the number of classes
-# Figs. 2 and 3 (PI 2026-11-11: "decide"; 2026-11-12: bars): the label set is a category, so a horizontal bar chart,
-# one row a network, of the relative change from the 188-class network of the same pretraining seed (run names end in
-# -sK), in percent: the bar the mean over seeds, with its +-1 SD bar. A bar needs a true zero, which a change has. 188 classes is the zero line. The field quotes such gains as relative
-# changes (ParT, ParticleNet; J-JEPA Fig. 2 draws them); the absolute values are in the tables. From scratch is the
-# last row, against the mean 188-class network; where it lies far outside the other rows its bar runs to the panel's
-# frame with the value printed on it.
-REL_ROWS = {"L162": 0.0, "R42_Q1": 1.0, "R16_Q1": 2.0}
-REL_CONTROLS = ("RAND", "FLAV_F0", "FLAV_F1", "FLAV_F1R")      # rows below the first divider, those the figure shows
-REL_NAMES = {"L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes", "RAND": "random partitions",
-             "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary", "FLAV_F1R": "random flavor boundary",
-             "SCRATCH": S.LEGEND["SCRATCH"]}
-REL_RAND_SPREAD = 0.1       # rows between the five random partitions' dots within their bar
-REL_LEFT, REL_W, REL_H, REL_WGAP, REL_HGAP = 4.2, 5.0, 5.0, 0.45, 1.35
-X_REL = {"accuracy": "Relative change in accuracy (%)", "r30": "Relative change in $R_{30}$ (%)"}
-REL_EDGE = 0.28             # the share of a panel's width an off-axis arrow and its value take, clear of the zero line
+# Figs. 2 and 3 (PI 2026-11-12: actual values only): the label set is a category, so a horizontal dot plot, one row a
+# network, on the metric itself. Each row: every pretraining run a small dot, the mean a larger filled circle in the
+# network's colour, a horizontal bar its SD over three runs (two runs: their dots and mean, no bar; the five random
+# partitions: five dots, mean and SD over the five). The 188-class mean is a vertical line with a light band of its SD
+# down the panel, and the first row. From scratch is the last row of Fig. 3 only. Nothing printed, nothing clipped.
+F2_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1")
+F2_CONTROLS = ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")      # rows below the first divider, those the figure shows
+F2_NAMES = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes",
+            "RAND": "random partitions", "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary",
+            "FLAV_F1R": "random flavor boundary", "SCRATCH": S.LEGEND["SCRATCH"]}
+F2_LEFT, F2_W, F2_H, F2_WGAP, F2_HGAP = 4.2, 5.0, 5.0, 0.45, 1.35
+X_F2 = {"accuracy": "Accuracy", "r30": "Rejection ($R_{30}$)"}
+RUN_DOT, MEAN_DOT = 2.2, 4.6     # pt: one pretraining run; the mean over runs
+RUN_DROP = 0.2                   # rows a run's dots sit below its row's mean, clear of the mean's circle
 
 
 def _range(ax, ys: list, log: bool, pad: float = 0.12) -> tuple:
@@ -89,24 +88,14 @@ def _range(ax, ys: list, log: bool, pad: float = 0.12) -> tuple:
     return lo - d, hi + d
 
 
-def _seed(m: str) -> str:
-    return m.rsplit("-s", 1)[1]
+def _f2_rows(groups, scratch: bool) -> dict:
+    """{row key: y}: the label sets from 0, the controls the figure shows after a gap, from scratch after another."""
+    shown = [k for k in F2_CONTROLS if any(key == k for _, key, _ in groups)]
+    rows = {**{k: float(i) for i, k in enumerate(F2_ROWS)}, **{k: 4.5 + i for i, k in enumerate(shown)}}
+    return {**rows, "SCRATCH": max(rows.values()) + 1.5} if scratch else rows
 
 
-def _paired(row: str, value) -> list:
-    """100 (v / v_188 - 1) per run of row, paired with the 188-class run of its seed; runs without both left out."""
-    ref = {_seed(m): v for m in RUNS["L188"] if (v := value(m)) is not None}
-    return [100.0 * (v / ref[_seed(m)] - 1) for m in RUNS[row] if (v := value(m)) is not None and _seed(m) in ref]
-
-
-def _rel_rows(groups) -> dict:
-    """{row key: y}: the label sets, the controls the figure shows from 3.5 down, from scratch after a second gap."""
-    shown = [k for k in REL_CONTROLS if any(key == k for _, key, _ in groups)]
-    rows = {**REL_ROWS, **{k: 3.5 + i for i, k in enumerate(shown)}}
-    return {**rows, "SCRATCH": max(rows.values()) + 1.5}
-
-
-def _rel_bracket(fig, ax, ys: list) -> None:
+def _f2_bracket(fig, ax, ys: list) -> None:
     """ "17 classes" on the left of the control rows' labels: a bracket spanning them, the words turned along it."""
     from matplotlib.transforms import blended_transform_factory
     tr = blended_transform_factory(fig.transFigure, ax.transData)
@@ -119,93 +108,84 @@ def _rel_bracket(fig, ax, ys: list) -> None:
              fontsize=S.TICK_PT5)
 
 
-def _rel_scratch(ax, y: float, v: list, xs: list) -> list:
-    """From scratch in its row: its bar where it lies within one span of the other rows; else the bar runs to the
-    panel's frame on its side with the value printed on it. Returns what the x range must hold (an infinity: the side)."""
-    from matplotlib.transforms import blended_transform_factory
-    grey = S.look("SCRATCH")["color"]
-    mean, lo, hi = P.F._spread(v)
-    span = max(xs) - min(xs)
-    if min(xs) - span <= mean <= max(xs) + span:
-        return L.row(ax, y, mean, lo, hi, color=grey)
-    far = math.copysign(1e6, mean)
-    ax.barh(y, far, height=L.ROW, color=grey, linewidth=0, zorder=2.0)       # clipped at the frame
-    tr = blended_transform_factory(ax.transAxes, ax.transData)
-    ax.text(0.975 if mean > 0 else 0.025, y, f"{mean:+.0f}%".replace("-", "\N{MINUS SIGN}"), transform=tr,
-            ha="right" if mean > 0 else "left", va="center_baseline", color="white", fontsize=S.TICK_PT5, zorder=3)
-    return [math.copysign(math.inf, mean)]
+def _f2_row(ax, y: float, v: list, color: str) -> list:
+    """One network's row: each run a small dot just below the row, the mean a filled circle on it with its SD bar
+    (three or more runs). Returns the plotted values."""
+    mean = float(np.mean(v))
+    ax.plot(v, [y + RUN_DROP] * len(v), linestyle="none", marker="o", markersize=RUN_DOT, markerfacecolor=color,
+            markeredgewidth=0, alpha=0.75, zorder=2.4)
+    out = list(v) + [mean]
+    if len(v) > 2:
+        sd = float(np.std(v, ddof=1))
+        ax.errorbar([mean], [y], xerr=[[sd], [sd]], fmt="none", ecolor=color, elinewidth=L.BAR, capsize=0, zorder=2.5)
+        out += [mean - sd, mean + sd]
+    ax.plot([mean], [y], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor=color,
+            markeredgecolor="white", markeredgewidth=0.5, zorder=2.6)
+    return out
 
 
-def _draw_f2(path, value_of, groups, absent: str, heading: str) -> None:
+def _draw_f2(path, value_of, groups, absent: str, heading: str, scratch: bool) -> None:
     """value_of(key, n, ds, met): a run's value or None for the task; groups: (legend label, style key, rows) of the
-    17-class controls. A 2x2 grid of near-square panels, the row labels on the left panels; filled markers (one mode)."""
-    from matplotlib.lines import Line2D
+    17-class controls. A 2x2 grid of near-square panels, the row labels on the left panels."""
+    from matplotlib.patches import Patch
     values = [value_of(key, n, ds, met) for key, n, ds, met, *_ in P.F2_PANELS]
     if not any(values):
         raise C.Absent(absent)
-    rows = _rel_rows(groups)
-    controls = [y for k, y in rows.items() if k in REL_CONTROLS]
+    rows = _f2_rows(groups, scratch)
+    controls = [y for k, y in rows.items() if k in F2_CONTROLS]
     top, bottom = 1.75, 1.0
-    fig = S.figure_cm(S.PRINT_W, top + 2 * REL_H + REL_HGAP + bottom)
-    axes = [S.axes_cm(fig, REL_LEFT + j * (REL_W + REL_WGAP), top + i * (REL_H + REL_HGAP), REL_W, REL_H)
+    fig = S.figure_cm(S.PRINT_W, top + 2 * F2_H + F2_HGAP + bottom)
+    axes = [S.axes_cm(fig, F2_LEFT + j * (F2_W + F2_WGAP), top + i * (F2_H + F2_HGAP), F2_W, F2_H)
             for i in range(2) for j in range(2)]
     for k, (ax, value, (key, _, ds, met, *_)) in enumerate(zip(axes, values, P.F2_PANELS)):
         S.title(ax, TITLES[key])
-        ax.set_ylim(rows["SCRATCH"] + 0.6, -0.6)
+        ax.set_ylim(max(rows.values()) + 0.6, -0.6)
         ax.yaxis.set_major_locator(ticker.FixedLocator(list(rows.values())))
-        ax.yaxis.set_major_formatter(ticker.FixedFormatter([REL_NAMES[r] if k % 2 == 0 else "" for r in rows]))
+        ax.yaxis.set_major_formatter(ticker.FixedFormatter([F2_NAMES[r] if k % 2 == 0 else "" for r in rows]))
         ax.yaxis.set_minor_locator(ticker.NullLocator())
         ax.tick_params(axis="y", length=0)
-        for y in (2.75, rows["SCRATCH"] - 0.75):
+        for y in [3.75] + ([rows["SCRATCH"] - 0.75] if scratch else []):
             ax.axhline(y, color=S.GREY_MID, linewidth=S.LW_THIN, zorder=0.5)
-        ax.axvline(0.0, color=S.SERIES["L188"], linewidth=S.LW_CURVE, zorder=1.5)
-        S.labels(ax, X_REL[met], None)
+        S.labels(ax, X_F2[met], None)
         if value is None:
             _empty_panel(ax)
             continue
         S.fine_grid(ax)
-        xs = [0.0]
-        for r, y in REL_ROWS.items():
-            if v := _paired(r, value):
-                xs += L.row(ax, y, *P.F._spread(v), color=S.SERIES[r])
-        for _, key_, rws in groups:
-            v = [x for r in rws for x in _paired(r, value)]
-            if len(rws) == 1 and v:
-                xs += L.row(ax, rows[key_], *P.F._spread(v), color=S.SERIES[key_])
-            elif v:             # the random partitions, one run each: the bar their mean, a dot each run
-                xs += L.row(ax, rows[key_], float(np.mean(v)), None, None, color=S.SERIES[key_]) + v
-                ax.plot(v, rows[key_] + REL_RAND_SPREAD * (np.arange(len(v)) - (len(v) - 1) / 2), linestyle="none",
-                        **L.dot("#000000", False), zorder=2.6)
-        scratch = P.scratch_series(M, I["per"], key, met)
+        xs = []
         ref = P._vals(RUNS, "L188", value)
-        if scratch and ref:
-            xs += _rel_scratch(ax, rows["SCRATCH"], [100.0 * (s / float(np.mean(ref)) - 1) for s in scratch[max(scratch)]], xs)
-        off = [x for x in xs if math.isinf(x)]          # an off-axis arrow: its side
-        lo, hi = _range(ax, [x for x in xs if not math.isinf(x)], False)
-        if off and off[0] > 0:
-            hi = max(hi, lo + (0.0 - lo) / (1 - REL_EDGE))
-        elif off:
-            lo = min(lo, hi - (hi - 0.0) / (1 - REL_EDGE))
-        ax.set_xlim(lo, hi)
-        ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]))
-        ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: f"{v:g}".replace("-", "\N{MINUS SIGN}")))
+        if ref:
+            m, sd = float(np.mean(ref)), float(np.std(ref, ddof=1)) if len(ref) > 1 else 0.0
+            ax.axvspan(m - sd, m + sd, color=S.SERIES["L188"], alpha=L.BAND, linewidth=0, zorder=0.8)
+            ax.axvline(m, color=S.SERIES["L188"], linewidth=S.LW_THIN, zorder=0.9)
+        for r in F2_ROWS:
+            if v := P._vals(RUNS, r, value):
+                xs += _f2_row(ax, rows[r], v, S.SERIES[r])
+        for _, key_, rws in groups:
+            if v := [x for r in rws for x in P._vals(RUNS, r, value)]:
+                xs += _f2_row(ax, rows[key_], v, S.SERIES[key_])
+        if scratch and (sc := P.scratch_series(M, I["per"], key, met)):
+            xs += _f2_row(ax, rows["SCRATCH"], sc[max(sc)], S.look("SCRATCH")["color"])
+        ax.set_xlim(*_range(ax, xs, False, pad=0.08))
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10]))
     for i in (0, 2):
-        _rel_bracket(fig, axes[i], controls)
+        _f2_bracket(fig, axes[i], controls)
     S.letter_panels(axes)
     S.heading(fig, heading)
-    from matplotlib.patches import Patch
-    handles = [Patch(facecolor=S.GREY_MID, linewidth=0, label="mean over pretraining runs"),
-               Line2D([], [], color="#000000", linewidth=L.BAR, label="SD"),
-               Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_CURVE, label=S.LEGEND["L188"])]
-    if any(len(rws) > 1 for _, _, rws in groups):
-        handles.insert(2, Line2D([], [], linestyle="none", **L.dot("#000000", False), label="one random partition"))
-    S.fig_legend(fig, handles, top_cm=0.6, ncol=len(handles))
+    grey = "#000000"
+    handles = [Line2D([], [], linestyle="none", marker="o", markersize=RUN_DOT, markerfacecolor=grey,
+                      markeredgewidth=0, alpha=0.75, label="one pretraining run"),
+               Line2D([], [], color=grey, linewidth=L.BAR, marker="o", markersize=MEAN_DOT, markerfacecolor=grey,
+                      markeredgecolor="white", markeredgewidth=0.5, label="mean and SD"),
+               (Patch(facecolor=S.SERIES["L188"], alpha=L.BAND, linewidth=0),
+                Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_THIN))]
+    labels = ["one pretraining run", "mean and SD", "188 classes, mean and SD"]
+    S.fig_legend(fig, handles, top_cm=0.6, ncol=3, labels=labels)
     S.save(fig, path)
 
 
 def draw_f2a(path) -> None:
     _draw_f2(path, _probe_value, _controlled() + [(S.LEGEND["RAND"], "RAND", M.RAND)],
-             "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features")
+             "no linear probes (linprobe/fits_v4)", "Linear probes on frozen features", scratch=False)
 
 
 def _probe_value(key, n, ds, met):
@@ -221,7 +201,8 @@ def _controlled():
 
 
 def draw_f2b(path) -> None:
-    _draw_f2(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning")
+    _draw_f2(path, _ft_value, _controlled(), "no fine-tuning read-outs (ft_mlst, budget)", "After fine-tuning",
+             scratch=True)
 
 
 # ------------------------------------------------------------------ F3-main, F3-app: every class against the 188-class model
@@ -241,9 +222,9 @@ def _ft_class_auc(models: list) -> dict:
 
 def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear probes", letters: str = "abcd", scope=None,
                   absent: str = "no class-balanced JetClass-II linear probes (linprobe/fits_v4)",
-                  ylabel: str = "AUC, the panel's network") -> None:
+                  ylabel: str = "AUC, the panel's network", step: float | None = None) -> None:
     """panels: (runs, title) or (runs, title, auc_of), two to four; a panel's own auc_of (F3-main: probe | fine-tuned)
-    reads both its model and the 188-class one. One point per class; below the dashed line the class does worse than
+    reads both its model and the 188-class one. One point per class; below the dotted line the class does worse than
     with 188 classes. Square panels, two per row at 6.5 cm, three in one row at 4.2 cm (PI 2026-11-11: no empty slot);
     the legend above the panels; letters names the panels (a second figure continues the first's letters)."""
     from matplotlib.lines import Line2D
@@ -286,8 +267,8 @@ def _draw_scatter(path, panels: list, auc_of=_class_auc, word: str = "Linear pro
     cells[0].set_xlim(lim)
     cells[0].set_ylim(lim)
     for axis in (cells[0].xaxis, cells[0].yaxis):    # one tick step on both axes of every panel
-        axis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))
-    handles = [Line2D([], [], color=S.TAB10[i], marker="o", markersize=4, linestyle="none", label=family_label(f))
+        axis.set_major_locator(ticker.MultipleLocator(step) if step else ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))
+    handles = [Line2D([], [], color=S.TAB10[i], marker="o", markersize=3, linestyle="none", label=family_label(f))
                for i, f in enumerate(FAMILIES)] + [Line2D([], [], **S.REFERENCE, label="same as 188 classes")]
     S.fig_legend(fig, handles, top_cm=0.6, ncol=3)
     S.heading(fig, f"{word} on $10^6$ JetClass-II jets, class by class")
@@ -317,7 +298,8 @@ def draw_f3_main(path) -> None:
     fine-tuning shows."""
     _draw_scatter(path, [(RUNS["R16_Q1"], f"{S.LEGEND['R16_Q1']} {S.PROBE}", _class_auc),
                          (RUNS["R16_Q1"], f"{S.LEGEND['R16_Q1']} {S.FINE_TUNED}", _ft_class_auc)],
-                  word="Linear probes (LP) and fine-tuned (f.t.)", ylabel=f"AUC, {S.LEGEND['R16_Q1']}")
+                  word="Linear probes (LP) and fine-tuned (f.t.)", ylabel=f"AUC, {S.LEGEND['R16_Q1']}",
+                  step=0.02)     # PI 2026-11-12: a label every 0.02 on both axes
 
 
 def draw_f3_app(path) -> None:
@@ -458,7 +440,7 @@ EMBED_MODELS = (("mtx-l188-s1", "L188"), ("mtx-r16q1-s1", "R16_Q1"))
 
 UMAP_DIRS = ("umap_v2", "umap", "umap_preview")     # round 3 (all four tasks); the long-budget jc1 run; the preview
 UMAP_SETTINGS = {"n_neighbors": 15, "min_dist": 0.1, "metric": "euclidean", "random_state": 1, "standardized": True}
-UMAP_READ = {      # one sentence per figure on what its panels show, written after looking at them (round 4)
+UMAP_READ = {      # one sentence per figure on what its panels show, written after looking at them (round 4); for the text
     "UMAP-jc1": "Both models' frozen features set the leptonic decays apart, in two islands for 188 classes; "
                 "fine-tuning separates most hadronic classes, Z→qq̄ partly mixed with H→bb̄ and W→qq′.",
     "UMAP-jc2-had": "The 188-class frozen features separate the three decays; the 17-class ones only order them, X→bb̄ "
@@ -551,24 +533,24 @@ def _umap_page(page: str) -> C.Page:
         precedent_label="MAP 2026 poster (frozen against fine-tuned), SuperJEPA Fig. 3",
         caption=f"UMAP of the class token of networks pretrained on JetClass-II with 188 classes (upper) and 17 (lower), "
                 f"frozen (left) and fine-tuned on {ft} (right), for {jets} in every panel; the plots are qualitative, "
-                f"without axis scales. {UMAP_READ[page]}",
+                "without axis scales.",      # PI 2026-11-12: no result sentences; the reading is for the text
         differs="One 2x2 layout for every task (PI, round 3): rows label sets, columns frozen and fine-tuned, the "
                 "poster's pairing. " + ("Ten class colours, JetClass's fixed tab10. " if page == "UMAP-jc1" else "tab10 in group order. ")
                 + "One legend, first panel. " + (f"UMAP with {u['n_neighbors']} neighbours, minimum distance "
                                                    f"{u['min_dist']}, seed {u['random_state']}.") + (" Absent inputs zero-filled, as in every frozen probe and fine-tuning."
                                                  if page in ("UMAP-top", "UMAP-qg") else ""),
         draw=lambda path: _draw_umap(path, page),
-        data_note="From umap_v2 (scripts/build_umap_jobs.py --out-name umap_v2).")
+        data_note=f"From umap_v2 (scripts/build_umap_jobs.py --out-name umap_v2). Reading, for the text: {UMAP_READ[page]}")
 
 
 
 
 def draw_val(path) -> None:
-    """Exact size, one panel across the text width (PI 2026-11-11), the legend above it."""
+    """Exact size, one panel SINGLE_W wide (PI 2026-11-12), the legend above it."""
     docs = M._load(P.DATA / "compute")
-    w = S.PRINT_W - 1.5 - 0.2
-    fig = S.figure_cm(S.PRINT_W, 1.6 + 0.7 * w + 1.0)
-    ax = S.axes_cm(fig, 1.5, 1.6, w, 0.7 * w)
+    w = S.SINGLE_W - 1.5 - 0.25
+    fig = S.figure_cm(S.SINGLE_W, 2.05 + 0.85 * w + 1.0)
+    ax = S.axes_cm(fig, 1.5, 2.05, w, 0.85 * w)
     S.fine_grid(ax)
     for level in S.LEVELS:
         have = [[e["val_acc"] for e in docs[m]["epochs"]] for m in RUNS[level] if m in docs and "val_acc" in docs[m]["epochs"][0]]
@@ -577,7 +559,7 @@ def draw_val(path) -> None:
         ax.plot(range(1, len(have[0]) + 1), np.mean(have, axis=0), **S.look(level), linewidth=S.LW_CURVE, label=S.LEGEND[level])
     S.heading(fig, "Pretraining on JetClass-II")
     S.labels(ax, "Pretraining epoch", "Validation accuracy")
-    S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=4)     # above the panel, 188 first, as every figure
+    S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=2)     # above the panel, 188 first, as every figure
     S.save(fig, path)
 
 
@@ -588,20 +570,20 @@ SUBST_NOTE = ("Top-tagging linear probes fill the missing inputs with random dra
               "training mean: the substitution chosen for each task on validation, over all 30 models.")
 TWO_RUNS = "The three controlled partitions have two runs each, the four label sets three."
 
-REL_CAPTION = ('relative change from the 188-class network of the same seed, in accuracy on class-balanced JetClass-II and '
-               'JetClass and in R30 on top and quark/gluon tagging. Bars are means, lines the SD over three '
-               'runs (range over two for flavor-boundary partitions). Last row: from scratch, against '
-               'the mean 188-class network (value printed if off the axis). Values: ')
+F2_KEY = ("Small dots: pretraining runs; circles: their mean; bars: SD over three runs (two-run partitions: no "
+          "bar). Line and band: the 188-class mean and SD. ")
 PAGES = [
     C.Page(
         id="F2a",
         title="Label granularity, linear probes",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption='Linear probes on networks pretrained on JetClass-II with 162, 43 and 17 classes and 17-class partitions (dots: each random partition, one run): ' + REL_CAPTION + G.number('tab:probes') + '.',
+        caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 "
+                "classes and with 17-class partitions, at each task's largest training set: accuracy on class-balanced "
+                "JetClass-II and on JetClass, R30 on top and quark/gluon tagging. " + F2_KEY
+                + "Random partitions: five, one run each, mean and SD over the five. Values: " + G.number("tab:summary") + ".",
         differs="Hong plots accuracy against the number of classes; here the label set is a category (PI 2026-11-11), "
-                "one row a network as in the field's bar charts of model comparisons, and the x axis the change from 188 classes, the relative gain its papers "
-                "quote. The absolute values are in the tables.",
+                "one row a network, on the metric itself (PI 2026-11-12: actual values only), every run shown.",
         draw=draw_f2a,
         data_note=f"{TWO_RUNS} Each plain random partition has one run. {SUBST_NOTE}"),
     C.Page(
@@ -609,7 +591,10 @@ PAGES = [
         title="Label granularity, after fine-tuning",
         precedent=HONG,
         precedent_label="Hong Fig. 2",
-        caption='Fine-tuned networks pretrained on JetClass-II with 162, 43 and 17 classes and three 17-class flavor-boundary partitions: ' + REL_CAPTION + f"{G.number('tab:jetclass')}, {G.number('tab:benchtop + tab:benchqg')[6:]} and {G.number('tab:ft')[6:]}.".replace('Table', 'Tables'),
+        caption="Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and with 17-class "
+                "flavor-boundary partitions, fine-tuned, and a network trained from scratch, on one million "
+                "class-balanced JetClass-II and one million JetClass jets (accuracy) and the full top and "
+                "quark/gluon training sets (R30). " + F2_KEY + "Values: " + G.number("tab:summary") + ".",
         differs="As F2a.",
         draw=draw_f2b,
         data_note="JetClass-II at 1,000,000 class-balanced jets. JetClass at 1,000,000 jets, top at 1,200,000, quark/gluon at 1,600,000. "
@@ -626,7 +611,7 @@ PAGES = [
         caption="Networks pretrained on JetClass-II with 17 and with 188 classes, then (a) a linear probe (LP) on "
                 "their frozen features or (b) the whole network fine-tuned (f.t.), on one million class-balanced "
                 "JetClass-II jets: each class's area under the curve with 17 classes against the same with 188. "
-                "Both panels share one range. Below the dashed line the class does worse with 17 classes. Colors "
+                "Both panels share one range. Below the dotted line the class does worse with 17 classes. Colors "
                 "are decay families; means over three pretraining runs.",
         differs="F3-scatter's (b) and F3-ft's (c) side by side (PI, 2026-11-08), on one axis range set by both panels, "
                 "so the shrink after fine-tuning shows; replaces the heatmap F3 and F3-scatter in the main text.",
@@ -639,7 +624,7 @@ PAGES = [
         caption="Linear probes on the frozen features of networks pretrained on JetClass-II, trained on one "
                 "million class-balanced JetClass-II jets: each class's area under the curve with (a) 162, (b) 43 and "
                 "(c) 17 pretraining classes and (d) the five 17-class random partitions averaged, against the same "
-                "with 188 classes. Below the dashed line the class does worse than with 188. Colors are decay "
+                "with 188 classes. Below the dotted line the class does worse than with 188. Colors are decay "
                 "families; means over three pretraining runs, in (d) over the five partitions, one run each.",
         differs="As F3-main. Round 4: seven panels split 4+3 over two figures, so every panel is a 6.5 cm square.",
         draw=draw_f3_app),
@@ -663,7 +648,7 @@ PAGES = [
         caption="Linear probes on the frozen features of networks pretrained on JetClass-II with (a) 162 and (b) "
                 "17 classes plus an auxiliary mass regression, trained on one million class-balanced JetClass-II "
                 "jets: each class's area under the curve against the same with 188 classes and no mass "
-                "regression. Below the dashed line the class does worse than with 188. Colors are decay families; "
+                "regression. Below the dotted line the class does worse than with 188. Colors are decay families; "
                 "values are means over two pretraining runs.",
         differs="F3-main's form for the two mass-regression models, moved out of F3-app so that the probe and "
                 "fine-tuning pages share one panel order (PI, 2026-11-07).",
@@ -676,7 +661,7 @@ PAGES = [
         caption="Networks pretrained on JetClass-II, fine-tuned on one million class-balanced JetClass-II jets: "
                 "each class's area under the curve with (a) 162, (b) 43 and (c) 17 pretraining classes and (d) "
                 "the five 17-class random partitions averaged, against the same with 188 classes. Below the "
-                "dashed line the class does worse than with 188. Colors are decay families; means over three "
+                "dotted line the class does worse than with 188. Colors are decay families; means over three "
                 "pretraining runs, in (d) over the five partitions, one run each.",
         differs="F3-main's form after fine-tuning (PI). Round 4: seven panels split 4+3 over two figures.",
         draw=draw_f3_ft),

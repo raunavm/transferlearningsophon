@@ -301,6 +301,9 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     return ref, e
 
 
+# PI 2026-11-12: panel titles say what each panel shows
+F9B_TITLE = {"median": "Median response", "resolution": "Resolution", "vs_pt": r"jet $p_{\mathrm{T}}$",
+             "vs_mgen": "generator mass"}
 X_PT, X_MGEN = r"Jet $p_{\mathrm{T}}$ [GeV]", r"Generator mass ($m_{\mathrm{gen}}$) [GeV]"
 
 
@@ -325,6 +328,7 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
     for i, which in enumerate(("median", "resolution")):
         for j, (axis, xlabel) in enumerate((("vs_pt", X_PT), ("vs_mgen", X_MGEN))):
             refs[i, j] = _quantity(axes[i, j], raxes[i, j], atlas, group, axis, series, which)
+            S.title(axes[i, j], F9B_TITLE[which] + " against " + F9B_TITLE[axis])
             raxes[i, j].tick_params(labelbottom=True)
             if i == 1:
                 S.labels(raxes[i, j], xlabel=xlabel)
@@ -338,6 +342,8 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, heading: str, ncol
                 axes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=5, steps=[1, 2, 5, 10], prune="lower"))
             else:
                 S.log_axis(axes[i, j], force=True, fine=True)
+                # PI 2026-11-12: "1.0", not "1", beside 0.2 and 0.5 (one decimal from 0.1 up)
+                axes[i, j].yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.1f}" if v >= 0.1 else f"{v:g}"))
             S.clear_edge_labels(axes[i, j], low=True)       # clear of the ratio panel below
             S.clear_edge_labels(raxes[i, j], high=True)
     fig.align_ylabels([axes[0, 0], raxes[0, 0], axes[1, 0], raxes[1, 0]])
@@ -449,14 +455,14 @@ def _floor(sc: dict, m: str) -> dict:
 
 
 def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs: dict | None = None) -> None:
-    """Exact size, one panel across the text width, the legend just above it; each row's mean over runs with a band of
+    """Exact size, one panel SINGLE_W wide (PI 2026-11-12), the legend just above it; each row's mean over runs with a band of
     the spread over runs (gallery_bands.spread_band), the label sets solid and filled, the mass models dashed and hollow
-    (mode "mass"); the floor black dashed; both axes logarithmic, labelled 10^n. runs: {row: models}, RUNS by default."""
+    (mode "mass"); the floor black dotted; both axes logarithmic, labelled 10^n. runs: {row: models}, RUNS by default."""
     runs = RUNS if runs is None else runs
-    legend_rows = math.ceil((sum(any(m in sc for m in runs[r]) for r in rows) + 1) / 3)
-    top, w = 0.95 + 0.45 * legend_rows, S.PRINT_W - 1.75 - 0.2
-    h = 0.7 * w
-    fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
+    legend_rows = math.ceil((sum(any(m in sc for m in runs[r]) for r in rows) + 1) / 2)
+    top, w = 0.95 + 0.45 * legend_rows, S.SINGLE_W - 1.75 - 0.25
+    h = 0.85 * w
+    fig = S.figure_cm(S.SINGLE_W, top + h + 1.0)
     ax = S.axes_cm(fig, 1.75, top, w, h)
     S.fine_grid(ax)
     drawn = []
@@ -487,13 +493,13 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, heading: str, runs
     S.log_axis(ax, "y", force=True)
     S.heading(fig, heading)
     S.labels(ax, r"QCD efficiency ($\varepsilon_B$)", "Jensen–Shannon distance")
-    S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=3)
+    S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=0.6, ncol=2)
     S.save(fig, path)
 
 
 def draw_f10b(path: pathlib.Path) -> None:
     """The label sets and the two mass models (PI, 2026-11-08); the flavor boundaries on F10b-flav."""
-    _sculpt_curves(path, _sculpt(), SCULPT_ROWS, "Mass sculpting of QCD jets by cuts on the pretraining head")
+    _sculpt_curves(path, _sculpt(), SCULPT_ROWS, "QCD mass sculpting by head cuts")
 
 
 def draw_f10b_flav(path: pathlib.Path) -> None:
@@ -586,9 +592,12 @@ def draw_f11(path: pathlib.Path) -> None:
         for label, style, rs in series:
             x, y, _ = P.xbx_curves(M, rs)
             mean = y.mean(axis=0)
+            # PI 2026-11-12: the +-1 SD band over runs (seeds for from scratch), as on every other scan
+            sd = y.std(axis=0, ddof=1) if len(y) > 1 else np.zeros_like(mean)
+            ax.fill_between(x, mean - sd, mean + sd, color=style["color"], alpha=L.BAND, linewidth=0, zorder=1.0)
             line, = ax.plot(x, mean, **{**style, "linewidth": S.LW_CURVE}, label=label)
             handles.setdefault(label, line)
-            top = max(top, float(np.nanmax(mean)))
+            top = max(top, float(np.nanmax(mean + sd)))
             xs += [float(np.min(x)), float(np.max(x))]
     for ax, what in zip(axes, (r"$X\rightarrow b\bar{b}$", r"$X\rightarrow bs$")):
         S.fine_grid(ax)
@@ -827,20 +836,20 @@ F10B_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (solid, "
     "three runs) and with 162 and 17 classes plus mass regression (dashed, two runs), used without further "
     "training: Jensen-Shannon distance between the soft-drop mass of all QCD test jets and of those passing a "
-    "cut on 1 - g_QCD, against its QCD efficiency eps_B. Bands: SD over runs, range over two. Black dashed: a "
+    "cut on 1 - g_QCD, against its QCD efficiency eps_B. Bands: SD over runs, range over two. Black dotted: a "
     "random selection of as many QCD jets.")
 F10B_FLAV_CAPTION = (
     "Cuts on the pretraining head of networks pretrained on JetClass-II with 17-class partitions with no, a "
     "b-quark and a random flavor boundary (two runs each), and with 188 classes for reference (three runs), used "
     "without further training: Jensen-Shannon distance between the soft-drop mass of all QCD test jets and of "
     "those passing a cut on 1 - g_QCD, against its QCD efficiency eps_B. Bands: range over runs, SD over three. "
-    "Black dashed: a random selection of as many QCD jets.")
+    "Black dotted: a random selection of as many QCD jets.")
 F10_FT_CAPTION = (
     "Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes (three runs) and 162 and 17 classes plus "
     "mass regression (two runs), and the same network trained from scratch (three seeds) on one million "
     "class-balanced JetClass-II jets and scored on 2 million natural-mix test jets: Jensen-Shannon "
     "distance between QCD soft-drop mass before and after a cut on 1 - g_QCD, against QCD efficiency eps_B. Bands: "
-    "SD, range over two. Black dashed: random selection of as many QCD jets.")
+    "SD, range over two. Black dotted: random selection of as many QCD jets.")
 F10C_CAPTION = (
     'Cuts on the pretraining head of networks pretrained on JetClass-II, used without further training, '
     "as in the DisCo paper's Fig. 3: the inverse Jensen-Shannon divergence (the squared distance) between "
@@ -849,10 +858,10 @@ F10C_CAPTION = (
     'regression), bars the SD over pretraining runs (range over two).')
 F11_CAPTION = (
     "Networks pretrained on JetClass-II, on Sophon's (a) X→bb̄ and (b) X→bs samples against QCD jets in the "
-    "soft-drop mass window: signal efficiency over the square root of the background efficiency against QCD "
-    "efficiency, from a classifier trained on the frozen features of each network (transfer), from the direct "
-    "discriminant of the 188-class pretraining head (X→bb̄) and from networks trained from scratch (X→bs). Curves are means over "
-    "pretraining runs and end where fewer than 20 background jets remain.")
+    "soft-drop mass window: signal efficiency over the square root of QCD efficiency, against QCD efficiency, for a "
+    "classifier on each network's frozen features (transfer), the 188-class head's direct discriminant (X→bb̄) and "
+    "networks trained from scratch. Means over three pretraining runs (from scratch: three trainings), bands the SD. "
+    "Curves end where fewer than 20 background jets remain.")
 PT_CAPTION = (
     "Networks pretrained on JetClass-II, in bins of jet transverse momentum: (a) accuracy of linear probes on "
     "class-balanced JetClass-II, with 188, 162, 43 and 17 pretraining classes; (b) the same for 17-class partitions with controlled flavor boundaries, with 188 and 17 classes for "
@@ -974,7 +983,7 @@ PAGES = [
          "Markers joined by a 1.1 pt line, not step markers: each point is a cumulative selection, so a segment would span "
          "a bin that does not exist (for the PI to decide). Faint dashed grid at major y ticks (round 3), where "
          "CMS has none; no major y tick falls in this log range, so no grid line shows. Jensen-Shannon distance (d_JS) and QCD efficiency instead of JSD and eps_B [%]; y limits from the "
-         "data instead of 0.007 to 1. The random-selection floor drawn as a black dashed line, where CMS has none (PI, 2026-11-07). No legend frame and no label "
+         "data instead of 0.007 to 1. The random-selection floor drawn as a black dotted line, where CMS has none (PI, 2026-11-07). No legend frame and no label "
          "block; STIX at 10 and 8 pt with inward ticks. Bands of the spread over runs (PI, 2026-11-08), where CMS draws "
          "none; the flavor-boundary partitions moved to F10b-flav.",
          draw_f10b,

@@ -24,11 +24,11 @@ MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_roc, gall
 ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement): main text,
          "F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11",
          # appendix
-         "FJ", "F4-other", "F4-mech-ft", "PT", "F6", "F6-app", "A10", "F8-auc", "A8-auc", "A10-auc", "F9a", "F10a", "F10b", "F10b-flav", "F10c",
-         "F10a-flav", "F10-ft", "UMAP-jc2-had", "VAL",
+         "F4-other", "F4-mech-ft", "PT", "F6", "A10", "F10b", "UMAP-jc2-had", "VAL",
          # supplement
-         "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "CONF", "F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2", "A3R",
-         "A3R-ft", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "A17-res", "A17-qcd", "A17-probe", "F10a-mass",
+         "FJ", "FJ-ctrl", "FJ-app", "FJ-ctrl-app", "FJ-s", "CONF", "F3-app", "F3-app2", "F3-app3", "F3-ft", "F3-ft2",
+         "A3R", "A3R-ft", "F6-app", "F8-auc", "A8-auc", "A10-auc", "F9a", "F10a", "F10b-flav", "F10c", "F10a-flav",
+         "F10-ft", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "A17-res", "A17-qcd", "A17-probe", "F10a-mass",
          "SOPHON-FIG2", "PALETTE",      # gallery only
          # the PI's line-graph style comparison (2026-11-11), gallery only
          "CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-FONT-T", "CMP-FONT-LM")

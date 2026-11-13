@@ -46,15 +46,15 @@ def test_the_gallery_order_is_the_placement_tier_by_tier():
 def test_the_main_text_is_the_pis_list_in_order():
     main = [k for k, t, _ in G.FIGURES if t == G.MAIN]
     assert main == ["F1", "F2a", "F2b", "F3-main", "F4-mech", "F8", "A8", "F9b", "F11"]
-    assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:jetclass", "tab:benchtop + tab:benchqg", "tab:mass",
-                                                          "tab:xbx", "tab:xbxrej"]
+    assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:summary", "tab:jetclass", "tab:benchtop", "tab:benchqg",
+                                                          "tab:mass", "tab:xbx"]
     # the fine-tuned read-out (2026-11-09) and X->bb/X->bs on Sophon's samples (2026-11-11) are in: nothing waits
     assert G.PROVISIONAL == {}
     assert set(G.PROVISIONAL) <= set(G.TIER) and all(v.isascii() for v in G.PROVISIONAL.values())    # the book's boxes
-    # F10b in the appendix between F10a and F10c, F10b-flav beside it: the bootstrap's 17 + mass - 17 at 1% is -2.0 sigma
+    # PI 2026-11-12: the appendix keeps these figures, everything else is in the supplement
     appendix = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
-    assert appendix[appendix.index("F10a"):appendix.index("F10c") + 1] == ["F10a", "F10b", "F10b-flav", "F10c"]
-    assert G.TIER["tab:sculpt"] == G.TIER["tab:compute"] == G.APPENDIX and G.TIER["tab:massdetail"] == G.SUPPLEMENT
+    assert appendix == ["F4-other", "F4-mech-ft", "PT", "F6", "A10", "F10b", "UMAP-jc2-had", "VAL"]
+    assert G.TIER["tab:sculpt"] == G.APPENDIX and G.TIER["tab:compute"] == G.TIER["tab:massdetail"] == G.SUPPLEMENT
     # the bootstrap's table right after the sculpting table, and what the sculpting sentences rest on
     tables = [k for k, t, _ in G.TABLES if t == G.APPENDIX]
     assert tables[tables.index("tab:sculpt") + 1] == "tab:sculptboot"
@@ -62,6 +62,10 @@ def test_the_main_text_is_the_pis_list_in_order():
                                          f"{G.number('F10b')}'s tier.")
     for k in ("F10b", "F10b-flav", "F10c", "F10a-flav"):
         assert G.evidence(k) == (k, "tab:sculpt", "tab:sculptboot")
+    # the trimmed appendix tables whole in the supplement; tab:boot nowhere
+    for k in ("tab:probes", "tab:coarse", "tab:qcdhf", "tab:pairs", "tab:fill"):
+        assert G.TIER[k] == G.APPENDIX and G.TIER[k + "full"] == G.SUPPLEMENT
+    assert "tab:boot" not in G.TIER and "tab:boot" in G.DROPPED_TABLES
 
 
 def test_every_item_has_one_tier_and_a_sentence():
@@ -74,16 +78,16 @@ def test_the_dropped_pages_are_gone():
     order, paper = _assigned(FIG / "gallery_figures.py", "ORDER"), _assigned(FIG / "gallery_figures.py", "PAPER")
     assert not set(G.DROPPED) & (set(order) | set(paper) | set(G.TIER)) and set(paper) <= set(order)
     # the tables the plan places nowhere; its "missing inputs (fill)" and "fine-tuning vs size" are placed
-    assert G.DROPPED_TABLES == ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:perclass", "tab:probesn")
-    assert not set(G.DROPPED_TABLES) & set(G.TIER) and G.TIER["tab:fill"] == G.TIER["tab:ft"] == G.APPENDIX
+    assert G.DROPPED_TABLES == ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:perclass", "tab:probesn", "tab:boot")
+    assert not set(G.DROPPED_TABLES) & set(G.TIER) and G.TIER["tab:fill"] == G.APPENDIX and G.TIER["tab:ft"] == G.SUPPLEMENT
 
 
 def test_numbers_count_within_each_tier_and_kind():
-    assert G.number("F1") == "Fig. 1" and G.number("F3-main") == "Fig. 4" and G.number("FJ") == "Fig. A1"
-    assert G.number("tab:jetclass") == "Table 1" and G.number("tab:probes") == "Table A1"
-    assert G.number("FJ-ctrl") == "Fig. S1" and G.number("tab:perrun") == "Table S1"
-    assert G.place("F10b") == "Appendix, Fig. A13" and G.place("F11") == "Main text, Fig. 9"
-    assert G.number("tab:sculptboot") == "Table A14" and G.number("tab:boot") == "Table A15"
+    assert G.number("F1") == "Fig. 1" and G.number("F3-main") == "Fig. 4" and G.number("F4-other") == "Fig. A1"
+    assert G.number("tab:summary") == "Table 1" and G.number("tab:probes") == "Table A1"
+    assert G.number("FJ") == "Fig. S1" and G.number("tab:perrun") == "Table S1"
+    assert G.place("F10b") == "Appendix, Fig. A6" and G.place("F11") == "Main text, Fig. 9"
+    assert G.number("tab:sculptboot") == "Table A12" and G.number("tab:xbxrej") == "Table A13"
 
 
 def test_f10b_goes_to_the_main_text_only_with_the_signs_of_the_rule():
@@ -109,13 +113,13 @@ def test_every_number_in_a_sentence_comes_from_number():
         assert set(refs) <= set(G.TIER), key
         filled = G.BACKS[key]
         assert "[[" not in filled and re.findall(r"(?:Fig\.|Table) [AS]?\d+", filled) == [G.number(r) for r in refs]
-    assert G.BACKS["FJ"].startswith(G.number("tab:jetclass")) and G.number("tab:jetclass") == "Table 1"
+    assert G.BACKS["FJ"] == f"Cited beside {G.number('tab:jetclassrej')}: the per-class ROC curves its rejections come from."
     assert G.BACKS["F3-app"] == f"Cited from {G.number('F3-main')}: the other scatter panels."
 
 
 def test_every_sentence_names_its_evidence():
     assert all(set(v) <= set(G.TIER) and k in G.TIER for k, v in G.EVIDENCE.items())
-    assert G.evidence("F2a") == ("F2a", "tab:probes") and G.evidence("F1") == ("F1",)
+    assert G.evidence("F2a") == ("F2a", "tab:summary", "tab:probes") and G.evidence("F1") == ("F1",)
 
 
 def test_the_new_pages_are_marked_new():
@@ -184,9 +188,9 @@ def test_the_sculpting_sentence_names_exactly_the_differences_beyond_three_sigma
     assert "sit with" not in sentence and not G.f10b_main(doc)
 
 
-def test_the_scaling_figures_in_auc_sit_in_the_appendix_after_a10_as_one_row():
-    """PI 2026-11-11: the scaling figures need AUC too; placed beside A10, the main text's list unchanged."""
-    app = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
-    i = app.index("A10")
-    assert app[i + 1:i + 4] == ["F8-auc", "A8-auc", "A10-auc"]
+def test_the_scaling_figures_in_auc_sit_in_the_supplement_as_one_row():
+    """PI 2026-11-11: the scaling figures need AUC too; 2026-11-12: in the supplement, one sentence."""
+    sup = [k for k, t, _ in G.FIGURES if t == G.SUPPLEMENT]
+    i = sup.index("F8-auc")
+    assert sup[i:i + 3] == ["F8-auc", "A8-auc", "A10-auc"]
     assert len({s for k, _, s in G.FIGURES if k.endswith("-auc")}) == 1

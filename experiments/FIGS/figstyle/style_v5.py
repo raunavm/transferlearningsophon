@@ -53,6 +53,19 @@ HANDLE = 2.6                                     # legend handle length (em): a 
 CLASS10 = ["#000000", "#332288", "#88CCEE", "#117733", "#DDCC77", "#CC6677", "#882255", "#44AA99", "#999933", "#AA4499"]
 TAB10 = CLASS10                                  # the name the pages use
 JC1_COLOUR = dict(zip(JC1_CLASSES, CLASS10))
+# PI 2026-11-12: grey dashed means from scratch in every figure, so reference and guide lines (the diagonal, the
+# random-selection floor, the soft-drop mass) are black dotted
+REFERENCE = {**REFERENCE, "linestyle": ":"}
+
+
+def grid(ax) -> None:
+    """The faint grid at major y ticks (2603.04084 Figs. 4, 6), solid: dashed grey is from scratch's line."""
+    ax.grid(False)
+    ax.yaxis.grid(True, which="major", linestyle="-", linewidth=0.35, color="#b0b0b0", alpha=0.3)
+    ax.set_axisbelow(True)
+
+
+fine_grid = grid
 NAME = {**NAME, "FLAV_F1": "$b$-quark boundary"}          # quark flavours in italic, as everywhere in the paper
 # a prime as a glyph beside the q (mathtext's q' raises it like a second superscript)
 JC1_TEX = {k: v.replace("qq'", r"qq^{\prime}") for k, v in JC1_TEX.items()}     # Computer Modern: a raised prime
@@ -188,6 +201,7 @@ def marker(key: str, mode: str = "ft", size: float | None = None) -> dict:
 # panels of at least 6.5 cm fit beside each other (ticks at 8 pt) with their tick labels; the y-axis label is written once per row when
 # the row shows one quantity.
 PRINT_W = 15.0                                  # cm, \linewidth of the paper
+SINGLE_W = 8.5                                  # cm, a one-panel figure (PI 2026-11-12): its panel the size of a 2x2 figure's
 PANEL_W = 6.5                                   # cm, a panel of a two-column figure
 PANEL_3 = 4.2                                   # cm, a panel of three in one row
 LABEL_PT5, TICK_PT5, TITLE_PT5, LEGEND_PT5 = 9.0, 8.0, 9.0, 8.5
@@ -272,4 +286,4 @@ def fig_legend(fig, handles, top_cm: float, ncol: int, **kw):
     """A figure-level legend centred above the panels, its top edge top_cm below the figure's top."""
     return fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, 1 - top_cm / (fig.get_figheight() / CM)),
                       ncol=ncol, frameon=False, fontsize=LEGEND_PT5, borderpad=0.2, labelspacing=0.3,
-                      columnspacing=1.2, handlelength=HANDLE, markerscale=1.6, **kw)     # 3 pt dots readable in the key
+                      columnspacing=1.2, handlelength=HANDLE, markerscale=1.0, **kw)     # PI 2026-11-12: keys the size of the plotted marks

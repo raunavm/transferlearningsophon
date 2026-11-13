@@ -481,8 +481,8 @@ PAGES = [
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (one panel per model)",
          caption="The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, one per panel, "
                  "fine-tuned on one million JetClass jets: background rejection against signal efficiency with "
-                 "each JetClass class as signal against the other nine, the mean over three pretraining runs, "
-                 "ending where fewer than 20 background jets remain. Titles give the mean area under the curve "
+                 "each JetClass class as signal against the other nine, the mean over three pretraining runs. "
+                 "Curves end where fewer than 20 background jets remain. Titles give the mean area under the curve "
                  "over the ten classes; the heading, that of a network trained from scratch.",
          differs="Against landscape: ten classes of one network, not fifteen networks; solid tab10. Against the poster: "
                  "rejection against efficiency (PI); four panels, not two; legend names only, as the AUCs do not fit.",
@@ -493,7 +493,7 @@ PAGES = [
          caption="Networks pretrained on JetClass-II with 17-class partitions, with no flavor boundary, a b-quark "
                  "boundary or a random flavor boundary (two runs each) and five random partitions (one run each, "
                  "averaged), fine-tuned on one million JetClass jets: rejection against efficiency for each class "
-                 "against the other nine, ending where fewer than 20 background jets remain. Titles give the mean "
+                 "against the other nine. Curves end where fewer than 20 background jets remain. Titles give the mean "
                  "area under the curve; the heading, that of a network trained from scratch.",
          differs="As FJ. The five plain random partitions share one panel, to stay at four: their mean AUCs over classes lie within "
                  "3e-4 of each other. Eight panels, one per partition, is the alternative.",
@@ -503,7 +503,7 @@ PAGES = [
          precedent_label="Landscape Fig. 5 (axes), MAP 2026 poster Fig. 5 (AUC in legend)",
          caption="A network trained from scratch on one million JetClass jets: background "
                  "rejection against signal efficiency with each of the ten JetClass classes as signal and the "
-                 "other nine as background, the mean over three trainings, ending where fewer than 20 background "
+                 "other nine as background, the mean over three trainings. Curves end where fewer than 20 background "
                  "jets remain. The legend gives each class's area under the curve; the heading gives their mean.",
          differs="As FJ, one panel; the class AUCs in a legend beside it on the right (PI), full width.",
          draw=draw_fj_s),
@@ -513,7 +513,7 @@ PAGES = [
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
                  "and 17 classes, trained on one million JetClass jets: background rejection against signal "
                  "efficiency with each class as signal against the other nine, the mean over three pretraining "
-                 "runs, ending where fewer than 20 background jets remain. Titles give the mean area under the "
+                 "runs. Curves end where fewer than 20 background jets remain. Titles give the mean area under the "
                  "curve; the heading, that of a network trained from scratch, for reference.",
          differs="As FJ, with no legend: probe curves lie lower, so it would cover Z to qq; the colors are FJ's. The "
                  "poster's left panel is also a frozen network, with an MLP on it; here the probe is linear.",
@@ -524,7 +524,7 @@ PAGES = [
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 17-class "
                  "partitions, with no flavor boundary, a b-quark boundary or a random flavor boundary (two runs "
                  "each) and five random partitions (one run each, averaged), trained on one million JetClass "
-                 "jets: rejection against efficiency for each class against the other nine, ending where fewer "
+                 "jets: rejection against efficiency for each class against the other nine. Curves end where fewer "
                  "than 20 background jets remain. Titles give the mean area under the curve; the heading, from "
                  "scratch.",
          differs="As FJ-ctrl, with no legend, as FJ-app. The five plain partitions' mean AUCs over classes lie within 5e-4 of each other.",
@@ -535,7 +535,7 @@ PAGES = [
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II, trained and scored on "
                  "two JetClass-II class pairs differing only in flavor (signal first): upper row, 188, 162, 43 and 17 "
                  "classes; lower row, 17-class partitions with no, a b-quark and a random flavor boundary, with 188 "
-                 "classes for reference. Means over three pretraining runs (partitions: two); curves end where fewer "
+                 "classes for reference. Means over three pretraining runs (partitions: two). Curves end where fewer "
                  "than 20 background jets remain.",
          differs="F4's (a) and (c) and F4-app's (a) and (c) in one 2x2 (PI, 2026-11-08): columns the pairs, rows the label "
                  "sets and the flavor boundaries; every panel from 1 to 10^4, the legend above the panels, off the curves. "
@@ -544,12 +544,12 @@ PAGES = [
     Page(id="F4-mech-ft", title="Flavor separation after fine-tuning (appendix)",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
-         caption="Networks pretrained on JetClass-II, fine-tuned on one million class-balanced JetClass-II jets and "
+         caption="Networks pretrained on JetClass-II and fine-tuned on one million class-balanced JetClass-II jets, "
                  "scored by the signal side's share of the pair's summed softmax on two class pairs differing only in "
-                 "flavor (signal first), among 2 million JetClass-II test jets in their natural class mix: upper "
-                 "row, 188, 162, 43 and 17 classes; lower row, 17-class partitions with no, a b-quark and a random "
-                 "flavor boundary, plus 188 classes. Means over three runs (partitions: two); curves end at 20 "
-                 "background jets.",
+                 "flavor (signal first), among 2 million natural-mix JetClass-II test jets: upper row, 188, "
+                 "162, 43 and 17 classes; lower row, 17-class partitions with no, a b-quark and a random flavor "
+                 "boundary, and 188 classes. Means over three runs (partitions: two). Curves end where fewer than 20 "
+                 "background jets remain.",
          differs="F4-mech's form after fine-tuning (PI, 2026-11-08), on F4-mech's axes (rejection 1 to 10^4); the main "
                  "text quotes these numbers from the pair table's fine-tuned columns.",
          data_note="Reads curves_v2/pairs_ft (the fine-tuned pairs job on the natural-mix test jets: the signal side's "
@@ -562,7 +562,7 @@ PAGES = [
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and "
                  "17 classes, trained and scored on three pairs of JetClass-II classes differing only in flavor "
                  "(signal first): (a) X→YY→bb̄qq vs cc̄qq, (b) X→ee vs μμ and (c) QCD bb̄ vs cc̄. Means over three "
-                 "pretraining runs; curves end where fewer than 20 background jets remain; a network with no curve "
+                 "pretraining runs. Curves end where fewer than 20 background jets remain; a network with no curve "
                  "is named in its panel.",
          differs="F4's (b) and (d) with QCD bb̄ vs cc̄ (PI, 2026-11-08); as F4-mech otherwise, the fourth cell empty.",
          data_note="X→ee vs X→μμ is read from every test jet of the pair (pairs_sib2), so a curve can reach a rejection "
@@ -576,8 +576,8 @@ PAGES = [
                  "trained from scratch, on the full top and quark/gluon training sets: rejection against "
                  "efficiency, means over three runs; dotted, one run with 188 classes and kinematic inputs only. "
                  "Lower panels: ratio to 188 classes; bands: each curve's SD over runs and 68% binomial "
-                 "uncertainty of the passing background count, in quadrature. On Herwig jets, 43 and 17 classes "
-                 "agree with 188 within uncertainty.",
+                 "uncertainty of the passing background count, in quadrature. Curves end where fewer than 20 background "
+                 "jets remain.",
          differs="Three stacked panels on one x axis (Sophon Fig. 3's arrangement), as landscape and ParticleNet draw "
                  "one per figure. Rejection on y as landscape, not ParticleNet's background efficiency; no AUC in the "
                  "legend, unlike ParticleNet (PI limit, numbers are in tables). The y axis starts at 1, not at the data; "
@@ -609,7 +609,7 @@ PAGES = [
          caption="Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 "
                  "and 17 classes, trained on one million class-balanced JetClass-II jets: rejection against "
                  "efficiency for each of the 188 classes against the rest of the test set, the mean over three "
-                 "pretraining runs, colored by decay family, ending where fewer than 20 background jets remain. "
+                 "pretraining runs, colored by decay family. Curves end where fewer than 20 background jets remain. "
                  "Each title gives the mean area under the curve over all classes.",
          differs="Axes as FJ (PI). Linear probes on JetClass-II in all four panels (1M jets), where the poster has a "
                  "frozen MLP and full fine-tuning on JetClass (10M). 188 thin curves in six family colours, not ten "
@@ -625,7 +625,7 @@ PAGES = [
          caption="The networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, fine-tuned on one "
                  "million class-balanced JetClass-II jets: rejection against efficiency for each of the 188 "
                  "classes against the rest of the test set, the mean over three pretraining runs, colored by "
-                 "decay family, ending where fewer than 20 background jets remain. Each title gives the mean area "
+                 "decay family. Curves end where fewer than 20 background jets remain. Each title gives the mean area "
                  "under the curve over all classes.",
          differs="As A3R, fine-tuned.",
          draw=draw_a3r_ft),

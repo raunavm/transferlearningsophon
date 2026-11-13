@@ -89,11 +89,13 @@ def height_cm(pdf: pathlib.Path) -> float:
 
 
 def size(pdf: pathlib.Path) -> str:
-    """Every figure across the text block (PI 2026-11-11), which is the size the figures are drawn at; the height cap
+    """Every figure at the size it is drawn: across the text block (PI 2026-11-11), a one-panel figure narrower; the height cap
     for a figure that would then be too tall for a page."""
     import fitz
     with fitz.open(pdf) as d:
         r = d[0].rect
+    if r.width / 72 * 2.54 < TEXT_W_CM - 1.0:        # a one-panel figure (PI 2026-11-12): at the size it is drawn
+        return ""
     return f"[height={MAX_H_CM}cm]" if r.height / r.width * TEXT_W_CM > MAX_H_CM else "[width=\\linewidth]"
 
 

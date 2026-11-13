@@ -43,7 +43,7 @@ from matplotlib.transforms import Bbox  # noqa: E402
 
 import palette_check as PC  # noqa: E402
 
-PRINT_CM = {"INVENTORY": 27.7}     # \paperfig widths other than \linewidth (15 cm); the map: the gallery page
+PRINT_CM = {"INVENTORY": 27.7, "F10b": 8.5, "F10b-flav": 8.5, "VAL": 8.5}     # \paperfig widths other than \linewidth (15 cm); the map: the gallery page; one-panel figures (style_v5.SINGLE_W)
 # three panels in one row are 4.1 to 4.2 cm wide (PI 2026-11-11: no empty slot in a grid); two beside each other at
 # least 6.1 cm, which leaves the room wide tick labels (10^n) need
 MIN_PANEL_CM, MIN_PANEL_CM_OF = 6.1, {"F3-app": 5.0, "F3-ft": 5.0, "F3-app2": 4.0, "F3-ft2": 4.0, "F4-other": 4.0,

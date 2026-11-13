@@ -8,8 +8,7 @@ A, the current style: each model's own marker shape, filled or hollow, 4-5 pt wi
 B, error bars: 1.3 pt lines; one marker shape (a 3 pt circle, no outline; open for a linear probe); +-1 SD as vertical
    bars, 1 pt, no caps, in the series colour; no bands; in a size scan a small horizontal offset between series.
 C, light bands: 1.3 pt lines; 3 pt circles at the measured points; +-1 SD bands at 15% opacity, no edge, under every line.
-Binned measurements (jet pT) are points with error bars and no lines in B and C; the pretraining label set is a
-category: one row a network (row). Colour is the model and line style the mode, as before (style_v5)."""
+Binned measurements (jet pT) are points with error bars and no lines in B and C. Colour is the model and line style the mode, as before (style_v5)."""
 from __future__ import annotations
 
 import numpy as np
@@ -68,15 +67,3 @@ def binned(ax, edges, mean, lo, hi, *, color: str, probe: bool, label: str) -> N
     ax.errorbar(0.5 * (e[1:] + e[:-1]), mean, xerr=0.5 * np.diff(e), yerr=[lo, hi], fmt="none", ecolor=color,
                 elinewidth=BAR, capsize=0, zorder=2.4)
     ax.plot(0.5 * (e[1:] + e[:-1]), mean, linestyle="none", **dot(color, probe), label=label, zorder=2.6)
-
-
-ROW = 0.62              # a bar's height, in rows
-
-
-def row(ax, y: float, mean: float, lo, hi, *, color: str, label: str | None = None) -> list:
-    """One row of a horizontal bar chart (a pretraining label set, a category): the bar from zero to the mean, its
-    +-1 SD bar in black (none for one run), as the field's bar charts of model comparisons (MIParT Figs. 5-6)."""
-    ax.barh(y, mean, height=ROW, color=color, linewidth=0, label=label, zorder=2.0)
-    if lo is not None:
-        ax.errorbar([mean], [y], xerr=[[lo], [hi]], fmt="none", ecolor="#000000", elinewidth=BAR, capsize=0, zorder=2.6)
-    return [mean - (lo or 0.0), mean + (hi or 0.0)]
