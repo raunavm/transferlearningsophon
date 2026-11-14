@@ -1798,3 +1798,7 @@ mtx2-tests-bookfull-bc089e3-raunav,2026-11-13T20:39:00Z,launched,"full suite at 
 pull-host-raunav,2026-11-13T14:15:00Z,deleted,"recreated for the bootstrap, UMAP and render pulls; deleted after the final fetch",experiments/FIGS/k8s/job-pull-host-raunav.yaml
 boot-jc2-raunav,2026-11-13T21:00:00Z,retired,"Never to run: superseded by boot-jc2b-ft-raunav (balanced test set) and boot-l3-raunav; nothing reads bootstrap/jc2.",experiments/FT/k8s/curves/job-boot-jc2-raunav.yaml
 boot-ft-raunav,2026-11-13T21:00:00Z,retired,"Never to run: the fine-tuning bootstraps the paper prints come from boot-l3-raunav; nothing reads bootstrap/ft.",experiments/FT/k8s/curves/job-boot-ft-raunav.yaml
+mtx2-tests-fix-007605a-raunav,2026-11-14T00:30:00Z,complete,"the four test files of the 9 bc089e3 failures after the fixes: 696 passed, 0 failed (first attempt refused at the 85% line, rebuilt at 90%)",experiments/MTX/k8s/v2/tests/job-mtx2-tests-fix-007605a-raunav.yaml
+render-gallery-9c0ef79-raunav,2026-11-14T18:50:00Z,complete,"mode headings above single-mode figures; 94 of 94 drawn, figcheck only the known supplement caption lengths",experiments/FIGS/k8s/job-render-gallery-9c0ef79-raunav.yaml
+render-gallery-c88a9c0-raunav,2026-11-14T19:20:00Z,complete,"resonance tagging heading 'Not fine-tuned'; 94 of 94 drawn; books rebuilt (60 and 183 pages)",experiments/FIGS/k8s/job-render-gallery-c88a9c0-raunav.yaml
+pull-host-raunav,2026-11-14T19:10:00Z,deleted,"recreated for the two render pulls, deleted after",experiments/FIGS/k8s/job-pull-host-raunav.yaml
