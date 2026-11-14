@@ -57,7 +57,7 @@ MODE_HEADINGS = {
     **dict.fromkeys(("F2-ft", "F2b", "F4-mech-ft", "F4-other-ft", "F4-light-ft", "F4-rand-ft", "F4-rand-qcd-ft", "A8",
                      "A8-auc", "A8-part", "F6-ft", "F6-part-ft", "FJ", "FJ-ctrl", "FJ-mass", "A3R-ft", "A3R-ctrl-ft",
                      "F10-ft", "F10-ft-part"), _FT),
-    **dict.fromkeys(("F11", "F11-part"), "Multilayer-perceptron classifier on frozen features"),
+    **dict.fromkeys(("F11", "F11-part"), "Not fine-tuned"),
     **dict.fromkeys(("F10a", "F10a-flav", "F10a-mass", "F10b", "F10b-flav", "F10c"), "Network output used directly"),
     **dict.fromkeys(("FJ-s", "A3R-s"), "Trained from scratch"),
 }
