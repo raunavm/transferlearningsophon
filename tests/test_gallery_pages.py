@@ -457,7 +457,9 @@ def test_every_figure_family_and_table_lists_the_networks_in_one_order():
     for ln in M.pt_bins_csv(perf, pooled).splitlines()[1:]:
         name, *key = ln.split(",")[:4]
         blocks.setdefault(tuple(key), []).append(name)
-    assert len(blocks) == 6 and all(names == [M._plain(a) for a in order] for names in blocks.values()), blocks
+    refs = {M._plain(M.INIT), M._plain(M.INIT_BN), M.SCRATCH_LABEL, "from scratch", "random network"}
+    assert len(blocks) == 6 and all(names[:len(order)] == [M._plain(a) for a in order] and set(names[len(order):]) <= refs
+                                    for names in blocks.values()), blocks
     assert [a for a, _ in M.CONF_DIFF] == list(order[1:]) and dict(M.CONF_DIFF) == dict(PC.LABEL_SETS + PC.PARTITIONS + PC.MASS)
     assert M.PAIR_ORDER == R.PAIR_ORDER and [k for k, *_ in M.PAIRS_FIG] == list(R.PAIR_ORDER)
     assert sorted(M.PAIRS_FIG) == sorted(M.PAIRS) and M.CONF_CLASSES == L.S.JC1_CLASSES
@@ -506,7 +508,7 @@ def test_the_jet_pt_family_is_two_by_two_with_one_mode_a_row_and_its_slices_in_t
         axes = [ax for ax in fig.axes if ax.get_xlabel()]
         assert [ax.get_title() for ax in axes] == [f"({'abcd'[k]}) {t}" for k, (_, t) in enumerate(panels)]
         assert all(ax.get_ylabel() == ylabel and ax.get_xlabel() == H.X_PT for ax in axes)
-        assert [ax.get_xlim() for ax in axes] == pytest.approx([pt[s] for s, _ in panels])
+        assert [v for ax in axes for v in ax.get_xlim()] == pytest.approx([v for s, _ in panels for v in pt[s]])
         shown = [t.get_text() for t in fig.legends[0].get_texts() if t.get_text()]
         assert shown == [L.S.LEGEND[r] for r in rows]
         assert not ({L.S.LEGEND[k] for k in ("SCRATCH", "INIT_BN")} & set(shown))

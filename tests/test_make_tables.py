@@ -660,6 +660,7 @@ def test_a_bound_is_never_averaged_into_a_mean():
     assert M.fmt_rejection([301.0, 302.0, 303.0], [False] * 3) == "302.0\\,$\\pm$\\,1.0"
 
 
+SUPP_REF = re.compile(r"\b(?:[Tt]ables?|[Ff]igures?) S\d+(?:(?:, | and )S\d+)*")   # the supplement's numbering
 FORBIDDEN = re.compile(r"Holm|\$p\$|p=|trend|registered|clause|verdict|\b(?:C[1-5]|S(?:10|[1-9]))\b")
 
 
@@ -670,7 +671,7 @@ def test_no_generated_file_carries_test_language_or_prediction_labels():
         lines = ([f"{k} {json.dumps(v)}" for k, v in json.loads(text).items()]
                  if rel == "provenance.json" else text.splitlines())
         bad += [f"{rel}: {m.group()!r} in {ln[:120]!r}" for ln in lines
-                for m in [FORBIDDEN.search(ln)] if m]
+                for m in [FORBIDDEN.search(SUPP_REF.sub("", ln))] if m]
     assert not bad, "\n".join(bad)
     assert "tables/tests.tex" not in built and "tables/s8.tex" not in built
 

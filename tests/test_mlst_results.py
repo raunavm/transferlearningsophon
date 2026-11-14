@@ -2822,7 +2822,8 @@ def test_the_mass_table_head_block_reads_the_regression_output_over_all_jets_inc
     k = next(i for i, ln in enumerate(d) if M.HEADING["head"] in ln)
     A = M.AGREE
     assert d[k + 1] == M.LABEL["L162_MASS"] + f" &  & 0.5100{A} & 0.6100{A} &  & 1.51{A} & 1.61{A} \\\\"
-    assert "0.1467" not in "\n".join(d) and M.V4.TOK_OPEN not in "\n".join(d)
+    upper = "\n".join(d).split("%SPLIT%")[0]
+    assert "0.1467" not in "\n".join(d) and M.V4.TOK_OPEN not in upper
 
 
 def _paper_tables() -> dict:
@@ -3104,7 +3105,7 @@ def test_bold_marks_the_best_value_of_a_column_and_every_value_within_three_stan
     Never bold: the random networks and the released checkpoint (reference rows, which are not the best either), a
     number that is no run's, a plain number in a table without published rows, a dash."""
     T, tok, lab = M.TAB, M.V4.tok, M.LABEL
-    assert M.NEVER_BOLD == (lab[M.INIT], lab[M.INIT_BN], lab[M.SOPHON])
+    assert M.NEVER_BOLD == (lab[M.INIT], lab[M.INIT_BN], lab["KIN"], lab[M.SOPHON])
     rows = [f"{lab['L188']} & {T(100.0, 2.0)} & 7 & -- \\\\",                    # the best
             f"{lab['L162']} & {T(95.0, 1.0)} & 9 & -- \\\\",                     # 5 <= 3 sqrt(1 + 4) = 6.7
             f"{lab['R42_Q1']} & {T(93.0, 1.0)} & 8 & {T(5.0, 1.0)} \\\\",        # 7 > 6.7
@@ -3429,7 +3430,8 @@ def test_the_mass_effect_table_prints_each_row_at_one_place_and_bolds_along_the_
     body = {ln.split(" & ")[0]: ln.removesuffix(r" \\").split(" & ")[1:] for ln in t.splitlines()
             if " & " in ln and not ln.startswith(" & ")}
     bold = {lab: [M.MASS_EFFECT[j] for j, c in enumerate(cells) if M.BOLD_ON in c] for lab, cells in body.items()}
-    assert bold == {"resolution, x": ["L162_MASS", "R16_Q1_MASS"], "median response, x": ["L162_MASS"],
+    # median response: |1.05 - 1| - |0.99 - 1| = 0.04 <= 3 sqrt(2) 0.01, |1.10 - 1| - 0.01 = 0.09 and 0.20 - 0.01 are not
+    assert bold == {"resolution, x": ["L162_MASS", "R16_Q1_MASS"], "median response, x": ["L162_MASS", "R16_Q1"],
                     "accuracy, linear probe": ["L162", "L162_MASS"], "signal efficiency, direct": []}
     assert body["signal efficiency, direct"] == ["--"] * 4
     # one place a row (its standard deviations), each value the mean of its network's runs

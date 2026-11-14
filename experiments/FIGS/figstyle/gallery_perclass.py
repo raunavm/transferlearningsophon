@@ -119,9 +119,10 @@ def _draw_grid(path, test: str, rows: tuple) -> None:
     fig = S.figure_cm(S.PRINT_W, top + n * w + (n - 1) * hgap + 1.0)
     x0 = (S.PRINT_W - LEFT - 2 * w - WGAP) / 2 + LEFT       # the block of labels and panels centred
     span = lim[1] - lim[0]
-    # the finest round step whose labels fit (0.8 cm each) and whose first tick clears the previous panel's last label
-    step = next(t for t in (0.02, 0.04, 0.05, 0.1)
-                if span / t * 0.8 <= w and (math.ceil(lim[0] / t - 1e-9) * t - lim[0]) / span * w >= 0.3)
+    # the finest round step whose labels fit (0.8 cm each) and whose first tick clears the previous panel's last label;
+    # if no step clears it, the coarsest whose labels fit
+    fits = [t for t in (0.02, 0.04, 0.05, 0.1) if span / t * 0.8 <= w]
+    step = next((t for t in fits if (math.ceil(lim[0] / t - 1e-9) * t - lim[0]) / span * w >= 0.3), fits[-1])
     dot = DOT[n]
     for i, (row, (a, b)) in enumerate(zip(pts, rows)):
         y0 = top + i * (w + hgap)
