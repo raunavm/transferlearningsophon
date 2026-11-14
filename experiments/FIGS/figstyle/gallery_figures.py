@@ -19,6 +19,7 @@ import gallery_review
 import gallery_roc
 import gallery_inventory
 import gallery_compare
+import style_v3 as S3
 import style_v5 as S
 
 MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_perclass, gallery_roc, gallery_inventory,
@@ -47,6 +48,22 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
 # families are, PI 2026-11-13, and the jet-pT family); F3, F3-scatter, F4 and
 # F4-app were dropped (gallery_placement.DROPPED, PI 2026-11-08); the per-class family replaced F3-main, F3-app,
 # F3-app2, F3-app3, F3-ft, F3-ft2 and CONF, and F6 took in F6-app (gallery_placement.SUPERSEDED, PI 2026-11-13)
+# PI 2026-11-14: a figure that holds one mode says which above its panels (style_v3.save draws it); the figures that
+# hold both modes or compare them (PT, PC-*, F8) name the mode in their panels or legends
+_LP, _FT = "Linear probe", "Fine-tuned"
+MODE_HEADINGS = {
+    **dict.fromkeys(("F2", "F2a", "F4-mech", "F4-other", "F4-light", "F4-ee", "F4-rand", "F4-rand-qcd", "A10", "A10-auc",
+                     "A10-part", "F6", "F6-part", "FJ-app", "FJ-ctrl-app", "FJ-mass-app", "A3R", "F11-probe"), _LP),
+    **dict.fromkeys(("F2-ft", "F2b", "F4-mech-ft", "F4-other-ft", "F4-light-ft", "F4-rand-ft", "F4-rand-qcd-ft", "A8",
+                     "A8-auc", "A8-part", "F6-ft", "F6-part-ft", "FJ", "FJ-ctrl", "FJ-mass", "A3R-ft", "A3R-ctrl-ft",
+                     "F10-ft", "F10-ft-part"), _FT),
+    **dict.fromkeys(("F11", "F11-part"), "Multilayer-perceptron classifier on frozen features"),
+    **dict.fromkeys(("F10a", "F10a-flav", "F10a-mass", "F10b", "F10b-flav", "F10c"), "Network output used directly"),
+    **dict.fromkeys(("FJ-s", "A3R-s"), "Trained from scratch"),
+}
+S3.HEADINGS.update(MODE_HEADINGS)
+
+
 PAPER = ("F1", "F2", "F2-ft", "F2a", "F2b", "PC-jc2", "PC-jc1", "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand", "PC-jc2-mass", "PC-jc1-mass",
          "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-mech", "F4-mech-ft", "F4-other", "F4-other-ft", "F4-light", "F4-light-ft", "F4-ee", "F4-rand", "F4-rand-qcd",
          "F4-rand-ft", "F4-rand-qcd-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "FJ-mass", "FJ-mass-app", "F6", "F6-ft", "F6-part", "F6-part-ft", "F8",

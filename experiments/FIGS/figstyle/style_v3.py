@@ -122,8 +122,47 @@ def legend(ax, **kw):
     return ax.legend(fontsize=kw.pop("fontsize", LEGEND_PT), borderpad=0.3, labelspacing=0.3, **kw)
 
 
+# PI 2026-11-14: a figure that holds one mode names it in a heading above the panels ({page id: heading}, filled by
+# gallery_figures); the figure grows HEADING_CM at the top and everything already drawn keeps its place below
+HEADINGS: dict = {}
+HEADING_CM = 0.5
+
+
+def _add_heading(fig, text: str) -> None:
+    from matplotlib.lines import Line2D
+    from matplotlib.text import Text
+    from matplotlib.transforms import Bbox
+    cm = 1 / 2.54
+    if not getattr(fig, "exact_size", False):          # a tight box takes the heading in as it is
+        fig.suptitle(text, fontsize=9.0, y=1.0, va="bottom")
+        return
+    W, H = fig.get_size_inches()
+    new_h = H + HEADING_CM * cm
+    k = H / new_h
+    anchors = [(leg, leg.get_bbox_to_anchor().transformed(fig.transFigure.inverted())) for leg in fig.legends]
+    for art in fig.get_children():
+        if art is fig.patch or art in fig.axes or art in fig.legends:
+            continue
+        if isinstance(art, Text) and art.get_transform() == fig.transFigure:
+            x, y = art.get_position()
+            art.set_position((x, y * k))
+        elif isinstance(art, Line2D) and art.get_transform() == fig.transFigure:
+            art.set_ydata([y * k for y in art.get_ydata()])
+        else:
+            raise ValueError(f"heading: no rule to move a figure-level {type(art).__name__}")
+    for ax in fig.axes:
+        x0, y0, w, h = ax.get_position(original=True).bounds
+        ax.set_position([x0, y0 * k, w, h * k], which="both")
+    fig.set_size_inches(W, new_h)
+    for leg, b in anchors:
+        leg.set_bbox_to_anchor(Bbox.from_extents(b.x0, b.y0 * k, b.x1, b.y1 * k), transform=fig.transFigure)
+    fig.text(0.5, 1 - 0.15 * cm / new_h, text, ha="center", va="top", fontsize=9.0)
+
+
 def save(fig, path: pathlib.Path) -> list:
     """bbox_inches='tight', as Sophon; vector PDF and a PNG for viewing. Prints how many line vertices lie under each legend."""
+    if (text := HEADINGS.get(pathlib.Path(path).stem)) is not None:
+        _add_heading(fig, text)
     fig.canvas.draw()
     for ax in fig.axes:
         if (leg := ax.get_legend()) is not None:

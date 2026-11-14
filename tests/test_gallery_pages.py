@@ -657,3 +657,29 @@ def test_the_supplement_tables_hold_the_points_their_figures_draw():
             ref = {seed(m): M._conf_matrix(conf[m]) for m in pooled[b]}
             mine = np.mean([M._conf_matrix(conf[m]) - ref[seed(m)] for m in pooled[a]], axis=0)
             assert np.allclose(mine, PC._diff(conf, a, b), equal_nan=True), (a, b)
+
+
+def test_a_figure_of_one_mode_names_it_in_a_heading_above_its_panels(tmp_path):
+    """PI 2026-11-14: a figure that holds one mode (linear probe, fine-tuned, ...) says which in a heading above the
+    panels; style_v3.save grows the figure at the top by HEADING_CM and leaves everything drawn where it was."""
+    import gallery_figures as F
+    import style_v3
+    import style_v5
+    ids = {p.id for m in F.MODULES for p in m.PAGES}
+    assert set(F.MODE_HEADINGS) <= ids and style_v3.HEADINGS == F.MODE_HEADINGS
+    assert F.MODE_HEADINGS["F2"] == "Linear probe" and F.MODE_HEADINGS["F2-ft"] == "Fine-tuned"
+    # the figures that hold both modes name them in their panels instead
+    assert not {"PT", "PC-jc2", "PC-jc1", "F8"} & set(F.MODE_HEADINGS)
+    fig = style_v5.figure_cm(15.0, 6.0)
+    ax = style_v5.axes_cm(fig, 1.0, 1.0, 5.0, 4.0)
+    leg = style_v5.fig_legend(fig, [matplotlib.lines.Line2D([], [], label="x")], top_cm=0.15, ncol=1)
+    fig.canvas.draw()
+    before = (ax.get_window_extent().y1, leg.get_window_extent().y1)
+    style_v3._add_heading(fig, "Linear probe")
+    fig.canvas.draw()
+    cm = 1 / 2.54 * fig.dpi
+    assert fig.get_figheight() * 2.54 == pytest.approx(6.0 + style_v3.HEADING_CM)
+    # distances from the bottom unchanged, so from the top each grew by HEADING_CM
+    assert (ax.get_window_extent().y1, leg.get_window_extent().y1) == pytest.approx(before, abs=0.01 * cm)
+    assert [t.get_text() for t in fig.texts] == ["Linear probe"]
+    matplotlib.pyplot.close(fig)
