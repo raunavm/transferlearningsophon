@@ -1,6 +1,6 @@
 \begin{table}[t]
 \centering
-\caption{Rejection of QCD jets by the $X\to b\bar b$ discriminant of linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, of the two networks with an added mass output, of the 17-class partitions and of the random network, trained on one million class-balanced JetClass-II jets. The discriminant is the probe's $X\to b\bar b$ score divided by the sum of that score and the QCD scores. $R_{50}$ is the inverse QCD efficiency at 50\% $X\to b\bar b$ efficiency, for QCD jets with two or more $b$ quarks, with one $b$ quark, and for all QCD jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks values within three standard deviations (both added in quadrature, before rounding) of the best in their column. The random network is a reference, never bold.}
+\caption{Rejection of QCD jets by the $X\to b\bar b$ discriminant of linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, of the two networks with an added mass output, of the 17-class partitions and of the random network, trained on one million class-balanced JetClass-II jets. The discriminant is the probe's $X\to b\bar b$ score divided by the sum of that score and the QCD scores. $R_{50}$ is the inverse QCD efficiency at 50\% $X\to b\bar b$ efficiency, for QCD jets with two or more $b$ quarks, with one $b$ quark, and for all QCD jets. A flavor boundary keeps apart decays that differ only in quark flavor. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks the best value in their column and those within three standard deviations (run spreads and any stored test-jet bootstrap). The random network is a reference, never bold.}
 \label{tab:qcdhf}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
@@ -9,18 +9,18 @@
  & $b\bar b$ & $b$ & all QCD \\
 \midrule
 \multicolumn{4}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 66.4\,$\pm$\,4.9} & {\fontseries{b}\selectfont 1{,}101\,$\pm$\,151} & {\fontseries{b}\selectfont 1{,}450\,$\pm$\,110} \\
-\Kres{} classes & {\fontseries{b}\selectfont 73.8\,$\pm$\,5.3} & {\fontseries{b}\selectfont 1{,}134\,$\pm$\,117} & {\fontseries{b}\selectfont 1{,}616\,$\pm$\,107} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 66\,$\pm$\,5} & {\fontseries{b}\selectfont 1{,}100\,$\pm$\,150} & {\fontseries{b}\selectfont 1{,}450\,$\pm$\,110} \\
+\Kres{} classes & {\fontseries{b}\selectfont 74\,$\pm$\,5} & {\fontseries{b}\selectfont 1{,}130\,$\pm$\,120} & {\fontseries{b}\selectfont 1{,}620\,$\pm$\,110} \\
 \Kres{} classes + mass & {\fontseries{b}\selectfont 67.4\,$\pm$\,0.4} & {\fontseries{b}\selectfont 891\,$\pm$\,33} & {\fontseries{b}\selectfont 1{,}454\,$\pm$\,33} \\
-\Kmid{} classes & {\fontseries{b}\selectfont 72.4\,$\pm$\,4.0} & {\fontseries{b}\selectfont 879\,$\pm$\,122} & {\fontseries{b}\selectfont 1{,}551\,$\pm$\,104} \\
-\Kcoarse{} classes & {\fontseries{b}\selectfont 65.1\,$\pm$\,4.3} & {\fontseries{b}\selectfont 714\,$\pm$\,201} & {\fontseries{b}\selectfont 1{,}337\,$\pm$\,72} \\
-\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 60.7\,$\pm$\,1.3} & 586\,$\pm$\,89 & 1{,}279\,$\pm$\,12 \\
+\Kmid{} classes & {\fontseries{b}\selectfont 72\,$\pm$\,4} & {\fontseries{b}\selectfont 880\,$\pm$\,120} & {\fontseries{b}\selectfont 1{,}550\,$\pm$\,100} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 65\,$\pm$\,4} & {\fontseries{b}\selectfont 710\,$\pm$\,200} & {\fontseries{b}\selectfont 1{,}340\,$\pm$\,70} \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 60.7\,$\pm$\,1.3} & 590\,$\pm$\,90 & 1{,}279\,$\pm$\,12 \\
 \multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & {\fontseries{b}\selectfont 63.5\,$\pm$\,3.6} & {\fontseries{b}\selectfont 742\,$\pm$\,147} & 1{,}254\,$\pm$\,5 \\
-\quad $b$-quark boundary & {\fontseries{b}\selectfont 66.8\,$\pm$\,1.6} & {\fontseries{b}\selectfont 810\,$\pm$\,148} & {\fontseries{b}\selectfont 1{,}449\,$\pm$\,43} \\
-\quad random flavor boundary & {\fontseries{b}\selectfont 65.9\,$\pm$\,1.9} & {\fontseries{b}\selectfont 772\,$\pm$\,117} & {\fontseries{b}\selectfont 1{,}413\,$\pm$\,27} \\
-\quad random partitions & {\fontseries{b}\selectfont 68.6\,$\pm$\,3.6} & {\fontseries{b}\selectfont 920\,$\pm$\,193} & {\fontseries{b}\selectfont 1{,}487\,$\pm$\,62} \\
-random network & 6.4\,$\pm$\,0.4 & 7\,$\pm$\,1 & 14\,$\pm$\,2 \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 64\,$\pm$\,4} & {\fontseries{b}\selectfont 740\,$\pm$\,150} & 1{,}254\,$\pm$\,5 \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 66.8\,$\pm$\,1.6} & {\fontseries{b}\selectfont 810\,$\pm$\,150} & {\fontseries{b}\selectfont 1{,}450\,$\pm$\,40} \\
+\quad random flavor boundary & {\fontseries{b}\selectfont 65.9\,$\pm$\,1.9} & {\fontseries{b}\selectfont 770\,$\pm$\,120} & {\fontseries{b}\selectfont 1{,}413\,$\pm$\,27} \\
+\quad random partitions & {\fontseries{b}\selectfont 69\,$\pm$\,4} & {\fontseries{b}\selectfont 920\,$\pm$\,190} & {\fontseries{b}\selectfont 1{,}490\,$\pm$\,60} \\
+random network & 6.4\,$\pm$\,0.4 & 7.3\,$\pm$\,1.0 & 13.6\,$\pm$\,2.1 \\
 \bottomrule
 \end{tabular*}
 \end{table}

@@ -115,7 +115,8 @@ the \Kfull-class model (appendix~\ref{sec:app-sculpt}).
 The resonance benchmark repeats Sophon's~\cite[section~III]{sophon} at every label set, on samples of % CHECK: pending XbxMx and the spin and production of the staged samples (Sophon: spin-0)
 a resonance $X$ decaying to $b\bar b$ or to $bs$, with the background, mass window and metrics of
 section~\ref{sec:evaluation}; figure~\ref{fig:f11} gives the resonance mass, the mass window and the
-numbers of jets. The transfer heads are trained on QCD jets from files that no pretraining run read,
+numbers of jets. The transfer heads are trained on QCD jets from files that no pretraining run trained or validated on (the pretraining
+reweighting histograms read them),
 drawn to match the signal in $p_{\mathrm{T}}$ and $\msd$, so no jet seen in pretraining enters
 the benchmark, and every model is scored on the same signal and QCD jets. Figure~\ref{fig:f11} draws
 $\epsS/\sqrt{\epsB}$ of equation~(\ref{eq:signif}), the reach of a selection without event

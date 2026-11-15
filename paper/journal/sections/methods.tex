@@ -31,7 +31,8 @@ Training jets are drawn with Sophon's reweighting, which gives each of Sophon's 
 same distribution in $(p_{\mathrm T}, \msd)$ in order to avoid sculpting the background mass
 distribution~\cite[Sec.~II]{sophon}. The categories are fixed by the JetClass-II classes and not by the label
 set, so which jets are drawn, and how often, is the same for every label set. Every linear probe and every
-fine-tuning on JetClass-II uses jets from files that no pretraining run read.
+fine-tuning on JetClass-II uses jets from files that no pretraining run trained or validated on; only the pretraining
+reweighting histograms read them.
 
 The network is Sophon's~\cite{sophon}, built on the Particle Transformer (ParT) architecture~\cite{part}. It has
 \DesignParticleBlocks{} particle-attention blocks, whose attention carries a bias computed from pairwise

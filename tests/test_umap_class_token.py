@@ -190,7 +190,11 @@ def test_the_gallery_has_five_umap_pages_none_in_the_paper():
     # then the supplement's further grids from umap_v3 (round 3, L19): X->bb and X->bs against QCD, and the mass
     # networks under their label sets on every task (gallery_labelset.UMAP_MORE)
     mass = [f"UMAP-mass-{p.removeprefix('UMAP-')}" for p in (new[1], new[0], *new[2:])] + ["UMAP-mass-xbx"]
-    assert [p for p in order if p.startswith("UMAP")] == [new[1], new[0], *new[2:], "UMAP-xbx", *mass]
+    # PI 2026-11-14 (step 5): the appendix holds two grids that cover every task (frozen, fine-tuned), and every
+    # per-task grid, the hadronic JetClass-II one first, is in the supplement
+    assert [p for p in order if p.startswith("UMAP")] == ["UMAP-frozen", "UMAP-ft", new[1], new[0], *new[2:], "UMAP-xbx",
+                                                          *mass]
+    assert _assigned(fig / "gallery_labelset.py", "UMAP_TASKS")["UMAP-frozen"][1][0] == ("two_prong", "JetClass-II")
     assert not [p for p in paper if p.startswith("UMAP")]
     pages = _assigned(fig / "gallery_labelset.py", "UMAP_PAGES")
     assert list(pages) == new

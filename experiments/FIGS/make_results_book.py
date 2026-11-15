@@ -45,6 +45,9 @@ M = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(M)
 TABLE_FILE = {M.CAPTIONS[k][0]: n for k, n, *_ in M.PLACEHOLDERS + M.LONGTABLES}
 TIERS = {t: [k for k, tier, _ in G.FIGURES if tier == t] + [k for k, tier, _ in G.TABLES if tier == t] for t in G.TIERS}
+# PI 2026-11-14 (step 6): the appendix by family, figures and tables together, each family under a one-line heading
+TIERS[G.APPENDIX] = [k for _, keys in G.APPENDIX_FAMILIES for k in keys]
+HEADING_OF = {keys[0]: family for family, keys in G.APPENDIX_FAMILIES}
 OUTPUTS = {"paper": ("results_book", (G.MAIN, G.APPENDIX)), "supplement": ("results_supplement", (G.SUPPLEMENT,)),
            "all": ("results_book_all", G.TIERS)}
 PREFIX = {G.MAIN: "", G.APPENDIX: "A", G.SUPPLEMENT: "S"}
@@ -104,10 +107,12 @@ def size(pdf: pathlib.Path) -> str:
 TEXT_W_CM = 15.0        # the paper's text width
 
 
-def figure(pid: str, rec: dict, src: pathlib.Path) -> str:
+def figure(pid: str, rec: dict, src: pathlib.Path, first: bool = False) -> str:
+    """first: the first item of an appendix family, whose heading has just started a page."""
     FIGS.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src / f"{pid}.pdf", FIGS / f"{pid}.pdf")
-    return (("\\clearpage\n" if height_cm(src / f"{pid}.pdf") > NEW_PAGE_CM else "") + "\\begin{figure}[H]\n\\centering\n"
+    return (("\\clearpage\n" if height_cm(src / f"{pid}.pdf") > NEW_PAGE_CM and not first else "")
+            + "\\begin{figure}[H]\n\\centering\n"
             f"\\includegraphics{size(src / f'{pid}.pdf')}{{../../figures/round4/{pid}.pdf}}\n"
             f"\\caption{{{tex_caption(rec['caption'])}}}\\label{{fig:{pid}}}\n\\end{{figure}}\n\\FloatBarrier\n")
 
@@ -180,6 +185,31 @@ def preamble(external: str | None = None) -> str:
             + (f"\\externaldocument{{{external}}}\n" if external else ""))
 
 
+def family_heading(family: str) -> str:
+    """The one-line heading of an appendix family (PI 2026-11-14, step 6)."""
+    return f"\\paragraph*{{{tex_caption(family.replace('Jet pT', 'Jet pT '))}}}\\mbox{{}}\n\n".replace("pT \\", "pT\\").replace(
+        " $p_{\\mathrm{T}}$ ", " $p_{\\mathrm{T}}$")
+
+
+def coverage_map() -> str:
+    """The coverage map on the appendix's first page (PI 2026-11-14, step 6): one row per family, the columns linear
+    probe (or frozen) and fine-tuned, each split into label sets, mass networks and partitions; each cell the numbers of
+    the paper's figures and tables, "does not apply" with the reason, or "supplement" (gallery_placement.coverage).
+    Unnumbered, above it the one rule for which networks a figure shows (gallery_placement.NETWORK_RULE)."""
+    cell = lambda t: tex_caption(t).replace("Fig. ", "Fig.~").replace("Figs. ", "Figs.~")  # noqa: E731
+    rows = [f"{tex_caption(family.replace('Jet pT', 'Jet pT '))} & " + " & ".join(cell(c) for c in cells) + " \\\\"
+            for family, cells in G.coverage()]
+    head = (" & \\multicolumn{3}{c}{" + G.MODE_NAMES[G.LP] + " or frozen} & \\multicolumn{3}{c}{"
+            + G.MODE_NAMES[G.FT] + "} \\\\\n\\cmidrule(lr){2-4}\\cmidrule(lr){5-7}\n family & "
+            + " & ".join(G.GROUP_NAMES[g] for g in G.GROUPS) + " & " + " & ".join(G.GROUP_NAMES[g] for g in G.GROUPS)
+            + " \\\\")
+    return ("\\noindent\\textbf{Where each result is.} " + tex_caption(G.NETWORK_RULE) + " Each cell gives the figures "
+            "and tables of the paper that show that group of networks in that mode, or says where it is.\n\n"
+            "\\begin{center}\\scriptsize\\setlength{\\tabcolsep}{2.5pt}\n"
+            "\\begin{tabular}{@{}>{\\raggedright\\arraybackslash}p{1.55cm}*{6}{>{\\raggedright\\arraybackslash}p{2.05cm}}@{}}\n\\toprule\n" + head + "\n\\midrule\n"
+            + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n\\end{center}\n\\clearpage\n")
+
+
 def tier_start(tier: str) -> str:
     """Each tier starts a page and numbers its figures and tables with its prefix (none in the main text)."""
     p = PREFIX[tier]
@@ -215,14 +245,18 @@ def build(src: pathlib.Path, which: str) -> str:
     n_fig = n_tab = n_box = 0
     for tier in tiers:
         out.append(tier_start(tier))
+        if tier == G.APPENDIX:
+            out.append(coverage_map())
         for item in TIERS[tier]:
+            if tier == G.APPENDIX and item in HEADING_OF:      # a family starts a page, its heading on top (step 6)
+                out.append("\\clearpage\n" + family_heading(HEADING_OF[item]) + "\\nopagebreak\n")
             if item.startswith("tab:"):
                 out.append(table_item(item, tier))
                 n_tab += 1
             elif recs.get(item, {}).get("drawn"):
                 if item in G.PROVISIONAL:
                     print(f"note: {item} is provisional ({G.PROVISIONAL[item]}); set as placed")
-                out.append(figure(item, recs[item], src))
+                out.append(figure(item, recs[item], src, first=tier == G.APPENDIX and item in HEADING_OF))
                 n_fig += 1
             elif item in G.PROVISIONAL:
                 print(f"note: {item} is provisional ({G.PROVISIONAL[item]}) and not drawn in {src}; a box keeps its number")

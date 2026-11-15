@@ -661,10 +661,11 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
     # features of every network, the random network last
     lines = t.splitlines()
     head, mlp = (lines.index(M._full_row(3, M.HEADING[k], italic=True)) for k in ("head", "mlp"))
-    assert lines.index("soft-drop mass & 0.200 & 1.05 \\\\") < head < mlp and lines[head - 1] == lines[mlp - 1] == r"\midrule"
+    # PI 2026-11-14 (audit 3, L5): the soft-drop mass, a reference, last, below a rule
+    assert head < mlp < lines.index("soft-drop mass & 0.200 & 1.05 \\\\") and lines[head - 1] == lines[mlp - 1] == r"\midrule"
     assert [ln.split(" & ")[0] for ln in lines[head + 1:mlp - 1]] == [M.LABEL[a] for a in M.MASS]
     assert lines[head + 1] == M.LABEL["L162_MASS"] + r" & 0.1170\,$\pm$\,0.0014 & 0.995 \\"
-    assert [ln.split(" & ")[0] for ln in lines[mlp + 1:-2]] == [M.LABEL[a] for a in M.MASS_ROWS]
+    assert [ln.split(" & ")[0] for ln in lines[mlp + 1:-4]] == [M.LABEL[a] for a in M.MASS_ROWS]
     # each mass network directly under its own label set (L5)
     assert M.MASS_ROWS == M.SETS + (M.INIT,) and "mass" not in M.MODES
     assert M.LABEL["L162_MASS"] + " & 0.150 & 1.00 \\\\" in lines[mlp:]        # equal runs: fmt_pm's common value
@@ -1005,7 +1006,7 @@ def test_the_models_without_a_balanced_nonlinear_probe_read_natural_composition(
     t = M.table_mlp(mlp, runs, MT.fmt_pm, rows, nat=nat)
     assert r"\pending" not in t
     blocks = t.split("%SPLIT%")
-    assert len(blocks) == 4 and "natural-composition" in blocks[3]
+    assert len(blocks) == 4 and "mixed test sample" in blocks[3]       # PI 2026-11-14: the mixed test sample
     assert next(ln for ln in blocks[0].splitlines() if ln.startswith(M.LABEL["L162_MASS"])).split(" & ")[1:5] == ["--"] * 4
     assert not any(ln.startswith(M.LABEL["L162_MASS"]) for b in blocks[1:3] for ln in b.splitlines())
     assert next(ln for ln in blocks[3].splitlines() if ln.startswith(M.LABEL["RAND2_p1"])).split(" & ")[2] == M._lone(1.25)
@@ -1629,7 +1630,8 @@ def test_a_standard_deviation_is_rounded_to_one_significant_figure_or_two_if_the
     assert M._sd_place(0.97) == 1 and M._sd_place(0.0096) == 3 and M._sd_place(96.0) == -1
     assert _column(M.TAB(10.42, 0.97)) == [r"10.4\,$\pm$\,1.0"]
     assert _column(M.TAB(0.7153, 0.0096)) == [r"0.715\,$\pm$\,0.010"]
-    assert _column(M.TAB(0.7153, 0.0024)) == [r"0.715\,$\pm$\,0.002"]            # the mean at the SD's place
+    # PI 2026-11-14: per cell as the PDG rounds, two figures for an SD whose leading digits are at most 354
+    assert _column(M.TAB(0.7153, 0.0024)) == [r"0.7153\,$\pm$\,0.0024"]          # the mean at the SD's place
     assert _column(M.TAB(0.7153, 0.0149)) == [r"0.715\,$\pm$\,0.015"]
     assert _column(M.TAB(1602.0, 81.0)) == [r"1{,}600\,$\pm$\,80"] and _column(M.TAB(1602.0, 151.0)) == [r"1{,}600\,$\pm$\,150"]
 
@@ -1647,17 +1649,20 @@ def test_a_table_column_prints_at_one_precision_its_standard_deviations_included
     assert M.V4.TOK_OPEN not in t
     # column a: the SDs 6.3, 1.2, 7.0 (the zero left out), median 6.3: units. Column b: 0.0024, 0.0049, 0.0071,
     # median 0.0049: three decimals, also for the single run
-    assert r"x & 312\,$\pm$\,6 & 0.715\,$\pm$\,0.002 \\" in t and r"y & 308\,$\pm$\,1 & 0.712\,$\pm$\,0.005 \\" in t
+    # PI 2026-11-14: a mean +- SD is rounded per cell as the PDG rounds; a single run keeps the column's place
+    assert r"x & 312\,$\pm$\,6 & 0.7153\,$\pm$\,0.0024 \\" in t and r"y & 307.7\,$\pm$\,1.2 & 0.712\,$\pm$\,0.005 \\" in t
     assert rf"z & 301{M.AGREE} & 0.715\,$\pm$\,0.007 \\" in t and rf"w & 295\,$\pm$\,7 & 0.700{M.SINGLE} \\" in t
     assert M.AGREE == r"$^{\P}$" and M.SINGLE == r"$^{\S}$"
     # one digit finer for the whole column where an SD would print as zero (the brief's example, 0.98560 +- 0.00004):
     # median 0.0002, four decimals, where 0.00004 prints as 0.0000
+    # PI 2026-11-14: per cell as the PDG rounds, so each SD at its own one or two figures
     assert _column(T(0.98560, 0.00004), T(0.9841, 0.0003), T(0.9838, 0.0002)) == [
         r"0.98560\,$\pm$\,0.00004", r"0.98410\,$\pm$\,0.00030", r"0.98380\,$\pm$\,0.00020"]
-    assert _column(T(0.9841, 0.0003), T(0.9838, 0.0002)) == [r"0.9841\,$\pm$\,0.0003", r"0.9838\,$\pm$\,0.0002"]
+    assert _column(T(0.9841, 0.0003), T(0.9838, 0.0002)) == [r"0.98410\,$\pm$\,0.00030", r"0.98380\,$\pm$\,0.00020"]
     # one digit, not more: an SD still zero one digit finer prints the value with the agreement mark
+    # PI 2026-11-14: per cell as the PDG rounds, so no SD prints as zero and no agreement mark is needed here
     assert _column(T(0.7153, 0.0024), T(0.7120, 0.0049), T(0.9760, 0.00003)) == [
-        r"0.7153\,$\pm$\,0.0024", r"0.7120\,$\pm$\,0.0049", "0.9760" + M.AGREE]
+        r"0.7153\,$\pm$\,0.0024", r"0.712\,$\pm$\,0.005", r"0.97600\,$\pm$\,0.00003"]
     assert _column(T(0.9760, 0.00003)) == [r"0.97600\,$\pm$\,0.00003"]           # alone: its own place
     # never past MAX_DECIMALS: an AUC that is 1 to seven digits
     assert M.MAX_DECIMALS == 5 and _column(T(0.99999946, 0.0000005)) == ["1.00000" + M.AGREE]
@@ -1693,7 +1698,7 @@ def test_the_mark_sentences_follow_the_marks_a_printed_table_carries():
     assert [mark for mark, _ in M.MARK_NOTES] == [M.SINGLE, M.AGREE]
     # the mark tied to "marks" by a non-breaking space, so that it never ends a line alone (round 2, package 3)
     assert single == r" $^{\S}$~marks a value from a single run."
-    assert agree == r" $^{\P}$~marks a value whose runs agree to the digits shown."
+    assert agree == r" $^{\P}$~marks a run spread below the last digit shown."
     assert M._mark_notes("Cap.", "a & 1") == "Cap."
     assert M._mark_notes("Cap.", "a & 1" + M.SINGLE) == "Cap." + single
     assert M._mark_notes("Cap.", "a & 1" + M.AGREE + " & 2" + M.SINGLE) == "Cap." + single + agree
@@ -2072,7 +2077,7 @@ def test_an_auc_that_rounds_to_one_prints_as_more_than_0_9999_and_leaves_its_col
     assert M.V4.TOK_OPEN in row(raw, M.LABEL["R16_Q1"])[1] and M.V4.TOK_OPEN not in row(raw, M.LABEL["L188"])[1]
     t = M.uniform_columns(raw)
     # the column's place comes from the one SD left in it (0.0003: four decimals), not from the near-one cells
-    assert [row(t, M.LABEL[a])[1] for a in runs] == [M.NEAR_ONE, M.NEAR_ONE + M.SINGLE, r"0.9992\,$\pm$\,0.0003"]
+    assert [row(t, M.LABEL[a])[1] for a in runs] == [M.NEAR_ONE, M.NEAR_ONE + M.SINGLE, r"0.99920\,$\pm$\,0.00028"]
     assert row(t, M.LABEL["L162"])[2] == "0.9000" + M.SINGLE and row(t, M.LABEL["L188"])[2] == "0.9000" + M.AGREE
     assert M.load_pairs_ft(DATA.parent / "no_such_dir") == {}
 
@@ -2104,7 +2109,8 @@ def test_the_sculpting_bootstrap_table_reads_the_l3_block_and_refuses_another_si
     assert "sculpt_boot" not in M.BOLD                 # a table of differences and their sigma: never bold
     # the working points in tab:sculpt's order (round-1 fix 2026-11-13): 10% and 1% QCD efficiency, then 50% signal
     assert [wp for wp, _ in M.SCULPT_BOOT_WPS] == ["eps_b=0.1", "eps_b=0.01", "eps_s=0.5"]
-    assert rows[1] == M.LABEL["R16_Q1"] + " $-$ " + M.LABEL["L188"] + r" & 1.22 & 0.20 & 0.30 & 0.10 & 3.26 \\"
+    # PI 2026-11-14: the distances unscaled, as tab:sculpt and the figures print them
+    assert rows[1] == M.LABEL["R16_Q1"] + " $-$ " + M.LABEL["L188"] + r" & 0.0122 & 0.0020 & 0.0030 & 0.0010 & 3.26 \\"
     assert r"$^{\dagger}$" not in "\n".join(t)
     # recomputed from the per-run distances: the file's numbers agree, and a changed run is fatal
     dist = {"mtx-l188-s1": 0.040, "mtx-l188-s2": 0.044, "mtx-r16q1-s1": 0.052, "mtx-r16q1-s2": 0.058}
@@ -2159,12 +2165,12 @@ def test_the_sculpting_bootstrap_table_is_the_l3_file_recomputed_from_the_per_ru
     sculpt = {k.removesuffix("_sculpting"): v for k, v in M._load(DATA / "head/sculpting_v3").items()}
     body = M.table_sculpt_boot(doc, runs, sculpt)       # the recomputation stops the build on a mismatch
     tex = (ROOT / "paper/journal/tables/mlst_sculpt_boot.tex").read_text()
-    num = lambda v: f"{v:.2f}".replace("-", "$-$")       # noqa: E731
+    num = lambda v: f"{v:.4f}".replace("-", "$-$")       # noqa: E731
     for name, d in doc["differences"].items():
         for wp, _ in M.SCULPT_BOOT_WPS:
             q = d["l3"][wp]["distance"]
             assert not q["pass"] and abs(q["z"]) < 3, (name, wp)
-            assert " & ".join(num(1e2 * q[k]) for k in ("delta", "sd_config", "sd_reference", "boot_sd")) in body
+            assert " & ".join(num(q[k]) for k in ("delta", "sd_config", "sd_reference", "boot_sd")) in body
     assert len([ln for ln in tex.splitlines() if " $-$ " in ln]) == len(doc["differences"]) * len(M.SCULPT_BOOT_WPS)
     assert "run SD, first & run SD, second & bootstrap SD" in tex and r"$^{\dagger}$" not in tex
 
@@ -2190,7 +2196,7 @@ def test_the_results_book_is_the_gallery_placement_and_boxes_only_provisional_it
         (tmp_path / "tables" / f"{B.TABLE_FILE[lab]}.tex").write_text(
             "\\begin{table}[t]\n\\caption{c}\\label{" + lab + "}\n\\begin{tabular}{l}a\\end{tabular}\n\\end{table}\n")
     monkeypatch.setattr(B, "PAPER", tmp_path)
-    monkeypatch.setattr(B, "figure", lambda pid, rec, src: f"% figure {pid}\n")
+    monkeypatch.setattr(B, "figure", lambda pid, rec, src, first=False: f"% figure {pid}\n")
     monkeypatch.setattr(G, "PROVISIONAL", {"F11": "waits", "tab:mass": "waits"})
     (tmp_path / "tables" / f"{B.TABLE_FILE['tab:mass']}.tex").write_text(
         "\\begin{table}[t]\n\\caption{c}\\label{tab:mass}\n\\begin{tabular}{l}\\pending{x}\\end{tabular}\n\\end{table}\n")
@@ -2406,7 +2412,7 @@ def test_both_resonance_tables_have_the_same_rows_and_the_rejection_table_shows_
     # one X->bb seed from scratch beside three X->bs seeds: the single run's values carry the mark
     one = [M.uniform_columns(pg) for pg in M.table_xbx_rej({}, {"xbb": scr["xbb"][:1], "xbs": scr["xbs"]}, runs, M.TAB).split("%SPLIT%")]
     assert one[0].splitlines()[-3].rstrip(r" \\").split(" & ")[1:] == ["300" + M.SINGLE, "900" + M.SINGLE] + ["--"] * 4
-    assert one[1].splitlines()[-3].rstrip(r" \\").split(" & ")[1:] == [r"203\,$\pm$\,3", r"610\,$\pm$\,10", "--", "--"]
+    assert one[1].splitlines()[-3].rstrip(r" \\").split(" & ")[1:5] == [r"203.3\,$\pm$\,3.3", r"610\,$\pm$\,10", "--", "--"]
     assert not any(M.SINGLE in M.uniform_columns(pg) for pg in pages)       # three seeds each: no mark
     # the closest-class output on its own (supplement) table, without from scratch
     node = M.table_xbx_rej({}, scr, runs, M.TAB, M.XBX_NODE_PAGES)
@@ -2544,15 +2550,16 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     # JetClass: no R50 and R30 (the per-class rejections are tab:jetclassrej); training jets: the published 2 M, ours 1 M
     assert all(ln.endswith(r" & -- & -- \\") for ln in blocks["JetClass"])
     # bold (PI 2026-11-12): in each block's column the best value and every value within three standard deviations of
-    # it, a published value with the SD it prints (none: zero). Accuracy: ParT's 0.836 alone (ours 0.802 and 0.801
-    # +- 0.001). AUC: ParT's 0.9834 and both of ours (0.982 and 0.981 +- 0.001), not ParticleNet's 0.9820
-    assert row("JetClass", r"ParT~\cite{part}") == [r"ParT~\cite{part}", r"2.14\,M", r"2\,M", B("0.836"), B("0.9834"), "--", "--"]
+    # it, a published value with the SD it prints; A3 (PI 2026-11-14): one printed without an uncertainty is never bold,
+    # so ParT's 0.836 and 0.9834 are light, and ours (0.982 and 0.981 +- 0.001) compete with each other
+    assert row("JetClass", r"ParT~\cite{part}") == [r"ParT~\cite{part}", r"2.14\,M", r"2\,M", "0.836", "0.9834", "--", "--"]
     assert row("JetClass", scratch)[4] == B(r"0.9820\,$\pm$\,0.0010") and row("JetClass", ft)[4] == B(r"0.9810\,$\pm$\,0.0010")
     assert M.BOLD_ON not in " & ".join(row("JetClass", r"ParticleNet~\cite{part}"))
     # the parameters and the training jets are counts: never bold
     assert not any(M.BOLD_ON in c for v in blocks.values() for ln in v for c in ln.split(" & ")[:3])
     assert row("JetClass", scratch)[1:3] == [r"2.21\,M", r"1\,M"] and row("JetClass", ft)[1:3] == [r"2.21\,M", r"1\,M"]
-    assert row("JetClass", scratch)[3] == r"0.8020\,$\pm$\,0.0010" and row("JetClass", ft)[3] == r"0.8010\,$\pm$\,0.0010"
+    # with ParT's 0.836 out of the rule (no uncertainty), our two rows are the best and within 3 SD of each other
+    assert row("JetClass", scratch)[3] == B(r"0.8020\,$\pm$\,0.0010") and row("JetClass", ft)[3] == B(r"0.8010\,$\pm$\,0.0010")
     # top and quark/gluon: the task's training set, a dash for an observable that is not trained; the published values
     # as their papers print them, ours at one precision per column of the block
     assert row("top tagging", r"ParT~\cite{part}") == [r"ParT~\cite{part}", r"2.14\,M", r"1.2\,M", "0.940", "0.9858",
@@ -2561,8 +2568,10 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     assert row("quark/gluon tagging", r"constituent multiplicity~\cite{efn}")[1:] == ["--", "--", "--", "0.8401", "19.0", "--"]
     assert row("quark/gluon tagging", r"ParT~\cite{part}")[2] == r"1.6\,M" and row("quark/gluon tagging", ft)[2] == r"1.6\,M"
     agree = lambda x: x + M.AGREE      # noqa: E731  three runs with one accuracy and AUC in the fixture
-    assert row("top tagging", scratch) == [scratch, r"2.21\,M", r"1.2\,M", agree("0.9400"), agree("0.9860"),
-                                           r"50\,$\pm$\,10", r"1{,}400\,$\pm$\,10"]
+    # A3 (PI 2026-11-14): the published values print no uncertainty here, so the AUC is decided among our two rows
+    assert row("top tagging", scratch)[:3] == [scratch, r"2.21\,M", r"1.2\,M"] and row("top tagging", scratch)[3] == agree("0.9400")
+    assert row("top tagging", scratch)[4] in (agree("0.9860"), B("0.9860") + M.AGREE)
+    assert row("top tagging", scratch)[5:] == [r"50\,$\pm$\,10", r"1{,}400\,$\pm$\,10"]
     assert row("top tagging", ft)[5:] == [r"460\,$\pm$\,10", r"1{,}810\,$\pm$\,10"]
     # the kinematic-only network: one run, every value marked, at the column's place; a one-run diagnostic outside the
     # network list, so never bold (NEVER_BOLD, page review 2026-11-13: its SD of zero made its R50 of 950 bold)
@@ -2572,9 +2581,10 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     # the best values of the block are published ones (named in words, round-1 fix: no "f.t."): L-GATr's accuracy,
     # OmniLearned-l's AUC and R30 (3,486 +- 157; 2,894 +- 84 is 592 away, more than three times 178), and the R50 of
     # ParT fine-tuned (691 +- 15), with MIParT-L's, L-GATr's and OmniLearned-l's within three standard deviations
-    assert row("top tagging", r"L-GATr, fine-tuned~\cite{lgatr}")[3:] == [B("0.9446"), "0.9879", B(r"651\,$\pm$\,11"),
+    # A3 (PI 2026-11-14): a published accuracy or AUC printed without an uncertainty is never bold
+    assert row("top tagging", r"L-GATr, fine-tuned~\cite{lgatr}")[3:] == ["0.9446", "0.9879", B(r"651\,$\pm$\,11"),
                                                                           r"2{,}894\,$\pm$\,84"]
-    assert row("top tagging", r"OmniLearned-l~\cite{omnilearned}")[3:] == ["0.944", B("0.9880"), B(r"688\,$\pm$\,9"),
+    assert row("top tagging", r"OmniLearned-l~\cite{omnilearned}")[3:] == ["0.944", "0.9880", B(r"688\,$\pm$\,9"),
                                                                           B(r"3{,}486\,$\pm$\,157")]
     assert row("top tagging", r"ParT, fine-tuned~\cite{part}")[5] == B(r"691\,$\pm$\,15")
     assert row("top tagging", r"MIParT-L, fine-tuned~\cite{mipart}")[5] == B(r"640\,$\pm$\,10")
@@ -2604,7 +2614,8 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     assert f.count(r"\newpage") == 1 and f.index("top tagging} \\\\") < f.index(r"\newpage") < f.index("(continued)}")
     assert M.BOLD["published"]["of"] == "their column and task"
     assert f.count(M.BOLD_NOTE.format("their column and task")) == 1 and M.BOLD_NOTE.format("their column") not in f
-    assert f.count(M.NONE_NOTE) == 1 and "The network on kinematic inputs only is a reference, never bold." in f
+    assert f.count(M.NONE_NOTE) == 0 and f.count(M.PUBLISHED_NONE_NOTE) == 1      # the single run is a reference row
+    assert "The kinematic-inputs network is a reference, never bold." in f
     assert r"\textbf" not in f and f.count(M.BOLD_ON) == t.count(M.BOLD_ON) > 0
 
 
@@ -2801,8 +2812,8 @@ def test_the_mass_table_head_block_reads_the_regression_output_over_all_jets_inc
     lines = M.table_mass(atlas, runs, M.TAB).splitlines()
     head, mlp = (lines.index(M._full_row(3, M.HEADING[k], italic=True)) for k in ("head", "mlp"))
     tok = M.V4.tok
-    # the soft-drop mass once, above both blocks: a property of the jets, no run and no mark
-    assert lines[4] == "soft-drop mass & " + tok("o", 0.2448) + " & " + tok("o", 0.9294) + r" \\" and lines[5] == r"\midrule" and head == 6
+    # the soft-drop mass once, below both blocks (a reference, last; L5): a property of the jets, no run and no mark
+    assert lines[-3] == "soft-drop mass & " + tok("o", 0.2448) + " & " + tok("o", 0.9294) + r" \\" and lines[-4] == r"\midrule" and head == 4
     assert sum(ln.startswith("soft-drop mass") for ln in lines) == 1
     assert lines[head + 1] == M.LABEL["L162_MASS"] + " & " + M._cell([0.1461, 0.1473], 2, M.TAB) + " & " + M._cell([0.99, 1.01], 2, M.TAB) + r" \\"
     assert lines[head + 2] == M.LABEL["R16_Q1_MASS"] + r" & \pending{no run yet} & \pending{no run yet} \\" and mlp == head + 4
@@ -2846,10 +2857,11 @@ def _caption_and_body(tex: str) -> tuple:
 
 def test_the_paper_has_twenty_tables_and_the_task_tables_are_placed_nowhere():
     tables = _paper_tables()
-    assert list(tables) == ["tab:summary", "tab:published", "tab:mass", "tab:xbx", "tab:summaryauc", "tab:probes",
-                            "tab:probesn", "tab:fill", "tab:inputs", "tab:partrepro", "tab:lrsweep", "tab:jetclassrej",
-                            "tab:jc1_class_auc", "tab:labelsets", "tab:ft", "tab:pairs", "tab:sculpt", "tab:sculptboot",
-                            "tab:masseffect", "tab:xbxrej"]
+    # PI 2026-11-14 (steps 5, 6): the appendix by family; tab:sculptboot in the supplement
+    assert list(tables) == ["tab:summary", "tab:published", "tab:mass", "tab:xbx", "tab:summaryauc", "tab:jc1_class_auc",
+                            "tab:jetclassrej", "tab:pairs", "tab:probesn", "tab:ft", "tab:probes", "tab:labelsets",
+                            "tab:masseffect", "tab:sculpt", "tab:xbxrej", "tab:inputs", "tab:fill", "tab:partrepro",
+                            "tab:lrsweep"]
     assert tables["tab:summaryauc"][1].name == "mlst_summary_auc.tex" and tables["tab:masseffect"][1].name == "mlst_masseffect.tex"
     assert tables["tab:published"][1].name == "mlst_published.tex" and tables["tab:labelsets"][1].name == "mlst_labelsets.tex"
     assert all(k in M.CAPTION_SHORT for k, _ in tables.values())                   # each prints its short caption
@@ -2898,7 +2910,8 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
     assert M.AUC_OVR == ("AUC is the area under the receiver operating characteristic curve, averaged over the classes, each "
                          "against the rest.")
     assert "averaged on JetClass-II and JetClass over the classes, each against the rest." in M.printed_caption("summary_auc")
-    assert "averaged over class pairs" not in M.printed_caption("published")
+    # audit 3 (B): ParT's JetClass AUC is the class-pair average, equal to ours on equal class sizes, and says so
+    assert "average over class pairs" in M.printed_caption("published")
     assert "on JetClass averaged over the classes, each against the rest" in M.printed_caption("published")
     # the sentence on the Particle Transformer paper's average over class pairs is in the JetClass tables' captions
     assert M.AUC_JC.strip() in M.printed_caption("jetclass_all") and "Particle Transformer paper" in M.AUC_JC
@@ -3001,19 +3014,23 @@ def test_the_generated_paper_tables_follow_the_table_rules():
     # network is the recomputed one, named by the common name, its caption says so); Sophon in the headline tables (on
     # JetClass-II and JetClass) and in tab:probes
     bn, sophon = M.LABEL[M.INIT_BN] + " & ", M.LABEL[M.SOPHON] + " & "
-    assert {lab for lab in tables if bn in read(lab)} == {"tab:pairs"}
-    assert M.LABEL[M.INIT] + " & " in read("tab:fill") and "batch-normalization statistics recomputed" in read("tab:fill")
+    # PI 2026-11-14: "random network" is the initialized one everywhere; the recomputed one keeps its own name
+    assert {lab for lab in tables if bn in read(lab)} == {"tab:pairs", "tab:fill"}
+    assert M.LABEL[M.INIT] + " & " not in read("tab:fill") and "BatchNorm recomputed means" in read("tab:fill")
     assert {lab for lab in tables if sophon in read(lab)} == {"tab:summary", "tab:summaryauc", "tab:probes"}
     # tab:mass: the soft-drop mass, the head block (two networks), the perceptron block (seven)
     mass = read("tab:mass").splitlines()
     head, mlp = (mass.index(M._full_row(3, M.HEADING[k], italic=True)) for k in ("head", "mlp"))
-    assert mass[head - 2].startswith("soft-drop mass & ") and mlp - head == 4 and mass[mlp + 8] == r"\bottomrule"
+    # the soft-drop mass, a reference, last (L5)
+    assert mass[mlp + 9].startswith("soft-drop mass & ") and mlp - head == 4 and mass[mlp + 10] == r"\bottomrule"
     # the coarse targets and the b-tagging discriminant left the paper for the supplement (L13), where they are
     # restored (round 3, package 1; with their whole copies): placed and written there, with their pooled
     # random-partitions row
     assert not {"tab:coarse", "tab:qcdhf"} & set(tables)
     G = _load("gallery_placement_coarse_t", "experiments/FIGS/figstyle/gallery_placement.py")
-    assert all(G.TIER[k] == G.TIER[k + "full"] == G.SUPPLEMENT for k in ("tab:coarse", "tab:qcdhf"))
+    # tab:qcdhf repeated every row of tab:qcdhffull (audit 3, 2026-11-14): only the whole copy is placed
+    assert G.TIER["tab:coarse"] == G.TIER["tab:coarsefull"] == G.TIER["tab:qcdhffull"] == G.SUPPLEMENT
+    assert "tab:qcdhf" in G.DROPPED_TABLES
     for k, f in (("coarse", "mlst_coarse"), ("qcdhf", "mlst_qcdhf")):
         assert (k, f) in [(a, b) for a, b, *_ in M.PLACEHOLDERS]
         tex = (ROOT / "paper/journal/tables" / f"{f}.tex").read_text()
@@ -3077,7 +3094,7 @@ def test_a_bold_value_is_in_the_bold_series_that_is_not_extended_and_its_mark_st
     assert M.BOLD_ON == r"{\fontseries{b}\selectfont " and M._b("0.94") == r"{\fontseries{b}\selectfont 0.94}"
     assert r"\textbf" not in M.BOLD_ON and M.BOLD_SIGMA == 3.0
     # _render: an upper-case token kind is the lower-case one printed bold
-    pm = r"0.50\,$\pm$\,0.01"
+    pm = r"0.500\,$\pm$\,0.010"          # PI 2026-11-14: per cell as the PDG rounds
     assert M._render("p", [0.5, 0.01], 2) == pm and M._render("P", [0.5, 0.01], 2) == M._b(pm)
     assert M._render("s", [0.94], 4) == "0.9400" + M.SINGLE and M._render("S", [0.94], 4) == M._b("0.9400") + M.SINGLE
     assert M._render("p", [0.5, 0.0], 3) == "0.500" + M.AGREE and M._render("P", [0.5, 0.0], 3) == M._b("0.500") + M.AGREE
@@ -3105,7 +3122,7 @@ def test_bold_marks_the_best_value_of_a_column_and_every_value_within_three_stan
     Never bold: the random networks and the released checkpoint (reference rows, which are not the best either), a
     number that is no run's, a plain number in a table without published rows, a dash."""
     T, tok, lab = M.TAB, M.V4.tok, M.LABEL
-    assert M.NEVER_BOLD == (lab[M.INIT], lab[M.INIT_BN], lab["KIN"], lab[M.SOPHON])
+    assert M.NEVER_BOLD == (lab[M.INIT], lab[M.INIT_BN], lab["KIN"], lab[M.SOPHON], M.SCRATCH_LABEL)
     rows = [f"{lab['L188']} & {T(100.0, 2.0)} & 7 & -- \\\\",                    # the best
             f"{lab['L162']} & {T(95.0, 1.0)} & 9 & -- \\\\",                     # 5 <= 3 sqrt(1 + 4) = 6.7
             f"{lab['R42_Q1']} & {T(93.0, 1.0)} & 8 & {T(5.0, 1.0)} \\\\",        # 7 > 6.7
@@ -3181,8 +3198,9 @@ def test_bold_is_decided_in_each_block_of_a_column_and_the_partitions_subheading
              M._full_row(3, M.HEADING["ft"], italic=True),
              f"x & 300 & {T(0.50, 0.01)} \\\\", f"z & 400 & {T(0.30, 0.01)} \\\\"]
     assert M.BOLD["jetclass_rej"] == {"whole": True, "published": True, "skip": (1,)}
-    # 0.51 is the best (published: no SD, zero); x is 0.01 from it, within 3 * 0.01; column 1 (training jets) is skipped
-    assert _chosen_bold("jetclass_rej", _frame(whole, 2)) == {(r"ParT~\cite{part}", 2), ("x", 2)}
+    # A3 (PI 2026-11-14): a published value without an uncertainty is never bold and sets no best, so x is the best;
+    # column 1 (training jets) is skipped
+    assert _chosen_bold("jetclass_rej", _frame(whole, 2)) == {("x", 2)}
     # a table of blocks in its caption's words: these keys (tab:published names its own words, "of")
     assert {k for k, v in M.BOLD.items() if v.get("blocks")} == {"summary", "summary_auc", "pairs", "probes_n", "ft",
                                                                  "jc1_class_auc", "mass"}
@@ -3209,18 +3227,17 @@ def test_a_published_value_takes_part_in_bold_with_the_standard_deviation_it_pri
             r"D~\cite{d} & 1\,k & -- & 3{,}000 & 0.9877 \\",                       # see below
             rf"from scratch (this work) & 2.21\,M & 1.2\,M & {T(461.0, 4.0)} & {tok('s', 0.9878)} \\"]
     block = "\n".join(rows[:3] + rows[4:])
-    # R50: 691 +- 15 and 640 +- 10. AUC: the published 0.9878 and our single run at 0.9878 (both SD zero, equal), not
-    # 0.9877
-    assert _chosen_bold("published", block) == {(r"A~\cite{a}", 3), (r"B~\cite{b}", 3), (r"B~\cite{b}", 4),
-                                                ("from scratch (this work)", 4)}
+    # R50: 691 +- 15 and 640 +- 10. AUC: the published values print no uncertainty, so they are never bold (A3, PI
+    # 2026-11-14), and our single run is then the column's only value: no bold
+    assert _chosen_bold("published", block) == {(r"A~\cite{a}", 3), (r"B~\cite{b}", 3)}
     out = M._bold("published", block).split("\n")
-    assert out[1] == r"B~\cite{b} & 2.38\,M & 1.2\,M & " + M._b(r"640\,$\pm$\,10") + " & " + M._b("0.9878") + r" \\"
-    assert out[2] == rows[2] and M.V4.tok("S", 0.9878) in out[3] and T(461.0, 4.0) in out[3]
-    # a published value without a printed SD has SD zero: 3,000 (thousands separator read) is the best alone
-    assert _chosen_bold("published", "\n".join(rows)) == {(r"D~\cite{d}", 3), (r"B~\cite{b}", 4), ("from scratch (this work)", 4)}
-    # plain numbers in the count columns are never bold, in the value columns they are
-    assert _chosen_bold("published", "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\") == {("x", 3)}
-    assert _chosen_bold("jetclass_rej", "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\") == {("x", 2), ("x", 3)}
+    assert out[1] == r"B~\cite{b} & 2.38\,M & 1.2\,M & " + M._b(r"640\,$\pm$\,10") + r" & 0.9878 \\"
+    assert out[2] == rows[2] and M.V4.tok("s", 0.9878) in out[3] and T(461.0, 4.0) in out[3]
+    # a published value without a printed SD (D's 3,000) is never bold and sets no best
+    assert _chosen_bold("published", "\n".join(rows)) == {(r"A~\cite{a}", 3), (r"B~\cite{b}", 3)}
+    # plain numbers without an uncertainty are never bold (A3, PI 2026-11-14), in count and value columns alike
+    assert _chosen_bold("published", "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\") == set()
+    assert _chosen_bold("jetclass_rej", "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\") == set()
     # without published rows a table's plain numbers take no part
     assert M._bold("xbx", "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\") == "x & 5 & 6 & 7 \\\\\ny & 4 & 5 & 6 \\\\"
 
@@ -3242,10 +3259,11 @@ def test_the_caption_says_what_bold_marks_once_and_only_where_a_cell_is_bold():
     rounding); none where no cell is bold or the table is not one of BOLD."""
     T, lab = M.TAB, M.LABEL
     col, blk = (M.BOLD_NOTE.format(x) for x in ("their column", "their column under their italic heading"))
-    assert col == (" Bold marks values within three standard deviations (both added in quadrature, before rounding) of "
-                   "the best in their column.")
-    assert blk == (" Bold marks values within three standard deviations (both added in quadrature, before rounding) of "
-                   "the best in their column under their italic heading.")
+    # A3 (PI 2026-11-14): the run spreads and, where stored, the test-jet bootstrap of the difference (L3)
+    assert col == (" Bold marks the best value in their column and those within three standard deviations (run "
+                   "spreads and any stored test-jet bootstrap).")
+    assert blk == (" Bold marks the best value in their column under their italic heading and those within three "
+                   "standard deviations (run spreads and any stored test-jet bootstrap).")
     rows = [f"{lab['L188']} & {T(100.0, 2.0)} \\\\", f"{lab['L162']} & {T(95.0, 1.0)} \\\\", f"{lab['R42_Q1']} & {T(93.0, 1.0)} \\\\",
             f"{lab[M.INIT]} & {T(200.0, 1.0)} \\\\"]
     f = M._float("xbx", _frame(rows, 1))
@@ -3287,7 +3305,7 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
     # to tab:probes, the network names in Table 1's end note (NET_DEF), the flavor boundary in the paper text
     cap, auc = M.printed_caption("summary"), M.printed_caption("summary_auc")
     assert "$R_{30}$, the inverse background efficiency at 30\\% signal efficiency" in cap and "class pairs" not in cap
-    assert re.findall(r"\\ref\{([^}]*)\}", cap) == ["tab:probes"] and "Sophon checkpoint's dashes" in cap
+    assert re.findall(r"\\ref\{([^}]*)\}", cap) == ["tab:probes"] and "Sophon checkpoint's zero-filled" in cap
     assert M.PART_DEF not in cap and M.NET_DEF.strip() not in cap
     assert auc.count("averaged on JetClass-II and JetClass over the classes, each against the rest.") == 1
     assert "table~\\ref{tab:summary}" in auc and "class pairs" not in auc
@@ -3607,8 +3625,9 @@ def test_the_confusion_table_holds_the_matrices_and_paired_changes_of_the_confus
     assert [p.count("true class & ") for p in parts] == [1, 1, 2, 2]
     qcd = [next(ln for ln in p.splitlines() if ln.startswith(M.CONF_TEX["label_QCD"] + " & ")).split(" & ")[1]
            for p in (parts[0], parts[2], parts[3])]
-    # means 81.25 (75, 87.5), -9.375 (-12.5, -6.25) and 62.5 (50, 62.5, 75), printed rather than left as tokens
-    assert qcd == [r"81.2\,$\pm$\,8.8", r"-9.4\,$\pm$\,4.4", r"62.5\,$\pm$\,12.5"] and M.V4.TOK_OPEN not in "".join(parts)
+    # means 81.25 (75, 87.5), -9.375 (-12.5, -6.25) and 62.5 (50, 62.5, 75), printed rather than left as tokens, each
+    # rounded as the PDG rounds (PI 2026-11-14)
+    assert qcd == [r"81\,$\pm$\,9", r"-9\,$\pm$\,4", r"62\,$\pm$\,12"] and M.V4.TOK_OPEN not in "".join(parts)
     np.testing.assert_allclose([float(np.std([75.0, 87.5], ddof=1)), float(np.std([-12.5, -6.25], ddof=1))], [8.84, 4.42], atol=0.01)
     # a run without the reference run of its seed stops the build
     del conf["mtx-r16q1-s2"]

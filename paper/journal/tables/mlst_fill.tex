@@ -1,7 +1,12 @@
-\begin{table*}[t]
-\centering
-\caption{$R_{30}$, the inverse background efficiency at 30\% signal efficiency, of the linear probes of table~\ref{tab:summary} on top and quark/gluon tagging with Pythia jets, with the missing inputs (table~\ref{tab:inputs}) at zero, the training mean (mean) or random draws of a real particle (draws). Table~\ref{tab:summary} uses \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon, so those columns are left out. The random network here has its batch-normalization statistics recomputed on \DesignBnJets{} training jets, unlike that of table~\ref{tab:summary}. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks values within three standard deviations (both added in quadrature, before rounding) of the best in their column. The random network is a reference, never bold.}
+\begin{landscape}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\setlength{\abovecaptionskip}{0pt}
+\captionof{table}{$R_{30}$, the inverse background efficiency at 30\% signal efficiency, of the linear probes of table~\ref{tab:summary} on top and quark/gluon tagging with Pythia jets, with the missing inputs (table~\ref{tab:inputs}) at zero, the training mean (mean) or random draws of a real particle (draws). Table~\ref{tab:summary} uses \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon, so those columns are left out. BatchNorm recomputed means batch-normalization statistics re-estimated on \DesignBnJets{} training jets. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks the best value in their column and those within three standard deviations (run spreads and any stored test-jet bootstrap). The random network is a reference, never bold.}
 \label{tab:fill}
+\par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
  & \multicolumn{2}{c}{top, $R_{30}$} & \multicolumn{2}{c}{quark/gluon (Pythia), $R_{30}$} \\
@@ -9,18 +14,21 @@
  & zero & mean & zero & draws \\
 \midrule
 \multicolumn{5}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 59.6\,$\pm$\,11.6} & {\fontseries{b}\selectfont 73\,$\pm$\,15} & {\fontseries{b}\selectfont 65.6\,$\pm$\,7.3} & {\fontseries{b}\selectfont 68.1\,$\pm$\,1.8} \\
-\Kres{} classes & {\fontseries{b}\selectfont 75.5\,$\pm$\,16.9} & {\fontseries{b}\selectfont 64\,$\pm$\,11} & {\fontseries{b}\selectfont 57.9\,$\pm$\,9.3} & {\fontseries{b}\selectfont 66.8\,$\pm$\,0.4} \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 85.7\,$\pm$\,12.9} & {\fontseries{b}\selectfont 68\,$\pm$\,15} & {\fontseries{b}\selectfont 63.2\,$\pm$\,3.1} & {\fontseries{b}\selectfont 71.2\,$\pm$\,1.2} \\
-\Kmid{} classes & {\fontseries{b}\selectfont 56.9\,$\pm$\,12.6} & {\fontseries{b}\selectfont 58\,$\pm$\,14} & {\fontseries{b}\selectfont 60.9\,$\pm$\,8.5} & {\fontseries{b}\selectfont 69.0\,$\pm$\,1.1} \\
-\Kcoarse{} classes & {\fontseries{b}\selectfont 54.6\,$\pm$\,4.6} & {\fontseries{b}\selectfont 55\,$\pm$\,5} & {\fontseries{b}\selectfont 62.0\,$\pm$\,7.0} & {\fontseries{b}\selectfont 71.6\,$\pm$\,2.8} \\
-\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 85.9\,$\pm$\,24.6} & {\fontseries{b}\selectfont 68\,$\pm$\,18} & {\fontseries{b}\selectfont 65.8\,$\pm$\,0.3} & {\fontseries{b}\selectfont 73.3\,$\pm$\,2.8} \\
+\Kfull{} classes & {\fontseries{b}\selectfont 60\,$\pm$\,12} & {\fontseries{b}\selectfont 73\,$\pm$\,15} & {\fontseries{b}\selectfont 66\,$\pm$\,7} & {\fontseries{b}\selectfont 68.1\,$\pm$\,1.8} \\
+\Kres{} classes & {\fontseries{b}\selectfont 76\,$\pm$\,17} & {\fontseries{b}\selectfont 64\,$\pm$\,11} & {\fontseries{b}\selectfont 58\,$\pm$\,9} & {\fontseries{b}\selectfont 66.8\,$\pm$\,0.4} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 86\,$\pm$\,13} & {\fontseries{b}\selectfont 68\,$\pm$\,15} & {\fontseries{b}\selectfont 63.2\,$\pm$\,3.1} & {\fontseries{b}\selectfont 71.2\,$\pm$\,1.2} \\
+\Kmid{} classes & {\fontseries{b}\selectfont 57\,$\pm$\,13} & {\fontseries{b}\selectfont 58\,$\pm$\,14} & {\fontseries{b}\selectfont 61\,$\pm$\,9} & {\fontseries{b}\selectfont 69.0\,$\pm$\,1.1} \\
+\Kcoarse{} classes & {\fontseries{b}\selectfont 55\,$\pm$\,5} & {\fontseries{b}\selectfont 55\,$\pm$\,5} & {\fontseries{b}\selectfont 62\,$\pm$\,7} & {\fontseries{b}\selectfont 71.6\,$\pm$\,2.8} \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 86\,$\pm$\,25} & {\fontseries{b}\selectfont 68\,$\pm$\,18} & {\fontseries{b}\selectfont 65.79\,$\pm$\,0.31} & {\fontseries{b}\selectfont 73.3\,$\pm$\,2.8} \\
 \multicolumn{5}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & {\fontseries{b}\selectfont 69.5\,$\pm$\,0.2} & {\fontseries{b}\selectfont 54\,$\pm$\,15} & {\fontseries{b}\selectfont 64.8\,$\pm$\,2.3} & {\fontseries{b}\selectfont 71.3\,$\pm$\,0.3} \\
-\quad $b$-quark boundary & {\fontseries{b}\selectfont 77.2\,$\pm$\,5.0} & {\fontseries{b}\selectfont 57\,$\pm$\,16} & {\fontseries{b}\selectfont 57.0\,$\pm$\,3.4} & {\fontseries{b}\selectfont 70.7\,$\pm$\,0.3} \\
-\quad random flavor boundary & {\fontseries{b}\selectfont 52.7\,$\pm$\,16.7} & {\fontseries{b}\selectfont 37\,$\pm$\,5} & {\fontseries{b}\selectfont 59.9\,$\pm$\,8.0} & {\fontseries{b}\selectfont 70.5\,$\pm$\,1.0} \\
-\quad random partitions & {\fontseries{b}\selectfont 51.8\,$\pm$\,16.5} & {\fontseries{b}\selectfont 51\,$\pm$\,6} & {\fontseries{b}\selectfont 59.2\,$\pm$\,6.5} & {\fontseries{b}\selectfont 64.7\,$\pm$\,2.8} \\
-random network & 57.6\,$\pm$\,12.7 & 60\,$\pm$\,2 & 54.2\,$\pm$\,2.4 & 52.4\,$\pm$\,0.4 \\
+\quad no flavor boundary & {\fontseries{b}\selectfont 69.49\,$\pm$\,0.22} & {\fontseries{b}\selectfont 54\,$\pm$\,15} & {\fontseries{b}\selectfont 64.8\,$\pm$\,2.3} & {\fontseries{b}\selectfont 71.28\,$\pm$\,0.29} \\
+\quad $b$-quark boundary & {\fontseries{b}\selectfont 77\,$\pm$\,5} & {\fontseries{b}\selectfont 57\,$\pm$\,16} & {\fontseries{b}\selectfont 57.0\,$\pm$\,3.4} & {\fontseries{b}\selectfont 70.67\,$\pm$\,0.28} \\
+\quad random flavor boundary & {\fontseries{b}\selectfont 53\,$\pm$\,17} & {\fontseries{b}\selectfont 37\,$\pm$\,5} & {\fontseries{b}\selectfont 60\,$\pm$\,8} & {\fontseries{b}\selectfont 70.5\,$\pm$\,1.0} \\
+\quad random partitions & {\fontseries{b}\selectfont 52\,$\pm$\,17} & {\fontseries{b}\selectfont 51\,$\pm$\,6} & {\fontseries{b}\selectfont 59\,$\pm$\,6} & {\fontseries{b}\selectfont 64.7\,$\pm$\,2.8} \\
+random network, BatchNorm recomputed & 58\,$\pm$\,13 & 60.4\,$\pm$\,2.4 & 54.2\,$\pm$\,2.4 & 52.4\,$\pm$\,0.4 \\
 \bottomrule
 \end{tabular*}
-\end{table*}
+\end{minipage}
+\end{center}
+}
+\end{landscape}

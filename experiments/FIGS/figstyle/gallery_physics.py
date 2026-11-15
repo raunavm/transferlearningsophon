@@ -28,7 +28,8 @@ SHOWN_FROM = 0.05       # a response axis covers the bins with this share of the
 HIST_ROOM = 1.45        # top of a histogram's y axis over its peak: room for the legend above the curves
 # F10a, after CMS Fig. 8: black inclusive, then two working points in CLASS10 colours (orange, plum), which reuse no
 # network colour (L6, palette_check), so no working point reads as a network; dark, mid and light in greyscale
-SELECTION_COLOUR = {1: S.CLASS10[9], 2: S.CLASS10[3]}
+# the working points in the neutral pair of style_v5.WORKING_POINT (audit 3: no hue of a network)
+SELECTION_COLOUR = {1: S.WORKING_POINT["10%"]["color"], 2: S.WORKING_POINT["1%"]["color"]}
 SCULPT_ROWS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")      # L5: each mass network under its label set
 SCULPT_PARTITIONS = ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")     # with 188 and 17 for reference
 F10B_FROM = 5e-3        # F10b: the first point is the 5.2e-3 grid point; CMS Fig. 9 left stops at 0.5%
@@ -162,23 +163,32 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
              if any(P._block(atlas, m, est, group) for m in runs)]
     # a probe beside a network's own output is open; one mode a panel stays filled
     mixed = len({est in PROBE_ESTS for _, est, _, _, _ in drawn}) > 1
-    zero = np.zeros_like(ref)
+    boot = lambda b: P._arr(b[f"{which}_sd"]) if b.get(f"{which}_sd") is not None else np.zeros(len(e) - 1)  # noqa: E731
+    ref_sd = boot(g)
     n = len(drawn) + 1                               # L21: the soft-drop mass and each series dodged within the bin
-    L.binned(ax, e, ref, zero, zero, color=GROOMED_LOOK["color"], probe=False, label=GROOMED, n=n)
-    rx.axhline(1.0, **S.REFERENCE, zorder=1.5)       # the ratio's unity line: a reference, dotted (L6)
-    ends, lows = [ref], [np.array([1.0])]
+    # PI 2026-11-14 (step 8, audit 3): the median row's lower panel is each estimate's distance from one, |median - 1|
+    # (a ratio of two medians says nothing about which is closer to one); the resolution row's the ratio to the
+    # soft-drop resolution
+    lower = (lambda v: np.abs(v - 1.0)) if which == "median" else (lambda v: v / ref)     # noqa: E731
+    L.binned(ax, e, ref, ref_sd, ref_sd, color=GROOMED_LOOK["color"], probe=False, label=GROOMED, n=n)
+    if which == "median":
+        L.binned(rx, e, lower(ref), ref_sd, ref_sd, color=GROOMED_LOOK["color"], probe=False, label="_nolegend_", n=n)
+    else:
+        rx.axhline(1.0, **S.REFERENCE, zorder=1.5)       # the ratio's unity line: a reference, dotted (L6)
+    ends, lows = [ref - ref_sd, ref + ref_sd], [lower(ref)]
     for k, (runs, est, line, mark, label) in enumerate(drawn, 1):
-        per = np.array([P._arr(b[axis][which]) for m in runs if (b := P._block(atlas, m, est, group))], float)
+        blocks = [b[axis] for m in runs if (b := P._block(atlas, m, est, group))]
+        per = np.array([P._arr(b[which]) for b in blocks], float)
         st = [P.F._spread(list(per[:, i])) for i in range(per.shape[1])]
         mean = np.array([s_[0] for s_ in st])
-        lo = np.array([s_[1] or 0.0 for s_ in st])
-        hi = np.array([s_[2] or 0.0 for s_ in st])
+        # the bar is the uncertainty the claims use (L3): the SD over runs and the mean bootstrap SD over test jets
+        sd = np.sqrt(np.array([s_[1] or 0.0 for s_ in st]) ** 2 + np.mean([boot(b) for b in blocks], axis=0) ** 2)
         probe, shape = mixed and est in PROBE_ESTS, mark or "o"
-        L.binned(ax, e, mean, lo, hi, color=line["color"], probe=probe, label=label, shape=shape, k=k, n=n)
-        L.binned(rx, e, mean / ref, lo / ref, hi / ref, color=line["color"], probe=probe, label="_nolegend_", shape=shape,
-                 k=k, n=n)
-        ends += [mean - lo, mean + hi]
-        lows += [(mean - lo) / ref, (mean + hi) / ref]
+        L.binned(ax, e, mean, sd, sd, color=line["color"], probe=probe, label=label, shape=shape, k=k, n=n)
+        rs = sd if which == "median" else sd / ref
+        L.binned(rx, e, lower(mean), rs, rs, color=line["color"], probe=probe, label="_nolegend_", shape=shape, k=k, n=n)
+        ends += [mean - sd, mean + sd]
+        lows += [lower(mean) - rs, lower(mean) + rs]
     if which == "resolution":
         v = np.concatenate([np.ravel(x) for x in ends])
         v = v[np.isfinite(v) & (v > 0)]
@@ -233,7 +243,7 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, ncol: int, cols: l
         for row_axes in (axes[i], raxes[i]):
             _share_row(row_axes)
         S.labels(axes[i, 0], ylabel=r"Median response ($r$)" if which == "median" else r"Resolution ($\sigma_r$)")
-        S.labels(raxes[i, 0], ylabel="Ratio")
+        S.labels(raxes[i, 0], ylabel=r"$|$median $-\,1|$" if which == "median" else "Ratio")
         for j in range(2):
             # at least two labelled ticks inside a ratio range that ends just past 0.8 and 1.2 (A17-ridge)
             raxes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=4, steps=[1, 2, 5, 10], prune="both"))
@@ -287,6 +297,38 @@ def draw_a17_ridge(path: pathlib.Path) -> None:
     _probe_figure(path, "ridge")
 
 
+# how the mass probes are centred (audit 3, P3): on the jet's true class in atlas_res, on one training median with no
+# generator truth in the refit atlas_res_v3 (PI 2026-11-15), which mlst_v4.pick reads once pulled
+TRUTH_FREE = M.V4.pick(P.DATA, "head/atlas_res") != "head/atlas_res"
+import gallery_captions as _K  # noqa: E402
+_K.FILLS["probe_note"] = (
+    "The probe regresses the mass on frozen features alone, centred on one training median, with no generator-level "
+    "class information." if TRUTH_FREE else
+    "The probe predicts the mass relative to the training median of the jet's true class, so its values compare probes "
+    "with each other, not with the soft-drop mass.")
+
+# PI 2026-11-14 (step 7): the partitions' mass probes, drawn once fitted, in the supplement (the paper's figures of the
+# mass family show the label sets and mass networks)
+PROBE_PARTS = ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")
+
+
+def _probe_part_figure(path: pathlib.Path, est: str) -> None:
+    atlas = _atlas()
+    if not any(P._block(atlas, m, est, "all") for a in PROBE_PARTS[2:] for m in POOLED[a]):
+        raise Absent(f"no {est} mass probe of the 17-class partitions (head/atlas_res)")
+    series = [(POOLED[n], est, S.look(_style(n)), None, S.LEGEND[_style(n)]) for n in PROBE_PARTS]
+    names = [S.LEGEND[_style(n)] for n in PROBE_PARTS]
+    _binned_2x2(path, "all", series, 3, cols=[names[:2] + [GROOMED], names[2:4], names[4:]])
+
+
+def draw_a17_probe_part(path: pathlib.Path) -> None:
+    _probe_part_figure(path, "mlp")
+
+
+def draw_a17_ridge_part(path: pathlib.Path) -> None:
+    _probe_part_figure(path, "ridge")
+
+
 # ------------------------------------------------------------------ F10a, F10b
 def _sculpt() -> dict:
     if not I["sculpt"]:
@@ -325,9 +367,9 @@ def _sculpt_ratio_range(sc: dict) -> list:
 def _sculpt_panels(path: pathlib.Path, rows: tuple) -> None:
     """One panel per model, two per row at 6.4 cm (L20; an odd last slot holds the legend), each with its ratio to the inclusive
     distribution (CMS's height); step histograms over the files' whole mass range, the inclusive one black and the
-    working points orange and plum (SELECTION_COLOUR), no model colour, since the title names the model; one y range."""
+    working points dark and light grey (SELECTION_COLOUR), no model colour, since the title names the model; one y range."""
     sc = _sculpt()
-    shown = [(a, ms) for a in rows if (ms := [m for m in RUNS[a] if m in sc])]
+    shown = [(a, ms) for a in rows if (ms := [m for m in POOLED[a] if m in sc])]     # the random partitions pooled
     if not shown:
         raise Absent("no mass sculpting curve of the models shown")
     ncols, odd = 2, len(shown) % 2              # L20: two a row; an odd count leaves the legend a slot (no empty slot)
@@ -398,7 +440,8 @@ def draw_f10a_mass(path: pathlib.Path) -> None:
 
 
 def draw_f10a_flav(path: pathlib.Path) -> None:
-    _sculpt_panels(path, tuple(S.CONTROLS))
+    """The flavor-boundary partitions, and the random partitions (pooled) once their head outputs exist (PI 2026-11-14)."""
+    _sculpt_panels(path, tuple(S.CONTROLS) + ("RAND",))
 
 
 def _floor(sc: dict, m: str) -> dict:
@@ -407,19 +450,12 @@ def _floor(sc: dict, m: str) -> dict:
     return {e: f for e, (_, f) in M._curve(sc, m).items()}
 
 
-def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, runs: dict | None = None, direct: bool = False,
-                   floor: bool = True) -> None:
-    """Exact size, one panel SINGLE_W wide (PI 2026-11-12), the legend just above it; each row's mean over runs with a band of
-    the spread over runs (gallery_bands.spread_band), every network solid in its colour (the mass networks in their
-    label sets' lighter shades, L6); the floor black dotted; both axes logarithmic, labelled 10^n. runs: {row: models}, RUNS by default.
-    direct: the curves are the pretraining heads' outputs used directly, dash-dot (L6); from scratch stays solid.
-    floor: draw the random-selection floor (the fine-tuned figures leave it out, so the networks fill the panel)."""
+def _sculpt_panel(ax, sc: dict, rows: tuple, runs: dict | None = None, direct: bool = False, floor: bool = True) -> None:
+    """One panel: each row's mean over runs with a band of the spread over runs (gallery_bands.spread_band), every
+    network solid in its colour (the mass networks in their label sets' lighter shades, L6); the floor black dotted;
+    both axes logarithmic, labelled 10^n. runs: {row: models}, RUNS by default. direct: the curves are the pretraining
+    heads' outputs used directly, dash-dot (L6); from scratch stays solid. floor: draw the random-selection floor."""
     runs = RUNS if runs is None else runs
-    legend_rows = math.ceil((sum(any(m in sc for m in runs[r]) for r in rows) + 1) / 2)
-    top, w = 0.5 + 0.45 * legend_rows, S.SINGLE_W - 1.75 - 0.25
-    h = 0.85 * w
-    fig = S.figure_cm(S.SINGLE_W, top + h + 1.0)
-    ax = S.axes_cm(fig, 1.75, top, w, h)
     S.fine_grid(ax)
     drawn = []
     for row in rows:
@@ -451,13 +487,45 @@ def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, runs: dict | None 
     S.log_axis(ax, "x", force=True)
     S.log_axis(ax, "y", force=floor)        # without the floor the range is under a decade: linear labels
     S.labels(ax, r"QCD efficiency ($\varepsilon_B$)", "Jensen–Shannon distance")
+
+
+def _sculpt_curves(path: pathlib.Path, sc: dict, rows: tuple, runs: dict | None = None, direct: bool = False,
+                   floor: bool = True) -> None:
+    """Exact size, one panel SINGLE_W wide (PI 2026-11-12), the legend just above it (_sculpt_panel)."""
+    runs = RUNS if runs is None else runs
+    legend_rows = math.ceil((sum(any(m in sc for m in runs[r]) for r in rows) + 1) / 2)
+    top, w = 0.5 + 0.45 * legend_rows, S.SINGLE_W - 1.75 - 0.25
+    h = 0.85 * w
+    fig = S.figure_cm(S.SINGLE_W, top + h + 1.0)
+    ax = S.axes_cm(fig, 1.75, top, w, h)
+    _sculpt_panel(ax, sc, rows, runs, direct, floor)
     S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=S.LEGEND_TOP, ncol=2)
     S.save(fig, path)
 
 
 def draw_f10b(path: pathlib.Path) -> None:
-    """The label sets and the two mass models (PI, 2026-11-08); the flavor boundaries on F10b-flav."""
-    _sculpt_curves(path, _sculpt(), SCULPT_ROWS, direct=True)
+    """The label sets and the two mass models (PI, 2026-11-08); the flavor boundaries on F10b-flav. PI 2026-11-14 (step
+    5): two panels, (a) the pretraining head used directly, (b) fine-tuned on JetClass-II with training from scratch
+    (F10-ft's curves), each on its own axis ranges, one legend above both."""
+    sc_ft = _sculpt_ft()
+    scratch = [f"scratch-s{k}" for k in (1, 2, 3)]
+    legend_rows = 3
+    w = (S.PRINT_W - 1.6 - 1.45 - 0.15) / 2         # two panels of at least 6.1 cm (L20)
+    top, h = 0.55 + 0.45 * legend_rows, 0.85 * w
+    fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
+    axes = [S.axes_cm(fig, 1.6, top, w, h), S.axes_cm(fig, 1.6 + w + 1.45, top, w, h)]
+    _sculpt_panel(axes[0], _sculpt(), SCULPT_ROWS, direct=True)
+    _sculpt_panel(axes[1], sc_ft, SCULPT_ROWS + ("SCRATCH",), {**RUNS, "SCRATCH": scratch}, floor=False)
+    S.title(axes[0], "pretraining head used directly")
+    S.title(axes[1], "fine-tuned")
+    handles = dict(zip(*reversed(axes[1].get_legend_handles_labels())))
+    handles.update(dict(zip(*reversed(axes[0].get_legend_handles_labels()))))
+    order = [S.LEGEND[r] for r in SCULPT_ROWS] + [S.LEGEND["SCRATCH"], "random selection"]
+    # a legend entry shows the solid line of the fine-tuned panel; the caption gives (a)'s dash-dot
+    S.fig_legend(fig, [dict(zip(*reversed(axes[1].get_legend_handles_labels()))).get(k, handles.get(k)) for k in order
+                       if k in handles], top_cm=S.LEGEND_TOP, ncol=3)
+    S.letter_panels(axes)
+    S.save(fig, path)
 
 
 def draw_f10b_flav(path: pathlib.Path) -> None:
@@ -500,7 +568,7 @@ def draw_f10_ft_part(path: pathlib.Path) -> None:
 
 # ------------------------------------------------------------------ F10c (DisCo Fig. 3's plane)
 F10C_KEY = "sig_eff_50"     # per run (head/sculpting_v3): {"rejection": 1/eps_B, "jsd": Jensen-Shannon divergence} at 50% eps_S
-F10C_ROWS = SCULPT_ROWS + tuple(S.CONTROLS)       # L5; three legend columns: 188 and 162, 43 and 17, the partitions
+F10C_ROWS = SCULPT_ROWS + tuple(S.CONTROLS) + ("RAND",)     # RAND drawn once its head outputs exist       # L5; three legend columns: 188 and 162, 43 and 17, the partitions
 
 
 def draw_f10c(path: pathlib.Path) -> None:
@@ -513,7 +581,7 @@ def draw_f10c(path: pathlib.Path) -> None:
     S.fine_grid(ax)
     drawn = 0
     for row in F10C_ROWS:
-        pts = [sc[m][F10C_KEY] for m in RUNS[row] if F10C_KEY in sc.get(m, {})]
+        pts = [sc[m][F10C_KEY] for m in POOLED[row] if F10C_KEY in sc.get(m, {})]
         if not pts:
             continue
         (x, xl, xh), (y, yl, yh) = (P.F._spread(v) for v in ([p["rejection"] for p in pts], [1 / p["jsd"] for p in pts]))
@@ -535,7 +603,8 @@ def draw_f10c(path: pathlib.Path) -> None:
 # text), the 17-class partitions with 188 and 17 classes for reference (appendix), the linear probe on the same
 # frozen features with the random network (supplement). No pretrained network is fine-tuned on these samples.
 XBX_LABEL_SETS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")      # L5
-XBX_PARTITIONS = ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")
+# PI 2026-11-14: the appendix's partition figure shows the label sets and mass networks too (one rule for the paper)
+XBX_PARTITIONS = XBX_LABEL_SETS + ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")
 CLASSIFIER, LINEAR = "head", "linear"       # xbx readouts: the frozen-feature classifier (the tables'), the linear probe
 DIRECT = "zero_shot_xbb"                    # the direct discriminant (Sophon Eq. 4), X->bb only, where X->bb is a class
 
@@ -660,19 +729,46 @@ def _accuracy(doc: dict) -> np.ndarray:
     return np.array([np.nan if b["accuracy"] is None else b["accuracy"] for b in doc["bins"]])
 
 
+def _accuracy_stat(doc: dict) -> np.ndarray:
+    """The binomial standard error of each bin's accuracy over its test jets (perf_vs_pt's accuracy_stat)."""
+    return np.array([np.nan if b.get("accuracy_stat") is None else b["accuracy_stat"] for b in doc["bins"]])
+
+
 def _bb_cc(doc: dict) -> np.ndarray:
     return np.array([np.nan if b["bb_vs_cc"] is None else b["bb_vs_cc"]["auc"] for b in doc["bins"]])
 
 
+def _bb_cc_stat(doc: dict) -> np.ndarray:
+    """The standard error of each bin's X->bb vs cc AUC over its few test jets (Hanley and McNeil 1982, from the AUC
+    and the jets of each kind)."""
+    out = []
+    for b in doc["bins"]:
+        r = b["bb_vs_cc"]
+        if r is None or r.get("auc") is None:
+            out.append(np.nan)
+            continue
+        a, n1, n2 = r["auc"], b.get("n_bb") or r["n_signal"], b.get("n_cc") or r["n_background"]
+        q1, q2 = a / (2 - a), 2 * a * a / (1 + a)
+        out.append(math.sqrt(max(a * (1 - a) + (n1 - 1) * (q1 - a * a) + (n2 - 1) * (q2 - a * a), 0.0) / (n1 * n2)))
+    return np.array(out)
+
+
+STAT = {"_accuracy": _accuracy_stat, "_bb_cc": _bb_cc_stat}     # each binned value's test-jet term
+
+
 def _pt_series(ax, e, values: list, key: str, label: str, band: bool = True, style: str = "B", probe: bool = False,
-               k: int = 0, n: int = 1) -> None:
+               k: int = 0, n: int = 1, stats: list | None = None) -> None:
     """Mean over runs per bin of edges e. Style A: joined at the bin centres, the series' marker, band the SD,
-    as F8. Styles B and C: binned points (lines_v6.binned), the family's form."""
+    as F8. Styles B and C: binned points (lines_v6.binned), the family's form, the bar the uncertainty the claims use
+    (L3, PI 2026-11-14): the SD over runs and, given stats (each run's test-jet standard error per bin), the mean
+    test-jet error added in quadrature (the runs share the test jets)."""
     st = [P.F._spread(list(v)) for v in np.asarray(values).T]
     mean = np.array([s[0] for s in st])
     if style != "A":
-        L.binned(ax, e, mean, np.array([s[1] or 0.0 for s in st]), np.array([s[2] or 0.0 for s in st]),
-                 color=S.SERIES[key], probe=probe, label=label, k=k, n=n)
+        sd = np.array([s[1] or 0.0 for s in st])
+        if stats is not None:
+            sd = np.sqrt(sd ** 2 + np.nan_to_num(np.nanmean(np.asarray(stats, float), axis=0)) ** 2)
+        L.binned(ax, e, mean, sd, sd, color=S.SERIES[key], probe=probe, label=label, k=k, n=n)
         return
     c = 0.5 * (e[1:] + e[:-1])
     style = S.look(key, linewidth=S.LW_CURVE)
@@ -686,9 +782,11 @@ def _pt_panel(ax, docs: dict, rows: tuple, value, ylabel: str, style: str = "B",
     """value(doc) per pT bin for each row's runs, absolute; drawn in reverse, so that the first row (188 classes)
     lies on top. One mode a panel: filled points (PI 2026-11-11)."""
     e = _edges(docs)
+    stat = STAT.get(value.__name__)
     for k, row in reversed(list(enumerate(rows))):       # L21: dodged within the bin in the legend's order
-        _pt_series(ax, e, [value(d) for d in _runs_in(docs, row)], row, S.LEGEND[row], style=style, probe=probe, k=k,
-                   n=len(rows))
+        runs = _runs_in(docs, row)
+        _pt_series(ax, e, [value(d) for d in runs], row, S.LEGEND[row], style=style, probe=probe, k=k, n=len(rows),
+                   stats=[stat(d) for d in runs] if stat else None)
     ax.set_xlim(*_pad_x(e))
     if ylabel:
         S.labels(ax, ylabel=ylabel)
@@ -753,25 +851,24 @@ def draw_pt_bbcc_part(path: pathlib.Path) -> None:
 # ------------------------------------------------------------------ the pages
 # the supplement members' captions (gallery_captions holds the main-text and appendix ones), filled like those
 SUPPLEMENT_CAPTIONS = {
-    "A17-probe": (
-        'A multilayer perceptron trained to regress the jet mass from frozen features gives a better mass resolution on'
-        ' all JetClass-II test jets on the networks pretrained with an added mass regression (+ mass) than on the same '
-        'label sets without it. Panels (a) and (b) show the median of r = m/m_gen, the ratio of estimated to generator '
-        'mass, against jet pT and generator mass, and panels (c) and (d) the resolution sigma_r, half the central 68% '
-        'range of r divided by its median, with the soft-drop mass in black and the random network, a network with its '
-        'initial random weights, as crosses. The lower panels show the ratio to the soft-drop value. Points are offset '
-        'slightly within each bin, and error bars show the standard deviation over three pretraining runs, two for + '
-        'mass, or three random initializations. The values are in tables {tab:mass} and {tab:massdetail}. The 17-class '
-        'partitions are not shown, because their mass probes have not been fitted.'
-    ),
+    **{pid: (
+        f"The {est} probe of figure {{fig:{ref}}} on the frozen features of the 17-class partitions, with no, a b-quark "
+        f"and a random flavor boundary and the five random partitions, beside 188 and 17 classes, in the form of "
+        f"figure {{fig:F9b}}: the median of r = m/m_gen in (a) and (b), its distance from one below, and the resolution "
+        f"sigma_r in (c) and (d), with the soft-drop mass in black. {{probe_note}} Points sit in their bin, the "
+        f"horizontal bar spanning it, and error bars combine the standard deviation over two pretraining runs per "
+        f"flavor-boundary partition, three for 188 and 17 classes, or the five random partitions, with the bootstrap "
+        f"over test jets. The values are in table {{tab:massdetail}}."
+    ) for pid, est, ref in (("A17-probe-part", "multilayer-perceptron", "A17-probe"),
+                            ("A17-ridge-part", "ridge", "A17-ridge"))},
     "A17-ridge": (
         'A linear regression of the jet mass on frozen features (a ridge probe) also gives a better mass resolution on '
         'the networks pretrained with an added mass regression (+ mass) than on the same label sets without it. The '
-        'panels have the form of figure {fig:A17-probe}, with the median of r = m/m_gen in (a) and (b), the resolution '
-        'sigma_r in (c) and (d), the soft-drop mass in black and the random network as crosses. Points are offset '
-        'slightly within each bin, and error bars show the standard deviation over three pretraining runs, two for + '
-        'mass, or three random initializations. The values are in table {tab:massdetail}. The 17-class partitions are '
-        'not shown, because their mass probes have not been fitted.'
+        'panels have the form of figure {fig:A17-probe}, with the median of r = m/m_gen in (a) and (b), its distance '
+        'from one below, the resolution sigma_r in (c) and (d), the soft-drop mass in black and the random network as '
+        'crosses. {probe_note} Points sit in their bin, the horizontal bar spanning it, and error bars '
+        'combine the standard deviation over three pretraining runs, two for + mass, or three random initializations, '
+        'with the bootstrap over test jets. The values are in table {tab:massdetail}.'
     ),
     "F9a": (
         "The panels show the response r = m/m_gen, a jet's estimated mass over its generator-level soft-drop mass, of the mass "
@@ -785,20 +882,20 @@ SUPPLEMENT_CAPTIONS = {
         f"The panels show the mass output of the networks pretrained with 162 and 17 classes and an added mass "
         f"regression (+ mass) on {group} JetClass-II test jets, in the form of figure {{fig:F9b}}, the median of "
         f"r = m/m_gen in (a) and (b) and the resolution sigma_r, half the central 68% range of r divided by its "
-        f"median, in (c) and (d) against jet transverse momentum pT and generator-level soft-drop mass, with the soft-drop mass in black. Points are offset slightly within each bin, error bars show the "
-        f"standard deviation over two pretraining runs, and the lower panels show the ratio to the soft-drop value. "
+        f"median, in (c) and (d) against jet transverse momentum pT and generator-level soft-drop mass, with the soft-drop "
+        f"mass in black. Points sit in their bin, the horizontal bar spanning it, error bars combine the standard "
+        f"deviation over two pretraining runs with the bootstrap over test jets, and the lower panels show the "
+        f"median's distance from one and the ratio to the soft-drop resolution. "
         f"The values are in table {{tab:massdetail}}."
     ) for key, group in (("res", "resonant"), ("qcd", "QCD"))},
     **{pid: (
         f"The panels show the soft-drop mass of JetClass-II QCD test jets before any selection (black) and after a "
         f"cut on 1 - g_QCD, one minus the summed QCD score of the network output used directly, at QCD efficiencies "
-        f"of 10% (orange) and 1% (plum), for the networks pretrained with {nets}, each named above its panel. Each "
+        f"of 10% (dark grey) and 1% (light grey), for the networks pretrained with {nets}, each named above its panel. Each "
         f"histogram is the mean over {runs} pretraining runs, and the lower panels show the ratio to the inclusive "
         f"distribution with a band of ±1 standard deviation over runs, on one ratio range for figures "
         f"{{fig:F10a}}, {{fig:F10a-mass}} and {{fig:F10a-flav}}. Above about 300 GeV few jets pass the 1% cut, so "
         f"the ratio swings from bin to bin. Figure {{fig:{dist}}} summarizes each distortion as a distance."
-        + (" The random partitions are not shown, because their output scores on these test jets have not been "
-           "computed." if pid == "F10a-flav" else "")
     ) for pid, nets, runs, dist in (
         ("F10a", "188, 162, 43 and 17 classes", "three", "F10b"),
         ("F10a-mass", "162 and 17 classes and an added mass regression (+ mass)", "two", "F10b"),
@@ -806,9 +903,9 @@ SUPPLEMENT_CAPTIONS = {
     "F10b-flav": (
         'The curves show the Jensen-Shannon distance between the soft-drop mass distributions of all JetClass-II QCD '
         'test jets and of those passing a cut on 1 - g_QCD, the network output used directly, against QCD efficiency '
-        'eps_B, for the three flavor-boundary partitions with 188 and 17 classes for reference. The random partitions '
-        'are not shown, because their output scores on these test jets have not been computed. Curves are means over '
-        'two pretraining runs per partition or three for 188 and 17 classes, the band, for 188 classes only, shows ±1 '
+        'eps_B, for the 17-class partitions with 188 and 17 classes for reference. Curves are means over two '
+        'pretraining runs per flavor-boundary partition, the five random partitions or three runs for 188 and 17 '
+        'classes, the band, for 188 classes only, shows ±1 '
         'standard deviation, the others being in the tables, and the dotted line is a random selection of as many QCD '
         'jets. Values are in tables {tab:sculpt} and {tab:sculptboot}.'
     ),
@@ -819,17 +916,15 @@ SUPPLEMENT_CAPTIONS = {
         "Kasieczka and Shih, Phys. Rev. Lett. 125, 122001 (2020). "
         "Points higher up distort the QCD mass less and points further right reject more QCD jets. Points are means "
         "over three pretraining runs, two for networks with an added mass regression (+ mass, lighter shades) and the "
-        "flavor-boundary partitions, and bars show the standard deviation over runs. The random partitions are not shown, because their output "
-        "scores on these test jets have not been computed. The values are in table {tab:sculpt}, at 50% resonant "
+        "flavor-boundary partitions, the five random partitions with one run each, and bars show the standard "
+        "deviation over runs. The values are in table {tab:sculpt}, at 50% resonant "
         "efficiency."
     ),
     "F10-ft": (
         'The curves show the Jensen-Shannon distance between the soft-drop mass distributions of all QCD test jets and '
         'of those passing a cut on 1 - g_QCD, against QCD efficiency eps_B, for networks fine-tuned on one million '
-        'class-balanced JetClass-II jets and scored on two million natural-composition test jets, with training from '
-        'scratch in grey. Fine-tuning ran with a cap of 40 epochs except three networks, the first run of 17 classes '
-        'and both runs of 17 classes + mass, which had the fourfold cap of 160 epochs, and from scratch ran its full '
-        'schedule. Bands, for 188 classes and from scratch only (the others in the tables), show ±1 standard deviation '
+        'class-balanced JetClass-II jets and scored on two million jets of the mixed test sample (38.7% two-prong, '
+        '40.8% three- and four-prong, 20.5% QCD jets), with training from scratch in grey. Bands, for 188 classes and from scratch only (the others in the tables), show ±1 standard deviation '
         'over three pretraining runs, two for networks with an added mass regression (+ mass), or three trainings from '
         'scratch. The random-selection floor, the dotted line of figure {fig:F10b}, lies below the range shown, and the'
         ' values at 10% and 1% QCD efficiency are in table {tab:sculpt}.'
@@ -838,8 +933,7 @@ SUPPLEMENT_CAPTIONS = {
         'As in figure {fig:F10-ft}, the curves show the Jensen-Shannon distance between the soft-drop mass '
         'distributions of all QCD test jets and of those passing a cut on 1 - g_QCD, against QCD efficiency eps_B, here'
         ' for the 17-class partitions fine-tuned on one million class-balanced JetClass-II jets, with 188 and 17 '
-        'classes for reference. Every partition ran with the 160-epoch cap, 188 classes and the second and third runs '
-        'of 17 classes with the 40-epoch cap. Curves are means over two pretraining runs per partition with a named '
+        'classes for reference. Curves are means over two pretraining runs per partition with a named '
         'flavor boundary, three for 188 and 17 classes, or the five random partitions, and the band, for 188 classes '
         'only, shows ±1 standard deviation, the others being in the tables. The random-selection floor of figure '
         '{fig:F10b} lies below the range shown, and the values at 10% and 1% QCD efficiency are in table {tab:sculpt}.'
@@ -849,10 +943,9 @@ SUPPLEMENT_CAPTIONS = {
         '188 classes and more accurate than the network pretrained with 17 classes in every jet pT bin. The panels '
         'repeat figure {fig:PT} for the 17-class partitions, each a regrouping of the 188 classes into 17, named by its'
         ' flavor boundary, a class boundary between decays that differ only in quark flavor, with the 188- and 17-class'
-        ' networks for reference. Fine-tuning on JetClass-II ran with a cap of 160 epochs for every partition and the '
-        'first run of 17 classes, and of 40 epochs for 188 classes and the other two runs of 17 classes. Points are '
-        'means over two pretraining runs per flavor-boundary partition, three for 188 and 17 classes, or the five '
-        'random partitions, points are offset slightly within each bin, and error bars show ±1 standard deviation. '
+        ' networks for reference. Points are means over two pretraining runs per flavor-boundary partition, three for '
+        '188 and 17 classes, or the five random partitions; they sit in their bin, the horizontal bar spanning it, and '
+        'error bars combine the standard deviation over runs with the binomial uncertainty over test jets. '
         'Values are in the file jet_pt_bins.csv of the supplementary data.'
     ),
     "PT-bbcc": (
@@ -860,20 +953,17 @@ SUPPLEMENT_CAPTIONS = {
         'jets in each JetClass-II jet pT bin, with the discriminant p(bb̄)/(p(bb̄) + p(cc̄)) of the 188 class outputs, '
         'for linear probes (a) and fine-tuned networks (b) of figure {fig:PT}, the label sets and the networks with an '
         'added mass regression (+ mass, lighter shades). A bin holds 240 to 930 jets of each kind. Points are means '
-        'over three pretraining runs, two for + mass, points are offset slightly within each bin, and error bars show '
-        '±1 standard deviation over runs, without the uncertainty from the few test jets per bin, so no bin is '
-        'compared. Fine-tuning on JetClass-II ran with a cap of 40 epochs, except the first run of 17 classes and both '
-        'runs of 17 classes + mass, which had the 160-epoch cap. Values are in the file jet_pt_bins.csv of the '
+        'over three pretraining runs, two for + mass; they sit in their bin, the horizontal bar spanning it, and error '
+        'bars combine the standard deviation over runs with the uncertainty of the area over the bin\'s test jets '
+        '(Hanley and McNeil). Values are in the file jet_pt_bins.csv of the '
         'supplementary data, and figure {fig:PT-bbcc-part} shows the 17-class partitions.'
     ),
     "PT-bbcc-part": (
         'The panels of figure {fig:PT-bbcc} for the 17-class partitions with no, a b-quark and a random flavor boundary'
         ' and the five random partitions, with the 188- and 17-class networks for reference, as linear probes (a) and '
-        'fine-tuned (b). Fine-tuning on JetClass-II ran with a cap of 160 epochs for every partition and the first run '
-        'of 17 classes, and of 40 epochs for 188 classes and the other two runs of 17 classes. Points are means over '
-        'two pretraining runs per flavor-boundary partition, three for 188 and 17 classes, or the five random '
-        'partitions, points are offset slightly within each bin, and error bars show ±1 standard deviation over runs, '
-        'without the uncertainty from the few test jets per bin, so no bin is compared. Values are in the file '
+        'fine-tuned (b). Points are means over two pretraining runs per flavor-boundary partition, three for 188 and 17 '
+        'classes, or the five random partitions; they sit in their bin, the horizontal bar spanning it, and error bars '
+        'combine the standard deviation over runs with the uncertainty of the area over the bin\'s test jets. Values are in the file '
         'jet_pt_bins.csv of the supplementary data.'
     ),
     "F11-probe": (
@@ -999,6 +1089,12 @@ PAGES = [
          "ATLAS 2024-015 Fig. 8", "",
          "A17-probe's form for the ridge regression (atlas_res_fine estimator \"ridge\"), new (PI 2026-11-13).",
          draw_a17_ridge, "Three runs per label set, two per mass network, three random initializations."),
+    *[Page(pid, f"Mass from frozen features, {word} probe, 17-class partitions (supplement)",
+           ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8", "",
+           "The probe figure's form for the 17-class partitions with 188 and 17 classes (PI 2026-11-14).", draw,
+           "Drawn once the partitions' mass probes are fitted.")
+      for pid, word, draw in (("A17-probe-part", "multilayer-perceptron", draw_a17_probe_part),
+                              ("A17-ridge-part", "ridge", draw_a17_ridge_part))],
     Page("F10a", "Mass sculpting: QCD mass", ["2604.09809/fig8.png"], "CMS JME-25-001 Fig. 8", "",
          "Six panels, one per model (PI), all jet pT, instead of CMS's six (two models, three pT ranges), with "
          "one y axis across them. Two working points instead of three, because the files hold 10% and "

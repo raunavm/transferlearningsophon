@@ -620,6 +620,7 @@
  "ft_mlst/best70_done18_leg2_metrics.json": "bd046eb34e939a44daa6a5ee32dceb9f3d74f11b92143cff7cdd3c594fa6f3ca",
  "ft_mlst/best70_leg1_metrics.json": "c868e2b4893c1108c249fecea6d6e5244abe0246290b8c79cbb8f8db830da9eb",
  "ft_mlst/best70_leg2_metrics.json": "e7c1a2c287bfb44bc7c298b2b7a930ce13edba16017fef01403a7040d8ac07e9",
+ "ft_mlst/image_provenance.json": "3dfcee9ca05a34dc38d72bd8730404eec915a49fc620c9b3d0a4cdd14d28d423",
  "ft_mlst/manifests.json": "a689f21e894f48ae73192d67d419b3744a7bbe342e240485952c921aa23d7aa5",
  "head/atlas_res/init-s1.json": "b1d5b80ec31e2b33b8cfb0b565afd5fbea3249183fccdf49051611fd8816e044",
  "head/atlas_res/init-s2.json": "5ba07e8ba3168574eaecf3cebe743f112ecb0904c59581f086400b5c10fb9ed1",

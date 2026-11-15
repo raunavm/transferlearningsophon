@@ -14,7 +14,7 @@ The line and colour rule (PI, 2026-11-13, binding decision L6): colour identifie
   no flavor boundary                  #CC6677 Tol muted rose
   b-quark boundary                    #117733 Tol muted green
   random flavor boundary              #88CCEE Tol muted cyan     (sand #DDCC77 swapped out: 16 CIEDE2000 from olive)
-  random partitions                   #BBBBBB Tol grey (mid)
+  random partitions                   #543005 dark brown (PI 2026-11-14: not a grey, which reads as a reference)
   188 classes, kinematic inputs only  #DDCC77 Tol muted sand
   released Sophon checkpoint          #CC3311 Tol vibrant red
   random network                      #333333 dark grey
@@ -30,13 +30,11 @@ A mass network is a network of its own, in the lighter shade of its label set, s
 
 Every pair of networks that can share a panel (palette_check.networks, its GROUPS: CIEDE2000 in normal vision and
 under deuteranopia and protanopia, Machado 2009, and the L* difference in greyscale) is at least 10 apart in every view
-but one pair the PI chose on 2026-11-07, 17 classes and the random partitions (8.6 under protanopia, 12 L* apart in
-greyscale). The closest new pairs: 17 + mass and 17 (12.3 normal, 10.4 simulated, 14 L* lighter) and 162 + mass and 162
+(random partitions, dark brown since 2026-11-14: at least 12.9 from every network in every view, 22 from black). The closest new pairs: 17 + mass and 17 (12.3 normal, 10.4 simulated, 14 L* lighter) and 162 + mass and 162
 (21.0, 18.6), close by design; kinematic inputs only and 43 (16.1, 15.5); the Sophon checkpoint and 43 (10.6 under
 deuteranopia); the random network and black (13.4) and from scratch (11.3, never in one figure). The headline dot
-plots show every network but name each row: there 17 + mass nears the random partitions under colour-vision deficiency
-(3.1). CLASS10 (the JetClass classes, the JetClass-II decay families, the UMAP groups) reuses no network colour: each of
-its colours is at least 10.9 CIEDE2000 from every network colour, its first six (the families) at least 15.1 apart.
+plots show every network but name each row. Every network has its own marker shape (MARKERS), for greyscale. CLASS10 (the JetClass classes, the JetClass-II decay families, the UMAP groups) reuses no network colour: each of
+its colours is at least 12 CIEDE2000 from every network colour and no hue within 25 degrees of a label set's.
 """
 from __future__ import annotations
 
@@ -54,12 +52,14 @@ GREY_DARK, GREY_MID, GREY_LIGHT = "#555555", "#BBBBBB", "#DDDDDD"
 LW_CURVE = 1.3                                   # a curve and its legend handle, wide enough to tell the colours apart
 HANDLE = 2.6                                     # legend handle length (em): a dashed handle shows two dashes
 # One qualitative set for everything that is not a network: the ten JetClass classes, the JetClass-II decay families
-# and the UMAP groups (PI 2026-11-11; was matplotlib's tab10). PI 2026-11-13 (L6): no colour that means a network, so
-# not Tol muted any more: black and nine colours each at least 10.9 CIEDE2000 from every network colour (palette_check),
-# the first six (the families) at least 15.1 apart (deuteranopia and protanopia counted at 2.5 times), the three after
-# black (the UMAP groups) light or saturated enough to stand apart from black in small translucent dots: pear,
-# vermillion, plum, dark teal, light orange; then maroon, chocolate, wine and orange.
-CLASS10 = ["#000000", "#BBCC33", "#D55E00", "#762A83", "#00555A", "#EE8866", "#67001F", "#7F3B08", "#882255", "#E69F00"]
+# and the UMAP groups (PI 2026-11-11; was matplotlib's tab10). PI 2026-11-13 (L6) and 2026-11-14 (step 8): no colour
+# that means a network or may be mistaken for one, so no hue within 25 degrees (CIELab) of a label set's or a mass
+# network's (indigo, purple, olive, teal) and at least 12 CIEDE2000 from every network colour in normal vision
+# (palette_check.networks): black, blue, orange, vermillion, green and pink (the six families, pairwise at least 13.8
+# with deuteranopia and protanopia counted at 1.5 times), then brown, dark red, light orange and light blue for the
+# JetClass classes, which the scatters also tell apart by shape. One meaning per colour where a figure shows decays:
+# QCD black, X->bb and H->bb blue.
+CLASS10 = ["#000000", "#0077BB", "#E69F00", "#D55E00", "#5AAE61", "#FBB4AE", "#8C510A", "#B2182B", "#FDB863", "#6BAED6"]
 TAB10 = CLASS10                                  # the name the pages use
 JC1_COLOUR = dict(zip(JC1_CLASSES, CLASS10))
 # reference and guide lines (the diagonal, the random-selection floor, a ratio's unity line) are black dotted, the one
@@ -87,11 +87,11 @@ def tint(colour: str, share: float = 0.4) -> str:
 
 # colour identifies the network (L6; the table in the docstring)
 SERIES = {"L188": "#332288", "L162": "#AA4499", "R42_Q1": "#999933", "R16_Q1": "#44AA99",
-          "FLAV_F0": "#CC6677", "FLAV_F1": "#117733", "FLAV_F1R": "#88CCEE", "RAND": GREY_MID,
+          "FLAV_F0": "#CC6677", "FLAV_F1": "#117733", "FLAV_F1R": "#88CCEE", "RAND": "#543005",
           "KIN": "#DDCC77", "SOPHON": "#CC3311", "INIT_BN": "#333333", "SCRATCH": GREY_DARK}
 SERIES.update({"L162_MASS": tint(SERIES["L162"]), "R16_Q1_MASS": tint(SERIES["R16_Q1"])})
 MARKERS = {"L188": "o", "L162": "s", "R42_Q1": "^", "R16_Q1": "D", "L162_MASS": "v", "R16_Q1_MASS": "P", "SCRATCH": "X",
-           "FLAV_F0": "p", "FLAV_F1": "*", "FLAV_F1R": "h", "RAND": "v", "INIT_BN": "x", "KIN": "o", "SOPHON": "d"}
+           "FLAV_F0": "p", "FLAV_F1": "*", "FLAV_F1R": "h", "RAND": "<", "INIT_BN": "x", "KIN": "o", "SOPHON": "d"}
 # the controls' shapes differ from every label set's, so no control shares a label set's shape in greyscale
 STAR_SCALE = 1.4                                 # "*" draws smaller than the other shapes at one markersize
 # the line of a use: "probe" only where linear probes share a panel with fine-tuned networks (L6), "direct" the direct

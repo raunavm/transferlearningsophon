@@ -27,10 +27,10 @@ from matplotlib.colors import to_hex  # noqa: E402
 
 def test_rows_merge_consecutive_items_of_one_sentence_and_carry_their_evidence():
     supp = [i for i in G.FIGURES if i[2] == G.BACKS["FJ-ctrl"]]
-    span = f"{G.number('FJ-ctrl')}–{G.number('FJ-s').split()[-1]}"
-    # round 3: the mass networks' JetClass curves (FJ-mass, FJ-mass-app) join the sentence
-    assert span == "Fig. S24–S29" and V._rows(tuple(supp)) == [
-        (span, "FJ-ctrl, FJ-app, FJ-ctrl-app, FJ-mass, FJ-mass-app, FJ-s", G.BACKS["FJ-ctrl"])]
+    # PI 2026-11-14 (audit 3): the linear probes first, then FJ (its own sentence) between them and the fine-tuned slices
+    span = f"{G.number('FJ-app')}–{G.number('FJ-s').split()[-1]}"
+    assert span == "Fig. S23–S29" and G.number("FJ") == "Fig. S26" and V._rows(tuple(supp)) == [
+        (span, "FJ-app, FJ-ctrl-app, FJ-mass-app, FJ-ctrl, FJ-mass, FJ-s", G.BACKS["FJ-ctrl"])]
     # with the tables it also rests on
     flav = tuple(i for i in G.FIGURES if i[0] in ("F10b-flav", "F10c", "F10a-flav"))
     rows = V._rows(flav)
@@ -194,9 +194,10 @@ def test_the_per_class_grid_puts_every_panel_on_one_range_and_colours_classes_no
     monkeypatch.setattr(PC.S, "save", lambda fig, path: figs.append(fig))
     PC.draw_jc2(None)
     panels = [ax for ax in figs[0].axes if ax.get_title()[:3] in {f"({x})" for x in "abcdef"}]
-    lo = 0.81 - 0.08 * (1 - 0.81)          # the lowest AUC drawn, 8% of its distance to 1 below it (the points clear, L7)
+    # PI 2026-11-14 (step D): one minus the AUC on log axes, one range for the grid, the smallest value over 1.6 below
+    lo = (1 - (0.81 + 0.001 * 187)) / 1.6
     assert len(panels) == 6 and all(ax.get_xlim() == ax.get_ylim() == panels[0].get_xlim() for ax in panels)
-    assert panels[0].get_xlim()[0] == pytest.approx(lo)
+    assert panels[0].get_xlim()[0] == pytest.approx(lo) and all(ax.get_xscale() == ax.get_yscale() == "log" for ax in panels)
     networks = {to_hex(c) for c in PC.S.SERIES.values()}
     for ax in panels:
         diagonal, *points = ax.lines
@@ -206,7 +207,7 @@ def test_the_per_class_grid_puts_every_panel_on_one_range_and_colours_classes_no
     # one colour a decay family, all from CLASS10 (blind page review 2026-11-13: the two orange shades apart, the pale
     # lime for the largest family)
     assert len(R.FAMILY_COLOURS) == len(R.FAMILIES) == len(set(R.FAMILY_COLOURS))
-    assert R.FAMILY_COLOURS == tuple(PC.S.CLASS10[k] for k in (0, 2, 7, 3, 4, 1))
+    assert R.FAMILY_COLOURS == tuple(PC.S.CLASS10[k] for k in (0, 1, 4, 2, 3, 5))
     assert [ax.get_title()[:3] for ax in panels] == [f"({x})" for x in "abcdef"]
     assert [ax.get_title().split(", ")[-1] for ax in panels] == ["linear probe", "fine-tuned"] * 3
     matplotlib.pyplot.close(figs[0])
@@ -220,8 +221,8 @@ def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_p
     import re
     import gallery_captions as K
     paper = [k for k, t, _ in G.FIGURES if t in (G.MAIN, G.APPENDIX)]
-    # round 3 (L20 splits): F2-ft, F4-light, F4-light-ft and F6-ft join the main text and the appendix
-    assert sorted(K.CAPTIONS) == sorted(paper) and len(paper) == 24
+    # PI 2026-11-14 (step 5): the mass probe joins the appendix, two task grids replace the JetClass-II UMAP grid
+    assert sorted(K.CAPTIONS) == sorted(paper) and len(paper) == 26
     for pid, raw in K.CAPTIONS.items():
         labels = re.findall(r"\{(tab:[a-z_0-9]+)\}", raw)
         assert set(labels) <= set(G.TIER) and not set(labels) & set(G.DROPPED_TABLES), pid
@@ -234,7 +235,14 @@ def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_p
     # L21 (band for 188 classes only): the other standard deviations are in the tables with the values
     assert K.text("F6").endswith(f"values and the other standard deviations are in tables {number('tab:summary')}, "
                                  f"{number('tab:summaryauc')} and {number('tab:probes')}.")
-    assert [number(k) for k in ("tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets")] == ["1", "A1", "A2", "A10"]
+    assert [number(k) for k in ("tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets")] == ["1", "A1", "A7", "A8"]
+    # PI 2026-11-14: a paper caption names no supplement item by number, only "the supplementary material"
+    for pid, raw in K.CAPTIONS.items():
+        refs = re.findall(r"\{((?:tab|fig):[A-Za-z0-9_-]+)\}", raw)
+        assert not [r for r in refs if G.TIER.get(r.removeprefix("fig:")) == G.SUPPLEMENT or G.TIER.get(r) == G.SUPPLEMENT], pid
+        assert not re.search(r"(figure|table)s? S\d", K.text(pid)) and not re.search(r"cap of|epoch cap|at most \d+ epochs",
+                                                                                     K.text(pid)), pid
+        assert "not shown" not in K.text(pid) and "not claimed" not in K.text(pid), pid
     # the headline family's captions name Table 1 and the AUC table (L2)
     assert all(K.text(k).endswith(f"tables {number('tab:summary')} and {number('tab:summaryauc')}.") for k in ("F2a", "F2b"))
     # the PI's sentence on JetClass, in the main headline figure of the fine-tuned networks (L20 split it by mode)
@@ -242,7 +250,7 @@ def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_p
     # the jet-pT figure (L4): why only JetClass-II and JetClass are binned, and its values in the data release (L18)
     assert re.findall(r"\{(tab:[a-z_0-9]+)\}", K.CAPTIONS["PT"]) == [] and "tab:ptbins" not in G.TIER
     assert "JetClass-II and JetClass only, as top and quark/gluon jet pT span about 50 to 100 GeV" in K.text("PT")
-    assert K.text("PT").endswith("values are in the supplementary file jet_pt_bins.csv.")
+    assert K.text("PT").endswith("Values are in the supplementary file jet_pt_bins.csv.")
     # the pages of the gallery carry these captions (apply at the end of each module)
     for mod in (L, R, PC, H):
         for page in mod.PAGES:
@@ -440,7 +448,8 @@ def test_every_figure_family_and_table_lists_the_networks_in_one_order():
     # the jet-pT family's partition figure (round 2): 188 and 17 classes for reference, then the partitions
     assert H.PT_PARTITIONS == H.SCULPT_PARTITIONS == ("L188", "R16_Q1") + order[len(sets):]
     assert L.HV_PARTITIONS == order[len(sets):] and H.PROBE_NETS == sets + ("INIT",)
-    assert H.F10C_ROWS == sets + ("FLAV_F0", "FLAV_F1", "FLAV_F1R")
+    # PI 2026-11-14: the random partitions drawn once their head outputs exist; F11-part shows every network
+    assert H.F10C_ROWS == sets + ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND") and H.XBX_PARTITIONS == order
     assert [a for a, _ in PC.LABEL_SETS + PC.PARTITIONS] == ["L162", "R42_Q1", "R16_Q1", *order[len(sets):]]
     assert [a for a, _ in PC.MASS] == ["L162_MASS", "R16_Q1_MASS"]
     # the tables
@@ -542,9 +551,9 @@ def test_the_jet_pt_files_hold_every_run_on_one_binning_and_the_jets_of_their_mo
     assert long == {"mtx-r16q1-s1", *pooled["R16_Q1_MASS"], *(m for a in M.FLAV for m in pooled[a]), *pooled["RAND"]}
     assert all("/budget/leg_jc2b/" in docs["jc2_ft"][m]["cell"] for m in need - long)
     assert all("/budget_long/leg2/" in docs["jc1"][m]["cell"] for m in need)
-    assert "pt_bins" not in M.CAPTIONS       # L18: no typeset table, no caption; the per-class captions state the caps
-    assert "Fine-tuning on JetClass-II ran with a cap of 160 epochs for every partition and of 40 epochs for 188 " \
-           "classes." in PC.SUPPLEMENT_CAPTIONS["PC-jc2-part"]
+    assert "pt_bins" not in M.CAPTIONS       # L18: no typeset table, no caption
+    # PI 2026-11-14 (step 8): no caption sentence about epoch caps
+    assert "epoch" not in PC.SUPPLEMENT_CAPTIONS["PC-jc2-part"]
     full = M._load(H.PERF / "jc1_fulldecay")
     assert sorted(full) == ["scratch-s1", "scratch-s2", "scratch-s3"]
     assert all("/budget_long_fulldecay/leg2/scratch/" in d["cell"] for d in full.values())
@@ -606,15 +615,20 @@ def test_the_uncertainty_display_of_l21():
     for k in range(3):
         LV.binned(ax, e, np.array([0.5, 0.6, 0.7]), np.full(3, 0.01), np.full(3, 0.02), color="#000000", probe=False,
                   label=str(k), k=k, n=3)
-    xs = np.array([ln.get_xdata() for ln in ax.lines])          # one joined line of points per series
+    xs = np.array([ln.get_xdata() for ln in ax.lines])          # one series of points each, no joining line
     centres = 0.5 * (e[1:] + e[:-1])
     step = LV.BIN_SPREAD / 2 * np.diff(e).min()                # the narrowest bin's width shared by the three
     assert np.allclose(xs - centres, np.array([[-step], [0.0], [step]]))           # the same step in every bin
     assert np.all((xs > e[:-1]) & (xs < e[1:]))                                     # inside the bin
-    assert all(ln.get_linestyle() == "-" and ln.get_linewidth() == LV.THIN for ln in ax.lines)
+    # PI 2026-11-14 (step 8): no connecting lines; a vertical bar per point and a horizontal bar across its bin
+    assert all(ln.get_linestyle() in ("None", "none", "") for ln in ax.lines)
     bars = [c for c in ax.collections]
-    assert len(bars) == 3 and all(len(c.get_segments()) == 3 for c in bars)           # vertical bars only, no xerr
-    assert all(np.allclose(seg[:, 0], seg[0, 0]) for c in bars for seg in c.get_segments())
+    assert len(bars) == 6 and all(len(c.get_segments()) == 3 for c in bars)
+    vertical = [c for c in bars if all(np.allclose(seg[:, 0], seg[0, 0]) for seg in c.get_segments())]
+    across = [c for c in bars if c not in vertical]
+    assert len(vertical) == len(across) == 3
+    assert all(np.allclose([seg[0][0] for seg in c.get_segments()], e[:-1]) and
+               np.allclose([seg[1][0] for seg in c.get_segments()], e[1:]) for c in across)
     assert not [c for c in ax.get_children() if type(c).__name__ == "Line2D" and c.get_marker() in ("|", "_")]   # no caps
     matplotlib.pyplot.close(fig)
 
@@ -640,10 +654,11 @@ def test_the_supplement_tables_hold_the_points_their_figures_draw():
         assert names == [M.LABEL[a] for a in M.SETS + M.FLAV + (M.RAND_POOLED,)]
     # the per-run sculpting files as the build reads them (head/sculpting_v3), the figure's own inputs on its runs
     sc = {k.removesuffix("_sculpting"): v for k, v in M._load(L.P.DATA / "head/sculpting_v3").items()}
-    if sc and all(H.F10C_KEY in sc.get(m, {}) for r in H.F10C_ROWS for m in L.RUNS[r]):
-        assert all(H.I["sculpt"][m][H.F10C_KEY] == sc[m][H.F10C_KEY] for r in H.F10C_ROWS for m in L.RUNS[r])
-        t = M.table_sculpt(sc, L.RUNS, M.TAB, H.F10C_ROWS)
-        for row in H.F10C_ROWS:
+    rows = tuple(r for r in H.F10C_ROWS if r in L.RUNS)      # the random partitions once their head outputs exist
+    if sc and all(H.F10C_KEY in sc.get(m, {}) for r in rows for m in L.RUNS[r]):
+        assert all(H.I["sculpt"][m][H.F10C_KEY] == sc[m][H.F10C_KEY] for r in rows for m in L.RUNS[r])
+        t = M.table_sculpt(sc, L.RUNS, M.TAB, rows)
+        for row in rows:
             ln = next(x for x in t.splitlines() if x.startswith(M.LABEL[row] + " & ")).removesuffix(r" \\")
             y = [1 / sc[m][H.F10C_KEY]["jsd"] for m in L.RUNS[row]]
             assert ln.split(" & ")[-1] == M._cell(y, len(L.RUNS[row]), M.TAB), row

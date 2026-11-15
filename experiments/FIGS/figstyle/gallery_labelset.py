@@ -29,6 +29,9 @@ PUBLISHED = {"jc1": (2_000_000, 0.836), "top": (1_200_000, 1602.0), "qg": (1_600
 # ParT's published AUCs, as in the same tables (JetClass: averaged over class pairs, equal to one against the rest on
 # its balanced test set, which mlst_v4 checks)
 PUBLISHED_AUC = {"jc1": (2_000_000, 0.9834), "top": (1_200_000, 0.9858), "qg": (1_600_000, 0.9121)}
+# the published standard deviations (ParT Tables 5 and 6, literature_benchmarks.json), drawn on the star (PI 2026-11-14):
+# R30 only; ParT gives no uncertainty for its accuracies and AUCs
+PUBLISHED_SD = {"top": 81.0, "qg": 1.1}
 Y_OF = {"accuracy": "Accuracy", "r30": r"Rejection ($R_{30}$)", "macro_auc_ovr": "Mean AUC over classes", "auc": "AUC"}
 
 
@@ -294,9 +297,14 @@ def _draw_hv(path, value, refs: tuple, cells: list, absent: str) -> None:
     fig = S.figure_cm(S.PRINT_W, top + nrows * h + (nrows - 1) * hgap + 0.95)
     hidden = bars = 0
     panels = []
+    # audit 3 (2026-11-14): a reference with no value in any panel of a row of panels (the released Sophon checkpoint
+    # on top and quark/gluon tagging) is left out of that row's panels rather than shown as an empty labelled row
+    row_refs = {i: tuple(r for r in refs if any(_hv_values(r, g, c) for (i_, _), c, g in zip(HV_SLOTS, cells, gets)
+                                                if i_ == i)) for i, _ in HV_SLOTS}
     for k, ((i, j), cell, get, (key, n, ds, met, title)) in enumerate(zip(HV_SLOTS, cells, gets, HV_PANELS)):
         y0, x = top + i * (h + hgap), left + j * (w + HV_WGAP)
-        series = [(r, _hv_values(r, get, cell), _hv_colour(r), r in refs) for r in HV_ROWS + HV_PARTITIONS + refs]
+        rows, head, dividers = _hv_rows(row_refs[i])
+        series = [(r, _hv_values(r, get, cell), _hv_colour(r), r in refs) for r in HV_ROWS + HV_PARTITIONS + row_refs[i]]
         if not any(vals for _, vals, _, _ in series):
             ax = S.axes_cm(fig, x, y0, w, h)
             _empty_panel(ax)
@@ -327,7 +335,7 @@ def _draw_hv(path, value, refs: tuple, cells: list, absent: str) -> None:
                 Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_THIN))]
     i, j = HV_LEGEND_SLOT
     S.slot_legend(fig, handles, left + j * (w + HV_WGAP), top + i * (h + hgap), w, h,
-                  labels=["mean and standard deviation\nover pretraining runs", "188 classes, mean and\nstandard deviation"])
+                  labels=["mean and standard deviation", "188 classes, mean and\nstandard deviation"])
     _hv_ticks(fig, panels)
     print(f"{path.name}: {hidden} of {bars} SD bars are shorter than the mean's circle")
     S.save(fig, path)
@@ -449,8 +457,9 @@ def _head(auc: bool = False) -> list:
 
 
 def draw_f2(path) -> None:
-    """Fig. 2: the linear probes, each task's headline metric (L20: the fine-tuned networks are F2-ft)."""
-    _draw_hv(path, _probe_value, HV_REFS["probe"], _head(), "no linear probes (linprobe/fits_v4)")
+    """Fig. 2: the linear probes, each task's headline metric (L20: the fine-tuned networks are F2-ft); the released
+    Sophon checkpoint as in Table 1 and the AUC version (audit 3, 2026-11-14)."""
+    _draw_hv(path, _probe_value, HV_REFS["probe_all"], _head(), "no linear probes (linprobe/fits_v4)")
 
 
 def draw_f2_ft(path) -> None:
@@ -555,6 +564,9 @@ def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.S
             # the curves end at the published size stays visible inside the star instead of under its outline
             ax.plot(*published[key], color="#000000", marker="*", markersize=STAR, markerfacecolor="none",
                     markeredgecolor="#000000", markeredgewidth=0.8, linestyle="none", label=PUBLISHED_LABEL, zorder=2.5)
+            if met == "r30" and key in PUBLISHED_SD:      # its published standard deviation (PI 2026-11-14)
+                ax.errorbar(*published[key], yerr=PUBLISHED_SD[key], fmt="none", ecolor="#000000", elinewidth=L.XBAR,
+                            capsize=0, zorder=2.45)
         if met == "r30":
             _log_y(ax)
         else:
@@ -602,8 +614,11 @@ def draw_f8(path, auc: bool = False) -> None:
 
 
 def draw_a10(path, auc: bool = False) -> None:
-    """Linear probes of the label sets and the mass networks, and the random network."""
-    _size(path, [_probe(r) for r in SIZE_ROWS] + [_probe(M.INIT)], "no linear probes (linprobe/fits_v4)", auc)
+    """Linear probes of the label sets and the mass networks; the random network in the AUC version only (PI
+    2026-11-14, audit 3: in accuracy and R30 its points, far below, set the y range and squeeze the label sets into a
+    strip, so the figure leaves it to tab:probesn)."""
+    _size(path, [_probe(r) for r in SIZE_ROWS] + ([_probe(M.INIT)] if auc else []), "no linear probes (linprobe/fits_v4)",
+          auc)
 
 
 def draw_a8(path, auc: bool = False, style: str = L.SIZE) -> None:
@@ -631,8 +646,19 @@ EMBED_MASS = (("mtx-l162-s1", "L162"), ("mtx-l162mass-s1", "L162_MASS"), ("mtx-r
               ("mtx-r16q1mass-s1", "R16_Q1_MASS"))
 # X->bb and X->bs against QCD on Sophon's samples: frozen only (L11, L12), one column a signal
 EMBED_XBX = (("xbb", r"$X\to b\bar{b}$"), ("xbs", r"$X\to bs$"))
-# X->bb its colour of the hadronic JetClass-II grid, QCD black, X->bs a third CLASS10 colour (brown, not an X decay there)
-XBX_COLOURS = [S.TAB10[0], S.TAB10[1], S.TAB10[7]]      # _draw_embeddings' group order: QCD, X->bb, X->bs
+# one colour per UMAP group across the embedding figures (PI 2026-11-14: no colour that may be mistaken for a network's,
+# style_v5.CLASS10): QCD black, X->bb blue, X->cc orange, X->qq vermillion in every grid, the JetClass classes their
+# JC1_COLOUR (H->bb blue, H->cc orange)
+_C = S.CLASS10
+GROUP_COLOUR = {"QCD": _C[0], "bb": _C[1], "cc": _C[2], "qq": _C[3], "top": _C[4], "ee": _C[5], "mm": _C[8],
+                "bs": _C[7], "quark": _C[9], "gluon": _C[6],
+                **{c.removeprefix("label_"): S.JC1_COLOUR[c] for c in S.JC1_CLASSES if c != "label_QCD"}}
+XBX_COLOURS = [GROUP_COLOUR[g] for g in ("QCD", "bb", "bs")]      # _draw_embeddings' group order: QCD, X->bb, X->bs
+
+
+def UMAP_GROUP_COLOURS(task: str, groups: list) -> dict:     # noqa: N802 (a table read as a function)
+    """{group: colour} of one grid row (GROUP_COLOUR)."""
+    return {g: GROUP_COLOUR[g] for g in groups}
 
 
 UMAP_DIRS = ("umap_v3", "umap_v2", "umap", "umap_preview")     # four label sets (2026-11-13); round 3; the long-budget jc1 run; the preview
@@ -700,13 +726,8 @@ def _draw_embeddings(path, grid: list, colours=None, wgap: float = 0.3) -> None:
     left = 0.35 if len(grid) <= 2 else (S.PRINT_W - len(grid[0]) * w - (len(grid[0]) - 1) * wgap) / 2     # centred
     fig, axes, _ = S.grid_cm(len(grid), len(grid[0]), aspect=aspect, w=w, left=left, wgap=wgap, hgap=0.6, bottom=0.3,
                              top=0.95 + 0.5 * legend_rows_n)
-    if colours is None:         # QCD black, as in every class figure; the other classes take the colours after it
-        rest = iter(S.TAB10[1:])
-        colours = [S.TAB10[0] if name == "QCD" else next(rest) for name in groups]
-        if len(groups) <= 3:    # black and vermillion (and purple), which stand apart in small translucent dots
-            first = "QCD" if "QCD" in groups else groups[0]
-            rest = iter((S.TAB10[2], S.TAB10[3]))
-            colours = [S.TAB10[0] if name == first else next(rest) for name in groups]
+    if colours is None:         # one colour per group in every grid (GROUP_COLOUR)
+        colours = [GROUP_COLOUR[name] for name in groups]
     colour = dict(zip(groups, colours))
     for r, (row, drow) in enumerate(zip(grid, docs)):
         for ax, (_, title), d in zip(axes[r], row, drow):
@@ -726,6 +747,55 @@ def _draw_umap(path, page: str) -> None:
             for m, level in EMBED_MODELS]
     colours = [S.JC1_COLOUR[c] for c in S.JC1_CLASSES] if name == "jc1" else None
     _draw_embeddings(path, grid, colours=colours)
+
+
+# PI 2026-11-14 (step 5): the appendix's embeddings as two grids that cover every task, rows the tasks and columns the
+# four label sets (EMBED_MODELS), one legend per row; the jets, UMAP settings and seed of the per-task grids (the
+# JetClass-II row is UMAP-jc2-had's hadronic decays and QCD). X->bb and X->bs are frozen only (L11).
+UMAP_TASKS = {"UMAP-frozen": ("frozen", (("two_prong", "JetClass-II"), ("jc1", "JetClass"), ("top", "top tagging"),
+                                         ("qg", "quark/gluon"), ("xbb", r"$X\to b\bar{b}$"), ("xbs", r"$X\to bs$"))),
+              "UMAP-ft": ("ft", (("two_prong", "JetClass-II"), ("jc1", "JetClass"), ("top", "top tagging"),
+                                 ("qg", "quark/gluon")))}
+UMAP_TASK_W, UMAP_TASK_ASPECT = 3.4, 0.6       # cm: four columns across the 15 cm text block
+
+
+def _draw_umap_tasks(path, page: str) -> None:
+    """Rows: the tasks of UMAP_TASKS[page], each with its own legend above it; columns: 188, 162, 43 and 17 classes,
+    named in every panel's title; the same jets in every panel of a row."""
+    from matplotlib.lines import Line2D
+    kind, tasks = UMAP_TASKS[page]
+    stems = [[f"{name}_{m}_{kind}" for m, _ in EMBED_MODELS] for name, _ in tasks]
+    root = _umap_root([s for row in stems for s in row])
+    docs = [[json.loads((root / f"{s}.json").read_text()) for s in row] for row in stems]
+    if any(d.get("umap", UMAP_SETTINGS) != UMAP_SETTINGS for row in docs for d in row):
+        raise SystemExit(f"FATAL: {root}: UMAP settings other than the caption's {UMAP_SETTINGS}")
+    w, h, left, wgap = UMAP_TASK_W, UMAP_TASK_W * UMAP_TASK_ASPECT, 0.55, 0.15
+    leg = [0.85 if name == "jc1" else 0.47 for name, _ in tasks]          # cm: the row's legend, JetClass's ten classes in two lines
+    title, gap = 0.45, 0.12                                                # cm: the panel titles; between a panel and the next legend
+    H = sum(leg) + len(tasks) * (title + h + gap)
+    fig = S.figure_cm(S.PRINT_W, H)
+    axes, y = [], 0.0
+    for (name, label), row, lh in zip(tasks, docs, leg):
+        groups = list(dict.fromkeys(g for d in row for g in d["groups"]))
+        if "QCD" in groups:                     # the background first, as in every legend
+            groups = ["QCD"] + [g for g in groups if g != "QCD"]
+        colours = UMAP_GROUP_COLOURS(name, groups)
+        handles = [Line2D([], [], color=colours[g], marker="o", markersize=4, linestyle="none", label=EMBED_NAMES[g])
+                   for g in groups]
+        fig.legend(handles=handles, loc="upper center", ncol=5 if len(groups) > 5 else len(groups), frameon=False,
+                   fontsize=S.LEGEND_PT5, borderpad=0.0, labelspacing=0.15, columnspacing=1.2, handletextpad=0.3,
+                   bbox_to_anchor=((left + (4 * w + 3 * wgap) / 2) / S.PRINT_W, 1 - (y + 0.02) / H))
+        y += lh + title
+        for j, d in enumerate(row):
+            ax = S.axes_cm(fig, left + j * (w + wgap), y, w, h)
+            _embedding(ax, d, [colours[g] for g in d["groups"]])
+            S.title(ax, S.NAME[EMBED_MODELS[j][1]])
+            axes.append(ax)
+        fig.text(0.2 / S.PRINT_W, 1 - (y + h / 2) / H, label, rotation=90, ha="center", va="center",
+                 fontsize=S.LABEL_PT5)
+        y += h + gap
+    S.letter_panels(axes)
+    S.save(fig, path)
 
 
 # the supplement's further grids (L12, L19): page -> (rows, columns as (file stem prefix, kind, panel word), heading)
@@ -808,6 +878,21 @@ def _umap_page(page: str) -> C.Page:
                                                  if page in ("UMAP-top", "UMAP-qg") else ""),
         draw=lambda path: _draw_umap(path, page),
         data_note=f"From umap_v2 (scripts/build_umap_jobs.py --out-name umap_v2). Reading, for the text: {UMAP_READ[page]}")
+
+
+
+def _umap_task_page(page: str) -> C.Page:
+    kind, tasks = UMAP_TASKS[page]
+    return C.Page(
+        id=page,
+        title=f"UMAP of the class token, every task, {'frozen' if kind == 'frozen' else 'fine-tuned'} (appendix)",
+        precedent=["map2026_poster/fig5.png", "2610.36121/fig3.png"],
+        precedent_label="MAP 2026 poster (frozen against fine-tuned), SuperJEPA Fig. 3",
+        caption="",
+        differs="PI 2026-11-14 (step 5): one grid per mode covering every task, rows the tasks, columns 188, 162, 43 "
+                "and 17 classes, one legend per row; the per-task grids' jets, UMAP settings and seed.",
+        draw=lambda path: _draw_umap_tasks(path, page),
+        data_note="From umap_v3 (L19).")
 
 
 
@@ -1067,6 +1152,7 @@ PAGES = [
         draw=draw_a10_part,
         data_note=SUBST_NOTE),
     *[_umap_page(page) for page in UMAP_PAGES],
+    *[_umap_task_page(page) for page in UMAP_TASKS],
     *[_umap_more_page(page) for page in UMAP_MORE],
     C.Page(
         id="VAL",

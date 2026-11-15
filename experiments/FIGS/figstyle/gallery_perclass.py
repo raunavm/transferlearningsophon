@@ -74,6 +74,86 @@ def _mean(get, row: str) -> dict:
     return {c: float(np.mean([p[c] for p in per if c in p])) for c in set().union(*per)} if per else {}
 
 
+def _sd(get, row: str) -> dict:
+    """{class: SD of the AUC over the row's runs} (0 for one run)."""
+    per = [p for m in POOLED[row] if (p := get(m))]
+    out = {}
+    for c in set().union(*per) if per else ():
+        v = [p[c] for p in per if c in p]
+        out[c] = float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
+    return out
+
+
+# ------------------------------------------------------------------ decision L3 per class (PI 2026-11-14)
+# A class counts as lower (higher) for a network than for its reference when |delta| > 3 sigma, sigma^2 = the SD^2 of
+# each side over its runs + the bootstrap SD^2 of the difference over test jets. The test-jet term is read from the L3
+# bootstrap files (experiments/STATS/paired_bootstrap.py --per-class: a "class_<k>" entry per class in each difference
+# and each model) when they hold it; without it the count uses the run SDs alone and says so (BOOT_MISSING).
+L3_FILES = {("jc2", 0): "probe_jc2bal_N1000000.json", ("jc2", 1): "ft_jc2bal_N1000000.json",
+            ("jc1", 0): "probe_jc1_N1000000.json", ("jc1", 1): "ft_jc1_N1000000.json"}
+L3_DIFF = {("L162", "L188"): "162-188", ("R42_Q1", "L188"): "43-188", ("R16_Q1", "L188"): "17-188",
+           ("L162_MASS", "L162"): "162mass-162", ("R16_Q1_MASS", "R16_Q1"): "17mass-17"}
+
+
+def _l3_doc(test: str, mode: int) -> dict:
+    """The L3 bootstrap of a test and mode (0 linear probe, 1 fine-tuned): bootstrap/l3_v5 for the linear probes when
+    the v5 refits are read (mlst_v4.pick), else bootstrap/l3; {} when absent."""
+    import json
+    name = L3_FILES[test, mode]
+    dirs = (["bootstrap/l3_v5"] if mode == 0 and M.V4.pick(P.DATA, "linprobe/fits_v4") != "linprobe/fits_v4" else []) \
+        + ["bootstrap/l3"]
+    for d in dirs:
+        if (P.DATA / d / name).exists():
+            return json.loads((P.DATA / d / name).read_text())
+    return {}
+
+
+def _class_key(test: str, c) -> str:
+    """The bootstrap's key of a class: class_<jet_label> on JetClass-II, class_<index in S.JC1_CLASSES> on JetClass."""
+    return f"class_{c}" if test == "jc2" else f"class_{S.JC1_CLASSES.index(c)}"
+
+
+def _boot_diff(test: str, mode: int, pair: tuple) -> dict:
+    """{class: bootstrap SD of the difference (one minus AUC, so of the AUC too)} of a pair, {} when not stored."""
+    d = _l3_doc(test, mode).get("diffs", {}).get(L3_DIFF.get(pair, ""), {})
+    return {k: v["boot_sd"] for k, v in d.items() if k.startswith("class_") and v.get("boot_sd") is not None}
+
+
+def _boot_side(test: str, mode: int, row: str) -> dict:
+    """{class key: RMS over the row's runs of each run's bootstrap SD}, {} when not stored (the bar of a mean)."""
+    models = _l3_doc(test, mode).get("models", {})
+    per = [models[m] for m in POOLED[row] if m in models]
+    keys = set().union(*per) if per else set()
+    return {k: float(np.sqrt(np.mean([q[k]["sd"] ** 2 for q in per if k in q and q[k].get("sd") is not None])))
+            for k in keys if k.startswith("class_") and any(k in q and q[k].get("sd") is not None for q in per)}
+
+
+def l3_counts(test: str, pair: tuple, mode: int) -> dict:
+    """{"lower", "higher", "lower_qcd", "n", "boot"}: the classes whose AUC for pair[0] lies below (above) pair[1]'s
+    by more than three L3 standard deviations, the QCD classes among the lower ones (JetClass-II), the classes
+    compared, and whether the test-jet term was read (else the run SDs alone)."""
+    get = SOURCES[test][mode]
+    (ma, sa), (mb, sb) = ((_mean(get, r), _sd(get, r)) for r in pair)
+    boot = _boot_diff(test, mode, pair)
+    qcd = {int(r["jet_label"]) for r in M._class_rows(P.REPO) if r["class_name"].startswith("label_QCD_")} \
+        if test == "jc2" else {"label_QCD"}
+    lower, higher = [], []
+    for c in ma:
+        if c not in mb:
+            continue
+        sigma = math.sqrt(sa[c] ** 2 + sb[c] ** 2 + boot.get(_class_key(test, c), 0.0) ** 2)
+        delta = ma[c] - mb[c]
+        if sigma > 0 and delta < -3 * sigma:
+            lower.append(c)
+        elif sigma > 0 and delta > 3 * sigma:
+            higher.append(c)
+    return {"lower": len(lower), "higher": len(higher), "lower_qcd": sum(c in qcd for c in lower),
+            "n": sum(c in mb for c in ma), "boot": bool(boot)}
+
+
+BOOT_MISSING = []      # (test, pair, mode) counted without the test-jet term, for the report
+
+
 # ------------------------------------------------------------------ the scatter grids
 def _look(test: str):
     """(class -> (colour, marker, size, zorder), legend handles) of the family's one colour rule."""
@@ -106,10 +186,17 @@ def _draw_grid(path, test: str, rows: tuple) -> None:
     handles = handles + [Line2D([], [], **S.REFERENCE, label="equal AUC")]
     n = len(rows)
     w = PANEL[n]
-    pts = [[[(ref[c], cmp_[c], c) for c in ref if c in cmp_] for cmp_, ref in ((_mean(get, a), _mean(get, b)) for get in gets)]
+    # PI 2026-11-14 (step D): one minus the AUC on log axes, so classes near AUC 1 spread out, each point with bars of
+    # its side's run SD and, where stored, its test-jet bootstrap SD (L3)
+    def side(get, row, mode):
+        m, sd, bt = _mean(get, row), _sd(get, row), _boot_side(test, mode, row)
+        return {c: (1 - m[c], math.hypot(sd[c], bt.get(_class_key(test, c), 0.0))) for c in m}
+    pts = [[[(ref[c][0], cmp_[c][0], c, ref[c][1], cmp_[c][1]) for c in ref if c in cmp_]
+            for k, (cmp_, ref) in enumerate((side(get, a, k), side(get, b, k)) for k, get in enumerate(gets))]
            for a, b in rows]
-    lo = min(v for row in pts for panel in row for x, y, _ in panel for v in (x, y))
-    lim = (lo - 0.08 * (1 - lo), 1.0 + 0.08 * (1 - lo))      # the points clear of the frames, the lowest too (L7)
+    vals = [v for row in pts for panel in row for x, y, _, ex, ey in panel for v in (x - ex, y - ey, x + ex, y + ey)]
+    lo, hi = min(v for v in vals if v > 0), max(vals)
+    lim = (lo / 1.6, hi * 1.6)                               # the points and bars clear of the frames (L7)
     ncol = math.ceil(len(handles) / 2)                       # two legend rows: three rows of panels fit the page
     one_ref = len({b for _, b in rows}) == 1
     two = any(len(S.LEGEND[a]) > 16 for a, _ in rows)        # a partition's name and the mode on two title lines
@@ -118,11 +205,6 @@ def _draw_grid(path, test: str, rows: tuple) -> None:
     hgap = HGAP + (TITLE_LINE if two else 0) + (0 if one_ref else XLABEL)
     fig = S.figure_cm(S.PRINT_W, top + n * w + (n - 1) * hgap + 1.0)
     x0 = (S.PRINT_W - LEFT - 2 * w - WGAP) / 2 + LEFT       # the block of labels and panels centred
-    span = lim[1] - lim[0]
-    # the finest round step whose labels fit (0.8 cm each) and whose first tick clears the previous panel's last label;
-    # if no step clears it, the coarsest whose labels fit
-    fits = [t for t in (0.02, 0.04, 0.05, 0.1) if span / t * 0.8 <= w]
-    step = next((t for t in fits if (math.ceil(lim[0] / t - 1e-9) * t - lim[0]) / span * w >= 0.3), fits[-1])
     dot = DOT[n]
     for i, (row, (a, b)) in enumerate(zip(pts, rows)):
         y0 = top + i * (w + hgap)
@@ -131,20 +213,24 @@ def _draw_grid(path, test: str, rows: tuple) -> None:
             ax = S.axes_cm(fig, x0 + j * (w + WGAP), y0, w, w)
             S.fine_grid(ax)
             ax.plot(lim, lim, **S.REFERENCE)
-            for x, y, c in panel:
+            for x, y, c, ex, ey in panel:
                 colour, marker, size, z = look(c)
+                ax.errorbar(x, y, xerr=ex or None, yerr=ey or None, fmt="none", ecolor=colour, elinewidth=0.4,
+                            capsize=0, alpha=0.6, zorder=z - 0.1)
                 ax.plot(x, y, color=colour, marker=marker, markersize=size or dot, linestyle="none", clip_on=False,
                         zorder=z, markeredgewidth=0.5 if marker in "+x*" else 0)
+            ax.set_xscale("log")
+            ax.set_yscale("log")
             ax.set_xlim(lim)
             ax.set_ylim(lim)
-            for axis in (ax.xaxis, ax.yaxis):
-                axis.set_major_locator(ticker.MultipleLocator(step))
+            S.log_axis(ax, "x", force=True)
+            S.log_axis(ax, "y", force=True)
             ax.tick_params(labelleft=j == 0, labelbottom=last)
             S.title(ax, f"({'abcdefgh'[2 * i + j]}) {S.LEGEND[a]},{chr(10) if two else ' '}{mode.lower()}")
             if j == 0:
-                S.labels(ax, ylabel="AUC, the panel's network")
+                S.labels(ax, ylabel="1 − AUC, the panel's network")
             if last:
-                S.labels(ax, xlabel=f"AUC, {S.LEGEND[b]}")
+                S.labels(ax, xlabel=f"1 − AUC, {S.LEGEND[b]}")
     # the six decay families and the diagonal in two rows across 15 cm: closer columns
     S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=ncol, columnspacing=0.8, handletextpad=0.4)
     S.save(fig, path)
@@ -315,10 +401,10 @@ SUPPLEMENT_CAPTIONS = {
         "figure {fig:PC-jc2}. Each point is one JetClass-II class, at its area under the receiver operating "
         "characteristic curve (AUC) for separating it from all other classes, with (a, b) no flavor boundary and "
         "(c, d) a b-quark boundary (vertical) against 188 classes (horizontal), as linear probes (left column) or "
-        "fine-tuned (right column) on one million class-balanced JetClass-II jets. Points below the dotted diagonal "
-        "are classes the partition separates less well, and colors are decay families. Each point is the mean over "
-        "two pretraining runs, and the 188-class values over three runs. Fine-tuning on JetClass-II ran with a cap of "
-        "160 epochs for every partition and of 40 epochs for 188 classes. Figure {fig:PC-jc2-rand} shows the random "
+        "fine-tuned (right column) on one million class-balanced JetClass-II jets, as one minus the AUC on logarithmic "
+        "axes. Points above the dotted diagonal are classes the partition separates less well, and colors are decay "
+        "families. Each point is the mean over two pretraining runs, and the 188-class values over three runs, with "
+        "bars of ±1 standard deviation. Figure {fig:PC-jc2-rand} shows the random "
         "flavor boundary and the random partitions. The points are in table {tab:perclass} and their averages in "
         "table {tab:summaryauc}."
     ),
@@ -327,10 +413,10 @@ SUPPLEMENT_CAPTIONS = {
         "(c, d) the five random 17-class partitions, each point one JetClass-II class at its area under the receiver "
         "operating characteristic curve (AUC) for separating it from all other classes (vertical) against 188 classes "
         "(horizontal), as linear probes (left column) or fine-tuned (right column) on one million class-balanced "
-        "JetClass-II jets. Points below the dotted diagonal are classes the partition separates less well, and colors "
-        "are decay families. Each point is the mean over two pretraining runs, or over the five random partitions "
-        "with one run each, and the 188-class values over three runs. Fine-tuning on JetClass-II ran with a cap of "
-        "160 epochs for every partition and of 40 epochs for 188 classes. The points are in table {tab:perclass} and "
+        "JetClass-II jets, as one minus the AUC on logarithmic axes. Points above the dotted diagonal are classes the "
+        "partition separates less well, and colors are decay families. Each point is the mean over two pretraining "
+        "runs, or over the five random partitions with one run each, and the 188-class values over three runs, with "
+        "bars of ±1 standard deviation. The points are in table {tab:perclass} and "
         "their averages in table {tab:summaryauc}."
     ),
     "PC-jc1-part": (
@@ -338,35 +424,37 @@ SUPPLEMENT_CAPTIONS = {
         "figure {fig:PC-jc1}. Each point is one JetClass class, at its area under the receiver operating "
         "characteristic curve (AUC) for separating it from the other nine, with (a, b) no flavor boundary and (c, d) a "
         "b-quark boundary (vertical) against 188 classes (horizontal), as linear probes (left column) or fine-tuned "
-        "(right column) on one million JetClass jets. Each point is the mean over two pretraining runs, and the "
-        "188-class values over three runs. Figure {fig:PC-jc1-rand} shows the random flavor boundary and the random "
+        "(right column) on one million JetClass jets, as one minus the AUC on logarithmic axes. Each point is the mean "
+        "over two pretraining runs, and the 188-class values over three runs, with bars of ±1 standard deviation. "
+        "Figure {fig:PC-jc1-rand} shows the random flavor boundary and the random "
         "partitions, and values are in table {tab:jc1_class_auc}."
     ),
     "PC-jc1-rand": (
         "The panels of figure {fig:PC-jc1-part} for (a, b) the 17-class partition with a random flavor boundary and "
         "(c, d) the five random 17-class partitions, each point one JetClass class at its area under the receiver "
         "operating characteristic curve (AUC) for separating it from the other nine (vertical) against 188 classes "
-        "(horizontal), as linear probes (left column) or fine-tuned (right column) on one million JetClass jets. Each "
-        "point is the mean over two pretraining runs, or over the five random partitions with one run each, and the "
-        "188-class values over three runs. Values are in table {tab:jc1_class_auc}."
+        "(horizontal), as linear probes (left column) or fine-tuned (right column) on one million JetClass jets, as one "
+        "minus the AUC on logarithmic axes. Each point is the mean over two pretraining runs, or over the five random "
+        "partitions with one run each, and the 188-class values over three runs, with bars of ±1 standard deviation. "
+        "Values are in table {tab:jc1_class_auc}."
     ),
     "PC-jc2-mass": (
         "The networks pretrained with an added mass regression against the same label set without it, in the form of "
         "figure {fig:PC-jc2}. Each point is one JetClass-II class, at its area under the receiver operating characteristic curve (AUC) for separating it "
         "from all other classes, with (a, b) 162 classes + mass against 162 classes and (c, d) 17 classes + mass "
         "against 17 classes, as linear probes (left column) or fine-tuned (right column) on one million class-balanced "
-        "JetClass-II jets. Points below the dotted diagonal are classes the mass network separates less well, and "
-        "colors are decay families. Each point is the mean over two pretraining runs for a mass network and three for "
-        "its label set. Fine-tuning on JetClass-II ran with a cap of 40 epochs, except the first run of 17 classes "
-        "and both runs of 17 classes + mass, which had the 160-epoch cap. The points are in table {tab:perclass} and "
+        "JetClass-II jets, as one minus the AUC on logarithmic axes. Points above the dotted diagonal are classes the "
+        "mass network separates less well, and colors are decay families. Each point is the mean over two pretraining "
+        "runs for a mass network and three for its label set, with bars of ±1 standard deviation. The points are in table {tab:perclass} and "
         "their averages in table {tab:summaryauc}."
     ),
     "PC-jc1-mass": (
         "The networks pretrained with an added mass regression against the same label set without it, in the form of "
         "figure {fig:PC-jc1}. Each point is one JetClass class, at its area under the receiver operating characteristic curve (AUC) for separating it "
         "from the other nine, with (a, b) 162 classes + mass against 162 classes and (c, d) 17 classes + mass against "
-        "17 classes, as linear probes (left column) or fine-tuned (right column) on one million JetClass jets. Each point "
-        "is the mean over two pretraining runs for a mass network and three for its label set. Values are in table "
+        "17 classes, as linear probes (left column) or fine-tuned (right column) on one million JetClass jets, as one "
+        "minus the AUC on logarithmic axes. Each point is the mean over two pretraining runs for a mass network and "
+        "three for its label set, with bars of ±1 standard deviation. Values are in table "
         "{tab:jc1_class_auc}."
     ),
     "PC-conf": (
@@ -396,6 +484,28 @@ SUPPLEMENT_CAPTIONS = {
     ),
 }
 
+def counts_sentence(test: str) -> str:
+    """The finding sentence of PC-jc2 and PC-jc1 from l3_counts (PI 2026-11-14: the counts follow L3, the run and
+    test-jet spread, and are computed, never typed): how many classes 162, 43 and 17 classes lower and raise against
+    188 classes, as linear probes and fine-tuned."""
+    try:
+        c = {(a, k): l3_counts(test, (a, b), k) for a, b in LABEL_SETS for k in (0, 1)}
+    except Exception:          # noqa: BLE001  no per-class values: the page is Absent, the caption keeps no count
+        return ""
+    BOOT_MISSING.extend((test, a, k) for (a, k), v in c.items() if not v["boot"])
+    spread = "runs and test jets" if all(v["boot"] for v in c.values()) else "runs"
+    n = max(v["n"] for v in c.values())
+    lp, ft = (", ".join(str(c[a, k]["lower"]) for a, _ in LABEL_SETS[:-1]) + f" and {c[LABEL_SETS[-1][0], k]['lower']}"
+              for k in (0, 1))
+    raised = sum(v["higher"] for v in c.values())
+    qcd = (f" ({c['L162', 0]['lower_qcd']} of the 162-class ones QCD classes)" if test == "jc2" else "")
+    what = "JetClass-II" if test == "jc2" else "JetClass"
+    return (f"Beyond three standard deviations of the spread over {spread}, 162, 43 and 17 classes separate {lp} of "
+            f"the {n} {what} classes less well than 188 classes as linear probes{qcd} and {ft} after fine-tuning, and "
+            + ("none better." if not raised else f"{raised} better in all."))
+
+
 import gallery_captions  # noqa: E402
+gallery_captions.COUNTS.update({"PC-jc2": counts_sentence("jc2"), "PC-jc1": counts_sentence("jc1")})
 PAGES = [dataclasses.replace(p, caption=gallery_captions.fill(SUPPLEMENT_CAPTIONS[p.id])) if p.id in SUPPLEMENT_CAPTIONS
          else p for p in gallery_captions.apply(PAGES)]

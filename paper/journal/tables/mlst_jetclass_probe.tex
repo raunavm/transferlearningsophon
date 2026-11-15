@@ -3,7 +3,7 @@
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \addtolength{\belowcaptionskip}{\medskipamount}
 \begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
-\caption{Linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, of the two networks with an added mass output, of every 17-class partition, of the random networks and of the released Sophon checkpoint, trained and scored on JetClass at the largest training set, in the columns of table~\ref{tab:jetclassall}. The released Sophon checkpoint, set apart by a rule, is outside the controlled comparison. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. $R$ with a subscript is the inverse QCD efficiency at that signal efficiency in percent, 50\% except 99\% for $H\to\ell\nu qq'$ and 99.5\% for $t\to b\ell\nu$. The batch-normalization (BatchNorm) statistics of the random network with BatchNorm recomputed are re-estimated on \DesignBnJets{} training jets. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. $^{\S}$~marks a value from a single run. $^{\P}$~marks a value whose runs agree to the digits shown.}\label{tab:jetclassprobe}\\
+\caption{Linear probes on the frozen features of the networks pretrained with 188, 162, 43 and 17 classes, of the two networks with an added mass output, of every 17-class partition, of the random networks and of the released Sophon checkpoint, trained and scored on JetClass at the largest training set, in the columns of table~\ref{tab:jetclassall}. The released Sophon checkpoint, set apart by a rule, is outside the controlled comparison. AUC is the area under the receiver operating characteristic curve, averaged over the classes, each against the rest. $R$ with a subscript is the inverse QCD efficiency at that signal efficiency in percent, 50\% except 99\% for $H\to\ell\nu qq'$ and 99.5\% for $t\to b\ell\nu$. The batch-normalization (BatchNorm) statistics of the random network with BatchNorm recomputed are re-estimated on \DesignBnJets{} training jets. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. $^{\S}$~marks a value from a single run.}\label{tab:jetclassprobe}\\
 \toprule
 &  &  & \multicolumn{3}{c}{rejection of QCD} \\
 \cmidrule(lr){4-6}
@@ -20,19 +20,19 @@
 \midrule
 \endhead
 \multicolumn{6}{@{}l}{\textit{linear probe on the frozen features}} \\*
-\Kfull{} classes & 0.771\,$\pm$\,0.002 & 0.9682\,$\pm$\,0.0006 & 836\,$\pm$\,93 & 382\,$\pm$\,34 & 19.98\,$\pm$\,0.97 \\
-\Kres{} classes & 0.771\,$\pm$\,0.001 & 0.9683\,$\pm$\,0.0002 & 797\,$\pm$\,131 & 415\,$\pm$\,52 & 20.70\,$\pm$\,0.81 \\
-\Kres{} classes + mass & 0.774\,$\pm$\,0.003 & 0.9690\,$\pm$\,0.0009 & 815\,$\pm$\,12 & 395\,$\pm$\,25 & 21.18\,$\pm$\,1.84 \\
-\Kmid{} classes & 0.770\,$\pm$\,0.001 & 0.9680\,$\pm$\,0.0004 & 875\,$\pm$\,184 & 440\,$\pm$\,31 & 20.78\,$\pm$\,0.71 \\
-\Kcoarse{} classes & 0.761\,$\pm$\,0.003 & 0.9650\,$\pm$\,0.0008 & 831\,$\pm$\,16 & 294\,$\pm$\,20 & 21.60\,$\pm$\,0.70 \\
-\Kcoarse{} classes + mass & 0.762\,$\pm$\,0.001 & 0.9653\,$\pm$\,0.0003 & 781\,$\pm$\,204 & 274\,$\pm$\,19 & 22.24\,$\pm$\,0.48 \\
+\Kfull{} classes & 0.7709\,$\pm$\,0.0023 & 0.9682\,$\pm$\,0.0006 & 840\,$\pm$\,90 & 382\,$\pm$\,34 & 20.0\,$\pm$\,1.0 \\
+\Kres{} classes & 0.7709\,$\pm$\,0.0005 & 0.96832\,$\pm$\,0.00016 & 800\,$\pm$\,130 & 410\,$\pm$\,50 & 20.7\,$\pm$\,0.8 \\
+\Kres{} classes + mass & 0.7739\,$\pm$\,0.0030 & 0.9690\,$\pm$\,0.0009 & 815\,$\pm$\,12 & 395\,$\pm$\,25 & 21.2\,$\pm$\,1.8 \\
+\Kmid{} classes & 0.7695\,$\pm$\,0.0014 & 0.9680\,$\pm$\,0.0004 & 880\,$\pm$\,180 & 440\,$\pm$\,31 & 20.8\,$\pm$\,0.7 \\
+\Kcoarse{} classes & 0.7605\,$\pm$\,0.0027 & 0.9650\,$\pm$\,0.0008 & 831\,$\pm$\,16 & 294\,$\pm$\,20 & 21.6\,$\pm$\,0.7 \\
+\Kcoarse{} classes + mass & 0.7618\,$\pm$\,0.0009 & 0.96532\,$\pm$\,0.00026 & 780\,$\pm$\,200 & 274\,$\pm$\,19 & 22.2\,$\pm$\,0.5 \\
 \multicolumn{6}{@{}l}{17-class partitions} \\*
-\quad no flavor boundary & 0.751\,$\pm$\,0.003 & 0.9628\,$\pm$\,0.0008 & 641\,$\pm$\,189 & 239\,$\pm$\,8 & 20.33\,$\pm$\,1.65 \\*
-\quad $b$-quark boundary & 0.763\,$\pm$\,0.002 & 0.9663\,$\pm$\,0.0003 & 1{,}045\,$\pm$\,77 & 349\,$\pm$\,68 & 19.28\,$\pm$\,1.87 \\*
-\quad random flavor boundary & 0.758\,$\pm$\,0.002 & 0.9649\,$\pm$\,0.0006 & 710\,$\pm$\,67 & 325\,$\pm$\,10 & 18.83\,$\pm$\,0.05 \\*
-\quad random partitions & 0.754\,$\pm$\,0.001 & 0.9638\,$\pm$\,0.0002 & 759\,$\pm$\,84 & 353\,$\pm$\,21 & 17.92\,$\pm$\,0.88 \\*
-random network & 0.408\,$\pm$\,0.001 & 0.8280\,$\pm$\,0.0011 & 25\,$\pm$\,1 & 20\,$\pm$\,2 & 17.91\,$\pm$\,0.83 \\*
-random network, BatchNorm recomputed & 0.475\,$\pm$\,0.005 & 0.8655\,$\pm$\,0.0040 & 46\,$\pm$\,2 & 14\,$\pm$\,1 & 15.37\,$\pm$\,0.53 \\*
+\quad no flavor boundary & 0.7511\,$\pm$\,0.0034 & 0.9628\,$\pm$\,0.0008 & 640\,$\pm$\,190 & 239\,$\pm$\,8 & 20.3\,$\pm$\,1.6 \\*
+\quad $b$-quark boundary & 0.7630\,$\pm$\,0.0021 & 0.96629\,$\pm$\,0.00029 & 1{,}040\,$\pm$\,80 & 350\,$\pm$\,70 & 19.3\,$\pm$\,1.9 \\*
+\quad random flavor boundary & 0.7579\,$\pm$\,0.0021 & 0.9649\,$\pm$\,0.0006 & 710\,$\pm$\,70 & 325\,$\pm$\,10 & 18.83\,$\pm$\,0.05 \\*
+\quad random partitions & 0.7541\,$\pm$\,0.0009 & 0.96379\,$\pm$\,0.00021 & 760\,$\pm$\,80 & 353\,$\pm$\,21 & 17.9\,$\pm$\,0.9 \\*
+random network & 0.4077\,$\pm$\,0.0013 & 0.8280\,$\pm$\,0.0011 & 25.3\,$\pm$\,1.1 & 20.4\,$\pm$\,1.6 & 17.9\,$\pm$\,0.8 \\*
+random network, BatchNorm recomputed & 0.475\,$\pm$\,0.005 & 0.866\,$\pm$\,0.004 & 46.3\,$\pm$\,2.3 & 13.7\,$\pm$\,1.2 & 15.4\,$\pm$\,0.5 \\*
 \noalign{\nobreak\vskip\aboverulesep\hrule height\lightrulewidth\nobreak\vskip\belowrulesep\nobreak}
 released Sophon checkpoint & 0.768$^{\S}$ & 0.9675$^{\S}$ & 752$^{\S}$ & 374$^{\S}$ & 19.70$^{\S}$ \\
 \noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
@@ -49,19 +49,19 @@ released Sophon checkpoint & 0.768$^{\S}$ & 0.9675$^{\S}$ & 752$^{\S}$ & 374$^{\
  & $R_{50}$ & $R_{99}$ & $R_{50}$ & $R_{99.5}$ & $R_{50}$ & $R_{50}$ \\
 \midrule
 \multicolumn{7}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & 200\,$\pm$\,15 & 918\,$\pm$\,36 & 1{,}097\,$\pm$\,82 & 2{,}689\,$\pm$\,306 & 76.1\,$\pm$\,1.7 & 63.1\,$\pm$\,2.5 \\
-\Kres{} classes & 207\,$\pm$\,15 & 933\,$\pm$\,46 & 1{,}221\,$\pm$\,150 & 3{,}361\,$\pm$\,583 & 81.6\,$\pm$\,2.1 & 65.8\,$\pm$\,3.2 \\
-\Kres{} classes + mass & 227\,$\pm$\,23 & 929\,$\pm$\,40 & 1{,}082\,$\pm$\,144 & 4{,}939\,$\pm$\,86 & 75.4\,$\pm$\,3.5 & 68.3\,$\pm$\,1.1 \\
-\Kmid{} classes & 207\,$\pm$\,13 & 919\,$\pm$\,75 & 1{,}298\,$\pm$\,203 & 3{,}682\,$\pm$\,484 & 79.1\,$\pm$\,1.6 & 69.5\,$\pm$\,0.9 \\
-\Kcoarse{} classes & 183\,$\pm$\,12 & 814\,$\pm$\,113 & 1{,}184\,$\pm$\,308 & 3{,}094\,$\pm$\,275 & 70.8\,$\pm$\,5.0 & 68.9\,$\pm$\,2.8 \\
-\Kcoarse{} classes + mass & 170\,$\pm$\,1 & 791\,$\pm$\,13 & 843\,$\pm$\,43 & 2{,}152\,$\pm$\,324 & 67.8\,$\pm$\,2.8 & 69.5\,$\pm$\,1.9 \\
+\Kfull{} classes & 200\,$\pm$\,15 & 920\,$\pm$\,40 & 1{,}100\,$\pm$\,80 & 2{,}690\,$\pm$\,310 & 76.1\,$\pm$\,1.7 & 63.1\,$\pm$\,2.5 \\
+\Kres{} classes & 207\,$\pm$\,15 & 930\,$\pm$\,50 & 1{,}220\,$\pm$\,150 & 3{,}400\,$\pm$\,600 & 81.6\,$\pm$\,2.1 & 65.8\,$\pm$\,3.2 \\
+\Kres{} classes + mass & 227\,$\pm$\,23 & 930\,$\pm$\,40 & 1{,}080\,$\pm$\,140 & 4{,}940\,$\pm$\,90 & 75.4\,$\pm$\,3.5 & 68.3\,$\pm$\,1.1 \\
+\Kmid{} classes & 207\,$\pm$\,13 & 920\,$\pm$\,70 & 1{,}300\,$\pm$\,200 & 3{,}700\,$\pm$\,500 & 79.1\,$\pm$\,1.6 & 69.5\,$\pm$\,0.9 \\
+\Kcoarse{} classes & 183\,$\pm$\,12 & 810\,$\pm$\,110 & 1{,}180\,$\pm$\,310 & 3{,}090\,$\pm$\,280 & 71\,$\pm$\,5 & 68.9\,$\pm$\,2.8 \\
+\Kcoarse{} classes + mass & 170.4\,$\pm$\,1.1 & 791\,$\pm$\,13 & 840\,$\pm$\,40 & 2{,}150\,$\pm$\,320 & 67.8\,$\pm$\,2.8 & 69.5\,$\pm$\,1.9 \\
 \multicolumn{7}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 156\,$\pm$\,2 & 697\,$\pm$\,21 & 899\,$\pm$\,14 & 2{,}058\,$\pm$\,861 & 67.3\,$\pm$\,2.6 & 68.7\,$\pm$\,0.7 \\
-\quad $b$-quark boundary & 200\,$\pm$\,7 & 706\,$\pm$\,23 & 948\,$\pm$\,157 & 1{,}973\,$\pm$\,352 & 72.8\,$\pm$\,3.1 & 67.0\,$\pm$\,1.2 \\
-\quad random flavor boundary & 180\,$\pm$\,7 & 672\,$\pm$\,18 & 937\,$\pm$\,254 & 1{,}951\,$\pm$\,187 & 73.7\,$\pm$\,1.9 & 66.0\,$\pm$\,0.5 \\
-\quad random partitions & 169\,$\pm$\,13 & 623\,$\pm$\,45 & 866\,$\pm$\,162 & 2{,}129\,$\pm$\,366 & 70.0\,$\pm$\,2.0 & 57.0\,$\pm$\,1.1 \\
-random network & 16\,$\pm$\,1 & 1$^{\P}$ & 20\,$\pm$\,1 & 1$^{\P}$ & 17.3\,$\pm$\,1.3 & 14.3\,$\pm$\,1.0 \\
-random network, BatchNorm recomputed & 14\,$\pm$\,1 & 2\,$\pm$\,1 & 23\,$\pm$\,2 & 2$^{\P}$ & 13.5\,$\pm$\,0.3 & 11.0\,$\pm$\,0.6 \\
+\quad no flavor boundary & 155.8\,$\pm$\,2.2 & 697\,$\pm$\,21 & 899\,$\pm$\,14 & 2{,}100\,$\pm$\,900 & 67.3\,$\pm$\,2.6 & 68.7\,$\pm$\,0.7 \\
+\quad $b$-quark boundary & 200\,$\pm$\,7 & 706\,$\pm$\,23 & 950\,$\pm$\,160 & 1{,}970\,$\pm$\,350 & 72.8\,$\pm$\,3.1 & 67.0\,$\pm$\,1.2 \\
+\quad random flavor boundary & 180\,$\pm$\,7 & 672\,$\pm$\,18 & 940\,$\pm$\,250 & 1{,}950\,$\pm$\,190 & 73.7\,$\pm$\,1.9 & 66.0\,$\pm$\,0.5 \\
+\quad random partitions & 169\,$\pm$\,13 & 620\,$\pm$\,40 & 870\,$\pm$\,160 & 2{,}100\,$\pm$\,400 & 70.0\,$\pm$\,2.0 & 57.0\,$\pm$\,1.1 \\
+random network & 15.8\,$\pm$\,1.2 & 1.452\,$\pm$\,0.035 & 20.0\,$\pm$\,1.4 & 1.204\,$\pm$\,0.015 & 17.3\,$\pm$\,1.3 & 14.3\,$\pm$\,1.0 \\
+random network, BatchNorm recomputed & 13.6\,$\pm$\,0.8 & 2.1\,$\pm$\,0.5 & 23.0\,$\pm$\,1.5 & 2.3\,$\pm$\,0.4 & 13.47\,$\pm$\,0.28 & 11.0\,$\pm$\,0.6 \\
 \midrule
 released Sophon checkpoint & 199$^{\S}$ & 791$^{\S}$ & 1{,}005$^{\S}$ & 2{,}857$^{\S}$ & 78.1$^{\S}$ & 62.3$^{\S}$ \\
 \bottomrule

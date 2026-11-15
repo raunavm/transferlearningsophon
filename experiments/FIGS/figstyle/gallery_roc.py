@@ -29,10 +29,9 @@ GRID = {"left": 0.1, "right": 0.965, "top": 0.92, "bottom": 0.06, "hspace": 0.1}
 STACKED_GRID = {"top": 0.98, "bottom": 0.06, "hspace": 0.35}
 FAMILIES = ("QCD", "Two-prong quarks and gluons", "Two-prong leptons", "Three-prong", "Four-prong",
             "Lepton-containing")
-# one colour per family, from CLASS10 (no network colour): black, vermillion, brown, purple, dark teal, lime; the two
-# orange shades of CLASS10[2] and CLASS10[5] no longer meet in one figure, and the pale lime goes to the largest family,
-# visible by its number (blind page review 2026-11-13; palette_check.separation >= 10.4 in every pair and vision)
-FAMILY_COLOURS = tuple(S.CLASS10[k] for k in (0, 2, 7, 3, 4, 1))
+# one colour per family, from CLASS10 (PI 2026-11-14: no colour that may be mistaken for a network's): black, blue,
+# green, orange, vermillion and pink
+FAMILY_COLOURS = tuple(S.CLASS10[k] for k in (0, 1, 4, 2, 3, 5))
 
 
 def family_label(f: str) -> str:
@@ -348,14 +347,15 @@ def _ratio(rx, s, ref, rel=None, **kw) -> list:
     return list(r[far]) + list(lo[far]) + list(hi[far])
 
 
-def _ratio_axis(axes: list, values: list) -> None:
+def _ratio_axis(axes: list, values: list, scale: str | None = None) -> None:
     """One ratio range for axes from every ratio and band edge drawn in them: logarithmic where the values span more
     than RATIO_LOG (labels at 1, 2 and 5 times a power of ten), linear otherwise (the widest round step that leaves two
     labels, none within a tenth of the height of either edge, as F6 had it); 1 always inside."""
     v = np.array([x for x in values if np.isfinite(x)] + [1.0], float)
     if v.size == 1:
         return
-    if v[v > 0].max() / v[v > 0].min() > RATIO_LOG:
+    # scale "log" or "linear" fixes the axis for a family (PI 2026-11-14: one ratio scale a figure, the caption says it)
+    if scale == "log" or (scale is None and v[v > 0].max() / v[v > 0].min() > RATIO_LOG):
         lo, hi = v[v > 0].min() / 1.25, v.max() * 1.25
         ticks = [m * 10.0 ** e for e in range(int(np.floor(np.log10(lo))), int(np.ceil(np.log10(hi))) + 1)
                  for m in (1, 2, 5) if lo * 1.05 <= m * 10.0 ** e <= hi / 1.05]
@@ -397,7 +397,8 @@ def _x_ticks(axes: list, lo: float, w: float, last: bool = True) -> None:
 
 
 def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_names: tuple = (), wgap: float = 0.25,
-              share=lambda i, j: 0, own_y: bool = False, fit_x: bool = True, legend_slot: tuple | None = None) -> None:
+              share=lambda i, j: 0, own_y: bool = False, fit_x: bool = True, legend_slot: tuple | None = None,
+              ratio_scale: str | None = None) -> None:
     """grid: rows of panels (docs, curve key, networks, title); a panel None is left out (its slot stays empty). Each
     panel w cm wide and aspect * w high, its ratio panel RATIO_HEIGHT of that under it. share(i, j): panels of one key
     share their y range and their ratio range (in a row only the first shows its tick labels unless own_y). fit_x: each
@@ -437,9 +438,9 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
                 if s is None or len(s[0]) < 2:
                     continue       # a network whose runs keep fewer than 20 background jets everywhere: no curve
                 z = 1.9 if net in ("SCRATCH", "INIT") else 2.0       # the references under the networks
-                # the random flavor boundary often runs on the b-quark boundary's curve (F4-mech (d)): drawn over
-                # it and thinner, so both show
-                z, lw = (2.05, 0.6 * S.LW_CURVE) if net == "FLAV_F1R" else (z, S.LW_CURVE)
+                # the random flavor boundary often runs on the b-quark boundary's curve (F4-mech (d)): drawn over it,
+                # at the width of every curve (PI 2026-11-14: no thinner line without a reason in the caption)
+                z, lw = (2.05, S.LW_CURVE) if net == "FLAV_F1R" else (z, S.LW_CURVE)
                 look = S.look(_style(net), linewidth=lw, zorder=z)
                 ax.plot(s[0], s[1], **look)
                 # L21: in a panel of more than three networks only 188 classes and the mode's reference keep a band
@@ -457,7 +458,7 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
             _y_range(drawn)
             for ij in ijs:
                 mains[ij].set_ylim(drawn[0].get_ylim())
-        _ratio_axis([ratios[ij] for ij in ijs], values[g])
+        _ratio_axis([ratios[ij] for ij in ijs], values[g], ratio_scale)
     for j in range(cols):
         col = [(i, j) for i in range(rows) if (i, j) in mains]
         lines = [ln for ij in col for ln in mains[ij].lines]
@@ -499,7 +500,8 @@ def _pair_grid(path: pathlib.Path, family: str, pairs: tuple, w: float, aspect: 
     name = (lambda t: _two_lines(t)) if w < 3.5 else (lambda t: t)
     _roc_grid(path, [[(docs, k, LABEL_SETS + ref, name(PAIR_TITLE[k])) for k in pairs],
                      [(docs, k, PARTITIONS, name(PAIR_TITLE[k])) for k in pairs]],
-              w=w, aspect=aspect, row_names=("Label sets", "17-class partitions"), share=lambda i, j: i)
+              w=w, aspect=aspect, row_names=("Label sets", "17-class partitions"), share=lambda i, j: i,
+              ratio_scale="log")      # the class-pair family: logarithmic ratio panels in every figure
 
 
 PAIR_W = {2: 6.3, 3: 4.15, 4: 3.0}      # cm: a panel of two, three or four in a row beside the turned row names
@@ -576,7 +578,7 @@ def _bench_grid(path: pathlib.Path, mode: str, nets: tuple) -> None:
     fams = {"probe": (_family("top_probe"), _family("qg_probe")), "ft": (_family("top_ft"), _family("qg_ft"))}
     panels = [(fams[mode][0 if key == "top" else 1], key, nets, name) for key, name in BENCH]
     _roc_grid(path, [panels[:2], panels[2:]], w=6.3, aspect=0.72, wgap=0.85, share=lambda i, j: int((i, j) != (0, 0)),
-              own_y=True, fit_x=False, legend_slot=(1, 1))
+              own_y=True, fit_x=False, legend_slot=(1, 1), ratio_scale="linear")    # the ROC family: linear
 
 
 def draw_f6(path: pathlib.Path) -> None:
@@ -917,12 +919,10 @@ SUPPLEMENT_CAPTIONS = {
     ),
     "F4-rand-ft": (
         "The panels of figure {fig:F4-rand} for networks fine-tuned on one million class-balanced JetClass-II jets and "
-        "scored on natural-composition test jets, the five random 17-class partitions with one run each beside 188 and 17 "
+        "scored on the mixed test sample (38.7% two-prong, 40.8% three- and four-prong, 20.5% QCD jets), the five random 17-class partitions with one run each beside 188 and 17 "
         "classes with three runs each. Some random partitions merge a pair into one class and others keep it apart, so "
         "the mean mixes the two. The lower panels show the ratio to 188 classes with each curve's standard deviation "
-        "over runs and binomial uncertainty in quadrature. Fine-tuning on JetClass-II ran with a cap of 160 epochs for "
-        "every partition and the first run of 17 classes, and of 40 epochs for 188 classes and the other two runs of "
-        "17 classes. Curves end where fewer than 20 background jets remain, and the areas under the receiver "
+        "over runs and binomial uncertainty in quadrature. Curves end where fewer than 20 background jets remain, and the areas under the receiver "
         "operating characteristic curve are in table {tab:pairsfull}."
     ),
     "F4-rand-qcd": (
@@ -936,12 +936,10 @@ SUPPLEMENT_CAPTIONS = {
     ),
     "F4-rand-qcd-ft": (
         "The panels of figure {fig:F4-rand-qcd} for networks fine-tuned on one million class-balanced JetClass-II jets "
-        "and scored on natural-composition test jets, the five random 17-class partitions with one run each beside 188 "
+        "and scored on the mixed test sample (38.7% two-prong, 40.8% three- and four-prong, 20.5% QCD jets), the five random 17-class partitions with one run each beside 188 "
         "and 17 classes with three runs each. Some random partitions merge a pair into one class and others keep it "
         "apart, so the mean mixes the two. The lower panels show the ratio to 188 classes with each curve's standard "
-        "deviation over runs and binomial uncertainty in quadrature. Fine-tuning on JetClass-II ran with a cap of 160 "
-        "epochs for every partition and the first run of 17 classes, and of 40 epochs for 188 classes and the other "
-        "two runs of 17 classes. Curves end where fewer than 20 background jets remain, and the areas under the "
+        "deviation over runs and binomial uncertainty in quadrature. Curves end where fewer than 20 background jets remain, and the areas under the "
         "receiver operating characteristic curve are in table {tab:pairsfull}."
     ),
     "F6-part": (
@@ -1030,8 +1028,7 @@ SUPPLEMENT_CAPTIONS = {
         "boundary, (b) a b-quark boundary, (c) a random flavor boundary and (d) random partitions, fine-tuned on one "
         "million class-balanced JetClass-II jets. Colors are decay families, and each curve is the mean over two "
         "pretraining runs, or over the five random partitions with one run each, and ends where fewer than 20 "
-        "background jets remain. Every partition was fine-tuned with a cap of 160 epochs, while the networks of "
-        "figure {fig:A3R-ft} had 40, except the first run of 17 classes. Each panel title gives the area under the "
+        "background jets remain. Each panel title gives the area under the "
         "receiver operating characteristic curve averaged over the classes, and each class's area is in table "
         "{tab:perclass}."
     ),
@@ -1054,8 +1051,7 @@ SUPPLEMENT_CAPTIONS = {
     "A3R-ft": (
         "The panels of figure {fig:A3R} for the networks pretrained with (a) 188, (b) 162, (c) 43 and (d) 17 classes "
         "and fine-tuned on one million class-balanced JetClass-II jets. Colors are decay families, and each curve is "
-        "the mean over three pretraining runs and ends where fewer than 20 background jets remain. Fine-tuning ran "
-        "with a cap of 40 epochs, except the first run of 17 classes, which had the 160-epoch cap. Each panel title "
+        "the mean over three pretraining runs and ends where fewer than 20 background jets remain. Each panel title "
         "gives the area under the receiver operating characteristic curve averaged over the classes, and each class's "
         "area is in table {tab:perclass}. Figures {fig:A3R-ctrl-ft} and {fig:A3R-s} show the 17-class partitions and "
         "training from scratch, and the mass networks are not drawn."

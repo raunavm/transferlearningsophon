@@ -263,7 +263,8 @@ weight decay, and train several seeds per pretraining run, which the tables aver
 The signal and QCD training jets are drawn in matched bins of $(p_{\mathrm{T}}, \msd)$,
 \XbbNTrainPerClass{} per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$. They are kept
 in a fixed shuffled order, repeated \XbbRepetition{} and \XbsRepetition{} times to reach Sophon's number
-of samples. The training QCD jets come from JetClass-II files that no pretraining run read and the evaluation QCD jets
+of samples. The training QCD jets come from JetClass-II files that no pretraining run trained or validated on (the pretraining
+reweighting histograms read them) and the evaluation QCD jets
 from its test files, so no pretraining jet enters either. Whether the signal mass is fixed or variable is
 recorded for every fit; Sophon trains its $X\to bs$ transfer head on a variable mass and evaluates it at
 \LitSophonXMass~GeV~\cite[Sec.~III]{sophon}.

@@ -22,15 +22,15 @@ network & \begin{tabular}[b]{@{}c@{}}validation\\accuracy\end{tabular} & GPU typ
 \Kres{} classes + mass, seed 2 & 0.5607 & \mbox{V100 (130)}, \mbox{RTX 3090 (15)} & 145 & \mbox{L4}, \mbox{Quadro RTX 6000}, \mbox{RTX 3090}, \mbox{RTX 5000 Ada Generation}, \mbox{TITAN RTX}, \mbox{V100} \\
 \Kmid{} classes, seed 1 & 0.7226 & \mbox{RTX 3090 (113)} & 113 & \mbox{L4}, \mbox{Quadro RTX 6000}, \mbox{TITAN RTX}, \mbox{V100} \\
 \Kmid{} classes, seed 2 & 0.7226 & \mbox{V100 (101)}, \mbox{RTX 3090 (24)} & 125 & \mbox{L4}, \mbox{Quadro RTX 6000}, \mbox{RTX 3090}, \mbox{RTX 5000 Ada Generation}, \mbox{TITAN RTX}, \mbox{V100} \\
-\Kmid{} classes, seed 3 & 0.7231 & \mbox{V100 (107)}, \mbox{RTX 3090 (20)} & 127 & \mbox{L4}, \mbox{L40}, \mbox{RTX 3090}, \mbox{V100} \\
+\Kmid{} classes, seed 3 & 0.7231 & \mbox{V100 (107)}, \mbox{RTX 3090 (20)} & 127 & \mbox{L4}, \mbox{L40}, \mbox{Quadro RTX 6000}, \mbox{RTX 3090}, \mbox{V100} \\
 \Kcoarse{} classes, seed 1 & 0.7848 & \mbox{RTX 3090 (108)}, \mbox{L4 (3)} & 111 & \mbox{A100 80GB SXM4}, \mbox{L4}, \mbox{L40}, \mbox{RTX 3090}, \mbox{RTX 5000 Ada Generation}, \mbox{V100} \\
 \Kcoarse{} classes, seed 2 & 0.7852 & \mbox{V100 (133)} & 133 & \mbox{A100 80GB PCIe}, \mbox{A100 80GB SXM4}, \mbox{L4}, \mbox{RTX 3090}, \mbox{TITAN RTX}, \mbox{V100} \\
 \Kcoarse{} classes, seed 3 & 0.7849 & \mbox{V100 (101)}, \mbox{L4 (72)} & 174 & \mbox{A100 40GB PCIe}, \mbox{A100 80GB SXM4}, \mbox{L4}, \mbox{Quadro RTX 6000}, \mbox{RTX 3090}, \mbox{RTX 4090}, \mbox{RTX 5000 Ada Generation}, \mbox{TITAN RTX}, \mbox{V100} \\
 \Kcoarse{} classes + mass, seed 1 & 0.7830 & \mbox{V100 (126)}, \mbox{RTX 3090 (16)} & 142 & \mbox{L4}, \mbox{L40}, \mbox{RTX 3090}, \mbox{TITAN RTX}, \mbox{V100} \\
-\Kcoarse{} classes + mass, seed 2 & 0.7836 & \mbox{RTX 3090 (101)} & 101 & \mbox{L4}, \mbox{L40}, \mbox{RTX 5000 Ada Generation}, \mbox{V100} \\
+\Kcoarse{} classes + mass, seed 2 & 0.7836 & \mbox{RTX 3090 (101)} & 101 & \mbox{L4}, \mbox{L40}, \mbox{Quadro RTX 6000}, \mbox{RTX 5000 Ada Generation}, \mbox{V100} \\
 \multicolumn{5}{@{}l}{17-class partitions} \\*
 \quad no flavor boundary, seed 1 & 0.7439 & \mbox{RTX 3090 (99)} & 99 & \mbox{A100 80GB PCIe}, \mbox{A100 80GB SXM4}, \mbox{L4}, \mbox{RTX 3090}, \mbox{TITAN RTX}, \mbox{V100} \\*
-\quad no flavor boundary, seed 2 & 0.7436 & \mbox{RTX 3090 (130)} & 130 & \mbox{A100 80GB SXM4}, \mbox{L4}, \mbox{Quadro RTX 6000}, \mbox{RTX 4090}, \mbox{V100} \\*
+\quad no flavor boundary, seed 2 & 0.7436 & \mbox{RTX 3090 (130)} & 130 & \mbox{A100 80GB SXM4}, \mbox{L4}, \mbox{Quadro RTX 6000}, \mbox{RTX 4090}, \mbox{RTX 5000 Ada Generation}, \mbox{V100} \\*
 \quad $b$-quark boundary, seed 1 & 0.7420 & \mbox{V100 (98)}, \mbox{RTX 3090 (24)} & 122 & \mbox{A100 80GB PCIe}, \mbox{A100 80GB SXM4}, \mbox{L4}, \mbox{Quadro RTX 6000}, \mbox{RTX 3090}, \mbox{TITAN RTX}, \mbox{V100} \\*
 \quad $b$-quark boundary, seed 2 & 0.7429 & \mbox{RTX 3090 (137)} & 137 & \mbox{A100 80GB PCIe}, \mbox{A100 80GB SXM4}, \mbox{L4}, \mbox{L40}, \mbox{L40S}, \mbox{Quadro RTX 6000}, \mbox{TITAN RTX}, \mbox{V100} \\*
 \quad random flavor boundary, seed 1 & 0.7115 & \mbox{RTX 3090 (125)} & 125 & \mbox{A100 80GB PCIe}, \mbox{L4}, \mbox{RTX 3090}, \mbox{V100} \\*
@@ -49,14 +49,14 @@ network & \begin{tabular}[b]{@{}c@{}}validation\\accuracy\end{tabular} & GPU typ
 \toprule
 network & \begin{tabular}[b]{@{}c@{}}validation accuracy at the last pretraining epoch,\\mean $\pm$ standard deviation over the runs\end{tabular} \\
 \midrule
-\Kfull{} classes & 0.5228\,$\pm$\,0.0002 \\
+\Kfull{} classes & 0.52281\,$\pm$\,0.00018 \\
 \Kres{} classes & 0.5634\,$\pm$\,0.0007 \\
 \Kres{} classes + mass & 0.5593\,$\pm$\,0.0019 \\
-\Kmid{} classes & 0.7228\,$\pm$\,0.0003 \\
-\Kcoarse{} classes & 0.7850\,$\pm$\,0.0002 \\
+\Kmid{} classes & 0.72275\,$\pm$\,0.00027 \\
+\Kcoarse{} classes & 0.78497\,$\pm$\,0.00017 \\
 \Kcoarse{} classes + mass & 0.7833\,$\pm$\,0.0004 \\
 \multicolumn{2}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.7438\,$\pm$\,0.0002 \\
+\quad no flavor boundary & 0.74375\,$\pm$\,0.00025 \\
 \quad $b$-quark boundary & 0.7424\,$\pm$\,0.0006 \\
 \quad random flavor boundary & 0.7121\,$\pm$\,0.0009 \\
 \quad random partitions & 0.6685\,$\pm$\,0.0031 \\
