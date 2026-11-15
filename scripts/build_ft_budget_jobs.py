@@ -382,6 +382,8 @@ USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
 case ${TASK} in
 __TASKS__  *) echo "FATAL: task ${TASK}"; exit ${HALT};;
 esac
+python3 experiments/FT/gpu_probe.py || exit 43
+RUN=/workspace/run; rm -rf ${RUN}; mkdir -p ${RUN}
 if [ "${VALMEM}" = 1 ]; then
   # the same VAL jets at every check: in memory, one whole pass of VAL / batch steps; weaver's per-epoch files thinned
   VALF=${VALF:-${SUB}/val_fixed.parquet}
@@ -391,8 +393,6 @@ else
   VALF=${VALF:-${SUB}/val.parquet}
   TRAINARGS=(--samples-per-epoch ${SPE}); VALARGS=(--samples-per-epoch-val ${VAL}); PRUNE=(); VALRULE=fixed-file
 fi
-python3 experiments/FT/gpu_probe.py || exit 43
-RUN=/workspace/run; rm -rf ${RUN}; mkdir -p ${RUN}
 [ ! -f ${CELL}/DONE ] || { echo "${CELL} is done"; exit 0; }
 [ -d ${CELL} ] && mv ${CELL} ${CELL}.partial.$(date -u +%s)
 mkdir -p ${CELL}
