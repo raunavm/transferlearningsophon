@@ -112,6 +112,18 @@ FULL = {"topkin": 1_200_000, "top": 1_200_000, "topmean": 1_200_000}   # the ful
 # recipe, 20 epochs, no early stop (top's full set only in the fill check; bench stops at 1e5)
 KIN_RUNS = ("l188kin-s1",)          # the 17-class kinematic-only run was stopped for good (2026-11-01)
 FULL_MEM = "88Gi"
+# One rule for every fine-tuning cell below the full top and quark/gluon sets (PI 2026-11-15): a fixed number of steps
+# set only by the training size, validation on the same 200,000 jets every FIXED_CHECK steps (held in memory, one pass
+# in batches of FIXED_VAL_BATCH so every check scores every jet), the best validation checkpoint over the whole schedule,
+# no patience. From scratch differs only in its learning rates and schedule (ParT's flat+decay, head x1).
+FIXED_ROOT = "/data/results/ft_v2/fixed"
+FIXED_STEPS = {1_000: 40_000, 10_000: 20_000, 100_000: 20_000, 1_000_000: 80_000}
+FIXED_CHECK, FIXED_VAL, FIXED_VAL_BATCH, FIXED_NO_PATIENCE = 50, 200_000, 1_000, 10 ** 6
+FIXED_VAL_FILE = {"jc2b": "/data/finetune/jc2_bal/val_200k.parquet"}   # elsewhere <subset dir>/val.parquet, 200,000 jets
+FIXED_SIZES = {"top": (1_000, 10_000, 100_000), "topkin": (1_000, 10_000, 100_000), "qg": (1_000, 10_000, 100_000),
+               "jc1": (10_000, 100_000, 1_000_000), "jc2b": (10_000, 100_000, 1_000_000)}
+FIXED_LR_PRE, FIXED_LR_SCRATCH = "1e-3", {"qg": "3e-3"}     # the swept rates (lrsweep_v2); from scratch 1e-3 elsewhere
+FIXED_JC2B_SMALL_RUNS = ("l188", "l162", "r42q1", "r16q1", "l162mass", "r16q1mass")   # JetClass-II below 1e6
 
 
 def head_mult(lr: str) -> str:
@@ -137,6 +149,37 @@ def cell(task: str, init: str, n: int, s: int, lr: str, root: str, sub: str = ""
             "lr": lr, "mult": head_mult(lr) if init else "", "out": f"{root}/{tree}/{leaf}/N{n}/s{s}",
             "epochs": 20 if full else EPOCHS * STEPS // steps, "spe": n if full else steps * BATCH,
             "patience": 1000 if full else PATIENCE, "val": VAL_SIZE.get(task, VAL_N)}
+
+
+def fixed_cell(task: str, init: str, n: int, s: int, lr: str, root: str = FIXED_ROOT) -> dict:
+    """A cell of the one rule (FIXED_*): FIXED_STEPS[n] steps in checks of FIXED_CHECK steps, no patience."""
+    c = cell(task, init, n, s, lr, root)
+    return {**c, "epochs": FIXED_STEPS[n] // FIXED_CHECK, "spe": FIXED_CHECK * BATCH, "patience": FIXED_NO_PATIENCE,
+            "val": FIXED_VAL, "valf": FIXED_VAL_FILE.get(task, ""), "valmem": 1}
+
+
+def fixed_cells(sizes: set) -> list:
+    """Every cell of the one rule at the given training sizes: each paper run (the kinematic-only run on top), and the
+    three from-scratch trainings; JetClass-II below 1e6 for the label sets and mass networks only, as before."""
+    out = []
+    for task, task_sizes in FIXED_SIZES.items():
+        for n in (m for m in task_sizes if m in sizes):
+            runs = KIN_RUNS if task == "topkin" else paper_runs()
+            if task == "jc2b" and n < LONG_N:
+                runs = [r for r in runs if r.rsplit("-s", 1)[0] in FIXED_JC2B_SMALL_RUNS]
+            out += [fixed_cell(task, r, n, 1, FIXED_LR_PRE) for r in runs]
+            if task != "topkin":
+                out += [fixed_cell(task, "", n, s, FIXED_LR_SCRATCH.get(task, "1e-3")) for s in SCRATCH_SEEDS]
+    return out
+
+
+def fixed_bench_cells() -> list:
+    """Validation-cost benchmark (PI 2026-11-15): top 1e4 from 188-s1 for 10 checks, validation in memory and from the
+    file loader, into ft_v2/fixed_bench; not results."""
+    root = "/data/results/ft_v2/fixed_bench"
+    mem = {**fixed_cell("top", "l188-s1", 10_000, 1, FIXED_LR_PRE, root), "epochs": 10}
+    disk = {**mem, "valmem": 0, "out": mem["out"].replace("/l188-s1/", "/l188-s1_disk/")}
+    return [mem, disk]
 
 
 def lrsweep_cells() -> list:
@@ -333,6 +376,14 @@ USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
 case ${TASK} in
 __TASKS__  *) echo "FATAL: task ${TASK}"; exit ${HALT};;
 esac
+VALF=${VALF:-${SUB}/val.parquet}
+if [ "${VALMEM}" = 1 ]; then
+  # the same VAL jets at every check: held in memory, one pass in batches that divide VAL; per-epoch states cleaned
+  VALARGS=(--in-memory-val --steps-per-epoch-val $((VAL / __VALBATCH__)) --batch-size-val __VALBATCH__ --fetch-step-val 1 --auto-clean)
+  VALRULE=fixed-set-in-memory
+else
+  VALARGS=(--samples-per-epoch-val ${VAL}); VALRULE=fixed-file
+fi
 python3 experiments/FT/gpu_probe.py || exit 43
 RUN=/workspace/run; rm -rf ${RUN}; mkdir -p ${RUN}
 [ ! -f ${CELL}/DONE ] || { echo "${CELL} is done"; exit 0; }
@@ -357,13 +408,13 @@ python3 experiments/FT/smoke_checks.py manifest --out ${CELL}/ft_manifest.json t
   init=${INIT:-scratch} run_dir=${RUN_DIR} checkpoint=${RUN_DIR:+/workspace/ckpt/${INIT}.pt} n_train=${N} ft_seed=${S} lr=${LR} ${RECIPE} weight_decay=0.01 \
   subset=${SUB}/train_N${N}_s1.parquet data_config=${CFG} num_classes=${K} batch_size=__BATCH__ \
   samples_per_epoch=${SPE} steps_per_epoch=$((SPE / __BATCH__)) max_epochs=${EP} \
-  samples_per_epoch_val=${VAL} early_stop_patience=${PAT} val_rule=fixed-file budget=v3.1
+  samples_per_epoch_val=${VAL} early_stop_patience=${PAT} val_rule=${VALRULE} val=${VALF} budget=v3.1
 python3 experiments/FT/ft_weaver.py --seed ${S} --lean-val-metrics \
-  --data-train ${SUB}/train_N${N}_s1.parquet --data-val ${SUB}/val.parquet --data-config ${CFG} \
+  --data-train ${SUB}/train_N${N}_s1.parquet --data-val ${VALF} --data-config ${CFG} \
   --network-config ${NET} -o num_classes ${K} -o fc_params '[(512,0.1)]' \
   --use-amp --batch-size __BATCH__ --num-workers 2 --fetch-by-files --fetch-step 1 --optimizer ranger \
   ${SCHED[@]+"${SCHED[@]}"} --optimizer-option weight_decay 0.01 ${MULTARG[@]+"${MULTARG[@]}"} \
-  --start-lr ${LR} --samples-per-epoch ${SPE} --samples-per-epoch-val ${VAL} \
+  --start-lr ${LR} --samples-per-epoch ${SPE} "${VALARGS[@]}" \
   --num-epochs ${EP} ${LOAD[@]+"${LOAD[@]}"} --model-prefix ${RUN}/net --log ${RUN}/train.log \
   > ${RUN}/stdout.log 2>&1 &
 PID=$!
@@ -381,7 +432,14 @@ if [ -n "${RUN_DIR}" ]; then
 fi
 BEST=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['best_epoch'])" ${CELL}/early_stop.json)
 LAST=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['last_epoch'])" ${CELL}/early_stop.json)
-cmp -s ${RUN}/net_best_epoch_state.pt ${RUN}/net_epoch-${BEST}_state.pt || { echo "FATAL: weaver's best state is not epoch ${BEST}"; exit ${HALT}; }
+if [ "${VALMEM}" = 1 ]; then   # --auto-clean keeps only the last epoch: weaver's own best must be early_stop's
+  WB=$(grep -o "Current validation metric: [0-9.]* (best: [0-9.]*)" ${RUN}/train.log | tail -1 | grep -o "best: [0-9.]*" | cut -c7-)
+  python3 -c "import json,sys; b=json.load(open(sys.argv[1]))['best_metric']; sys.exit(abs(b-float(sys.argv[2]))>1e-5)" ${CELL}/early_stop.json ${WB} \
+    || { echo "FATAL: weaver's best (${WB}) is not early_stop's"; exit ${HALT}; }
+  grep -q "Processed ${VAL} entries" ${RUN}/train.log || { echo "FATAL: a validation pass did not score all ${VAL} jets"; exit ${HALT}; }
+else
+  cmp -s ${RUN}/net_best_epoch_state.pt ${RUN}/net_epoch-${BEST}_state.pt || { echo "FATAL: weaver's best state is not epoch ${BEST}"; exit ${HALT}; }
+fi
 cp ${RUN}/net_best_epoch_state.pt ${CELL}/net_best_epoch_state.pt
 cp ${RUN}/net_epoch-${LAST}_state.pt ${CELL}/net_last_epoch_state.pt
 case ${TASK} in
@@ -424,19 +482,20 @@ def task_cases() -> str:
 def cell_cases(cells: list) -> str:
     return "".join(f"  {i}) TASK={c['task']}; INIT={c['init']}; RUN_DIR={c['run_dir']}; N={c['n']}; S={c['s']}; "
                    f"LR={c['lr']}; MULT={c['mult']}; EP={c['epochs']}; SPE={c['spe']}; PAT={c['patience']}; "
-                   f"VAL={c['val']}; PATFROM={c.get('patience_from', 0)}; CELL={c['out']};;\n" for i, c in enumerate(cells))
+                   f"VAL={c['val']}; PATFROM={c.get('patience_from', 0)}; VALF={c.get('valf', '')}; VALMEM={c.get('valmem', 0)}; "
+                   f"CELL={c['out']};;\n" for i, c in enumerate(cells))
 
 
 GPU_POOLS = ("gpu", "a100")     # nvidia.com/<pool>: NRP's A100s are their own resource (cms-ml quota 26, shared)
 
 
 def spec(name: str, cells: list, tag: str, parallelism: int, memory: str, cpu: int = 4,
-         line: int = storage_line.GENERAL, pool: str = "gpu") -> str:
+         line: int = storage_line.GENERAL, pool: str = "gpu", product: str = "") -> str:
     if pool not in GPU_POOLS:
         raise SystemExit(f"FATAL: GPU pool {pool}: one of {GPU_POOLS}")
     launch = _launch()
     script = (CELL_SCRIPT.replace("__LINE__", str(storage_line.check(line))).replace("__CASES__", cell_cases(cells)).replace("__TASKS__", task_cases())
-              .replace("__BATCH__", str(BATCH)).replace("__HERWIG__", " ".join(HERWIG_TEST)))
+              .replace("__BATCH__", str(BATCH)).replace("__VALBATCH__", str(FIXED_VAL_BATCH)).replace("__HERWIG__", " ".join(HERWIG_TEST)))
     # a node's DNS can fail for minutes (cph-dgx-node4/5/8, 2026-11-03): six cells used up their three
     # attempts at the clone, in seconds, before reaching the training script
     script = ("set -euo pipefail\n"
@@ -451,7 +510,7 @@ def spec(name: str, cells: list, tag: str, parallelism: int, memory: str, cpu: i
     # the A100 resource itself picks the product; the general pool lists the products we accept
     products = "" if pool == "a100" else (
         "              - key: nvidia.com/gpu.product\n                operator: In\n"
-        f"                values: [{', '.join(repr(g).replace(chr(39), chr(34)) for g in launch.V2_FT_GPU)}]\n")
+        f"                values: [{', '.join(repr(g).replace(chr(39), chr(34)) for g in ([product] if product else launch.V2_FT_GPU))}]\n")
     return f"""apiVersion: batch/v1
 kind: Job
 metadata:
@@ -526,6 +585,7 @@ def main(argv=None) -> int:
     ap.add_argument("--name-suffix", default="", help="a second job of the same cells, e.g. cpu3")
     ap.add_argument("--mem", default="", help="memory per pod, overriding the rule below (64Gi: the long JetClass "
                     "cells peaked at 53 GiB over 22 pods, and 88Gi kept them off nodes with a free GPU, 2026-11-07)")
+    ap.add_argument("--gpu-product", default="", help="one nvidia.com/gpu.product for every pod (the benchmark)")
     ap.add_argument("--gpu-pool", default="gpu", choices=GPU_POOLS,
                     help="a100: request nvidia.com/a100 (NRP's separate A100 pool) instead of nvidia.com/gpu")
     ap.add_argument("--part", default=None, help="with --indices: the name of one part of a kind split over GPU pools")
@@ -536,7 +596,7 @@ def main(argv=None) -> int:
     storage_line.add_argument(ap)
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
-                                                 "readout-pre-full"))
+                                                 "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench"))
     a = ap.parse_args(argv)
     if a.part and not a.indices:
         ap.error("--part needs --indices")
@@ -558,6 +618,10 @@ def main(argv=None) -> int:
             cells, mem = lrsweep_cells(), "48Gi"
         elif kind == "fillcheck":
             cells, mem = fillcheck_cells(), "48Gi"
+        elif kind.startswith("fixed-"):     # the one rule's rates are fixed (FIXED_LR_*), not taken from the sweep flags
+            cells = {"fixed-1e5": lambda: fixed_cells({100_000}), "fixed-1e6": lambda: fixed_cells({1_000_000}),
+                     "fixed-rest": lambda: fixed_cells({1_000, 10_000}), "fixed-bench": fixed_bench_cells}[kind]()
+            mem = "64Gi"
         else:
             if not (a.lr_pre and a.lr_scratch):
                 ap.error(f"{kind} needs --lr-pre and --lr-scratch (from the sweep)")
@@ -589,7 +653,7 @@ def main(argv=None) -> int:
         if a.name_suffix:
             name = name.replace("-raunav", f"-{a.name_suffix}-raunav")
         p = OUT_DIR / f"job-{name}.yaml"
-        p.write_text(spec(name, cells, a.tag, a.parallelism, mem, a.cpu, a.storage_line, a.gpu_pool))
+        p.write_text(spec(name, cells, a.tag, a.parallelism, mem, a.cpu, a.storage_line, a.gpu_pool, a.gpu_product))
         print(p, len(cells), "cells")
     return 0
 

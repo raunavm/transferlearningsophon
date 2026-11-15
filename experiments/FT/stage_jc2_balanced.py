@@ -170,13 +170,43 @@ def plan(census: dict, groups: dict) -> dict:
     return out
 
 
+VAL_200K, VAL_200K_NAME = 200_000, "val_200k.parquet"   # the one validation size of every fine-tuning (PI 2026-11-15)
+
+
+def val_counts(avail: np.ndarray, total: int, r: np.random.Generator) -> np.ndarray:
+    """Per-class counts summing to exactly total, as equal as the pool allows: the smallest common quota that reaches
+    total (a class short of it gives all its jets), then one jet fewer in randomly chosen classes at the quota."""
+    if avail.sum() < total:
+        raise SystemExit(f"FATAL: {avail.sum()} jets for a validation set of {total}")
+    q = next(q for q in range(1, int(avail.max()) + 1) if np.minimum(avail, q).sum() >= total)
+    c = np.minimum(avail, q)
+    at_q = np.flatnonzero(c == q)
+    c[r.choice(at_q, size=int(c.sum() - total), replace=False)] -= 1
+    return c
+
+
+def val_200k_ids(census: dict) -> np.ndarray:
+    """The source ids of val_200k.parquet: from the same held-out jets as val.parquet (every class's jets after its
+    largest training quota, so disjoint from every train_N and from the test files), exactly VAL_200K of them."""
+    he_src, he_lab = census["ft_heldout"]
+    he_avail = np.bincount(he_lab, minlength=N_NATIVE)
+    order = per_class_order(he_src, he_lab, rng("train"))
+    big = quotas(max(SIZES), he_avail, rng("extra"))
+    rest = [order[c][big[c]:] for c in range(N_NATIVE)]
+    return choose(rest, val_counts(np.array([r.size for r in rest]), VAL_200K, rng("val200k")))
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--root", default="/jc2/jet_data")
+    ap.add_argument("--val-200k", action="store_true", help="only write val_200k.parquet into a complete staging")
     a = ap.parse_args(argv)
-    if (a.out / "DONE").exists():
+    if a.val_200k:
+        if not (a.out / "DONE").exists() or (a.out / VAL_200K_NAME).exists():
+            raise SystemExit(f"FATAL: {a.out} must be a complete staging without {VAL_200K_NAME}")
+    elif (a.out / "DONE").exists():
         raise SystemExit(f"FATAL: {a.out} is complete; staged data is never rebuilt")
     t0 = time.time()
     a.out.mkdir(parents=True, exist_ok=True)
@@ -199,6 +229,18 @@ def main(argv=None) -> int:
         lab = np.concatenate([res[f][1] for f in fl]).astype(np.int64)
         census[role] = (src, lab)
         counts[role] = np.bincount(lab, minlength=N_NATIVE).tolist()
+    if a.val_200k:      # a complete staging: its census and outputs stay as they are
+        ids = val_200k_ids(census)
+        p = plan(census, groups)
+        used = np.concatenate([p[k] for k in p if k.startswith(("train_N", "test"))])
+        if np.intersect1d(ids, used).size:
+            raise SystemExit("FATAL: val_200k overlaps a training subset or the test set")
+        rec = write(a.out, VAL_200K_NAME, ids, all_files, rng("perm_val200k"))
+        rec.update(sha256=sha256(a.out / VAL_200K_NAME), disjoint_from=sorted(k for k in p if k.startswith(("train_N", "test"))))
+        (a.out / "manifest_val_200k.json").write_text(json.dumps(
+            {"script": "experiments/FT/stage_jc2_balanced.py --val-200k", "seed": SEED, "rows": VAL_200K, **rec}, indent=1) + "\n")
+        print(f"{VAL_200K_NAME}: {rec['rows']:,} jets, {rec['coverage']['n_classes_present']} classes", flush=True)
+        return 0
     (a.out / "census.json").write_text(json.dumps(
         {"selection": [MS.PT_LO, MS.PT_HI, MS.MSD_LO, MS.MSD_HI], "files": files,
          "counts": counts, "class_names": [names[i] for i in range(N_NATIVE)],

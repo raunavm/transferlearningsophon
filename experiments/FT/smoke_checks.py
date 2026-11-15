@@ -129,9 +129,9 @@ def write_manifest(out: str, kv: list[str]) -> None:
                                             text=True, timeout=10).stdout.strip()
     except Exception:
         rec["repo_commit"] = None
-    try:
-        import weaver
-        rec["weaver_version"] = getattr(weaver, "__version__", None)
+    try:        # weaver-core defines no __version__ (every manifest before 2026-11-15 recorded null): the installed package's
+        from importlib.metadata import version
+        rec["weaver_version"] = version("weaver-core")
     except Exception:
         rec["weaver_version"] = None
     try:

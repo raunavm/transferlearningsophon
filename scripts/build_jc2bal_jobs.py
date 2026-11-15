@@ -65,6 +65,21 @@ def _launch():
     return m
 
 
+def stage_val200k_spec(tag: str) -> tuple:
+    """CPU: val_200k.parquet into the complete staging (stage_jc2_balanced.py --val-200k, PI 2026-11-15: one 200,000-jet
+    validation set for every fine-tuning); nothing else in jc2_bal is written. Under 1 GB, so the finishing line."""
+    name, text = stage_spec(tag, "jc2bal-val200k-raunav")
+    text = text.replace('[ "${USED}" -le 85 ]', '[ "${USED}" -le 90 ]')
+    lines = text.splitlines()
+    i = next(k for k, ln in enumerate(lines) if ln.strip() == f"rm -rf {BAL}.staging")
+    pad = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
+    assert lines[i + 4].strip() == 'echo "JC2BAL STAGE COMPLETE"', "stage_spec changed"
+    lines[i:i + 5] = [pad + f"python3 experiments/FT/stage_jc2_balanced.py --out {BAL} --val-200k --workers 8",
+                      pad + f"ls -la {BAL}; head -c 2000 {BAL}/manifest_val_200k.json",
+                      pad + 'echo "JC2BAL VAL200K COMPLETE"']
+    return name, "\n".join(lines) + "\n"
+
+
 def stage_spec(tag: str, name: str = "jc2bal-stage-raunav", out: str = BAL,
                stager: str = "experiments/FT/stage_jc2_balanced.py") -> tuple:
     launch = _launch()
@@ -779,7 +794,7 @@ def main(argv=None) -> int:
     ap.add_argument("--name", default="jc2bal-x-raunav", help="extract, fit: the job name (with --only)")
     ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "ref2", "split", "extract", "fit", "mlp",
                                                  "masscurves", "kin", "xfill", "fitfill", "sib", "sibstage", "sibx",
-                                                 "coarse", "qcdhf", "ckptid", "sophon"))
+                                                 "coarse", "qcdhf", "ckptid", "sophon", "val200k"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
@@ -795,7 +810,8 @@ def main(argv=None) -> int:
                       "mlp": lambda: fit_spec(a.tag, a.parallelism, True),
                       "masscurves": lambda: masscurves_spec(a.tag), "kin": lambda: kin_spec(a.tag),
                       "coarse": lambda: coarse_spec(a.tag, a.parallelism), "qcdhf": lambda: qcdhf_spec(a.tag),
-                      "ckptid": lambda: ckptid_spec(a.tag), "sophon": lambda: sophon_spec(a.tag)}[kind]()
+                      "ckptid": lambda: ckptid_spec(a.tag), "sophon": lambda: sophon_spec(a.tag),
+                      "val200k": lambda: stage_val200k_spec(a.tag)}[kind]()
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(p)
