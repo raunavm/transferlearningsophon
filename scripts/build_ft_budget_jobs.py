@@ -191,14 +191,24 @@ FIXED_SWEEP_PRE, FIXED_SWEEP_SCRATCH, FIXED_SWEEP_N = ("1e-4", "3e-4", "1e-3", "
 FIXED_SWEEP_PRE_EXT = ("1e-2", "3e-2")
 
 
-def fixed_sweep_cells(pre=FIXED_SWEEP_PRE, scratch=FIXED_SWEEP_SCRATCH) -> list:
+def fixed_sweep_cells(pre=FIXED_SWEEP_PRE, scratch=FIXED_SWEEP_SCRATCH, init="l188-s1", n=FIXED_SWEEP_N,
+                      tasks=("top", "qg")) -> list:
     out = []
-    for task in ("top", "qg"):
-        out += [fixed_cell(task, "l188-s1", FIXED_SWEEP_N, 1, lr, FIXED_SWEEP_ROOT) for lr in pre]
-        out += [fixed_cell(task, "", FIXED_SWEEP_N, 1, lr, FIXED_SWEEP_ROOT) for lr in scratch]
+    for task in tasks:
+        out += [fixed_cell(task, init, n, 1, lr, FIXED_SWEEP_ROOT) for lr in pre]
+        out += [fixed_cell(task, "", n, 1, lr, FIXED_SWEEP_ROOT) for lr in scratch]
     for c in out:     # one directory per rate, as the old sweep (cell's sub)
-        c["out"] = c["out"].replace(f"/N{FIXED_SWEEP_N}/", f"_lr{c['lr']}/N{FIXED_SWEEP_N}/")
+        c["out"] = c["out"].replace(f"/N{n}/", f"_lr{c['lr']}/N{n}/")
     return out
+
+
+# PI 2026-11-15: the pretrained rate checked at the other end of the label-set range (17 classes, seed 1), and the
+# 10^3 length set from a smoke of 188 and 17 classes on top at the chosen rate on the long schedule
+FIXED_SWEEP_17 = ("3e-3", "1e-2", "3e-2")
+
+
+def fixed_smoke_1e3_cells() -> list:
+    return [c for r in ("l188-s1", "r16q1-s1") for c in fixed_sweep_cells((FIXED_LR_PRE,), (), r, 1_000, ("top",))]
 
 
 def fixed_bench_cells() -> list:
@@ -627,7 +637,8 @@ def main(argv=None) -> int:
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
-                                                 "fixed-sweep-ext"))
+                                                 "fixed-sweep-ext",
+                                                 "fixed-sweep-17", "fixed-smoke-1e3"))
     a = ap.parse_args(argv)
     if a.part and not a.indices:
         ap.error("--part needs --indices")
@@ -653,7 +664,9 @@ def main(argv=None) -> int:
             cells = {"fixed-1e5": lambda: fixed_cells({100_000}), "fixed-1e6": lambda: fixed_cells({1_000_000}),
                      "fixed-rest": lambda: fixed_cells({1_000, 10_000}), "fixed-bench": fixed_bench_cells,
                      "fixed-sweep": fixed_sweep_cells,
-                     "fixed-sweep-ext": lambda: fixed_sweep_cells(FIXED_SWEEP_PRE_EXT, ())}[kind]()
+                     "fixed-sweep-ext": lambda: fixed_sweep_cells(FIXED_SWEEP_PRE_EXT, ()),
+                     "fixed-sweep-17": lambda: fixed_sweep_cells(FIXED_SWEEP_17, (), "r16q1-s1"),
+                     "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
             # small cells ~16 GiB before the in-memory checks; 1e6 set from the smoke cell (fixed-bench index 2)
             mem = "24Gi"
