@@ -47,9 +47,10 @@ MASS_S = ("The response distributions, the mass output by jet group and the ridg
           "[[F9a]] to [[A17-ridge]].")
 SCULPT_S = ("The mass histograms, the flavor-boundary partitions, the rejection plane, the fine-tuned networks and the "
             "mass networks of the sculpting comparison of [[F10b]] are in [[F10a]] to [[F10a-mass]].")
-# L3 for the resonance read-outs: run SDs plus a binomial term for the signal jets of each side (an estimate; no
-# bootstrap is stored): 17 - 188 is 5.1 sigma on X->bb (6.0 on run spread) and 5.5 on X->bs; each flavor-boundary
-# partition - 188 at least 5.7 sigma; every partition - 17 at most 2.8 sigma (random partitions on X->bs)
+# L3 for the resonance read-outs (tests/test_xbx_claims_l3.py, which fails the build if a claim stops holding): run SDs
+# plus the test-sample variance of each side, the signal jets (binomial) and the QCD jets through the cut (ROC slope at
+# eps_B = 1%): 17 - 188 is -4.9 sigma on X->bb and -5.8 on X->bs; each flavor-boundary partition - 188 at least -5.2;
+# every partition - 17 at most 2.8 sigma (random partitions on X->bs)
 XBX_PART = ("At 1% QCD efficiency, the partitions with no, a b-quark and a random flavor boundary each keep fewer X→bb̄ "
             "and X→bs signal jets than 188 classes, and no 17-class partition differs from 17 classes by more than three "
             "standard deviations.")
