@@ -56,6 +56,8 @@ WPS = (("eps_b=0.01", "eps_b", 0.01), ("eps_b=0.1", "eps_b", 0.1), ("eps_s=0.5",
 # configuration minus reference: model name parts mtx-<arm>-s<k>
 DIFFS = {"17-188": ("r16q1", "l188"), "43-188": ("r42q1", "l188"), "162-188": ("l162", "l188"),
          "17mass-17": ("r16q1mass", "r16q1"),
+         # the claim of Fig. A14 compares every + mass network with 188 classes too (audit 2026-11-15)
+         "17mass-188": ("r16q1mass", "l188"), "162mass-188": ("l162mass", "l188"),
          "162mass-162": ("l162mass", "l162"), "flavf0-188": ("flavf0", "l188"), "flavf1-188": ("flavf1", "l188"),
          "flavf1r-188": ("flavf1r", "l188")}
 QTY = {"distance": np.sqrt, "jsd": lambda x: x}

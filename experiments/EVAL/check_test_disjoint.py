@@ -152,7 +152,12 @@ def main(argv=None) -> int:
         fail.append("fine-tuned head outputs not on TEST2M")
 
     bal_sha = json.loads((a.bal / "manifest.json").read_text())["sha256"]
-    cells = sorted(p for p in glob.glob(str(a.ft_root / "budget*" / "leg_jc2b" / "*" / "N*" / "s*" / "ft_manifest.json"))
+    # the one rule's validation sets (PI 2026-11-15): val_200k.parquet and val_fixed.parquet carry their own records
+    for name, rec in (("val_200k.parquet", "manifest_val_200k.json"), ("val_fixed.parquet", "val_fixed.json")):
+        if (a.bal / rec).exists():
+            bal_sha[name] = json.loads((a.bal / rec).read_text())["sha256"]
+    cells = sorted(p for tree in ("budget*", "fixed")       # + the one rule's tree (PI 2026-11-15)
+                   for p in glob.glob(str(a.ft_root / tree / "leg_jc2b" / "*" / "N*" / "s*" / "ft_manifest.json"))
                    if ".partial" not in p)
     used, res["cells"] = {}, {}
     for c in cells:
