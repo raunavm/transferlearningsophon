@@ -224,7 +224,8 @@ def rand_specs(tag: str) -> dict[str, str]:
     out = {}
     for m, run, arm, k, reg in rand_models():
         text = flav_spec(m, run, arm, k, reg).replace(f'"{FLAV_PIN}"', f'"{tag}"').replace(f'"{X_MEM}"', f'"{RAND_MEM}"')
-        assert f'"{tag}"' in text and f'"{RAND_MEM}"' in text, m
+        text = text.replace('[ "${USED}" -lt 85 ]', '[ "${USED}" -le 90 ]')   # the finishing line (storage_line)
+        assert f'"{tag}"' in text and f'"{RAND_MEM}"' in text and '-le 90 ]' in text, m
         out[f"job-head-x-{m.removeprefix('mtx-')}-raunav.yaml"] = text
     body = "".join(f'          [ -f {HEAD_ROOT}/{m}/test/best70/head_outputs.npz ] || {{ echo "FATAL: no head '
                    f'outputs for {m}: apply after its head job"; exit 42; }}\n' for m in RAND_RUNS)
@@ -234,7 +235,7 @@ def rand_specs(tag: str) -> dict[str, str]:
     body += f'          echo "sculpting of the {len(RAND_RUNS)} random partitions done"\n'
     out["job-head-sculpt-rand-raunav.yaml"] = BX.V1ERR_TEMPLATE.format(
         name="head-sculpt-rand-raunav", image=BX.IMAGE, pin=tag, body=body, mem="16Gi", cpu="4", gpu_req="",
-        gpu_check="", node_exclude="")
+        gpu_check="", node_exclude="").replace('[ "${USED}" -lt 85 ]', '[ "${USED}" -le 90 ]')
     return out
 
 
