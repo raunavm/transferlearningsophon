@@ -24,7 +24,8 @@ storage_line.FINISHING. Specs in experiments/EVAL/k8s/v2/refit_v5/; plan and lau
            kinematic-only run's top MLP; one CPU model (CPU_PIN) -> fits_v5_mlp. The whole row: the 18 ran at
            mtx-s2.34, and a spec cloning that tag is refused by tests/test_spec_pins.py (probe_bal.py changed since)
   atlas    atlas_resolution.py --grid v2 --mlp-max-epochs MASS_MLP_EPOCHS on one CPU model (CPU_PIN), every
-           model of the mass table -> atlas_res_v3; rebin: atlas_rebin.py -> atlas_res_fine_v3
+           model of the mass table -> atlas_res_v3; atlas-part: the same on the flavour-boundary and random
+           partitions (no mass_v3.json to check against); rebin: atlas_rebin.py -> atlas_res_fine_v3, after both
   boot     paired_bootstrap.py on the v5 probes: balanced JetClass-II at 1e6 and its pairs, JetClass at 1e6
            (fits_v5_probs), top and quark/gluon (Herwig) at every size under the chosen substitutions
            (fits_v5_fill_probs, FILL_TAG) -> bootstrap/probe_v5
@@ -337,9 +338,12 @@ def _atlas_module():
     return _load("build_atlas_res_job", "scripts/build_atlas_res_job.py")
 
 
-def atlas_spec(tag: str, parallelism: int) -> str:
-    """build_atlas_res_job.spec into ATLAS_V2 with --grid v2 and the longer MLP cap, pinned to CPU_PIN."""
+def atlas_spec(tag: str, parallelism: int, ms=None) -> str:
+    """build_atlas_res_job.spec into ATLAS_V2 with --grid v2 and the longer MLP cap, pinned to CPU_PIN
+    (ms: another model list in build_atlas_res_job.models' form)."""
     ba = _atlas_module()
+    if ms is not None:
+        ba.models = lambda: ms
     text = ba.spec(tag, parallelism)
     subs = [(f"name: {ba.NAME}\n", "name: refit5-atlas-raunav\n", 1),
             (f"OUT={ba.OUT_ROOT}\n", f"OUT={ATLAS_V2}\n", 1),
@@ -360,11 +364,35 @@ def atlas_spec(tag: str, parallelism: int) -> str:
     return pin_cpu(text)
 
 
+def atlas_part_models() -> list[tuple[str, str, str, str, str]]:
+    """The flavour-boundary and random partitions (PI 2026-11-14: their mass probes, never a caption gap): own head
+    outputs and frozen features, no mass output."""
+    hb = _atlas_module().HB
+    return [(m, f"{hb.HEAD_ROOT}/{m}/test/best70", f"{hb.LP.LP_ROOT}/{m}/jc2/test/best70", "best70", "")
+            for m in hb.FLAV_RUNS + hb.RAND_RUNS]
+
+
+def atlas_part_spec(tag: str, parallelism: int) -> str:
+    """atlas_spec on the partitions into the same ATLAS_V2. Their head jobs ran the sculpting only, so they have no
+    mass_v3.json and its cross-check (the same jets as mass_resolution.py) is skipped; DONE_PART when all are in."""
+    text = atlas_spec(tag, parallelism, atlas_part_models())
+    subs = [("name: refit5-atlas-raunav\n", "name: refit5-atlas-part-raunav\n", 1),
+            ("for F in ${OBS}/head_outputs.npz ${FEAT}/manifest.json ${MASSV3}; do",
+             "for F in ${OBS}/head_outputs.npz ${FEAT}/manifest.json; do", 1),
+            ("--mass-v3 ${MASSV3} ", "", 1),
+            ("touch ${OUT}/DONE\n", "touch ${OUT}/DONE_PART\n", 1)]
+    for old, new, n in subs:
+        if text.count(old) != n:
+            raise SystemExit(f"FATAL: atlas_spec changed: {old!r} found {text.count(old)} times")
+        text = text.replace(old, new)
+    return text
+
+
 def rebin_spec(tag: str) -> str:
     ba = _atlas_module()
     text = ba.rebin_spec(tag)
     subs = [(f"name: {ba.FINE_NAME}\n", "name: refit5-rebin-raunav\n", 1),
-            (f"[ -f {ba.OUT_ROOT}/DONE ]", f"[ -f {ATLAS_V2}/DONE ]", 1),
+            (f"[ -f {ba.OUT_ROOT}/DONE ]", f"[ -f {ATLAS_V2}/DONE ] && [ -f {ATLAS_V2}/DONE_PART ]", 1),
             (f"{ba.OUT_ROOT} is not complete", f"{ATLAS_V2} is not complete", 1),
             (f"--in-dir {ba.OUT_ROOT} --out-dir {ba.FINE_ROOT}", f"--in-dir {ATLAS_V2} --out-dir {ATLAS_FINE_V2}", 1),
             (f"touch {ba.FINE_ROOT}/DONE", f"touch {ATLAS_FINE_V2}/DONE", 1)]
@@ -376,7 +404,7 @@ def rebin_spec(tag: str) -> str:
 
 
 def atlas_models() -> list[str]:
-    return [m for m, *_ in _atlas_module().models()]
+    return [m for m, *_ in _atlas_module().models() + atlas_part_models()]
 
 
 def _curves():
@@ -469,7 +497,8 @@ def build(tag: str, parallelism: int) -> dict[str, str]:
     return {"fit": fit_spec(tag, parallelism), "fill": fill_spec(tag, parallelism), "sib": sib_spec(tag, parallelism),
             "coarse": coarse_spec(tag, parallelism), "qcdhf": qcdhf_spec(tag), "nat": nat_spec(tag, parallelism),
             "sophonx": sophonx_spec(tag), "sophon": sophon_spec(tag), "xbx": xbx_spec(tag, parallelism),
-            "mlp": mlp_spec(tag, parallelism), "atlas": atlas_spec(tag, parallelism), "rebin": rebin_spec(tag),
+            "mlp": mlp_spec(tag, parallelism), "atlas": atlas_spec(tag, parallelism),
+            "atlas-part": atlas_part_spec(tag, parallelism), "rebin": rebin_spec(tag),
             "boot": boot_spec(tag), "bootl3": bootl3_spec(tag), "checks": checks_spec(tag)}
 
 
@@ -478,7 +507,8 @@ def main(argv=None) -> int:
     ap.add_argument("--tag", required=True, help="the pushed tag the pods clone")
     ap.add_argument("--parallelism", type=int, default=5)
     ap.add_argument("kinds", nargs="+", choices=("all", "fit", "fill", "sib", "coarse", "qcdhf", "nat", "sophonx",
-                                                 "sophon", "xbx", "mlp", "atlas", "rebin", "boot", "bootl3", "checks"))
+                                                 "sophon", "xbx", "mlp", "atlas", "atlas-part", "rebin", "boot", "bootl3",
+                                                 "checks"))
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
         raise SystemExit(f"FATAL: --tag {a.tag} is not an mtx-sN.NN tag")
