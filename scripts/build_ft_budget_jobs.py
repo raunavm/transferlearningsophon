@@ -285,6 +285,14 @@ spec:
 PRE_FULL_METRICS = f"{PRE_FULL_ROOT}/budget_prefull_metrics.json"
 
 
+def long_rest_cells(lr_pre: str) -> list:
+    """PI 2026-11-14 (compared networks trained identically): every pretrained run of the paper not yet fine-tuned on
+    JetClass-II at 1e6 with the long budget (the label sets, both 162 + mass runs, 17 classes s2 and s3), so all 27 use
+    160 epochs with the best validation epoch; their fixed-budget cells under budget/ are superseded, not deleted."""
+    done = set(LONG_JC2B) | {r for r in paper_runs() if r.startswith(("rand", "flav"))}
+    return [{**cell("jc2b", r, LONG_N, 1, lr_pre, LONG_ROOT), "epochs": LONG_EPOCHS} for r in paper_runs() if r not in done]
+
+
 def long_ctrl_cells(lr_pre: str) -> list:
     """The five random partitions and the three controlled ones on JetClass-II at 1e6 with the long
     budget, so the JetClass-II fine-tuning figures carry the controls (PI, 2026-11-05)."""
@@ -526,7 +534,7 @@ def main(argv=None) -> int:
     ap.add_argument("--rerun", action="append", default=[], metavar="TASK:N",
                     help="pre-full-rerun / readout-pre-full: a (task, size) of PRE_FULL_SIZES that moved, e.g. top:1000")
     storage_line.add_argument(ap)
-    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl",
+    ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full"))
     a = ap.parse_args(argv)
@@ -561,6 +569,7 @@ def main(argv=None) -> int:
                      "long-jc2b": lambda: long_cells("jc2b", a.lr_pre, a.lr_scratch),
                      "long-jc1": lambda: long_cells("jc1", a.lr_pre, a.lr_scratch),
                      "long-jc2b-ctrl": lambda: long_ctrl_cells(a.lr_pre),
+                     "long-jc2b-rest": lambda: long_rest_cells(a.lr_pre),
                      "pre-full": lambda: pre_full_cells(a.lr_pre),
                      "pre-full-rerun": lambda: pre_full_rerun_cells(a.lr_pre, reruns),
                      "scratch-full": lambda: scratch_full_cells(a.lr_scratch, a.lr_scratch_qg or a.lr_scratch),
