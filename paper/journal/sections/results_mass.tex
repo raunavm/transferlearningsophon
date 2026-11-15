@@ -81,8 +81,8 @@ loss (section~\ref{sec:labelsets}), the two runs move in opposite directions, so
 does not show a larger cost. A likely reason is that the frozen features have room for the mass
 beside the class information, so the regression adds what the features carry without displacing
 what the labels ask for. With \MlstMassNRunsWord{} runs per model the data can only fail to show a
-cost that grows with the loss share; they cannot exclude a modest one. An MLP probe on the natural-composition
-test set reads the same at both label sets (ratio of its $1-\AUC$: \MlstMlpNatJcTwoResMassOverResPr{} at \Kres{}
+cost that grows with the loss share; they cannot exclude a modest one. An MLP probe on the mixed
+test sample reads the same at both label sets (ratio of its $1-\AUC$: \MlstMlpNatJcTwoResMassOverResPr{} at \Kres{}
 classes and \MlstMlpNatJcTwoCoarseMassOverCoarsePr{} at \Kcoarse{} classes; table~\ref{tab:mlp}), so this is not
 a limit of what a linear classifier can read.
 % CHECK: MlstMlpNatJcTwoResMassOverResPr and MlstMlpNatJcTwoCoarseMassOverCoarsePr read "equal within" (recomputed from fits_v3_mlp2: raw 1.016, 1.009 and 1.026, 1.019; hierarchy-level SD 1.3%).

@@ -179,7 +179,11 @@ def test_the_coverage_map_has_a_row_a_family_and_no_blank_cell():
     assert cov["Embeddings"][1] == "supplement" and cov["Embeddings"][2].startswith("does not apply")
     # every paper item that shows a group is in the map, and only paper items are
     assert set(G.SHOWS) <= {k for k, t in G.TIER.items() if t != G.SUPPLEMENT}
-    assert "17-class partitions appear in the figures of the headline metrics, class pairs and resonance tagging" in G.NETWORK_RULE
+    # PI 2026-11-14: the rule holds for the tables too; outside the three families the partitions are in the supplement
+    assert G.NETWORK_RULE.startswith("Every figure and table of the paper shows the label sets")
+    assert "17-class partitions appear in the paper for the headline metrics, class pairs and resonance tagging" in G.NETWORK_RULE
+    assert cov["Training size"][2] == cov["ROC curves"][5] == cov["Per class"][2] == cov["Sculpting"][2] == "supplement"
+    assert G.TIER["tab:labelsetsfull"] == G.TIER["tab:jc1_class_aucfull"] == G.TIER["tab:sculptfull"] == G.SUPPLEMENT
 
 
 def test_f10b_goes_to_the_main_text_only_with_the_signs_of_the_rule():

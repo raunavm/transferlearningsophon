@@ -198,9 +198,8 @@ _TABLES = (
     ("tab:summaryauc", APPENDIX, "[[tab:summaryauc]] gives the area under the ROC curve beside every value of "
                                  "[[tab:summary]], the values of [[F2a]] and [[F2b]]."),
     # plan "tables": moves to the appendix with the JetClass per-class figure, whose every point it holds
-    ("tab:jc1_class_auc", APPENDIX, "[[tab:jc1_class_auc]] gives every point of [[PC-jc1]], [[PC-jc1-part]], "
-                                    "[[PC-jc1-rand]] and [[PC-jc1-mass]], each JetClass class's area under the ROC "
-                                    "curve."),
+    ("tab:jc1_class_auc", APPENDIX, "[[tab:jc1_class_auc]] gives every point of [[PC-jc1]] and [[PC-jc1-mass]], each "
+                                    "JetClass class's area under the ROC curve."),
     # L3 (run SDs, no bootstrap): 162, 43 and 17 against 188 within 2.2 standard deviations on every class; the class
     # AUCs of 17 classes are not (PC-jc1)
     ("tab:jetclassrej", APPENDIX, "Fine-tuned on JetClass, 162, 43 and 17 classes reject QCD jets as 188 classes do "
@@ -265,6 +264,13 @@ _TABLES = (
     *((k, SUPPLEMENT, "Every random partition, the ratio to 188 classes and every block of [[tab:probes]], "
                       "[[tab:fill]], [[tab:pairs]] and [[tab:coarse]] are in [[tab:probesfull]] to [[tab:fillfull]].")
       for k in ("tab:probesfull", "tab:coarsefull", "tab:pairsfull", "tab:fillfull")),
+    # the network rule (PI 2026-11-14): the partitions of the appendix tables of these families, whole copies
+    ("tab:jc1_class_aucfull", SUPPLEMENT, "Every point of [[PC-jc1-part]] and [[PC-jc1-rand]] is in "
+                                         "[[tab:jc1_class_aucfull]], with the rows of [[tab:jc1_class_auc]]."),
+    ("tab:labelsetsfull", SUPPLEMENT, "The fine-tuned top and quark/gluon networks of [[tab:labelsets]] with the "
+                                     "17-class partitions are in [[tab:labelsetsfull]]."),
+    ("tab:sculptfull", SUPPLEMENT, "The sculpting of [[tab:sculpt]] with the 17-class partitions is in "
+                                  "[[tab:sculptfull]]."),
     # tab:qcdhf repeated every row of this table (audit 3): this copy stays, with each random partition
     ("tab:qcdhffull", SUPPLEMENT, "The linear probes' X→bb̄ discriminant on QCD jets with b quarks is in "
                                   "[[tab:qcdhffull]]."),
@@ -326,10 +332,10 @@ for _kind, _items in (("figures", _FIGURES), ("tables", _TABLES)):
 # PI 2026-11-14 (step 6): one rule for which networks a figure shows, stated once (on the coverage map's page) and
 # followed by every figure of the paper. Groups: the label sets (188, 162, 43, 17 classes), the mass networks
 # (162 and 17 classes + mass), the 17-class partitions.
-NETWORK_RULE = ("Every figure of the paper shows the label sets (188, 162, 43 and 17 classes) and the mass networks "
-                "(162 and 17 classes + mass); the 17-class partitions appear in the figures of the headline metrics, "
-                "class pairs and resonance tagging, and in the supplementary material for every other family; the "
-                "per-class and embedding figures show the label sets only.")
+NETWORK_RULE = ("Every figure and table of the paper shows the label sets (188, 162, 43 and 17 classes) and the mass "
+                "networks (162 and 17 classes + mass); the 17-class partitions appear in the paper for the headline "
+                "metrics, class pairs and resonance tagging, and in the supplementary material for every other "
+                "family; the per-class and embedding figures show the label sets only.")
 PART_IN_PAPER = ("Headline metrics", "Class pairs", "Resonance tagging")
 SETS_ONLY = ("Per class", "Embeddings")
 LP, FT = "lp", "ft"
@@ -343,23 +349,23 @@ SHOWS = {
     "tab:summary": ("Headline metrics", (LP, FT), GROUPS), "tab:summaryauc": ("Headline metrics", (LP, FT), GROUPS),
     "tab:published": ("Headline metrics", (FT,), ("sets",)),
     "PC-jc2": ("Per class", (LP, FT), ("sets",)), "PC-jc1": ("Per class", (LP, FT), ("sets",)),
-    "tab:jc1_class_auc": ("Per class", (LP, FT), GROUPS), "tab:jetclassrej": ("Per class", (FT,), ("sets", "mass")),
+    "tab:jc1_class_auc": ("Per class", (LP, FT), ("sets", "mass")), "tab:jetclassrej": ("Per class", (FT,), ("sets", "mass")),
     **{k: ("Class pairs", (LP,), GROUPS) for k in ("F4-mech", "F4-other", "F4-light")},
     **{k: ("Class pairs", (FT,), GROUPS) for k in ("F4-mech-ft", "F4-other-ft", "F4-light-ft")},
     "tab:pairs": ("Class pairs", (LP, FT), GROUPS),
     "A8": ("Training size", (FT,), ("sets", "mass")), "A10": ("Training size", (LP,), ("sets", "mass")),
-    "tab:probesn": ("Training size", (LP,), GROUPS), "tab:ft": ("Training size", (FT,), GROUPS),
+    "tab:probesn": ("Training size", (LP,), ("sets", "mass")), "tab:ft": ("Training size", (FT,), ("sets", "mass")),
     "F6": ("ROC curves", (LP,), ("sets", "mass")), "F6-ft": ("ROC curves", (FT,), ("sets", "mass")),
-    "tab:probes": ("ROC curves", (LP,), GROUPS), "tab:labelsets": ("ROC curves", (FT,), GROUPS),
+    "tab:probes": ("ROC curves", (LP,), ("sets", "mass")), "tab:labelsets": ("ROC curves", (FT,), ("sets", "mass")),
     "PT": ("Jet pT", (LP, FT), ("sets", "mass")),
     "tab:mass": ("Mass", (LP,), ("sets", "mass")), "F9b": ("Mass", (LP,), ("mass",)),
     "A17-probe": ("Mass", (LP,), ("sets", "mass")), "tab:masseffect": ("Mass", (LP, FT), ("sets", "mass")),
-    "F10b": ("Sculpting", (LP, FT), ("sets", "mass")), "tab:sculpt": ("Sculpting", (LP, FT), GROUPS),
+    "F10b": ("Sculpting", (LP, FT), ("sets", "mass")), "tab:sculpt": ("Sculpting", (LP, FT), ("sets", "mass")),
     "F11": ("Resonance tagging", (LP,), ("sets", "mass")), "F11-part": ("Resonance tagging", (LP,), GROUPS),
     "tab:xbx": ("Resonance tagging", (LP,), GROUPS), "tab:xbxrej": ("Resonance tagging", (LP,), GROUPS),
     "UMAP-frozen": ("Embeddings", (LP,), ("sets",)), "UMAP-ft": ("Embeddings", (FT,), ("sets",)),
     "VAL": ("Training details", (LP, FT), ("sets", "mass")),       # pretraining, before either mode
-    "tab:fill": ("Training details", (LP,), GROUPS), "tab:lrsweep": ("Training details", (FT,), ("sets",)),
+    "tab:fill": ("Training details", (LP,), ("sets", "mass")), "tab:lrsweep": ("Training details", (FT,), ("sets",)),
 }
 # the cells no network of the group can fill, with the reason (PI: "does not apply" with the reason, no cell blank)
 DOES_NOT_APPLY = {

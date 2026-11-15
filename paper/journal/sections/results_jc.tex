@@ -10,7 +10,7 @@ Each subsection compares the four levels of the class hierarchy first and the co
 controls against the \Kcoarse-class level whose class count they share. Linear probes on frozen features
 carry the comparison on the pretraining classes, and MLP probes check them: on the same class-balanced test
 set for the levels of the hierarchy, the partitions with controlled flavor boundaries and the randomly
-initialized network, and on the natural-composition test set for the
+initialized network, and on the mixed test sample for the
 models with the auxiliary mass regression and the \RandVtwoNPartitions{} random partitions
 (appendix~\ref{sec:app-mlp}). Fine-tuning carries the comparison on the downstream benchmarks. On JetClass-II the text compares label
 sets by ratios of $1-\AUC$ (equation~(\ref{eq:ratio})), and on the downstream tasks by each task's background
@@ -163,7 +163,7 @@ quark flavor over that of the classes kept apart from all of theirs is
 \MlstPerClassRandFlavMergedOverApartPr{}; for lepton flavor it is \MlstPerClassRandLeptonMergedOverApartPr{}.
 Within the random partitions, merged and kept-apart classes thus lose alike: in a curve of one class against
 the rest, sharing a label with a flavor counterpart adds no cost beyond what the kind of decay brings. An MLP
-probe on the natural-composition test set reads the same (quark flavor, \MlstMlpNatPerClassRandFlavMergedOverApartPr{};
+probe on the mixed test sample reads the same (quark flavor, \MlstMlpNatPerClassRandFlavMergedOverApartPr{};
 lepton flavor, \MlstMlpNatPerClassRandLeptonMergedOverApartPr), so the equality is not a limit of what a linear
 classifier can read. The separation of a merged pair does not show the merge either,
 as long as another boundary in the label set still separates the two flavors: the pair $X\to ee$ against

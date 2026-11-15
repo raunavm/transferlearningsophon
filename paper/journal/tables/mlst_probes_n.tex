@@ -2,7 +2,7 @@
 \begin{center}
 \setlength{\tabcolsep}{4pt}
 \begin{minipage}{\linewidth}\centering
-\captionof{table}{Linear probes of table~\ref{tab:summary} at the smaller training sets in the header, in accuracy on class-balanced JetClass-II and JetClass and in $R_{30}$, the inverse background efficiency at 30\% signal efficiency, on top and quark/gluon tagging, Pythia and Herwig. Training jets are counted in total, and the missing inputs are set as in table~\ref{tab:probes}. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks the best value in their column under their italic heading and those within three standard deviations (run spreads and any stored test-jet bootstrap). The random network is a reference, never bold.}
+\captionof{table}{Linear probes of table~\ref{tab:summary} at the smaller training sets in the header, in accuracy on class-balanced JetClass-II and JetClass and in $R_{30}$, the inverse background efficiency at 30\% signal efficiency, on top and quark/gluon tagging, Pythia and Herwig. Training jets are counted in total, and the missing inputs are set as in table~\ref{tab:probes}. The 17-class partitions are in the supplementary material. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network. Bold marks the best value in their column under their italic heading and those within three standard deviations (run spreads and any stored test-jet bootstrap). The random network is a reference, never bold.}
 \label{tab:probesn}
 \par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
@@ -13,16 +13,11 @@
 \midrule
 \multicolumn{4}{@{}l}{\textit{linear probe on the frozen features, JetClass-II, accuracy}} \\
 \Kfull{} classes & {\fontseries{b}\selectfont 0.3126\,$\pm$\,0.0032} & {\fontseries{b}\selectfont 0.3822\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 0.4191\,$\pm$\,0.0005} \\
-\Kres{} classes & 0.3109\,$\pm$\,0.0023 & {\fontseries{b}\selectfont 0.3807\,$\pm$\,0.0012} & {\fontseries{b}\selectfont 0.4176\,$\pm$\,0.0009} \\
-\Kres{} classes + mass & 0.3033\,$\pm$\,0.0006 & {\fontseries{b}\selectfont 0.3745\,$\pm$\,0.0024} & 0.4126\,$\pm$\,0.0017 \\
+\Kres{} classes & {\fontseries{b}\selectfont 0.3109\,$\pm$\,0.0023} & {\fontseries{b}\selectfont 0.3807\,$\pm$\,0.0012} & {\fontseries{b}\selectfont 0.4176\,$\pm$\,0.0009} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.3033\,$\pm$\,0.0006} & 0.3745\,$\pm$\,0.0024 & 0.4126\,$\pm$\,0.0017 \\
 \Kmid{} classes & 0.2016\,$\pm$\,0.0014 & 0.280\,$\pm$\,0.004 & 0.337\,$\pm$\,0.005 \\
 \Kcoarse{} classes & 0.1376\,$\pm$\,0.0028 & 0.234\,$\pm$\,0.004 & 0.309\,$\pm$\,0.007 \\
 \Kcoarse{} classes + mass & 0.135\,$\pm$\,0.008 & 0.237\,$\pm$\,0.024 & 0.304\,$\pm$\,0.027 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.1990\,$\pm$\,0.0029 & 0.2862\,$\pm$\,0.0010 & 0.351\,$\pm$\,0.004 \\
-\quad $b$-quark boundary & 0.2251\,$\pm$\,0.0010 & 0.3261\,$\pm$\,0.0026 & 0.3757\,$\pm$\,0.0012 \\
-\quad random flavor boundary & 0.2301\,$\pm$\,0.0009 & 0.3484\,$\pm$\,0.0009 & 0.3937\,$\pm$\,0.0016 \\
-\quad random partitions & {\fontseries{b}\selectfont 0.3243\,$\pm$\,0.0028} & {\fontseries{b}\selectfont 0.3837\,$\pm$\,0.0020} & 0.4104\,$\pm$\,0.0015 \\
 random network & 0.0200\,$\pm$\,0.0017 & 0.0418\,$\pm$\,0.0019 & 0.0633\,$\pm$\,0.0013 \\
 \midrule
 \multicolumn{4}{@{}l}{\textit{linear probe on the frozen features, JetClass, accuracy}} \\
@@ -32,11 +27,6 @@ random network & 0.0200\,$\pm$\,0.0017 & 0.0418\,$\pm$\,0.0019 & 0.0633\,$\pm$\,
 \Kmid{} classes & {\fontseries{b}\selectfont 0.7109\,$\pm$\,0.0005} & {\fontseries{b}\selectfont 0.7521\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 0.7679\,$\pm$\,0.0012} \\
 \Kcoarse{} classes & {\fontseries{b}\selectfont 0.689\,$\pm$\,0.006} & 0.742\,$\pm$\,0.004 & 0.7586\,$\pm$\,0.0026 \\
 \Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.691\,$\pm$\,0.006} & 0.7436\,$\pm$\,0.0015 & 0.7601\,$\pm$\,0.0008 \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 0.677\,$\pm$\,0.004 & 0.7321\,$\pm$\,0.0025 & 0.7494\,$\pm$\,0.0033 \\
-\quad $b$-quark boundary & {\fontseries{b}\selectfont 0.7008\,$\pm$\,0.0018} & 0.7449\,$\pm$\,0.0008 & {\fontseries{b}\selectfont 0.7612\,$\pm$\,0.0022} \\
-\quad random flavor boundary & {\fontseries{b}\selectfont 0.6925\,$\pm$\,0.0007} & 0.7397\,$\pm$\,0.0009 & 0.7561\,$\pm$\,0.0020 \\
-\quad random partitions & {\fontseries{b}\selectfont 0.6960\,$\pm$\,0.0027} & 0.7380\,$\pm$\,0.0006 & 0.7524\,$\pm$\,0.0010 \\
 random network & 0.306\,$\pm$\,0.006 & 0.3854\,$\pm$\,0.0016 & 0.4049\,$\pm$\,0.0016 \\
 \bottomrule
 \end{tabular*}
@@ -57,11 +47,6 @@ random network & 0.306\,$\pm$\,0.006 & 0.3854\,$\pm$\,0.0016 & 0.4049\,$\pm$\,0.
 \Kmid{} classes & {\fontseries{b}\selectfont 146\,$\pm$\,32} & {\fontseries{b}\selectfont 233\,$\pm$\,18} & {\fontseries{b}\selectfont 236\,$\pm$\,10} \\
 \Kcoarse{} classes & 154\,$\pm$\,5 & {\fontseries{b}\selectfont 252\,$\pm$\,19} & {\fontseries{b}\selectfont 259\,$\pm$\,20} \\
 \Kcoarse{} classes + mass & {\fontseries{b}\selectfont 192.0\,$\pm$\,1.4} & {\fontseries{b}\selectfont 310\,$\pm$\,40} & {\fontseries{b}\selectfont 340\,$\pm$\,50} \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & {\fontseries{b}\selectfont 148\,$\pm$\,14} & {\fontseries{b}\selectfont 248\,$\pm$\,24} & {\fontseries{b}\selectfont 255\,$\pm$\,9} \\
-\quad $b$-quark boundary & 139.44\,$\pm$\,0.27 & {\fontseries{b}\selectfont 214\,$\pm$\,6} & {\fontseries{b}\selectfont 210\,$\pm$\,9} \\
-\quad random flavor boundary & 144\,$\pm$\,7 & {\fontseries{b}\selectfont 213\,$\pm$\,13} & {\fontseries{b}\selectfont 230\,$\pm$\,17} \\
-\quad random partitions & 101\,$\pm$\,10 & 165\,$\pm$\,11 & 165\,$\pm$\,12 \\
 random network & 43.1\,$\pm$\,1.1 & 55.3\,$\pm$\,3.1 & 57.5\,$\pm$\,3.0 \\
 \midrule
 \multicolumn{4}{@{}l}{\textit{linear probe on the frozen features, quark/gluon tagging, Pythia jets, $R_{30}$}} \\
@@ -71,11 +56,6 @@ random network & 43.1\,$\pm$\,1.1 & 55.3\,$\pm$\,3.1 & 57.5\,$\pm$\,3.0 \\
 \Kmid{} classes & {\fontseries{b}\selectfont 63.4\,$\pm$\,2.7} & {\fontseries{b}\selectfont 66.9\,$\pm$\,0.6} & {\fontseries{b}\selectfont 70.8\,$\pm$\,1.4} \\
 \Kcoarse{} classes & {\fontseries{b}\selectfont 62\,$\pm$\,4} & {\fontseries{b}\selectfont 72.0\,$\pm$\,1.8} & {\fontseries{b}\selectfont 74.6\,$\pm$\,1.5} \\
 \Kcoarse{} classes + mass & {\fontseries{b}\selectfont 64\,$\pm$\,4} & {\fontseries{b}\selectfont 66.9\,$\pm$\,3.4} & {\fontseries{b}\selectfont 69.9\,$\pm$\,1.4} \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & 55.9\,$\pm$\,1.8 & {\fontseries{b}\selectfont 69.6\,$\pm$\,0.8} & {\fontseries{b}\selectfont 72.33\,$\pm$\,0.26} \\
-\quad $b$-quark boundary & {\fontseries{b}\selectfont 60\,$\pm$\,6} & {\fontseries{b}\selectfont 67.9\,$\pm$\,1.0} & {\fontseries{b}\selectfont 72.1\,$\pm$\,1.9} \\
-\quad random flavor boundary & {\fontseries{b}\selectfont 61.8\,$\pm$\,3.5} & {\fontseries{b}\selectfont 69.5\,$\pm$\,1.2} & {\fontseries{b}\selectfont 72.1\,$\pm$\,0.8} \\
-\quad random partitions & {\fontseries{b}\selectfont 55\,$\pm$\,5} & {\fontseries{b}\selectfont 64.8\,$\pm$\,2.3} & {\fontseries{b}\selectfont 68.3\,$\pm$\,2.2} \\
 random network & 43.0\,$\pm$\,2.5 & 55.6\,$\pm$\,1.2 & 56.7\,$\pm$\,0.5 \\
 \midrule
 \multicolumn{4}{@{}l}{\textit{linear probe on the frozen features, quark/gluon tagging, Herwig jets, $R_{30}$}} \\
@@ -85,11 +65,6 @@ random network & 43.0\,$\pm$\,2.5 & 55.6\,$\pm$\,1.2 & 56.7\,$\pm$\,0.5 \\
 \Kmid{} classes & {\fontseries{b}\selectfont 31.8\,$\pm$\,0.8} & {\fontseries{b}\selectfont 32.4\,$\pm$\,1.7} & {\fontseries{b}\selectfont 34.6\,$\pm$\,1.8} \\
 \Kcoarse{} classes & {\fontseries{b}\selectfont 31.0\,$\pm$\,2.8} & {\fontseries{b}\selectfont 34.5\,$\pm$\,1.1} & {\fontseries{b}\selectfont 35.3\,$\pm$\,1.0} \\
 \Kcoarse{} classes + mass & {\fontseries{b}\selectfont 33.1\,$\pm$\,1.0} & {\fontseries{b}\selectfont 33.70\,$\pm$\,0.35} & {\fontseries{b}\selectfont 35.0\,$\pm$\,0.8} \\
-\multicolumn{4}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & {\fontseries{b}\selectfont 26.8\,$\pm$\,0.6} & {\fontseries{b}\selectfont 34.194\,$\pm$\,0.008} & {\fontseries{b}\selectfont 34.5\,$\pm$\,0.7} \\
-\quad $b$-quark boundary & {\fontseries{b}\selectfont 30.4\,$\pm$\,3.0} & {\fontseries{b}\selectfont 33.3\,$\pm$\,0.6} & {\fontseries{b}\selectfont 34.5\,$\pm$\,0.5} \\
-\quad random flavor boundary & {\fontseries{b}\selectfont 30.7\,$\pm$\,1.3} & {\fontseries{b}\selectfont 34.1\,$\pm$\,1.1} & {\fontseries{b}\selectfont 34.98\,$\pm$\,0.26} \\
-\quad random partitions & {\fontseries{b}\selectfont 28.9\,$\pm$\,1.8} & {\fontseries{b}\selectfont 33.0\,$\pm$\,1.4} & {\fontseries{b}\selectfont 33.7\,$\pm$\,1.5} \\
 random network & 25.2\,$\pm$\,1.0 & 30.8\,$\pm$\,0.4 & 31.9\,$\pm$\,1.2 \\
 \bottomrule
 \end{tabular*}

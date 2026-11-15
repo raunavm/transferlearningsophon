@@ -945,7 +945,9 @@ def probe_series(M, I, runs, ds: str, met: str, row: str, chosen: dict) -> dict:
     out = {}
     for n in sizes:
         v = [x for m in runs[row] if (x := get(m, n)) is not None]
-        if v:
+        # the one rejection convention (mlst_v4.rejection): where no background jet passes in a run the value is a
+        # lower limit, which the tables print with a geq sign and the figures do not draw
+        if v and not any(isinstance(x, M.Bound) for x in v):
             out[int(n)] = v
     return out
 

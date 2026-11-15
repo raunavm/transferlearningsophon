@@ -1694,8 +1694,9 @@ def test_identical_runs_print_the_value_once_with_the_agreement_mark_through_flo
 def test_the_mark_sentences_follow_the_marks_a_printed_table_carries():
     """A caption gets the single-run sentence and the agreement sentence exactly when a printed cell carries the
     mark (PI 2026-11-12: every mark explained, and no other)."""
-    single, agree = (note for _, note in M.MARK_NOTES)
-    assert [mark for mark, _ in M.MARK_NOTES] == [M.SINGLE, M.AGREE]
+    single, agree, lower = (note for _, note in M.MARK_NOTES)
+    # PI 2026-11-14: the one rejection convention, a lower limit where no background jet passes, explained once
+    assert [mark for mark, _ in M.MARK_NOTES] == [M.SINGLE, M.AGREE, r"$\geq$"] and "no background jet passes" in lower
     # the mark tied to "marks" by a non-breaking space, so that it never ends a line alone (round 2, package 3)
     assert single == r" $^{\S}$~marks a value from a single run."
     assert agree == r" $^{\P}$~marks a run spread below the last digit shown."
@@ -2044,7 +2045,7 @@ def test_the_pair_table_groups_the_rows_by_mode_with_the_mode_in_the_group_headi
     assert "An AUC that would round to 1.0000 is printed as $>0.9999$." in M.printed_caption("pairs_full")
     dagger, ddagger, pooled = (note for _, note in M.KEY_MARKS["pairs"])
     assert dagger in tab and ddagger not in tab and pooled not in tab and r"\ddagger" not in tab and M.POOL_MARK not in tab
-    assert "natural composition" in M.CAPTIONS["pairs"][1]         # the full account, kept for the text
+    assert "mixed test sample" in M.CAPTIONS["pairs"][1]         # the full account, kept for the text (PI 2026-11-14)
     empty = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188",), {}).splitlines()
     k = empty.index(M._full_row(1 + 2 * len(M.PAIRS), M.HEADING["ft"], italic=True))
     assert empty[k + 1] == M._full_row(1 + 2 * len(M.PAIRS), r"\pending{no run yet}")
@@ -2761,7 +2762,7 @@ def test_the_probe_table_of_the_paper_holds_what_table_one_lacks_of_top_and_quar
     # without blocks in the caption
     f = M._float("probes", t, True, pages=True, whole="turned", colsep_pt=6)
     assert "landscape" in f and f.count(r"\label{tab:probes}") == 1 and not _sizes_in(f)
-    assert all(note in f for _, note in M.MARK_NOTES) and f.count(sophon + " & ") == 1 and "(LP)" not in f
+    assert all(note in f for _, note in M.MARK_NOTES[:2]) and f.count(sophon + " & ") == 1 and "(LP)" not in f
     assert M.KEY_MARKS["probes"][0][1] not in f
     # no bold cell: no bold sentence (it is said only where a cell is bold)
     assert "Bold marks" not in f and f.count(M.BOLD_ON) == 0
@@ -3162,7 +3163,7 @@ def test_bold_takes_the_smallest_value_or_the_one_closest_to_one_in_the_columns_
     test is on |mean - best| there too."""
     T, tok = M.TAB, M.V4.tok
     assert {k: {d: v[d] for d in ("lower", "unity") if d in v} for k, v in M.BOLD.items() if "lower" in v or "unity" in v} == {
-        "mass": {"lower": (1,), "unity": (2,)}, "sculpt": {"lower": (1, 3, 6)}}
+        "mass": {"lower": (1,), "unity": (2,)}, "sculpt": {"lower": (1, 3, 6)}, "sculpt_full": {"lower": (1, 3, 6)}}
     # tab:sculpt: a distance column (1) and an efficiency column (2)
     sculpt = _frame([f"x & {T(4.4, 0.3)} & {T(50.0, 1.0)} \\\\",        # the smallest distance, the largest efficiency
                      f"y & {T(5.2, 0.3)} & {T(40.0, 1.0)} \\\\",        # 0.8 <= 3 sqrt(0.18) = 1.27;  10 > 4.2
@@ -3203,10 +3204,10 @@ def test_bold_is_decided_in_each_block_of_a_column_and_the_partitions_subheading
     assert _chosen_bold("jetclass_rej", _frame(whole, 2)) == {("x", 2)}
     # a table of blocks in its caption's words: these keys (tab:published names its own words, "of")
     assert {k for k, v in M.BOLD.items() if v.get("blocks")} == {"summary", "summary_auc", "pairs", "probes_n", "ft",
-                                                                 "jc1_class_auc", "mass"}
+                                                                 "jc1_class_auc", "jc1_class_auc_full", "mass"}
     assert set(M.BOLD) == {"summary", "summary_auc", "published", "labelsets", "probes", "pairs", "probes_n", "ft",
                            "jc1_class_auc", "mass", "sculpt", "jetclass_rej", "xbx", "xbx_rej", "coarse", "qcdhf", "fill",
-                           "masseffect"}
+                           "masseffect", "labelsets_full", "jc1_class_auc_full", "sculpt_full"}    # the supplement copies (PI 2026-11-14)
     # tab:masseffect is built transposed, so the rule applies along its rows, and its caption says so, with which value
     # is best in each row (the "best" sentence before the bold note); tab:published's words name the task blocks
     assert M.BOLD["masseffect"]["of"] == "their row" and set(M.BOLD["masseffect"]) == {"of", "best"}
@@ -3327,7 +3328,9 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
             lines = tab.splitlines()
             assert lines[2] == r" & JetClass-II & JetClass & top tagging & \multicolumn{2}{c}{quark/gluon tagging} \\"
             assert lines[3] == r"\cmidrule(lr){5-6}" and lines[4] == head[label]
-            assert lines[6] == M._full_row(6, M.HEADING[mode], italic=True) and tab.count(r"\textit{") == 1
+            # the mode heading and the 17-class partitions subheading, both italic (PI 2026-11-14)
+            assert lines[6] == M._full_row(6, M.HEADING[mode], italic=True) and tab.count(r"\textit{") == 2
+            assert r"\textit{" + M.PARTITIONS + "}" in tab
             names = [ln.split(" & ")[0] for ln in lines if " & " in ln and not ln.startswith(" & ")]
             refs = [M.LABEL[M.INIT], M.LABEL[M.SOPHON]] if mode == "lp" else [M.SCRATCH_LABEL]
             assert names == [M.LABEL[a] for a in M.SETS] + [r"\quad " + M.LABEL[a] for a in M.SUMMARY_CONTROLS] + refs
@@ -3738,3 +3741,20 @@ def test_every_placed_table_is_set_at_the_body_size_and_the_per_run_table_names_
     assert "Sophon's network" not in per_run
     per_class = (ROOT / "paper/journal/tables/mlst_per_class.tex").read_text()
     assert r"\begin{tabular}[b]{@{}c@{}}\Kres{} classes\\+ mass\end{tabular}" in per_class
+
+
+def test_one_rejection_convention_where_no_background_jet_passes():
+    """PI 2026-11-14: a rejection read from any stored file follows mlst_v4.rejection: the value where a background
+    jet passes; a lower limit (Bound, printed with a geq sign and explained once) of the background count where none
+    does, whatever the file stores (a zero count, a bound flag, the 1e12 sentinel, an infinite value, a null); a dash
+    where the count is unknown. The figures draw no lower limit (paper_figures.probe_series)."""
+    V = M.V4
+    assert V.rejection(250.0) == 250.0 and not isinstance(V.rejection(250.0), V.Bound)
+    assert isinstance(V.rejection(400.0, bound=True), V.Bound) and V.rejection(400.0, bound=True) == 400.0
+    for stored in (1e12, float("inf")):
+        assert V.rejection(stored, True, 0, 103453) == 103453.0 and isinstance(V.rejection(stored, True, 0, 103453), V.Bound)
+        assert V.rejection(stored, True, 0) is None
+    assert V.rejection(None, n_pass=0, n_bkg=298597) == 298597.0 and V.rejection(None) is None
+    assert V.background_count([{"eps_b": 0.0, "n_bkg_pass": 0}, {"eps_b": 0.000165, "n_bkg_pass": 33}]) == 200000
+    assert M.Bound is V.Bound and M._rej({"r30": 1e12, "r30_is_bound": True, "r30_n_bkg_pass": 0}, "r30") is None
+    assert M.MARK_NOTES[-1][0] == r"$\geq$" and M._mark_notes("C.", r"a & $\geq$5") == "C." + M.MARK_NOTES[-1][1]

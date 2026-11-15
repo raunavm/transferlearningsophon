@@ -1,13 +1,9 @@
 \begin{landscape}
-{
-\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{table*}[t]
+\centering
 \setlength{\tabcolsep}{6pt}
-\begin{center}
-\begin{minipage}{\linewidth}\centering
-\setlength{\abovecaptionskip}{0pt}
-\captionof{table}{Linear probes of table~\ref{tab:summary} on top and quark/gluon tagging, Pythia and Herwig, in accuracy and $R_{50}$, the inverse background efficiency at 50\% signal efficiency. The missing inputs (table~\ref{tab:inputs}) are \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon, chosen on validation, and zero for the released Sophon checkpoint. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks the best value in their column and those within three standard deviations (run spreads and any stored test-jet bootstrap). References (random network, kinematic-inputs network, released Sophon checkpoint) are never bold. $^{\S}$~marks a value from a single run.}
+\caption{Linear probes of table~\ref{tab:summary} on top and quark/gluon tagging, Pythia and Herwig, in accuracy and $R_{50}$, the inverse background efficiency at 50\% signal efficiency. The missing inputs (table~\ref{tab:inputs}) are \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon, chosen on validation, and zero for the released Sophon checkpoint. The 17-class partitions are in the supplementary material. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network. Bold marks the best value in their column and those within three standard deviations (run spreads and any stored test-jet bootstrap). References (random network, kinematic-inputs network, released Sophon checkpoint) are never bold. $^{\S}$~marks a value from a single run.}
 \label{tab:probes}
-\par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
  & \multicolumn{2}{c}{top tagging} & \multicolumn{2}{c}{quark/gluon, Pythia jets} & \multicolumn{2}{c}{quark/gluon, Herwig jets} \\
@@ -21,18 +17,11 @@
 \Kmid{} classes & 0.9101\,$\pm$\,0.0019 & 87.7\,$\pm$\,3.5 & {\fontseries{b}\selectfont 0.8055\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 25.7\,$\pm$\,0.6} & 0.7206\,$\pm$\,0.0005 & {\fontseries{b}\selectfont 11.52\,$\pm$\,0.23} \\
 \Kcoarse{} classes & {\fontseries{b}\selectfont 0.9152\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 97\,$\pm$\,4} & {\fontseries{b}\selectfont 0.8064\,$\pm$\,0.0014} & {\fontseries{b}\selectfont 25.8\,$\pm$\,0.7} & {\fontseries{b}\selectfont 0.7201\,$\pm$\,0.0028} & {\fontseries{b}\selectfont 11.50\,$\pm$\,0.16} \\
 \Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.9196\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 118\,$\pm$\,9} & {\fontseries{b}\selectfont 0.8051\,$\pm$\,0.0016} & {\fontseries{b}\selectfont 25.836\,$\pm$\,0.024} & {\fontseries{b}\selectfont 0.7248\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 11.921\,$\pm$\,0.009} \\
-\multicolumn{7}{@{}l}{17-class partitions} \\
-\quad no flavor boundary & {\fontseries{b}\selectfont 0.9124\,$\pm$\,0.0029} & {\fontseries{b}\selectfont 93\,$\pm$\,8} & {\fontseries{b}\selectfont 0.803\,$\pm$\,0.004} & {\fontseries{b}\selectfont 25.1\,$\pm$\,0.6} & {\fontseries{b}\selectfont 0.7206\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 11.47\,$\pm$\,0.16} \\
-\quad $b$-quark boundary & 0.9075\,$\pm$\,0.0017 & 80\,$\pm$\,6 & 0.8034\,$\pm$\,0.0013 & 24.77\,$\pm$\,0.28 & {\fontseries{b}\selectfont 0.7214\,$\pm$\,0.0007} & {\fontseries{b}\selectfont 11.56\,$\pm$\,0.13} \\
-\quad random flavor boundary & 0.90883\,$\pm$\,0.00035 & 84.0\,$\pm$\,1.3 & {\fontseries{b}\selectfont 0.8050\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 25.34\,$\pm$\,0.22} & {\fontseries{b}\selectfont 0.7216\,$\pm$\,0.0022} & 11.66\,$\pm$\,0.08 \\
-\quad random partitions & 0.9029\,$\pm$\,0.0035 & 64\,$\pm$\,4 & {\fontseries{b}\selectfont 0.8027\,$\pm$\,0.0031} & {\fontseries{b}\selectfont 24.1\,$\pm$\,0.8} & {\fontseries{b}\selectfont 0.7212\,$\pm$\,0.0034} & {\fontseries{b}\selectfont 11.34\,$\pm$\,0.35} \\
 random network & 0.8867\,$\pm$\,0.0013 & 25.0\,$\pm$\,0.8 & 0.7851\,$\pm$\,0.0018 & 19.40\,$\pm$\,0.28 & 0.7205\,$\pm$\,0.0021 & 10.58\,$\pm$\,0.11 \\
 \Kfull{} classes, kinematic inputs only & 0.9163$^{\S}$ & 94$^{\S}$ & -- & -- & -- & -- \\
 \midrule
 released Sophon checkpoint & 0.8882$^{\S}$ & 39$^{\S}$ & 0.7917$^{\S}$ & 19.30$^{\S}$ & 0.7153$^{\S}$ & 10.32$^{\S}$ \\
 \bottomrule
 \end{tabular*}
-\end{minipage}
-\end{center}
-}
+\end{table*}
 \end{landscape}

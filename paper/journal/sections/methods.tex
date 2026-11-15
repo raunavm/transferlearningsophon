@@ -230,7 +230,8 @@ appendix~\ref{sec:app-probes}. A linear probe reads only what a linear function 
 probe, a small multilayer perceptron with one hidden layer of \LpMlpHidden{} units trained on the same frozen
 features, therefore checks the linear probes, and tells whether the information is absent or only not linearly
 readable; for the models with the auxiliary mass regression and the \RandVtwoNPartitions{} random partitions it
-was run only on the natural-composition JetClass-II test set, whose class shares follow the selection
+was run only on the mixed test sample of JetClass-II, whose class shares follow the selection (two-prong decays
+38.7\%, three- and four-prong decays 40.8\%, QCD 20.5\% of the jets)
 (appendix~\ref{sec:app-mlp}). The randomly initialized network is the saved initial
 weights of a \Kfull-class model before any training, one for each seed. Evaluated in the same way, it gives
 the floor: what a linear probe on frozen features gets from the architecture alone. Its BatchNorm statistics

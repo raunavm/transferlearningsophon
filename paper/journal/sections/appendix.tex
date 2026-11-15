@@ -170,7 +170,7 @@ up to \JcBalValPerClass{} validation jets per class. The AUC averaged over class
 classes with a full test sample and over the resonant and the QCD classes.
 
 The linear probes on class pairs are binary. They are trained on up to \JcBalPairTrainPerSide{} jets
-per side and tested on up to \JcBalPairTestPerSide, each side at its natural composition, and choose
+per side and tested on up to \JcBalPairTestPerSide, each side's classes at their shares in the mixed test sample, and choose
 their regularization on \LpPairNValMin{} to \LpPairNValMax{} jets held out from the training jets. The pair
 $X\to ee$ against $X\to\mu\mu$ is the exception, with the sets of section~\ref{sec:evaluation}.
 
@@ -340,10 +340,10 @@ training set of JetClass-II, JetClass and the class pairs other than $X\to ee$ a
 top and quark/gluon with the missing inputs set to zero. On JetClass-II and the class pairs the MLP probes of
 the levels of the hierarchy, the partitions with controlled flavor boundaries and the randomly initialized
 network use the class-balanced test set of the linear probes. Those of the models with the auxiliary mass
-regression and the \RandVtwoNPartitions{} random partitions use the natural-composition test set, so the table
+regression and the \RandVtwoNPartitions{} random partitions use the mixed test sample, so the table
 gives them in a block of their own beside the levels of the hierarchy on that set, and no ratio crosses the
 two test sets.
-% CHECK: every linear null in the main text between the mass models or the random partitions has its natural-composition MLP value quoted (results_mass.tex, results_jc.tex); fits_v4_mlp still holds none of these nine models.
+% CHECK: every linear null in the main text between the mass models or the random partitions has its mixed-test-sample MLP value quoted (results_mass.tex, results_jc.tex); fits_v4_mlp still holds none of these nine models.
 
 The last rows of the same table address a second question: whether the hidden layer of the head, where
 Sophon's transfer head starts, holds information that a linear probe cannot read from the class
@@ -357,10 +357,10 @@ quark/gluon training set, and the table sets it beside the linear probe on the c
 \subsection{BatchNorm statistics}\label{sec:app-bn}
 
 Recomputing the BatchNorm statistics tests whether the label-set comparison depends on the statistics
-each model accumulated during pretraining. Every linear probe on natural-composition JetClass-II was
+each model accumulated during pretraining. Every linear probe on the mixed test sample of JetClass-II was
 repeated on the copy of the selected checkpoint whose BatchNorm statistics were recomputed on
 \DesignBnJets{} training jets (table~\ref{tab:bn}); the class-balanced linear probes of the main text use
-the checkpoints as trained, which is why this check runs on the natural-composition test set. The ratio of
+the checkpoints as trained, which is why this check runs on the mixed test sample. The ratio of
 the class-averaged $1-\AUC$ of a label set to the \Kfull-class model of its seed changes by at most
 \MlstBnMaxDev, less than the smallest difference between label sets that the main text reports. On the class
 pairs other than $X\to ee$ against $X\to\mu\mu$, whose probe ran only on the checkpoints as trained, the ratio
@@ -402,11 +402,11 @@ uncertainty of a ratio, and we use it only as a conservative threshold (section~
 
 \input{tables/mlst_boot}
 
-\subsection{Class-balanced and natural-composition test sets}\label{sec:app-balance}
+\subsection{The class-balanced test set and the mixed test sample}\label{sec:app-balance}
 
 Comparing two test sets tests whether class balancing changes the order of the label sets on JetClass-II.
 Table~\ref{tab:balance} gives the linear probes with \FtSizeESix{} training jets on the
-natural-composition test set, whose class shares follow the selection, beside those on the class-balanced
+mixed test sample, whose class shares follow the selection, beside those on the class-balanced
 set of the main text. The label sets fall in the same order on both.
 % CHECK: tab:balance gives the order 188 < 162 < 43 < 17 in the ratio of 1-AUC on both test sets (v3 natural 1.171 and 1.538; v4 balanced 1.227 and 1.557 for 43 and 17)
 

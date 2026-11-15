@@ -607,8 +607,42 @@ def _jc1_cells(cells: dict, init: str, n: str, seeds) -> list:
 SAME_PASS = r"$^{\ddagger}$"     # runs that pass the same QCD jets: one value, marked, no "+- 0" (PI 2026-11-12)
 
 
+# ------------------------------------------------------------------ one rejection convention (PI 2026-11-14)
+# A rejection is measured where at least one background jet passes the working point. Where none passes in a run
+# (a zero count, a bound flag, the 1e12 sentinel of linear_probe_v2, an infinite value, or a null), the run's value
+# is a lower limit, the number of background jets (the inverse of one jet's share), printed with a geq sign and
+# explained once in the caption (mlst_results.MARK_NOTES); a cell whose background count is unknown is a dash.
+# Figures draw no such point: every curve ends where fewer than JC1_MIN_BKG background jets pass.
+class Bound(float):
+    """A rejection where no background jet passed: a lower limit."""
+
+
+NO_PASS = 1e11          # a stored rejection at or above this is the "nothing passed" sentinel (1e12), not a value
+
+
+def rejection(value, bound: bool = False, n_pass=None, n_bkg=None):
+    """A stored rejection under the one convention above: the value; Bound(value) for a capped value; Bound(n_bkg)
+    where no background jet passes and the count is known; None (a dash) where it is not."""
+    v = None if value is None else float(value)
+    if n_pass == 0 or v is None or not math.isfinite(v) or v >= NO_PASS:
+        return Bound(n_bkg) if n_bkg and (n_pass == 0 or v is not None or bound) else None
+    return Bound(v) if bound else v
+
+
+def background_count(entries) -> int | None:
+    """The number of background jets behind per-class rejections that share one background (JetClass: QCD), from
+    any entry where some pass: n_bkg_pass / eps_b."""
+    for e in entries:
+        if e and e.get("n_bkg_pass") and e.get("eps_b"):
+            return int(round(e["n_bkg_pass"] / e["eps_b"]))
+    return None
+
+
 def _jc_cell(vals, place, fmt_pm, two):
+    bound = any(isinstance(x, Bound) for x in vals)
     v = [x for x in vals if x is not None]
+    if bound and v:
+        return r"$\geq$" + _jc_cell([float(x) for x in v], place, fmt_pm, two)
     if tokens(fmt_pm) and v:        # runs that agree are an SD of zero, which mlst_results._render marks
         return tok("p", float(np.mean(v)), float(np.std(v, ddof=1))) if len(v) >= 2 else tok("s", v[0])
     if len(v) >= 2:
@@ -650,7 +684,9 @@ def jetclass_rows(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, sc
         for c, _ in JC1_COLS:
             wp = [b["per_class"][c]["rejection"] for b in blocks]
             marks.append(r"$^\dagger$" if min(w["n_bkg_pass"] for w in wp) < JC1_MIN_BKG else "")
-            cols.append(_jc_cell([w["rejection"] for w in wp], 0, fmt_pm, two))
+            nb = [background_count(x["rejection"] for x in b["per_class"].values()) for b in blocks]
+            cols.append(_jc_cell([rejection(w["rejection"], w.get("is_bound"), w.get("n_bkg_pass"), n)
+                                  for w, n in zip(wp, nb)], 0, fmt_pm, two))
         return f"{name} & {nmax / 1e6:g} M & {_params_cell(our_params(len(JC1_COLS) + 1))}", cols, marks
     ours = []
     for arm in rows:
