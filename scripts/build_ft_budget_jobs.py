@@ -128,7 +128,10 @@ FIXED_CHECK = {1_000: 50, 10_000: 50, 100_000: 50, 1_000_000: 500}
 FIXED_VAL_FILE = {}               # every task: <subset dir>/val_fixed.parquet
 FIXED_SIZES = {"top": (1_000, 10_000, 100_000), "topkin": (1_000, 10_000, 100_000), "qg": (1_000, 10_000, 100_000),
                "jc1": (10_000, 100_000, 1_000_000), "jc2b": (10_000, 100_000, 1_000_000)}
-FIXED_LR_PRE, FIXED_LR_SCRATCH = "1e-3", {"qg": "3e-3"}     # the swept rates (lrsweep_v2); from scratch 1e-3 elsewhere
+# the rates of the one-rule sweep (fixed_sweep, extended at the edge; 2026-11-15, best validation accuracy at 1e4):
+# pretrained 1e-2 (top 0.9249, q/g 0.8260; 3e-3 and 3e-2 below on both), from scratch top 3e-3 and q/g 1e-3;
+# from scratch 1e-3 (ParT's recipe) on JetClass and JetClass-II, which the sweep does not cover
+FIXED_LR_PRE, FIXED_LR_SCRATCH = "1e-2", {"top": "3e-3", "qg": "1e-3"}
 FIXED_JC2B_SMALL_RUNS = ("l188", "l162", "r42q1", "r16q1", "l162mass", "r16q1mass")   # JetClass-II below 1e6
 
 
