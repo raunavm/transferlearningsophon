@@ -485,7 +485,11 @@ case ${TASK} in
         --observers jet_pt jet_energy --out ${CELL}/features_herwig --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits
       mv ${CELL}/features_herwig/logits.npy ${CELL}/features/logits_herwig.npy
       mv ${CELL}/features_herwig/label188.npy ${CELL}/features/label_herwig.npy
-    fi;;
+    fi
+    # the read-outs take logits, labels and observers only (the fine-tuned embeddings re-extract from the checkpoint):
+    # features.npy (0.2-0.45 GB a cell) is checked and dropped, as in build_ft_jobs, so the rows fit under the line
+    python3 -c "import numpy as np, sys; d = sys.argv[1]; F = np.load(d + '/features.npy', mmap_mode='r'); G = np.load(d + '/logits.npy', mmap_mode='r'); L = np.load(d + '/label188.npy', mmap_mode='r'); ok = F.shape[0] == G.shape[0] == L.shape[0] and np.isfinite(F).all() and np.isfinite(G).all(); sys.exit(0 if ok else 'FAIL features: ' + str((F.shape, G.shape, L.shape)))" ${CELL}/features || exit ${HALT}
+    rm -f ${CELL}/features/features.npy ${CELL}/features_herwig/features.npy;;
 esac
 touch ${CELL}/DONE
 echo "FT BUDGET CELL ${IDX} DONE: ${CELL}"
