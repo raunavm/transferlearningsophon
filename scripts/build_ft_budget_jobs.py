@@ -179,6 +179,23 @@ def fixed_cells(sizes: set) -> list:
     return out
 
 
+FIXED_SWEEP_ROOT = "/data/results/ft_v2/fixed_sweep"
+# the rate sweep redone under the one rule, one rate past each edge of the old sweep (PI 2026-11-15: both old choices,
+# pretrained 1e-3 and quark/gluon from scratch 3e-3, sat at its edge); the same cells: top and quark/gluon at 1e4,
+# l188-s1 and from-scratch seed 1. Chosen on the best validation accuracy; a choice at an edge extends the grid again.
+FIXED_SWEEP_PRE, FIXED_SWEEP_SCRATCH, FIXED_SWEEP_N = ("1e-4", "3e-4", "1e-3", "3e-3"), ("3e-4", "1e-3", "3e-3", "1e-2"), 10_000
+
+
+def fixed_sweep_cells() -> list:
+    out = []
+    for task in ("top", "qg"):
+        out += [fixed_cell(task, "l188-s1", FIXED_SWEEP_N, 1, lr, FIXED_SWEEP_ROOT) for lr in FIXED_SWEEP_PRE]
+        out += [fixed_cell(task, "", FIXED_SWEEP_N, 1, lr, FIXED_SWEEP_ROOT) for lr in FIXED_SWEEP_SCRATCH]
+    for c in out:     # one directory per rate, as the old sweep (cell's sub)
+        c["out"] = c["out"].replace(f"/N{FIXED_SWEEP_N}/", f"_lr{c['lr']}/N{FIXED_SWEEP_N}/")
+    return out
+
+
 def fixed_bench_cells() -> list:
     """Validation-cost benchmark (PI 2026-11-15): top 1e4 from 188-s1 for 10 checks, validation in memory and from the
     file loader, into ft_v2/fixed_bench; not results."""
@@ -600,7 +617,7 @@ def main(argv=None) -> int:
     storage_line.add_argument(ap)
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
-                                                 "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench"))
+                                                 "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep"))
     a = ap.parse_args(argv)
     if a.part and not a.indices:
         ap.error("--part needs --indices")
@@ -624,7 +641,8 @@ def main(argv=None) -> int:
             cells, mem = fillcheck_cells(), "48Gi"
         elif kind.startswith("fixed-"):     # the one rule's rates are fixed (FIXED_LR_*), not taken from the sweep flags
             cells = {"fixed-1e5": lambda: fixed_cells({100_000}), "fixed-1e6": lambda: fixed_cells({1_000_000}),
-                     "fixed-rest": lambda: fixed_cells({1_000, 10_000}), "fixed-bench": fixed_bench_cells}[kind]()
+                     "fixed-rest": lambda: fixed_cells({1_000, 10_000}), "fixed-bench": fixed_bench_cells,
+                     "fixed-sweep": fixed_sweep_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
             # small cells ~16 GiB before the in-memory checks; 1e6 set from the smoke cell (fixed-bench index 2)
             mem = "24Gi"
