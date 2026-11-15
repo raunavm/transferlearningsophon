@@ -143,7 +143,7 @@ def test_the_refits_write_new_folders_only_on_the_v5_grid(specs):
         assert "--grid v5" in s[kind], kind
     for old in ("fits_v4 ", "fits_v4_probs ", "fits_v4_fill ", "atlas_res ", "fits_ihep/xbb "):
         assert all(f"--out /data/results/eval/v2_linprobe_bal/{old}" not in t for t in s.values())
-    assert "--out-dir ${OUT} --grid v2 --mlp-max-epochs 200" in s["atlas"] and "OUT=/data/results/eval/atlas_res_v2" in s["atlas"]
+    assert "--out-dir ${OUT} --grid v2 --centre global --mlp-max-epochs 200" in s["atlas"] and "OUT=/data/results/eval/atlas_res_v3" in s["atlas"]
     for k, v in b.CPU_PIN.items():
         for kind in ("atlas", "mlp"):
             assert f"key: {k}" in s[kind] and f'values: ["{v}"]' in s[kind], kind

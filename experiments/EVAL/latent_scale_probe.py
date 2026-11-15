@@ -121,13 +121,23 @@ def r2(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 def fit_ridge(Xtr, ytr, Xva, yva, Xte, alphas=None, tol=None):
     """Ridge at the alpha of the best validation R^2 (the first on ties), on alphas (default ALPHAS);
     tol: the largest alpha within tol of the best instead, with every alpha's R^2 recorded."""
+    import warnings
+    from scipy.linalg import LinAlgWarning
     from sklearn.linear_model import Ridge
     from sklearn.preprocessing import StandardScaler
+    # double precision on standardized features (PI 2026-11-15: the float32 solve warned "ill-conditioned" at small
+    # alpha); every alpha whose solve still warns is recorded, and refit_checks fails if it is the chosen one
+    Xtr, Xva, Xte = (np.asarray(x, dtype=np.float64) for x in (Xtr, Xva, Xte))
+    ytr = np.asarray(ytr, dtype=np.float64)
     sc = StandardScaler().fit(Xtr)
     tr, va, te = sc.transform(Xtr), sc.transform(Xva), sc.transform(Xte)
-    fits = []
+    fits, ill = [], []
     for a in (ALPHAS if alphas is None else alphas):
-        m = Ridge(alpha=a).fit(tr, ytr)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", LinAlgWarning)
+            m = Ridge(alpha=a).fit(tr, ytr)
+        if any(issubclass(x.category, LinAlgWarning) for x in w):
+            ill.append(a)
         fits.append((a, r2(yva, m.predict(va)), m))
     if tol is None:
         best_a, best_va, best = max(fits, key=lambda f: f[1])     # max keeps the first of equal values
@@ -135,7 +145,8 @@ def fit_ridge(Xtr, ytr, Xva, yva, Xte, alphas=None, tol=None):
     top = max(f[1] for f in fits)
     best_a, best_va, best = max((f for f in fits if f[1] >= top - tol), key=lambda f: f[0])
     return best.predict(te), {"alpha": best_a, "val_r2": best_va, "alpha_grid": [f[0] for f in fits],
-                              "search": {str(a): v for a, v, _ in fits}, "selection_tol": tol}
+                              "search": {str(a): v for a, v, _ in fits}, "selection_tol": tol, "precision": "float64",
+                              "ill_conditioned_alphas": ill, "chosen_ill_conditioned": best_a in ill}
 
 
 def fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS, max_epochs=None):

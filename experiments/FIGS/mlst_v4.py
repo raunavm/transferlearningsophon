@@ -43,11 +43,11 @@ SCRATCH_FULL = "_fulldecay"
 V5 = {"linprobe/fits_v4": "linprobe/fits_v5", "linprobe/fits_v4_fill": "linprobe/fits_v5_fill",
       "linprobe/fits_v4_sib2": "linprobe/fits_v5_sib2", "linprobe/fits_v4_coarse": "linprobe/fits_v5_coarse",
       "linprobe/fits_v4_qcdhf": "linprobe/fits_v5_qcdhf", "linprobe/sophon": "linprobe/sophon_v5",
-      "linprobe/fits_v3": "linprobe/fits_v5_nat", "head/atlas_res": "head/atlas_res_v2",
-      "head/atlas_res_fine": "head/atlas_res_fine_v2", "bootstrap/probe_v4": "bootstrap/probe_v5",
+      "linprobe/fits_v3": "linprobe/fits_v5_nat", "head/atlas_res": "head/atlas_res_v3",
+      "head/atlas_res_fine": "head/atlas_res_fine_v3", "bootstrap/probe_v4": "bootstrap/probe_v5",
       "xbx": "xbx_v5", "linprobe/fits_v4_mlp": "linprobe/fits_v5_mlp"}
-ONE_CPU = ("head/atlas_res_v2", "linprobe/fits_v5_mlp")      # the MLPs: one CPU model over the family
-NO_RULES = ("linprobe/fits_v5_qcdhf", "head/atlas_res_fine_v2", "bootstrap/probe_v5")   # no fit of their own
+ONE_CPU = ("head/atlas_res_v3", "linprobe/fits_v5_mlp")      # the MLPs: one CPU model over the family
+NO_RULES = ("linprobe/fits_v5_qcdhf", "head/atlas_res_fine_v3", "bootstrap/probe_v5")   # no fit of their own
 # one grid for every linear probe (PI 2026-11-14): these are pulled together or not at all; the probe bootstrap only
 # with them, and the fine-binned mass file only with its v2 source
 LINEAR_V5 = ("linprobe/fits_v4", "linprobe/fits_v4_fill", "linprobe/fits_v4_sib2", "linprobe/fits_v4_coarse",

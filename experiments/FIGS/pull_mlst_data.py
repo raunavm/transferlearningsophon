@@ -97,8 +97,8 @@ V5_PULL = ((EVAL / "v2_linprobe_bal" / "fits_v5", "linprobe/fits_v5"),
            (EVAL / "v2_linprobe" / "fits_v5_nat", "linprobe/fits_v5_nat"),
            (EVAL / "v2_linprobe_sophon" / "fits_v5", "linprobe/sophon_v5"),
            (EVAL / "v2_linprobe_sophon" / "fits_v5_fill", "linprobe/sophon_v5_fill"),
-           (EVAL / "atlas_res_v2", "head/atlas_res_v2"),
-           (EVAL / "atlas_res_fine_v2", "head/atlas_res_fine_v2"))
+           (EVAL / "atlas_res_v3", "head/atlas_res_v3"),
+           (EVAL / "atlas_res_fine_v3", "head/atlas_res_fine_v3"))
 V5_BOOT = ("probe_v5", "l3_v5")
 MTX = pathlib.Path("/data/results/mtx_v2")
 N_EPOCHS = 80

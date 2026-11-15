@@ -74,10 +74,14 @@ def cpu_models(doc) -> set:
 
 def check(docs: dict, expect=(), one_cpu: bool = False) -> dict:
     """{model: document} -> the summary; summary["ok"] is False if any rule fails."""
-    edges, lates, cpus, n_fits = [], [], {}, 0
+    edges, lates, cpus, n_fits, ill, truth = [], [], {}, 0, [], []
     for m, doc in sorted(docs.items()):
+        if doc.get("centre") == "class":       # a mass refit centred on the true class (PI 2026-11-15: never)
+            truth.append(m)
         for path, rec in records(doc):
             n_fits += 1
+            if rec.get("chosen_ill_conditioned"):
+                ill.append({"model": m, "cell": "/".join(path), "alpha": rec.get("alpha")})
             if (e := edge(rec)) is not None:
                 edges.append({"model": m, "cell": "/".join(path), "edge": e,
                               "value": rec.get("C", rec.get("alpha"))})
@@ -87,8 +91,9 @@ def check(docs: dict, expect=(), one_cpu: bool = False) -> dict:
         for c in cpu_models(doc):
             cpus.setdefault(c, []).append(m)
     missing = sorted(set(expect) - set(docs))
-    ok = not edges and not lates and not missing and (not one_cpu or len(cpus) <= 1)
+    ok = not edges and not lates and not missing and not ill and not truth and (not one_cpu or len(cpus) <= 1)
     return {"ok": ok, "n_models": len(docs), "n_fits": n_fits, "edges": edges, "late_best_epoch": lates,
+            "chosen_ill_conditioned": ill, "class_truth_centring": truth,
             "cpu_models": cpus, "one_cpu_required": one_cpu, "missing": missing, "late_fraction": LATE_FRACTION}
 
 

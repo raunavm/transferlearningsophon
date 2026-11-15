@@ -166,7 +166,7 @@ def response_block(r: np.ndarray, lab: np.ndarray, pt: np.ndarray, mgen: np.ndar
     return out
 
 
-def frozen_jets(obs: dict) -> dict:
+def frozen_jets(obs: dict, centre: str = "class") -> dict:
     """mass_resolution.main's jets, split and centring, step for step: the valid jets, the
     classes with enough training jets, the split recomputed over them, and the target centred
     on its class's training median. `rows` are positions in the observers' arrays."""
@@ -178,7 +178,10 @@ def frozen_jets(obs: dict) -> dict:
     tr, va, te = MR.make_splits(keep.size)
     y_raw = y_all[vidx][keep]
     lab_use = lab_all[vidx][keep]
-    med = MR.class_median(y_raw, lab_use, tr)[lab_use]
+    if centre == "global":     # PI 2026-11-15: no generator truth at test time; one training-set median for every jet
+        med = np.full(y_raw.size, np.median(y_raw[tr]))
+    else:                      # mass_v3's centring: each jet on its TRUE class's training median (uses the label)
+        med = MR.class_median(y_raw, lab_use, tr)[lab_use]
     if np.isnan(med).any():
         raise SystemExit("FATAL: a kept class has no jet in the training split")
     return {"vidx": vidx, "keep": keep, "rows": vidx[keep], "tr": tr, "va": va, "te": te,
@@ -225,6 +228,8 @@ def main(argv=None) -> int:
     ap.add_argument("--mass-v3", type=pathlib.Path, default=None,
                     help="the model's mass_v3.json, checked against (recommended)")
     ap.add_argument("--out-dir", required=True, type=pathlib.Path)
+    ap.add_argument("--centre", choices=("class", "global"), default="class",
+                    help="global: the regression target centred on one training median, no class truth (the v2 refit)")
     ap.add_argument("--grid", choices=("v1", "v2"), default="v1",
                     help="v2: the ridge on ALPHAS_V2 with the plateau rule, the MLP's epochs recorded")
     ap.add_argument("--mlp-max-epochs", type=int, default=None, help="the MLP's cap (default the module's)")
@@ -236,7 +241,7 @@ def main(argv=None) -> int:
         print(f"{out_json} exists; not overwritten")
         return 0
     obs = MR.load_observers(a.observers)
-    J = frozen_jets(obs)
+    J = frozen_jets(obs, a.centre)
     te = J["te"]
     rows = J["rows"][te]
     o = {k: np.asarray(v)[rows].astype(np.float64) for k, v in obs["obs"].items()}
@@ -317,7 +322,7 @@ def main(argv=None) -> int:
                       **inputs},
            "check_against_mass_v3": {"statistic": "sigma68_central: half the central 68% range of "
                                                   "ln r (mass_resolution.resolution)", **check},
-           "fits": fits, "cpu_model": MR.cpu_model(), "grid": a.grid,
+           "fits": fits, "cpu_model": MR.cpu_model(), "grid": a.grid, "centre": a.centre,
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
     if "max_epochs" in fits["mlp"]:
         cap = fits["mlp"]["max_epochs"]

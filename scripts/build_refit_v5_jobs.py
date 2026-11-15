@@ -24,7 +24,7 @@ storage_line.FINISHING. Specs in experiments/EVAL/k8s/v2/refit_v5/; plan and lau
            kinematic-only run's top MLP; one CPU model (CPU_PIN) -> fits_v5_mlp. The whole row: the 18 ran at
            mtx-s2.34, and a spec cloning that tag is refused by tests/test_spec_pins.py (probe_bal.py changed since)
   atlas    atlas_resolution.py --grid v2 --mlp-max-epochs MASS_MLP_EPOCHS on one CPU model (CPU_PIN), every
-           model of the mass table -> atlas_res_v2; rebin: atlas_rebin.py -> atlas_res_fine_v2
+           model of the mass table -> atlas_res_v3; rebin: atlas_rebin.py -> atlas_res_fine_v3
   boot     paired_bootstrap.py on the v5 probes: balanced JetClass-II at 1e6 and its pairs, JetClass at 1e6
            (fits_v5_probs), top and quark/gluon (Herwig) at every size under the chosen substitutions
            (fits_v5_fill_probs, FILL_TAG) -> bootstrap/probe_v5
@@ -69,7 +69,8 @@ SOPHON_V5 = {k: f"{JB.SOPHON_ROOT}/{k}" for k in ("fits_v5", "fits_v5_probs", "f
 XBX_ROOT, XBX_V5 = "/data/results/eval/xbx", "/data/results/eval/xbx/fits_ihep_v5"
 XBX_SIGNALS = ("xbb", "xbs")
 MLP_V5 = f"{LP}/fits_v5_mlp"
-ATLAS_V2, ATLAS_FINE_V2 = "/data/results/eval/atlas_res_v2", "/data/results/eval/atlas_res_fine_v2"
+# v3 (2026-11-15): the truth-free centring; atlas_res_v2 holds 3 class-centred fits of the stopped first attempt, never read
+ATLAS_V2, ATLAS_FINE_V2 = "/data/results/eval/atlas_res_v3", "/data/results/eval/atlas_res_fine_v3"
 # the mass MLP's cap: 60 at atlas_res; best epochs were not recorded, and probe.py's classification MLP left 93 of 360 fits
 # still improving under the same 60 / 8 rule, so the refit starts at 200 (patience and gain unchanged); refit_checks
 # fails the family if any best epoch lies in the last tenth, and then every network is refitted at a longer cap
@@ -343,7 +344,7 @@ def atlas_spec(tag: str, parallelism: int) -> str:
     subs = [(f"name: {ba.NAME}\n", "name: refit5-atlas-raunav\n", 1),
             (f"OUT={ba.OUT_ROOT}\n", f"OUT={ATLAS_V2}\n", 1),
             ("--mass-v3 ${MASSV3} --out-dir ${OUT} || halt",
-             f"--mass-v3 ${{MASSV3}} --out-dir ${{OUT}} --grid v2 --mlp-max-epochs {MASS_MLP_EPOCHS} || halt", 1),
+             f"--mass-v3 ${{MASSV3}} --out-dir ${{OUT}} --grid v2 --centre global --mlp-max-epochs {MASS_MLP_EPOCHS} || halt", 1),
             ('[ "${USED}" -lt 85 ]', f'[ "${{USED}}" -le {LINE} ]', 1),
             ("backoffLimitPerIndex: 6\n", "backoffLimitPerIndex: 2\n", 1),
             # sized to use: NRP blocks accounts whose pods use little of what they request (2026-11-10, 2026-11-15)
