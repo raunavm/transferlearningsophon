@@ -28,6 +28,7 @@ KIN = "l188kin-s1"
 SCRATCH_MAY_DIFFER = {"lr", "head_lr_mult", "lr_schedule", "patience_from"}     # ParT's from-scratch recipe
 KIN_MAY_DIFFER = {"data_config", "code:data_config"}                            # kinematic inputs, by design
 FIXED_STEPS = {1_000: 40_000, 10_000: 20_000, 100_000: 20_000, 1_000_000: 80_000}
+FIXED_CHECK = {1_000: 50, 10_000: 50, 100_000: 50, 1_000_000: 500}
 
 
 @functools.lru_cache(maxsize=None)
@@ -99,7 +100,7 @@ def test_every_compared_fine_tuning_below_the_full_sets_is_trained_identically()
 
 
 def test_below_the_full_sets_every_cell_follows_the_one_rule_and_no_best_checkpoint_sits_at_an_edge():
-    """Fixed steps per training size, a check every 50 steps, no patience; best checkpoint neither at the first check
+    """Fixed steps and check interval per training size (50 steps below 1e6, 500 at 1e6), no patience; best checkpoint neither at the first check
     nor in the last 10% of the schedule (PI 2026-11-15)."""
     bad = []
     for (task, n), cells in sorted(_below_full().items()):
@@ -107,8 +108,9 @@ def test_below_the_full_sets_every_cell_follows_the_one_rule_and_no_best_checkpo
             e = rec.get("early_stop") or {}
             ep, best = e.get("max_epochs"), e.get("best_epoch")
             spe = int(s["steps_per_epoch"]) if s.get("steps_per_epoch") else None
-            if spe != 50 or ep is None or ep * spe != FIXED_STEPS.get(n):
-                bad.append(f"{task} N={n} {cell}: {ep} checks x {spe} steps, the rule is {FIXED_STEPS.get(n)} steps in 50s")
+            if spe != FIXED_CHECK.get(n) or ep is None or ep * spe != FIXED_STEPS.get(n):
+                bad.append(f"{task} N={n} {cell}: {ep} checks x {spe} steps, the rule is {FIXED_STEPS.get(n)} steps "
+                           f"in checks of {FIXED_CHECK.get(n)}")
             if e.get("patience") is None or e["patience"] < ep or e.get("epochs_completed") != ep:
                 bad.append(f"{task} N={n} {cell}: patience {e.get('patience')}, ran {e.get('epochs_completed')} of {ep}")
             if best is None or best < 1 or best >= 0.9 * ep:

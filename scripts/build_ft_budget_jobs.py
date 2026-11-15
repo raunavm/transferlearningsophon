@@ -121,7 +121,10 @@ FULL_MEM = "88Gi"
 # 200,000), val_fixed.parquet in every subset directory (stage_val_fixed.py), and each check scores all of it.
 FIXED_ROOT = "/data/results/ft_v2/fixed"
 FIXED_STEPS = {1_000: 40_000, 10_000: 20_000, 100_000: 20_000, 1_000_000: 80_000}
-FIXED_CHECK, FIXED_VAL, FIXED_NO_PATIENCE = 50, 390 * 512, 10 ** 6
+FIXED_VAL, FIXED_NO_PATIENCE = 390 * 512, 10 ** 6
+# the check interval, like the steps, set only by the training size (PI 2026-11-15): every 50 steps below 1e6, every 500
+# at 1e6, where every best checkpoint observed sits at 3,500 steps or later
+FIXED_CHECK = {1_000: 50, 10_000: 50, 100_000: 50, 1_000_000: 500}
 FIXED_VAL_FILE = {}               # every task: <subset dir>/val_fixed.parquet
 FIXED_SIZES = {"top": (1_000, 10_000, 100_000), "topkin": (1_000, 10_000, 100_000), "qg": (1_000, 10_000, 100_000),
                "jc1": (10_000, 100_000, 1_000_000), "jc2b": (10_000, 100_000, 1_000_000)}
@@ -155,9 +158,9 @@ def cell(task: str, init: str, n: int, s: int, lr: str, root: str, sub: str = ""
 
 
 def fixed_cell(task: str, init: str, n: int, s: int, lr: str, root: str = FIXED_ROOT) -> dict:
-    """A cell of the one rule (FIXED_*): FIXED_STEPS[n] steps in checks of FIXED_CHECK steps, no patience."""
+    """A cell of the one rule (FIXED_*): FIXED_STEPS[n] steps in checks of FIXED_CHECK[n] steps, no patience."""
     c = cell(task, init, n, s, lr, root)
-    return {**c, "epochs": FIXED_STEPS[n] // FIXED_CHECK, "spe": FIXED_CHECK * BATCH, "patience": FIXED_NO_PATIENCE,
+    return {**c, "epochs": FIXED_STEPS[n] // FIXED_CHECK[n], "spe": FIXED_CHECK[n] * BATCH, "patience": FIXED_NO_PATIENCE,
             "val": FIXED_VAL, "valf": FIXED_VAL_FILE.get(task, ""), "valmem": 1}
 
 
