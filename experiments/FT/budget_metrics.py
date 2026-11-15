@@ -115,6 +115,11 @@ def main(argv=None) -> int:
                                                    "max_epochs", "steps_per_epoch", "early_stop_patience",
                                                    "subset", "init", "checkpoint")}
             m["gpu"] = man.get("gpu_device_name")       # every tree, for the compute table
+            # what compared cells must share (PI 2026-11-15; tests/test_comparisons_identical.py reads it)
+            m["setup"] = {k: man.get(k) for k in ("batch_size", "samples_per_epoch", "samples_per_epoch_val", "val_rule",
+                                                  "val", "val_sha256", "subset_sha256", "data_config", "network",
+                                                  "num_classes", "ckpt_rule", "training_code_sha256", "weaver_version", "repo_commit",
+                                                  "torch_version")}
             ic = cell / "init_checkpoint.json"
             if ic.exists():
                 m["init_checkpoint"] = json.loads(ic.read_text())

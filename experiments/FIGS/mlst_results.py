@@ -2035,6 +2035,8 @@ def load_ft(data: pathlib.Path) -> tuple:
         per[key] = {init: {int(n[1:]): [rec for _, rec in sorted(seeds.items())]
                            for n, seeds in by_n.items() if re.fullmatch(r"N\d+", n)}
                     for init, by_n in cells.items()}
+    if (data / "budget" / FIXED).exists():      # the one rule (PI 2026-11-15) replaces every older tree below the full sets
+        return tag, merge_fixed(per, data / "budget" / FIXED), absent
     return tag, merge_budget(per, data / "budget" / "budget_metrics.json",
                              data / "budget" / "budget_long_metrics.json",
                              [data / "budget" / f for f in SCRATCH_FULL], data / "budget" / PRE_FULL), absent
@@ -2058,6 +2060,27 @@ SCRATCH_FULL = {"budget_fulldecay_metrics.json": 30, "budget_long_fulldecay_metr
 # cells stand (nothing moved); anything else is FATAL.
 PRE_FULL = "budget_prefull_metrics.json"
 PRE_FULL_TEST = tuple(f"{a}-s{k}" for a in ("l188", "r16q1") for k in (1, 2, 3))
+
+
+# The one fine-tuning rule (PI 2026-11-15; scripts/build_ft_budget_jobs.py FIXED_*): every cell below the full top and
+# quark/gluon sets, pretrained, kinematic-only and from scratch, from one read-out of ft_v2/fixed. Used complete or not at
+# all: once it is pulled no cell of the older trees (budget, budget_long, budget_prefull, *_fulldecay) is read.
+FIXED, FIXED_N = "fixed_metrics.json", 341
+
+
+def merge_fixed(per: dict, path: pathlib.Path) -> dict:
+    """per's full-set cells (FULL_N) and every cell of the one-rule read-out below them; FATAL unless it is complete."""
+    doc = json.loads(path.read_text())
+    if doc.get("missing") or len(doc["cells"]) != FIXED_N:
+        raise SystemExit(f"FATAL: {path}: {len(doc['cells'])} cells (expected {FIXED_N}), missing {doc.get('missing')}; "
+                         "the one-rule read-out is used complete or not at all")
+    out = {key: {init: {n: v for n, v in by_n.items() if key in FULL_N and n >= FULL_N[key]}
+                 for init, by_n in cells.items()} for key, cells in per.items()}
+    for (key, init, n), recs in _budget_cells(path).items():
+        if key in FULL_N and n >= FULL_N[key]:
+            raise SystemExit(f"FATAL: {path}: a full-set cell {key} {init} N={n}; the full sets keep ParT's recipe")
+        out.setdefault(key, {}).setdefault(init, {})[n] = recs
+    return out
 
 
 def _budget_cells(path: pathlib.Path) -> dict:

@@ -1,0 +1,8 @@
+{
+ "what": "the image of the full-set top and quark/gluon fine-tuning (best70 wave, tag mtx-s1.98), which named the mutable tag gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121",
+ "tag_resolves_to_on_2026-11-15": "sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7",
+ "pinned_digest_in_repo_since": "2026-07-13 (commit 6c5f3ff), the digest every pinned job uses",
+ "inference": "the tag pointed to this digest when the repo first pinned it and still does, so the wave of 2026-10-02 almost certainly ran on it; the registry keeps no history to prove the date itself",
+ "weaver_core_in_image": "0.4.17 (importlib.metadata in a pod of this image, 2026-11-15); every manifest from mtx-s2.96 on records it",
+ "checked_by": "registry manifest HEAD with an anonymous pull token, 2026-11-15"
+}
