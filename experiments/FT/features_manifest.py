@@ -21,10 +21,12 @@ import hashlib
 import json
 import pathlib
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 FT = pathlib.Path("/data/results/ft_v2")
 SUPERSEDED = ("budget", "budget_long", "budget_fulldecay", "budget_long_fulldecay", "budget_prefull", "lrsweep",
               "lrsweep_v2")
+THREADS = 8
 FIELDS = ("path", "size_bytes", "sha256", "checkpoint", "checkpoint_sha256_recorded", "checkpoint_sha256",
           "regenerable", "extract_manifest")
 
@@ -40,20 +42,21 @@ def sha256(p: pathlib.Path) -> str:
 def manifest(out: pathlib.Path) -> int:
     if out.exists():
         raise SystemExit(f"FATAL: {out} exists")
-    rows, ck_cache = [], {}
-    for tree in SUPERSEDED:
-        for f in sorted((FT / tree).rglob("features.npy")):
-            em = f.parent / "extract_manifest.json"
-            m = json.loads(em.read_text()) if em.exists() else {}
-            ck = m.get("checkpoint", "")
-            if ck and ck not in ck_cache:
-                ck_cache[ck] = sha256(pathlib.Path(ck)) if pathlib.Path(ck).exists() else ""
-            actual = ck_cache.get(ck, "")
-            rows.append({"path": str(f), "size_bytes": f.stat().st_size, "sha256": sha256(f), "checkpoint": ck,
-                         "checkpoint_sha256_recorded": m.get("checkpoint_sha256", ""), "checkpoint_sha256": actual,
-                         "regenerable": int(bool(ck) and actual != "" and actual == m.get("checkpoint_sha256")),
-                         "extract_manifest": str(em) if em.exists() else ""})
-            print(len(rows), f, rows[-1]["regenerable"], flush=True)
+    files = [f for tree in SUPERSEDED for f in sorted((FT / tree).rglob("features.npy"))]
+    ems = {f: f.parent / "extract_manifest.json" for f in files}
+    meta = {f: json.loads(e.read_text()) if e.exists() else {} for f, e in ems.items()}
+    cks = sorted({m.get("checkpoint", "") for m in meta.values()} - {""})
+    with ThreadPoolExecutor(THREADS) as ex:    # the shared volume reads one stream slowly; hashlib frees the GIL
+        ck_hash = dict(zip(cks, ex.map(lambda c: sha256(pathlib.Path(c)) if pathlib.Path(c).exists() else "", cks)))
+        f_hash = dict(zip(files, ex.map(sha256, files)))
+    rows = []
+    for f in files:
+        m, ck = meta[f], meta[f].get("checkpoint", "")
+        actual = ck_hash.get(ck, "")
+        rows.append({"path": str(f), "size_bytes": f.stat().st_size, "sha256": f_hash[f], "checkpoint": ck,
+                     "checkpoint_sha256_recorded": m.get("checkpoint_sha256", ""), "checkpoint_sha256": actual,
+                     "regenerable": int(bool(ck) and actual != "" and actual == m.get("checkpoint_sha256")),
+                     "extract_manifest": str(ems[f]) if ems[f].exists() else ""})
     tmp = out.with_suffix(".tmp")
     with open(tmp, "w", newline="") as fh:
         w = csv.DictWriter(fh, FIELDS)
@@ -70,12 +73,16 @@ def delete(man: pathlib.Path) -> int:
     log = man.with_suffix(".deleted.log")
     rows = list(csv.DictReader(open(man)))
     freed, kept = 0, 0
+    for r in rows:
+        f = pathlib.Path(r["path"])
+        if not f.is_relative_to(FT) or f.name != "features.npy" or f.relative_to(FT).parts[0] not in SUPERSEDED:
+            raise SystemExit(f"FATAL: {f} is not a superseded cell's features.npy")
+    with ThreadPoolExecutor(THREADS) as ex:
+        now = list(ex.map(lambda r: sha256(pathlib.Path(r["path"])) if pathlib.Path(r["path"]).exists() else "", rows))
     with open(log, "a") as lg:
-        for r in rows:
+        for r, h in zip(rows, now):
             f = pathlib.Path(r["path"])
-            if not f.is_relative_to(FT) or f.name != "features.npy" or f.parts[4] not in SUPERSEDED:
-                raise SystemExit(f"FATAL: {f} is not a superseded cell's features.npy")
-            if r["regenerable"] != "1" or not f.exists() or sha256(f) != r["sha256"]:
+            if r["regenerable"] != "1" or h != r["sha256"]:
                 kept += 1
                 lg.write(f"kept {f}\n")
                 continue
