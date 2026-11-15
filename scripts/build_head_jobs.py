@@ -206,6 +206,38 @@ def sculpt_v3_spec() -> str:
                                     mem=INIT_MEM, cpu="4", gpu_req="", gpu_check="", node_exclude="")
 
 
+# The random partitions' head outputs and sculpting (PI 2026-11-15, step 7: the frozen sculpting figures said their
+# scores "have not been computed"; and the mass refit needs their observers). Same code as the flavour runs' (mtx-s2.80):
+# extract_v2.py since then only adds a load check, mass_sculpting.py only moved its body into head_doc().
+RAND_RUNS = ("mtx-rand2p1-s1", "mtx-rand2p2-s2", "mtx-rand2p3-s1", "mtx-rand2p4-s2", "mtx-rand2p5-s2")
+RAND_MEM = "16Gi"         # extraction measured ~7 GiB (NRP blocks accounts that over-request, 2026-11-15)
+
+
+def rand_models() -> list[tuple[str, str, str, int, int]]:
+    arm = {run: a for run, a, *_ in BX.v2_runs()}
+    out = [(m, run, rung, k, reg) for m, run, rung, k, reg, _c in LP.models() if m in RAND_RUNS]
+    assert [m for m, *_ in out] == list(RAND_RUNS) and {r for _m, _u, r, _k, _g in out} == {"none"}, out
+    return [(m, run, arm[m], k, reg) for m, run, _r, k, reg in out]
+
+
+def rand_specs(tag: str) -> dict[str, str]:
+    out = {}
+    for m, run, arm, k, reg in rand_models():
+        text = flav_spec(m, run, arm, k, reg).replace(f'"{FLAV_PIN}"', f'"{tag}"').replace(f'"{X_MEM}"', f'"{RAND_MEM}"')
+        assert f'"{tag}"' in text and f'"{RAND_MEM}"' in text, m
+        out[f"job-head-x-{m.removeprefix('mtx-')}-raunav.yaml"] = text
+    body = "".join(f'          [ -f {HEAD_ROOT}/{m}/test/best70/head_outputs.npz ] || {{ echo "FATAL: no head '
+                   f'outputs for {m}: apply after its head job"; exit 42; }}\n' for m in RAND_RUNS)
+    arms = {m: a for m, _r, a, _k, _g in rand_models()}
+    body += "".join(f"          python3 experiments/EVAL/mass_sculpting.py --head {HEAD_ROOT}/{m}/test/best70 \\\n"
+                    f"            --out {SCULPT_V3_DIR}/{m}_sculpting.json --label-set {arms[m]} || halt\n" for m in RAND_RUNS)
+    body += f'          echo "sculpting of the {len(RAND_RUNS)} random partitions done"\n'
+    out["job-head-sculpt-rand-raunav.yaml"] = BX.V1ERR_TEMPLATE.format(
+        name="head-sculpt-rand-raunav", image=BX.IMAGE, pin=tag, body=body, mem="16Gi", cpu="4", gpu_req="",
+        gpu_check="", node_exclude="")
+    return out
+
+
 def init_models() -> list[str]:
     return [m for m, *_ in LP.models() if m.startswith("init-")]
 
@@ -313,7 +345,14 @@ def main(argv=None) -> int:
     ap.add_argument("--only", nargs="*", default=None)
     ap.add_argument("--check-only", action="store_true")
     ap.add_argument("--ft-head", action="store_true", help="only the fine-tuned networks' job (FT_HEAD_PIN)")
+    ap.add_argument("--rand", metavar="TAG", help="only the random partitions' head and sculpting jobs, at TAG")
     a = ap.parse_args(argv)
+    if a.rand:
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        for name, text in rand_specs(a.rand).items():
+            (OUT_DIR / name).write_text(text)
+            print(OUT_DIR.relative_to(ROOT) / name)
+        return 0
     if a.ft_head:
         BX.verify_pin(FT_HEAD_PIN, list(FT_HEAD_NEEDED), a.pin_not_yet_tagged, FT_HEAD_NEEDED)
         for name, cells in ft_head_jobs().items():

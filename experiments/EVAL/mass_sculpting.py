@@ -37,6 +37,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 HEAD_FILE = "head_outputs.npz"
 QCD_LABELS = (161, 188)                      # native labels [161, 188); below them resonant
 FLAV_MAP = "configs/labelmaps/flavour_pair_map.v2.csv"   # FLAV_F0, FLAV_F1, FLAV_F1R columns
+RAND_MAP = "configs/labelmaps/rand_label_map.v2.csv"     # RAND2_p1 ... RAND2_p5 columns (PI 2026-11-15, step 7)
 SIG_EFF = 0.5                                # the signal efficiency of DisCo's R50 / JSD50
 WORKING_POINTS = (0.1, 0.01)                 # QCD efficiency of the cut
 # 2026-10-31: the divergence and the Jensen-Shannon DISTANCE (its square root, the quantity CMS
@@ -56,11 +57,12 @@ def qcd_nodes(label_set: str) -> list[int]:
     """The QCD output nodes of a contraction-tree rung (anomaly.node_roles) or of a
     flavour-boundary partition (a column of FLAV_MAP), a node being QCD only if every
     native class in it is."""
-    if not label_set.startswith("FLAV_"):
+    if not label_set.startswith(("FLAV_", "RAND2_")):
         return sorted(_load("anomaly", "experiments/EVAL/anomaly.py").node_roles(label_set)[2])
-    rows = list(csv.DictReader((REPO / FLAV_MAP).open()))
+    path = REPO / (RAND_MAP if label_set.startswith("RAND2_") else FLAV_MAP)   # random partitions: one pure-QCD group
+    rows = list(csv.DictReader(path.open()))
     if label_set not in rows[0]:
-        raise SystemExit(f"FATAL: {label_set} not a column of {FLAV_MAP}")
+        raise SystemExit(f"FATAL: {label_set} not a column of {path.name}")
     isq = {}
     for r in rows:
         isq.setdefault(int(r[label_set]), []).append(r["class_name"].startswith("label_QCD_"))
