@@ -114,12 +114,15 @@ KIN_RUNS = ("l188kin-s1",)          # the 17-class kinematic-only run was stoppe
 FULL_MEM = "88Gi"
 # One rule for every fine-tuning cell below the full top and quark/gluon sets (PI 2026-11-15): a fixed number of steps
 # set only by the training size, validation on the same 200,000 jets every FIXED_CHECK steps (held in memory, one pass
-# in batches of FIXED_VAL_BATCH so every check scores every jet), the best validation checkpoint over the whole schedule,
+# so every check scores every jet), the best validation checkpoint over the whole schedule,
 # no patience. From scratch differs only in its learning rates and schedule (ParT's flat+decay, head x1).
+# The image's weaver (0.4.17) holds data in memory only for training and validation together (--in-memory) and validates
+# in the training batch: so the validation set is 199,680 jets (390 x 512, the largest multiple of the batch up to
+# 200,000), val_fixed.parquet in every subset directory (stage_val_fixed.py), and each check scores all of it.
 FIXED_ROOT = "/data/results/ft_v2/fixed"
 FIXED_STEPS = {1_000: 40_000, 10_000: 20_000, 100_000: 20_000, 1_000_000: 80_000}
-FIXED_CHECK, FIXED_VAL, FIXED_VAL_BATCH, FIXED_NO_PATIENCE = 50, 200_000, 1_000, 10 ** 6
-FIXED_VAL_FILE = {"jc2b": "/data/finetune/jc2_bal/val_200k.parquet"}   # elsewhere <subset dir>/val.parquet, 200,000 jets
+FIXED_CHECK, FIXED_VAL, FIXED_NO_PATIENCE = 50, 390 * 512, 10 ** 6
+FIXED_VAL_FILE = {}               # every task: <subset dir>/val_fixed.parquet
 FIXED_SIZES = {"top": (1_000, 10_000, 100_000), "topkin": (1_000, 10_000, 100_000), "qg": (1_000, 10_000, 100_000),
                "jc1": (10_000, 100_000, 1_000_000), "jc2b": (10_000, 100_000, 1_000_000)}
 FIXED_LR_PRE, FIXED_LR_SCRATCH = "1e-3", {"qg": "3e-3"}     # the swept rates (lrsweep_v2); from scratch 1e-3 elsewhere
@@ -376,13 +379,14 @@ USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
 case ${TASK} in
 __TASKS__  *) echo "FATAL: task ${TASK}"; exit ${HALT};;
 esac
-VALF=${VALF:-${SUB}/val.parquet}
 if [ "${VALMEM}" = 1 ]; then
-  # the same VAL jets at every check: held in memory, one pass in batches that divide VAL; per-epoch states cleaned
-  VALARGS=(--in-memory-val --steps-per-epoch-val $((VAL / __VALBATCH__)) --batch-size-val __VALBATCH__ --fetch-step-val 1 --auto-clean)
-  VALRULE=fixed-set-in-memory
+  # the same VAL jets at every check: in memory, one whole pass of VAL / batch steps; weaver's per-epoch files thinned
+  VALF=${VALF:-${SUB}/val_fixed.parquet}
+  TRAINARGS=(--in-memory --steps-per-epoch $((SPE / __BATCH__))); VALARGS=(--steps-per-epoch-val $((VAL / __BATCH__)))
+  PRUNE=(--prune ${RUN}/net); VALRULE=fixed-set-in-memory
 else
-  VALARGS=(--samples-per-epoch-val ${VAL}); VALRULE=fixed-file
+  VALF=${VALF:-${SUB}/val.parquet}
+  TRAINARGS=(--samples-per-epoch ${SPE}); VALARGS=(--samples-per-epoch-val ${VAL}); PRUNE=(); VALRULE=fixed-file
 fi
 python3 experiments/FT/gpu_probe.py || exit 43
 RUN=/workspace/run; rm -rf ${RUN}; mkdir -p ${RUN}
@@ -406,7 +410,7 @@ else
 fi
 python3 experiments/FT/smoke_checks.py manifest --out ${CELL}/ft_manifest.json task=${TASK} \
   init=${INIT:-scratch} run_dir=${RUN_DIR} checkpoint=${RUN_DIR:+/workspace/ckpt/${INIT}.pt} n_train=${N} ft_seed=${S} lr=${LR} ${RECIPE} weight_decay=0.01 \
-  subset=${SUB}/train_N${N}_s1.parquet data_config=${CFG} num_classes=${K} batch_size=__BATCH__ \
+  subset=${SUB}/train_N${N}_s1.parquet data_config=${CFG} network=${NET} num_classes=${K} batch_size=__BATCH__ \
   samples_per_epoch=${SPE} steps_per_epoch=$((SPE / __BATCH__)) max_epochs=${EP} \
   samples_per_epoch_val=${VAL} early_stop_patience=${PAT} val_rule=${VALRULE} val=${VALF} budget=v3.1
 python3 experiments/FT/ft_weaver.py --seed ${S} --lean-val-metrics \
@@ -414,13 +418,13 @@ python3 experiments/FT/ft_weaver.py --seed ${S} --lean-val-metrics \
   --network-config ${NET} -o num_classes ${K} -o fc_params '[(512,0.1)]' \
   --use-amp --batch-size __BATCH__ --num-workers 2 --fetch-by-files --fetch-step 1 --optimizer ranger \
   ${SCHED[@]+"${SCHED[@]}"} --optimizer-option weight_decay 0.01 ${MULTARG[@]+"${MULTARG[@]}"} \
-  --start-lr ${LR} --samples-per-epoch ${SPE} "${VALARGS[@]}" \
+  --start-lr ${LR} "${TRAINARGS[@]}" "${VALARGS[@]}" \
   --num-epochs ${EP} ${LOAD[@]+"${LOAD[@]}"} --model-prefix ${RUN}/net --log ${RUN}/train.log \
   > ${RUN}/stdout.log 2>&1 &
 PID=$!
 ES=0
 python3 experiments/FT/early_stop.py watch --log ${RUN}/train.log --pid ${PID} --patience ${PAT} --patience-from ${PATFROM} \
-  --max-epochs ${EP} --out ${CELL}/early_stop.json || ES=$?
+  --max-epochs ${EP} ${PRUNE[@]+"${PRUNE[@]}"} --out ${CELL}/early_stop.json || ES=$?
 wait ${PID} || true
 cp ${RUN}/train.log ${RUN}/stdout.log ${CELL}/
 [ "${ES}" -eq 0 ] || { echo "FATAL: ${CELL}: training did not finish (early_stop rc=${ES})"; tail -30 ${RUN}/stdout.log; exit 1; }
@@ -432,13 +436,9 @@ if [ -n "${RUN_DIR}" ]; then
 fi
 BEST=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['best_epoch'])" ${CELL}/early_stop.json)
 LAST=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['last_epoch'])" ${CELL}/early_stop.json)
-if [ "${VALMEM}" = 1 ]; then   # --auto-clean keeps only the last epoch: weaver's own best must be early_stop's
-  WB=$(grep -o "Current validation metric: [0-9.]* (best: [0-9.]*)" ${RUN}/train.log | tail -1 | grep -o "best: [0-9.]*" | cut -c7-)
-  python3 -c "import json,sys; b=json.load(open(sys.argv[1]))['best_metric']; sys.exit(abs(b-float(sys.argv[2]))>1e-5)" ${CELL}/early_stop.json ${WB} \
-    || { echo "FATAL: weaver's best (${WB}) is not early_stop's"; exit ${HALT}; }
-  grep -q "Processed ${VAL} entries" ${RUN}/train.log || { echo "FATAL: a validation pass did not score all ${VAL} jets"; exit ${HALT}; }
-else
-  cmp -s ${RUN}/net_best_epoch_state.pt ${RUN}/net_epoch-${BEST}_state.pt || { echo "FATAL: weaver's best state is not epoch ${BEST}"; exit ${HALT}; }
+cmp -s ${RUN}/net_best_epoch_state.pt ${RUN}/net_epoch-${BEST}_state.pt || { echo "FATAL: weaver's best state is not epoch ${BEST}"; exit ${HALT}; }
+if [ "${VALMEM}" = 1 ]; then    # every check scored all VAL jets, never fewer
+  NV=$(grep -c "Processed ${VAL} entries" ${RUN}/train.log); [ "${NV}" -ge "${EP}" ] || { echo "FATAL: ${NV} of ${EP} checks scored ${VAL} jets"; exit ${HALT}; }
 fi
 cp ${RUN}/net_best_epoch_state.pt ${CELL}/net_best_epoch_state.pt
 cp ${RUN}/net_epoch-${LAST}_state.pt ${CELL}/net_last_epoch_state.pt
@@ -495,7 +495,7 @@ def spec(name: str, cells: list, tag: str, parallelism: int, memory: str, cpu: i
         raise SystemExit(f"FATAL: GPU pool {pool}: one of {GPU_POOLS}")
     launch = _launch()
     script = (CELL_SCRIPT.replace("__LINE__", str(storage_line.check(line))).replace("__CASES__", cell_cases(cells)).replace("__TASKS__", task_cases())
-              .replace("__BATCH__", str(BATCH)).replace("__VALBATCH__", str(FIXED_VAL_BATCH)).replace("__HERWIG__", " ".join(HERWIG_TEST)))
+              .replace("__BATCH__", str(BATCH)).replace("__HERWIG__", " ".join(HERWIG_TEST)))
     # a node's DNS can fail for minutes (cph-dgx-node4/5/8, 2026-11-03): six cells used up their three
     # attempts at the clone, in seconds, before reaching the training script
     script = ("set -euo pipefail\n"

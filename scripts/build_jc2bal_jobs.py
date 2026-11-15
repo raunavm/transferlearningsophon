@@ -80,6 +80,28 @@ def stage_val200k_spec(tag: str) -> tuple:
     return name, "\n".join(lines) + "\n"
 
 
+VAL_FIXED = (("/data/finetune/top_sub", "label"), ("/data/finetune/qg_v2_sub", "label"),
+             ("/data/finetune/jc1", "onehot:label_QCD,label_Hbb,label_Hcc,label_Hgg,label_H4q,label_Hqql,label_Zqq,"
+                                    "label_Wqq,label_Tbqq,label_Tbl"),
+             ("/data/finetune/jc2_bal", "jet_label"))
+
+
+def valfixed_spec(tag: str) -> tuple:
+    """CPU: val_fixed.parquet (199,680 jets) beside every fine-tuning subset (experiments/FT/stage_val_fixed.py; PI
+    2026-11-15); JetClass-II's from val_200k.parquet (stage_val200k_spec), the others from their val.parquet."""
+    name, text = stage_val200k_spec(tag)
+    text = text.replace("jc2bal-val200k-raunav", "valfixed-raunav")
+    lines = text.splitlines()
+    i = next(k for k, ln in enumerate(lines) if "--val-200k" in ln)
+    pad = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
+    cmds = []
+    for d, lab in VAL_FIXED:
+        src = f"{d}/val_200k.parquet" if d.endswith("jc2_bal") else f"{d}/val.parquet"
+        cmds.append(pad + f"python3 experiments/FT/stage_val_fixed.py --src {src} --label {lab} --out {d}/val_fixed.parquet")
+    lines[i:i + 3] = cmds + [pad + 'echo "VALFIXED COMPLETE"']
+    return "valfixed-raunav", "\n".join(lines) + "\n"
+
+
 def stage_spec(tag: str, name: str = "jc2bal-stage-raunav", out: str = BAL,
                stager: str = "experiments/FT/stage_jc2_balanced.py") -> tuple:
     launch = _launch()
@@ -794,7 +816,7 @@ def main(argv=None) -> int:
     ap.add_argument("--name", default="jc2bal-x-raunav", help="extract, fit: the job name (with --only)")
     ap.add_argument("kinds", nargs="+", choices=("stage", "ref", "ref2", "split", "extract", "fit", "mlp",
                                                  "masscurves", "kin", "xfill", "fitfill", "sib", "sibstage", "sibx",
-                                                 "coarse", "qcdhf", "ckptid", "sophon", "val200k"))
+                                                 "coarse", "qcdhf", "ckptid", "sophon", "val200k", "valfixed"))
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in a.kinds:
@@ -811,7 +833,8 @@ def main(argv=None) -> int:
                       "masscurves": lambda: masscurves_spec(a.tag), "kin": lambda: kin_spec(a.tag),
                       "coarse": lambda: coarse_spec(a.tag, a.parallelism), "qcdhf": lambda: qcdhf_spec(a.tag),
                       "ckptid": lambda: ckptid_spec(a.tag), "sophon": lambda: sophon_spec(a.tag),
-                      "val200k": lambda: stage_val200k_spec(a.tag)}[kind]()
+                      "val200k": lambda: stage_val200k_spec(a.tag),
+                      "valfixed": lambda: valfixed_spec(a.tag)}[kind]()
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(p)

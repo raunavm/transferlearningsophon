@@ -72,11 +72,30 @@ def alive(pid: int) -> bool:
         return False
 
 
+def prune(prefix: str, metrics: dict, current: set) -> None:
+    """Delete weaver's per-epoch files (pod-local) of every logged epoch except the two latest and every epoch at the
+    best metric so far (ties kept), so a long schedule fits the pod's disk; weaver's own best copy is untouched."""
+    done = sorted(e for e in metrics if e in current)
+    if len(done) < 3:
+        return
+    top = max(metrics[e] for e in done)
+    keep = set(done[-2:]) | {e for e in done if metrics[e] == top}
+    for e in done[:-2]:
+        if e not in keep:
+            for kind in ("state", "optimizer"):
+                try:
+                    os.remove(f"{prefix}_epoch-{e}_{kind}.pt")
+                except FileNotFoundError:
+                    pass
+
+
 def watch(a) -> int:
     stopped, last, be = False, None, None
     while True:
         lines = open(a.log).readlines() if os.path.exists(a.log) else []
         metrics, current = scan(lines)
+        if a.prune:
+            prune(a.prune, metrics, current)
         stop, last, be = decide(metrics, current, a.patience, a.patience_from)
         if stop:
             os.kill(a.pid, signal.SIGTERM)
@@ -119,6 +138,7 @@ def main(argv=None) -> int:
     w.add_argument("--patience", type=int, default=10)
     w.add_argument("--max-epochs", type=int, default=40)
     w.add_argument("--patience-from", type=int, default=0)
+    w.add_argument("--prune", default="", help="weaver's --model-prefix: thin its per-epoch files as it trains")
     w.add_argument("--out", required=True)
     w.add_argument("--poll", type=float, default=10.0)
     a = ap.parse_args(argv)

@@ -63,7 +63,7 @@ MS = _load("make_subsets", "experiments/FT/make_subsets.py")
 
 def rng(purpose: str) -> np.random.Generator:
     return np.random.default_rng([SEED, {"test": 1, "train": 2, "val": 3, "pairs_train": 4, "pairs_test": 5,
-                                         "extra": 6, "perm": 7}[purpose]])
+                                         "extra": 6, "perm": 7, "val200k": 8, "perm_val200k": 9}[purpose]])
 
 
 def census_file(path: str) -> tuple:

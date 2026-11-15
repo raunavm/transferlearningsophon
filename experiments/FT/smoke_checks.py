@@ -119,6 +119,10 @@ def check_pred(path: str, k: int, n: int) -> None:
     print(f"PASS pred: {n} entries, {k} score branches")
 
 
+TRAINING_CODE = ("experiments/FT/ft_weaver.py", "experiments/E1/seed_weaver.py", "experiments/FT/early_stop.py",
+                 "experiments/FT/fill_config.py")
+
+
 def write_manifest(out: str, kv: list[str]) -> None:
     rec = {"written_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     for item in kv:
@@ -157,7 +161,7 @@ def write_manifest(out: str, kv: list[str]) -> None:
         # The bytes this cell trains and validates on, so a later reuse of the cell
         # can be checked exactly (experiments/FT/ft_v2.py ref_cell_problem).
         import hashlib
-        val = pathlib.Path(sub).parent / "val.parquet"
+        val = pathlib.Path(rec.get("val") or pathlib.Path(sub).parent / "val.parquet")   # a cell's own val= wins
         for key, f in (("subset_sha256", pathlib.Path(sub)), ("val_sha256", val)):
             if f.exists():
                 h = hashlib.sha256()
@@ -167,6 +171,11 @@ def write_manifest(out: str, kv: list[str]) -> None:
                 rec[key] = h.hexdigest()
         if val.exists():
             rec["val"] = str(val)
+    # What compared cells must share (PI 2026-11-15): the bytes of the code and configs that train, not the commit id.
+    import hashlib
+    code = list(TRAINING_CODE) + [rec[k] for k in ("data_config", "network") if rec.get(k)]
+    rec["training_code_sha256"] = {f: hashlib.sha256(pathlib.Path(f).read_bytes()).hexdigest()
+                                   for f in code if pathlib.Path(f).is_file()}
     pathlib.Path(out).parent.mkdir(parents=True, exist_ok=True)
     pathlib.Path(out).write_text(json.dumps(rec, indent=2))
     print(f"wrote {out}")
