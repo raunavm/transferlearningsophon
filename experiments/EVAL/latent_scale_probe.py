@@ -70,6 +70,13 @@ def cpu_model() -> str:
     return platform.processor() or platform.machine()
 N_PERM = 10
 ALPHAS = [0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
+# v2 (PI 2026-11-14: no selected alpha at either edge of its grid): 1e-4 ... 1e8, and, where the
+# validation R^2 is flat to the least-squares limit, the largest alpha (the most regularised) within
+# ALPHA_TOL of the best. On ALPHAS 9 of the 19 mass-table fits chose an edge (1000: the four mass
+# networks and one 188-class run; 0.01: four), and only the chosen alpha was recorded.
+ALPHAS_V2 = [10.0 ** k for k in range(-4, 9)]
+ALPHA_TOL = 1e-6                     # validation R^2
+MLP_MAX_EPOCHS, MLP_PATIENCE, MLP_MIN_GAIN = 60, 8, 1e-5     # the mass MLP's schedule (fit_mlp)
 
 
 def make_splits(n: int, rng_seed: int = SPLIT_SEED):
@@ -111,21 +118,27 @@ def r2(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return 1.0 - ss_res / ss_tot
 
 
-def fit_ridge(Xtr, ytr, Xva, yva, Xte):
+def fit_ridge(Xtr, ytr, Xva, yva, Xte, alphas=None, tol=None):
+    """Ridge at the alpha of the best validation R^2 (the first on ties), on alphas (default ALPHAS);
+    tol: the largest alpha within tol of the best instead, with every alpha's R^2 recorded."""
     from sklearn.linear_model import Ridge
     from sklearn.preprocessing import StandardScaler
     sc = StandardScaler().fit(Xtr)
     tr, va, te = sc.transform(Xtr), sc.transform(Xva), sc.transform(Xte)
-    best, best_a, best_va = None, None, -np.inf
-    for a in ALPHAS:
+    fits = []
+    for a in (ALPHAS if alphas is None else alphas):
         m = Ridge(alpha=a).fit(tr, ytr)
-        v = r2(yva, m.predict(va))
-        if v > best_va:
-            best, best_a, best_va = m, a, v
-    return best.predict(te), {"alpha": best_a, "val_r2": best_va}
+        fits.append((a, r2(yva, m.predict(va)), m))
+    if tol is None:
+        best_a, best_va, best = max(fits, key=lambda f: f[1])     # max keeps the first of equal values
+        return best.predict(te), {"alpha": best_a, "val_r2": best_va}
+    top = max(f[1] for f in fits)
+    best_a, best_va, best = max((f for f in fits if f[1] >= top - tol), key=lambda f: f[0])
+    return best.predict(te), {"alpha": best_a, "val_r2": best_va, "alpha_grid": [f[0] for f in fits],
+                              "search": {str(a): v for a, v, _ in fits}, "selection_tol": tol}
 
 
-def fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
+def fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS, max_epochs=None):
     """128 -> 256 -> 1. Nonlinear because a linear probe LOWER-BOUNDS what the
     representation holds; a linear null cannot distinguish "absent" from "present
     but not linearly decodable" (D6). The same logic that makes the MLP mandatory
@@ -134,13 +147,14 @@ def fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds=MLP_SEEDS):
     prev = torch.get_num_threads()
     torch.set_num_threads(MLP_THREADS)
     try:
-        pred, meta = _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds)
+        pred, meta = (_fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds) if max_epochs is None
+                      else _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds, max_epochs))
     finally:
         torch.set_num_threads(prev)
     return pred, {**meta, "torch_threads": MLP_THREADS, "cpu_model": cpu_model()}
 
 
-def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds):
+def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds, max_epochs=MLP_MAX_EPOCHS):
     import torch
     from sklearn.preprocessing import StandardScaler
     xs = StandardScaler().fit(Xtr)
@@ -159,8 +173,9 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds):
             torch.nn.Dropout(0.1), torch.nn.Linear(256, 1))
         opt = torch.optim.AdamW(net.parameters(), lr=1e-3, weight_decay=1e-4)
         lossf = torch.nn.MSELoss()
-        best_state, best_va, bad = None, np.inf, 0
-        for epoch in range(60):
+        best_state, best_va, bad, best_epoch, run = None, np.inf, 0, 0, 0
+        for epoch in range(max_epochs):
+            run = epoch + 1
             net.train()
             perm = torch.randperm(tr.shape[0])
             for i in range(0, tr.shape[0], 4096):
@@ -171,19 +186,22 @@ def _fit_mlp(Xtr, ytr, Xva, yva, Xte, seeds):
             net.eval()
             with torch.no_grad():
                 v = float(lossf(net(va), tva))
-            if v < best_va - 1e-5:
-                best_va, bad = v, 0
+            if v < best_va - MLP_MIN_GAIN:
+                best_va, bad, best_epoch = v, 0, run
                 best_state = {k: t.clone() for k, t in net.state_dict().items()}
             else:
                 bad += 1
-                if bad >= 8:
+                if bad >= MLP_PATIENCE:
                     break
         net.load_state_dict(best_state)
         net.eval()
         with torch.no_grad():
             preds.append(net(te).squeeze(1).numpy() * ys_sd + ys_mu)
-        meta.append({"seed": s, "val_mse": best_va})
-    return np.mean(preds, axis=0), {"per_seed": meta, "n_seeds": len(seeds)}
+        # best_epoch counts from 1; stopped: the patience rule ended the fit before the cap
+        meta.append({"seed": s, "val_mse": best_va, "best_epoch": best_epoch, "epochs_run": run,
+                     "stopped": run < max_epochs or bad >= MLP_PATIENCE})
+    return np.mean(preds, axis=0), {"per_seed": meta, "n_seeds": len(seeds), "max_epochs": max_epochs,
+                                    "patience": MLP_PATIENCE, "min_gain": MLP_MIN_GAIN}
 
 
 def probe_one(F, y, tr, va, te, do_null: bool):

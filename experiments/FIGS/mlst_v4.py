@@ -36,6 +36,23 @@ JC1_LONG, JC1_LONG_SCRATCH = ("jc1_ft", "jc1_ft_ovr"), ("s1", "s2", "s3")
 # from scratch with its whole flat+decay schedule (build_gallery_data_job.py --mode scratch-full): <family>_fulldecay
 # replaces the long docs' from-scratch seeds (PI 2026-11-07)
 SCRATCH_FULL = "_fulldecay"
+# The v5 refits of the frozen read-outs (PI 2026-11-14, scripts/build_refit_v5_jobs.py): each replaces its family whole
+# once pulled (pick), never model by model: a v5 folder lacking a model the old one holds, or failing the refit rules
+# (experiments/EVAL/refit_checks.py: a selected C or alpha at an edge of its grid, an MLP best epoch in the last tenth of
+# its cap, more than one CPU model for the mass MLP), stops the build
+V5 = {"linprobe/fits_v4": "linprobe/fits_v5", "linprobe/fits_v4_fill": "linprobe/fits_v5_fill",
+      "linprobe/fits_v4_sib2": "linprobe/fits_v5_sib2", "linprobe/fits_v4_coarse": "linprobe/fits_v5_coarse",
+      "linprobe/fits_v4_qcdhf": "linprobe/fits_v5_qcdhf", "linprobe/sophon": "linprobe/sophon_v5",
+      "linprobe/fits_v3": "linprobe/fits_v5_nat", "head/atlas_res": "head/atlas_res_v2",
+      "head/atlas_res_fine": "head/atlas_res_fine_v2", "bootstrap/probe_v4": "bootstrap/probe_v5",
+      "xbx": "xbx_v5", "linprobe/fits_v4_mlp": "linprobe/fits_v5_mlp"}
+ONE_CPU = ("head/atlas_res_v2", "linprobe/fits_v5_mlp")      # the MLPs: one CPU model over the family
+NO_RULES = ("linprobe/fits_v5_qcdhf", "head/atlas_res_fine_v2", "bootstrap/probe_v5")   # no fit of their own
+# one grid for every linear probe (PI 2026-11-14): these are pulled together or not at all; the probe bootstrap only
+# with them, and the fine-binned mass file only with its v2 source
+LINEAR_V5 = ("linprobe/fits_v4", "linprobe/fits_v4_fill", "linprobe/fits_v4_sib2", "linprobe/fits_v4_coarse",
+             "linprobe/fits_v4_qcdhf", "linprobe/sophon", "linprobe/fits_v3", "xbx")
+TIED_V5 = {"bootstrap/probe_v4": "linprobe/fits_v4", "head/atlas_res_fine": "head/atlas_res"}
 
 
 def _module(rel: str, name: str):
@@ -47,6 +64,59 @@ def _module(rel: str, name: str):
 
 def _load(d: pathlib.Path) -> dict:
     return {p.stem: json.loads(p.read_text()) for p in sorted(d.glob("*.json"))} if d.is_dir() else {}
+
+
+def _stems(d: pathlib.Path) -> set:
+    return {p.relative_to(d).with_suffix("").as_posix() for p in d.rglob("*.json")} if d.is_dir() else set()
+
+
+def pick(data: pathlib.Path, rel: str) -> str:
+    """rel's v5 refit (V5) where it is pulled, else rel. The v5 folder must hold every file rel holds (same names,
+    any subfolder) and pass the refit rules; otherwise the build stops rather than mix the two."""
+    new = V5.get(rel)
+    if new is None or not (data / new).is_dir():
+        return rel
+    lack = sorted(_stems(data / rel) - _stems(data / new))
+    if lack:
+        raise SystemExit(f"FATAL: {new} lacks {len(lack)} of {rel}'s files ({', '.join(lack[:6])}"
+                         f"{', ...' if len(lack) > 6 else ''}): pull it whole or remove it; families are never mixed")
+    if new not in NO_RULES:
+        rc = _module("experiments/EVAL/refit_checks.py", "refit_checks")
+        docs = {s: json.loads((data / new / f"{s}.json").read_text()) for s in _stems(data / new)}
+        r = rc.check(docs, one_cpu=new in ONE_CPU)
+        if not r["ok"]:
+            raise SystemExit(f"FATAL: {new} fails the refit rules: {len(r['edges'])} selections at a grid edge "
+                             f"{[(e['model'], e['cell'], e['edge']) for e in r['edges'][:4]]}, "
+                             f"{len(r['late_best_epoch'])} MLP fits with a best epoch in the last tenth of the cap, "
+                             f"CPU models {sorted(r['cpu_models'])}")
+    return new
+
+
+def check_v5(data: pathlib.Path) -> bool:
+    """Whether the v5 refits are in use: every family of LINEAR_V5 at v5 or none; a TIED_V5 family at v5 only with its
+    source at v5 (and the source then needs it); each picked family complete and within the rules (pick)."""
+    got = {rel: pick(data, rel) != rel for rel in LINEAR_V5}
+    if len(set(got.values())) > 1:
+        raise SystemExit("FATAL: the v5 linear probes are pulled for " + ", ".join(V5[r] for r, g in got.items() if g)
+                         + " but not for " + ", ".join(V5[r] for r, g in got.items() if not g)
+                         + ": one grid for every linear probe, pull them together")
+    for rel, src in TIED_V5.items():
+        a, b = pick(data, rel) != rel, pick(data, src) != src
+        if a != b:
+            raise SystemExit(f"FATAL: {V5[rel] if a else rel} beside {V5[src] if b else src}: pull the two together")
+    return all(got.values())
+
+
+def load_xbx(data: pathlib.Path, XR) -> dict:
+    """xbx_report.load of the X->bb / X->bs fits, with each model's linear probe from the v5 refit (xbx_v5, fit_xbx.py
+    --linear-only) once pulled: the head and the outputs' own discriminants stay those of the first fit."""
+    xfits = XR.load(data / "xbx") if (data / "xbx").is_dir() else {}
+    if pick(data, "xbx") == "xbx":
+        return xfits
+    for m, sigs in XR.load(data / V5["xbx"]).items():
+        for s, v in sigs.items():
+            xfits[m][s]["linear"] = v["linear"]
+    return xfits
 
 
 def remap(doc: dict) -> dict:
@@ -69,8 +139,10 @@ def load_fits(data: pathlib.Path) -> tuple[dict, dict]:
     X->ee vs X->mumu probe of fits_v4_sib joins the raw cells as one more class-balanced pair
     (cells[ckpt]["jc2bal_pairs"]["ee_vs_mm"]); fits_v4_sib2, scored on every test jet of the pair,
     replaces it where present; a model without a v4 file is not merged."""
-    raw = _load(data / FITS_V4)
-    for sibs in (_load(data / SIB_V4), _load(data / SIB2_V4)):
+    fits = pick(data, FITS_V4)
+    raw = _load(data / fits)
+    # the v5 refit has the every-test-jet X->ee vs X->mumu probe only (fits_v5_sib2)
+    for sibs in ((_load(data / SIB_V4), _load(data / SIB2_V4)) if fits == FITS_V4 else (_load(data / pick(data, SIB2_V4)),)):
         for m, sib in sibs.items():
             if m not in raw:
                 continue
@@ -138,6 +210,12 @@ def design_macros(em, root: pathlib.Path, data: pathlib.Path, missing: list, fmt
     pb = _module("experiments/EVAL/probe_bal.py", "probe_bal")
     em.macro("LpVfourCMax", _sci(repr(max(pb.C_GRID_V4))), root / "experiments/EVAL/probe_bal.py", "C_GRID_V4",
              "largest inverse regularisation of the v4 probes")
+    # the v5 refits' grid and plateau rule (PI 2026-11-14), for the methods text once the v5 families are in use
+    src = root / "experiments/EVAL/linear_probe_v2.py"
+    em.macro("LpVfiveCMin", _sci(repr(min(pb.lp.C_GRID_V5))), src, "C_GRID_V5", "smallest inverse regularisation, v5")
+    em.macro("LpVfiveCMax", _sci(repr(max(pb.lp.C_GRID_V5))), src, "C_GRID_V5", "largest inverse regularisation, v5")
+    em.macro("LpPlateauTol", _sci(repr(pb.lp.PLATEAU_TOL)), src, "PLATEAU_TOL",
+             "validation cross-entropy (nats) within which the smallest C is taken, v5")
     sjb = _module("experiments/FT/stage_jc2_balanced.py", "stage_jc2_balanced")
     src = root / "experiments/FT/stage_jc2_balanced.py"
     em.macro("JcBalTestPerClass", _int(fmt_int, sjb.TEST_PER_CLASS), src, "TEST_PER_CLASS")

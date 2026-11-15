@@ -881,7 +881,7 @@ def figure_xbx(root, outdir) -> list:
         return []
     XR = _module("experiments/XBS/xbx_report.py", "xbx_report")
     M = _mlst()
-    return XR.figure(M, style, M._paper(root), XR.load(DATA / "xbx"), outdir)
+    return XR.figure(M, style, M._paper(root), M.V4.load_xbx(DATA, XR), outdir)
 
 
 # ------------------------------------------------------------------ schematic

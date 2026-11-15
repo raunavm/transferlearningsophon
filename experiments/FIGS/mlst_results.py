@@ -122,6 +122,7 @@ FITS, MLP_FITS = "linprobe/fits_v3", "linprobe/fits_v3_mlp"
 MLP_FITS_V4, FITS_INITBN, MLP_FITS_INITBN = ("linprobe/fits_v3_mlp2", "linprobe/fits_v3_initbn",
                                              "linprobe/fits_v3_mlp2_initbn")
 FITS_FILL, MLP_BAL = "linprobe/fits_v4_fill", "linprobe/fits_v4_mlp"
+SOPHON_FILL_V5 = "linprobe/sophon_v5_fill"     # the released checkpoint's substitution probes (probe_released.py --fill-root)
 # (dataset key, metric, column heading)
 TASKS = (("jc2_188", "macro_auc_ovr", "JetClass-II"), ("jc2_188", "macro_auc_resonant", "resonant"),
          ("jc2_188", "macro_auc_qcd", "QCD"), ("jc1", "macro_auc_ovr", "JetClass"),
@@ -1101,7 +1102,9 @@ def load_mlp(data: pathlib.Path) -> dict:
     two versions are never mixed; the models fits_v4_mlp lacks keep theirs in load_mlp_natural."""
     mlp = load_mlp_natural(data)
     mlp.update({"initbn" + m.removeprefix("init"): d for m, d in _load(data / MLP_FITS_INITBN).items()})
-    bal = _load(data / MLP_BAL)
+    # fits_v5_mlp (PI 2026-11-14): every network, the mass-output runs and random partitions among them, on one CPU
+    # model, in place of fits_v4_mlp whole (mlst_v4.pick)
+    bal = _load(data / V4.pick(data, MLP_BAL))
     if not bal:
         return mlp
     jc2 = set(MLP_JC2)
@@ -1330,7 +1333,7 @@ def _bench_rec(fits: dict, fill: dict, chosen: dict, m: str, ds: str, n: str | N
     The kinematic-only model has nothing missing and is read from fits; the released Sophon checkpoint has no
     substitution probes, so its missing inputs stay zero (the captions say so)."""
     s = chosen.get(ds)
-    if s is None or m in (KIN_MODEL, SOPHON_MODEL):
+    if s is None or m == KIN_MODEL or (m == SOPHON_MODEL and m not in fill):
         return _probe_rec(fits, m, ds, n)
     c = _raw_cells(fill, m).get(SUBST_KEY[ds][s]) or {}
     return c.get(n or max(c, key=int)) if c else None
@@ -3512,7 +3515,20 @@ def _pctsd(x) -> str:
 R30_HEAD, OMA_HEAD, BULLET = r"$R_{30}$", r"$1-\mathrm{AUC}$", r"$\bullet$"
 
 
-def table_boot(boot: dict, runs: dict, fits=None, per=None, balanced: bool = True) -> tuple[str, dict]:
+def check_boot_fills(docs: dict, chosen: dict) -> None:
+    """Each top / quark/gluon bootstrap document reads every probe at the substitution chosen on validation."""
+    for name, d in docs.items():
+        task = name.rsplit("_N", 1)[0]
+        if task not in ("top", "qg", "qg_herwig") or chosen.get(task) is None:
+            continue
+        tag = SUBST_KEY[task][chosen[task]].partition(".")[2]
+        bad = [m for m, r in d["models"].items() if f".{tag}/" not in r["input"]] if tag else []
+        if bad or not tag:
+            raise SystemExit(f"FATAL: bootstrap {name} does not read the {chosen[task]} substitution's probes "
+                             f"({bad[:3] or 'zero fill'}); rerun scripts/build_refit_v5_jobs.py boot with FILL_TAG")
+
+
+def table_boot(boot: dict, runs: dict, fits=None, per=None, balanced: bool = True, fill=None, chosen=None) -> tuple[str, dict]:
     """A7: per label-set comparison, at the largest training set: the SD of the logarithm of the ratio
     over the pretraining runs and from the finite test sample, in per cent, in the task's metric.
     balanced: the JetClass-II ratios come from the class-balanced fits (fits_v4), so the probe column
@@ -3528,7 +3544,8 @@ def table_boot(boot: dict, runs: dict, fits=None, per=None, balanced: bool = Tru
         for _, kind, src, met in BOOT_COLS:
             if met == "r30":
                 if kind == "probe":
-                    get = lambda m, src=src: None if fits is None else _probe_rec(fits, m, src)
+                    # the probe the tables print: the substitution chosen on validation (_bench_rec), zero while pending
+                    get = lambda m, src=src: (None if fits is None else _bench_rec(fits, fill or {}, chosen or {}, m, src))
                 else:
                     get = lambda m, src=src: (None if not per or not _sizes(per, src) else
                                               (per[src].get(m[len("mtx-"):], {}).get(_sizes(per, src)[-1]) or [None])[0])
@@ -3767,7 +3784,7 @@ def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> t
     spec = importlib.util.spec_from_file_location("xbx_report", root / "experiments/XBS/xbx_report.py")
     XR = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(XR)
-    xfits = XR.load(data / "xbx") if (data / "xbx").is_dir() else {}
+    xfits = V4.load_xbx(data, XR)
     scr = xbx_scratch(data)
     MT = SimpleNamespace(fmt_pm=fmt_pm, fmt_int=fmt_int)
     have = {n for sigs in xfits.values() for n in sigs}
@@ -6080,8 +6097,13 @@ def required_pass(em, index, missing: list) -> None:
 
 def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict:
     data = root / "experiments/FIGS/data/v2"
-    fits3, comp = _load(data / FITS), _load(data / "compute")
-    fits3.update({"initbn" + m.removeprefix("init"): d for m, d in _load(data / FITS_INITBN).items()})
+    # the v5 refits replace their families whole, every linear-probe family together (mlst_v4.check_v5)
+    V4.check_v5(data)
+    nat = V4.pick(data, FITS)
+    fits3, comp = _load(data / nat), _load(data / "compute")
+    # fits_v5_nat holds each untrained trunk's init_bn cells in its own file, fits_v3 in fits_v3_initbn
+    fits3.update({"initbn" + m.removeprefix("init"): d for m, d in
+                  (_load(data / FITS_INITBN) if nat == FITS else {k: v for k, v in fits3.items() if k.startswith("init-")}).items()})
     # the v4 probes (class-balanced JetClass-II, v4 grid; mlst_v4.py) replace fits_v3 once pulled
     fits_v4, raw_v4 = V4.load_fits(data)
     fits = fits_v4 or fits3
@@ -6119,12 +6141,18 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     rows_init = ALL_ROWS + (INIT, INIT_BN)
     # the substitution of the missing inputs, chosen once per task on validation (PI 2026-11-02): every
     # top and quark/gluon probe the tables show uses it; zero, marked, until the fill fits are pulled
-    fill = _load(data / FITS_FILL)
+    fill = _load(data / V4.pick(data, FITS_FILL))
     if not fill:
         missing.append(f"substitution probes -- experiments/FIGS/data/v2/{FITS_FILL}/")
     chosen, _ = chosen_substitutions(fill, runs)
     # the released Sophon checkpoint: a row of the frozen-probe tables only, never one of the runs; pending until pulled
-    sophon = _load(data / FITS_SOPHON).get(SOPHON_MODEL)
+    sophon = _load(data / V4.pick(data, FITS_SOPHON)).get(SOPHON_MODEL)
+    if V4.pick(data, FITS_SOPHON) != FITS_SOPHON:
+        # v5: the released checkpoint with the substitutions the pretrained rows use (_bench_rec)
+        sfill = _load(data / SOPHON_FILL_V5).get(SOPHON_MODEL)
+        if sfill is None:
+            raise SystemExit(f"FATAL: {V4.V5[FITS_SOPHON]} without {SOPHON_FILL_V5}: pull them together")
+        fill = {**fill, SOPHON_MODEL: sfill}
     if not sophon:
         missing.append(f"the released Sophon checkpoint's probes -- experiments/FIGS/data/v2/{FITS_SOPHON}/")
     fits_s = {**fits, SOPHON_MODEL: V4.remap(sophon)} if sophon else fits
@@ -6162,7 +6190,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     if fits3:
         bn_macros(em, fits3, runs, index)
         out["tables/mlst_bn.tex"] = _float("bn", table_bn(fits3, runs, TAB, ALL_ROWS))
-    co = _load(data / "linprobe/fits_v4_coarse")
+    co = _load(data / V4.pick(data, "linprobe/fits_v4_coarse"))
     if co:
         co_s = {**co, SOPHON_MODEL: sophon} if sophon else co
         # the random partitions pooled, kept in the supplement beside its full version (PI 2026-11-13: delete
@@ -6173,7 +6201,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                                                                 ALL_ROWS + (INIT, INIT_BN, SOPHON)), True)
     else:
         missing.append("probes on the coarse targets -- experiments/FIGS/data/v2/linprobe/fits_v4_coarse/")
-    hf = _load(data / "linprobe/fits_v4_qcdhf")
+    hf = _load(data / V4.pick(data, "linprobe/fits_v4_qcdhf"))
     if hf:
         # the random partitions pooled, kept beside the full version (PI 2026-11-13: delete nothing)
         out["tables/mlst_qcdhf.tex"] = _float("qcdhf", table_qcdhf(hf, _pooled(runs), TAB, _paper_rows(ALL_ROWS + (INIT,))),
@@ -6238,12 +6266,12 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     out["tables/mlst_fill_main.tex"] = _float("fill_main", table_fill(raw_v4, fill, fits, runs, TAB, MAIN), True)
     fill_macros(em, raw_v4, fill, fits, runs, index, fmt_pm, missing)
     loss_share_macros(em, comp, runs, index, fmt_pm, root)
-    atlas = _load(data / "head" / "atlas_res")
+    atlas = _load(data / V4.pick(data, "head/atlas_res"))
     if atlas:
         out["tables/mlst_mass.tex"] = _float("mass", table_mass(atlas, runs, TAB))
         # the binned values as the mass figures draw them (atlas_res_fine: ten jet-pT bins, the same jets and inclusive
         # values as atlas_res)
-        fine = _load(data / "head" / "atlas_res_fine") or atlas
+        fine = _load(data / V4.pick(data, "head/atlas_res_fine")) or atlas
         out["tables/mlst_mass_detail.tex"] = _float("mass_detail", md := table_mass_detail(fine, runs, TAB), True, fill={"__BLANK__": (
             r"bins with fewer than \MlstMassMinJets{} jets are blank." if " & --" in md.split("%SPLIT%", 1)[-1]
             else r"every bin holds at least \MlstMassMinJets{} jets.")})
@@ -6302,8 +6330,14 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         missing.append("fixed-budget fine-tuning -- experiments/FIGS/data/v2/budget/budget_metrics.json")
     # bootstrap/l3 (decision L3, 2026-11-13) has its own layout ("diffs" with an "l3" block) and is not tab:boot's
     boot = {d.name: _load(d) for d in sorted((data / "bootstrap").glob("*")) if d.is_dir() and "." not in d.name
-            and d.name != "l3"}
-    body, worst = table_boot(boot, runs, fits, per if tag else None, balanced=bool(fits_v4))
+            and d.name != "l3" and d.name != "l3_v5"}
+    if V4.pick(data, "bootstrap/probe_v4") != "bootstrap/probe_v4":
+        # the bootstrap of the v5 probes stands in tab:boot's probe_v4 column, after its top and quark/gluon inputs are
+        # checked to be the probes the tables print (the substitutions chosen on validation)
+        boot["probe_v4"] = boot.pop("probe_v5")
+        check_boot_fills(boot["probe_v4"], chosen)
+    boot.pop("probe_v5", None)
+    body, worst = table_boot(boot, runs, fits, per if tag else None, balanced=bool(fits_v4), fill=fill, chosen=chosen)
     if fits_v4 and "probe_v4" not in boot:
         missing.append("test-sample bootstrap of the class-balanced probes -- experiments/FIGS/data/v2/bootstrap/probe_v4/")
     out["tables/mlst_boot.tex"] = _float("boot", body, True, fill={"__JC2COMP__": "class-balanced" if fits_v4

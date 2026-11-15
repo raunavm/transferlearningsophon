@@ -86,6 +86,20 @@ FT_FILES = {"leg1": ("leg1_metrics",), "leg2": ("leg2_metrics",),
 FT_EXTRA = (("best70_leg188_leg1_metrics", "leg1_metrics", "best70_leg188_leg1_metrics"),
             ("recipe_check/leg_top_e100_bench_metrics", "bench_metrics", "topcheck_bench_metrics"))
 EVAL = pathlib.Path("/data/results/eval")
+# the v5 refits (scripts/build_refit_v5_jobs.py): pulled whole once its checks job wrote PASS
+V5_PASS = EVAL / "refit_v5_checks" / "PASS"
+V5_PULL = ((EVAL / "v2_linprobe_bal" / "fits_v5", "linprobe/fits_v5"),
+           (EVAL / "v2_linprobe_bal" / "fits_v5_fill", "linprobe/fits_v5_fill"),
+           (EVAL / "v2_linprobe_bal" / "fits_v5_sib2", "linprobe/fits_v5_sib2"),
+           (EVAL / "v2_linprobe_bal" / "fits_v5_coarse", "linprobe/fits_v5_coarse"),
+           (EVAL / "v2_linprobe_bal" / "fits_v5_qcdhf", "linprobe/fits_v5_qcdhf"),
+           (EVAL / "v2_linprobe_bal" / "fits_v5_mlp", "linprobe/fits_v5_mlp"),
+           (EVAL / "v2_linprobe" / "fits_v5_nat", "linprobe/fits_v5_nat"),
+           (EVAL / "v2_linprobe_sophon" / "fits_v5", "linprobe/sophon_v5"),
+           (EVAL / "v2_linprobe_sophon" / "fits_v5_fill", "linprobe/sophon_v5_fill"),
+           (EVAL / "atlas_res_v2", "head/atlas_res_v2"),
+           (EVAL / "atlas_res_fine_v2", "head/atlas_res_fine_v2"))
+V5_BOOT = ("probe_v5", "l3_v5")
 MTX = pathlib.Path("/data/results/mtx_v2")
 N_EPOCHS = 80
 MANIFEST_KEYS = ("leg", "init", "n_train", "ft_seed", "lr", "head_lr_mult", "weight_decay", "epochs",
@@ -180,6 +194,8 @@ def main() -> int:
             for f in sorted(d.glob(pattern)):
                 if "." in f.parent.name:
                     continue        # a job's staging directory (<family>.staging.<n>): not finished
+                if f.parent.name in V5_BOOT and not V5_PASS.exists():
+                    continue        # the v5 bootstraps only with the v5 refits (below)
                 b = f.read_bytes()
                 json.loads(b)
                 add(f"{name}/{f.relative_to(d)}", b)
@@ -238,6 +254,12 @@ def main() -> int:
               (EVAL / "umap_v3", "umap_v3", "*.json"),
               # plan 2026-11-08 step 2: the sculpting bootstrap (the fine-tuned sculpting below, once DONE)
               (EVAL / "v2_head", "head", "sculpting_boot.json"))
+        # the v5 refits (PI 2026-11-14, scripts/build_refit_v5_jobs.py): every family at once, and only after the
+        # refit-checks job passed (its PASS file), so a pull never takes part of them (mlst_v4.pick refuses a part)
+        if V5_PASS.exists():
+            v4 += tuple((d, name, "*.json") for d, name in V5_PULL)
+            for s in ("xbb", "xbs"):
+                v4 += ((EVAL / "xbx" / "fits_ihep_v5" / s, f"xbx_v5/{s}", "*.json"),)
         for d, name, pattern in v4:
             for f in sorted(d.glob(pattern)):
                 b = f.read_bytes()

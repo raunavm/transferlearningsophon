@@ -67,6 +67,14 @@ import numpy as np
 REPO = pathlib.Path(__file__).resolve().parents[2]
 # 2026-10-29: 100 added; 139 of 1,083 fits of fits3000 chose the old upper edge, 10
 C_GRID = (0.001, 0.01, 0.1, 1.0, 10.0, 100.0)
+# v5 (PI 2026-11-14: no selected C at either edge of its grid, for any network): one grid for every
+# linear probe, 1e-6 ... 1e6, and the plateau rule below. Where the validation cross-entropy falls
+# monotonically to its unregularised limit (17 fits of fits_v4 / fits_v4_fill / fits_v4_sib2 at 1e4,
+# differences of 1e-9 nats between 1e3 and 1e4), no grid gives an interior argmin; among the values
+# within PLATEAU_TOL of the minimum the smallest C (the most regularised) is taken
+C_GRID_V5 = tuple(10.0 ** k for k in range(-6, 7))
+PLATEAU_TOL = 1e-6                   # nats of mean validation cross-entropy
+SELECT_TOL = None                    # None: the argmin (fits_v3, fits_v4); v5 sets PLATEAU_TOL
 # 2026-10-10: at 1000 the 162- and 10-class probes at 1e5-1e6 jets stopped short of the
 # tolerance (untrained trunk, JetClass-II 1e5, C=1: objective 4e-5 above its minimum,
 # reached at ~1900 iterations); 3000 lets them converge
@@ -219,18 +227,29 @@ def fit(xtr, ytr, xva, yva, k: int) -> tuple[object, object, dict]:
     sc = StandardScaler().fit(xtr)
     xtr_s, xva_s = sc.transform(xtr), sc.transform(xva)
     clf = Logit(np.unique(ytr), device())
-    search, best = {}, None
+    search, fitted = {}, {}
     for c in C_GRID:
         n_iter = clf.fit(xtr_s, ytr, c)
         ce = cross_entropy(full_proba(clf, xva_s, k), yva)
         search[str(c)] = {"val_cross_entropy": ce, "n_iter": n_iter, "grad_max": clf.grad_max_,
                           "converged": n_iter < MAX_ITER and clf.grad_max_ <= CONVERGED_GRAD}
-        if best is None or ce < best[0]:
-            best = (ce, c, clf.coef_.copy(), clf.intercept_.copy())
-    _, c, coef, icpt = best
-    clf.coef_, clf.intercept_ = coef, icpt
-    return sc, clf, {"C": c, "search": search, "converged": search[str(c)]["converged"],
-                     "device": clf.device}
+        fitted[c] = (clf.coef_.copy(), clf.intercept_.copy())
+    c = select(search, SELECT_TOL)
+    clf.coef_, clf.intercept_ = fitted[c]
+    rec = {"C": c, "search": search, "converged": search[str(c)]["converged"], "device": clf.device}
+    if SELECT_TOL is not None:
+        rec["selection_tol"] = SELECT_TOL
+    return sc, clf, rec
+
+
+def select(search: dict, tol: float | None) -> float:
+    """The selected C of a search ({str(C): {"val_cross_entropy": ...}}, in C_GRID order): the
+    first minimum (tol None), else the smallest C whose cross-entropy is within tol of the minimum."""
+    cs = [float(c) for c in search]
+    ce = [search[c]["val_cross_entropy"] for c in search]
+    if tol is None:
+        return cs[int(np.argmin(ce))]
+    return min(c for c, v in zip(cs, ce) if v <= min(ce) + tol)
 
 
 def multiclass_metrics(p: np.ndarray, y: np.ndarray, k: int, qcd: int, eval_arm) -> dict:
@@ -565,7 +584,12 @@ def main(argv=None) -> int:
     ap.add_argument("--mlp", nargs="?", const="v3", choices=tuple(MLP_DATASETS), default=None,
                     help="fit the nonlinear probe at the largest training set: on the binary tasks "
                          "(v3, the default), and also on jc1 and jc2_188 (v4)")
+    ap.add_argument("--grid", choices=("v3", "v5"), default="v3",
+                    help="v5: C_GRID_V5 and the plateau rule (PLATEAU_TOL) in place of C_GRID and the argmin")
     a = ap.parse_args(argv)
+    global C_GRID, SELECT_TOL
+    if a.grid == "v5":
+        C_GRID, SELECT_TOL = C_GRID_V5, PLATEAU_TOL
     out = a.out / f"{a.model}.json"
     if out.exists():
         print(f"{out} exists: every probe of {a.model} is fitted")
@@ -581,8 +605,9 @@ def main(argv=None) -> int:
     doc = {"model": a.model, "root": str(a.root), "checkpoints": a.checkpoints,
            "datasets": a.datasets, "c_grid": list(C_GRID), "max_iter": MAX_ITER,
            "converged_grad": CONVERGED_GRAD, "auc_stride": AUC_STRIDE,
-           "selection": "validation cross-entropy",
-           "threads": os.environ.get("OMP_NUM_THREADS"), "tf32": tf32,
+           "selection": "validation cross-entropy" + ("" if SELECT_TOL is None else
+                                                      f", smallest C within {SELECT_TOL:g} of the minimum"),
+           "grid": a.grid, "threads": os.environ.get("OMP_NUM_THREADS"), "tf32": tf32,
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
     if a.mlp:
         doc.update(probe="mlp", mlp_set=a.mlp, datasets=["jc2_188_pairs", "top", "qg", "qg_herwig"]

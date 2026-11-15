@@ -57,6 +57,13 @@ above them, on the same test jets, so F8a's response panel and its resolution pa
 one sample (head/curves_v2/*_response.json is filled from every matched jet, five times as
 many, and holds ln r).
 
+THE v2 REFIT (2026-11-14, PI). --grid v2 fits the ridge on latent_scale_probe.ALPHAS_V2 with its plateau
+rule (the largest alpha within ALPHA_TOL of the best validation R^2, every alpha's R^2 recorded) and the
+MLP for at most --mlp-max-epochs epochs, recording each seed's best epoch, epochs run and the cap, and
+late_best_epoch: whether a best epoch lies in the last LATE_FRACTION of the cap (then the schedule is
+lengthened for every network and all are refitted, experiments/EVAL/refit_checks.py). The job pins one
+CPU model (scripts/build_refit_v5_jobs.py atlas).
+
 THE OUTPUT. <out-dir>/<model>.json (schema: the Phase B brief's interface, plus provenance
 keys) and <out-dir>/<model>_perjet.npz, the per-jet values every number is computed from
 (stream row, native label, jet pT, m_gen and each estimate); the summaries, bootstrap errors
@@ -83,6 +90,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
 from experiments.EVAL import mass_resolution as MR  # noqa: E402
+from experiments.EVAL import latent_scale_probe as LSP  # noqa: E402
 
 QUANTILES = (0.159, 0.841)
 MIN_JETS = 100
@@ -94,6 +102,7 @@ GROUPS = {"resonant": lambda lab: lab < MR.N_RESONANT, "qcd": lambda lab: lab >=
 CHECK_TOL = 1e-9        # groomed and regressed: the same arithmetic on the same jets as mass_v3.json
 BOOT_RESAMPLES, BOOT_SEED = 200, 20261102
 HIST_EDGES = np.linspace(0.0, 2.0, 101)     # r, bins of 0.02 (np.histogram: the last edge is closed)
+LATE_FRACTION = 0.1     # a best epoch in the last tenth of the MLP's cap: the schedule is too short
 
 
 def edges(bins) -> list:
@@ -216,6 +225,9 @@ def main(argv=None) -> int:
     ap.add_argument("--mass-v3", type=pathlib.Path, default=None,
                     help="the model's mass_v3.json, checked against (recommended)")
     ap.add_argument("--out-dir", required=True, type=pathlib.Path)
+    ap.add_argument("--grid", choices=("v1", "v2"), default="v1",
+                    help="v2: the ridge on ALPHAS_V2 with the plateau rule, the MLP's epochs recorded")
+    ap.add_argument("--mlp-max-epochs", type=int, default=None, help="the MLP's cap (default the module's)")
     a = ap.parse_args(argv)
 
     out_json = a.out_dir / f"{a.model}.json"
@@ -270,8 +282,10 @@ def main(argv=None) -> int:
     Fu = F[J["vidx"]][J["keep"]]
     del F
     tr, va, y = J["tr"], J["va"], J["y_use"]
+    kw = {"ridge": {"alphas": LSP.ALPHAS_V2, "tol": LSP.ALPHA_TOL} if a.grid == "v2" else {},
+          "mlp": {} if a.mlp_max_epochs is None else {"max_epochs": a.mlp_max_epochs}}
     for p, fit in (("ridge", MR.fit_ridge), ("mlp", MR.fit_mlp)):
-        pred, fits[p] = fit(Fu[tr], y[tr], Fu[va], y[va], Fu[te])
+        pred, fits[p] = fit(Fu[tr], y[tr], Fu[va], y[va], Fu[te], **kw[p])
         lr[p] = pred - y[te]
         record(p)
         print(f"  {p}: sigma68_central {check[p]['recomputed']:.6f} (mass_v3.json {check[p]['stored']}); "
@@ -303,8 +317,11 @@ def main(argv=None) -> int:
                       **inputs},
            "check_against_mass_v3": {"statistic": "sigma68_central: half the central 68% range of "
                                                   "ln r (mass_resolution.resolution)", **check},
-           "fits": fits, "cpu_model": MR.cpu_model(),
+           "fits": fits, "cpu_model": MR.cpu_model(), "grid": a.grid,
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest()}
+    if "max_epochs" in fits["mlp"]:
+        cap = fits["mlp"]["max_epochs"]
+        fits["mlp"]["late_best_epoch"] = any(s["best_epoch"] > (1 - LATE_FRACTION) * cap for s in fits["mlp"]["per_seed"])
     tmp = out_json.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(doc, indent=1))
     tmp.replace(out_json)           # atomic: an existing JSON means done to a retried pod

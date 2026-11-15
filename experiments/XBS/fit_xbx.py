@@ -33,6 +33,9 @@ examples it saw from its fine-tuning manifest.
     python3 experiments/XBS/fit_xbx.py model --root /data/results/eval/xbx --model mtx-l188-s1 \\
         --signals xbs --checkpoint best70 --window 93.75 143.75 --mx 125 \\
         --out /data/results/eval/xbx/fits_ihep/xbs
+    python3 experiments/XBS/fit_xbx.py model ... --linear-only --grid v5 --out /data/results/eval/xbx/fits_ihep_v5/xbs
+        (2026-11-14, PI: no selected C at either edge: the linear probe alone, on linear_probe_v2's v5 grid
+        and plateau rule; the head and the zero-shot outputs stay those of the first fit)
     python3 experiments/XBS/fit_xbx.py scratch --sig <cell>/features_sig --qcd <cell>/features_qcd \\
         --window 93.75 143.75 --mx 125 --ft-manifest <cell>/ft_manifest.json --out <cell>/endpoints.json
 """
@@ -86,7 +89,7 @@ def first_layer(man: dict) -> dict:
     return {k: sd[k] for k in (f"{X.FC0}.weight", f"{X.FC0}.bias")}
 
 
-def fit_signal(model_dir: pathlib.Path, sig: str, ckpt: str, window, seeds) -> dict:
+def fit_signal(model_dir: pathlib.Path, sig: str, ckpt: str, window, seeds, linear_only: bool = False) -> dict:
     tr, va, ev, qcd = (load(model_dir / s / part / ckpt) for s, part in
                        ((sig, "train"), (sig, "val"), (sig, "eval"), ("qcd", "eval")))
     for name, d, want in (("train", tr, {0, 1}), ("val", va, {0, 1}), ("eval", ev, {1}), ("qcd", qcd, {0})):
@@ -103,7 +106,7 @@ def fit_signal(model_dir: pathlib.Path, sig: str, ckpt: str, window, seeds) -> d
     sc, clf, rec = LP.fit(tr["x"], tr["y"], va["x"], va["y"], 2)
     p = lambda d: clf.predict_proba(sc.transform(d["x"]))[:, 1]
     out["linear"] = {**score(p(ev), p(qcd)), "C": rec["C"], "converged": rec["converged"], "search": rec["search"]}
-    if "head" in ev:
+    if "head" in ev and not linear_only:
         z = lambda d, col: X.zero_shot(d["head"][col], d["head"]["logp_qcd"])
         g = X.node_groups(json.loads((model_dir / sig / "eval" / "xbx.json").read_text())["arm"])
         out["nodes"] = {k: g[k] for k in ("xbb", "xbq", "xbb_own")}
@@ -157,6 +160,9 @@ def main(argv=None) -> int:
     m.add_argument("--signals", nargs="+", required=True)
     m.add_argument("--checkpoint", required=True, help="best70, or init for an untrained network")
     m.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
+    m.add_argument("--linear-only", action="store_true", help="the linear probe alone (no head, no zero-shot)")
+    m.add_argument("--grid", choices=("v3", "v5"), default="v3",
+                   help="v5: linear_probe_v2.C_GRID_V5 and its plateau rule (default: C_GRID and the argmin)")
     m.add_argument("--out", required=True, type=pathlib.Path)
     s = sub.add_parser("scratch")
     s.add_argument("--sig", required=True, type=pathlib.Path)
@@ -175,10 +181,14 @@ def main(argv=None) -> int:
     if a.cmd == "scratch":
         write_json(target, {"mx": a.mx, **scratch(a.sig, a.qcd, a.window, a.ft_manifest)})
         return 0
+    if a.grid == "v5":
+        LP.C_GRID, LP.SELECT_TOL = LP.C_GRID_V5, LP.PLATEAU_TOL
     res = {"model": a.model, "checkpoint": a.checkpoint, "window": list(a.window), "mx": a.mx, "seeds": a.seeds,
-           "device": LP.device(),
+           "device": LP.device(), "grid": a.grid, "c_grid": list(LP.C_GRID), "selection_tol": LP.SELECT_TOL,
+           "linear_only": a.linear_only,
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
-           "signals": {s: fit_signal(a.root / a.model, s, a.checkpoint, a.window, a.seeds) for s in a.signals}}
+           "signals": {s: fit_signal(a.root / a.model, s, a.checkpoint, a.window, a.seeds, a.linear_only)
+                       for s in a.signals}}
     write_json(target, res)
     print(json.dumps({s: {k: v.get("neg_ln_eps_s") if isinstance(v, dict) else [h["neg_ln_eps_s"] for h in v]
                           for k, v in r.items() if k in ("zero_shot_xbb", "group_node_xbb", "zero_shot_xbq",

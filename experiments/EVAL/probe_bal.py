@@ -26,6 +26,11 @@ What changes from linear_probe_v2.py's fits_v3, whose fitting and metrics this r
     (2026-11-05, PI: the curve must reach 1e4) the same training jets and EVERY test jet of the pair
     (experiments/FT/stage_jc2_siblings.py, extracted as dataset jc2sib), so the 188- and 162-class
     curves exist where 5,000 background jets gave none;
+  * --grid v5 (2026-11-14, PI: no selected C at either edge of its grid): linear_probe_v2's C_GRID_V5
+    (1e-6 ... 1e6) with its plateau rule (the smallest C within PLATEAU_TOL of the least validation
+    cross-entropy), every probe of the run; the class probabilities of a multi-class task are saved at
+    the reported checkpoint's largest training set only (fits_v4_probs holds them at every size and
+    variant, 74 GB, which /data no longer has room for twice; no reader takes the others);
   * --coarse TARGET... (2026-11-07, PI: "does 188 match 17 on 17's own task?") fits only the balanced
     JetClass-II task with the native labels mapped onto a coarser label set (COARSE_MAPS: the 43- and
     17-class levels of the hierarchy, and the partition with no flavor boundary), at the largest
@@ -60,6 +65,7 @@ FILL_ROOT = pathlib.Path("/data/results/eval/v2_linprobe_fill")
 FILLS = {"top": ("ntop", "itop4"), "qg": ("nqg", "iqg4"), "jc2bal": ("ntop", "nqg", "itop4", "iqg4")}
 BAL = pathlib.Path("/data/finetune/jc2_bal")
 C_GRID_V4 = (0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0)
+SLIM = False         # --grid v5: multi-class probabilities at the largest size of the reported checkpoint only
 PAIR_VAL_FRACTION = 0.1
 PAIR_SEED = 20261031
 N_NATIVE = 188
@@ -120,7 +126,8 @@ def jc2bal_cells(model: str, ckpt: str, save, sizes=None, transform=None, name="
     if transform:
         xva, xte = transform(xva, mte), transform(xte, mte)
     cells = {}
-    for n in sizes or lp.train_sizes(NEW_ROOT / model, "jc2bal"):
+    sizes = sizes or lp.train_sizes(NEW_ROOT / model, "jc2bal")
+    for n in sizes:
         xtr, ytr, _ = load(model, "jc2bal", f"train_N{n}", ckpt, root)
         if transform:
             xtr = transform(xtr, mte)
@@ -131,7 +138,7 @@ def jc2bal_cells(model: str, ckpt: str, save, sizes=None, transform=None, name="
                          "n_val": int(yva.size), "n_classes_in_train": int(np.unique(ytr).size),
                          "train_label_counts": np.bincount(ytr, minlength=N_NATIVE).tolist(),
                          "seconds": round(time.time() - t0, 1)}
-        if save:
+        if save and (not SLIM or n == max(sizes)):
             save(f"{name}_N{n}", sc, clf, rec, np.arange(yte.size), yte, p=p)
         print(f"  {model} {ckpt} {name} N{n}: macro_auc={cells[str(n)]['macro_auc_ovr']:.5f} C={rec['C']}",
               flush=True)
@@ -254,10 +261,11 @@ def old_cells(model: str, ckpt: str, helpers, save, datasets=("jc1", "top", "qg"
     return cells
 
 
-def repro(model: str, ds: str, split: str, ckpt: str, stored: pathlib.Path) -> dict:
-    """The zero-fill features re-extracted under FILL_ROOT against the stored ones: same jets, and
+def repro(model: str, ds: str, split: str, ckpt: str, stored: pathlib.Path,
+          fill_root: pathlib.Path = FILL_ROOT) -> dict:
+    """The zero-fill features re-extracted under fill_root against the stored ones: same jets, and
     the largest absolute feature difference (another GPU changes the last digits)."""
-    a = FILL_ROOT / model / ds / split / ckpt
+    a = fill_root / model / ds / split / ckpt
     b = stored / model / ds / split / ckpt
     if not np.array_equal(np.load(a / "rows.npy"), np.load(b / "rows.npy")) or \
             not np.array_equal(np.load(a / "label188.npy"), np.load(b / "label188.npy")):
@@ -267,8 +275,11 @@ def repro(model: str, ds: str, split: str, ckpt: str, stored: pathlib.Path) -> d
     return {"n": int(fa.shape[0]), "max_abs_diff": float(np.abs(fa - fb).max()) if fa.size else 0.0}
 
 
-def fill_cells(model: str, ckpt: str, helpers, probs_out) -> dict:
-    """Zero / mean / four-draw imputation, side by side (FILLS)."""
+def fill_cells(model: str, ckpt: str, helpers, probs_out, fill_root: pathlib.Path = FILL_ROOT,
+               old_root: pathlib.Path = OLD_ROOT, jc2bal: bool = True) -> dict:
+    """Zero / mean / four-draw imputation, side by side (FILLS); fill_root holds the re-extracted
+    features, old_root the stored zero fill they are checked against; jc2bal False: top and
+    quark/gluon only (the released Sophon checkpoint, probe_released.py --fill-root)."""
     cells, check = {}, {}
     for ds in ("top", "qg"):
         for v in ("",) + FILLS[ds]:
@@ -276,16 +287,19 @@ def fill_cells(model: str, ckpt: str, helpers, probs_out) -> dict:
             save = lp.saver(probs_out, model, tag)
             if save:
                 save.out = probs_out
-            c = lp.probe_cells(FILL_ROOT / model, tag, [ds], helpers, save, pathlib.Path(lp.JC2_PARQUET))
+            c = lp.probe_cells(fill_root / model, tag, [ds], helpers, save, pathlib.Path(lp.JC2_PARQUET))
             sfx = f".{v}" if v else ""
             cells[f"{ds}{sfx}"] = c[ds]
             if "qg_herwig" in c:
                 cells[f"qg_herwig{sfx}"] = c["qg_herwig"]
-        check[ds] = repro(model, ds, "test", ckpt, OLD_ROOT)
+        check[ds] = repro(model, ds, "test", ckpt, old_root, fill_root)
+    if not jc2bal:
+        cells["repro_zero_fill"] = check
+        return cells
     nmax = max(lp.train_sizes(NEW_ROOT / model, "jc2bal"))
     for v in ("",) + FILLS["jc2bal"]:
         tag = f"{ckpt}.{v}" if v else ckpt
-        save = lp.saver(probs_out, model, tag)
+        save = None if SLIM else lp.saver(probs_out, model, tag)
         cells[f"jc2bal.{v}" if v else "jc2bal"] = jc2bal_cells(model, tag, save, sizes=[nmax], root=FILL_ROOT)
     check["jc2bal"] = repro(model, "jc2bal", "test", ckpt, NEW_ROOT)
     cells["repro_zero_fill"] = check
@@ -344,6 +358,26 @@ def mlp_cells(model: str, ckpt: str, probe, datasets) -> dict:
 _EVAL_ARM = []
 
 
+def add_grid_argument(ap) -> None:
+    ap.add_argument("--grid", choices=("v4", "v5"), default="v4",
+                    help="v5: linear_probe_v2.C_GRID_V5 with the plateau rule, slim probabilities (SLIM)")
+
+
+def set_grid(grid: str) -> None:
+    """v4: C_GRID_V4, the argmin (as fits_v4 ran); v5: C_GRID_V5, PLATEAU_TOL, SLIM."""
+    global SLIM
+    v5 = grid == "v5"
+    lp.C_GRID = lp.C_GRID_V5 if v5 else C_GRID_V4
+    lp.SELECT_TOL = lp.PLATEAU_TOL if v5 else None
+    SLIM = v5
+
+
+def grid_record(grid: str) -> dict:
+    return {"grid": grid, "c_grid": list(lp.C_GRID),
+            "selection": "validation cross-entropy" + ("" if lp.SELECT_TOL is None else
+                                                      f", smallest C within {lp.SELECT_TOL:g} of the minimum")}
+
+
 def lp_eval_arm():
     if not _EVAL_ARM:
         _EVAL_ARM.append(_load("eval_arm", "experiments/EVAL/eval_arm.py"))
@@ -369,7 +403,9 @@ def main(argv=None) -> int:
                     help="only the balanced JetClass-II task on these coarser label sets (coarse_cells)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--probs-out", type=pathlib.Path, default=None)
+    add_grid_argument(ap)
     a = ap.parse_args(argv)
+    set_grid(a.grid)
     out = a.out / f"{a.model}.json"
     if out.exists():
         print(f"{out} exists")
@@ -379,8 +415,8 @@ def main(argv=None) -> int:
         names = {int(r["jet_label"]): r["class_name"] for r in csv.DictReader(f)}
     probe = _load("probe", "experiments/EVAL/probe.py")
     helpers = (lp_eval_arm(), probe, lr.rung_maps()["L162"], names)
-    doc = {"model": a.model, "checkpoints": a.checkpoints, "variants": a.variants, "c_grid": list(C_GRID_V4),
-           "auc_stride": 1, "selection": "validation cross-entropy", "max_iter": lp.MAX_ITER,
+    doc = {"model": a.model, "checkpoints": a.checkpoints, "variants": a.variants, **grid_record(a.grid),
+           "auc_stride": 1, "max_iter": lp.MAX_ITER,
            "converged_grad": lp.CONVERGED_GRAD, "pair_val_fraction": PAIR_VAL_FRACTION,
            "balanced_manifest_sha256": None if a.old_only else
            hashlib.sha256((BAL / "manifest.json").read_bytes()).hexdigest(),
@@ -406,7 +442,9 @@ def main(argv=None) -> int:
             doc["cells"][ckpt] = {"jc2bal_pairs": sibling_pair_cells(a.model, ckpt, probe, save, names, test)}
             continue
         if a.mlp:
-            doc["probe"] = "mlp"
+            # the CPU model is part of an MLP's result (latent_scale_probe.py); probe.py pins its threads
+            doc["probe"], doc["mlp_threads"] = "mlp", probe.MLP_THREADS
+            doc["cpu_model"] = _load("latent_scale_probe", "experiments/EVAL/latent_scale_probe.py").cpu_model()
             doc["cells"][ckpt] = mlp_cells(a.model, ckpt, probe, a.mlp_datasets)
             continue
         if a.old_only:
@@ -417,11 +455,11 @@ def main(argv=None) -> int:
             c.update(old_cells(a.model, ckpt, helpers, save))
         nmax = max(lp.train_sizes(NEW_ROOT / a.model, "jc2bal"))
         for v in a.variants:
-            vs = lp.saver(a.probs_out, a.model, f"{ckpt}.{v}")
+            vs = None if SLIM else lp.saver(a.probs_out, a.model, f"{ckpt}.{v}")
             c[f"jc2bal.{v}"] = jc2bal_cells(a.model, f"{ckpt}.{v}", vs, sizes=[nmax])
         if a.hidden:
             man = json.loads((NEW_ROOT / a.model / "jc2bal" / "test" / ckpt / "manifest.json").read_text())
-            hs = lp.saver(a.probs_out, a.model, f"{ckpt}.hidden")
+            hs = None if SLIM else lp.saver(a.probs_out, a.model, f"{ckpt}.hidden")
             c["jc2bal.hidden"] = jc2bal_cells(a.model, ckpt, hs, sizes=[nmax], transform=lambda x, m: hidden(x, man),
                                               name="jc2bal_hidden")
             n = max(lp.train_sizes(OLD_ROOT / a.model, "qg"))

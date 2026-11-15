@@ -7,7 +7,11 @@ The same fits and metrics as fits_v4: balanced JetClass-II at every training siz
 JetClass, top and quark/gluon with Herwig (old_cells, ParT's one-vs-one AUC on JetClass at the largest
 size); --coarse adds the coarse label sets of probe_bal.py --coarse. The output file has fits_v4's
 layout, cells[<checkpoint>][jc2bal|jc1|top|qg|qg_herwig][<n>], plus jc2bal_coarse when asked, so
-mlst_v4.load_fits reads it.
+mlst_v4.load_fits reads it. --grid v5 fits on probe_bal.py's v5 grid and rule (as every network's v5 refit).
+--fill-root (2026-11-14, PI: the released checkpoint with the substitutions of the pretrained rows) fits
+probe_bal.fill_cells on top and quark/gluon instead: the zero fill, the training mean and the four draws
+extracted under <fill-root>/<model>/{top,qg}/ (scripts/build_refit_v5_jobs.py sophonx), the zero fill
+checked against the features under --root; fits_v4_fill's layout.
 
     python3 experiments/EVAL/probe_released.py --model sophon-released --checkpoints released \\
         --root /data/results/eval/v2_linprobe_sophon --out .../fits_v4 --probs-out .../fits_v4_probs
@@ -45,7 +49,11 @@ def main(argv=None) -> int:
     ap.add_argument("--coarse", nargs="*", choices=sorted(pb.COARSE_MAPS), default=[])
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--probs-out", type=pathlib.Path, default=None)
+    ap.add_argument("--fill-root", type=pathlib.Path, default=None,
+                    help="the fills' features: fit the substitutions of top and quark/gluon only (fill_cells)")
+    pb.add_grid_argument(ap)
     a = ap.parse_args(argv)
+    pb.set_grid(a.grid)
     out = a.out / f"{a.model}.json"
     if out.exists():
         print(f"{out} exists")
@@ -54,8 +62,8 @@ def main(argv=None) -> int:
     with lr.MAP.open() as f:
         names = {int(r["jet_label"]): r["class_name"] for r in csv.DictReader(f)}
     helpers = (pb.lp_eval_arm(), _load("probe", "experiments/EVAL/probe.py"), lr.rung_maps()["L162"], names)
-    doc = {"model": a.model, "checkpoints": a.checkpoints, "feature_root": str(a.root), "c_grid": list(pb.C_GRID_V4),
-           "auc_stride": 1, "selection": "validation cross-entropy", "max_iter": lp.MAX_ITER,
+    doc = {"model": a.model, "checkpoints": a.checkpoints, "feature_root": str(a.root), **pb.grid_record(a.grid),
+           "auc_stride": 1, "max_iter": lp.MAX_ITER,
            "converged_grad": lp.CONVERGED_GRAD,
            "balanced_manifest_sha256": hashlib.sha256((pb.BAL / "manifest.json").read_bytes()).hexdigest(),
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
@@ -67,6 +75,12 @@ def main(argv=None) -> int:
         save = lp.saver(a.probs_out, a.model, ckpt)
         if save:
             save.out = a.probs_out
+        if a.fill_root is not None:
+            doc["probe"], doc["fill_root"] = "linear, fills of the absent inputs", str(a.fill_root)
+            doc["fills"] = {k: list(pb.FILLS[k]) for k in ("top", "qg")}
+            doc["cells"][ckpt] = pb.fill_cells(a.model, ckpt, helpers, a.probs_out, fill_root=a.fill_root,
+                                               old_root=a.root, jc2bal=False)
+            continue
         c = {"jc2bal": pb.jc2bal_cells(a.model, ckpt, save, sizes=lp.train_sizes(a.root / a.model, "jc2bal"),
                                        root=a.root)}
         c.update(pb.old_cells(a.model, ckpt, helpers, save, root=a.root))

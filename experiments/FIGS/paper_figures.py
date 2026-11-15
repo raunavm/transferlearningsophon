@@ -149,16 +149,16 @@ def absent(what: str) -> None:
 
 def inputs(M) -> dict:
     """Every input of the figures, read once; empty where not pulled yet."""
+    M.V4.check_v5(DATA)       # the v5 refits whole or not at all (mlst_v4.pick)
     fits, raw = M.V4.load_fits(DATA)
     census = DATA / "jc2bal" / "census.json"
-    xbx = DATA / "xbx"
-    return {"fits": fits, "raw": raw, "mlp": M.load_mlp(DATA), "fill": M._load(DATA / M.FITS_FILL),
-            "per": M.load_ft(DATA)[1], "atlas": M._load(DATA / "head" / "atlas_res"),
+    return {"fits": fits, "raw": raw, "mlp": M.load_mlp(DATA), "fill": M._load(DATA / M.V4.pick(DATA, M.FITS_FILL)),
+            "per": M.load_ft(DATA)[1], "atlas": M._load(DATA / M.V4.pick(DATA, "head/atlas_res")),
             # mass_sculpting.py of 2026-11-07 (eps_S, R50, the flavor controls) replaces the older files run by run
             "sculpt": {**F._curves("sculpting_v2"), **{p.stem.removesuffix("_sculpting"): json.loads(p.read_text())
                                                        for p in sorted((DATA / "head/sculpting_v3").glob("*.json"))}},
             "census": json.loads(census.read_text()) if census.exists() else None,
-            "xbx": _xr().load(xbx) if xbx.is_dir() else {}, "xbx_scratch": M.xbx_scratch(DATA),
+            "xbx": M.V4.load_xbx(DATA, _xr()), "xbx_scratch": M.xbx_scratch(DATA),
             "roc": M.V4.load_roc(DATA)}
 
 

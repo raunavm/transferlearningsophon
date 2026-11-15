@@ -87,7 +87,7 @@ def draw_f1(path: pathlib.Path) -> None:
 
 
 # ------------------------------------------------------------------ F9a, F9b, A17
-ATLAS_FINE = M._load(P.DATA / "head" / "atlas_res_fine")     # ten pT bins (atlas_rebin.py); the same jets and inclusive values
+ATLAS_FINE = M._load(P.DATA / M.V4.pick(P.DATA, "head/atlas_res_fine"))     # ten pT bins (atlas_rebin.py); the same jets and inclusive values
 
 
 def _atlas() -> dict:
