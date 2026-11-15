@@ -185,7 +185,8 @@ def fixed_bench_cells() -> list:
     root = "/data/results/ft_v2/fixed_bench"
     mem = {**fixed_cell("top", "l188-s1", 10_000, 1, FIXED_LR_PRE, root), "epochs": 10}
     disk = {**mem, "valmem": 0, "out": mem["out"].replace("/l188-s1/", "/l188-s1_disk/")}
-    return [mem, disk]
+    big = {**fixed_cell("jc2b", "l188-s1", 1_000_000, 1, FIXED_LR_PRE, root), "epochs": 2}    # memory of a 1e6 cell
+    return [mem, disk, big]
 
 
 def lrsweep_cells() -> list:
@@ -624,7 +625,9 @@ def main(argv=None) -> int:
         elif kind.startswith("fixed-"):     # the one rule's rates are fixed (FIXED_LR_*), not taken from the sweep flags
             cells = {"fixed-1e5": lambda: fixed_cells({100_000}), "fixed-1e6": lambda: fixed_cells({1_000_000}),
                      "fixed-rest": lambda: fixed_cells({1_000, 10_000}), "fixed-bench": fixed_bench_cells}[kind]()
-            mem = "64Gi"
+            # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
+            # small cells ~16 GiB before the in-memory checks; 1e6 set from the smoke cell (fixed-bench index 2)
+            mem = "24Gi"
         else:
             if not (a.lr_pre and a.lr_scratch):
                 ap.error(f"{kind} needs --lr-pre and --lr-scratch (from the sweep)")
