@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # The manifest of superseded fine-tuning cells' features.npy before their one-time removal (PI 2026-11-15,
+  # disk option A): experiments/FT/features_manifest.py delete. Deletes exactly the reviewed manifest rows that re-hash to it. CPU.
+  name: features-delete-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.11 https://github.com/raunavm/transferlearningsophon.git tls; }
+          retry clone || exit 1
+          cd /workspace/tls
+          M=/data/results/deleted_features_manifest.csv
+          echo "510485d780b6b8c24f01571589504f06385fd525bad2c9e6cdc3143950793108  ${M}" | sha256sum -c - || { echo "FATAL: ${M} is not the reviewed manifest"; exit 1; }
+          python3 experiments/FT/features_manifest.py delete --manifest ${M}
+          cat /data/results/deleted_features_manifest.deleted.log | cut -d" " -f1 | sort | uniq -c; df -h /data | tail -1
+        resources:
+          requests: { memory: "4Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "4Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
