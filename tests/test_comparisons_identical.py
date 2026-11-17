@@ -27,8 +27,8 @@ TRAINING_CODE = ("experiments/FT/ft_weaver.py", "experiments/E1/seed_weaver.py",
 KIN = "l188kin-s1"
 SCRATCH_MAY_DIFFER = {"lr", "head_lr_mult", "lr_schedule", "patience_from"}     # ParT's from-scratch recipe
 KIN_MAY_DIFFER = {"data_config", "code:data_config"}                            # kinematic inputs, by design
-FIXED_STEPS = {1_000: 40_000, 10_000: 20_000, 100_000: 20_000, 1_000_000: 80_000}
-FIXED_CHECK = {1_000: 50, 10_000: 50, 100_000: 50, 1_000_000: 500}
+FIXED_STEPS = {1_000: 20_000, 10_000: 3_000, 100_000: 20_000, 1_000_000: 80_000}
+FIXED_CHECK = {1_000: 50, 10_000: 25, 100_000: 50, 1_000_000: 500}
 
 
 @functools.lru_cache(maxsize=None)
@@ -100,7 +100,7 @@ def test_every_compared_fine_tuning_below_the_full_sets_is_trained_identically()
 
 
 def test_below_the_full_sets_every_cell_follows_the_one_rule_and_no_best_checkpoint_sits_at_an_edge():
-    """Fixed steps and check interval per training size (50 steps below 1e6, 500 at 1e6), no patience; best checkpoint neither at the first check
+    """Fixed steps and check interval per training size (25 at 1e4, 50 at 1e3 and 1e5, 500 at 1e6), no patience; best checkpoint neither at the first check
     nor in the last 10% of the schedule (PI 2026-11-15)."""
     bad = []
     for (task, n), cells in sorted(_below_full().items()):

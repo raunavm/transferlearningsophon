@@ -1,0 +1,94 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # The fine-tuning cells' largest step (test-set extraction) alone, to size memory requests (PI 2026-11-16).
+  name: ft-extract-memprobe-raunav
+  namespace: cms-ml
+spec:
+  completionMode: Indexed
+  completions: 4
+  parallelism: 4
+  backoffLimitPerIndex: 3
+  podFailurePolicy:
+    rules:
+    - action: FailIndex
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        env:
+        - name: REPO_REF
+          value: "mtx-s3.09"
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+        - name: POD_NAME
+          valueFrom: { fieldRef: { fieldPath: metadata.name } }
+        args:
+        - |
+          set -euo pipefail
+          retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt ${T} failed: $1"; sleep 60; done; return 1; }
+          retry git clone -q --depth 1 --branch "${REPO_REF}" https://github.com/raunavm/transferlearningsophon.git /workspace/transferlearningsophon || exit 1
+          cd /workspace/transferlearningsophon
+          retry pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
+          # the largest step of a fine-tuning cell (the test-set extraction), alone, on a finished cell's checkpoint, to size the
+          # rows' memory requests from it (PI 2026-11-16); writes only to the pod's disk
+          OUT=/workspace/probe; mkdir -p ${OUT}
+          case ${JOB_COMPLETION_INDEX} in
+            0) TASK=top; K=2; CK=/data/results/ft_v2/fixed/leg_top/l188-s1/N100000/s1; CFG=configs/finetune/TopReference.yaml; TEST="/data/finetune/top/top_test.parquet";;
+            1) TASK=qg; K=2; CK=/data/results/ft_v2/fixed/leg_qg/l188-s1/N100000/s1; CFG=configs/finetune/EnergyFlowQG.yaml; TEST="/data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet";;
+            2) TASK=jc1; K=10; CK=/data/results/ft_v2/fixed/leg2/l188-s1/N100000/s1; CFG=configs/finetune/JetClassI_sophon_noweight.yaml; TEST=""; for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do for f in $(ls /data/JetClass/Pythia/test_20M/${C}_*.root | sort | head -2); do TEST="${TEST} ${f}"; done; done;;
+            3) TASK=jc2b; K=188; CK=/data/results/ft_v2/fixed_bench/leg_jc2b/l188-s1/N1000000/s1; CFG=configs/data/JetClassII_base.yaml; TEST="/data/finetune/jc2_bal/test.parquet";;
+          esac
+          [ -f ${CK}/net_best_epoch_state.pt ] || { echo "FATAL: no checkpoint in ${CK}"; exit 42; }
+          if [ ${TASK} = jc1 ]; then
+            weaver --predict --data-test ${TEST} --data-config ${CFG} --network-config experiments/E1/ParT_sophon_arch_10c.py -o num_classes ${K} \
+              -o fc_params '[(512,0.1)]' --predict-gpus 0 --batch-size 512 --num-workers 2 --fetch-by-files --fetch-step 1 \
+              --model-prefix ${CK}/net_best_epoch_state.pt --predict-output ${OUT}/pred.root 2>&1 | tail -2
+            python3 experiments/FT/slim_outputs.py pred --file ${OUT}/pred.root
+          else
+            python3 experiments/EVAL/extract_features.py --checkpoint ${CK}/net_best_epoch_state.pt --num-classes ${K} --arm MEMPROBE_${TASK} \
+              --data-config ${CFG} --data-test ${TEST} --observers jet_pt jet_energy --out ${OUT}/features --batch-size 512 --num-workers 1 \
+              --fetch-step 1 --save-logits 2>&1 | tail -2
+            if [ ${TASK} = qg ]; then
+              python3 experiments/EVAL/extract_features.py --checkpoint ${CK}/net_best_epoch_state.pt --num-classes ${K} --arm MEMPROBE_qg_herwig \
+                --data-config configs/finetune/EnergyFlowQG.yaml --data-test /data/finetune/qg_herwig/qg_herwig_chunk0.parquet \
+                /data/finetune/qg_herwig/qg_herwig_chunk1.parquet --observers jet_pt jet_energy --out ${OUT}/features_herwig \
+                --batch-size 512 --num-workers 1 --fetch-step 1 --save-logits 2>&1 | tail -2
+            fi
+          fi
+          echo "MEMPROBE ${TASK} peak_bytes $(cat /sys/fs/cgroup/memory.peak)"
+        resources:
+          requests: { memory: "48Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "48Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+        - { name: dshm, mountPath: /dev/shm }
+      tolerations:
+      - { key: "nvidia.com/gpu", operator: "Exists", effect: "PreferNoSchedule" }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: nvidia.com/gpu.product
+                operator: In
+                values: ["NVIDIA-GeForce-RTX-3090", "NVIDIA-L40", "NVIDIA-L40S", "NVIDIA-RTX-A6000", "NVIDIA-A40", "NVIDIA-GeForce-RTX-4090", "NVIDIA-RTX-A5000", "Tesla-V100-SXM2-32GB", "NVIDIA-A10", "NVIDIA-RTX-5000-Ada-Generation", "NVIDIA-L4", "NVIDIA-TITAN-RTX", "Quadro-RTX-6000"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu", "k8s-haosu-10.sdsc.optiputer.net", "ry-gpu-08.sdsc.optiputer.net"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
+      - name: dshm
+        emptyDir: { medium: Memory, sizeLimit: "8Gi" }

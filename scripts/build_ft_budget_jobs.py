@@ -120,11 +120,14 @@ FULL_MEM = "88Gi"
 # in the training batch: so the validation set is 199,680 jets (390 x 512, the largest multiple of the batch up to
 # 200,000), val_fixed.parquet in every subset directory (stage_val_fixed.py), and each check scores all of it.
 FIXED_ROOT = "/data/results/ft_v2/fixed"
-FIXED_STEPS = {1_000: 40_000, 10_000: 20_000, 100_000: 20_000, 1_000_000: 80_000}
+# 1e4 and 1e3 set from the sweep's and the smoke's validation curves (PI 2026-11-16): at 1e4 every best check by 1,200
+# steps (at 1e-2 the third 50-step check, so checks every 25); at 1e3 the smoke's best by 3,700 steps, the length kept
+# at 20,000 (two top cells, quark/gluon untested)
+FIXED_STEPS = {1_000: 20_000, 10_000: 3_000, 100_000: 20_000, 1_000_000: 80_000}
 FIXED_VAL, FIXED_NO_PATIENCE = 390 * 512, 10 ** 6
 # the check interval, like the steps, set only by the training size (PI 2026-11-15): every 50 steps below 1e6, every 500
 # at 1e6, where every best checkpoint observed sits at 3,500 steps or later
-FIXED_CHECK = {1_000: 50, 10_000: 50, 100_000: 50, 1_000_000: 500}
+FIXED_CHECK = {1_000: 50, 10_000: 25, 100_000: 50, 1_000_000: 500}
 FIXED_VAL_FILE = {}               # every task: <subset dir>/val_fixed.parquet
 FIXED_SIZES = {"top": (1_000, 10_000, 100_000), "topkin": (1_000, 10_000, 100_000), "qg": (1_000, 10_000, 100_000),
                "jc1": (10_000, 100_000, 1_000_000), "jc2b": (10_000, 100_000, 1_000_000)}
@@ -501,6 +504,7 @@ case ${TASK} in
     python3 -c "import numpy as np, sys; d = sys.argv[1]; F = np.load(d + '/features.npy', mmap_mode='r'); G = np.load(d + '/logits.npy', mmap_mode='r'); L = np.load(d + '/label188.npy', mmap_mode='r'); ok = F.shape[0] == G.shape[0] == L.shape[0] and np.isfinite(F).all() and np.isfinite(G).all(); sys.exit(0 if ok else 'FAIL features: ' + str((F.shape, G.shape, L.shape)))" ${CELL}/features || exit ${HALT}
     rm -f ${CELL}/features/features.npy ${CELL}/features_herwig/features.npy;;
 esac
+cat /sys/fs/cgroup/memory.peak > ${CELL}/memory_peak_bytes 2>/dev/null || true    # the pod's peak, to size requests
 touch ${CELL}/DONE
 echo "FT BUDGET CELL ${IDX} DONE: ${CELL}"
 """
