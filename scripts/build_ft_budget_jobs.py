@@ -642,7 +642,8 @@ def main(argv=None) -> int:
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
                                                  "fixed-sweep-ext",
-                                                 "fixed-sweep-17", "fixed-smoke-1e3"))
+                                                 "fixed-sweep-17", "fixed-smoke-1e3",
+                                                 "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
     if a.part and not a.indices:
         ap.error("--part needs --indices")
@@ -666,7 +667,8 @@ def main(argv=None) -> int:
             cells, mem = fillcheck_cells(), "48Gi"
         elif kind.startswith("fixed-"):     # the one rule's rates are fixed (FIXED_LR_*), not taken from the sweep flags
             cells = {"fixed-1e5": lambda: fixed_cells({100_000}), "fixed-1e6": lambda: fixed_cells({1_000_000}),
-                     "fixed-rest": lambda: fixed_cells({1_000, 10_000}), "fixed-bench": fixed_bench_cells,
+                     "fixed-rest": lambda: fixed_cells({1_000, 10_000}), "fixed-1e4": lambda: fixed_cells({10_000}),
+                     "fixed-1e3": lambda: fixed_cells({1_000}), "fixed-bench": fixed_bench_cells,
                      "fixed-sweep": fixed_sweep_cells,
                      "fixed-sweep-ext": lambda: fixed_sweep_cells(FIXED_SWEEP_PRE_EXT, ()),
                      "fixed-sweep-17": lambda: fixed_sweep_cells(FIXED_SWEEP_17, (), "r16q1-s1"),
