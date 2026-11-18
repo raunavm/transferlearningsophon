@@ -60,7 +60,9 @@ FIXED = f"{FT}/fixed"                                   # build_ft_budget_jobs.F
 FIXED_METRICS = f"{FIXED}/fixed_metrics.json"           # experiments/FT/budget_metrics.py's read-out of ft_v2/fixed
 # boot-l3-raunav, the same parts on inputs of the same sizes, peaked at 4.0 GiB working set (part 0, ft-jc2b; part 1,
 # sculpt, 1.0 GiB; Prometheus 2026-11-18) under its 48Gi: 2x the peak
-MEM_RERUN = "8Gi"
+# 2026-11-18: the sculpt rerun (with the random partitions) was OOM-killed at 8Gi within 3 minutes, so the
+# working-set peak above undercounts; the rerun takes the original job's 48Gi
+MEM_RERUN = MEM
 NEEDED = {"experiments/STATS/paired_bootstrap.py": "def group_diff", "experiments/FT/jc1_acc_boot.py": "def l3",
           "experiments/EVAL/sculpting_boot.py": "def unpaired"}
 

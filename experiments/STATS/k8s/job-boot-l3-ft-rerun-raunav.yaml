@@ -51,8 +51,8 @@ spec:
           esac
           echo "BOOT L3 PART ${JOB_COMPLETION_INDEX} COMPLETE"
         resources:
-          requests: { memory: "8Gi", cpu: "4", ephemeral-storage: "5Gi" }
-          limits:   { memory: "8Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          requests: { memory: "48Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "48Gi", cpu: "4", ephemeral-storage: "5Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
       affinity:
