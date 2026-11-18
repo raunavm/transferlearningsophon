@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Per-class recall (PI 2026-11-18; experiments/EVAL/perclass_recall.py). CPU. Index 0: the v5 linear probes on
+  # JetClass-II and JetClass (inputs exist now). Index 1: the one-rule fine-tuning cells at 1e5 jets, a smoke of the
+  # fine-tuned code path (not read by the paper). Peak memory ~2.5 GB (JetClass: 200 x 2M uint8 resample counts 0.4 GB,
+  # 36 x 2M predictions 0.6 GB, a 200k-jet logit chunk and its softmax ~1 GB); 6Gi requested.
+  name: perclass-recall-raunav
+  namespace: cms-ml
+spec:
+  completionMode: Indexed
+  completions: 2
+  parallelism: 2
+  backoffLimitPerIndex: 1
+  podFailurePolicy:
+    rules:
+    - action: FailIndex
+      onExitCodes: { containerName: main, operator: In, values: [42] }
+    - action: Ignore
+      onPodConditions:
+      - type: DisruptionTarget
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.14 https://github.com/raunavm/transferlearningsophon.git tls; }
+          retry clone || exit 1
+          cd /workspace/tls
+          export PYTHONUNBUFFERED=1 OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          [ "${USED}" -le 90 ] || { echo "FATAL: /data at ${USED}%"; exit 42; }
+          OUT=/data/results/eval/perclass_recall
+          mkdir -p ${OUT}
+          IDX=${JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}
+          case ${IDX} in
+            0) python3 experiments/EVAL/perclass_recall.py probe --task jc2 jc1 --out ${OUT};;
+            1) python3 experiments/EVAL/perclass_recall.py ft --task jc2 jc1 --n 100000 --out ${OUT};;
+            *) echo "FATAL: no part for index ${IDX}"; exit 42;;
+          esac
+          echo "PERCLASS RECALL PART ${IDX} COMPLETE"
+        resources:
+          requests: { memory: "6Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "6Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu", "k8s-haosu-10.sdsc.optiputer.net", "ry-gpu-08.sdsc.optiputer.net"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

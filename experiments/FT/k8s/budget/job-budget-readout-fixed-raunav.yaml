@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Read-out of all 341 one-rule cells (FIXED_N) into fixed_metrics.json, which mlst_results uses complete or not at all. CPU only.
+  name: budget-readout-fixed-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 43200
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          for T in 1 2 3 4 5; do git clone --depth 1 --branch "mtx-s3.14" https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
+          cd /workspace/repo
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          [ "${USED}" -le 90 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+          FIXED=/data/results/ft_v2/fixed
+          # the kinematic-only network fine-tuned on the full top set with ParT's recipe (build_ft_jobs best70_kin): once
+          KIN=/data/results/ft_v2/best70_kin/best70_kin_metrics.json
+          if [ -e ${KIN} ]; then echo "skip ${KIN}: exists"; else
+            python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/best70_kin --trees leg_top --out ${KIN}.new
+            python3 -c "import json,sys;d=json.load(open(sys.argv[1]));sys.exit(0 if list(d['cells'])==['leg_top/l188kin-s1/N1200000/s1'] and not d['missing'] else 'FATAL: %s, missing %s'%(list(d['cells']),d['missing']))" ${KIN}.new
+            mv ${KIN}.new ${KIN}
+          fi
+          # the paper's read-out: refuses to start unless all 341 one-rule cells have DONE, refuses a read-out short
+          # of a cell, and never overwrites one already written
+          OUT=${FIXED}/fixed_metrics.json
+          if [ -e ${OUT} ]; then echo "skip ${OUT}: exists"; exit 0; fi
+          python3 -c "import importlib.util,pathlib,sys;s=importlib.util.spec_from_file_location('bm','experiments/FT/budget_metrics.py');b=importlib.util.module_from_spec(s);s.loader.exec_module(b);k=b.fixed_keys();miss=[x for x in sorted(k) if not pathlib.Path('${FIXED}',x,'DONE').exists()];sys.exit(0 if len(k)==341 and not miss else 'FATAL: %d expected, %d not DONE: %s'%(len(k),len(miss),miss[:20]))"
+          python3 experiments/FT/budget_metrics.py --root ${FIXED} --expect-fixed --out ${OUT}.new
+          python3 -c "import json,sys;d=json.load(open(sys.argv[1]));n,m=len(d['cells']),len(d['missing']);sys.exit(0 if d['expected']==341 and n+m==341 and m==0 else 'FATAL: %d cells + %d missing, expected %s'%(n,m,d['expected']))" ${OUT}.new
+          mv ${OUT}.new ${OUT}
+          echo "READOUT COMPLETE"
+        resources:
+          # largest step: one class-balanced JetClass-II cell, 188 logits x ~904,000 test jets (logits.npy 680 MB float32):
+          # float64 copy 1.36 GB, softmax's three temporaries and native_metrics' p[idx] copy -> ~7 GB peak; JetClass
+          # pred.root (2M jets x 10 classes) far less. 16Gi is over twice the estimate (earlier read-outs of this
+          # script requested 24Gi with no measured use).
+          requests: { memory: "16Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "16Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
