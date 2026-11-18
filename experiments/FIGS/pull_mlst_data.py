@@ -51,6 +51,10 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   checks/test_disjoint.json        TEST2M shares no jet with the fine-tuning sets (experiments/EVAL/check_test_disjoint.py)
   budget/{budget,lrsweep}_metrics.json  the fixed-budget fine-tuning read-outs (experiments/FT/budget_metrics.py);
                                    budget_{,long_}fulldecay_metrics.json the from-scratch cells with the whole schedule
+  budget/fixed_metrics.json        the one fine-tuning rule's 341 cells (PI 2026-11-15; job-budget-readout-fixed),
+                                   fixed_metrics_partial.json its preview read-out (job-budget-readout-fixed-preview),
+                                   best70_kin_metrics.json the kinematic-only network on the full top set
+  budget/fixed_sweep.json          the one rule's rate sweep at 1e4 jets (fixed_sweep below, from each cell's files)
   budget/jc1_acc_boot_N<N>.json    the paired bootstrap of the JetClass accuracy differences (experiments/FT/jc1_acc_boot.py)
   partrepro/<variant>.json         ParT's top-tagging script reproduced (scripts/build_partrepro_jobs.py)
   dup_check/<file>.json            per-jet comparisons of near-identical results (experiments/EVAL/dup_check.py)
@@ -58,10 +62,24 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   confusion_jc1/<model>.json       the JetClass confusion matrices (experiments/EVAL/perf_vs_pt.py)
   curves_v2/pairs_ft/<model>.json  the fine-tuned networks on the class pairs (roc_points.py ft --family pairs_ft,
                                    from scratch included), with the other DONE families of curves_v2
+  curves_v2/<family>_{v5,fixed}/   the reruns of the ROC families (scripts/build_gallery_data_job.py probe-v5,
+                                   probe-v5-fill, jc1-fixed, ft-pairs-fixed; mlst_v4.ROC_RERUN), by the same rule:
+                                   a job writes every DONE of its group after its last file, so a group comes whole
+                                   (not /data/results/eval/v2_ft_head_fixed: per-jet outputs, too large to pull)
   head/sculpting_ft/<model>.json   QCD mass sculpting of the fine-tuned JetClass-II networks (experiments/EVAL/sculpting_ft.py),
                                    only once its job wrote DONE (after every model)
   head/sculpting_boot.json         the paired bootstrap of the heads' sculpting differences (experiments/EVAL/sculpting_boot.py)
                                    (not /data/results/eval/v2_ft_head: per-jet outputs, too large to pull)
+  perf_vs_pt_fixed/{jc2_ft,jc1}/, confusion_jc1_fixed/, head/sculpting_ft_fixed/, umap_v4/  the rerun's read-outs
+                                   of the one rule's fine-tuned cells at 1e6 (scripts/build_perf_pt_jobs.py jc2fixed
+                                   jc1fixed, build_gallery_data_job.py sculpt-ft-fixed, build_umap_jobs.py umap_v4),
+                                   each folder whole after its DONE
+  perf_vs_pt_v5/{jc2,jc1_probe}/   the v5 linear probes per jet-pT bin (build_perf_pt_jobs.py jc2v5 jc1probev5), whole
+                                   after its DONE and only with the v5 refits (V5_PASS)
+  l3_rerun/<file>.json             the rerun's decision-L3 bootstraps (scripts/build_boot_l3_jobs.py --rerun), each file
+                                   written whole; not under bootstrap/, whose folders are tab:boot's
+  perclass_recall/{probe_<task>,ft_<task>_N<n>}.json  per-class recall of every network, its test-jet bootstrap and
+                                   decision L3's differences (experiments/EVAL/perclass_recall.py), each written whole
   index.json                       {path: sha256} of every file above: the single source the
                                    macros counted over many files cite (mlst_results.py checks it)
 
@@ -74,6 +92,7 @@ import hashlib
 import io
 import json
 import pathlib
+import re
 import sys
 import tarfile
 
@@ -100,6 +119,17 @@ V5_PULL = ((EVAL / "v2_linprobe_bal" / "fits_v5", "linprobe/fits_v5"),
            (EVAL / "atlas_res_v3", "head/atlas_res_v3"),
            (EVAL / "atlas_res_fine_v3", "head/atlas_res_fine_v3"))
 V5_BOOT = ("probe_v5", "l3_v5")
+# the rerun's read-outs (PI 2026-11-15/16): (folder, name pulled), each taken whole once its job wrote DONE; the v5
+# probes' only with the v5 refits
+RERUN_PULL = ((EVAL / "perf_vs_pt_fixed" / "jc2_ft", "perf_vs_pt_fixed/jc2_ft"),
+              (EVAL / "perf_vs_pt_fixed" / "jc1", "perf_vs_pt_fixed/jc1"),
+              (EVAL / "confusion_jc1_fixed", "confusion_jc1_fixed"),
+              (EVAL / "v2_head" / "sculpting_ft_fixed", "head/sculpting_ft_fixed"),
+              (EVAL / "umap_v4", "umap_v4"))
+RERUN_PULL_V5 = ((EVAL / "perf_vs_pt_v5" / "jc2", "perf_vs_pt_v5/jc2"),
+                 (EVAL / "perf_vs_pt_v5" / "jc1_probe", "perf_vs_pt_v5/jc1_probe"))
+L3_RERUN = pathlib.Path("/data/results/bootstrap/l3_rerun")
+PERCLASS_RECALL = EVAL / "perclass_recall"
 MTX = pathlib.Path("/data/results/mtx_v2")
 N_EPOCHS = 80
 MANIFEST_KEYS = ("leg", "init", "n_train", "ft_seed", "lr", "head_lr_mult", "weight_decay", "epochs",
@@ -133,6 +163,37 @@ def manifests() -> dict:
                 m = json.loads((cell / "ft_manifest.json").read_text())
                 out[str(cell.relative_to(FT))] = {k: m.get(k) for k in MANIFEST_KEYS}
     return out
+
+
+FIXED_SWEEP, SWEEP_N = FT / "fixed_sweep", "N10000"
+
+
+def fixed_sweep() -> dict:
+    """{tree/<init>_lr<rate>: cell} of the one rule's rate sweep at 1e4 jets (build_ft_budget_jobs fixed_sweep_cells,
+    -ext, -17): its best validation accuracy and check from early_stop.json, from the last attempt (s1.partial.<time>)
+    where no attempt reached DONE (the cell was stopped), and its training log's divergence evidence: any NaN training
+    loss, and the final training loss and accuracy."""
+    out = {}
+    for d in sorted(FIXED_SWEEP.glob(f"*/*_lr*/{SWEEP_N}")):
+        cell, done = d / "s1", (d / "s1" / "DONE").exists()
+        if not done:
+            tries = [p for p in d.glob("s1.partial.*") if (p / "early_stop.json").exists()]
+            if not tries:
+                continue
+            cell = max(tries, key=lambda p: int(p.name.rsplit(".", 1)[1]))
+        es = json.loads((cell / "early_stop.json").read_text())
+        train = re.findall(r"Train AvgLoss: ([^,\s]+), AvgAcc: ([^,\s]+)", (cell / "train.log").read_text())
+        last = float(train[-1][0]) if train else None
+        init, lr = d.parent.name.rsplit("_lr", 1)
+        out[f"{d.parent.parent.name}/{d.parent.name}"] = {
+            "tree": d.parent.parent.name, "init": init, "lr": lr, "n": int(SWEEP_N[1:]), "done": done,
+            "dir": str(cell.relative_to(FT)), "best_metric": es["best_metric"], "best_epoch": es["best_epoch"],
+            "epochs_completed": es["epochs_completed"],
+            "last_metric": (es.get("metrics") or {}).get(str(es.get("last_epoch"))),
+            "nan_loss": any(x == "nan" for x, _ in train),
+            "final_train_loss": None if last is None or last != last else last,
+            "final_train_acc": float(train[-1][1]) if train else None}
+    return {"root": str(FIXED_SWEEP), "cells": out}
 
 
 def compute(run: pathlib.Path) -> dict:
@@ -196,6 +257,8 @@ def main() -> int:
                     continue        # a job's staging directory (<family>.staging.<n>): not finished
                 if f.parent.name in V5_BOOT and not V5_PASS.exists():
                     continue        # the v5 bootstraps only with the v5 refits (below)
+                if f.parent == L3_RERUN:
+                    continue        # pulled to l3_rerun/ (below), outside tab:boot's folders
                 b = f.read_bytes()
                 json.loads(b)
                 add(f"{name}/{f.relative_to(d)}", b)
@@ -219,6 +282,11 @@ def main() -> int:
               (FT / "budget_prefull", "budget", "budget_prefull_metrics.json"),
               # the JetClass accuracy differences against the run spread and a bootstrap of the test jets (PI 2026-11-09)
               (FT / "jc1_acc_boot", "budget", "jc1_acc_boot_N*.json"),
+              # the one fine-tuning rule (PI 2026-11-15): its read-out, complete (the paper) or partial (a preview,
+              # read only with MLST_FT_PREVIEW=1), and the kinematic-only network on the full top set
+              (FT / "fixed", "budget", "fixed_metrics.json"),
+              (FT / "fixed", "budget", "fixed_metrics_partial.json"),
+              (FT / "best70_kin", "budget", "best70_kin_metrics.json"),
               # the TEST2M disjointness proof (experiments/EVAL/check_test_disjoint.py, 2026-11-09: all 30 fine-tuned heads)
               (pathlib.Path("/data/results/checks"), "checks", "test_disjoint.json"),
               (FT / "lrsweep_v2", "budget", "lrsweep_metrics.json"),     # 50-step checks (2026-11-01)
@@ -266,6 +334,21 @@ def main() -> int:
                 json.loads(b)
                 rel = f"{f.parent.name}.json" if name == "partrepro" else f.name
                 add(f"{name}/{rel}", b)
+        for d, name in RERUN_PULL + (RERUN_PULL_V5 if V5_PASS.exists() else ()):
+            if (d / "DONE").exists():
+                for f in sorted(d.glob("*.json")):
+                    b = f.read_bytes()
+                    json.loads(b)
+                    add(f"{name}/{f.name}", b)
+        for f in sorted(L3_RERUN.glob("*.json")):
+            b = f.read_bytes()
+            json.loads(b)
+            add(f"l3_rerun/{f.name}", b)
+        # per-class recall (experiments/EVAL/perclass_recall.py, PI 2026-11-18): each file written whole (atomic)
+        for f in sorted(PERCLASS_RECALL.glob("*.json")):
+            b = f.read_bytes()
+            json.loads(b)
+            add(f"perclass_recall/{f.name}", b)
         # the fine-tuned sculpting (scripts/build_gallery_data_job.py ft-pairs-sculpt): whole or not at all
         sft = EVAL / "v2_head" / "sculpting_ft"
         if (sft / "DONE").exists():
@@ -286,6 +369,7 @@ def main() -> int:
                 b = f.read_bytes()
                 json.loads(b)
                 add(f"xbx_scratch/{f.parent.parent.name}/{f.parent.name}.json", b)
+        add("budget/fixed_sweep.json", (json.dumps(fixed_sweep(), indent=1, sort_keys=True) + "\n").encode())
         add("ft_mlst/manifests.json", (json.dumps(manifests(), indent=1) + "\n").encode())
         add("jc2_test/counts.json", (json.dumps(jc2_test_counts()) + "\n").encode())
         for run in sorted(MTX.glob("mtx-*")):

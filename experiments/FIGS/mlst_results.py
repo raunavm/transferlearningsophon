@@ -830,72 +830,93 @@ POOL_MARK = r"$^{\parallel}$"     # the pooled random partitions: some of the fi
 NEAR_ONE = r"$>0.9999$"            # an AUC that rounds to 1.0000 (PI 2026-11-12): no digits beyond, no spread
 SEP_FLOOR = 1e-4    # below this 1 - AUC (AUC 1.0000 at four decimals) no ratio to the run is printed
 # the fine-tuned networks on the class pairs (PI 2026-11-08): experiments/FT/roc_points.py ft --family pairs_ft, one doc
-# per model (scratch-s<k> from scratch) with "curves": {pair: {auc, ...}}; the JetClass-II fine-tuning at 1e6 scored
-# with g_a / (g_a + g_b) on the pair's jets among the first 2,000,000 TEST2M jets, natural composition (the jets of the
-# head sculpting, scripts/build_head_jobs.py --ft-head)
+# per model (scratch-s<k> from scratch) with "curves": {pair: {rejection, n_bkg_pass, n_background, ...}} on the doc's
+# eps_grid; the JetClass-II fine-tuning at 1e6 scored with g_a / (g_a + g_b) on the pair's jets among the first 2,000,000
+# TEST2M jets, natural composition (the jets of the head sculpting, scripts/build_head_jobs.py --ft-head, and for the one
+# rule's cells --ft-head-fixed: mlst_v4.load_family reads its rerun pairs_ft_fixed once pulled)
 PAIRS_FT = "curves_v2/pairs_ft"
 PAIRS_LABEL_CM = 4.6        # the pair table's row labels wrap at this width and its blocks may be shrunk by
                             # SHRINK_OK, so that two pairs fit a block
 FT_SCRATCH_MODELS = ("scratch-s1", "scratch-s2", "scratch-s3")
+# tab:pairs and tab:pairsfull (PI 2026-11-18: no 1 - AUC anywhere): the rejection 1/eps_B at 50% signal efficiency,
+# R50, of each run, the linear probes' from their fit files (linear_probe_v2: r50, r50_n_bkg_pass, n_test_background)
+# and the fine-tuned networks' from their pair curves (the point eps_S = PAIR_EPS of the curve's grid). Lower-bound
+# rule: a run in which fewer than PAIR_MIN_PASS background jets pass at that efficiency (where every curve of the
+# class-pair figures stops) has no measured R50; it gives the lower limit n_background / PAIR_MIN_PASS. A cell with such
+# a run prints PAIR_GT and the smallest, over its runs, of the measured values and these limits (every run's R50 lies
+# above it), with no spread; its column then has no bold (_bold).
+PAIR_EPS = 0.5
+PAIR_MIN_PASS = V4.JC1_MIN_BKG
+PAIR_GT = r"$>$"
+
+
+def pair_r50(doc: dict, key: str):
+    """(R50, background jets passing at PAIR_EPS, background jets) of a pair curve doc's curve key, or None."""
+    c = doc.get("curves", {}).get(key)
+    if c is None:
+        return None
+    grid = np.asarray(doc["eps_grid"], float)
+    i = int(np.argmin(np.abs(grid - PAIR_EPS)))
+    if abs(grid[i] - PAIR_EPS) > 1e-9:
+        raise SystemExit(f"FATAL: the pair curves' grid has no point at signal efficiency {PAIR_EPS}")
+    return c["rejection"][i], int(c["n_bkg_pass"][i]), int(c["n_background"])
+
+
+def _pair_r50(fits, m, key):
+    """A linear probe's pair_r50 triple from its fit record, or None."""
+    c = fits.get(m, {}).get("cells", {}).get(_ck(m), {}).get(PAIR_DS, {}).get(PAIR_N, {}).get(key)
+    return None if c is None else (c["r50"], int(c["r50_n_bkg_pass"]), int(c["n_test_background"]))
+
+
+def pair_cell(vals: list, n_expected: int, fmt_pm) -> str:
+    """One cell of the pair tables from the runs' pair_r50 triples (None where a run has none): the lower-bound rule
+    above where a run has fewer than PAIR_MIN_PASS background jets passing, else _cell's mean +- SD of R50."""
+    have = [v for v in vals if v is not None]
+    if not any(k < PAIR_MIN_PASS for _r, k, _n in have):
+        return _cell([r for r, _k, _n in have], n_expected, fmt_pm)
+    low = min(n / PAIR_MIN_PASS if k < PAIR_MIN_PASS else r for r, k, n in have)
+    return (PAIR_GT + _tab1(low) + (SINGLE if len(have) == 1 else "")
+            + (rf" \pending{{{len(have)} of {n_expected}}}" if len(have) < n_expected else ""))
 
 
 def load_pairs_ft(data: pathlib.Path) -> dict:
-    """{model: {pair: record}} of the fine-tuned pair read-outs, {} until pulled."""
-    return {m: d.get("curves", d) for m, d in _load(data / PAIRS_FT).items()}
+    """{model: {pair: pair_r50 triple}} of the fine-tuned pair curves (mlst_v4.load_family: the one rule's rerun
+    once pulled), {} until pulled."""
+    return {m: {k: pair_r50(d, k) for k in d["curves"]} for m, d in V4.load_family(data, "pairs_ft").items()}
 
 
-def table_pairs(fits, runs, fmt_pm, status, rows, ft=None, rho=True) -> str:
-    """A11, binary probes between JetClass-II classes: the AUC, and the ratio of 1 - AUC to the
-    188-class run as a labelled column ('--' where that run separates the test jets completely);
-    a dagger marks a pair the label set merges. ft (load_pairs_ft; {} prints the group pending) adds the fine-tuned
-    networks as a second row group: the mode in each group's heading and not in the row labels, a row fine-tuned
-    from scratch (no probe) and none for the random networks (no fine-tuning). One tabular, the pairs as column
-    groups (split_wide deals them into blocks). rho=False (the paper, PI 2026-11-12): the AUC only, named once in
-    the heading over the pairs. The pooled random partitions (RAND_POOLED) are marked where some but not all of the
-    five merge the pair (POOL_MARK). A mean AUC that rounds to 1.0000 prints as NEAR_ONE and takes no part in its
-    column's precision."""
+def table_pairs(fits, runs, fmt_pm, status, rows, ft=None) -> str:
+    """A11, pairs of JetClass-II classes: R50 of each pair (the lower-bound rule above), under one heading over the
+    pairs, in the class-pair figures' panel order; a dagger marks a pair the label set merges. The linear probes
+    (binary probes, fits) first; ft (load_pairs_ft; {} prints the group pending) adds the fine-tuned networks as a
+    second row group: the mode in each group's heading and not in the row labels, a row fine-tuned from scratch (no
+    probe) and none for the random networks (no fine-tuning). The pooled random partitions (RAND_POOLED) are marked
+    where some but not all of the five merge the pair (POOL_MARK)."""
     mark = {"merged": r"$^{\dagger}$", "partly": r"$^{\ddagger}$", "apart": "", "some": POOL_MARK}
     if RAND_POOLED in rows:
         def pooled(key):
             st = [status.get(a, {}).get(key, "apart") for a in RAND]
             return "merged" if all(x == "merged" for x in st) else "apart" if all(x == "apart" for x in st) else "some"
         status = {**status, RAND_POOLED: {key: pooled(key) for key, *_ in PAIRS}}
-    modes = [("lp", tuple(rows), lambda m, key: _pair(fits, m, key))]
+    modes = [("lp", tuple(rows), lambda m, key: _pair_r50(fits, m, key))]
     if ft is not None:          # until pulled ({}), one pending row in place of the group's rows
         modes.append(("ft", tuple(r for r in rows if r not in (INIT, INIT_BN)) + (SCRATCH,) if ft else (),
-                      lambda m, key: (ft.get(m, {}).get(key) or {}).get("auc")))
+                      lambda m, key: ft.get(m, {}).get(key)))
         runs = {**runs, SCRATCH: list(FT_SCRATCH_MODELS)}
-    body = {}                                       # (mode, arm) -> [(AUC cell, rho cell)] per pair
-    for mode, arms, get in modes:
-        for arm in arms:
-            body[mode, arm] = []
-            for key, *_ in PAIRS_FIG:
-                v = [get(m, key) for m in runs[arm]]
-                near = None not in v and round(float(np.mean(v)), 4) >= 1
-                auc = ((NEAR_ONE + SINGLE * (len(v) == 1) if near else _cell(v, len(runs[arm]), fmt_pm, frac=True))
-                       + mark[status.get(arm, {}).get(key, "apart")])      # a merge is the label set's, in both modes
-                r, n = _ratio_to_full(fits, runs, arm, lambda m: _oma(get(m, key)))
-                sep = separated(fits, runs, key, get) & {_idx(m) for m in runs[arm]}
-                body[mode, arm].append((auc, _cell(r, n, fmt_pm) if n and not sep else "--"))
-    # a pair whose rho is a dash in every row (the 188-class runs separate it) shows its AUC only
-    has_rho = [rho and any(c[i][1] != "--" for c in body.values()) for i in range(len(PAIRS_FIG))]
-    w = [2 if h else 1 for h in has_rho]
-    out = [r"\begin{tabular}{l" + "c" * sum(w) + "}", r"\toprule"]
-    if rho:
-        out += [" & " + " & ".join(rf"\multicolumn{{{k}}}{{c}}{{{h}}}" for k, (_, h, *_) in zip(w, PAIRS_FIG)) + r" \\",
-                "".join(rf"\cmidrule(lr){{{2 + sum(w[:i])}-{1 + sum(w[:i + 1])}}}" for i in range(len(w))),
-                " & " + " & ".join(r"AUC & $\rho$" if h else "AUC" for h in has_rho) + r" \\", r"\midrule"]
-    else:
-        out += [rf" & \multicolumn{{{len(PAIRS_FIG)}}}{{c}}{{AUC}} \\", rf"\cmidrule(lr){{2-{1 + len(PAIRS_FIG)}}}",
-                " & " + " & ".join(h for _, h, *_ in PAIRS_FIG) + r" \\", r"\midrule"]
-    for k, (mode, arms, _) in enumerate(modes):
+    n = len(PAIRS_FIG)
+    out = [r"\begin{tabular}{l" + "c" * n + "}", r"\toprule",
+           rf" & \multicolumn{{{n}}}{{c}}{{$R_{{50}}$}} \\", rf"\cmidrule(lr){{2-{1 + n}}}",
+           " & " + " & ".join(h for _, h, *_ in PAIRS_FIG) + r" \\", r"\midrule"]
+    for k, (mode, arms, get) in enumerate(modes):
         if len(modes) > 1:
-            out += ([r"\midrule"] if k else []) + [_full_row(1 + sum(w), HEADING[mode], italic=True)]
+            out += ([r"\midrule"] if k else []) + [_full_row(1 + n, HEADING[mode], italic=True)]
         if not arms:
-            out.append(_full_row(1 + sum(w), r"\pending{no run yet}"))
+            out.append(_full_row(1 + n, r"\pending{no run yet}"))
         for arm in arms:
-            out.append((SCRATCH_LABEL if arm == SCRATCH else _row(arm, runs)) + " & " + " & ".join(
-                a + (" & " + r if h else "") for (a, r), h in zip(body[mode, arm], has_rho)) + r" \\")
+            # a merge is the label set's, so its mark stands in both modes
+            cells = [pair_cell([get(m, key) for m in runs[arm]], len(runs[arm]), fmt_pm)
+                     + mark[status.get(arm, {}).get(key, "apart")] for key, *_ in PAIRS_FIG]
+            out.append((SCRATCH_LABEL if arm == SCRATCH else _row(arm, runs)) + " & " + " & ".join(cells) + r" \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}"])
 
 
@@ -1541,6 +1562,24 @@ RIDGE = "ridge regression on the frozen features"
 # A17-qcd (the mass output, by jet group) and A17-probe, A17-ridge (the probes, all jets); (estimator, jet group, rows)
 MASS_DETAIL_BINNED = (("regressed", "all", MASS), ("regressed", "resonant", MASS), ("regressed", "qcd", MASS),
                       ("mlp", "all", MASS_ROWS), ("ridge", "all", MASS_ROWS))
+# the 17-class partitions' probes (PI 2026-11-14, step 7; atlas_res_v3 from refit5-atlas-part), indented under PARTITIONS
+# between the label sets and the random network (L5), the random partitions pooled, wherever the files hold them
+MASS_PARTS = FLAV + (RAND_POOLED,)
+
+
+def _mass_arms(atlas, runs, est: str, arms: tuple) -> list:
+    """[(arm, indented)] of a probe block (est mlp or ridge): arms, with the partitions before the random network where
+    the files hold their fits; the mass output's blocks (regressed) unchanged."""
+    if est == "regressed" or not any(_ares(atlas, m, est, "all") is not None for a in MASS_PARTS
+                                     for m in _pooled(runs).get(a, [])):
+        return [(a, False) for a in arms]
+    head = [a for a in arms if a != INIT]
+    return [(a, False) for a in head] + [(PARTITIONS, True)] + [(a, True) for a in MASS_PARTS] \
+        + [(a, False) for a in arms if a == INIT]
+
+
+def mass_has_parts(atlas, runs) -> bool:
+    return any(_ares(atlas, m, "mlp", "all") is not None for a in MASS_PARTS for m in _pooled(runs).get(a, []))
 
 
 def table_mass_detail(atlas, runs, fmt_pm) -> str:
@@ -1551,6 +1590,7 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
     bins), per MASS_DETAIL_BINNED block, the soft-drop mass once over each jet group."""
     sec = lambda t, k: r"\multicolumn{" + str(k) + r"}{@{}l}{\textit{" + t + r"}} \\"   # noqa: E731
     group = {g: h for g, _, h in MASS_GROUPS}
+    runs = _pooled(runs)
     # the upper part one tabular (page review 2026-11-13: the ridge rows as a second tabular were left alone on a
     # page): over all, resonant and QCD jets, a cell over all jets empty where Table 5 holds it (all but the ridge)
     groups, ng = ("all", "resonant", "qcd"), 3
@@ -1566,9 +1606,12 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
         for est, name, arms in ests:
             # in \itshape, not \textit: _turned_long starts a page at a second mode heading, and these are not modes
             part.append(r"\multicolumn{" + str(1 + 2 * ng) + r"}{@{}l}{{\itshape " + name + r"}} \\")
-            for arm in arms:
-                ms = runs[arm]
-                part.append(f"{LABEL[arm]} & " + " & ".join(
+            for arm, ind in _mass_arms(atlas, runs, est, arms):
+                if arm == PARTITIONS:
+                    part.append(_full_row(1 + 2 * ng, PARTITIONS))
+                    continue
+                ms = runs.get(arm, [])
+                part.append((r"\quad " if ind else "") + f"{LABEL[arm]} & " + " & ".join(
                     "" if g == "all" and est != "ridge" else _cell([_ares(atlas, m, est, g, k) for m in ms], len(ms), fmt_pm)
                     for k in ("resolution", "median") for g in groups) + r" \\")
         out += uniform_columns("\n".join(part)).split("\n")
@@ -1594,10 +1637,13 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
                                + r" \\")
                 # italic, as every table's section headings; _turned_long breaks a page only at a mode heading (HEADING)
                 out.append(sec(f"{name}, {group[g]} jets", 1 + len(bins)))
-                for arm in arms:
-                    ms = runs[arm]
+                for arm, ind in _mass_arms(atlas, runs, est, arms):
+                    if arm == PARTITIONS:
+                        out.append(_full_row(1 + len(bins), PARTITIONS))
+                        continue
+                    ms = runs.get(arm, [])
                     per = [_ares(atlas, m, est, g, key, axis) for m in ms]
-                    out.append(f"{LABEL[arm]} & " + " & ".join(
+                    out.append((r"\quad " if ind else "") + f"{LABEL[arm]} & " + " & ".join(
                         _cell([None if p is None else p[i] for p in per], len(ms), fmt_pm) for i in range(len(bins))) + r" \\")
             out += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(out + [""])
@@ -1791,6 +1837,10 @@ def table_sculpt(sculpt, runs, fmt_pm, rows, label: dict | None = None) -> str:
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
+# the fine-tuned networks' sculpting (experiments/EVAL/sculpting_ft.py), the one rule's JetClass-II cells at 1e6 only
+# (scripts/build_gallery_data_job.py --mode sculpt-ft-fixed, pulled whole after its DONE): the older trees' files in
+# head/sculpting_ft are never read
+SCULPT_FT = "head/sculpting_ft_fixed"
 SCULPT_BOOT_WPS = (("eps_b=0.1", r"$\epsB = 10\%$"), ("eps_b=0.01", r"$\epsB = 1\%$"),     # tab:sculpt's order
                    ("eps_s=0.5", r"$\epsS = 50\%$"))
 
@@ -1802,6 +1852,9 @@ def _sculpt_distance(sculpt: dict, m: str, wp: str) -> float:
 
 
 SCULPT_BOOT_L3 = "bootstrap/l3/sculpting_boot_l3.json"     # decision L3 (2026-11-13): the sides unpaired, every run
+# the rerun's copy (scripts/build_boot_l3_jobs.py --rerun, pulled to l3_rerun/): the same heads with the five random
+# partitions pooled against 188 classes (sculpting_boot.POOLED); read in place of the first once pulled
+SCULPT_BOOT_L3_RERUN = "l3_rerun/sculpting_boot_l3.json"
 
 
 def table_sculpt_boot(doc, runs, sculpt=None) -> str:
@@ -1814,6 +1867,8 @@ def table_sculpt_boot(doc, runs, sculpt=None) -> str:
     network, then of its reference."""
     num = lambda v: f"{v:.4f}".replace("-", "$-$")      # noqa: E731  unscaled distances (PI 2026-11-14), four decimals
     arm = {m.removeprefix("mtx-").rsplit("-s", 1)[0]: a for a, ms in runs.items() for m in ms}
+    arm["rand2p"] = RAND_POOLED         # sculpting_boot.POOLED: the five random partitions as one side
+    rows = ALL_ROWS + (RAND_POOLED,)
     diffs = doc["differences"]
     for name, d in diffs.items():
         for wp, _ in SCULPT_BOOT_WPS:
@@ -1830,13 +1885,13 @@ def table_sculpt_boot(doc, runs, sculpt=None) -> str:
                                                        (np.std(b, ddof=1), x["sd_reference"]))):
                     raise SystemExit(f"FATAL: {SCULPT_BOOT_L3} {name} {wp}: delta or a run SD differs from the "
                                      "sculpting files")
-    order = lambda x: (ALL_ROWS.index(arm[x[1]["configuration"]]), ALL_ROWS.index(arm[x[1]["reference"]]))   # noqa: E731
+    order = lambda x: (rows.index(arm[x[1]["configuration"]]), rows.index(arm[x[1]["reference"]]))   # noqa: E731
     out = [r"\begin{tabular}{lccccc}", r"\toprule",
            r" & $\Delta$ & run SD, first & run SD, second & bootstrap SD & $\Delta/\sigma$ \\", r"\midrule"]
     for k, (wp, head) in enumerate(SCULPT_BOOT_WPS):
         block = [_full_row(6, head, italic=True)]
         for name, d in sorted(diffs.items(), key=order):
-            part = arm[d["configuration"]] in FLAV + RAND
+            part = arm[d["configuration"]] in FLAV + RAND + (RAND_POOLED,)
             if part and PARTITIONS not in block[-1] and not block[-1].startswith(r"\quad "):
                 block.append(_full_row(6, PARTITIONS))
             x = d["l3"][wp]["distance"]
@@ -2047,11 +2102,17 @@ def load_ft(data: pathlib.Path) -> tuple:
         per[key] = {init: {int(n[1:]): [rec for _, rec in sorted(seeds.items())]
                            for n, seeds in by_n.items() if re.fullmatch(r"N\d+", n)}
                     for init, by_n in cells.items()}
-    if (data / "budget" / FIXED).exists():      # the one rule (PI 2026-11-15) replaces every older tree below the full sets
-        return tag, merge_fixed(per, data / "budget" / FIXED), absent
-    return tag, merge_budget(per, data / "budget" / "budget_metrics.json",
-                             data / "budget" / "budget_long_metrics.json",
-                             [data / "budget" / f for f in SCRATCH_FULL], data / "budget" / PRE_FULL), absent
+    fixed = data / "budget" / FIXED
+    if ft_preview() and not fixed.exists():     # a preview reads the one-rule cells finished so far (FIXED_PARTIAL)
+        fixed = data / "budget" / FIXED_PARTIAL
+        if not fixed.exists():
+            raise SystemExit(f"FATAL: {PREVIEW_ENV}=1 but neither {FIXED} nor {FIXED_PARTIAL} in {data / 'budget'}")
+    if fixed.exists():      # the one rule (PI 2026-11-15) replaces every older tree below the full sets
+        return tag, merge_kin(merge_fixed(per, fixed, preview=fixed.name == FIXED_PARTIAL), data / "budget" / KIN_FULL), absent
+    return tag, merge_kin(merge_budget(per, data / "budget" / "budget_metrics.json",
+                                       data / "budget" / "budget_long_metrics.json",
+                                       [data / "budget" / f for f in SCRATCH_FULL], data / "budget" / PRE_FULL),
+                          data / "budget" / KIN_FULL), absent
 
 
 # 2026-10-31 (plan 3.1, 3.4): below the full set every fine-tuning is the fixed-budget recipe
@@ -2077,21 +2138,57 @@ PRE_FULL_TEST = tuple(f"{a}-s{k}" for a in ("l188", "r16q1") for k in (1, 2, 3))
 # The one fine-tuning rule (PI 2026-11-15; scripts/build_ft_budget_jobs.py FIXED_*): every cell below the full top and
 # quark/gluon sets, pretrained, kinematic-only and from scratch, from one read-out of ft_v2/fixed. Used complete or not at
 # all: once it is pulled no cell of the older trees (budget, budget_long, budget_prefull, *_fulldecay) is read.
+# 341 = top 3 x 31 (27 paper runs, the kinematic-only run, 3 from scratch) + quark/gluon 3 x 30 + JetClass 3 x 30
+# + JetClass-II 2 x 19 (below 1e6 the label sets and mass networks only) + 30 at 1e6; the cells of the launched
+# job-ft-budget-fixed-{1e3,1e4,1e5,1e6}*-raunav specs (tests/test_ft_fixed_readout.py counts them).
 FIXED, FIXED_N = "fixed_metrics.json", 341
+# A preview (PREVIEW_ENV=1, PI 2026-11-18) reads job-budget-readout-fixed-preview's partial read-out when the complete one
+# is absent: every finished cell, a missing one absent (its table cell pending), a from-scratch size with a seed missing
+# left out whole. Never the paper's build: without PREVIEW_ENV a partial read-out is not read at all.
+FIXED_PARTIAL, PREVIEW_ENV = "fixed_metrics_partial.json", "MLST_FT_PREVIEW"
+# The full sets that keep ParT's recipe under the one rule: top and quark/gluon. JetClass's largest set, 1e6 jets, is a
+# one-rule cell (build_ft_budget_jobs.FIXED_SIZES), so the old JetClass cells at FULL_N are not read.
+FIXED_PART_FULL = ("top", "qg", "qg_herwig")
+# the kinematic-only network fine-tuned on the full top set with ParT's recipe (ft_v2/best70_kin, one cell)
+KIN_FULL = "best70_kin_metrics.json"
 
 
-def merge_fixed(per: dict, path: pathlib.Path) -> dict:
-    """per's full-set cells (FULL_N) and every cell of the one-rule read-out below them; FATAL unless it is complete."""
+def ft_preview() -> bool:
+    import os
+    return os.environ.get(PREVIEW_ENV) == "1"
+
+
+def merge_fixed(per: dict, path: pathlib.Path, preview: bool = False) -> dict:
+    """per's full top and quark/gluon cells (FIXED_PART_FULL) and every cell of the one-rule read-out; FATAL unless it is
+    complete, or with preview (FIXED_PARTIAL) unless it names every cell, read or missing."""
     doc = json.loads(path.read_text())
-    if doc.get("missing") or len(doc["cells"]) != FIXED_N:
-        raise SystemExit(f"FATAL: {path}: {len(doc['cells'])} cells (expected {FIXED_N}), missing {doc.get('missing')}; "
-                         "the one-rule read-out is used complete or not at all")
-    out = {key: {init: {n: v for n, v in by_n.items() if key in FULL_N and n >= FULL_N[key]}
+    miss = doc.get("missing", [])
+    if (miss and not preview) or len(doc["cells"]) + (len(miss) if preview else 0) != FIXED_N:
+        raise SystemExit(f"FATAL: {path}: {len(doc['cells'])} cells (expected {FIXED_N}), missing {len(miss)}: {miss[:5]}; "
+                         "the one-rule read-out is used complete or not at all" + (" (a preview names every cell)" if preview else ""))
+    out = {key: {init: {n: v for n, v in by_n.items() if key in FIXED_PART_FULL and n >= FULL_N[key]}
                  for init, by_n in cells.items()} for key, cells in per.items()}
     for (key, init, n), recs in _budget_cells(path).items():
-        if key in FULL_N and n >= FULL_N[key]:
+        if key in FIXED_PART_FULL and n >= FULL_N[key]:
             raise SystemExit(f"FATAL: {path}: a full-set cell {key} {init} N={n}; the full sets keep ParT's recipe")
         out.setdefault(key, {}).setdefault(init, {})[n] = recs
+    for k in miss:      # preview: a from-scratch size short of a seed would read as complete, so it is left out
+        tree, init, n, _ = k.split("/")
+        if init == BUDGET_SCRATCH:
+            for key, (t, _) in BUDGET_TREE.items():
+                if t == tree:
+                    out.get(key, {}).get(SCRATCH, {}).pop(int(n[1:]), None)
+    return out
+
+
+def merge_kin(out: dict, path: pathlib.Path) -> dict:
+    """out with the kinematic-only network's full top cell (KIN_FULL) where it is pulled; FATAL unless it is that one cell."""
+    if not path.exists():
+        return out
+    cells = _budget_cells(path)
+    if list(cells) != [("top", KIN_INIT, FULL_N["top"])] or len(cells[("top", KIN_INIT, FULL_N["top"])]) != 1:
+        raise SystemExit(f"FATAL: {path}: {sorted(cells)}; expected the one full top cell of {KIN_INIT}")
+    out.setdefault("top", {}).setdefault(KIN_INIT, {})[FULL_N["top"]] = cells[("top", KIN_INIT, FULL_N["top"])]
     return out
 
 
@@ -3201,27 +3298,39 @@ def eemm_macros(em, fits: dict, runs: dict, index, fmt_pm, fmt_int, status: dict
 JC1_AUC_COLS = (("label_QCD", "QCD"),) + V4.JC1_COLS      # ParT's class order, as the other JetClass tables
 
 
-def table_jc1_class_auc(ft_docs: dict, probe_docs: dict, runs: dict, fmt_pm, arms=ALL_ROWS, init=INIT) -> str:
-    """Each JetClass class against the other nine, at 10^6 jets (curves_v2/jc1_ft_ovr, jc1_probe_ovr; the points of
-    the JetClass per-class figures): arms (the paper: the random partitions pooled, runs from _pooled) fine-tuned with
-    the network from scratch, and probed with the random network init."""
-    scratch = [m for m in sorted(ft_docs) if m.startswith("scratch")]
+RECALL_DIR = "perclass_recall"      # experiments/EVAL/perclass_recall.py: probe_<task>.json, ft_<task>_N<n>.json
 
-    def rows(docs: dict, extra: list) -> list:
+
+def _recall(doc: dict, m: str) -> dict | None:
+    """{class: recall} of model m in a perclass_recall file (JetClass: class names; JetClass-II: jet_label), None if
+    the file lacks it."""
+    r = (doc or {}).get("models", {}).get(m)
+    if r is None:
+        return None
+    return {(doc["classes"][k] if doc.get("classes") else k): v for k, v in enumerate(r["recall"])}
+
+
+def table_jc1_class_recall(ft_doc: dict, probe_doc: dict, runs: dict, fmt_pm, arms=ALL_ROWS, init=INIT) -> str:
+    """Table A2 (tab:jc1_class_auc; PI 2026-11-18: recall, not AUC): each JetClass class's recall, the fraction of its
+    test jets the network labels as that class, at 10^6 training jets (perclass_recall probe_jc1, ft_jc1_N1000000; the
+    points of the JetClass per-class figures): arms (the paper: the random partitions pooled, runs from _pooled) as
+    linear probes with the random network init, and fine-tuned with the network from scratch; a fine-tuned file not
+    yet pulled leaves its cells pending."""
+    scratch = sorted(m for m in (ft_doc or {}).get("models", {}) if m.startswith("scratch"))
+
+    def rows(doc: dict, extra: list) -> list:
         out = []
         for name, ms in [(_row(a, runs), runs[a]) for a in arms] + extra:
-            have = [m for m in ms if m in docs]
-            if have:
-                out.append(name + " & " + " & ".join(
-                    _cell([docs[m]["curves"][c]["auc"] for m in have], len(ms), fmt_pm, frac=True) for c, _ in JC1_AUC_COLS) + r" \\")
+            per = [p for m in ms if (p := _recall(doc, m))]
+            out.append(name + " & " + " & ".join(
+                _cell([p[c] for p in per], len(ms) or 3, fmt_pm, frac=True) for c, _ in JC1_AUC_COLS) + r" \\")
         return out
 
     head = [r"\begin{tabular}{l" + "c" * len(JC1_AUC_COLS) + "}", r"\toprule",
             " & " + " & ".join(t for _, t in JC1_AUC_COLS) + r" \\", r"\midrule"]
-    part = lambda t: [r"\multicolumn{" + str(1 + len(JC1_AUC_COLS)) + r"}{l}{\textit{" + t + r"}} \\"]   # noqa: E731
-    return "\n".join(head + rows(probe_docs, [(_row(init, runs), runs[init])])       # L1: linear probe first
+    return "\n".join(head + rows(probe_doc, [(_row(init, runs), runs[init])])       # L1: linear probe first
                      + [r"\bottomrule", r"\end{tabular}", "%SPLIT%"] + head
-                     + rows(ft_docs, [(SCRATCH_LABEL, scratch)]) + [r"\bottomrule", r"\end{tabular}", ""])
+                     + rows(ft_doc, [(SCRATCH_LABEL, scratch)]) + [r"\bottomrule", r"\end{tabular}", ""])
 
 
 # ------------------------------------------------------------------ the JetClass confusion percentages (supplement)
@@ -3306,26 +3415,22 @@ def per_class_csv(fits, runs, root) -> str:
 
 
 
-def per_class_auc(fits, per, runs, arm: str, mode: str) -> dict:
-    """{class: [AUC of the class against the rest, one a run of arm]} on JetClass-II, as the per-class figures read
-    them (gallery_perclass.SOURCES["jc2"]): the linear probe on one million class-balanced jets (_per_class), or the
-    network fine-tuned on as many (mode "ft", the per_class_auc of the fine-tuning read-out)."""
+def per_class_recall(docs: dict, runs, arm: str, mode: str) -> dict:
+    """{class: [recall of the class, one a run of arm]} on JetClass-II, as the per-class figures read them
+    (gallery_perclass.SOURCES["jc2"]): docs {"lp": perclass_recall probe_jc2, "ft": ft_jc2_N1000000}, the linear probe
+    on one million class-balanced jets or the network fine-tuned on as many."""
     out = collections.defaultdict(list)
     for m in runs[arm]:
-        if mode == "lp":
-            p = _per_class(fits, m)
-        else:
-            p = _ft(per, "jc2", m, FT_RATIO_N, "per_class_auc") if per.get("jc2") else None
-            p = None if p is None else {int(c): v for c, v in p.items() if v is not None}
-        for c, v in (p or {}).items():
+        for c, v in (_recall(docs.get(mode), m) or {}).items():
             out[c].append(v)
     return out
 
 
-def table_per_class(fits, per, runs, fmt_pm, root, native_tex) -> str:
-    """tab:perclass (supplement): per class of JetClass-II, in the order of the per-class figures' grouping (by the
-    17-class group), the AUC of the class against the rest for the label sets and the 17-class partitions (the random
-    partitions pooled, runs from _pooled), as a linear probe and fine-tuned: every point of the JetClass-II per-class figures.
+def table_per_class(docs: dict, runs, fmt_pm, root, native_tex) -> str:
+    """tab:perclass (supplement; PI 2026-11-18: recall, not AUC): per class of JetClass-II, in the order of the
+    per-class figures' grouping (by the 17-class group), the recall of the class for the label sets and the 17-class
+    partitions (the random partitions pooled, runs from _pooled), as a linear probe and fine-tuned (docs as
+    per_class_recall; a file not pulled leaves its block pending): every point of the JetClass-II per-class figures.
     Two turned longtables under one number, the label sets and then the 17-class partitions (ten columns of five
     decimals do not fit one turned page), each with its column names on every page and the two modes as blocks; each
     block's columns at their own precision."""
@@ -3348,7 +3453,7 @@ def table_per_class(fits, per, runs, fmt_pm, root, native_tex) -> str:
                 r"\caption{__CAPTION__}\label{tab:perclass}\\" if first else more, r"\toprule", *head, r"\midrule",
                 r"\endfirsthead", more, r"\toprule", *head, r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot"]
             first = False
-            vals = {a: per_class_auc(fits, per, runs, a, mode) for a in cols}
+            vals = {a: per_class_recall(docs, runs, a, mode) for a in cols}
             rows, last = [], None
             for r in classes:
                 c = int(r["jet_label"])
@@ -3356,7 +3461,7 @@ def table_per_class(fits, per, runs, fmt_pm, root, native_tex) -> str:
                     rows.append(r"\midrule")
                 last = r["R16_Q1"]
                 rows.append(native_tex(r["class_name"]) + " & " + " & ".join(
-                    _cell(vals[a][c], len(runs[a]), fmt_pm, frac=True) if vals[a].get(c) else "--" for a in cols) + r" \\")
+                    _cell(vals[a].get(c, []), len(runs[a]), fmt_pm, frac=True) for a in cols) + r" \\")
             out += [rf"\multicolumn{{{1 + len(cols)}}}{{@{{}}l}}{{\textit{{{HEADING[mode]}}}}} \\*"] + uniform_columns(
                 "\n".join(rows)).split("\n")
             out.append(r"\end{longtable}")
@@ -3642,24 +3747,72 @@ def partrepro(em, data: pathlib.Path, per, fmt_pm, missing: list, runs: dict | N
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
+# The one rule's rate sweep (pull_mlst_data.fixed_sweep, budget/FIXED_SWEEP; build_ft_budget_jobs fixed_sweep_cells): top
+# and quark/gluon at 1e4 jets, seed 1 of 188 classes and (PI 2026-11-15: the other end of the label-set range) of 17,
+# and from scratch. Pretrained, the rate with the largest summed best validation accuracy averaged over SWEEP_ARMS, among
+# the rates both ran; from scratch, each task's best (PI 2026-11-15/16, RUNS.csv ft-budget-fixed-sweep-17-raunav).
+FIXED_SWEEP = "fixed_sweep.json"
+SWEEP_INIT = {"l188-s1": "L188", "r16q1-s1": "R16_Q1"}
+SWEEP_ARMS = ("L188", "R16_Q1")
+SWEEP_TREES = (("leg_top", "top"), ("leg_qg", "quark/gluon"))
+DIVERGED = r"$^{\dagger}$"
+
+
+def _sweep_diverged(c: dict) -> bool:
+    """A NaN training loss, or a final training loss of a constant prediction (ln 2, chance on the balanced binary tasks)."""
+    return bool(c["nan_loss"]) or (c["final_train_loss"] is not None and c["final_train_loss"] >= 0.99 * math.log(2))
+
+
+def sweep_rates(doc: dict) -> tuple:
+    """({arm: {rate: {tree: (best validation accuracy, diverged)}}}, from scratch {rate: {tree: ...}}, {rate: the summed
+    accuracy averaged over SWEEP_ARMS} at the rates every arm ran on both tasks, {"pre": rate, tree: from-scratch rate})."""
+    pre, scr = collections.defaultdict(dict), collections.defaultdict(dict)
+    for c in doc["cells"].values():
+        v = (c["best_metric"], _sweep_diverged(c))
+        if c["init"] == BUDGET_SCRATCH:
+            scr[c["lr"]][c["tree"]] = v
+        else:
+            pre[SWEEP_INIT[c["init"]]].setdefault(c["lr"], {})[c["tree"]] = v
+    trees = [t for t, _ in SWEEP_TREES]
+    common = set.intersection(*({lr for lr, v in pre[a].items() if all(t in v for t in trees)} for a in SWEEP_ARMS))
+    if not common or any(sum(t in v for v in scr.values()) == 0 for t in trees):
+        raise SystemExit("FATAL: the rate sweep lacks a rate both label sets ran on both tasks, or a task from scratch")
+    mean = {lr: float(np.mean([sum(pre[a][lr][t][0] for t in trees) for a in SWEEP_ARMS])) for lr in common}
+    chosen = {"pre": max(mean, key=mean.get),
+              **{t: max((lr for lr in scr if t in scr[lr]), key=lambda lr, t=t: scr[lr][t][0]) for t in trees}}
+    return dict(pre), dict(scr), mean, chosen
+
+
 def table_lrsweep(doc: dict) -> str:
-    """A4: the learning-rate sweep at 10^4 top and quark/gluon jets: each rate's best validation
-    accuracy per task and their sum; a star on the rates chosen (mlst_v4.choose_rates), on the sum
-    for the pretrained weights and on each task's accuracy from scratch."""
-    pre, scr = V4.choose_rates(doc)
-    by = collections.defaultdict(dict)
-    for key, m in doc["cells"].items():
-        tree, leaf = key.split("/")[:2]
-        init, lr = leaf.rsplit("_lr", 1)
-        by[(SCRATCH_LABEL if init == "scratch" else LABEL["L188"], lr)][tree] = m["early_stop"]["best_metric"]
-    out = [r"\begin{tabular}{llccc}", r"\toprule", r" & learning rate & top & quark/gluon & sum \\", r"\midrule"]
+    """A4: the one rule's learning-rate sweep at 10^4 top and quark/gluon jets: each rate's best validation accuracy per
+    task and their sum, for 188 and 17 classes, their mean at the rates both ran, and from scratch; a star on the rates
+    chosen (sweep_rates: the mean's sum for the pretrained weights, each task's accuracy from scratch), a dagger on a run
+    whose training diverged (its best validation accuracy is from before)."""
+    pre, scr, mean, chosen = sweep_rates(doc)
     star = r"$^{\ast}$"
-    for (kind, lr), v in sorted(by.items(), key=lambda x: (x[0][0] == SCRATCH_LABEL, float(x[0][1]))):
-        vals = [v.get("leg_top"), v.get("leg_qg")]
-        cells = ["--" if x is None else f"{x:.4f}" + (star if kind == SCRATCH_LABEL and scr[t] == lr else "")
-                 for t, x in zip(("leg_top", "leg_qg"), vals)]       # single runs: said once in the caption
-        s = f"{sum(vals):.4f}" if None not in vals else "--"
-        out.append(f"{kind} & {_power(lr)} & " + " & ".join(cells) + f" & {s}" + (star if kind != SCRATCH_LABEL and lr == pre else "") + r" \\")
+    trees = [t for t, _ in SWEEP_TREES]
+    val = lambda x, mark="": "--" if x is None else f"{x[0]:.4f}" + (DIVERGED if x[1] else "") + mark    # noqa: E731
+
+    def line(name, lr, cells, total, mark=""):
+        return f"{name} & {_power(lr)} & " + " & ".join(cells) + f" & {total}{mark}" + r" \\"
+    out = [r"\begin{tabular}{llccc}", r"\toprule",
+           r" & learning rate & " + " & ".join(h for _, h in SWEEP_TREES) + r" & sum \\", r"\midrule"]
+    for arm in SWEEP_ARMS:
+        for lr in sorted(pre[arm], key=float):
+            v = [pre[arm][lr].get(t) for t in trees]
+            out.append(line(LABEL[arm], lr, [val(x) for x in v],
+                            f"{sum(x[0] for x in v):.4f}" if None not in v else "--"))
+    out.append(r"\midrule")
+    for lr in sorted(mean, key=float):
+        v = [(float(np.mean([pre[a][lr][t][0] for a in SWEEP_ARMS])), any(pre[a][lr][t][1] for a in SWEEP_ARMS))
+             for t in trees]
+        out.append(line(f"mean of {LABEL['L188']} and {LABEL['R16_Q1']}", lr, [val(x) for x in v], f"{mean[lr]:.4f}",
+                        star if lr == chosen["pre"] else ""))
+    out.append(r"\midrule")
+    for lr in sorted(scr, key=float):
+        v = [scr[lr].get(t) for t in trees]
+        out.append(line(SCRATCH_LABEL, lr, [val(x, star if chosen[t] == lr else "") for t, x in zip(trees, v)],
+                        f"{sum(x[0] for x in v):.4f}" if None not in v else "--"))
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -4575,11 +4728,6 @@ RATIO_COL = ("The ratio column is $\\rho$ of equation~(\\ref{eq:ratio}), $(1-\\m
 AUC_DEF = "AUC: area under the curve of signal efficiency against background efficiency."
 KIN_NOTE = ("The \\Kfull-class model with kinematic inputs only, a diagnostic of the missing inputs, has one run and "
             "no input missing, and is evaluated on top tagging only.")
-# the pairs caption's note where a 188-class run separates a pair's test jets completely (tab:pairs '--')
-ZERO_NOTE = (" A dash in a ratio column marks a seed whose \\Kfull-class run has $1-\\mathrm{AUC} < 10^{-4}$, "
-             "a near-complete separation.")
-
-
 # the reference row of the frozen-probe tables; the differences are the verified ones (PI 2026-11-08): the stream and its
 # loader (pretrain_v2.py: a fresh seeded stream every epoch), the initialization, the checkpoint rule (best_window_epoch)
 SOPHON_NOTE = ("Below the rule, the released Sophon checkpoint~\\cite{sophon}, probed in the same way, lies outside the "
@@ -4589,13 +4737,6 @@ SOPHON_NOTE = ("Below the rule, the released Sophon checkpoint~\\cite{sophon}, p
 SOPHON_SHORT = "Below the rule, the released Sophon checkpoint, outside the controlled comparison (table~\\ref{tab:probes})."
 SOPHON_ZERO = (" Its top and quark/gluon probes set the missing inputs to zero, where our rows use the substitution "
                "chosen on validation.")
-
-
-def zero_note(fits, runs, ft=None) -> str:
-    """The tab:pairs caption's ZERO_NOTE when a 188-class run, probed or fine-tuned (ft, load_pairs_ft), separates
-    some pair's test jets completely."""
-    get = lambda m, k: ((ft or {}).get(m, {}).get(k) or {}).get("auc")      # noqa: E731
-    return ZERO_NOTE if any(separated(fits, runs, k) or separated(fits, runs, k, get) for k, *_ in PAIRS) else ""
 
 
 CAPTIONS = {
@@ -4638,7 +4779,7 @@ CAPTIONS = {
               "scored on the pair's jets among \\LpNTestJcii{} JetClass-II test jets of the mixed test sample by the "
               "summed output scores of the first side over those of both sides. The two modes are scored on different "
               "test jets, so they are compared within a mode only. "
-              "The AUC. "
+              "$R_{50}$, the inverse background efficiency at 50\\% signal efficiency with the first side as signal. "
               "No pretraining: fine-tuned from scratch, three seeds, no probe. $^{\\dagger}$: the label set merges the two "
               "sides into one class; $^{\\ddagger}$: it merges the first side with part of the second; $^{\\parallel}$: some of the five random partitions merge the two sides. " + SPREAD_POOLED
               + " The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label "
@@ -4646,7 +4787,7 @@ CAPTIONS = {
               "with its BatchNorm statistics recomputed, has no label set, and no fine-tuning. The $X\\to ee$ vs $\\mu\\mu$ probe is trained on the "
               "jets of the two classes in the class-balanced training set (\\MlstPairEemmNTrain{} jets) and scored on every "
               "JetClass-II test jet of the two classes (\\MlstPairEemmNTestPerSide{} per side). A mark applies to the "
-              "configuration.__ZERO__"),
+              "configuration."),
     "pairs_full": ("tab:pairsfull", "Pairs of JetClass-II classes separated by networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and by the controls, every random partition: "
               "a binary linear probe on the frozen features, trained on up to \\JcBalPairTrainPerSide{} jets of each "
               "side from held-out JetClass-II files and scored on up to \\JcBalPairTestPerSide{} of each side from the "
@@ -4655,16 +4796,15 @@ CAPTIONS = {
               "scored on the pair's jets among \\LpNTestJcii{} JetClass-II test jets of the mixed test sample by the "
               "summed output scores of the first side over those of both sides. The two modes are scored on different "
               "test jets, so they are compared within a mode only. "
-              "The AUC and the ratio $\\rho$ "
-              "of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to the \\Kfull-class run of the same seed in the same mode. "
+              "$R_{50}$, the inverse background efficiency at 50\\% signal efficiency with the first side as signal. "
               "No pretraining: fine-tuned from scratch, three seeds, no probe. $^{\\dagger}$: the label set merges the two "
               "sides into one class; $^{\\ddagger}$: it merges the first side with part of the second. " + SPREAD
               + " The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label "
               "set but the \\Kfull-class one merges all QCD classes. The random network without pretraining, as initialized and "
-              "with its BatchNorm statistics recomputed, has no label set, no $\\rho$ and no fine-tuning. The $X\\to ee$ vs $\\mu\\mu$ probe is trained on the "
+              "with its BatchNorm statistics recomputed, has no label set and no fine-tuning. The $X\\to ee$ vs $\\mu\\mu$ probe is trained on the "
               "jets of the two classes in the class-balanced training set (\\MlstPairEemmNTrain{} jets) and scored on every "
               "JetClass-II test jet of the two classes (\\MlstPairEemmNTestPerSide{} per side). A mark applies to the "
-              "configuration.__ZERO__"),
+              "configuration."),
     "mlp": ("tab:mlp", "Nonlinear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained and scored "
             "on each task (a multilayer perceptron with one hidden layer of \\LpMlpHidden{} units, "
             "\\LpMlpSeedsWord{} seeds averaged) at the largest training set: class-balanced JetClass-II AUC (all, resonant and QCD "
@@ -4718,10 +4858,10 @@ CAPTIONS = {
                 "and on the class-balanced test set: AUC averaged over the classes and the ratio $\\rho$ of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to "
                 "the \\Kfull-class run of the same seed. " + SPREAD),
     "jc1_class_auc": ("tab:jc1_class_auc", "Networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and the "
-                      "controls, trained on one million JetClass jets: the area under the curve of each JetClass class "
-                      "against the other nine. Upper part: fine-tuned, beside the network trained from scratch. Lower "
-                      "part: linear probes on the frozen features, beside the random network without pretraining whose "
-                      "BatchNorm statistics are recomputed. " + SPREAD + " From scratch: three training seeds."),
+                      "controls, trained on one million JetClass jets: the recall of each JetClass class, the fraction "
+                      "of its test jets the network assigns to it. Upper part: linear probes on the frozen features, "
+                      "beside the random network without pretraining. Lower part: fine-tuned, beside the network "
+                      "trained from scratch. " + SPREAD + " From scratch: three training seeds."),
     "fill_main": ("tab:fill_main", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with the inputs a "
                   "data set lacks set to zero, to the training mean or to random draws of a real particle, trained at the "
                   "largest training set. Upper part: relative "
@@ -4853,8 +4993,9 @@ CAPTIONS = {
                       "$H\\to\\ell\\nu qq'$, 99.5\\% for $t\\to b\\ell\\nu$), the "
                       "fewest over the runs of each row: the counts behind the rejections of "
                       "tables~\\ref{tab:jetclassrej} and~\\ref{tab:jetclassall}."),
-    "per_class": ("tab:perclass", "The AUC of each JetClass-II class against the rest, as a linear probe on the frozen "
-                  "features and fine-tuned, for every network of the per-class figures."),
+    "per_class": ("tab:perclass", "The recall of each JetClass-II class, the fraction of its test jets the network "
+                  "assigns to it, as a linear probe on the frozen features and fine-tuned, for every network of the "
+                  "per-class figures."),
     "per_run": ("tab:perrun", "Each run of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, and of the network trained from scratch, at "
                 "the largest training set of each task: linear probe on the frozen features and fine-tuning. Linear probes on top and quark/gluon with the missing inputs substituted as chosen on "
                 "validation (\\LpSubstitutionTop{} for top, \\LpSubstitutionQg{} for quark/gluon); fine-tuning with "
@@ -4868,10 +5009,11 @@ CAPTIONS = {
                    "groups that hold classes of more than one prong count. A dagger marks a ratio where fewer than "
                    "$\\nmin$ QCD jets pass in the partition's run or in that \\Kfull-class run."),
     "lrsweep": ("tab:lrsweep", "Learning-rate choice for training Sophon's network, pretrained on JetClass-II with "
-                "\\Kfull{} classes (seed 1) or trained from scratch, on $10^{4}$ top and quark/gluon jets: the best validation "
-                "accuracy of each rate on top and quark/gluon and their sum. Pretrained: the rate of the pretrained layers, with the new "
-                "output head at 50 times that rate, at most $5\\times10^{-3}$. $^{\\ast}$: the rate chosen, on the sum for the pretrained "
-                "weights and on each task's accuracy for the networks trained from scratch; the test jets play no part."),
+                "\\Kfull{} or \\Kcoarse{} classes (seed 1) or trained from scratch, on $10^{4}$ top and quark/gluon jets: the "
+                "best validation accuracy of each rate on top and quark/gluon and their sum. Pretrained: the rate of the pretrained "
+                "layers, with the new output head at 50 times that rate, at most $5\\times10^{-3}$. $^{\\ast}$: the rate chosen, on "
+                "the sum averaged over \\Kfull{} and \\Kcoarse{} classes for the pretrained weights and on each task's accuracy "
+                "for the networks trained from scratch; the test jets play no part."),
     "inputs": ("tab:inputs", "The per-particle inputs: which the top and the quark/gluon data provide ($\\bullet$), "
                "and where a zero lies after the network's input normalization, in SDs of the training particles. The "
                "mean substitution puts the running mean of the input normalization in every missing slot; the "
@@ -4933,11 +5075,11 @@ CAPTIONS = {
 # (caption key, table file, wide, caption fill) of the tables written as placeholders until their data exist
 PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes_n", True, None),
                 ("probes_n_full", "mlst_probes_n_full", True, None), ("ft_full", "mlst_ft_full", True, None),
-                ("pairs", "mlst_pairs", True, {"__ZERO__": ""}), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
+                ("pairs", "mlst_pairs", True, None), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
                 ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None), ("fill_main", "mlst_fill_main", True, None),
                 ("jc1_class_auc", "mlst_jc1_class_auc", True, None),
-                ("mass", "mlst_mass", False, {"__PROBE_CENTRE__": ""}), ("mass_detail", "mlst_mass_detail", True, {"__BLANK__": ""}),
-                ("sculpt", "mlst_sculpt", True, {"__SCULPT_BINS__": r"\pending{bins}", "__SCULPT_FLAV__": "", "__SCULPT_SIG__": "", "__SCULPT_CUT__": "", "__SCULPT_RUNS__": ""}), ("sculpt_boot", "mlst_sculpt_boot", False, {"__REPLICAS__": r"\pending{n}"}), ("ft", "mlst_ft", True, None),
+                ("mass", "mlst_mass", False, {"__PROBE_CENTRE__": ""}), ("mass_detail", "mlst_mass_detail", True, {"__BLANK__": "", "__MASS_RUNS__": ""}),
+                ("sculpt", "mlst_sculpt", True, {"__SCULPT_BINS__": r"\pending{bins}", "__SCULPT_FLAV__": "", "__SCULPT_SIG__": "", "__SCULPT_CUT__": "", "__SCULPT_RUNS__": ""}), ("sculpt_boot", "mlst_sculpt_boot", False, {"__REPLICAS__": r"\pending{n}", "__SCULPT_BOOT_RAND__": ""}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, {"__JC2COMP__": "class-balanced"}),
                 ("bench_top", "mlst_bench_top", True, None), ("bench_qg", "mlst_bench_qg", True, None),
                 ("xbx", "mlst_xbx", False, None), ("xbx_rej", "mlst_xbx_rej", True, None), ("xbx_node", "mlst_xbx_node", False, None),
@@ -4953,7 +5095,7 @@ PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes
                 ("labelsets_full", "mlst_labelsets_full", True, None),
                 ("jc1_class_auc_full", "mlst_jc1_class_auc_full", True, None),
                 ("sculpt_full", "mlst_sculpt_full", True, {"__SCULPT_RUNS__": ""}),
-                ("probes_full", "mlst_probes_full", True, None), ("pairs_full", "mlst_pairs_full", True, {"__ZERO__": ""}),
+                ("probes_full", "mlst_probes_full", True, None), ("pairs_full", "mlst_pairs_full", True, None),
                 ("coarse_full", "mlst_coarse_full", True, None),
                 ("qcdhf_full", "mlst_qcdhf_full", False, {"__QCDHF_C__": r"\pending{n}", "__QCDHF_LIGHT__": r"\pending{n}"}),
                 ("fill_full", "mlst_fill_full", True, None),
@@ -5102,21 +5244,26 @@ def _runs(*kinds) -> str:
     return out
 
 
+# the pair tables' lower limit (table_pairs' rule, PI 2026-11-18)
+PAIR_GT_NOTE = (" $>$~marks a lower limit where fewer than \\MlstMinBkgPass{} background jets pass at 50\\% signal "
+                "efficiency in a run, the number of background jets over \\MlstMinBkgPass{}, the smallest over the runs.")
 # a mark that only some tables carry: its sentence is added when a cell of the printed table has it
 KEY_MARKS = {
     "probes": (("^{*}", " $^{*}$~marks a probe that did not converge."),),
     "qcdhf": ((r"\dagger", " $^\\dagger$~marks a value for which fewer than \\MlstMinBkgPass{} jets pass in a run."),),
     "jetclass_rej": ((r"\dagger", " $^\\dagger$~marks a value with fewer than \\MlstMinBkgPass{} QCD jets passing in a "
                                   "run."),),
-    "lrsweep": ((r"^{\ast}", " $^{\\ast}$~marks the rate chosen, by the sum for fine-tuning and by each task's accuracy "
-                             "from scratch."),),
+    "lrsweep": ((r"^{\ast}", " $^{\\ast}$~marks the rate chosen, by the sum averaged over the two label sets for "
+                             "fine-tuning and by each task's accuracy from scratch."),
+                (r"\dagger", " $^{\\dagger}$~marks a run whose training diverged, to a NaN training loss or a constant "
+                              "prediction; its best validation accuracy is from before."),),
     "pairs": ((r"\dagger", " $^{\\dagger}$~marks a pair the label set merges into one class."),
               (r"\ddagger", " $^{\\ddagger}$~marks a pair the label set merges in part."),
-              (r"\parallel", " $^{\\parallel}$~marks a pair some random partitions merge.")),
+              (r"\parallel", " $^{\\parallel}$~marks a pair some random partitions merge."), (PAIR_GT, PAIR_GT_NOTE)),
     # the supplement's full copies (PI caption brief: marks explained in sentences, no colons)
     "pairs_full": ((r"\dagger", " $^{\\dagger}$~marks a pair that the label set merges into one class."),
                    (r"\ddagger", " $^{\\ddagger}$~marks a pair where the label set merges the first class with "
-                                  "part of the second.")),
+                                  "part of the second."), (PAIR_GT, PAIR_GT_NOTE)),
     "qcdhf_full": ((r"\dagger", " $^\\dagger$~marks a value for which fewer than \\MlstMinBkgPass{} jets pass in a run."),),
     "probes_full": (("^{*}", " $^{*}$~marks a probe that did not converge."),),
     "probes_n_full": (("^{*}", " $^{*}$~marks a probe that did not converge."),),
@@ -5159,8 +5306,8 @@ CAPTION_SHORT = {
                 "named after ``minus'', each run paired with the run of the same pretraining seed and the "
                 "differences averaged over the runs." + PART_DEF
                 + _runs("set", "flav", "mass", "rand", "scratch"),
-    "per_class": "The area under the receiver operating characteristic curve (AUC) of each JetClass-II class "
-                 "against the other classes for " + PNETS + ", the two networks with an added mass output "
+    "per_class": "The recall of each JetClass-II class, the fraction of its test jets the network assigns to it, "
+                 "for " + PNETS + ", the two networks with an added mass output "
                  "(\\Kres{} classes + mass, \\Kcoarse{} classes + mass) and the 17-class partitions, as linear probes on the frozen features trained on one million "
                  "class-balanced JetClass-II jets and fine-tuned on as many. The label sets come first and the "
                  "17-class partitions second, each with a linear-probe block and a fine-tuned block, named in every "
@@ -5180,13 +5327,12 @@ CAPTION_SHORT = {
                    "validation. The network pretrained with \\Kfull{} classes on kinematic inputs only has one run, "
                    "on top tagging only, and the released Sophon checkpoint, set apart by a rule, is outside the "
                    "controlled comparison." + BN_DEF + PART_DEF + _runs("set", "flav", "mass", "rand1"),
-    "pairs": ("The area under the receiver operating characteristic curve (AUC) separating pairs of JetClass-II classes, "
+    "pairs": ("The rejection at 50\\% signal efficiency, $R_{50}$, separating pairs of JetClass-II classes, "
              "for linear probes and networks fine-tuned on a million class-balanced jets, the modes on different test "
              "jets. BatchNorm recomputed means batch-normalization statistics re-estimated on \\DesignBnJets{} training jets."
              + _runs("set", "flav", "mass", "rand")),
-    "pairs_full": "Every row of table~\\ref{tab:pairs}, with each random partition, beside " + RHO_SHORT
-                  + " in the same mode, which the reference rows lack. An AUC that would round to 1.0000 is printed "
-                  "as $>0.9999$." + BN_DEF + PART_DEF + _runs("set", "flav", "mass", "rand1") + "__ZERO__",
+    "pairs_full": ("Every row of table~\\ref{tab:pairs}, with each random partition." + BN_DEF + PART_DEF
+                   + _runs("set", "flav", "mass", "rand1")),
     "mlp": "Multilayer-perceptron probes, with one hidden layer of \\LpMlpHidden{} units, on the frozen features of "
            "every pretrained network and of the random networks, at each task's largest training set, scored on the AUC "
            "for JetClass-II and JetClass, on the AUC and $R_{30}$ for top and quark/gluon tagging, and on the AUC of "
@@ -5225,13 +5371,13 @@ CAPTION_SHORT = {
           "on its mixed test sample, with the batch-normalization (BatchNorm) statistics as accumulated in pretraining "
           "and as recomputed on \\DesignBnJets{} training jets. The columns give the AUC and " + RHO_SHORT + ". " + AUC_OVR + PART_DEF
           + _runs("set", "flav", "mass"),
-    "jc1_class_auc": ("The area under the receiver operating characteristic curve (AUC) of each JetClass class against "
-                     "the other nine, for linear probes and fine-tuned networks trained on one million JetClass jets, "
+    "jc1_class_auc": ("The recall of each JetClass class, the fraction of its test jets the network assigns to it, "
+                     "for linear probes and fine-tuned networks trained on one million JetClass jets, "
                      "beside the random network (linear probes) and training from scratch (fine-tuned). The 17-class partitions are in the supplementary material."
                      + _runs("set", "mass")),
     # the supplement's copy with the 17-class partitions (the network rule, PI 2026-11-14)
-    "jc1_class_auc_full": ("Every row of table~\\ref{tab:jc1_class_auc} and the 17-class partitions, the area under the "
-                           "receiver operating characteristic curve (AUC) of each JetClass class against the other nine, "
+    "jc1_class_auc_full": ("Every row of table~\\ref{tab:jc1_class_auc} and the 17-class partitions, the recall of "
+                           "each JetClass class, the fraction of its test jets the network assigns to it, "
                            "for linear probes and networks fine-tuned on one million JetClass jets." + PART_DEF
                            + _runs("set", "flav", "mass", "rand")),
     "fill": ("$R_{30}$, the inverse background efficiency at 30\\% signal efficiency, of the linear probes of "
@@ -5257,20 +5403,21 @@ CAPTION_SHORT = {
             "between their label sets at the largest training set, as the SD of the logarithm of "
             "the ratio over the pretraining runs / that from the finite test sample. JetClass-II: the ratio of "
             "$1-\\mathrm{AUC}$; top and quark/gluon: the ratio of $R_{30}$.",
-    "lrsweep": "Best validation accuracy at each learning rate tried for fine-tuning the network pretrained with "
-               "\\Kfull{} classes and for training from scratch, on $10^{4}$ top-tagging jets and on $10^{4}$ "
-               "quark/gluon jets, with the sum of the two in the last column. For fine-tuning, the rate is that of "
-               "the pretrained layers, and the new output head trains at 50 times that rate, at most "
-               "$5\\times10^{-3}$, so at $5\\times10^{-3}$ at every rate tried. The rate chosen for \\Kfull{} classes "
-               "is used for every pretrained network below the full training sets. The two grids differ because "
-               "training from scratch has no pretrained layers to keep, and neither was extended past its edge. Every "
-               "value is from a single run.",
+    "lrsweep": "Best validation accuracy at each learning rate tried for fine-tuning the networks pretrained with "
+               "\\Kfull{} and \\Kcoarse{} classes and for training from scratch, on $10^{4}$ top-tagging jets and on "
+               "$10^{4}$ quark/gluon jets, with the sum of the two in the last column. For fine-tuning, the rate is that "
+               "of the pretrained layers, and the new output head trains at 50 times that rate, at most "
+               "$5\\times10^{-3}$, so at $5\\times10^{-3}$ at every rate tried. The grid for \\Kfull{} classes was "
+               "extended past its upper edge, where it peaked, and the upper rates were tried with \\Kcoarse{} classes; "
+               "the rate with the largest sum averaged over the two is used for every pretrained network below the full "
+               "top and quark/gluon training sets. Training from scratch on JetClass and JetClass-II uses $10^{-3}$, the "
+               "Particle Transformer's rate, which the sweep does not cover. Every value is from a single run.",
     "mass_detail": "Jet-mass resolution and median response on JetClass-II in detail, defined as in "
                    "table~\\ref{tab:mass}. In the upper part a cell over all jets is empty where "
                    "table~\\ref{tab:mass} holds it. The lower parts give the bins of jet $p_{\\mathrm{T}}$ and "
                    "generator-level soft-drop mass of " + _figures("F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge")
                    + ", the mass output over all, resonant and QCD jets and the two regression probes over all jets, and "
-                   "__BLANK__ The soft-drop mass has no run-to-run spread." + _runs("set", "mass", "init"),
+                   "__BLANK__ The soft-drop mass has no run-to-run spread.__MASS_RUNS__",
     "sculpt": ("Jensen--Shannon distance (base 2) between the soft-drop mass distributions of all QCD "
               "test jets and those passing a cut on one minus the summed QCD output, of networks used directly (first "
               "part) and fine-tuned (second part). The cut keeps a fraction $\\epsB$ of QCD "
@@ -5285,7 +5432,7 @@ CAPTION_SHORT = {
                    "network's standard deviation over its runs, the bootstrap column that of $\\Delta$ over __REPLICAS__ "
                    "replicas of the test jets, and $\\sigma$ adds the three in quadrature, a difference counting where "
                    "$|\\Delta|/\\sigma$ exceeds three. A label set has \\MlstNRunsWord{} pretraining runs, a mass "
-                   "network and a flavor-boundary partition \\MlstMassNRunsWord{}."),
+                   "network and a flavor-boundary partition \\MlstMassNRunsWord{}__SCULPT_BOOT_RAND__."),
     "ft": ("The fine-tuned networks of table~\\ref{tab:summary} and from scratch at the smaller training sets, in accuracy "
           "on class-balanced JetClass-II and JetClass and $R_{30}$, the inverse background efficiency at 30\\% signal "
           "efficiency, on top and quark/gluon tagging, Pythia and Herwig, with the missing top and quark/gluon inputs at "
@@ -5847,7 +5994,7 @@ def _bold(key: str, tab: str, spec: dict | None = None) -> str:
     wrapped here). A block is the rows under one heading across the table (PARTITIONS is no such heading). Per
     block and column, the best value and every value with |mean - best| <= BOLD_SIGMA * sqrt(SD^2 + SD_best^2); a
     single run has SD 0. No bold in a block's column with fewer than two values, or with a value printed as a bound
-    (NEAR_ONE), whose best is not a printed value. spec: the settings in place of BOLD[key] (tab:masseffect, whose
+    (NEAR_ONE, PAIR_GT), whose best is not a printed value. spec: the settings in place of BOLD[key] (tab:masseffect, whose
     directions follow its rows)."""
     spec = spec or BOLD[key]
     lines = tab.split("\n")
@@ -5869,7 +6016,7 @@ def _bold(key: str, tab: str, spec: dict | None = None) -> str:
             toks = TOKEN.findall(c)
             if col in spec.get("skip", ()):
                 pass
-            elif NEAR_ONE in c:
+            elif NEAR_ONE in c or PAIR_GT in c:
                 void.add((block, col))
             elif len(toks) == 1 and toks[0][0] in "ps":
                 v = [float(x) for x in toks[0][1].split()]
@@ -6291,7 +6438,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     runs_s = {**runs, SOPHON: [SOPHON_MODEL]}
     pairs_ft = load_pairs_ft(data)
     if not pairs_ft:
-        missing.append(f"fine-tuned class pairs -- experiments/FIGS/data/v2/{PAIRS_FT}/")
+        missing.append(f"fine-tuned class pairs -- experiments/FIGS/data/v2/{PAIRS_FT}/ (or its rerun {PAIRS_FT}_fixed/)")
     # the paper's tables pool the five random partitions into one row and print no ratio column; the supplement's
     # *_full copies keep both (PI 2026-11-12)
     pooled_s = _pooled(runs_s)
@@ -6310,13 +6457,11 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
            "tables/mlst_probes_n_full.tex": _longtable("probes_n_full", table_probes_n(
                fits, runs, TAB, ALL_ROWS + (INIT,), fill, chosen, kin=True)),
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, _pooled(runs), TAB, status,
-                                                                _paper_rows(rows_init),
-                                                                pairs_ft, rho=False), True,
-                                           fill={"__ZERO__": ""}, label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK),
+                                                                _paper_rows(rows_init), pairs_ft), True,
+                                           label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK),
            "tables/mlst_pairs_full.tex": _float("pairs_full", table_pairs(fits, runs, TAB, status,
                                                                           rows_init, pairs_ft),
-                                                True, fill={"__ZERO__": zero_note(fits, runs, pairs_ft)},
-                                                label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK, pad=True),
+                                                True, label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK, pad=True),
            "tables/mlst_balance.tex": _float("balance", table_balance(fits3, fits_v4, runs, TAB, ALL_ROWS + (INIT_BN,)))}
     comparisons(em, fits, runs, status, index, fmt_pm)
     eemm_macros(em, fits, runs, index, fmt_pm, fmt_int, status)
@@ -6348,12 +6493,21 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     mlp_nat = load_mlp_natural(data)
     per_class_macros(em, fits, runs, root, index, fmt_pm, native_tex, mlp_nat)
     out["data_release/jetclass2_per_class.csv"] = per_class_csv(fits, runs, root)
-    jc1_ft_ovr, jc1_probe_ovr = V4.load_family(data, "jc1_ft_ovr"), _load(data / V4.ROC_DIR / "jc1_probe_ovr")
-    if jc1_ft_ovr and jc1_probe_ovr:
-        out["tables/mlst_jc1_class_auc.tex"] = _float("jc1_class_auc", table_jc1_class_auc(
-            jc1_ft_ovr, jc1_probe_ovr, _pooled(runs), TAB, SETS), True)
-        out["tables/mlst_jc1_class_auc_full.tex"] = _float("jc1_class_auc_full", table_jc1_class_auc(
-            jc1_ft_ovr, jc1_probe_ovr, _pooled(runs), TAB, _paper_rows(ALL_ROWS)), True)
+    # per-class recall (PI 2026-11-18): Table A2 and its supplement copy on JetClass, tab:perclass on JetClass-II; the
+    # linear probes required, the fine-tuned blocks pending until their file is pulled
+    rec = _load(data / RECALL_DIR)
+    ft_rec = {t: rec.get(f"ft_{t}_N{FT_RATIO_N}", {}) for t in ("jc1", "jc2")}
+    if rec.get("probe_jc1"):
+        out["tables/mlst_jc1_class_auc.tex"] = _float("jc1_class_auc", table_jc1_class_recall(
+            ft_rec["jc1"], rec["probe_jc1"], _pooled(runs), TAB, SETS), True)
+        out["tables/mlst_jc1_class_auc_full.tex"] = _float("jc1_class_auc_full", table_jc1_class_recall(
+            ft_rec["jc1"], rec["probe_jc1"], _pooled(runs), TAB, _paper_rows(ALL_ROWS)), True)
+    if rec.get("probe_jc2"):
+        # every point of the JetClass-II per-class figures (PI 2026-11-13: restored, supplement)
+        out["tables/mlst_per_class.tex"] = _longtable("per_class", table_per_class(
+            {"lp": rec["probe_jc2"], "ft": ft_rec["jc2"]}, _pooled(runs), TAB, root, native_tex))
+    missing += [f"per-class recall -- experiments/FIGS/data/v2/{RECALL_DIR}/{k}.json" for k in
+                ("probe_jc1", "probe_jc2", f"ft_jc1_N{FT_RATIO_N}", f"ft_jc2_N{FT_RATIO_N}") if not rec.get(k)]
 
     conf, conf_s = _load(data / "confusion_jc1"), _load(data / "confusion_jc1_fulldecay")
     if conf and conf_s:
@@ -6415,7 +6569,9 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         fine = _load(data / V4.pick(data, "head/atlas_res_fine")) or atlas
         out["tables/mlst_mass_detail.tex"] = _float("mass_detail", md := table_mass_detail(fine, runs, TAB), True, fill={"__BLANK__": (
             r"bins with fewer than \MlstMassMinJets{} jets are blank." if " & --" in md.split("%SPLIT%", 1)[-1]
-            else r"every bin holds at least \MlstMassMinJets{} jets.")})
+            else r"every bin holds at least \MlstMassMinJets{} jets."),
+            "__MASS_RUNS__": (PART_DEF + _runs("set", "mass", "flav", "rand", "init")) if mass_has_parts(fine, runs)
+            else _runs("set", "mass", "init")})
         mass_macros(em, atlas, runs, index, fmt_pm)
     else:
         missing.append("ATLAS mass resolution -- experiments/FIGS/data/v2/head/atlas_res/")
@@ -6442,7 +6598,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                 else f"{len(e) - 1} bins from {e[0]:g} to {e[-1]:g}~GeV")
         # round-1 fix 2026-11-13: a second part for the networks fine-tuned on JetClass-II (head/sculpting_ft, the
         # fine-tuned sculpting figures' files), every network and from scratch, so that those curves have a home
-        sft = _load(data / "head" / "sculpting_ft")
+        sft = _load(data / SCULPT_FT)
         sft = {k.removesuffix("_sculpting"): v for k, v in sft.items()}
         runs_ft = {**_pooled(runs), SCRATCH: sorted(m for m in sft if m.startswith("scratch-s"))}
         ft_part = ("%SPLIT%" + table_sculpt(sft, runs_ft, TAB, SETS + (SCRATCH,))) if sft else ""
@@ -6459,13 +6615,16 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm)
     else:
         missing.append("mass sculpting -- experiments/FIGS/data/v2/head/*_sculpting.json")
-    boot_file = data / SCULPT_BOOT_L3
+    boot_file = data / (SCULPT_BOOT_L3_RERUN if (data / SCULPT_BOOT_L3_RERUN).exists() else SCULPT_BOOT_L3)
     if boot_file.exists():
         sb = json.loads(boot_file.read_text())
         out["tables/mlst_sculpt_boot.tex"] = _float("sculpt_boot", table_sculpt_boot(sb, runs, sculpt),
-                                                    fill={"__REPLICAS__": fmt_int(sb["replicas"])}, whole="turned", colsep_pt=6)
+                                                    fill={"__REPLICAS__": fmt_int(sb["replicas"]), "__SCULPT_BOOT_RAND__": (
+                                                        ", and the five random partitions, one run each, form one side"
+                                                        if any(d["configuration"] == "rand2p" for d in sb["differences"].values())
+                                                        else "")}, whole="turned", colsep_pt=6)
     else:
-        missing.append(f"sculpting bootstrap -- experiments/FIGS/data/v2/{SCULPT_BOOT_L3}")
+        missing.append(f"sculpting bootstrap -- experiments/FIGS/data/v2/{SCULPT_BOOT_L3_RERUN}")
     composition_macros(em, data, root, missing)
     size_macros(em, fits, fmt_int, index)
     method_macros(em, root, words)
@@ -6496,9 +6655,6 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             "ft", "ft", lambda t, ds, met, a: size_ft(per, _pooled(runs), t, met, None if a == SCRATCH else a),
             (SCRATCH_LABEL, SCRATCH), {k: n for k, n, *_ in SUMMARY_PANELS}, rows=SETS), True, whole="upright")
         out["tables/mlst_ft_full.tex"] = _longtable("ft_full", table_ft(per, runs, TAB, ALL_ROWS))
-        # every point of the JetClass-II per-class figures (PI 2026-11-13: restored, supplement)
-        out["tables/mlst_per_class.tex"] = _longtable("per_class", table_per_class(fits, per, _pooled(runs), TAB, root,
-                                                                                   native_tex))
         body, fewest = table_ft_rej(per, runs, TAB, ALL_ROWS)
         out["tables/mlst_ft_rej.tex"] = _float("ft_rej", body, True,
                                                fill={"__FEWEST__": fmt_int(fewest) if fewest else "--"})
@@ -6534,16 +6690,17 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                        + ", ".join(k for k, v in perf.items() if not v))
     XR, xfits = xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int)
     if tag is not None and atlas and xfits and sculpt:
-        rows = masseffect_rows(atlas, fits_s, fill, chosen, per, mlp, XR, xfits, sculpt, _load(data / "head" / "sculpting_ft"),
-                               runs)
+        rows = masseffect_rows(atlas, fits_s, fill, chosen, per, mlp, XR, xfits, sculpt, _load(data / SCULPT_FT), runs)
         out["tables/mlst_masseffect.tex"] = _float("masseffect", table_masseffect(rows, runs, TAB), True, pages=True,
                                                    whole="turned", colsep_pt=6, notes=[MASSEFFECT_NOTE])
     t = partrepro(em, data, per if tag else {}, fmt_pm, missing, runs={**runs, "__bench__": MAIN})
     if t:
         out["tables/mlst_partrepro.tex"] = _float("partrepro", t)
-    sweep = data / "budget" / "lrsweep_metrics.json"
+    sweep = data / "budget" / FIXED_SWEEP
     if sweep.exists():
         out["tables/mlst_lrsweep.tex"] = _float("lrsweep", table_lrsweep(json.loads(sweep.read_text())))
+    else:
+        missing.append(f"the one rule's rate sweep -- experiments/FIGS/data/v2/budget/{FIXED_SWEEP}")
     offsets = data / "head" / "input_bn_offsets.json"
     out["tables/mlst_inputs.tex"] = _float("inputs", table_inputs(root, json.loads(offsets.read_text())["offsets"]
                                                                   if offsets.exists() else None), True)

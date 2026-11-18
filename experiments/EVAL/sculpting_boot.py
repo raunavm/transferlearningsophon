@@ -30,6 +30,9 @@ Beside them, "l3" (decision L3, 2026-11-13): the sides unpaired over all their r
 of the two means, sigma^2 = SD^2 of the configuration's runs + SD^2 of the reference's + boot_sd^2, boot_sd the SD
 over the replicas of that replica's difference of the two means; pass = |delta| > 3 sigma (null sigma, no pass, for a
 side with one run).
+POOLED (PI 2026-11-14/15: tab:sculptboot with every partition): the five random partitions, one run each and no run
+index in common with a reference, as one side against 188 classes; the "l3" block only (no paired block), computed when
+--models holds them and skipped otherwise.
 
     python3 experiments/EVAL/sculpting_boot.py --head-root /data/results/eval/v2_head --models mtx-l188-s1 ... \\
         --label-set mtx-flavf0-s1=FLAV_F0 ... --replicas 200 --sculpting-dir /data/results/eval/v2_head/sculpting_v3 \\
@@ -60,6 +63,8 @@ DIFFS = {"17-188": ("r16q1", "l188"), "43-188": ("r42q1", "l188"), "162-188": ("
          "17mass-188": ("r16q1mass", "l188"), "162mass-188": ("l162mass", "l188"),
          "162mass-162": ("l162mass", "l162"), "flavf0-188": ("flavf0", "l188"), "flavf1-188": ("flavf1", "l188"),
          "flavf1r-188": ("flavf1r", "l188")}
+# a side of several arms: (model-name prefix after "mtx-", reference arm)
+POOLED = {"rand-188": ("rand2p", "l188")}
 QTY = {"distance": np.sqrt, "jsd": lambda x: x}
 
 
@@ -167,6 +172,18 @@ def difference(nominal: dict, boot: dict, pairs: list, wp: str, f) -> dict:
     return out
 
 
+def pooled_diffs(models, nominal: dict, boot: dict) -> dict:
+    """POOLED's differences among models: decision L3's block only, the pooled side every run whose name starts with
+    mtx-<prefix>; none for a prefix without runs (a call without them, as the sculpting rerun's 22)."""
+    out = {}
+    for name, (x, y) in POOLED.items():
+        rx, ry = [m for m in models if m.removeprefix("mtx-").startswith(x)], runs_of(models, y)
+        if rx:
+            out[name] = {"configuration": x, "reference": y, "pairs": [], "pooled": True,
+                         "l3": {wp: {q: unpaired(nominal, boot, rx, ry, wp, f) for q, f in QTY.items()} for wp, *_ in WPS}}
+    return out
+
+
 def stored_jsd(path: pathlib.Path, head_outputs_sha256) -> dict:
     """{wp: JSD} of a stored mass_sculpting.py document, which must be of the same head outputs."""
     doc = json.loads(path.read_text())
@@ -248,6 +265,7 @@ def main(argv=None) -> int:
         diffs[name] = {"configuration": x, "reference": y, "pairs": [list(p) for p in pairs],
                        **{wp: {q: difference(nominal, boot, pairs, wp, f) for q, f in QTY.items()} for wp, *_ in WPS},
                        "l3": {wp: {q: unpaired(nominal, boot, rx, ry, wp, f) for q, f in QTY.items()} for wp, *_ in WPS}}
+    diffs |= pooled_diffs(a.models, nominal, boot)
     lab = ref["label188"]
     doc = {"head_root": str(a.head_root), "sculpting_dir": str(a.sculpting_dir), "replicas": a.replicas, "seed": a.seed,
            "n_jets": int(lab.size), "n_qcd": int(((lab >= MS.QCD_LABELS[0]) & (lab < MS.QCD_LABELS[1])).sum()),
@@ -275,8 +293,11 @@ def main(argv=None) -> int:
     tmp.write_text(json.dumps(doc, indent=1, allow_nan=False) + "\n")
     os.replace(tmp, a.out)
     for name, d in diffs.items():
-        print(f"{name}: " + "; ".join(f"{wp} {d[wp]['distance']['delta']:+.4f} +- {d[wp]['distance']['sigma'] or 0:.4f} "
-                                       f"({'pass' if d[wp]['distance']['pass'] else 'fail'})" for wp, *_ in WPS))
+        if d.get("pooled"):
+            print(f"{name}: pooled, l3 only")
+        else:
+            print(f"{name}: " + "; ".join(f"{wp} {d[wp]['distance']['delta']:+.4f} +- {d[wp]['distance']['sigma'] or 0:.4f} "
+                                           f"({'pass' if d[wp]['distance']['pass'] else 'fail'})" for wp, *_ in WPS))
         u = d["l3"]
         print("  l3: " + "; ".join(f"{wp} {u[wp]['distance']['delta']:+.4f} +- {u[wp]['distance']['sigma'] or 0:.4f} "
                                     f"({'pass' if u[wp]['distance']['pass'] else 'fail'})" for wp, *_ in WPS))

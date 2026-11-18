@@ -539,14 +539,61 @@ def paper_models() -> list:
             if l.strip() and not l.startswith("#")]
 
 
+# The reruns of the ROC families (PI 2026-11-18), each under curves_v2/ROC_RERUN[family]: the linear probes refitted
+# (v5: scripts/build_gallery_data_job.py --mode probe-v5, probe-v5-fill) and the fine-tuning under the one rule at 1e6
+# (ft_v2/fixed: --mode jc1-fixed, ft-pairs-fixed). A rerun replaces its family whole, never model by model, and the
+# families of a group together (one job writes a group; a figure reads within one group), so no figure mixes the old
+# inputs with the rerun's. A v5 folder must hold every model the old family holds (pick's rule); a fixed one every
+# paper run and the from-scratch seeds. Pulled in part, the build stops.
+ROC_RERUN = {"jc1_probe": "jc1_probe_v5", "jc1_probe_ovr": "jc1_probe_ovr_v5", "jc2_ovr": "jc2_ovr_v5",
+             "pairs": "pairs_v5", "pairs_sib2": "pairs_v5", "top_probe": "top_probe_v5", "qg_probe": "qg_probe_v5",
+             "jc1_ft": "jc1_ft_fixed", "jc1_ft_ovr": "jc1_ft_ovr_fixed", "pairs_ft": "pairs_ft_fixed"}
+ROC_RERUN_GROUPS = (("jc1_probe", "jc1_probe_ovr", "jc2_ovr", "pairs", "pairs_sib2"), ("top_probe", "qg_probe"),
+                    ("jc1_ft", "jc1_ft_ovr"), ("pairs_ft",))
+ROC_FIXED = ("jc1_ft", "jc1_ft_ovr", "pairs_ft")
+
+
+def _scratch_v2(d: dict) -> dict:
+    """scratch-s<k> as scratch-v2-s<k>, the JetClass families' from-scratch name."""
+    return {f"scratch-v2-{m.removeprefix('scratch-')}" if m.startswith("scratch-") else m: x for m, x in d.items()}
+
+
+def rerun_family(data: pathlib.Path, fam: str) -> dict | None:
+    """{model: doc} of fam's rerun (ROC_RERUN) once its group is pulled, None while none of the group is; FATAL when
+    only part of the group is pulled or the rerun lacks a model it must hold."""
+    if fam not in ROC_RERUN:
+        return None
+    group = next(g for g in ROC_RERUN_GROUPS if fam in g)
+    have = {f: (data / ROC_DIR / ROC_RERUN[f]).is_dir() for f in group}
+    if not any(have.values()):
+        return None
+    if not all(have.values()):
+        raise SystemExit(f"FATAL: the reruns {sorted({ROC_RERUN[f] for f in group if have[f]})} are pulled without "
+                         f"{sorted({ROC_RERUN[f] for f in group if not have[f]})}: pull the group together")
+    docs = _load(data / ROC_DIR / ROC_RERUN[fam])
+    if fam in ROC_FIXED:
+        scratch = [f"scratch-{s}" for s in JC1_LONG_SCRATCH]
+        if fam in JC1_LONG:
+            docs, scratch = _scratch_v2(docs), [f"scratch-v2-{s}" for s in JC1_LONG_SCRATCH]
+        need = set(paper_models()) | set(scratch)
+    else:
+        need = set(_load(data / ROC_DIR / fam))
+    if lack := sorted(need - set(docs)):
+        raise SystemExit(f"FATAL: {ROC_RERUN[fam]} lacks {len(lack)} models ({', '.join(lack[:6])}): pull it whole")
+    return docs
+
+
 def load_family(data: pathlib.Path, fam: str) -> dict:
-    """{model: doc} of curves_v2/<fam>; for a JC1_LONG family the long-budget docs (scratch-s<k> as
-    scratch-v2-s<k>) when they hold every paper run and every JC1_LONG_SCRATCH seed, else the old ones.
-    With the long docs, <fam>_fulldecay's from-scratch seeds replace theirs once pulled (FATAL short of a seed)."""
+    """{model: doc} of curves_v2/<fam>: its rerun (rerun_family) once pulled; else, for a JC1_LONG family, the
+    long-budget docs (scratch-s<k> as scratch-v2-s<k>) when they hold every paper run and every JC1_LONG_SCRATCH
+    seed, else the old ones. With the long docs, <fam>_fulldecay's from-scratch seeds replace theirs once pulled
+    (FATAL short of a seed)."""
+    if (rerun := rerun_family(data, fam)) is not None:
+        return rerun
     docs = _load(data / ROC_DIR / fam)
     if fam not in JC1_LONG:
         return docs
-    v2 = lambda d: {f"scratch-v2-{m.removeprefix('scratch-')}" if m.startswith("scratch-") else m: x for m, x in d.items()}
+    v2 = _scratch_v2
     long = v2(_load(data / ROC_DIR / f"{fam}_long"))
     need = set(paper_models()) | {f"scratch-v2-{s}" for s in JC1_LONG_SCRATCH}
     if not need <= set(long):

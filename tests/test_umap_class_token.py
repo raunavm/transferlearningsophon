@@ -90,51 +90,80 @@ def test_extractions_through_other_data_configs_are_refused(tmp_path):
         uc.main(["--feat-dir", str(tmp_path), "--out-dir", str(tmp_path / "o"), "--sets", "qg"])
 
 
-def test_the_umap_job_extracts_the_new_models_and_links_the_earlier_ones():
+def test_the_umap_job_extracts_the_one_rule_cells_and_links_the_rest():
     import yaml
     BU = _bu()
     sha = "ab" * 20
-    d = yaml.safe_load(BU.spec(sha, "umap_v3", "umap_v2", 89))
+    d = yaml.safe_load(BU.spec(sha, "umap_v4", "umap_v3", 90))
     c = d["spec"]["template"]["spec"]["containers"][0]
     a = c["args"][0]
-    assert d["metadata"]["name"] == "umap-v3-raunav" and d["spec"]["backoffLimit"] == 1
+    assert d["metadata"]["name"] == "umap-v4-raunav" and d["spec"]["backoffLimit"] == 1
     # CPU only: no GPU request, no GPU toleration, torch threads pinned to the quota
     assert "nvidia.com/gpu" not in c["resources"]["limits"] and c["resources"]["limits"]["cpu"] == "8"
+    assert c["resources"]["limits"]["memory"] == BU.MEM
     assert "tolerations" not in d["spec"]["template"]["spec"] and "export OMP_NUM_THREADS=7 " in a
     # the code of a pushed commit; the storage line before anything is written
     assert f"git -C tls checkout -q {sha}" in a and "--branch" not in a and "retry clone" in a
-    assert '[ "${USED}" -le 89 ]' in a and "configmap" not in a.lower()
-    # four new models x four tasks x frozen and fine-tuned, one per pod; 188 and 17 classes come from umap_v2
-    new = [m for m, _k, _r in BU.MODELS if m not in BU.REUSABLE]
-    assert new == ["l162-s1", "r42q1-s1", "l162mass-s1", "r16q1mass-s1"]
-    assert d["spec"]["completionMode"] == "Indexed" and d["spec"]["completions"] == 32 and d["spec"]["parallelism"] <= 12
-    assert '[ "${N}" -eq 32 ]' in a and "-mindepth 4 -maxdepth 4 -name extract_manifest.json" in a
-    assert "x jc1 frozen mtx-l188-s1" not in a and "x jc2 ft mtx-r16q1-s1 " not in a
+    assert '[ "${USED}" -le 90 ]' in a and "configmap" not in a.lower()
+    # the one rule (PI 2026-11-15): only the JetClass and JetClass-II fine-tuned cells are extracted anew, six models x
+    # two, one per pod; every frozen extraction and the full-set top and quark/gluon ones come from umap_v3
+    assert d["spec"]["completionMode"] == "Indexed" and d["spec"]["completions"] == 12 and d["spec"]["parallelism"] <= 6
+    assert '[ "${N}" -eq 12 ]' in a and "-mindepth 4 -maxdepth 4 -name extract_manifest.json" in a
+    assert "x jc2 frozen" not in a and "x jc1 frozen" not in a and "x top " not in a and "x qg " not in a
+    assert "budget" not in a and "jc2_cell" not in a
     jc2b = "configs/data/JetClassII_base.yaml 2 /data/finetune/jc2_bal/test.parquet"
+    old = "/data/results/eval/umap_v3/features"
     for i, (m, k, reg) in enumerate(BU.MODELS):
-        if m in BU.REUSABLE:
-            assert f"/data/results/eval/umap_v2/features/{{jc1,jc2,top,qg}}/mtx-{m}/{{frozen,ft}}; do [ -f" in a
-            continue
-        assert f"C_jc2_{i}=$(jc2_cell {m})" in a
-        # the frozen mass-output checkpoint is read with its regression output; the fine-tuned cell has none
-        assert f"x jc2 frozen mtx-{m} ${{CK{i}}} {k} {reg} {jc2b} ;;" in a
+        for task, leg in (("jc2", "leg_jc2b"), ("jc1", "leg2")):
+            assert f"C_{task}_{i}=/data/results/ft_v2/fixed/{leg}/{m}/N1000000/s1; done_cell ${{C_{task}_{i}}}" in a
         assert f"x jc2 ft mtx-{m} ${{C_jc2_{i}}}/net_best_epoch_state.pt 188 0 {jc2b} ;;" in a
-        assert f"x top ft mtx-{m} ${{C_top_{i}}}/net_best_epoch_state.pt 2 0 " in a
-    assert (k, reg) == (17, 1) and "--num-reg ${REG}" in a
-    # the long JetClass-II extractions first; every cell checked before the first extraction
-    assert a.index("0) x jc2 frozen mtx-l162-s1") < a.index("x jc1 frozen mtx-l162-s1") < a.index("x qg ft mtx-r16q1mass-s1")
-    assert a.rindex("done_cell ${C_") < a.index("0) x jc2")
+        assert f"x jc1 ft mtx-{m} ${{C_jc1_{i}}}/net_best_epoch_state.pt 10 0 " in a
+        # every reused extraction must name the checkpoint this job would read
+        for task in BU.TASKS:
+            assert f"same_ckpt {old}/{task}/mtx-{m}/frozen ${{CK{i}}}" in a
+        for task in ("top", "qg"):
+            assert f"same_ckpt {old}/{task}/mtx-{m}/ft ${{C_{task}_{i}}}/net_best_epoch_state.pt" in a
+    # every cell and every reused extraction checked before the first extraction
+    assert a.rindex("done_cell ${C_") < a.index("0) x jc2") and a.rindex("same_ckpt /data") < a.index("0) x jc2")
+    assert a.index("0) x jc2 ft mtx-l188-s1") < a.index("x jc1 ft mtx-l188-s1")
     # the earlier extractions linked (not copied, not changed) by the pod that fits, before the fit
-    link = a.index("ln -s ${D} ${L}")
-    assert a.index("mkdir /data/results/eval/umap_v3/fit.lock") < link < a.index("umap_class_token.py")
-    assert "/umap_v2/features/{jc1,jc2,top,qg}/mtx-{l188-s1,r16q1-s1}/{frozen,ft}" in next(
-        ln for ln in a.splitlines() if "ln -s" in ln)
+    link = a.index("ln -s /data/results/eval/umap_v3/${D} ${L}")
+    assert a.index("mkdir /data/results/eval/umap_v4/fit.lock") < link < a.index("umap_class_token.py")
+    linked = next(ln for ln in a.splitlines() if "ln -s" in ln).split("; do")[0].split()[3:]
+    assert len(linked) == 6 * 6 and "features/jc2/mtx-l188-s1/ft" not in linked and "features/top/mtx-l188-s1/ft" in linked
     # the X->bx class token of every model, checked before the extractions start
     assert "/data/results/eval/xbx/mtx-{l188-s1,l162-s1,r42q1-s1,r16q1-s1,l162mass-s1,r16q1mass-s1}/{xbb,xbs,qcd}/eval/best70" in a
-    assert "umap_class_token.py --feat-dir /data/results/eval/umap_v3/features --out-dir /data/results/eval/umap_v3" in a
+    assert "umap_class_token.py --feat-dir /data/results/eval/umap_v4/features --out-dir /data/results/eval/umap_v4" in a
     assert d["spec"]["activeDeadlineSeconds"] >= 43200
-    # without --reuse every model is extracted
+    # without --reuse every extraction is made
     assert yaml.safe_load(BU.spec(sha, "umap_x"))["spec"]["completions"] == 48
+
+
+def _bash_fn(script: str, name: str) -> str:
+    """The one-line bash function name of a generated script."""
+    return next(ln for ln in script.splitlines() if ln.strip().startswith(f"{name} () {{"))
+
+
+def test_the_umap_job_refuses_an_unfinished_cell_and_a_reused_extraction_of_another_checkpoint(tmp_path):
+    import subprocess
+    import yaml
+    BU = _bu()
+    a = yaml.safe_load(BU.spec("ab" * 20, "umap_v4", "umap_v3", 90))["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    fns = _bash_fn(a, "done_cell") + "\n" + _bash_fn(a, "same_ckpt") + "\n"
+    run = lambda body: subprocess.run(["bash", "-c", "set -euo pipefail\n" + fns + body], capture_output=True, text=True)  # noqa: E731
+    cell = tmp_path / "cell"
+    cell.mkdir()
+    (cell / "net_best_epoch_state.pt").write_bytes(b"x")
+    r = run(f"done_cell {cell}\necho after")
+    assert r.returncode == 42 and "is not done" in r.stdout and "after" not in r.stdout
+    (cell / "DONE").write_text("")
+    assert run(f"done_cell {cell}").returncode == 0
+    ext = tmp_path / "ext"
+    ext.mkdir()
+    (ext / "extract_manifest.json").write_text(json.dumps({"checkpoint": "/data/a.pt"}))
+    assert run(f"same_ckpt {ext} /data/a.pt").returncode == 0
+    r = run(f"same_ckpt {ext} /data/b.pt\necho after")
+    assert r.returncode == 42 and "is not of /data/b.pt" in r.stdout and "after" not in r.stdout
 
 
 def _xbx(root, model, rng_seed=0, n=(2500, 2600, 9000)):

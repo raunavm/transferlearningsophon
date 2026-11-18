@@ -16,11 +16,23 @@ Round 5 (PI 2026-11-13, approved inference on stored outputs; CPU, no forward pa
   --parts jc1full   the from-scratch JetClass cells the paper reads (build_ft_budget_jobs.long_scratch_full_cells,
                     the full schedule; the files in perf_vs_pt_v2/jc1 come from superseded cells) ->
                     OUT_V3/jc1_fulldecay/scratch-s<S>.json and CONF_FULL/scratch-s<S>.json
+The rerun (PI 2026-11-15/16), into new folders, each part's DONE written after its last model so the pull takes a
+folder whole or not at all:
+  --parts jc2v5       the JetClass-II linear probes at 1e6 of the v5 refit (fits_v5_probs), the 27 paper runs ->
+                      OUT_V5/jc2; refuses to start (exit 42) unless every model's fits_v5/<model>.json exists
+  --parts jc1probev5  the JetClass linear probes at 1e6 of the v5 refit, the 27 paper runs and the random network
+                      (init-s1..3, initbn-s1..3) -> OUT_V5/jc1_probe; the same refusal
+  --parts jc2fixed    JetClass-II fine-tuned at 1e6 under the one rule (ft_v2/fixed/leg_jc2b, the 27 paper runs and
+                      the three from-scratch seeds) -> OUT_FIXED/jc2_ft; refuses unless all 30 cells have DONE
+  --parts jc1fixed    JetClass fine-tuned at 1e6 under the one rule (ft_v2/fixed/leg2, the same 30) -> OUT_FIXED/jc1
+                      and CONF_FIXED; the same refusal
 A part writes only files that do not exist; /data above the storage line refuses the start (exit 42).
-experiments/FIGS/pull_mlst_data.py pulls perf_vs_pt/<task>/ and confusion_jc1/.
+experiments/FIGS/pull_mlst_data.py pulls perf_vs_pt/<task>/ and confusion_jc1/, perf_vs_pt_v5/ and perf_vs_pt_fixed/.
 
     python3 scripts/build_perf_pt_jobs.py --tag mtx-s2.NN --parts jc2 [--pin-not-yet-tagged]
     python3 scripts/build_perf_pt_jobs.py --commit <pushed commit> --parts jc2ft jc1probe jc1full --storage-line 89
+    python3 scripts/build_perf_pt_jobs.py --tag TAG_TBD --pin-not-yet-tagged --parts jc2v5 jc1probev5 --storage-line 90
+    python3 scripts/build_perf_pt_jobs.py --tag TAG_TBD --pin-not-yet-tagged --parts jc2fixed jc1fixed --storage-line 90
 """
 from __future__ import annotations
 
@@ -41,8 +53,16 @@ OUT_V3, CONF_FULL = "/data/results/eval/perf_vs_pt_v3", "/data/results/eval/conf
 SCRIPT = "experiments/EVAL/perf_vs_pt.py"
 NEEDED = {SCRIPT: "def confusion"}
 NEEDED_V3 = {SCRIPT: "INIT_BN_MODELS = "}
-PARTS = ("jc2", "jc1", "jc2ft", "jc1probe", "jc1full")
+# the rerun: the v5 linear probes (scripts/build_refit_v5_jobs.py fit) and the one rule's cells at 1e6
+OUT_V5, OUT_FIXED = "/data/results/eval/perf_vs_pt_v5", "/data/results/eval/perf_vs_pt_fixed"
+CONF_FIXED = "/data/results/eval/confusion_jc1_fixed"
+FITS_V5, PROBS_V5 = "/data/results/eval/v2_linprobe_bal/fits_v5", "/data/results/eval/v2_linprobe_bal/fits_v5_probs"
+RERUN = ("jc2v5", "jc1probev5", "jc2fixed", "jc1fixed")
+PARTS = ("jc2", "jc1", "jc2ft", "jc1probe", "jc1full") + RERUN
 MEM, CPU = "16Gi", "4"
+# perf-pt-jc2ft-jc1probe-jc1full-raunav, the same steps on the same inputs, peaked at 14.8 GiB working set (Prometheus,
+# 2026-11-18): 1.6x for the rerun's parts
+MEM_RERUN = "24Gi"
 
 
 def _load(name: str, rel: str):
@@ -64,6 +84,16 @@ def long_jc1_cells() -> list[str]:
 def full_jc1_cells() -> list[str]:
     """The three from-scratch JetClass cells at 1e6 with the full schedule, the ones the paper reads."""
     return [c["out"] for c in BFB.long_scratch_full_cells("jc1", "1e-3")]
+
+
+def fixed_cells(task: str) -> list[str]:
+    """The one rule's 30 cells at 1e6 of a task ("jc1" or "jc2b"): every paper run and three seeds from scratch."""
+    return [c["out"] for c in BFB.fixed_cells({1_000_000}) if c["task"] == task]
+
+
+def v5_models(init: bool) -> list[str]:
+    """The models whose v5 fit the probe parts read: the paper runs, and with init the three untrained trunks."""
+    return [f"mtx-{r}" for r in BFB.paper_runs()] + (["init-s1", "init-s2", "init-s3"] if init else [])
 
 
 def pushed_commit(ref: str) -> str:
@@ -100,6 +130,13 @@ def spec(tag: str, parts, commit: bool = False, line: int = storage_line.GENERAL
     if "jc1full" in parts:
         guard += ["for c in " + " ".join(full_jc1_cells())
                   + '; do [ -e "${c}/DONE" ] || { echo "FATAL: ${c} not DONE"; exit 42; }; done']
+    if "jc2v5" in parts or "jc1probev5" in parts:
+        fits = " ".join(f"{FITS_V5}/{m}.json" for m in v5_models("jc1probev5" in parts))
+        guard += [f"for f in {fits}" + '; do [ -e "${f}" ] || { echo "FATAL: no ${f}: the v5 fit is not done"; exit 42; }; done']
+    for part, task in (("jc2fixed", "jc2b"), ("jc1fixed", "jc1")):
+        if part in parts:
+            guard += ["for c in " + " ".join(fixed_cells(task))
+                      + '; do [ -e "${c}/DONE" ] || { echo "FATAL: ${c} not DONE"; exit 42; }; done']
     if "jc2" in parts:
         calls += ["retry pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1",
                   f"python3 {SCRIPT} jc2 --out-dir {OUT_ROOT}/jc2"]
@@ -119,6 +156,27 @@ def spec(tag: str, parts, commit: bool = False, line: int = storage_line.GENERAL
                   '| head -2); do TEST1="${TEST1} ${f}"; done; done',
                   '[ "$(echo ${TEST1} | wc -w)" -eq 20 ] || { echo "FATAL: expected 20 JetClass test files"; exit 42; }',
                   f"python3 {SCRIPT} jc1probe --out-dir {OUT_V3}/jc1_probe --test-files ${{TEST1}}"]
+    if "jc2v5" in parts:
+        calls += ["retry pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1",
+                  f"python3 {SCRIPT} jc2 --out-dir {OUT_V5}/jc2 --probs-root {PROBS_V5}",
+                  f"touch {OUT_V5}/jc2/DONE"]
+    if "jc2fixed" in parts:
+        tree = f"{BFB.FIXED_ROOT}/leg_jc2b"
+        calls += [f"python3 {SCRIPT} jc2ft --out-dir {OUT_FIXED}/jc2_ft --trees {tree} --scratch-tree {tree} "
+                  f"--probe-dir {OUT_V5}/jc2",
+                  f"touch {OUT_FIXED}/jc2_ft/DONE"]
+    if "jc1fixed" in parts:
+        calls += [f"python3 {SCRIPT} jc1 --tree {BFB.FIXED_ROOT}/leg2 --out-dir {OUT_FIXED}/jc1 --confusion-out {CONF_FIXED}",
+                  f"touch {OUT_FIXED}/jc1/DONE {CONF_FIXED}/DONE"]
+    if "jc1probev5" in parts:
+        # last, as jc1probe above: its row map is checked in the pod and a refusal stops the pod
+        calls += ['TEST1=""',
+                  f"for C in {' '.join(BFB.JC1_CLASSES)}; do for f in $(ls /data/JetClass/Pythia/test_20M/${{C}}_*.root | sort "
+                  '| head -2); do TEST1="${TEST1} ${f}"; done; done',
+                  '[ "$(echo ${TEST1} | wc -w)" -eq 20 ] || { echo "FATAL: expected 20 JetClass test files"; exit 42; }',
+                  f"python3 {SCRIPT} jc1probe --out-dir {OUT_V5}/jc1_probe --probs-root {PROBS_V5} --test-files ${{TEST1}}",
+                  f"touch {OUT_V5}/jc1_probe/DONE"]
+    mem = MEM_RERUN if set(parts) <= set(RERUN) else MEM
     script = "\n".join([
         "set -euo pipefail",
         "retry () { for T in 1 2 3 4 5; do \"$@\" && return 0; echo \"attempt $T failed: $1\"; sleep 30; done; return 1; }",
@@ -157,8 +215,8 @@ spec:
         - |
 {body}
         resources:
-          requests: {{ memory: "{MEM}", cpu: "{CPU}", ephemeral-storage: "10Gi" }}
-          limits:   {{ memory: "{MEM}", cpu: "{CPU}", ephemeral-storage: "10Gi" }}
+          requests: {{ memory: "{mem}", cpu: "{CPU}", ephemeral-storage: "10Gi" }}
+          limits:   {{ memory: "{mem}", cpu: "{CPU}", ephemeral-storage: "10Gi" }}
         volumeMounts:
         - {{ name: data, mountPath: /data }}
       affinity:
@@ -189,6 +247,8 @@ def main(argv=None) -> int:
     storage_line.add_argument(ap)
     a = ap.parse_args(argv)
     parts = [p for p in PARTS if p in a.parts]
+    if set(parts) & set(RERUN) and not set(parts) <= set(RERUN):
+        raise SystemExit("FATAL: the rerun's parts (" + " ".join(RERUN) + ") go in a job of their own")
     needed = NEEDED_V3 if set(parts) - {"jc2", "jc1"} else NEEDED
     pin = pushed_commit(a.commit) if a.commit else a.tag
     _load("build_extract_jobs", "scripts/build_extract_jobs.py").verify_pin(

@@ -12,6 +12,12 @@
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode sculpt-boot   # paired bootstrap of the head sculpting
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode jc1-acc-boot --storage-line 90   # JetClass accuracy, 1e6
     python3 scripts/build_gallery_data_job.py --tag mtx-s2.NN --mode jc1-acc-boot-1e4 --storage-line 90   # and 1e4
+  the reruns of the ROC families (PI 2026-11-18; mlst_v4.ROC_RERUN reads them, each group whole):
+    python3 scripts/build_gallery_data_job.py --tag TAG --mode probe-v5 --storage-line 90        # v5 linear probes
+    python3 scripts/build_gallery_data_job.py --tag TAG --mode probe-v5-fill --storage-line 90   # ... top, quark/gluon
+    python3 scripts/build_gallery_data_job.py --tag TAG --mode jc1-fixed --storage-line 90       # JetClass, one rule, 1e6
+    python3 scripts/build_gallery_data_job.py --tag TAG --mode ft-pairs-fixed --storage-line 90  # pairs, one rule, 1e6
+    python3 scripts/build_gallery_data_job.py --tag TAG --mode sculpt-ft-fixed --storage-line 90 # sculpting, one rule, 1e6
 """
 import argparse
 import importlib.util
@@ -266,6 +272,139 @@ def calls_jc1_acc_boot_1e4() -> str:
     return "\n".join("          " + c for c in out)
 
 
+# ------------------------------------------------------------------ the reruns (PI 2026-11-18)
+# Each mode waits for nothing: it refuses (exit 42) unless every input it reads is complete, writes its families'
+# files (roc_points.py skips a file that exists, so a retried pod resumes) and the DONE of every family it writes only
+# after the last, so the pull (pull_mlst_data.py: families with DONE) takes the group whole (mlst_v4.ROC_RERUN_GROUPS).
+BAL = "/data/results/eval/v2_linprobe_bal"
+V5_FITS, V5_PROBS, V5_SIB2 = f"{BAL}/fits_v5", f"{BAL}/fits_v5_probs", f"{BAL}/fits_v5_sib2"
+V5_FILL = f"{BAL}/fits_v5_fill"
+# the substitutions v4 chose on validation (mlst_results.chosen_substitutions); before launching probe-v5-fill, check
+# LpSubstitutionTop/Qg on the pulled fits_v5_fill and change these if the v5 choice moved
+V5_FILL_CKPT = {"top": "best70.itop4", "qg": "best70.nqg"}
+V5_PAIR_FILES = ("jc2bal_pairs_bb_vs_cc", "jc2bal_pairs_bbqq_vs_ccqq", "jc2bal_pairs_bc_vs_bq_cs",
+                 "jc2bal_pairs_qcd_b_vs_light", "jc2bal_pairs_qcd_bb_vs_cc", "jc2bal_pairs_qcd_c_vs_light",
+                 "jc2bal_pairs_ee_vs_mm")
+INITS = ("init-s1", "init-s2", "init-s3")
+KIN_MODEL = "mtx-l188kin-s1"
+OVR_RUNS = ("l188", "l162", "r42q1", "r16q1")        # jc2_ovr: the four label sets (build_curve_jobs.ROC_OVR_RUNS)
+
+
+def _need(paths: list) -> str:
+    """Refuse (exit 42) unless every path exists."""
+    return ("for f in " + " ".join(paths) + '; do [ -e "${f}" ] || { echo "FATAL: no ${f}"; exit 42; }; done')
+
+
+def _done(fams) -> list:
+    return [f"echo done > {ROC}/{f}/DONE" for f in fams]
+
+
+def _rules(fams: list, models: list) -> str:
+    """Refuse (exit 42) unless the v5 fit folders pass the PI's refit rules (experiments/EVAL/refit_checks.py, the test
+    mlst_v4.pick applies): these curves are read before the whole v5 refit has passed its checks job (B4)."""
+    return (f"python3 experiments/EVAL/refit_checks.py --family {' '.join(fams)} --expect {' '.join(models)} "
+            '|| { echo "FATAL: the v5 fits fail the refit rules"; exit 42; }')
+
+
+def calls_probe_v5() -> str:
+    """The v5 linear probes' ROC families (fits_v5_probs, fits_v5_sib2_probs), each fit file (written last) of every
+    model present first: JetClass signal against QCD and class against the rest, JetClass-II class against the rest,
+    and the seven class pairs, X->ee vs X->mumu on every test jet of the pair (v5 has no balanced X->ee probe), for
+    every paper run and the random network (as initialized and BatchNorm recomputed: v5 fits it on every pair)."""
+    models = paper_models() + list(INITS)
+    ovr = [m for m in paper_models() if m.split("-")[1] in OVR_RUNS]
+    out = [_need([f"{d}/{m}.json" for d in (V5_FITS, V5_SIB2) for m in models]), _rules([V5_FITS, V5_SIB2], models)]
+    for fam in ("jc1_probe", "jc1_probe_ovr"):
+        out.append(f"python3 experiments/FT/roc_points.py probes --family {fam} --probs-root {V5_PROBS} "
+                   f"--files jc1_N1000000 --models {' '.join(models)} --out-dir {ROC}/{fam}_v5")
+    out.append(f"python3 experiments/FT/roc_points.py probes --family jc2_ovr --probs-root {V5_PROBS} "
+               f"--files jc2bal_N{JC2_N} --models {' '.join(ovr)} --out-dir {ROC}/jc2_ovr_v5")
+    out.append(f"python3 experiments/FT/roc_points.py probes --family pairs --probs-root {V5_PROBS} {V5_SIB2}_probs "
+               f"--fits-root {V5_FITS} {V5_SIB2} --files {' '.join(V5_PAIR_FILES)} --models {' '.join(models)} "
+               f"--out-dir {ROC}/pairs_v5")
+    out += _done(("jc1_probe_v5", "jc1_probe_ovr_v5", "jc2_ovr_v5", "pairs_v5"))
+    return "\n".join("          " + c for c in out)
+
+
+def calls_probe_v5_fill() -> str:
+    """Top and quark/gluon linear probes of the v5 refit at the full sets under V5_FILL_CKPT (fits_v5_fill_probs),
+    every paper run's fill fit present first, and the kinematic-only run's plain top probe (fits_v5_probs), as
+    top_probe and qg_probe hold them."""
+    models = paper_models()
+    probs = f"{V5_FILL}_probs"
+    out = [_need([f"{V5_FILL}/{m}.json" for m in models] + [f"{V5_FITS}/{KIN_MODEL}.json"]),
+           _rules([V5_FILL], models), _rules([V5_FITS], [KIN_MODEL]),
+           f"python3 experiments/FT/roc_points.py probes --family top_probe --probs-root {probs} "
+           f"--ckpt {V5_FILL_CKPT['top']} --files top_N1200000 --models {' '.join(models)} --out-dir {ROC}/top_probe_v5",
+           f"python3 experiments/FT/roc_points.py probes --family top_probe --probs-root {V5_PROBS} --ckpt best70 "
+           f"--files top_N1200000 --models {KIN_MODEL} --out-dir {ROC}/top_probe_v5",
+           f"python3 experiments/FT/roc_points.py probes --family qg_probe --probs-root {probs} "
+           f"--ckpt {V5_FILL_CKPT['qg']} --files qg_N1600000 qg_herwig_N1600000 --models {' '.join(models)} "
+           f"--out-dir {ROC}/qg_probe_v5"]
+    out += _done(("top_probe_v5", "qg_probe_v5"))
+    return "\n".join("          " + c for c in out)
+
+
+def fixed_cells(task: str) -> list:
+    """The one rule's cells of task at 1e6 (build_ft_budget_jobs.fixed_cells): each paper run, then from scratch."""
+    bfb = _bfb()
+    return [c for c in bfb.fixed_cells({bfb.LONG_N}) if c["task"] == task]
+
+
+def calls_jc1_fixed() -> str:
+    """The one rule's JetClass cells at 1e6 (ft_v2/fixed/leg2), every one DONE first: each signal class against QCD
+    (jc1_ft, ParT's discriminant) and each class against the rest (jc1_ft_ovr), into <family>_fixed."""
+    cells = fixed_cells("jc1")
+    tree = cells[0]["out"].rsplit("/", 3)[0]
+    inits = " ".join(sorted({c["init"] or "scratch" for c in cells}))
+    out = [_need([f"{c['out']}/DONE" for c in cells])]
+    out += [f"python3 experiments/FT/roc_points.py ft --family {fam} --tree {tree} --task jc1 --n {JC2_N} "
+            f"--inits {inits} --out-dir {ROC}/{fam}_fixed" for fam in ("jc1_ft", "jc1_ft_ovr")]
+    out += _done(("jc1_ft_fixed", "jc1_ft_ovr_fixed"))
+    return "\n".join("          " + c for c in out)
+
+
+def calls_ft_pairs_fixed() -> str:
+    """The one rule's JetClass-II cells at 1e6 (ft_v2/fixed/leg_jc2b) on the class pairs, from each cell's outputs on
+    the natural-mix TEST2M jets (build_head_jobs.py --ft-head-fixed), every cell DONE and every model's head outputs
+    present first, into curves_v2/pairs_ft_fixed."""
+    hb = _hb()
+    cells = hb.ft_head_fixed_cells()
+    tree = cells[0][1].rsplit("/", 3)[0]
+    inits = " ".join(sorted({c.rsplit("/", 3)[1] for _m, c in cells}))
+    out = [_need([f"{c}/DONE" for _m, c in cells] + [f"{hb.FT_HEAD_FIXED_ROOT}/{m}/manifest.json" for m, _c in cells]),
+           f"python3 experiments/FT/roc_points.py ft --family pairs_ft --tree {tree} --task jc2b --n {JC2_N} "
+           f"--inits {inits} --head-root {hb.FT_HEAD_FIXED_ROOT} --out-dir {ROC}/pairs_ft_fixed"]
+    out += _done(("pairs_ft_fixed",))
+    return "\n".join("          " + c for c in out)
+
+
+# the one rule's fine-tuned sculpting (experiments/EVAL/sculpting_ft.py) from the same head outputs as ft-pairs-fixed,
+# into a new folder, so the older trees' files in SCULPT_FT are never read or skipped into it
+SCULPT_FT_FIXED = "/data/results/eval/v2_head/sculpting_ft_fixed"
+
+
+def calls_sculpt_ft_fixed() -> str:
+    """The QCD mass sculpting of the one rule's 30 JetClass-II cells at 1e6 (build_head_jobs.ft_head_fixed_cells), every
+    cell DONE and every model's head outputs present first (exit 42), DONE after the last model."""
+    hb = _hb()
+    cells = hb.ft_head_fixed_cells()
+    tree = cells[0][1].rsplit("/", 3)[0]
+    inits = list(dict.fromkeys(c.rsplit("/", 3)[1] for _m, c in cells))
+    out = [_need([f"{c}/DONE" for _m, c in cells] + [f"{hb.FT_HEAD_FIXED_ROOT}/{m}/{f}" for m, _c in cells
+                                                     for f in ("manifest.json", "head_outputs.npz")]),
+           f"python3 experiments/EVAL/sculpting_ft.py --tree {tree} --n {JC2_N} --inits {' '.join(inits)} "
+           f"--head-root {hb.FT_HEAD_FIXED_ROOT} --out-dir {SCULPT_FT_FIXED}",
+           f"echo done > {SCULPT_FT_FIXED}/DONE"]
+    return "\n".join("          " + c for c in out)
+
+
+# CPU memory of the reruns' modes: the largest step reads one model's jc2bal_N1000000 probabilities (349 MB on disk,
+# ~1.4 GB as float64 for its 188 one-against-the-rest curves) or one fine-tuned network's 2M x 188 head outputs (0.8 GB);
+# a few GB at most
+RERUN_MEM = "16Gi"
+
+
 MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
          "kin": (calls_kin, "gallery-data-kin-raunav", "top_probe"),
          "sib2": (calls_sib2, "gallery-data-sib2-raunav", "pairs_sib2"),
@@ -277,7 +416,13 @@ MODES = {"": (calls, "gallery-data-raunav", "top_probe qg_probe jc2_ft_ovr"),
          "ft-pairs-sculpt": (calls_ft_pairs_sculpt, "gallery-data-ft-pairs-sculpt-raunav", f"pairs_ft {SCULPT_FT}"),
          "sculpt-boot": (calls_sculpt_boot, "sculpt-boot-raunav", "/data/results/eval/v2_head"),
          "jc1-acc-boot": (calls_jc1_acc_boot, "jc1-acc-boot-raunav", JC1_BOOT),
-         "jc1-acc-boot-1e4": (calls_jc1_acc_boot_1e4, "jc1-acc-boot-1e4-raunav", JC1_BOOT)}
+         "jc1-acc-boot-1e4": (calls_jc1_acc_boot_1e4, "jc1-acc-boot-1e4-raunav", JC1_BOOT),
+         "probe-v5": (calls_probe_v5, "gallery-data-probe-v5-raunav", "jc1_probe_v5 jc1_probe_ovr_v5 jc2_ovr_v5 pairs_v5"),
+         "probe-v5-fill": (calls_probe_v5_fill, "gallery-data-probe-v5-fill-raunav", "top_probe_v5 qg_probe_v5"),
+         "jc1-fixed": (calls_jc1_fixed, "gallery-data-jc1-fixed-raunav", "jc1_ft_fixed jc1_ft_ovr_fixed"),
+         "ft-pairs-fixed": (calls_ft_pairs_fixed, "gallery-data-ft-pairs-fixed-raunav", "pairs_ft_fixed"),
+         "sculpt-ft-fixed": (calls_sculpt_ft_fixed, "gallery-data-sculpt-ft-fixed-raunav", SCULPT_FT_FIXED)}
+RERUNS = ("probe-v5", "probe-v5-fill", "jc1-fixed", "ft-pairs-fixed", "sculpt-ft-fixed")
 
 
 def main() -> int:
@@ -293,6 +438,11 @@ def main() -> int:
     text = text.replace("name: gallery-data-raunav", f"name: {name}").replace(
         f"mkdir -p {ROC}/top_probe {ROC}/qg_probe {ROC}/jc2_ft_ovr",
         "mkdir -p " + " ".join(d if d.startswith("/") else f"{ROC}/{d}" for d in dirs.split()))
+    if a.mode in RERUNS:
+        old = 'requests: { memory: "32Gi", cpu: "8"'
+        assert text.count(old) == 1 and text.count('limits:   { memory: "32Gi", cpu: "8"') == 1
+        text = text.replace('memory: "32Gi", cpu: "8"', f'memory: "{RERUN_MEM}", cpu: "4"').replace(
+            "OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8", "OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4")
     out.write_text(text)
     print(out)
     return 0

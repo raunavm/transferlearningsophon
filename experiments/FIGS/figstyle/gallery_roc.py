@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """The gallery's ROC mock-ups (docs/figstyle/PLAN.md): FJ, FJ-ctrl, FJ-s, FJ-app, FJ-ctrl-app, A3R, A3R-ft (the ROC family's
 multi-class form), the class-pair family F4-mech, F4-mech-ft, F4-other, F4-other-ft, F4-ee, F4-rand, F4-rand-ft, and the
-ROC family's two-class form F6, F6-part. Every ROC is
+ROC family's two-class form F6, F6-part, and the main text's ROC-main (JetClass against QCD, top and quark/gluon). Every
+ROC is
 rejection (log, from 1) against signal efficiency (linear, 0 to 1), the mean over runs from
 gallery_common.mean_over_runs, on style_v4's grid, with the y axis stopping where the curves stop so
 they come in from the top of the frame, and the legend in the free lower left."""
@@ -17,7 +18,7 @@ import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.ticker import FixedLocator, FuncFormatter, LogLocator, MultipleLocator, NullFormatter, NullLocator
 
-from gallery_bands import rejection_rel_error
+from gallery_bands import rejection_rel_error, spread_band
 from gallery_common import Absent, M, P, Page, ROC, RUNS, mean_over_runs
 import lines_v6 as L
 import style_v5 as S
@@ -599,6 +600,86 @@ def draw_f6_part_ft(path: pathlib.Path) -> None:
     _bench_grid(path, "ft", PARTITIONS + ("RAND",))
 
 
+# ------------------------------------------------------------------ ROC-main (PI 2026-11-18): the main text's ROC figure.
+# Upper row the fine-tuned JetClass networks at 1e6 jets, four signal classes against QCD (ParT's discriminant,
+# curves_v2/jc1_ft); lower row F6's and F6-ft's top and quark/gluon (Pythia) panels without their ratio panels. Four
+# panels a row (the brief's two rows of four; L20 asks two a row, which would take four rows and overrun the page),
+# one y range a row. A panel whose data are not pulled says so and the others are drawn.
+MAIN_JC1 = ("label_Hbb", "label_Hcc", "label_Hgg", "label_Tbqq")
+MAIN_JC1_NETS = ("L188", "R16_Q1", "SCRATCH")
+MAIN_BENCH = (("top_probe", "top", "Top tagging,\nlinear probe", LABEL_SETS),
+              ("top_ft", "top", "Top tagging,\nfine-tuned", LABEL_SETS + ("SCRATCH",)),
+              ("qg_probe", "qg", "Quark/gluon,\nlinear probe", LABEL_SETS),
+              ("qg_ft", "qg", "Quark/gluon,\nfine-tuned", LABEL_SETS + ("SCRATCH",)))
+MAIN_LEFT, MAIN_GAP = 1.3, 0.2          # cm: room for the tick labels and y label; between panels (no y labels inside)
+MAIN_W = (S.PRINT_W - MAIN_LEFT - 0.1 - 3 * MAIN_GAP) / 4
+PENDING = "pending"
+
+
+def _spread(ax, docs: dict, models: list, key: str, look: dict) -> None:
+    """mean_over_runs' curve's band: mean -+ the SD over runs (gallery_bands.spread_band) at the points where every
+    run has at least 20 background jets; none for a single run."""
+    have = [m for m in models if m in docs and key in docs[m]["curves"]]
+    if len(have) < 2:
+        return
+    eps = np.asarray(docs[have[0]]["eps_grid"], float)
+    rej = np.array([M.V4.roc_series(docs[m], key)[1] for m in have])
+    ok = np.isfinite(rej).all(axis=0)
+    if ok.sum() < 2:
+        return
+    lo, hi = spread_band(rej[:, ok])
+    ax.fill_between(eps[ok], np.maximum(lo, 1.0), hi, color=look["color"], alpha=0.2, linewidth=0,
+                    zorder=look["zorder"] - 0.1)
+
+
+def _main_panel(ax, docs: dict, key: str, nets: tuple, handles: dict) -> None:
+    """Each network's mean curve, its band where L21 keeps one (every band in a panel of three)."""
+    for net in sorted(nets, key=lambda n: -NETWORKS.index(n)):        # 188 classes last, on top
+        models = _models(docs, net)
+        s = mean_over_runs(docs, models, key)
+        if s is None or len(s[0]) < 2:
+            continue
+        look = S.look(_style(net), linewidth=S.LW_CURVE, zorder=1.9 if net == "SCRATCH" else 2.0)
+        ax.plot(s[0], s[1], **look)
+        if L.keeps_band(net, len(nets)):
+            _spread(ax, docs, models, key, look)
+        handles.setdefault(net, Line2D([], [], **S.look(_style(net)), linewidth=S.LW_CURVE, label=S.LEGEND[_style(net)]))
+
+
+def draw_roc_main(path: pathlib.Path) -> None:
+    jc1 = ROC.get("jc1_ft") or {}
+    rows = [[(jc1, c, S.JC1_TEX[c], MAIN_JC1_NETS) for c in MAIN_JC1],
+            [(ROC.get(fam) or {}, key, name, nets) for fam, key, name, nets in MAIN_BENCH]]
+    legend_rows = max(len(c) for c in _legend_cols({n for r in rows for p in r for n in p[3]}))
+    top = S.LEGEND_TOP + 0.45 * legend_rows + 0.65
+    h, hgap = MAIN_W, 1.35 + TITLE_LINE          # _roc_grid's gap; the lower row's titles take two lines
+    fig = S.figure_cm(S.PRINT_W, top + 2 * h + hgap + 1.0)
+    handles, axes = {}, []
+    for i, row in enumerate(rows):
+        row_axes = []
+        for j, (docs, key, name, nets) in enumerate(row):
+            ax = S.axes_cm(fig, MAIN_LEFT + j * (MAIN_W + MAIN_GAP), top + i * (h + hgap), MAIN_W, h)
+            _roc_axes(ax, x_step=0.5)
+            _main_panel(ax, docs, key, nets, handles)
+            # a panel with no curve says so in its title (L7: no text inside a panel)
+            S.title(ax, name if ax.lines else f"{name}, {PENDING}")
+            row_axes.append(ax)
+        drawn = [ax for ax in row_axes if ax.lines]
+        if drawn:
+            _y_range(drawn)
+        for j, ax in enumerate(row_axes):
+            ax.set_ylim(drawn[0].get_ylim() if drawn else (0.8, 1e3))
+            ax.tick_params(labelleft=j == 0)
+        S.labels(row_axes[0], ylabel=r"Rejection ($1/\varepsilon_B$)")
+        S.labels(row_axes[-1], xlabel=S.X_EPS)      # one x label a row: four would not fit beside each other
+        axes += row_axes
+    if not handles:
+        raise Absent("no curve of ROC-main: curves_v2 jc1_ft, top_probe, top_ft, qg_probe and qg_ft hold none")
+    _group_legend(fig, handles)
+    S.letter_panels(axes)
+    S.save(fig, path)
+
+
 EVERY_CLASS_LW = 1.0     # 188 curves a panel: thin, opaque, and the legend handles as thin
 
 
@@ -663,6 +744,17 @@ PAIR_DIFFERS = ("The family's form (PI 2026-11-13): columns the pairs in one ord
                 "under each panel with each curve's band; every curve solid (one mode a figure).")
 PAIR_NOTE = ("A network whose runs keep fewer than 20 background jets at every efficiency has no curve. Means over runs: "
              "three per label set, two per mass network and flavor-boundary partition.")
+# the reruns (PI 2026-11-18; mlst_v4.ROC_RERUN: each family replaced whole once its rerun is pulled)
+PAIR_LP_NOTE = ("Reads curves_v2/pairs: the v5 refit's probes (pairs_v5, scripts/build_gallery_data_job.py --mode probe-v5) "
+                "once pulled, until then v4. ")
+PAIR_FT_NOTE = ("Reads curves_v2/pairs_ft (the fine-tuned networks on natural-mix test jets: the signal side's summed "
+                "softmax over the pair's summed softmax): the one rule's JetClass-II cells at 1e6 (pairs_ft_fixed: "
+                "build_head_jobs.py --ft-head-fixed, then build_gallery_data_job.py --mode ft-pairs-fixed) once pulled, "
+                "until then the superseded budget and long-budget cells. ")
+FJ_NOTE = ("Reads curves_v2/jc1_ft_ovr: the one rule's cells at 1e6 (jc1_ft_ovr_fixed, build_gallery_data_job.py --mode "
+           "jc1-fixed) once pulled, until then the long-budget cells, which the one rule supersedes.")
+FJ_APP_NOTE = ("Reads curves_v2/jc1_probe_ovr: the v5 refit's probes (jc1_probe_ovr_v5, --mode probe-v5) once pulled, "
+               "until then v4.")
 SUBST_NOTE = ("Top-tagging linear probes fill the missing inputs with random draws and quark/gluon probes with the "
               "training mean, the substitution chosen on validation.")
 
@@ -677,6 +769,7 @@ PAGES = [
                  "over the ten classes.",
          differs="Against landscape: ten classes of one network, not fifteen networks; solid tab10. Against the poster: "
                  "rejection against efficiency (PI); four panels, not two; legend names only, as the AUCs do not fit.",
+         data_note=FJ_NOTE,
          draw=draw_fj),
     Page(id="FJ-ctrl", title="JetClass after fine-tuning, random partitions",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
@@ -708,6 +801,7 @@ PAGES = [
                  "curve.",
          differs="As FJ, with no legend: probe curves lie lower, so it would cover Z to qq; the colors are FJ's. The "
                  "poster's left panel is also a frozen network, with an MLP on it; here the probe is linear.",
+         data_note=FJ_APP_NOTE,
          draw=draw_fj_app),
     Page(id="FJ-ctrl-app", title="JetClass with linear probes, random partitions (appendix)",
          precedent=["1902.09914/fig5.png", "map2026_poster/fig5.png"],
@@ -739,15 +833,14 @@ PAGES = [
          precedent_label="Landscape Fig. 5",
          caption="",
          differs=PAIR_DIFFERS,
-         data_note=PAIR_NOTE,
+         data_note=PAIR_LP_NOTE + PAIR_NOTE,
          draw=draw_f4_mech),
     Page(id="F4-mech-ft", title="Class pairs, fine-tuned, X→bb̄ vs cc̄ and X→bc vs bq, cs",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
          caption="",
          differs="F4-mech's form after fine-tuning; from scratch (grey) in the upper row.",
-         data_note="Reads curves_v2/pairs_ft (the fine-tuned networks on natural-mix test jets: the signal side's summed "
-                   "softmax over the pair's summed softmax). " + PAIR_NOTE,
+         data_note=PAIR_FT_NOTE + PAIR_NOTE,
          draw=draw_f4_mech_ft),
     Page(id="F4-other", title="Class pairs, linear probes, the four other flavor pairs",
          precedent=["1902.09914/fig5.png"],
@@ -756,7 +849,7 @@ PAGES = [
          differs="F4-mech's form on X→YY→bb̄qq vs cc̄qq and QCD bb̄ vs cc̄ (PI 2026-11-13: X→ee vs μμ to the "
                  "supplement); L20: two 6.3 cm panels a row, so the QCD pairs with b and with c against light are "
                  "F4-light.",
-         data_note=PAIR_NOTE,
+         data_note=PAIR_LP_NOTE + PAIR_NOTE,
          draw=draw_f4_other),
     Page(id="F4-light", title="Class pairs, linear probes, QCD with heavy quarks vs light",
          precedent=["1902.09914/fig5.png"],
@@ -764,7 +857,7 @@ PAGES = [
          caption="",
          differs="F4-mech's form on QCD with b vs light and QCD with c, no b, vs light (L20: the second half of the "
                  "old four-pair F4-other).",
-         data_note=PAIR_NOTE,
+         data_note=PAIR_LP_NOTE + PAIR_NOTE,
          draw=draw_f4_light),
     Page(id="F4-other-ft", title="Class pairs, fine-tuned, the four other flavor pairs",
          precedent=["1902.09914/fig5.png"],
@@ -772,14 +865,14 @@ PAGES = [
          caption="",
          differs="F4-other's form after fine-tuning (new: the fine-tuned counterpart of F4-other); from scratch in the "
                  "upper row.",
-         data_note="Reads curves_v2/pairs_ft. " + PAIR_NOTE,
+         data_note=PAIR_FT_NOTE + PAIR_NOTE,
          draw=draw_f4_other_ft),
     Page(id="F4-light-ft", title="Class pairs, fine-tuned, QCD with heavy quarks vs light",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
          caption="",
          differs="F4-light's form after fine-tuning; from scratch in the upper row.",
-         data_note="Reads curves_v2/pairs_ft. " + PAIR_NOTE,
+         data_note=PAIR_FT_NOTE + PAIR_NOTE,
          draw=draw_f4_light_ft),
     Page(id="F4-ee", title="Class pairs, X→ee vs μμ, linear probes",
          precedent=["1902.09914/fig5.png"],
@@ -822,6 +915,24 @@ PAGES = [
          differs="F4-rand-qcd after fine-tuning.",
          data_note="Reads curves_v2/pairs_ft.",
          draw=lambda path: draw_f4_rand(path, "pairs_ft", PAIR_ORDER[3:6])),
+    Page(id="ROC-main", title="ROC curves, JetClass against QCD and top and quark/gluon tagging",
+         precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
+         precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
+         caption="Background rejection against signal efficiency, the mean over runs, with the standard deviation over "
+                 "runs as a band. (a)–(d) Networks pretrained with 188 and 17 classes and a network trained from "
+                 "scratch, fine-tuned on one million JetClass jets: H→bb̄, H→cc̄, H→gg and t→bqq′ against QCD jets. "
+                 "(e)–(h) Top and quark/gluon tagging (Pythia), linear probes and fine-tuned, for the label sets and "
+                 "mass networks; only 188 classes and from scratch carry bands. Curves end where fewer than 20 "
+                 "background jets remain.",
+         differs="Four panels a row (the PI's two rows of four, 2026-11-18; L20's two a row would take four rows and "
+                 "overrun the page), one y range a row, one x label a row. The upper row is ParT's discriminant "
+                 "p_S/(p_S+p_QCD) with bands of the run spread; the lower row is F6's and F6-ft's Pythia panels without "
+                 "their ratio panels (F6 and F6-ft keep them, and Herwig), bands as L21.",
+         data_note="(a)-(d) read curves_v2/jc1_ft: the one rule's cells (jc1_ft_fixed) once pulled, until then the "
+                   "long-budget cells, which the one rule supersedes. (e) and (g) read top_probe and qg_probe: the v5 "
+                   "refit (top_probe_v5, qg_probe_v5) once pulled, until then v4. A panel with no data says pending. "
+                   + SUBST_NOTE,
+         draw=draw_roc_main),
     Page(id="F6", title="ROC curves, top and quark/gluon tagging, linear probes",
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
@@ -904,7 +1015,7 @@ SUPPLEMENT_CAPTIONS = {
         "classes and 17 classes + mass, + mass marking an added mass regression, and the random network. Each curve is "
         "the mean over three pretraining runs, two for 17 classes + mass, or three random initializations, and ends "
         "where fewer than 20 X→μμ jets remain. Fine-tuned, every network separates the pair completely, so no "
-        "fine-tuned panel is drawn, and the areas under the receiver operating characteristic curve are in table "
+        "fine-tuned panel is drawn, and the rejections at 50% signal efficiency are in table "
         "{tab:pairs}."
     ),
     "F4-rand": (
@@ -914,16 +1025,16 @@ SUPPLEMENT_CAPTIONS = {
         "mixes the two. Each panel shows background rejection against signal efficiency with the first-named class as "
         "signal, and the lower panels the ratio to 188 classes with each curve's standard deviation over runs and "
         "binomial uncertainty in quadrature. Curves end where fewer than 20 background jets remain. Every random "
-        "partition separates X→ee from X→μμ completely, and the areas under the receiver operating characteristic "
-        "curve are in table {tab:pairsfull}."
+        "partition separates X→ee from X→μμ completely, and the rejections at 50% signal efficiency "
+        "are in table {tab:pairsfull}."
     ),
     "F4-rand-ft": (
         "The panels of figure {fig:F4-rand} for networks fine-tuned on one million class-balanced JetClass-II jets and "
         "scored on the mixed test sample (38.7% two-prong, 40.8% three- and four-prong, 20.5% QCD jets), the five random 17-class partitions with one run each beside 188 and 17 "
         "classes with three runs each. Some random partitions merge a pair into one class and others keep it apart, so "
         "the mean mixes the two. The lower panels show the ratio to 188 classes with each curve's standard deviation "
-        "over runs and binomial uncertainty in quadrature. Curves end where fewer than 20 background jets remain, and the areas under the receiver "
-        "operating characteristic curve are in table {tab:pairsfull}."
+        "over runs and binomial uncertainty in quadrature. Curves end where fewer than 20 background jets remain, and the rejections at 50% signal efficiency "
+        "are in table {tab:pairsfull}."
     ),
     "F4-rand-qcd": (
         "The panels of figure {fig:F4-rand} on the three pairs of QCD jets of figures {fig:F4-other} and {fig:F4-light}, "
@@ -931,16 +1042,16 @@ SUPPLEMENT_CAPTIONS = {
         "mean over the five with one run each, beside 188 and 17 classes with three runs each. Some random partitions "
         "merge a pair into one class and others keep it apart, so the mean mixes the two. The lower panels show the "
         "ratio to 188 classes with each curve's standard deviation over runs and binomial uncertainty in quadrature. "
-        "Curves end where fewer than 20 background jets remain, and the areas under the receiver operating "
-        "characteristic curve are in table {tab:pairsfull}."
+        "Curves end where fewer than 20 background jets remain, and the rejections at 50% signal efficiency "
+        "are in table {tab:pairsfull}."
     ),
     "F4-rand-qcd-ft": (
         "The panels of figure {fig:F4-rand-qcd} for networks fine-tuned on one million class-balanced JetClass-II jets "
         "and scored on the mixed test sample (38.7% two-prong, 40.8% three- and four-prong, 20.5% QCD jets), the five random 17-class partitions with one run each beside 188 "
         "and 17 classes with three runs each. Some random partitions merge a pair into one class and others keep it "
         "apart, so the mean mixes the two. The lower panels show the ratio to 188 classes with each curve's standard "
-        "deviation over runs and binomial uncertainty in quadrature. Curves end where fewer than 20 background jets remain, and the areas under the "
-        "receiver operating characteristic curve are in table {tab:pairsfull}."
+        "deviation over runs and binomial uncertainty in quadrature. Curves end where fewer than 20 background jets remain, and the rejections at 50% signal efficiency "
+        "are in table {tab:pairsfull}."
     ),
     "F6-part": (
         "The four 17-class partitions in the form of figure {fig:F6}, as linear probes on frozen features trained on "

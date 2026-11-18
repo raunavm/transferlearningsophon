@@ -529,15 +529,18 @@ def draw_f10b(path: pathlib.Path) -> None:
 
 
 def draw_f10b_flav(path: pathlib.Path) -> None:
-    """The flavor-boundary partitions with 188 and 17 classes for reference; the random partitions have no head
-    outputs (their extraction is queued inference)."""
+    """The flavor-boundary and the random partitions (pooled) with 188 and 17 classes for reference (the random
+    partitions' head outputs and sculpting: head/sculpting_v3, PI 2026-11-15)."""
     sc = _sculpt()
     if not any(m in sc for a in S.CONTROLS for m in RUNS[a]):
         raise Absent("no mass sculpting curve of the flavor-boundary partitions")
     _sculpt_curves(path, sc, SCULPT_PARTITIONS, POOLED, direct=True)
 
 
-SCULPT_FT = "head/sculpting_ft"     # the fine-tuned networks' sculpting files, <model>.json (EVAL/sculpting_ft.py)
+# the fine-tuned networks' sculpting files, <model>.json (EVAL/sculpting_ft.py): the one rule's JetClass-II cells at 1e6
+# only (build_gallery_data_job.py --mode sculpt-ft-fixed, pulled whole after its DONE); head/sculpting_ft, of the older
+# trees, is never drawn
+SCULPT_FT = "head/sculpting_ft_fixed"
 
 
 def _sculpt_ft() -> dict:
@@ -699,6 +702,13 @@ def draw_f11_probe(path: pathlib.Path) -> None:
 # experiments/EVAL/perf_vs_pt.py's files, pulled by pull_mlst_data.py: per pT bin, the linear probes on class-balanced
 # JetClass-II (jc2) and on JetClass (jc1_probe), and the networks fine-tuned on them (jc2_ft, jc1)
 PERF = P.DATA / "perf_vs_pt"
+# the rerun (PI 2026-11-15): the linear-probe panels read the bins of the v5 refit (perf_vs_pt_v5/, build_perf_pt_jobs
+# jc2v5, jc1probev5) once the v5 probes are in use (mlst_v4.pick: every linear-probe family at v5 or none), the
+# fine-tuned panels only the one rule's cells at 1e6 (perf_vs_pt_fixed/, jc2fixed, jc1fixed): the files of the older
+# fine-tuning trees in perf_vs_pt/jc2_ft and jc1 are never drawn
+PROBE_V5 = M.V4.pick(P.DATA, "linprobe/fits_v4") != "linprobe/fits_v4"
+PERF_DIR = {"jc2": P.DATA / "perf_vs_pt_v5" if PROBE_V5 else PERF, "jc1_probe": P.DATA / "perf_vs_pt_v5" if PROBE_V5 else PERF,
+            "jc2_ft": P.DATA / "perf_vs_pt_fixed", "jc1": P.DATA / "perf_vs_pt_fixed"}
 PT_MARKER = 3.5
 # the family's panels, (perf_vs_pt folder, panel title): rows linear probe and fine-tuned, columns JetClass-II (ten
 # bins, 200-2500 GeV) and JetClass (five bins, 500-1000 GeV). Only these two test sets: the top and quark/gluon samples
@@ -796,9 +806,10 @@ def _pt_figure(path: pathlib.Path, panels: tuple, rows: tuple, value, ylabel: st
     """The family's form: panels (perf_vs_pt folder, title) two to a row, each on its own y axis (the test sets and
     modes differ in level), every axis labelled; unjoined points with bin bars; the figure legend above in the
     columns of the networks' groups (gallery_roc._group_legend)."""
-    docs = {sub: M._load(PERF / sub) for sub, _ in panels}
+    docs = {sub: M._load(PERF_DIR[sub] / sub) for sub, _ in panels}
     if not all(docs.values()):
-        raise Absent("no performance against jet pT (perf_vs_pt/" + ", ".join(s for s, d in docs.items() if not d) + ")")
+        raise Absent("no performance against jet pT (" + ", ".join(f"{PERF_DIR[s].name}/{s}" for s, d in docs.items()
+                                                                  if not d) + ")")
     n_rows = (len(panels) + 1) // 2
     legend_rows = max(len(c) for c in _legend_cols(rows))
     fig, axes, _ = S.grid_cm(n_rows, 2, w=6.1, aspect=0.87, top=0.95 + 0.42 * legend_rows, left=1.3, wgap=1.5,
@@ -892,14 +903,16 @@ SUPPLEMENT_CAPTIONS = {
         f"The panels show the soft-drop mass of JetClass-II QCD test jets before any selection (black) and after a "
         f"cut on 1 - g_QCD, one minus the summed QCD score of the network output used directly, at QCD efficiencies "
         f"of 10% (dark grey) and 1% (light grey), for the networks pretrained with {nets}, each named above its panel. Each "
-        f"histogram is the mean over {runs} pretraining runs, and the lower panels show the ratio to the inclusive "
+        f"histogram is the mean over {runs}, and the lower panels show the ratio to the inclusive "
         f"distribution with a band of ±1 standard deviation over runs, on one ratio range for figures "
         f"{{fig:F10a}}, {{fig:F10a-mass}} and {{fig:F10a-flav}}. Above about 300 GeV few jets pass the 1% cut, so "
         f"the ratio swings from bin to bin. Figure {{fig:{dist}}} summarizes each distortion as a distance."
     ) for pid, nets, runs, dist in (
-        ("F10a", "188, 162, 43 and 17 classes", "three", "F10b"),
-        ("F10a-mass", "162 and 17 classes and an added mass regression (+ mass)", "two", "F10b"),
-        ("F10a-flav", "the 17-class partitions with no, a b-quark and a random flavor boundary", "two", "F10b-flav"))},
+        ("F10a", "188, 162, 43 and 17 classes", "three pretraining runs", "F10b"),
+        ("F10a-mass", "162 and 17 classes and an added mass regression (+ mass)", "two pretraining runs", "F10b"),
+        ("F10a-flav", "the 17-class partitions with no, a b-quark and a random flavor boundary and the five random "
+                      "partitions, these as one panel", "two pretraining runs per flavor-boundary partition or the five "
+                                                       "random partitions", "F10b-flav"))},
     "F10b-flav": (
         'The curves show the Jensen-Shannon distance between the soft-drop mass distributions of all JetClass-II QCD '
         'test jets and of those passing a cut on 1 - g_QCD, the network output used directly, against QCD efficiency '
@@ -907,7 +920,7 @@ SUPPLEMENT_CAPTIONS = {
         'pretraining runs per flavor-boundary partition, the five random partitions or three runs for 188 and 17 '
         'classes, the band, for 188 classes only, shows ±1 '
         'standard deviation, the others being in the tables, and the dotted line is a random selection of as many QCD '
-        'jets. Values are in tables {tab:sculpt} and {tab:sculptboot}.'
+        'jets. Values are in tables {tab:sculptfull} and {tab:sculptboot}.'
     ),
     "F10c": (
         "Each point shows the inverse Jensen-Shannon divergence 1/JSD50 between the soft-drop mass distributions of "
@@ -917,8 +930,8 @@ SUPPLEMENT_CAPTIONS = {
         "Points higher up distort the QCD mass less and points further right reject more QCD jets. Points are means "
         "over three pretraining runs, two for networks with an added mass regression (+ mass, lighter shades) and the "
         "flavor-boundary partitions, the five random partitions with one run each, and bars show the standard "
-        "deviation over runs. The values are in table {tab:sculpt}, at 50% resonant "
-        "efficiency."
+        "deviation over runs. The values are in tables {tab:sculpt} and, for the 17-class partitions, {tab:sculptfull}, "
+        "at 50% resonant efficiency."
     ),
     "F10-ft": (
         'The curves show the Jensen-Shannon distance between the soft-drop mass distributions of all QCD test jets and '
@@ -1141,27 +1154,27 @@ PAGES = [
          "six trainings per method. Legend above the panel; no ideal-tagger arrow.",
          draw_f10c,
          "New page. Reads sig_eff_50 {rejection, jsd} from each run's sculpting file (head/sculpting_v3/<model>_sculpting.json, "
-         "the 22 models of the sculpting rerun, the flavor-boundary partitions among them)."),
+         "the 22 models of the sculpting rerun and the five random partitions, PI 2026-11-15)."),
     Page("F10b-flav", "Mass sculpting: the flavor-boundary partitions, how much (appendix)", ["2604.09809/fig9.png"],
          "CMS JME-25-001 Fig. 9 left", "",
-         "F10b's form for the three flavor-boundary partitions, with 188 classes for reference (PI, 2026-11-08: out of "
-         "the main-text F10b). A separate page rather than a panel on F10a-flav, whose 2x2 of mass distributions has no "
-         "room for a distance panel.",
-         draw_f10b_flav, "Two runs per partition, three for 188 classes."),
+         "F10b's form for the three flavor-boundary partitions and the five random partitions (one curve), with 188 and "
+         "17 classes for reference (PI, 2026-11-08: out of the main-text F10b; the random partitions' heads, PI "
+         "2026-11-15). A separate page rather than a panel on F10a-flav, whose 2x2 of mass distributions has no room "
+         "for a distance panel.",
+         draw_f10b_flav, "Two runs per flavor-boundary partition, five random partitions, three for 188 and 17 classes."),
     Page("F10-ft", "Mass sculpting after fine-tuning (appendix)", ["2604.09809/fig9.png"],
          "CMS JME-25-001 Fig. 9 left", "",
          "F10b's form after fine-tuning (PI, 2026-11-08), on the same natural-mix test jets as F10b, unweighted, so "
          "the floor is F10b's: a random selection of as many QCD jets.",
          draw_f10_ft,
-         "Reads head/sculpting_ft/<model>.json (experiments/EVAL/sculpting_ft.py): the curve's js_distance and n_pass; "
-         "absent until pulled. From scratch: the three full-schedule networks (scratch-s1..3), grey solid. 17 classes "
-         "run 1 and both 17 + mass runs are the long-budget cells (160-epoch cap), the others the 40-epoch cells."),
+         "Reads head/sculpting_ft_fixed/<model>.json (experiments/EVAL/sculpting_ft.py): the curve's js_distance and "
+         "n_pass; absent until pulled. Every cell, from scratch (scratch-s1..3, grey solid) among them, is the one rule's "
+         "at 1e6 (ft_v2/fixed, PI 2026-11-15)."),
     Page("F10-ft-part", "Mass sculpting after fine-tuning, 17-class partitions (supplement)", ["2604.09809/fig9.png"],
          "CMS JME-25-001 Fig. 9 left", "",
          "F10-ft's form for the three flavor-boundary partitions and the five random partitions (one curve, the band "
          "their SD), with 188 and 17 classes for reference (PI 2026-11-13).", draw_f10_ft_part,
-         "Every partition cell is a long-budget cell (160-epoch cap); 188 classes and 17 classes runs 2 and 3 the "
-         "40-epoch cells, 17 classes run 1 the long-budget cell."),
+         "Every cell is the one rule's at 1e6 (ft_v2/fixed, PI 2026-11-15; head/sculpting_ft_fixed/)."),
     Page("F11", "Resonance tagging", ["2405.12972/fig2.png"], "Sophon Fig. 2", F11_CAPTION,
          "Same layout, limits on x, fonts and legend place; round 3's faint grid and thinner lines. y axis eps_S/sqrt(eps_B), in words figure of merit, instead of the "
          "significance Z, and x axis QCD efficiency instead of SM background efficiency, because Z needs the SM backgrounds, which "
@@ -1192,15 +1205,13 @@ PAGES = [
          "2026-11-11: every axis labelled). Panel titles and a figure legend instead of the precedents' text block; no "
          "experiment label; the label sets and the mass networks only (PI 2026-11-12: nothing else mixed in).",
          draw_pt,
-         "Three runs per label set, two per mass network. JetClass-II fine-tuned: 17 classes run 1 and both 17 + mass "
-         "runs are the long-budget cells (160-epoch cap), the others the 40-epoch cells, as Table 1 reads them; "
-         "JetClass fine-tuned: the long-budget cells (budget_long/leg2) of Table 1."),
+         "Three runs per label set, two per mass network. Fine-tuned: the one rule's cells at 1e6 (ft_v2/fixed, PI "
+         "2026-11-15; perf_vs_pt_fixed/); linear probes: perf_vs_pt_v5/ once the v5 refits are in use, else perf_vs_pt/."),
     Page("PT-part", "Performance against jet pT, 17-class partitions (supplement)", ["2004.08262/fig17.png"],
          "CMS DeepAK8 Fig. 17", PT_CAPTION,
          "PT's form for the three flavor-boundary partitions and the five random partitions (one point, the bar their "
          "SD), with 188 and 17 classes for reference.", draw_pt_part,
-         "Two runs per flavor-boundary partition, three for 188 and 17 classes; every partition's fine-tuned JetClass-II "
-         "cell is a long-budget cell (160-epoch cap)."),
+         "Two runs per flavor-boundary partition, three for 188 and 17 classes; fine-tuned: " + "the one rule's cells at 1e6 (ft_v2/fixed, PI 2026-11-15), perf_vs_pt_fixed/"),
     Page("PT-bbcc", "X→bb̄ vs X→cc̄ against jet pT (supplement)", ["2004.08262/fig17.png"], "CMS DeepAK8 Fig. 17",
          PT_CAPTION,
          "The old PT panel (d) in both modes: the area under the ROC curve of X→bb̄ against X→cc̄ per JetClass-II jet-pT "
@@ -1210,8 +1221,7 @@ PAGES = [
          "CMS DeepAK8 Fig. 17", PT_CAPTION,
          "PT-bbcc's form for the three flavor-boundary partitions and the five random partitions (one point, the bar "
          "their SD), with 188 and 17 classes for reference, as PT-part.", draw_pt_bbcc_part,
-         "Two runs per flavor-boundary partition, three for 188 and 17 classes; every partition's fine-tuned JetClass-II "
-         "cell is a long-budget cell (160-epoch cap)."),
+         "Two runs per flavor-boundary partition, three for 188 and 17 classes; fine-tuned: " + "the one rule's cells at 1e6 (ft_v2/fixed, PI 2026-11-15), perf_vs_pt_fixed/"),
 ]
 
 import dataclasses  # noqa: E402

@@ -9,11 +9,15 @@ Walks <root>/<tree>/<init>/N<N>/s<S>/ for every cell with DONE and scores it:
   leg_jc2b          from the 188 logits on every jet of the balanced test set: accuracy, the macro AUC
                     over all classes, the resonant and the QCD classes, each class's AUC and each
                     resonant class's rejection of summed QCD (linear_probe_v2.native_metrics)
-Every cell also carries its early_stop.json (best epoch, validation metric, epochs run, stopped early)
-and its manifest's recipe. A cell without DONE is listed as missing; the read-out never fills it.
+Every cell also carries its early_stop.json (best epoch, validation metric, epochs run, stopped early;
+a full-set cell of ParT's recipe has best_epoch.json instead, read into the same keys) and its manifest's
+recipe. A cell without DONE is listed as missing; the read-out never fills it. With --expect-fixed the
+cells are the one rule's (scripts/build_ft_budget_jobs.py fixed_cells), and one not yet started is
+missing too, so a partial read-out names every cell it lacks.
 
     python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/budget --out budget_metrics.json
     python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/lrsweep_v2 --out lrsweep_metrics.json
+    python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/fixed --expect-fixed --out fixed_metrics.json
 """
 from __future__ import annotations
 
@@ -80,11 +84,31 @@ def jc2b_metrics(cell: pathlib.Path, lp) -> dict:
         lp.AUC_STRIDE = old
 
 
+def fixed_keys() -> set:
+    """{tree/init/N<N>/s<S>} of every cell of the one rule at every size (build_ft_budget_jobs.fixed_cells)."""
+    b = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
+    return {"/".join(pathlib.Path(c["out"]).parts[-4:]) for c in b.fixed_cells(set(b.FIXED_STEPS))}
+
+
+def early_stop(cell: pathlib.Path) -> dict:
+    """The cell's early_stop.json without its per-epoch metrics; a full-set cell of ParT's recipe (20 epochs, no
+    stopping, build_ft_jobs) has best_epoch.json instead, read into the same keys."""
+    if (cell / "early_stop.json").exists():
+        es = json.loads((cell / "early_stop.json").read_text())
+        es.pop("metrics", None)
+        return es
+    be = json.loads((cell / "best_epoch.json").read_text())
+    return {"source": "best_epoch.json", "best_epoch": be["epoch"], "best_metric": be["metric"],
+            "epochs_completed": be["n_epochs"], "stopped_early": False}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True, type=pathlib.Path)
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--trees", nargs="+", default=["leg_top", "leg_qg", "leg2", "leg_jc2b"])
+    ap.add_argument("--expect-fixed", action="store_true",
+                    help="the cells are the one rule's (build_ft_budget_jobs.fixed_cells); one not DONE is missing")
     a = ap.parse_args(argv)
     bm = _load("bench_metrics", "experiments/FT/bench_metrics.py")
     probe = _load("probe", "experiments/EVAL/probe.py")
@@ -92,8 +116,13 @@ def main(argv=None) -> int:
     doc = {"script": "experiments/FT/budget_metrics.py", "root": str(a.root),
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
            "cells": {}, "missing": []}
+    expect = fixed_keys() if a.expect_fixed else None
+    if expect is not None:
+        doc["expected"] = len(expect)
     for tree in a.trees:
-        for cell in sorted((a.root / tree).glob("*/N*/s*")):
+        found = sorted((a.root / tree).glob("*/N*/s*")) if expect is None else \
+            [a.root / k for k in sorted(expect) if k.startswith(tree + "/")]
+        for cell in found:
             if cell.name.endswith(".lock") or ".partial." in cell.name:
                 continue
             key = f"{tree}/{cell.relative_to(a.root / tree)}"
@@ -108,8 +137,7 @@ def main(argv=None) -> int:
                 m = jc1_metrics(cell, lp)
             else:
                 m = jc2b_metrics(cell, lp)
-            m["early_stop"] = json.loads((cell / "early_stop.json").read_text())
-            m["early_stop"].pop("metrics", None)
+            m["early_stop"] = early_stop(cell)
             man = json.loads((cell / "ft_manifest.json").read_text())
             m["recipe"] = {k: man.get(k) for k in ("lr", "head_lr_mult", "lr_schedule", "weight_decay",
                                                    "max_epochs", "steps_per_epoch", "early_stop_patience",

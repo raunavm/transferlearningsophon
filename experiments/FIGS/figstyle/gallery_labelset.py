@@ -497,6 +497,13 @@ SIZE_LEFT, SIZE_WGAP, SIZE_HGAP, SIZE_RIGHT = 1.35, 0.85, 1.0, 0.15      # cm
 SIZE_W = (S.PRINT_W - SIZE_LEFT - SIZE_WGAP - SIZE_RIGHT) / 2              # 6.3 cm
 SIZE_ASPECT = 0.72          # three rows and the caption on one page (make_results_book.MAX_H_CM)
 SIZE_XLABEL = 0.45          # cm: an x label under a panel with another below it
+# A8 and A10 (PI 2026-11-18): a second block, the AUC on JetClass-II and JetClass (averaged over the classes, each against
+# the rest) and of top and quark/gluon, under the headline block; five rows, so flatter panels and room around the
+# legend's slot, which its one column of eight or nine entries (~3.6-3.9 cm) overfills: the page's height is
+# 0.6 + 5 x 0.39 x 6.325 + 4 x 1.0 + 2 x 0.25 + 1.0 = 18.43 cm (size_layout; make_results_book.MAX_H_CM 18.5)
+SIZE_AUC4 = tuple(s for s in SIZE5_AUC if s[0] != "qg_herwig")
+SIZE_AUC_SLOTS = ((3, 0), (3, 1), (4, 0), (4, 1))
+SIZE_ASPECT_TWO, SIZE_LEGEND_ROOM = 0.39, 0.25
 POOLED = M._pooled(RUNS)
 
 
@@ -528,22 +535,39 @@ PUBLISHED_LABEL = "published Particle\nTransformer"      # L7: no abbreviation i
 SIZE_PAD = 1.7              # a panel's x axis runs from its smallest training set over SIZE_PAD to its largest times it
 
 
-def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.SIZE) -> None:
+def size_layout(two: bool) -> tuple:
+    """(slots, panel height, top of each row, figure height) in cm of the training-size family: SIZE_SLOTS, or with two
+    (A8, A10) SIZE_SLOTS and SIZE_AUC_SLOTS at SIZE_ASPECT_TWO with SIZE_LEGEND_ROOM above and below the legend's row."""
+    slots = SIZE_SLOTS + (SIZE_AUC_SLOTS if two else ())
+    h, top = (SIZE_ASPECT_TWO if two else SIZE_ASPECT) * SIZE_W, 0.6
+    nrows = max(i for i, _ in slots + (SIZE_LEGEND_SLOT,)) + 1
+    # the lowest panel of each column carries the x label; one with a panel below it needs the room for it
+    lowest = {j: max(i for i, j_ in slots if j_ == j) for _, j in slots}
+    gaps = [SIZE_HGAP + (SIZE_XLABEL if any(lowest[j] == i for j in lowest) else 0)
+            + (SIZE_LEGEND_ROOM if two and i in (SIZE_LEGEND_SLOT[0] - 1, SIZE_LEGEND_SLOT[0]) else 0)
+            for i in range(nrows - 1)]
+    y_of = [top + i * h + sum(gaps[:i]) for i in range(nrows)]
+    return slots, h, y_of, y_of[-1] + h + 1.0
+
+
+def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.SIZE, auc_rows=None) -> None:
     """series_of(key, ds, met): [(series, line, mark, label)] of a panel, in the legend's order; drawn in reverse, so
-    the first (188 classes) lies on top. auc: the same five tasks in AUC (SIZE5_AUC) with ParT's published AUCs."""
+    the first (188 classes) lies on top. auc: the same five tasks in AUC (SIZE5_AUC) with ParT's published AUCs.
+    auc_rows: series_of of a second block under the first, SIZE_AUC4 in AUC (A8, A10; size_layout)."""
     spec, published = (SIZE5_AUC, PUBLISHED_AUC) if auc else (SIZE5, PUBLISHED)
     panels = [series_of(key, ds, met) for key, ds, met, _ in spec]
+    pubs = [published] * len(spec)
+    if auc_rows:
+        panels += [auc_rows(key, ds, met) for key, ds, met, _ in SIZE_AUC4]
+        spec, pubs = spec + SIZE_AUC4, pubs + [PUBLISHED_AUC] * len(SIZE_AUC4)
     if not any(s for p in panels for s, *_ in p):
         raise C.Absent(absent)
-    w, h, top = SIZE_W, SIZE_ASPECT * SIZE_W, 0.6
-    nrows = max(i for i, _ in SIZE_SLOTS + (SIZE_LEGEND_SLOT,)) + 1
-    # the lowest panel of each column carries the x label; one with a panel below it needs the room for it
-    lowest = {j: max(i for i, j_ in SIZE_SLOTS if j_ == j) for _, j in SIZE_SLOTS}
-    gaps = [SIZE_HGAP + (SIZE_XLABEL if any(lowest[j] == i for j in lowest) else 0) for i in range(nrows - 1)]
-    y_of = [top + i * h + sum(gaps[:i]) for i in range(nrows)]
-    fig = S.figure_cm(S.PRINT_W, y_of[-1] + h + 1.0)
+    slots, h, y_of, height = size_layout(bool(auc_rows))
+    w = SIZE_W
+    lowest = {j: max(i for i, j_ in slots if j_ == j) for _, j in slots}
+    fig = S.figure_cm(S.PRINT_W, height)
     axes, handles = [], {}
-    for k, ((i, j), panel, (key, _, met, title)) in enumerate(zip(SIZE_SLOTS, panels, spec)):
+    for k, ((i, j), panel, (key, _, met, title), published) in enumerate(zip(slots, panels, spec, pubs)):
         ax = S.axes_cm(fig, SIZE_LEFT + j * (w + SIZE_WGAP), y_of[i], w, h)
         axes.append(ax)
         ax.set_xscale("log")
@@ -602,8 +626,10 @@ def _tuned(row: str, tag: bool = False):
                                      S.LEGEND[row] + (f" {S.FINE_TUNED}" if tag else ""))
 
 
-def _size(path, makers: list, absent: str, auc: bool, style: str = L.SIZE) -> None:
-    _draw_size(path, lambda key, ds, met: [m(key, ds, met) for m in makers], absent, auc=auc, style=style)
+def _size(path, makers: list, absent: str, auc: bool, style: str = L.SIZE, auc_makers=None) -> None:
+    """auc_makers: the makers of a second block in AUC under the first (A8, A10)."""
+    _draw_size(path, lambda key, ds, met: [m(key, ds, met) for m in makers], absent, auc=auc, style=style,
+               auc_rows=(lambda key, ds, met: [m(key, ds, met) for m in auc_makers]) if auc_makers else None)
 
 
 def draw_f8(path, auc: bool = False) -> None:
@@ -614,16 +640,22 @@ def draw_f8(path, auc: bool = False) -> None:
 
 
 def draw_a10(path, auc: bool = False) -> None:
-    """Linear probes of the label sets and the mass networks; the random network in the AUC version only (PI
-    2026-11-14, audit 3: in accuracy and R30 its points, far below, set the y range and squeeze the label sets into a
-    strip, so the figure leaves it to tab:probesn)."""
-    _size(path, [_probe(r) for r in SIZE_ROWS] + ([_probe(M.INIT)] if auc else []), "no linear probes (linprobe/fits_v4)",
-          auc)
+    """Linear probes of the label sets and the mass networks, the AUC block under the headline block; the random network
+    in the AUC only (PI 2026-11-14, audit 3: in accuracy and R30 its points, far below, set the y range and squeeze the
+    label sets into a strip, so the figure leaves it to tab:probesn). auc: the AUC alone (A10-auc, superseded)."""
+    probes = [_probe(r) for r in SIZE_ROWS]
+    absent = "no linear probes (linprobe/fits_v4)"
+    if auc:
+        _size(path, probes + [_probe(M.INIT)], absent, True)
+    else:
+        _size(path, probes, absent, False, auc_makers=probes + [_probe(M.INIT)])
 
 
 def draw_a8(path, auc: bool = False, style: str = L.SIZE) -> None:
-    """A10's form after fine-tuning: the label sets, the mass networks and from scratch."""
-    _size(path, [_tuned(r) for r in SIZE_ROWS] + [_tuned("SCRATCH")], "no fine-tuning read-outs", auc, style)
+    """A10's form after fine-tuning: the label sets, the mass networks and from scratch, the AUC block under the headline
+    block (PI 2026-11-18: Fig. 7). auc: the AUC alone (A8-auc, superseded)."""
+    tuned = [_tuned(r) for r in SIZE_ROWS] + [_tuned("SCRATCH")]
+    _size(path, tuned, "no fine-tuning read-outs", auc, style, auc_makers=None if auc else tuned)
 
 
 def draw_a10_part(path) -> None:
@@ -661,7 +693,11 @@ def UMAP_GROUP_COLOURS(task: str, groups: list) -> dict:     # noqa: N802 (a tab
     return {g: GROUP_COLOUR[g] for g in groups}
 
 
-UMAP_DIRS = ("umap_v3", "umap_v2", "umap", "umap_preview")     # four label sets (2026-11-13); round 3; the long-budget jc1 run; the preview
+UMAP_DIRS = ("umap_v4", "umap_v3", "umap_v2", "umap", "umap_preview")     # the one rule; four label sets (2026-11-13); round 3; the long-budget jc1 run; the preview
+# the one rule (PI 2026-11-15): the fine-tuned panels of these sets come from the JetClass and JetClass-II cells it
+# replaced (scripts/build_umap_jobs.py --out-name umap_v4 --reuse umap_v3), so they are read from umap_v4 alone; their
+# frozen panels and the fine-tuned top and quark/gluon ones (full sets, ParT's recipe) did not change
+UMAP_FIXED, UMAP_RERUN_FT = "umap_v4", ("jc1", "two_prong", "leptons")
 UMAP_SETTINGS = {"n_neighbors": 15, "min_dist": 0.1, "metric": "euclidean", "random_state": 1, "standardized": True}
 UMAP_READ = {      # one sentence per figure on what its panels show, written after looking at them (round 4); for the text
     "UMAP-jc1": "Both models' frozen features set the leptonic decays apart, in two islands for 188 classes; "
@@ -689,9 +725,10 @@ UMAP_PAGES = {
 
 
 def _umap_root(stems: list):
-    """The first of UMAP_DIRS holding every file of a figure: umap_v2/ where pulled, else (JetClass only) umap/ or
-    the preview."""
-    for name in UMAP_DIRS:
+    """The first of UMAP_DIRS holding every file of a figure: umap_v4/ where pulled, else umap_v3/ ... the preview; a
+    figure with a fine-tuned panel of UMAP_RERUN_FT only from UMAP_FIXED (never the superseded cells' panels)."""
+    rerun = any(s.endswith("_ft") and s.split("_mtx-")[0] in UMAP_RERUN_FT for s in stems)
+    for name in ((UMAP_FIXED,) if rerun else UMAP_DIRS):
         if all((P.DATA / name / f"{s}.json").exists() for s in stems):
             return P.DATA / name
     raise C.Absent(f"no UMAP of the class token for {stems[0]} ({', '.join(d + '/' for d in UMAP_DIRS)})")
@@ -854,7 +891,7 @@ def _umap_more_page(page: str) -> C.Page:
                 + ("X→bb̄ and X→bs against QCD as the two columns, frozen only (L11)." if xbx
                    else "columns frozen and fine-tuned."),
         draw=lambda path: _draw_umap_more(path, page),
-        data_note="From umap_v3 (L19).")
+        data_note="From umap_v4, or umap_v3 for a grid without a fine-tuned JetClass or JetClass-II panel (L19).")
 
 
 def _umap_page(page: str) -> C.Page:
@@ -877,7 +914,7 @@ def _umap_page(page: str) -> C.Page:
                                                    f"{u['min_dist']}, seed {u['random_state']}.") + (" Absent inputs zero-filled, as in every frozen probe and fine-tuning."
                                                  if page in ("UMAP-top", "UMAP-qg") else ""),
         draw=lambda path: _draw_umap(path, page),
-        data_note=f"From umap_v2 (scripts/build_umap_jobs.py --out-name umap_v2). Reading, for the text: {UMAP_READ[page]}")
+        data_note=f"From umap_v4 (scripts/build_umap_jobs.py --out-name umap_v4). Reading, for the text: {UMAP_READ[page]}")
 
 
 
@@ -892,7 +929,7 @@ def _umap_task_page(page: str) -> C.Page:
         differs="PI 2026-11-14 (step 5): one grid per mode covering every task, rows the tasks, columns 188, 162, 43 "
                 "and 17 classes, one legend per row; the per-task grids' jets, UMAP settings and seed.",
         draw=lambda path: _draw_umap_tasks(path, page),
-        data_note="From umap_v3 (L19).")
+        data_note="From umap_v4 (the one rule's JetClass and JetClass-II cells; the rest linked from umap_v3, L19).")
 
 
 
@@ -1083,7 +1120,9 @@ PAGES = [
         precedent=["2401.13537/fig3.png"],
         precedent_label="Golling Fig. 3",
         caption="",
-        differs=SIZE_DIFFERS + " Fine-tuned: from scratch (grey) is the reference.",
+        differs=SIZE_DIFFERS + " Fine-tuned: from scratch (grey) is the reference. PI 2026-11-18: the AUC block (JetClass-II, "
+                               "JetClass, top, quark/gluon) under the headline block, A8-auc folded in; flatter panels so "
+                               "the page fits.",
         draw=draw_a8,
         data_note=SIZE_NOTE + " On JetClass-II and JetClass the plan's sizes drop 1,000 jets for fine-tuning and from "
                   "scratch, so those curves start at 10,000 by design."),
@@ -1094,7 +1133,8 @@ PAGES = [
         precedent_label="Golling Fig. 3",
         caption="",
         differs=SIZE_DIFFERS + " Linear probes: the random network (dark grey) is the reference; the from-scratch curve "
-                               "left the figure (plan).",
+                               "left the figure (plan). PI 2026-11-18: the AUC block (JetClass-II, JetClass, top, "
+                               "quark/gluon; the random network in it) under the headline block, A10-auc folded in.",
         draw=draw_a10,
         data_note=f"{SIZE_NOTE} {SUBST_NOTE}"),
     C.Page(
@@ -1107,8 +1147,9 @@ PAGES = [
                 "probe (dashed, open circles; was a lighter tint, which now means + mass), from scratch grey; the "
                 "family's five panels.",
         draw=draw_f8,
-        data_note=f"Sizes below the full set use the fixed step budget with early stopping; the full JetClass, top and "
-                  f"quark/gluon points use the full-set recipe. {SUBST_NOTE}"),
+        data_note=f"Every fine-tuning below the full top and quark/gluon sets, JetClass and JetClass-II at every size "
+                  f"included, follows the one rule (a fixed number of steps set by the training size, the best "
+                  f"validation checkpoint); the full top and quark/gluon points use ParT's recipe. {SUBST_NOTE}"),
     C.Page(
         id="F8-auc",
         title="Training size, 188 classes against from scratch, AUC",

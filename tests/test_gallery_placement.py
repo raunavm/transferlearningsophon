@@ -92,9 +92,13 @@ def test_the_main_text_is_the_pis_list_in_order():
     # figure is one mode a figure (F6, F6-ft)
     # PI 2026-11-14 (steps 5, 6): the appendix by family, linear probes first (F4-other and F4-light before the
     # fine-tuned pairs); the mass probe on frozen features beside F9b; the embeddings as two task grids
-    assert appendix == ["F2a", "F2b", "PC-jc1", "F4-other", "F4-light", "F4-mech-ft", "F4-other-ft", "F4-light-ft",
-                        "A10", "F6", "F6-ft", "PT", "F9b", "A17-probe", "F10b", "F11-part", "UMAP-frozen", "UMAP-ft",
+    # PI 2026-11-18: F2a and F2b (AUC only) and F6/F6-ft (now ROC-main's second row) to the supplement; the full
+    # JetClass ROC set (FJ-app, FJ) behind ROC-main in the appendix
+    assert appendix == ["PC-jc1", "F4-other", "F4-light", "F4-mech-ft", "F4-other-ft", "F4-light-ft",
+                        "A10", "FJ-app", "FJ", "PT", "F9b", "A17-probe", "F10b", "F11-part", "UMAP-frozen", "UMAP-ft",
                         "VAL"]
+    assert [k for k, t, _ in G.FIGURES if t == G.MAIN] == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "ROC-main", "A8",
+                                                          "F11"]
     assert [f for f, _ in G.APPENDIX_FAMILIES] == ["Headline metrics", "Per class", "Class pairs", "Training size",
                                                    "ROC curves", "Jet pT", "Mass", "Sculpting", "Resonance tagging",
                                                    "Embeddings", "Training details"]
@@ -174,7 +178,7 @@ def test_the_coverage_map_has_a_row_a_family_and_no_blank_cell():
             assert c and (c == "supplement" or c.startswith("does not apply (") or re.fullmatch(
                 r"(Figs?\. [AS]?\d+(, [AS]?\d+)*)?(; )?(Tables? [AS]?\d+(, [AS]?\d+)*)?", c)), (family, c)
     cov = dict(rows)
-    assert cov["Headline metrics"][0] == "Figs. 2, A1; Tables 1, A1"
+    assert cov["Headline metrics"][0] == "Fig. 2; Tables 1, A1"
     assert all(c.startswith("does not apply") for c in cov["Resonance tagging"][3:])
     assert cov["Embeddings"][1] == "supplement" and cov["Embeddings"][2].startswith("does not apply")
     # every paper item that shows a group is in the map, and only paper items are
@@ -210,7 +214,7 @@ def test_every_number_in_a_sentence_comes_from_number():
         filled = G.BACKS[key]
         assert "[[" not in filled and re.findall(r"(?:Fig\.|Table) [AS]?\d+", filled) == [G.number(r) for r in refs]
     # plain sentences that name their items (2026-11-13: no "Cited beside ...:" form, no colon)
-    assert G.BACKS["FJ"] == f"{G.number('tab:jc1_class_auc')} gives the areas under the ROC curves of {G.number('FJ')}."
+    assert G.BACKS["FJ"].startswith(f"Fine-tuned, {G.number('FJ')} gives every JetClass class's rejection")
     assert G.BACKS["PC-conf"] == (f"The JetClass confusion matrices of every pretrained network are in {G.number('PC-conf')}, "
                                   f"{G.number('PC-conf-part')} and {G.number('PC-conf-mass')}.")
     assert not any(s.startswith("Cited") or ": " in s for s in G.BACKS.values())
@@ -233,8 +237,9 @@ def test_every_sentence_names_its_evidence():
     assert G.evidence("tab:labelsets") == ("tab:labelsets", "tab:summary", "tab:summaryauc")
     assert G.evidence("tab:partrepro") == ("tab:partrepro", "tab:published")
     # the per-class and training-size families point at their tables
-    assert G.evidence("PC-jc2") == ("PC-jc2", "tab:summaryauc", "tab:perclass")
-    assert G.evidence("A8") == ("A8", "tab:ft", "tab:summary") and G.evidence("A10") == ("A10", "tab:probesn", "tab:summary")
+    assert G.evidence("PC-jc2") == ("PC-jc2", "tab:summary", "tab:perclass")     # recall: its class mean is the accuracy
+    assert G.evidence("A8") == ("A8", "tab:ft", "tab:summary", "tab:ftfull")
+    assert G.evidence("A10") == ("A10", "tab:probesn", "tab:summary", "tab:probesnfull")
     # the jet-pT family: its values are the data release's jet_pt_bins.csv (L18), no table, so the figure is its own
     # evidence; the three supplement slices share one sentence
     assert G.evidence("PT") == ("PT",) and "tab:ptbins" not in G.TIER
@@ -249,7 +254,7 @@ def test_the_new_pages_are_marked_new():
     review = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(review)
     for page in ("F2", "PC-jc2", "PC-jc1", "F4-other-ft", "F4-ee", "F4-rand", "F6-part", "A8-part", "A10-part", "F10-ft",
-                 "F11-part", "F11-probe", "A17-ridge", "F10-ft-part", "VAL-part"):
+                 "F11-part", "F11-probe", "A17-ridge", "F10-ft-part", "VAL-part", "ROC-main"):
         assert review.CHANGES[page].startswith("NEW: "), page
     for page in ("F2a", "F2b", "PC-conf", "F4-mech", "F4-mech-ft", "F4-other", "F6", "A8", "A10", "F10b-flav", "F11", "VAL"):
         assert review.CHANGES[page].startswith("CHANGED: "), page
@@ -338,12 +343,11 @@ def test_the_sculpting_sentence_names_exactly_the_differences_beyond_three_sigma
     assert not re.search(r"\d\.\d", G.BACKS["F10b"]) and "closest" not in G.BACKS["F10b"]
 
 
-def test_the_scaling_figures_in_auc_sit_in_the_supplement_as_one_row():
-    """PI 2026-11-11: the scaling figures need AUC too; 2026-11-12: in the supplement, one sentence."""
-    sup = [k for k, t, _ in G.FIGURES if t == G.SUPPLEMENT]
-    i = sup.index("F8-auc")
-    assert sup[i:i + 3] == ["F8-auc", "A10-auc", "A8-auc"]       # linear probes before fine-tuned (audit 3)
-    assert len({s for k, _, s in G.FIGURES if k.endswith("-auc")}) == 1
+def test_the_training_size_figures_carry_the_auc_as_their_second_row():
+    """PI 2026-11-18: Fig. 7 (A8) and its linear-probe twin (A10) hold the AUC as a second row; the separate AUC pages
+    are superseded; F8's AUC page stays in the supplement."""
+    assert G.SUPERSEDED["A8-auc"] == "A8" and G.SUPERSEDED["A10-auc"] == "A10"
+    assert "A8-auc" not in G.TIER and "A10-auc" not in G.TIER and G.TIER["F8-auc"] == G.SUPPLEMENT
 
 
 def test_the_round_two_sentences_claim_only_what_passes_the_three_sigma_rule():

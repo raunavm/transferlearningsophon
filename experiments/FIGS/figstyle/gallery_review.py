@@ -125,9 +125,11 @@ CHANGES = {
     "VAL-part": "NEW: VAL's form for the 17-class partitions with 17 classes for reference (supplement).",
     "VAL": f"CHANGED: the mass networks in their lighter shades and SD bands (PI 2026-11-13); {NAMES}; {CAPTION}.",
     "A10": "CHANGED: the training-size family's form (PI 2026-11-13): five tasks with Herwig, the mass networks, the "
-           "random network in place of from scratch.",
+           "random network in place of from scratch; PI 2026-11-18: the AUC as a second row (A10-auc folded in).",
     "A8": "CHANGED: the training-size family's form (PI 2026-11-13): five tasks with Herwig, the mass networks; now the "
-          "main-text slice.",
+          "main-text slice; PI 2026-11-18: the AUC as a second row (A8-auc folded in).",
+    "ROC-main": "NEW: ROC curves in the main text (PI 2026-11-18): fine-tuned JetClass flavour classes against QCD at a "
+                "million jets, then top and quark/gluon as linear probes and fine-tuned.",
     "A8-part": "NEW: A8's form for the four 17-class partitions with 188 and 17 classes.",
     "A10-part": "NEW: A10's form for the four 17-class partitions with 188 and 17 classes.",
     "FJ-app": f"CHANGED: {TICKS}; {CAPTION}.",

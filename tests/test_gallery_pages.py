@@ -183,33 +183,42 @@ def test_the_pair_legend_holds_only_the_curves_drawn(monkeypatch):
 
 
 def test_the_per_class_grid_puts_every_panel_on_one_range_and_colours_classes_not_networks(monkeypatch):
-    """Per-class family (PI 2026-11-12/13; L20: networks as rows): linear probe beside fine-tuned, a row per compared
-    network, one axis range for the grid from the lowest AUC drawn; a point's colour is its decay family's
-    (gallery_roc.FAMILY_COLOURS, from CLASS10), never a colour that means a network (L6); the diagonal is the black
-    dotted reference."""
+    """Per-class family (PI 2026-11-12/13; L20: networks as rows; PI 2026-11-18: per-class recall, Fig. 4's rows 162, 43,
+    17 classes, 162 classes + mass and 17 classes + mass against 188): linear probe beside fine-tuned, one linear axis
+    range for the grid from the lowest and highest recall drawn; a point's colour is what the 17-class labels merged its
+    class with (gallery_perclass.MERGE_COLOURS, from CLASS10), never a colour that means a network (L6); the diagonal is
+    the black dotted reference."""
     classes = range(188)
-    monkeypatch.setattr(PC, "SOURCES", {"jc2": (lambda m: {c: 0.81 + 0.001 * c for c in classes},
-                                                lambda m: {c: 0.90 + 0.0005 * c for c in classes})})
+    monkeypatch.setattr(PC, "SOURCES", {"jc2": (lambda m: {c: 0.30 + 0.003 * c for c in classes},
+                                                lambda m: {c: 0.25 + 0.0035 * c for c in classes})})
+    monkeypatch.setattr(PC, "_doc", lambda test, mode: {})          # no test-jet bootstrap: bars of the run SD only
     figs = []
     monkeypatch.setattr(PC.S, "save", lambda fig, path: figs.append(fig))
     PC.draw_jc2(None)
-    panels = [ax for ax in figs[0].axes if ax.get_title()[:3] in {f"({x})" for x in "abcdef"}]
-    # PI 2026-11-14 (step D): one minus the AUC on log axes, one range for the grid, the smallest value over 1.6 below
-    lo = (1 - (0.81 + 0.001 * 187)) / 1.6
+    letters = "abcdef"
+    panels = [ax for ax in figs[0].axes if ax.get_title()[:3] in {f"({x})" for x in letters}]
+    lo, hi = 0.25, 0.25 + 0.0035 * 187
+    pad = 0.04 * (hi - lo)
     assert len(panels) == 6 and all(ax.get_xlim() == ax.get_ylim() == panels[0].get_xlim() for ax in panels)
-    assert panels[0].get_xlim()[0] == pytest.approx(lo) and all(ax.get_xscale() == ax.get_yscale() == "log" for ax in panels)
+    assert panels[0].get_xlim() == pytest.approx((lo - pad, hi + pad))
+    assert all(ax.get_xscale() == ax.get_yscale() == "linear" for ax in panels)
     networks = {to_hex(c) for c in PC.S.SERIES.values()}
     for ax in panels:
         diagonal, *points = ax.lines
         assert diagonal.get_linestyle() == ":" and to_hex(diagonal.get_color()) == "#000000"
         assert len(points) == 188 and not {to_hex(ln.get_color()) for ln in points} & networks
-        assert {to_hex(ln.get_color()) for ln in points} <= {to_hex(c) for c in R.FAMILY_COLOURS}
-    # one colour a decay family, all from CLASS10 (blind page review 2026-11-13: the two orange shades apart, the pale
-    # lime for the largest family)
+        assert {to_hex(ln.get_color()) for ln in points} <= {to_hex(c) for c in PC.MERGE_COLOURS.values()}
+    assert len(set(PC.MERGE_COLOURS.values())) == len(PC.MERGE_KINDS)
+    # the 17-class merges: 27 QCD classes; of the 161 resonant ones, 77 share their group with a decay differing only
+    # in quark flavor, 14 only in lepton flavor, 64 with both, 6 with neither
+    kinds = list(PC.merge_kind().values())
+    assert {k: kinds.count(k) for k in PC.MERGE_KINDS} == {"qcd": 27, "quark": 77, "lepton": 14, "both": 64, "apart": 6}
+    assert [ax.get_title()[:3] for ax in panels] == [f"({x})" for x in letters]
+    assert [ax.get_title().split(", ")[-1] for ax in panels] == ["linear probe", "fine-tuned"] * 3
+    assert [ax.get_title()[4:].split(",")[0] for ax in panels[::2]] == [PC.S.LEGEND[a] for a, _ in PC.FIG4]
+    # one gallery_roc colour per decay family (the class-pair family), all from CLASS10
     assert len(R.FAMILY_COLOURS) == len(R.FAMILIES) == len(set(R.FAMILY_COLOURS))
     assert R.FAMILY_COLOURS == tuple(PC.S.CLASS10[k] for k in (0, 1, 4, 2, 3, 5))
-    assert [ax.get_title()[:3] for ax in panels] == [f"({x})" for x in "abcdef"]
-    assert [ax.get_title().split(", ")[-1] for ax in panels] == ["linear probe", "fine-tuned"] * 3
     matplotlib.pyplot.close(figs[0])
 
 
@@ -483,9 +492,10 @@ def test_every_figure_family_and_table_lists_the_networks_in_one_order():
 # ------------------------------------------------------------------ round 2 (2026-11-13): the jet-pT family and the tables
 # that hold what the figures draw
 def _pt_docs() -> dict:
-    """The perf_vs_pt folders the jet-pT family draws, {folder: {model: doc}}; {} if one is not pulled (the
-    from-scratch JetClass folder, jc1_fulldecay, only jet_pt_bins.csv reads)."""
-    docs = {sub: L.M._load(H.PERF / sub) for sub in L.M.PT_DIRS if sub != "jc1_fulldecay"}
+    """The perf_vs_pt folders the jet-pT family draws (gallery_physics.PERF_DIR: the v5 probes once in use, the one
+    rule's fine-tuned cells), {folder: {model: doc}}; {} if one is not pulled (the from-scratch JetClass folder,
+    jc1_fulldecay, only jet_pt_bins.csv reads)."""
+    docs = {sub: L.M._load(H.PERF_DIR[sub] / sub) for sub in L.M.PT_DIRS if sub != "jc1_fulldecay"}
     return docs if all(docs.values()) else {}
 
 
@@ -525,11 +535,9 @@ def test_the_jet_pt_family_is_two_by_two_with_one_mode_a_row_and_its_slices_in_t
 
 
 def test_the_jet_pt_files_hold_every_run_on_one_binning_and_the_jets_of_their_mode():
-    """The four perf_vs_pt folders pulled 2026-11-13 (jc2_ft and jc1_probe new): every run of the figure's rows, one
-    pT binning per test set, the fine-tuned JetClass-II networks binned on the probes' own jets, the JetClass probes and
-    fine-tuned networks on as many jets per bin; the fine-tuning cells those of Table 1 (40-epoch cap, 160 for the first
-    17-class run, both 17 + mass runs and every partition, as the per-class figures' captions say); from scratch on
-    JetClass read from its full-schedule cells (jc1_fulldecay)."""
+    """The four folders the family draws: every run of the figure's rows, one pT binning per test set, the fine-tuned
+    JetClass-II networks binned on the probes' own jets, the JetClass probes and fine-tuned networks on as many jets per
+    bin; the fine-tuned cells the one rule's at 1e6 (ft_v2/fixed, PI 2026-11-15), from scratch among them."""
     docs = _pt_docs()
     if not docs:
         pytest.skip("the perf_vs_pt folders are not pulled")
@@ -546,17 +554,14 @@ def test_the_jet_pt_files_hold_every_run_on_one_binning_and_the_jets_of_their_mo
     n = lambda sub: {tuple(b["n"] for b in d["bins"]) for m, d in docs[sub].items() if m in need}      # noqa: E731
     assert n("jc2") == n("jc2_ft") and len(n("jc2")) == 1 and n("jc1_probe") == n("jc1") and len(n("jc1")) == 1
     assert {d["mode"] for d in docs["jc1_probe"].values()} == {"linear probe"}
-    # the fine-tuning cells: the 160-epoch (budget_long) cells exactly where the per-class captions say
-    long = {m for m in need if "/budget_long/" in docs["jc2_ft"][m]["cell"]}
-    assert long == {"mtx-r16q1-s1", *pooled["R16_Q1_MASS"], *(m for a in M.FLAV for m in pooled[a]), *pooled["RAND"]}
-    assert all("/budget/leg_jc2b/" in docs["jc2_ft"][m]["cell"] for m in need - long)
-    assert all("/budget_long/leg2/" in docs["jc1"][m]["cell"] for m in need)
+    # the fine-tuning cells: the one rule's at 1e6, every pretrained one and the three from scratch
+    scratch = {f"scratch-s{k}" for k in (1, 2, 3)}
+    for sub, leg in (("jc2_ft", "leg_jc2b"), ("jc1", "leg2")):
+        assert need | scratch <= set(docs[sub]), sub
+        assert all(f"/ft_v2/fixed/{leg}/" in d["cell"] and "/N1000000/s" in d["cell"] for d in docs[sub].values()), sub
     assert "pt_bins" not in M.CAPTIONS       # L18: no typeset table, no caption
     # PI 2026-11-14 (step 8): no caption sentence about epoch caps
     assert "epoch" not in PC.SUPPLEMENT_CAPTIONS["PC-jc2-part"]
-    full = M._load(H.PERF / "jc1_fulldecay")
-    assert sorted(full) == ["scratch-s1", "scratch-s2", "scratch-s3"]
-    assert all("/budget_long_fulldecay/leg2/scratch/" in d["cell"] for d in full.values())
 
 
 def test_the_jet_pt_csv_holds_every_point_of_the_jet_pt_figures():

@@ -20,7 +20,18 @@ retried pod does only what is missing):
                full training sets under the substitutions chosen on validation (build_gallery_data_job: best70.itop4,
                best70.nqg)
 
+The rerun (--rerun; PI 2026-11-15/16), every output new under OUT_RERUN, two jobs:
+  boot-l3-sculpt-rerun-raunav  part sculpt on the heads of SCULPT_V3 and the five random partitions
+               (build_head_jobs.RAND_RUNS), these pooled as one side against 188 classes (sculpting_boot.POOLED, the
+               "l3" block); launchable now (head outputs and sculpting_v3 documents exist)
+  boot-l3-ft-rerun-raunav      parts ft-jc2b, ft-jc1 and jc1-acc on the one rule's cells at 1e6 (ft_v2/fixed): every
+               cell of a part must have DONE, and jc1-acc needs the one rule's read-out FIXED_METRICS, or the part
+               refuses (exit 42, which fails the job: apply after all 60 cells and the read-out exist). Top and
+               quark/gluon fine-tune on the full sets with ParT's recipe, which the one rule leaves as they were, so
+               ft-top / ft-qg stay in l3; the probe parts are build_refit_v5_jobs.py bootl3's (l3_v5).
+
     python3 scripts/build_boot_l3_jobs.py --commit <pushed commit> --storage-line 89
+    python3 scripts/build_boot_l3_jobs.py --tag TAG_TBD --pin-not-yet-tagged --rerun --storage-line 90
 """
 from __future__ import annotations
 
@@ -44,6 +55,12 @@ DIFFS = {"162-188": ("l162", "l188"), "43-188": ("r42q1", "l188"), "17-188": ("r
          "162mass-162": ("l162mass", "l162"), "17mass-17": ("r16q1mass", "r16q1")}
 REPLICAS = 200
 MEM, CPU, PARALLEL, DEADLINE_S = "48Gi", "4", 4, 43200
+OUT_RERUN = "/data/results/bootstrap/l3_rerun"
+FIXED = f"{FT}/fixed"                                   # build_ft_budget_jobs.FIXED_ROOT
+FIXED_METRICS = f"{FIXED}/fixed_metrics.json"           # experiments/FT/budget_metrics.py's read-out of ft_v2/fixed
+# boot-l3-raunav, the same parts on inputs of the same sizes, peaked at 4.0 GiB working set (part 0, ft-jc2b; part 1,
+# sculpt, 1.0 GiB; Prometheus 2026-11-18) under its 48Gi: 2x the peak
+MEM_RERUN = "8Gi"
 NEEDED = {"experiments/STATS/paired_bootstrap.py": "def group_diff", "experiments/FT/jc1_acc_boot.py": "def l3",
           "experiments/EVAL/sculpting_boot.py": "def unpaired"}
 
@@ -64,10 +81,10 @@ def diff_args() -> str:
     return " ".join(f"--diff {n}={side(a)}/{side(b)}" for n, (a, b) in DIFFS.items())
 
 
-def pb(task: str, models: str, out: str, extra: str = "") -> str:
-    """One paired_bootstrap.py call into OUT/out, skipped when that file exists."""
-    return (f"[ -e {OUT}/{out} ] || python3 experiments/STATS/paired_bootstrap.py --task {task} {models} --headline "
-            f"{diff_args()}{extra} --b {REPLICAS} --out {OUT}/{out}")
+def pb(task: str, models: str, out: str, extra: str = "", root: str = OUT) -> str:
+    """One paired_bootstrap.py call into root/out, skipped when that file exists."""
+    return (f"[ -e {root}/{out} ] || python3 experiments/STATS/paired_bootstrap.py --task {task} {models} --headline "
+            f"{diff_args()}{extra} --b {REPLICAS} --out {root}/{out}")
 
 
 def cells(tree: str, n: int) -> str:
@@ -106,10 +123,43 @@ def parts() -> list[tuple[str, list[str]]]:
             ("ft-top", top), ("ft-qg", qg), ("probe-bin", probe_bin)]
 
 
-def spec(commit: str, line: int = storage_line.GENERAL) -> str:
+def done_all(tree: str) -> str:
+    """The refusal of a part until every run's cell of tree at 1e6 has DONE."""
+    cs = " ".join(f"{tree}/{m.removeprefix('mtx-')}/N1000000/s1" for m in runs())
+    return f"for C in {cs}" + '; do [ -f ${C}/DONE ] || { echo "FATAL: ${C} is not done"; exit 42; }; done'
+
+
+def sculpt_rerun() -> list[str]:
+    """The heads' sculpting bootstrap with the random partitions (sculpting_boot.POOLED) into OUT_RERUN."""
+    hb = _load("build_head_jobs", "scripts/build_head_jobs.py")
+    models = list(hb.SCULPT_V3) + list(hb.RAND_RUNS)
+    sets = " ".join(f"{m}={arm}" for m, _r, arm, _k, _g in hb.flav_models() + hb.rand_models())
+    return [f"python3 experiments/EVAL/sculpting_boot.py --head-root {hb.HEAD_ROOT} --models {' '.join(models)} "
+            f"--label-set {sets} --replicas {REPLICAS} --sculpting-dir {hb.SCULPT_V3_DIR} "
+            f"--out {OUT_RERUN}/sculpting_boot_l3.json"]
+
+
+def ft_rerun() -> list[tuple[str, list[str]]]:
+    """The fine-tuned parts on the one rule's cells at 1e6, each refusing until its inputs exist."""
+    jc2b, jc1 = f"{FIXED}/leg_jc2b", f"{FIXED}/leg2"
+    f = f"{OUT_RERUN}/jc1_acc_boot_N1000000.json"       # written under .new and moved, so a pull never takes a part
+    return [("ft-jc2b", [done_all(jc2b), pb("jc2b", cells(jc2b, 1_000_000), "ft_jc2bal_N1000000.json", root=OUT_RERUN)]),
+            ("ft-jc1", [done_all(jc1), pb("jc1_all", cells(jc1, 1_000_000), "ft_jc1_N1000000.json", root=OUT_RERUN)]),
+            ("jc1-acc", [done_all(jc1),
+                         f'[ -f {FIXED_METRICS} ] || {{ echo "FATAL: no {FIXED_METRICS}: read out ft_v2/fixed first"; exit 42; }}',
+                         f"[ -e {f} ] || {{ python3 experiments/FT/jc1_acc_boot.py --root {FIXED} --n 1000000 "
+                         f"--metrics {FIXED_METRICS} --replicas {REPLICAS} --out {f}.new && mv -n {f}.new {f}; }}"])]
+
+
+RERUN_JOBS = {"boot-l3-sculpt-rerun-raunav": lambda: [("sculpt", sculpt_rerun())], "boot-l3-ft-rerun-raunav": ft_rerun}
+
+
+def spec(commit: str, line: int = storage_line.GENERAL, ps=None, name: str = NAME, mem: str = MEM, out: str = OUT,
+         tag: bool = False) -> str:
+    """The Indexed job of parts ps (parts() by default) cloning commit (or, with tag, a tag)."""
     launch = _load("build_mtx_launch", "scripts/build_mtx_launch.py")
-    clone = _load("build_perf_pt_jobs", "scripts/build_perf_pt_jobs.py").clone_line(commit, True)
-    ps = parts()
+    clone = _load("build_perf_pt_jobs", "scripts/build_perf_pt_jobs.py").clone_line(commit, not tag)
+    ps = parts() if ps is None else ps
     case = []
     for i, (label, lines) in enumerate(ps):
         case += [f"  {i})  # {label}"] + [f"    {ln}" for ln in lines] + ["    ;;"]
@@ -123,7 +173,7 @@ def spec(commit: str, line: int = storage_line.GENERAL) -> str:
         f"export PYTHONUNBUFFERED=1 OMP_NUM_THREADS={CPU} OPENBLAS_NUM_THREADS={CPU} MKL_NUM_THREADS={CPU}",
         "USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)",
         f'[ "${{USED}}" -le {line} ] || {{ echo "FATAL: /data is ${{USED}}% full"; exit 42; }}',
-        f"mkdir -p {OUT}",
+        f"mkdir -p {out}",
         "case ${JOB_COMPLETION_INDEX} in",
         *case,
         '  *) echo "FATAL: no part for index ${JOB_COMPLETION_INDEX}"; exit 42 ;;',
@@ -135,12 +185,12 @@ def spec(commit: str, line: int = storage_line.GENERAL) -> str:
 kind: Job
 metadata:
   # GENERATED by scripts/build_boot_l3_jobs.py -- test-jet bootstraps for decision L3. CPU only; writes new files only.
-  name: {NAME}
+  name: {name}
   namespace: cms-ml
 spec:
   completionMode: Indexed
   completions: {len(ps)}
-  parallelism: {PARALLEL}
+  parallelism: {min(PARALLEL, len(ps))}
   backoffLimit: 1
   activeDeadlineSeconds: {DEADLINE_S}
   podFailurePolicy:
@@ -158,8 +208,8 @@ spec:
         - |
 {body}
         resources:
-          requests: {{ memory: "{MEM}", cpu: "{CPU}", ephemeral-storage: "5Gi" }}
-          limits:   {{ memory: "{MEM}", cpu: "{CPU}", ephemeral-storage: "5Gi" }}
+          requests: {{ memory: "{mem}", cpu: "{CPU}", ephemeral-storage: "5Gi" }}
+          limits:   {{ memory: "{mem}", cpu: "{CPU}", ephemeral-storage: "5Gi" }}
         volumeMounts:
         - {{ name: data, mountPath: /data }}
       affinity:
@@ -182,15 +232,25 @@ spec:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--commit", required=True, help="the pushed commit the pods clone")
+    ref = ap.add_mutually_exclusive_group(required=True)
+    ref.add_argument("--commit", help="the pushed commit the pods clone")
+    ref.add_argument("--tag", help="the pushed tag the pods clone")
+    ap.add_argument("--pin-not-yet-tagged", action="store_true", help="with --tag: the tag is made after the build")
+    ap.add_argument("--rerun", action="store_true", help="the rerun's two jobs (RERUN_JOBS) into OUT_RERUN")
     storage_line.add_argument(ap)
     a = ap.parse_args(argv)
-    commit = _load("build_perf_pt_jobs", "scripts/build_perf_pt_jobs.py").pushed_commit(a.commit)
-    _load("build_extract_jobs", "scripts/build_extract_jobs.py").verify_pin(commit, list(NEEDED), False, NEEDED)
+    pin = _load("build_perf_pt_jobs", "scripts/build_perf_pt_jobs.py").pushed_commit(a.commit) if a.commit else a.tag
+    needed = {**NEEDED, "experiments/EVAL/sculpting_boot.py": "POOLED = "} if a.rerun else NEEDED
+    _load("build_extract_jobs", "scripts/build_extract_jobs.py").verify_pin(
+        pin, list(needed), a.pin_not_yet_tagged and not a.commit, needed)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    p = OUT_DIR / f"job-{NAME}.yaml"
-    p.write_text(spec(commit, storage_line.check(a.storage_line)))
-    print(p.relative_to(ROOT))
+    line = storage_line.check(a.storage_line)
+    jobs = ({n: spec(pin, line, f(), n, MEM_RERUN, OUT_RERUN, bool(a.tag)) for n, f in RERUN_JOBS.items()} if a.rerun
+            else {NAME: spec(pin, line, tag=bool(a.tag))})
+    for n, text in jobs.items():
+        p = OUT_DIR / f"job-{n}.yaml"
+        p.write_text(text)
+        print(p.relative_to(ROOT))
     return 0
 
 

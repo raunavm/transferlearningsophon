@@ -10,12 +10,12 @@ device in each manifest (the first JetClass extractions of l188-s1 ran on a V100
 pod read 68 jets/s, so the job is Indexed: one extraction per pod, in parallel; the pod that finds every
 extraction in place (an atomic mkdir decides between two) fits the UMAPs and writes DONE.
 
-  jc1  one JetClass test file per class, every 10th jet; fine-tuned: budget_long/leg2/<m>/N1000000/s1 (K = 10)
+  jc1  one JetClass test file per class, every 10th jet; fine-tuned: the one rule's cell (PI 2026-11-15)
+       fixed/leg2/<m>/N1000000/s1 (K = 10)
   jc2  the class-balanced JetClass-II test set, every 2nd jet (2,458-2,519 of each single-class group, so 2,000
        per group still holds; extract_features.py runs every jet and keeps every STRIDE-th, so the stride
-       shrinks the cache, not the compute); fine-tuned: the JetClass-II cell
-       at 1e6 the paper reports, budget_long/leg_jc2b/<m>/N1000000/s1 where it is DONE, else
-       budget/leg_jc2b/<m>/N1000000/s1, chosen in the pod (K = 188); its test config
+       shrinks the cache, not the compute); fine-tuned: the one rule's cell fixed/leg_jc2b/<m>/N1000000/s1
+       (K = 188); its test config
   top  the top-tagging test set, every 20th jet; fine-tuned: best70/leg_top/<m>/N1200000/s1 (K = 2)
   qg   the quark/gluon (Pythia) test chunks, every 10th jet; fine-tuned: best70/leg_qg/<m>/N1600000/s1 (K = 2)
 
@@ -25,13 +25,16 @@ The frozen checkpoint is the one the frozen probes read; all four tasks' probe m
 
 Round 5 (decision L12, PI 2026-11-13): MODELS is pretraining run 1 of the four label sets and of the two mass-output
 models (their frozen checkpoints read with --num-reg 1; a fine-tuned cell has a fresh head without the mass output).
---reuse <out-name> takes REUSABLE's extractions from that earlier output instead of repeating them: the pod that
-fits links them into this output's feature tree (symbolic links; nothing of the earlier output is changed), and
-umap_class_token.py checks that they hold the same jets as the new ones. The fit also embeds the X->bb / X->bs
+--reuse <out-name> takes the extractions of REUSE from that earlier output instead of repeating them: every frozen one
+(the pretrained checkpoints are unchanged) and the fine-tuned top and quark/gluon ones (their full-set cells keep ParT's
+recipe under the one rule); each must name the checkpoint this job would read, or every pod refuses (exit 42). The pod
+that fits links them into this output's feature tree (symbolic links; nothing of the earlier output is changed), and
+umap_class_token.py checks that they hold the same jets as the new ones. The cells read must all be DONE (exit 42). The fit also embeds the X->bb / X->bs
 evaluation jets from experiments/XBS/extract_xbx.py's stored class token (sets xbb and xbs, frozen only; no extraction).
 The pod clones a pushed commit (--commit) and refuses to start above the storage line.
 
     python3 scripts/build_umap_jobs.py --commit <pushed commit> --out-name umap_v3 --reuse umap_v2 --storage-line 89
+    python3 scripts/build_umap_jobs.py --tag TAG_TBD --pin-not-yet-tagged --out-name umap_v4 --reuse umap_v3 --storage-line 90
 """
 import argparse
 import importlib.util
@@ -44,31 +47,35 @@ import storage_line  # noqa: E402
 OUT_DIR = ROOT / "experiments" / "EVAL" / "k8s" / "v2" / "umap"
 UMAP_PIN = "umap-learn==0.5.7"
 CPUS, THREADS = 8, 7        # one core left for the loader worker and the shell
-PARALLEL = 12                # with our GPU pods, under the pod cap of 25
+PARALLEL = 6                 # beside the fine-tuning pods, under the pod cap of 40
+# umap-v3-raunav's JetClass-II extractions peaked at 19-26 GiB working set, the others at 6-11 GiB (Prometheus,
+# 2026-11-18): about 1.5x the largest
+MEM = "40Gi"
 PYARROW_PIN = "pyarrow==25.0.1"   # weaver reads the parquet test sets (JetClass-II, top, q/g) through it and the image
 # has none: umap-v2 died on it at the first JetClass-II read, 2026-11-06
 # (run, classes, regression outputs of the pretraining head)
 MODELS = (("l188-s1", 188, 0), ("l162-s1", 162, 0), ("r42q1-s1", 43, 0), ("r16q1-s1", 17, 0),
           ("l162mass-s1", 162, 1), ("r16q1mass-s1", 17, 1))
-REUSABLE = ("l188-s1", "r16q1-s1")       # extracted by umap_v2 with these very configs, files and cells
+# task -> the kinds --reuse takes from the earlier output (see the docstring)
+REUSE = {"jc1": ("frozen",), "jc2": ("frozen",), "top": ("frozen", "ft"), "qg": ("frozen", "ft")}
 XBX_ROOT, XBX_SPLITS = "/data/results/eval/xbx", ("xbb", "xbs", "qcd")   # umap_class_token.XBX_SPLITS
 DEADLINE_S = 86400                       # 32 extractions, 12 at a time; the JetClass-II ones take hours each
 FT = "/data/results/ft_v2"
+FIXED = FT + "/fixed"        # build_ft_budget_jobs.FIXED_ROOT: the one rule's cells (PI 2026-11-15)
 LP_OLD, LP_BAL = "/data/results/eval/v2_linprobe", "/data/results/eval/v2_linprobe_bal"
 # task -> (data config, stride, test files, K, fine-tuned cell (None: chosen in the pod), frozen-probe manifest);
 # configs and test files as the fine-tuning read-outs (build_ft_budget_jobs.TASKS, TEST_CFG; build_ft_jobs bench)
 TASKS = {
     "jc1": ("configs/finetune/JetClassI_sophon_noweight.yaml", 10, "${JC1}", 10,
-            FT + "/budget_long/leg2/{m}/N1000000/s1", LP_OLD + "/mtx-{m}/jc1/test/best70/manifest.json"),
+            FIXED + "/leg2/{m}/N1000000/s1", LP_OLD + "/mtx-{m}/jc1/test/best70/manifest.json"),
     "jc2": ("configs/data/JetClassII_base.yaml", 2, "/data/finetune/jc2_bal/test.parquet", 188,
-            None, LP_BAL + "/mtx-{m}/jc2bal/test/best70/manifest.json"),
+            FIXED + "/leg_jc2b/{m}/N1000000/s1", LP_BAL + "/mtx-{m}/jc2bal/test/best70/manifest.json"),
     "top": ("configs/finetune/TopReference.yaml", 20, "/data/finetune/top/top_test.parquet", 2,
             FT + "/best70/leg_top/{m}/N1200000/s1", LP_OLD + "/mtx-{m}/top/test/best70/manifest.json"),
     "qg": ("configs/finetune/EnergyFlowQG.yaml", 10,
            "/data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet", 2,
            FT + "/best70/leg_qg/{m}/N1600000/s1", LP_OLD + "/mtx-{m}/qg/test/best70/manifest.json"),
 }
-JC2_ROOTS = (FT + "/budget_long", FT + "/budget")       # the long budget where it ran, else the standard one
 NEEDED = {"experiments/EVAL/umap_class_token.py": "def run_xbx(a, names)",
           "experiments/EVAL/extract_features.py": "--num-reg"}
 
@@ -80,19 +87,17 @@ def _load(name: str, rel: str):
     return m
 
 
-def spec(commit: str, out_name: str, reuse: str | None = None, line: int = storage_line.GENERAL) -> str:
+def spec(commit: str, out_name: str, reuse: str | None = None, line: int = storage_line.GENERAL,
+         tag: bool = False) -> str:
     launch = _load("build_mtx_launch", "scripts/build_mtx_launch.py")
     classes = " ".join(_load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py").JC1_CLASSES)
-    clone = _load("build_perf_pt_jobs", "scripts/build_perf_pt_jobs.py").clone_line(commit, True)
+    clone = _load("build_perf_pt_jobs", "scripts/build_perf_pt_jobs.py").clone_line(commit, not tag)
     out = f"/data/results/eval/{out_name}"
     old = f"/data/results/eval/{reuse}" if reuse else None
-    reused = [m for m, _k, _r in MODELS if old and m in REUSABLE]
-    blocks, runs = [], {t: [] for t in TASKS}   # every checkpoint is resolved and checked before the first extraction
+    kept = REUSE if old else {}
+    # every checkpoint is resolved and checked, and every reused extraction matched to it, before the first extraction
+    blocks, runs, links = [], {t: [] for t in TASKS}, []
     for i, (m, k, reg) in enumerate(MODELS):
-        if m in reused:
-            blocks.append(f"for D in {old}/features/{{{','.join(TASKS)}}}/mtx-{m}/{{frozen,ft}}; do "
-                          '[ -f ${D}/extract_manifest.json ] || { echo "FATAL: no ${D}"; exit 42; }; done')
-            continue
         mans = " ".join(t[5].format(m=m) for t in TASKS.values())
         # the frozen checkpoint: the one every task's frozen probes read
         blocks += [f"CK{i}=$(python3 -c \"import json, sys; d = [json.load(open(p)) for p in sys.argv[1:]]; "
@@ -101,19 +106,21 @@ def spec(commit: str, out_name: str, reuse: str | None = None, line: int = stora
                    f'echo "mtx-{m} frozen: ${{CK{i}}}"']
         for task, (cfg, stride, files, kt, cell, _) in TASKS.items():
             c = f"C_{task}_{i}"
-            blocks.append((f"{c}={cell.format(m=m)}" if cell else
-                           f'{c}=$(jc2_cell {m}) || {{ echo "FATAL: no JetClass-II cell of {m} is done"; exit 42; }}')
-                          + f"; done_cell ${{{c}}}")
-            runs[task] += [f"x {task} frozen mtx-{m} ${{CK{i}}} {k} {reg} {cfg} {stride} {files}",
-                           f"x {task} ft mtx-{m} ${{{c}}}/net_best_epoch_state.pt {kt} 0 {cfg} {stride} {files}"]
+            blocks.append(f"{c}={cell.format(m=m)}; done_cell ${{{c}}}")
+            for kind, ck, nk, nr in (("frozen", f"${{CK{i}}}", k, reg), ("ft", f"${{{c}}}/net_best_epoch_state.pt", kt, 0)):
+                if kind in kept.get(task, ()):
+                    links.append(f"features/{task}/mtx-{m}/{kind}")
+                    blocks.append(f"same_ckpt {old}/{links[-1]} {ck}")
+                else:
+                    runs[task].append(f"x {task} {kind} mtx-{m} {ck} {nk} {nr} {cfg} {stride} {files}")
     # the X->bx class token the fit reads, for every model
     blocks.append(f"for D in {XBX_ROOT}/mtx-{{{','.join(m for m, _k, _r in MODELS)}}}/{{{','.join(XBX_SPLITS)}}}/eval/best70; do "
                   '[ -f ${D}/manifest.json ] || { echo "FATAL: no ${D}"; exit 42; }; done')
     # the longest extractions first: JetClass-II (every jet of 903,922 through the network), JetClass, top, q/g
     runs = runs["jc2"] + runs["jc1"] + runs["top"] + runs["qg"]
-    links = ([f"for D in {old}/features/{{{','.join(TASKS)}}}/mtx-{{{','.join(reused)}}}/{{frozen,ft}}; do "
-              f'L={out}/features/${{D#{old}/features/}}; mkdir -p $(dirname ${{L}}); [ -e ${{L}} ] || ln -s ${{D}} ${{L}}; done']
-             if reused else [])
+    links = ([f"for D in {' '.join(links)}; do "
+              f"L={out}/${{D}}; mkdir -p $(dirname ${{L}}); [ -e ${{L}} ] || ln -s {old}/${{D}} ${{L}}; done"]
+             if links else [])
     script = f"""set -euo pipefail
 retry () {{ for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }}
 {clone}
@@ -128,9 +135,9 @@ USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
 [ "${{USED}}" -le {line} ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
 JC1=""; for C in {classes}; do JC1="${{JC1}} $(ls /data/JetClass/Pythia/test_20M/${{C}}_*.root | sort | head -1)"; done
 [ "$(echo ${{JC1}} | wc -w)" -eq 10 ] || {{ echo "FATAL: JetClass test files"; exit 42; }}
-# the JetClass-II cell at 1e6 the paper reports: the long budget where it is done, else the standard one
-jc2_cell () {{ for R in {" ".join(JC2_ROOTS)}; do [ -f ${{R}}/leg_jc2b/$1/N1000000/s1/DONE ] && {{ echo ${{R}}/leg_jc2b/$1/N1000000/s1; return 0; }}; done; return 1; }}
 done_cell () {{ [ -f $1/DONE ] && [ -f $1/net_best_epoch_state.pt ] || {{ echo "FATAL: $1 is not done"; exit 42; }}; echo "fine-tuned: $1"; }}
+# same_ckpt DIR CHECKPOINT: a reused extraction must be of the checkpoint this job would read
+same_ckpt () {{ python3 -c "import json, sys; sys.exit(json.load(open(sys.argv[1] + '/extract_manifest.json'))['checkpoint'] != sys.argv[2])" $1 $2 || {{ echo "FATAL: $1 is not of $2"; exit 42; }}; }}
 # x TASK KIND MODEL CHECKPOINT K REG CONFIG STRIDE FILES...: the class token on FILES, every STRIDE-th jet, one loader
 # worker; REG the checkpoint head's regression outputs after its K classes
 x () {{
@@ -164,7 +171,7 @@ metadata:
 spec:
   completionMode: Indexed
   completions: {len(runs)}
-  parallelism: {PARALLEL}
+  parallelism: {min(PARALLEL, len(runs))}
   backoffLimit: 1
   activeDeadlineSeconds: {DEADLINE_S}
   template:
@@ -178,8 +185,8 @@ spec:
         - |
 {body}
         resources:
-          requests: {{ memory: "48Gi", cpu: "{CPUS}", ephemeral-storage: "20Gi" }}
-          limits:   {{ memory: "48Gi", cpu: "{CPUS}", ephemeral-storage: "20Gi" }}
+          requests: {{ memory: "{MEM}", cpu: "{CPUS}", ephemeral-storage: "20Gi" }}
+          limits:   {{ memory: "{MEM}", cpu: "{CPUS}", ephemeral-storage: "20Gi" }}
         volumeMounts:
         - {{ name: data, mountPath: /data }}
         - {{ name: dshm, mountPath: /dev/shm }}
@@ -205,19 +212,23 @@ spec:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--commit", required=True, help="the pushed commit the pods clone")
+    ref = ap.add_mutually_exclusive_group(required=True)
+    ref.add_argument("--commit", help="the pushed commit the pods clone")
+    ref.add_argument("--tag", help="the pushed tag the pods clone")
+    ap.add_argument("--pin-not-yet-tagged", action="store_true", help="with --tag: the tag is made after the build")
     ap.add_argument("--out-name", required=True, help="the folder under /data/results/eval/ (new)")
-    ap.add_argument("--reuse", help="an earlier output whose REUSABLE extractions are linked in, not repeated")
+    ap.add_argument("--reuse", help="an earlier output whose REUSE extractions are linked in, not repeated")
     storage_line.add_argument(ap)
     a = ap.parse_args(argv)
     if a.reuse == a.out_name:
         raise SystemExit("FATAL: --reuse names the output itself")
     perf = _load("build_perf_pt_jobs", "scripts/build_perf_pt_jobs.py")
-    commit = perf.pushed_commit(a.commit)
-    _load("build_extract_jobs", "scripts/build_extract_jobs.py").verify_pin(commit, list(NEEDED), False, NEEDED)
+    pin = perf.pushed_commit(a.commit) if a.commit else a.tag
+    _load("build_extract_jobs", "scripts/build_extract_jobs.py").verify_pin(
+        pin, list(NEEDED), a.pin_not_yet_tagged and not a.commit, NEEDED)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     p = OUT_DIR / f"job-{a.out_name.replace('_', '-')}-raunav.yaml"
-    p.write_text(spec(commit, a.out_name, a.reuse, storage_line.check(a.storage_line)))
+    p.write_text(spec(pin, a.out_name, a.reuse, storage_line.check(a.storage_line), bool(a.tag)))
     print(p.relative_to(ROOT))
     return 0
 
