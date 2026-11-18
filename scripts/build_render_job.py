@@ -127,12 +127,38 @@ MOCKUPS = {"what": "figure mock-ups", "suffix": "-mockups", "texdir": "paper/moc
 """}
 
 
+# the results book (make_results_book.py, main text and appendix): the tables, every gallery page, the book and a PNG of
+# each drawn page; with --preview (MLST_FT_PREVIEW=1) the partial one-rule read-out is read and every placed item is
+# PROVISIONAL, so an undrawn figure keeps its number in a box and a table shows its pending cells
+BOOK = {"what": "results book", "suffix": "-book", "texdir": "paper/journal", "texfile": "results_book",
+        "draw": """          pip install --no-cache-dir -q pymupdf==1.26.7 || exit 1
+          python3 experiments/FIGS/make_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
+          python3 experiments/FIGS/figstyle/gallery_figures.py --outdir /workspace/gal > ${OUT}/figures.txt 2>&1; echo "gallery rc=$?"
+          python3 experiments/FIGS/make_results_book.py /workspace/gal --tier paper > ${OUT}/book.txt 2>&1; echo "book rc=$?"
+          tail -n 15 ${OUT}/tables.txt ${OUT}/figures.txt ${OUT}/book.txt
+""",
+        "collect": """          mkdir -p ${OUT}/figures ${OUT}/png ${OUT}/paper/journal
+          cp -f /workspace/gal/*.pdf /workspace/gal/pages.json ${OUT}/figures/ 2>/dev/null
+          python3 -c "import fitz,glob,os,sys; [fitz.open(p)[0].get_pixmap(dpi=110).save(os.path.join(sys.argv[1], os.path.basename(p)[:-4] + '.png')) for p in glob.glob('/workspace/gal/*.pdf')]" ${OUT}/png
+          cp -f paper/journal/results_book.tex paper/journal/results_generated.tex ${OUT}/paper/journal/ 2>/dev/null
+          cp -rf paper/journal/tables ${OUT}/paper/journal/ 2>/dev/null
+          cp -f paper/journal/results_book.pdf ${OUT}/results_book.pdf 2>/dev/null
+"""}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mockups", action="store_true", help="the figure mock-ups instead of the paper")
+    ap.add_argument("--book", action="store_true", help="the results book (main text and appendix) instead of the paper")
+    ap.add_argument("--preview", action="store_true", help="with --book: today's partial results (MLST_FT_PREVIEW=1)")
     storage_line.add_argument(ap)
     a = ap.parse_args()
-    mode = MOCKUPS if a.mockups else PAPER
+    mode = MOCKUPS if a.mockups else BOOK if a.book else PAPER
+    if a.preview:
+        if mode is not BOOK:
+            raise SystemExit("FATAL: --preview is for --book")
+        mode = {**BOOK, "suffix": "-bookpreview", "what": "results book (preview of partial results)",
+                "draw": "          export MLST_FT_PREVIEW=1\n" + BOOK["draw"]}
     line = storage_line.check(a.storage_line)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
                             text=True, check=True).stdout.strip()

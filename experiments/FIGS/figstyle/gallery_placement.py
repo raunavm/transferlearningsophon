@@ -10,6 +10,7 @@ sentence names another item as [[key]], filled in by number() ("Fig. 4", "Table 
 evidence(key): the items the sentence rests on, the item itself first."""
 from __future__ import annotations
 
+import os
 import re
 
 MAIN, APPENDIX, SUPPLEMENT = "main", "appendix", "supplement"
@@ -315,6 +316,12 @@ EVIDENCE = {
     "tab:partrepro": ("tab:published",),      # ParT's published row and our from-scratch row
 }
 TIER = {k: t for k, t, _ in _FIGURES + _TABLES}
+# the preview book (scripts/build_render_job.py --book --preview, 2026-11-18): today's partial rerun results, so every
+# placed item is PROVISIONAL (a figure not drawn keeps its number in a box, a table shows its pending cells); never set
+# for the paper build
+PREVIEW = os.environ.get("MLST_FT_PREVIEW") == "1"
+if PREVIEW:
+    PROVISIONAL = {**{k: "preview: waits for the rerun results" for k, t in TIER.items() if t != SUPPLEMENT}, **PROVISIONAL}
 
 # PI 2026-11-14 (step 6): the appendix ordered by family, figures and tables together, each family under a one-line
 # heading; within a family linear probes before fine-tuned networks, each table beside the figures it holds.

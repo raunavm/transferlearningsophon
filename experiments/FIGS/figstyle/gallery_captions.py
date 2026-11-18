@@ -38,8 +38,8 @@ CAPTIONS = {
         'network, the linear-probe reference, beyond the // breaks in (a) and (b). The released Sophon checkpoint, one '
         'network, appears on JetClass-II and JetClass only. R30 is the inverse background efficiency at 30% signal '
         'efficiency, and quark/gluon tagging trains on Pythia jets. Values are in table {tab:summary}, figure '
-        '{fig:F2-ft} shows the fine-tuned networks and figure {fig:F2a} the area under the receiver operating '
-        'characteristic curve.'
+        '{fig:F2-ft} shows the fine-tuned networks and table {tab:summaryauc} the area under the receiver '
+        'operating characteristic curve.'
     ),
     "F2-ft": (
         'After fine-tuning, 17 classes stay below 188 classes on JetClass-II and make about 3% more errors on '
@@ -47,8 +47,8 @@ CAPTIONS = {
         'classes in R30 by more than three standard deviations. Points are means ±1 standard deviation over the runs '
         'of figure {fig:F1}, over the five random partitions, or over three trainings from scratch, the fine-tuned '
         'reference. R30 is the inverse background efficiency at 30% signal efficiency, and quark/gluon tagging trains '
-        'on Pythia jets. Values are in table {tab:summary}, figure {fig:F2} shows the linear probes and figure '
-        '{fig:F2b} the area under the receiver operating characteristic curve.'
+        'on Pythia jets. Values are in table {tab:summary}, figure {fig:F2} shows the linear probes and table '
+        '{tab:summaryauc} the area under the receiver operating characteristic curve.'
     ),
     "F2a": (
         'In the area under the receiver operating characteristic curve (AUC), linear probes with 162, 43 and 17 classes '
