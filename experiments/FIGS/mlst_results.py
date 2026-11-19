@@ -4364,14 +4364,18 @@ def table_by_size(key: str, mode: str, series, ref: tuple, largest: dict, rows=S
     out. Bold per block and column, each column of a block at its own precision."""
     pages = []
     for tasks in SIZE_PAGES:
-        blocks, shown = [], None
+        blocks, data = [], []
         for t in tasks:
             _, ds, met, title = next(x for x in SIZE_TASKS if x[0] == t)
             rs = {a: series(t, ds, met, a) for a in rows + (ref[1],)}
-            sizes = sorted({n for v in rs.values() for n in v if n != largest[t]})
-            if shown not in (None, sizes):
-                raise SystemExit(f"FATAL: {key}: the tasks {tasks} have different training sizes")
-            shown = sizes
+            data.append((met, title, rs, sorted({n for v in rs.values() for n in v if n != largest[t]})))
+        # the paper build refuses tasks with different sizes; the preview book (ft_preview: the partial one-rule
+        # read-out) shows every size any task has, "--" where a task has none yet
+        if len({tuple(d[3]) for d in data}) > 1 and not ft_preview():
+            raise SystemExit(f"FATAL: {key}: the tasks {tasks} have different training sizes")
+        shown = sorted({n for d in data for n in d[3]})
+        for met, title, rs, _ in data:
+            sizes = shown
             nc = 1 + len(sizes)
             body = [_full_row(nc, f"{HEADING[mode]}, {title}, {SIZE_METRIC[met]}", italic=True)]
             for a in rows + (ref[1],):
