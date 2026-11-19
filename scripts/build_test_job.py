@@ -59,7 +59,7 @@ spec:
           git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo || exit 1
           cd /workspace/repo && git checkout -q ${{COMMIT}} || exit 1
           git rev-parse HEAD
-          pip install --no-cache-dir -q pytest pyarrow matplotlib==3.10.7 mplhep==0.4.1 || exit 1
+          pip install --no-cache-dir -q pytest pyarrow matplotlib==3.10.7 mplhep==0.4.1 pymupdf==1.26.7 || exit 1
           python3 -c "import sys, torch, weaver; print(sys.version.split()[0], torch.__version__, weaver.__file__)"
           python3 -m pytest {target} -q -p no:cacheprovider -rfE > ${{OUT}}/pytest.txt 2>&1
           echo "pytest rc=$?"

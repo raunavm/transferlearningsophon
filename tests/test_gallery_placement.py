@@ -70,7 +70,8 @@ def test_the_main_text_is_the_pis_list_in_order():
     # PI 2026-11-13 (L1, L9, L13): at most one figure a family in the main text, the slice with the approved story;
     # L20 (panels at least 4.5 cm) split the headline figure into one figure a mode, F2 (linear probes) and F2-ft
     # (fine-tuned), both in the main text (round 3, package 1b; whether L1's one figure may be two is the lead's)
-    assert main == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11"]
+    # PI 2026-11-18: ROC curves in the main text, one figure a mode (ROC-main, ROC-main-ft)
+    assert main == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "ROC-main", "ROC-main-ft", "A8", "F11"]
     # PI 2026-11-12: one table beside the published models (tab:published) in place of the JetClass, top and
     # quark/gluon tables; the other label sets' fine-tuned rows in one appendix table (tab:labelsets), which also takes
     # in the Herwig table
@@ -96,8 +97,6 @@ def test_the_main_text_is_the_pis_list_in_order():
     # JetClass curves (FJ-app, FJ; every class against QCD is in ROC-main / ROC-main-ft) to the supplement
     assert appendix == ["PC-jc1", "F4-other", "F4-light", "F4-mech-ft", "F4-other-ft", "F4-light-ft",
                         "A10", "PT", "F9b", "A17-probe", "F10b", "F11-part", "UMAP-frozen", "UMAP-ft", "VAL"]
-    assert [k for k, t, _ in G.FIGURES if t == G.MAIN] == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "ROC-main",
-                                                          "ROC-main-ft", "A8", "F11"]
     assert [f for f, _ in G.APPENDIX_FAMILIES] == ["Headline metrics", "Per class", "Class pairs", "Training size",
                                                    "ROC curves", "Jet pT", "Mass", "Sculpting", "Resonance tagging",
                                                    "Embeddings", "Training details"]
@@ -140,21 +139,23 @@ def test_the_dropped_pages_are_gone():
 
 
 def test_numbers_count_within_each_tier_and_kind():
-    # PI 2026-11-14 (steps 5, 6): the appendix by family, so F4-other is Fig. A4 and the mass probe Fig. A14
+    # PI 2026-11-18: the appendix by family, so F4-other is Fig. A2 and the mass probe Fig. A10; F6-ft and FJ in the
+    # supplement
     assert G.number("F1") == "Fig. 1" and G.number("F2-ft") == "Fig. 3" and G.number("PC-jc2") == "Fig. 4"
-    assert G.number("F4-other") == "Fig. A4" and G.number("F4-light") == "Fig. A5" and G.number("F6-ft") == "Fig. A11"
+    assert G.number("ROC-main") == "Fig. 6" and G.number("ROC-main-ft") == "Fig. 7" and G.number("A8") == "Fig. 8"
+    assert G.number("F4-other") == "Fig. A2" and G.number("F4-light") == "Fig. A3" and G.number("F6-ft") == "Fig. S4"
     assert G.number("tab:summary") == "Table 1" and G.number("tab:summaryauc") == "Table A1" and G.number("tab:probes") == "Table A7"
     assert G.number("FJ") == "Fig. S26" and G.number("tab:perrun") == "Table S1"
-    assert G.place("F10b") == "Appendix, Fig. A15" and G.place("F11") == "Main text, Fig. 7"
+    assert G.place("F10b") == "Appendix, Fig. A11" and G.place("F11") == "Main text, Fig. 9"
     assert G.number("tab:sculptboot") == "Table S6" and G.number("tab:masseffect") == "Table A9"
     assert G.number("tab:xbxrej") == "Table A11"
     # four main-text tables (PI 2026-11-12)
     assert [G.number(k) for k in ("tab:published", "tab:mass", "tab:xbx")] == ["Table 2", "Table 3", "Table 4"]
     assert G.number("tab:labelsets") == "Table A8" and G.number("tab:jetclassrej") == "Table A3" and G.number("tab:pairs") == "Table A4"
-    assert G.number("PT") == "Fig. A12" and G.number("F9b") == "Fig. A13" and G.number("A17-probe") == "Fig. A14"
-    assert [G.number(k) for k in ("UMAP-frozen", "UMAP-ft", "VAL")] == ["Fig. A17", "Fig. A18", "Fig. A19"]
+    assert G.number("PT") == "Fig. A8" and G.number("F9b") == "Fig. A9" and G.number("A17-probe") == "Fig. A10"
+    assert [G.number(k) for k in ("UMAP-frozen", "UMAP-ft", "VAL")] == ["Fig. A13", "Fig. A14", "Fig. A15"]
     assert [G.number(k) for k in ("A3R-ft", "A3R-s", "PT-part", "PT-bbcc", "PT-bbcc-part", "F9a")] == [
-        "Fig. S31", "Fig. S33", "Fig. S34", "Fig. S35", "Fig. S36", "Fig. S37"]
+        "Fig. S33", "Fig. S35", "Fig. S36", "Fig. S37", "Fig. S38", "Fig. S39"]
     assert [G.number(k) for k in ("tab:perclass", "tab:jc1conf", "tab:coarse")] == ["Table S11", "Table S12", "Table S13"]
     assert "tab:ptbins" not in G.TIER and G.number("tab:compute") == "Table S16"
     # the supplement's UMAP grids (the per-task grid of JetClass-II's hadronic decays first), then the pretraining

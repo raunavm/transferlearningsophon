@@ -989,6 +989,25 @@ SIZE_NOTE = ("Means over runs: three per label set, two per mass network, three 
              "initializations.")
 # the supplement members' captions, filled like the paper's (gallery_captions holds the main-text and appendix ones)
 SUPPLEMENT_CAPTIONS = {
+    # PI 2026-11-18: in the supplement (paper captions, gallery_captions, until then)
+    "F2a": (
+        'In the area under the receiver operating characteristic curve (AUC), linear probes with 162, 43 and 17 classes '
+        'separate the JetClass-II classes less well than 188 classes, and on top tagging 17 classes + mass separates '
+        'better. The panels show the AUC of the linear probes of figure {fig:F2}, on JetClass-II and JetClass averaged '
+        'over the classes, each against the rest, with the random network beyond the // breaks in (a) and (b). Tasks, '
+        'networks and run counts are those of figure {fig:F2}, and the line and band repeat the 188-class values. The '
+        'released Sophon checkpoint appears on JetClass-II and JetClass only, as its top and quark/gluon probes set '
+        'the missing inputs to zero. Values are in tables {tab:summary} and {tab:summaryauc}.'
+    ),
+    "F2b": (
+        'After fine-tuning, every pretrained network separates the JetClass-II and JetClass classes better than '
+        'training from scratch in the area under the receiver operating characteristic curve (AUC). The panels show '
+        'the AUC of the fine-tuned networks of figure {fig:F2-ft}, on JetClass-II and JetClass averaged over the '
+        'classes, each against the rest. Tasks, networks and run counts are those of figure {fig:F2-ft}, the line and '
+        'band repeat the 188-class values, and from scratch lies beyond an axis break (//) in (b) and (d). The random '
+        'network has no fine-tuned version: its weights are untrained, and training from scratch, with its own '
+        'schedule, is the reference. Values are in tables {tab:summary} and {tab:summaryauc}.'
+    ),
     "VAL-part": (
         "The curves show the validation accuracy on JetClass-II against pretraining epoch for the 17-class partitions, "
         "with the network pretrained with 17 classes for reference, every network scored on its own 17 classes. Each "
@@ -1017,25 +1036,6 @@ SUPPLEMENT_CAPTIONS = {
         'Particle Transformer. Fine-tuning and training from scratch on JetClass-II and JetClass start at 10,000 jets, '
         'and the linear probes fill the missing top inputs with random draws and the quark/gluon inputs with the '
         'training mean, as in table {tab:probesnfull}. Values are in tables {tab:ftfull} and {tab:probesnfull}.'
-    ),
-    "A8-auc": (
-        'The panels of figure {fig:A8} in the area under the receiver operating characteristic curve (AUC), averaged '
-        'over the classes, each against the rest, on class-balanced JetClass-II and JetClass, and of the binary task on'
-        ' top and quark/gluon tagging, scored on Pythia and on Herwig jets, for the fine-tuned networks of each label '
-        'set, with and without the mass regression (+ mass), and training from scratch (grey). Points, offset slightly '
-        'in size, are means and error bars ±1 standard deviation over three pretraining runs, two for + mass, or three '
-        'trainings from scratch, and open stars mark the published Particle Transformer. JetClass-II and JetClass start'
-        ' at 10,000 jets, and the values are in table {tab:ftfull}.'
-    ),
-    "A10-auc": (
-        'The panels of figure {fig:A10} in the area under the receiver operating characteristic curve (AUC), averaged '
-        'over the classes, each against the rest, on class-balanced JetClass-II and JetClass, and of the binary task on'
-        ' top and quark/gluon tagging, scored on Pythia and on Herwig jets, for linear probes on the frozen features of'
-        ' each label set, with and without the mass regression (+ mass), and of the random network (dark grey). Points,'
-        ' offset slightly in size, are means and error bars ±1 standard deviation over three pretraining runs, two for '
-        '+ mass, or three random initializations, and open stars mark the published Particle Transformer. The linear '
-        'probes fill the missing top inputs with random draws and the quark/gluon inputs with the training mean, as in '
-        'table {tab:probesnfull}, where the values are.'
     ),
     "A8-part": (
         'The networks pretrained with the four 17-class partitions in the form of figure {fig:A8}, fine-tuned and '
@@ -1158,22 +1158,6 @@ PAGES = [
         caption="",
         differs="F8's form in AUC (PI 2026-11-11: the scaling figures need AUC as well as accuracy and rejection).",
         draw=lambda path: draw_f8(path, auc=True)),
-    C.Page(
-        id="A8-auc",
-        title="Training size, fine-tuned, AUC",
-        precedent=["2401.13537/fig3.png"],
-        precedent_label="Golling Fig. 3",
-        caption="",
-        differs="A8's form in AUC.",
-        draw=lambda path: draw_a8(path, auc=True)),
-    C.Page(
-        id="A10-auc",
-        title="Training size, linear probes, AUC",
-        precedent=["2401.13537/fig3.png"],
-        precedent_label="Golling Fig. 3",
-        caption="",
-        differs="A10's form in AUC.",
-        draw=lambda path: draw_a10(path, auc=True)),
     C.Page(
         id="A8-part",
         title="Training size, fine-tuned, 17-class partitions",

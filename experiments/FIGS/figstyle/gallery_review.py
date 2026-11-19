@@ -32,8 +32,6 @@ REVIEW = {
     "FJ-ctrl-app": (3, FIXED + "raised with the PI: log x; greyscale of the ten class colours."),
     "FJ-s": (3, CLEAN),
     "F8-auc": (1, "new page, not yet reviewed."),
-    "A8-auc": (1, "new page, not yet reviewed."),
-    "A10-auc": (1, "new page, not yet reviewed."),
     "A3R": (3, CLEAN),
     "A3R-ft": (3, CLEAN),
     "UMAP-jc1": (3, CLEAN + " Raised with the PI: per-class colours and greyscale."),
@@ -59,8 +57,6 @@ CHANGES = {
           "partitions under a subheading, the random network and from scratch (L5).",
     "F8-auc": "NEW: F8 in AUC (PI 2026-11-11): the AUC averaged over the classes on JetClass-II and JetClass, the AUC of "
               "top and quark/gluon tagging, with ParT's published AUCs.",
-    "A8-auc": "NEW: A8 in AUC, as F8-auc; five tasks with Herwig and the mass networks.",
-    "A10-auc": "NEW: A10 in AUC, as F8-auc; five tasks with Herwig, the mass networks and the random network.",
     "INVENTORY": "CHANGED: the map of the story-based placement (PI, 2026-11-08): tier, number, draft sentence and "
                  "evidence of every item; the sculpting test; book numbers; printed at 100%.",
     "PALETTE": "CHANGED: F4-mech in place of the dropped F4 in the colour-vision renders.",

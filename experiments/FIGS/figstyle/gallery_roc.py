@@ -1012,6 +1012,27 @@ PAGES = [
 
 # the supplement members' captions, filled like the paper's (gallery_captions holds the main-text and appendix ones)
 SUPPLEMENT_CAPTIONS = {
+    # PI 2026-11-18: in the supplement (paper captions, gallery_captions, until then)
+    "F6": (
+        'With linear probes, no label set or mass network differs from 188 classes by more than three standard '
+        'deviations in R30, the inverse background efficiency at 30% signal efficiency, on top and quark/gluon '
+        'tagging, Pythia and Herwig; 17 classes + mass, the highest curve in (a), lies two standard deviations above. '
+        'Panels show background rejection against signal efficiency, means over the runs of figure {fig:F1} down to '
+        '20 passing background jets. The lower panels give the ratio to 188 classes on a linear axis from a signal '
+        'efficiency of 0.1, with a band of run spread and binomial uncertainty for 188 classes only. Figure {fig:F6-ft} '
+        'shows the fine-tuned networks, and values and the other standard deviations are in tables {tab:summary}, '
+        '{tab:summaryauc} and {tab:probes}.'
+    ),
+    "F6-ft": (
+        "After fine-tuning, no label set or mass network differs from 188 classes in R30, the inverse background "
+        "efficiency at 30% signal efficiency, by more than three standard deviations on top and quark/gluon tagging, "
+        "Pythia and Herwig. Panels show background rejection against signal efficiency for the networks of figure "
+        "{fig:F6} fine-tuned and for training from scratch, means over the runs of figure {fig:F1} or three trainings "
+        "from scratch, down to 20 passing background jets. Lower panels give the ratio to 188 classes on a linear axis "
+        "from a signal efficiency of 0.1, with bands for the run spread and binomial uncertainty of 188 classes and from "
+        "scratch only, the other standard deviations being in the tables. Values are in tables {tab:summary}, "
+        "{tab:summaryauc} and {tab:labelsets}."
+    ),
     "F4-ee": (
         "Linear probes on the frozen features separate X→ee from X→μμ completely with the networks pretrained with 188 "
         "classes, 162 classes and 162 classes + mass and with every 17-class partition, which keep fewer than 20 X→μμ jets at every "

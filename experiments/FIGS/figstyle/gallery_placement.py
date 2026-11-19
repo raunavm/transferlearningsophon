@@ -201,8 +201,9 @@ _TABLES = (
                        "into the frozen features."),
     ("tab:xbx", MAIN, XBX),
     # the appendix by family (PI 2026-11-14, step 6; APPENDIX_FAMILIES), each table beside its family's figures
+    # PI 2026-11-18: the AUC as the secondary metric, beside every headline value
     ("tab:summaryauc", APPENDIX, "[[tab:summaryauc]] gives the area under the ROC curve beside every value of "
-                                 "[[tab:summary]], the values of [[F2a]] and [[F2b]] (PI 2026-11-18: AUC as the secondary metric)."),
+                                 "[[tab:summary]]."),
     # plan "tables": moves to the appendix with the JetClass per-class figure, whose every point it holds
     ("tab:jc1_class_auc", APPENDIX, "[[tab:jc1_class_auc]] gives every point of [[PC-jc1]] and [[PC-jc1-mass]], each "
                                     "JetClass class's recall."),
@@ -359,7 +360,6 @@ GROUPS = ("sets", "mass", "part")
 # F1 and the tables of inputs and of the published comparison's ParT reproduction show no group.
 SHOWS = {
     "F2": ("Headline metrics", (LP,), GROUPS), "F2-ft": ("Headline metrics", (FT,), GROUPS),
-    "F2a": ("Headline metrics", (LP,), GROUPS), "F2b": ("Headline metrics", (FT,), GROUPS),
     "tab:summary": ("Headline metrics", (LP, FT), GROUPS), "tab:summaryauc": ("Headline metrics", (LP, FT), GROUPS),
     "tab:published": ("Headline metrics", (FT,), ("sets",)),
     "PC-jc2": ("Per class", (LP, FT), ("sets",)), "PC-jc1": ("Per class", (LP, FT), ("sets",)),
@@ -369,7 +369,6 @@ SHOWS = {
     "tab:pairs": ("Class pairs", (LP, FT), GROUPS),
     "A8": ("Training size", (FT,), ("sets", "mass")), "A10": ("Training size", (LP,), ("sets", "mass")),
     "tab:probesn": ("Training size", (LP,), ("sets", "mass")), "tab:ft": ("Training size", (FT,), ("sets", "mass")),
-    "F6": ("ROC curves", (LP,), ("sets", "mass")), "F6-ft": ("ROC curves", (FT,), ("sets", "mass")),
     "ROC-main": ("ROC curves", (LP,), ("sets", "mass")), "ROC-main-ft": ("ROC curves", (FT,), ("sets", "mass")),
     "tab:probes": ("ROC curves", (LP,), ("sets", "mass")), "tab:labelsets": ("ROC curves", (FT,), ("sets", "mass")),
     "PT": ("Jet pT", (LP, FT), ("sets", "mass")),

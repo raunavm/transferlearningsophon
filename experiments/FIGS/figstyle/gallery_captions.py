@@ -50,24 +50,6 @@ CAPTIONS = {
         'on Pythia jets. Values are in table {tab:summary}, figure {fig:F2} shows the linear probes and table '
         '{tab:summaryauc} the area under the receiver operating characteristic curve.'
     ),
-    "F2a": (
-        'In the area under the receiver operating characteristic curve (AUC), linear probes with 162, 43 and 17 classes '
-        'separate the JetClass-II classes less well than 188 classes, and on top tagging 17 classes + mass separates '
-        'better. The panels show the AUC of the linear probes of figure {fig:F2}, on JetClass-II and JetClass averaged '
-        'over the classes, each against the rest, with the random network beyond the // breaks in (a) and (b). Tasks, '
-        'networks and run counts are those of figure {fig:F2}, and the line and band repeat the 188-class values. The '
-        'released Sophon checkpoint appears on JetClass-II and JetClass only, as its top and quark/gluon probes set '
-        'the missing inputs to zero. Values are in tables {tab:summary} and {tab:summaryauc}.'
-    ),
-    "F2b": (
-        'After fine-tuning, every pretrained network separates the JetClass-II and JetClass classes better than '
-        'training from scratch in the area under the receiver operating characteristic curve (AUC). The panels show '
-        'the AUC of the fine-tuned networks of figure {fig:F2-ft}, on JetClass-II and JetClass averaged over the '
-        'classes, each against the rest. Tasks, networks and run counts are those of figure {fig:F2-ft}, the line and '
-        'band repeat the 188-class values, and from scratch lies beyond an axis break (//) in (b) and (d). The random '
-        'network has no fine-tuned version: its weights are untrained, and training from scratch, with its own '
-        'schedule, is the reference. Values are in tables {tab:summary} and {tab:summaryauc}.'
-    ),
     "PC-jc2": (
         "{counts} Each point is one JetClass-II class's recall, the fraction of its test jets the network assigns to "
         "it, for the panel's network (vertical) against 188 classes (horizontal), as linear probes (left) or "
@@ -113,15 +95,11 @@ CAPTIONS = {
     "A8": (
         'After fine-tuning, 17 classes are less accurate than 188 classes on JetClass-II at every training-set size and'
         ' on JetClass at one million jets, while on top and quark/gluon tagging, Pythia and Herwig, no label set or '
-        'mass network differs from 188 classes in R30 by more than three standard deviations at any size. The upper '
-        'panels show accuracy and R30, the inverse background efficiency at 30% signal efficiency, and the lower '
-        'panels the area under the ROC curve (AUC), averaged over the classes on JetClass-II and JetClass, against '
-        'training-set size. '
-        'Error bars are ±1 standard deviation over the runs of figure {fig:F1} '
-        'or three trainings from scratch (grey), points offset by at most 10% in size, and open stars mark the '
-        'published Particle Transformer, trained from scratch on 2, 1.2 and 1.6 million jets, with its published '
-        'standard deviation on R30. Figure {fig:A10} shows the linear probes, and values are in tables {tab:ft} and '
-        '{tab:summary}.'
+        'mass network differs from 188 classes in R30 by more than three standard deviations. The upper panels show '
+        'accuracy and R30, the inverse background efficiency at 30% signal efficiency, and the lower panels the area '
+        'under the ROC curve, averaged over the classes on JetClass-II and JetClass. Error bars are ±1 standard deviation over the '
+        'runs of figure {fig:F1} or three trainings from scratch (grey); open stars mark the published Particle '
+        'Transformer. Figure {fig:A10} shows the linear probes, and values are in tables {tab:ft} and {tab:summary}.'
     ),
     "F9b": (
         'Each network with an added mass regression (+ mass) resolves the jet mass better than the soft-drop mass in '
@@ -209,26 +187,6 @@ CAPTIONS = {
         'horizontal bar spanning it, and error bars combine the standard deviation over the runs of figure {fig:F1} '
         'with the binomial uncertainty over test jets, the three-standard-deviation test applied. Values are in the '
         'supplementary file jet_pt_bins.csv.'
-    ),
-    "F6": (
-        'With linear probes, no label set or mass network differs from 188 classes by more than three standard '
-        'deviations in R30, the inverse background efficiency at 30% signal efficiency, on top and quark/gluon '
-        'tagging, Pythia and Herwig; 17 classes + mass, the highest curve in (a), lies two standard deviations above. '
-        'Panels show background rejection against signal efficiency, means over the runs of figure {fig:F1} down to '
-        '20 passing background jets. The lower panels give the ratio to 188 classes on a linear axis from a signal '
-        'efficiency of 0.1, with a band of run spread and binomial uncertainty for 188 classes only. Figure {fig:F6-ft} '
-        'shows the fine-tuned networks, and values and the other standard deviations are in tables {tab:summary}, '
-        '{tab:summaryauc} and {tab:probes}.'
-    ),
-    "F6-ft": (
-        "After fine-tuning, no label set or mass network differs from 188 classes in R30, the inverse background "
-        "efficiency at 30% signal efficiency, by more than three standard deviations on top and quark/gluon tagging, "
-        "Pythia and Herwig. Panels show background rejection against signal efficiency for the networks of figure "
-        "{fig:F6} fine-tuned and for training from scratch, means over the runs of figure {fig:F1} or three trainings "
-        "from scratch, down to 20 passing background jets. Lower panels give the ratio to 188 classes on a linear axis "
-        "from a signal efficiency of 0.1, with bands for the run spread and binomial uncertainty of 188 classes and from "
-        "scratch only, the other standard deviations being in the tables. Values are in tables {tab:summary}, "
-        "{tab:summaryauc} and {tab:labelsets}."
     ),
     "A10": (
         'With linear probes, 43 and 17 classes are less accurate on JetClass-II than 188 classes at every training-set '

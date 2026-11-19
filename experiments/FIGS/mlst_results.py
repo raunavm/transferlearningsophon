@@ -5408,8 +5408,8 @@ CAPTION_SHORT = {
                "$10^{4}$ quark/gluon jets, with the sum of the two in the last column. For fine-tuning, the rate is that "
                "of the pretrained layers, and the new output head trains at 50 times that rate, at most "
                "$5\\times10^{-3}$, so at $5\\times10^{-3}$ at every rate tried. The grid for \\Kfull{} classes was "
-               "extended past its upper edge, where it peaked, and the upper rates were tried with \\Kcoarse{} classes; "
-               "the rate with the largest sum averaged over the two is used for every pretrained network below the full "
+               "extended past its upper edge, where it peaked, and the upper rates were tried with \\Kcoarse{} classes. "
+               "The rate with the largest sum averaged over the two is used for every pretrained network below the full "
                "top and quark/gluon training sets. Training from scratch on JetClass and JetClass-II uses $10^{-3}$, the "
                "Particle Transformer's rate, which the sweep does not cover. Every value is from a single run.",
     "mass_detail": "Jet-mass resolution and median response on JetClass-II in detail, defined as in "

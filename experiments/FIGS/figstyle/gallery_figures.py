@@ -24,21 +24,19 @@ import style_v5 as S
 
 MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_perclass, gallery_roc, gallery_inventory,
            gallery_compare)
-ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement): main text,
-         "F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "ROC-main", "ROC-main-ft", "A8", "F11",
-         # appendix, by family (gallery_placement.APPENDIX_FAMILIES)
-         "F2a", "F2b", "PC-jc1", "F4-other", "F4-light", "F4-mech-ft", "F4-other-ft", "F4-light-ft", "A10", "F6",
-         "F6-ft", "PT", "F9b", "A17-probe", "F10b", "F11-part", "UMAP-frozen", "UMAP-ft", "VAL",
-         # supplement
-         "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand", "PC-jc2-mass", "PC-jc1-mass", "PC-conf",
-         "PC-conf-part", "PC-conf-mass", "F4-ee", "F4-rand", "F4-rand-qcd", "F4-rand-ft", "F4-rand-qcd-ft", "F8",
-         "F8-auc", "A10-auc", "A8-auc", "A10-part", "A8-part", "F6-part", "F6-part-ft", "FJ-app", "FJ-ctrl-app",
-         "FJ-mass-app", "FJ", "FJ-ctrl", "FJ-mass", "FJ-s", "A3R", "A3R-ft", "A3R-ctrl-ft", "A3R-s", "PT-part",
-         "PT-bbcc", "PT-bbcc-part", "F9a", "A17-res", "A17-qcd", "A17-ridge", "A17-probe-part", "A17-ridge-part",
-         "F10a", "F10b-flav", "F10c",
-         "F10a-flav", "F10-ft", "F10-ft-part", "F10a-mass", "F11-probe", "UMAP-jc2-had", "UMAP-jc1", "UMAP-jc2-lep",
-         "UMAP-top", "UMAP-qg", "UMAP-xbx", "UMAP-mass-jc2-had", "UMAP-mass-jc1", "UMAP-mass-jc2-lep",
-         "UMAP-mass-top", "UMAP-mass-qg", "UMAP-mass-xbx", "VAL-part",
+ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement, PI 2026-11-18):
+         # main text, appendix by family, supplement
+         "F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "ROC-main", "ROC-main-ft", "A8", "F11", "PC-jc1", "F4-other",
+         "F4-light", "F4-mech-ft", "F4-other-ft", "F4-light-ft", "A10", "PT", "F9b", "A17-probe", "F10b", "F11-part",
+         "UMAP-frozen", "UMAP-ft", "VAL", "F2a", "F2b", "F6", "F6-ft", "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part",
+         "PC-jc1-rand", "PC-jc2-mass", "PC-jc1-mass", "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-ee", "F4-rand",
+         "F4-rand-qcd", "F4-rand-ft", "F4-rand-qcd-ft", "F8", "F8-auc", "A10-part", "A8-part", "F6-part",
+         "F6-part-ft", "FJ-app", "FJ", "FJ-ctrl-app", "FJ-mass-app", "FJ-ctrl", "FJ-mass", "FJ-s", "A3R", "A3R-ft",
+         "A3R-ctrl-ft", "A3R-s", "PT-part", "PT-bbcc", "PT-bbcc-part", "F9a", "A17-res", "A17-qcd", "A17-ridge",
+         "A17-probe-part", "A17-ridge-part", "F10a", "F10b-flav", "F10c", "F10a-flav", "F10-ft", "F10-ft-part",
+         "F10a-mass", "F11-probe", "UMAP-jc2-had", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "UMAP-xbx",
+         "UMAP-mass-jc2-had", "UMAP-mass-jc1", "UMAP-mass-jc2-lep", "UMAP-mass-top", "UMAP-mass-qg", "UMAP-mass-xbx",
+         "VAL-part",
          "SOPHON-FIG2", "PALETTE",      # gallery only
          # the PI's line-graph style comparison (2026-11-11), gallery only
          "CMP-F7-B", "CMP-F7-C", "CMP-A4-B", "CMP-A4-C", "CMP-FONT-T", "CMP-FONT-LM")
@@ -53,10 +51,10 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
 # hold both modes or compare them (PT, PC-*, F8) name the mode in their panels or legends
 _LP, _FT = "Linear probe", "Fine-tuned"
 MODE_HEADINGS = {
-    **dict.fromkeys(("F2", "ROC-main", "F2a", "F4-mech", "F4-other", "F4-light", "F4-ee", "F4-rand", "F4-rand-qcd", "A10", "A10-auc",
+    **dict.fromkeys(("F2", "ROC-main", "F2a", "F4-mech", "F4-other", "F4-light", "F4-ee", "F4-rand", "F4-rand-qcd", "A10",
                      "A10-part", "F6", "F6-part", "FJ-app", "FJ-ctrl-app", "FJ-mass-app", "A3R", "F11-probe"), _LP),
     **dict.fromkeys(("F2-ft", "ROC-main-ft", "F2b", "F4-mech-ft", "F4-other-ft", "F4-light-ft", "F4-rand-ft", "F4-rand-qcd-ft", "A8",
-                     "A8-auc", "A8-part", "F6-ft", "F6-part-ft", "FJ", "FJ-ctrl", "FJ-mass", "A3R-ft", "A3R-ctrl-ft",
+                     "A8-part", "F6-ft", "F6-part-ft", "FJ", "FJ-ctrl", "FJ-mass", "A3R-ft", "A3R-ctrl-ft",
                      "F10-ft", "F10-ft-part"), _FT),
     # PI 2026-11-14 (audit 3): every one-mode figure names its mode, the mass and UMAP figures too; F10b holds both
     # modes, one a panel, so its panel titles name them
@@ -74,7 +72,7 @@ S3.HEADINGS.update(MODE_HEADINGS)
 PAPER = ("F1", "F2", "F2-ft", "ROC-main", "ROC-main-ft", "F2a", "F2b", "PC-jc2", "PC-jc1", "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand", "PC-jc2-mass", "PC-jc1-mass",
          "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-mech", "F4-mech-ft", "F4-other", "F4-other-ft", "F4-light", "F4-light-ft", "F4-ee", "F4-rand", "F4-rand-qcd",
          "F4-rand-ft", "F4-rand-qcd-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "FJ-mass", "FJ-mass-app", "F6", "F6-ft", "F6-part", "F6-part-ft", "F8",
-         "F8-auc", "A8", "A8-auc", "A8-part", "A10", "A10-auc", "A10-part", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge", "A17-probe-part", "A17-ridge-part",
+         "F8-auc", "A8", "A8-part", "A10", "A10-part", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge", "A17-probe-part", "A17-ridge-part",
          "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",
          "F10-ft", "F10-ft-part", "F10a-mass", "F11", "F11-part", "F11-probe", "A3R", "A3R-ft", "A3R-ctrl-ft", "A3R-s", "PT", "PT-part", "PT-bbcc", "PT-bbcc-part",
          "VAL", "VAL-part")      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
