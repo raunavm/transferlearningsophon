@@ -613,6 +613,9 @@ MAIN_COLS, MAIN_ROWS = 4, 3
 MAIN_LEFT, MAIN_GAP = 1.3, 0.2          # cm: room for the tick labels and y label; between panels (no y labels inside)
 MAIN_W = (S.PRINT_W - MAIN_LEFT - 0.1 - (MAIN_COLS - 1) * MAIN_GAP) / MAIN_COLS
 MAIN_TOP, MAIN_HGAP = 0.6, 1.35         # cm: one-line titles; _roc_grid's gap for the x tick labels and a title
+# PI 2026-11-19: the leptonic classes lie above 97% signal efficiency against QCD (roc_points.EPS_GRID reaches 0.9999),
+# so their panels show 0.95 to 1, ticks every 0.02, widened by 2% of that range as _roc_axes does
+MAIN_ZOOM, MAIN_ZOOM_X = ("label_Hqql", "label_Tbl"), (0.95, 1.0)
 PENDING = "pending"
 
 
@@ -657,8 +660,17 @@ def _draw_roc_main(path: pathlib.Path, mode: str) -> None:
         r, c = divmod(k, MAIN_COLS)
         ax = S.axes_cm(fig, MAIN_LEFT + c * (MAIN_W + MAIN_GAP), MAIN_TOP + r * (h + MAIN_HGAP), MAIN_W, h)
         _roc_axes(ax, x_step=0.5)
+        if key in MAIN_ZOOM:
+            lo, hi = MAIN_ZOOM_X
+            ax.set_xlim(lo - 0.02 * (hi - lo), hi + 0.02 * (hi - lo))
+            ax.xaxis.set_major_locator(MultipleLocator(0.02))
+            ax.xaxis.set_minor_locator(MultipleLocator(0.01))
+            ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.2f}"))
         _main_panel(ax, docs, key, nets, handles)
-        S.title(ax, name if ax.lines else f"{name}, {PENDING}")      # L7: no text inside a panel
+        # "pending" only where no run has the curve yet; a curve beyond the 20-jet limit everywhere is left empty, as
+        # the caption says (L7: no text inside a panel)
+        have = any(key in d.get("curves", {}) for d in docs.values())
+        S.title(ax, name if ax.lines or have else f"{name}, {PENDING}")
         ax.tick_params(labelleft=c == 0)
         if c == 0:
             S.labels(ax, ylabel=r"Rejection ($1/\varepsilon_B$)")

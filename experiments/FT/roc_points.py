@@ -37,7 +37,7 @@ where eps_B = 0, never capped). The cut is the first ROC vertex at which at leas
 background jets pass (more than 20 only with tied scores): every grid point at or above its eps_S
 has at least 20 background jets behind it, and a reader draws only those. The cut is null when no
 vertex below full signal efficiency reaches 20 background jets (the curve lies beyond the limit at
-every eps_S the grid holds). The grid stops at 0.995: interpolating at eps_S = 1 returns the last
+every eps_S the grid holds). The grid stops at 0.9999: interpolating at eps_S = 1 returns the last
 vertex, eps_B = 1.
 
 Every file is written whole (tmp + os.replace) and a file that exists is skipped, never
@@ -85,6 +85,9 @@ PB = _load("probe_bal", "experiments/EVAL/probe_bal.py")     # SIBLING_PAIRS
 
 OUT_ROOT = pathlib.Path("/data/results/ft_v2/curves_v2")
 EPS_GRID = tuple(round(0.001 * i, 3) for i in range(1, 11)) + tuple(round(0.015 + 0.005 * i, 3) for i in range(197))
+# PI 2026-11-19: up to 0.9999, for JetClass's leptonic classes against QCD (H->lvqq', t->blv), whose curves lie above
+# 0.97 (fine-tuned t->blv above 0.996): Figs. 6 and 7 draw them on an axis from 0.95 to 1
+EPS_GRID += (0.996, 0.997, 0.998, 0.999, 0.9995, 0.9999)
 MIN_BKG_PASS = 20               # the fewest background jets behind a drawn point (mlst_v4.JC1_MIN_BKG)
 FT_TASK = {"jc1_ft": "jc1", "jc1_ft_ovr": "jc1", "top_ft": "top", "qg_ft": "qg", "jc2_ft_ovr": "jc2b",
            "pairs_ft": "jc2b"}     # the fine-tuning families and their task

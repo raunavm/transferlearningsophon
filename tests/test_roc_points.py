@@ -32,7 +32,8 @@ def _src(tmp_path):
 
 def test_the_grid_and_the_cut_constant():
     g = RP.EPS_GRID
-    assert len(g) == 207 and g[0] == 0.001 and g[9] == 0.010 and g[10] == 0.015 and g[-1] == 0.995
+    assert len(g) == 213 and g[0] == 0.001 and g[9] == 0.010 and g[10] == 0.015 and g[206] == 0.995
+    assert g[207:] == (0.996, 0.997, 0.998, 0.999, 0.9995, 0.9999) and list(g) == sorted(set(g))   # PI 2026-11-19
     assert all(b > a for a, b in zip(g, g[1:])) and {0.3, 0.5} <= set(g)
     assert RP.MIN_BKG_PASS == V4.JC1_MIN_BKG == 20
     assert RP.JC1_SIGNALS == tuple(c for c, _ in V4.JC1_COLS)

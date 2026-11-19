@@ -81,7 +81,8 @@ CAPTIONS = {
         'Background rejection against signal efficiency with linear probes on frozen features, the mean over runs. '
         '(a)-(i) Every JetClass signal class against QCD jets, as the Particle Transformer reports JetClass; (j) top and '
         '(k) quark/gluon tagging (Pythia). Every panel shows the label sets and mass networks; only 188 classes carries a '
-        'band of the standard deviation over runs. Curves end where fewer than 20 background jets remain. Figure '
+        'band of the standard deviation over runs. Panels (e) and (i), the leptonic decays, show signal efficiencies '
+        'from 0.95. Curves end where fewer than 20 background jets remain. Figure '
         '{fig:ROC-main-ft} shows the fine-tuned networks, and tables {tab:probes} and {tab:summary} the values.'
     ),
     "ROC-main-ft": (
@@ -89,7 +90,8 @@ CAPTIONS = {
         'signal class against QCD jets, fine-tuned on one million JetClass jets, as the Particle Transformer reports '
         'JetClass; (j) top and (k) quark/gluon tagging (Pythia), fine-tuned on the full sets. Every panel shows the label '
         'sets and mass networks, with training from scratch (grey); only 188 classes and from scratch carry bands of the '
-        'standard deviation over runs. Curves end where fewer than 20 background jets remain. Values are in tables '
+        'standard deviation over runs. Panels (e) and (i), the leptonic decays, show signal efficiencies from 0.95. '
+        'Curves end where fewer than 20 background jets remain. Values are in tables '
         '{tab:jetclassrej}, {tab:labelsets} and {tab:summary}.'
     ),
     "A8": (
@@ -144,7 +146,7 @@ CAPTIONS = {
         "flavor-boundary partitions (lower row), means over the runs of figure {fig:F1} ending where fewer than 20 "
         "background jets remain. Lower panels give the ratio to 188 classes on a logarithmic axis, banded for 188 "
         "classes only by run spread and binomial uncertainty. " + NO_RAND +
-        " Figure {fig:F4-light} shows the other two pairs, and table {tab:pairs} each pair's rejection at 50% signal efficiency and the other spreads."
+        " Figure {fig:F4-light} shows the other two pairs, and table {tab:pairs} each pair's rejection at 90% signal efficiency and the other spreads."
     ),
     "F4-light": (
         "With linear probes, 43 and 17 classes separate QCD jets with b quarks, and those with c but no b quarks, from "
@@ -152,7 +154,7 @@ CAPTIONS = {
         "are those of figure {fig:F4-other} with the jets with heavy quarks as the signal. Curves are means over the "
         "runs of figure {fig:F1} ending where fewer than 20 background jets remain, and the ratio panels, on a "
         "logarithmic axis, are banded for 188 classes only. "
-        + NO_RAND + " Table {tab:pairs} gives each pair's rejection at 50% signal efficiency and the other spreads."
+        + NO_RAND + " Table {tab:pairs} gives each pair's rejection at 90% signal efficiency and the other spreads."
     ),
     "F4-mech-ft": (
         "After fine-tuning, 17 classes still separate X→bb̄ from cc̄ and X→bc from bq, cs worse than 188 classes. The "
@@ -160,14 +162,14 @@ CAPTIONS = {
         "jets and scored on " + MIXED + ", with training from scratch in the upper row and 17 classes in the lower row "
         "for reference. The ratio panels have a logarithmic axis, and curves end where fewer than 20 background jets "
         "remain. Bands, for 188 classes and from scratch only, combine run spread and binomial "
-        "uncertainty. " + NO_RAND + " Table {tab:pairs} gives each pair's rejection at 50% signal efficiency and the other spreads."
+        "uncertainty. " + NO_RAND + " Table {tab:pairs} gives each pair's rejection at 90% signal efficiency and the other spreads."
     ),
     "F4-other-ft": (
         "After fine-tuning, 17 classes still separate both pairs worse than 188 classes. The panels are those of "
         "figure {fig:F4-other} for networks fine-tuned on one million class-balanced JetClass-II jets and scored on "
         + MIXED + ", with training from scratch in the upper row. The ratio panels have a logarithmic axis, and curves "
         "end where fewer than 20 background jets remain. Bands, for 188 classes and from scratch only, combine run "
-        "spread and binomial uncertainty. " + NO_RAND + " Figure {fig:F4-light-ft} shows the other two pairs, and table {tab:pairs} each pair's rejection at 50% signal efficiency and "
+        "spread and binomial uncertainty. " + NO_RAND + " Figure {fig:F4-light-ft} shows the other two pairs, and table {tab:pairs} each pair's rejection at 90% signal efficiency and "
         "the other spreads."
     ),
     "F4-light-ft": (
@@ -175,7 +177,7 @@ CAPTIONS = {
         "188 classes. The panels are those of figure {fig:F4-light} for networks fine-tuned on one million "
         "class-balanced JetClass-II jets and scored on " + MIXED + ", with training from scratch in the upper row. The "
         "ratio panels have a logarithmic axis, and curves end where fewer than 20 background jets remain. Bands, for "
-        "188 classes and from scratch only, combine run spread and binomial uncertainty. " + NO_RAND + " Table {tab:pairs} gives each pair's rejection at 50% signal efficiency and the "
+        "188 classes and from scratch only, combine run spread and binomial uncertainty. " + NO_RAND + " Table {tab:pairs} gives each pair's rejection at 90% signal efficiency and the "
         "other spreads."
     ),
     "PT": (

@@ -838,14 +838,16 @@ PAIRS_FT = "curves_v2/pairs_ft"
 PAIRS_LABEL_CM = 4.6        # the pair table's row labels wrap at this width and its blocks may be shrunk by
                             # SHRINK_OK, so that two pairs fit a block
 FT_SCRATCH_MODELS = ("scratch-s1", "scratch-s2", "scratch-s3")
-# tab:pairs and tab:pairsfull (PI 2026-11-18: no 1 - AUC anywhere): the rejection 1/eps_B at 50% signal efficiency,
-# R50, of each run, the linear probes' from their fit files (linear_probe_v2: r50, r50_n_bkg_pass, n_test_background)
-# and the fine-tuned networks' from their pair curves (the point eps_S = PAIR_EPS of the curve's grid). Lower-bound
+# tab:pairs and tab:pairsfull (PI 2026-11-18: no 1 - AUC anywhere; PI 2026-11-19: at 90% signal efficiency, where
+# every pair but X->ee vs mumu is measured after fine-tuning; at 50% four of seven were lower limits for every network):
+# the rejection 1/eps_B at PAIR_EPS of each run, read off the pair curves of both modes (the point eps_S = PAIR_EPS of
+# the curve's grid): the linear probes' (load_pairs_lp: curves_v2 pairs, the v5 refit's pairs_v5 once pulled) and the
+# fine-tuned networks' (load_pairs_ft). The names say R50 for history. Lower-bound
 # rule: a run in which fewer than PAIR_MIN_PASS background jets pass at that efficiency (where every curve of the
 # class-pair figures stops) has no measured R50; it gives the lower limit n_background / PAIR_MIN_PASS. A cell with such
 # a run prints PAIR_GT and the smallest, over its runs, of the measured values and these limits (every run's R50 lies
 # above it), with no spread; its column then has no bold (_bold).
-PAIR_EPS = 0.5
+PAIR_EPS = 0.9
 PAIR_MIN_PASS = V4.JC1_MIN_BKG
 PAIR_GT = r"$>$"
 
@@ -879,13 +881,19 @@ def pair_cell(vals: list, n_expected: int, fmt_pm) -> str:
             + (rf" \pending{{{len(have)} of {n_expected}}}" if len(have) < n_expected else ""))
 
 
+def load_pairs_lp(data: pathlib.Path) -> dict:
+    """{model: {pair: pair_r50 triple}} of the linear probes' pair curves (mlst_v4.load_family "pairs": the v5 refit's
+    pairs_v5, every pair, once pulled)."""
+    return {m: {k: pair_r50(d, k) for k in d["curves"]} for m, d in V4.load_family(data, "pairs").items()}
+
+
 def load_pairs_ft(data: pathlib.Path) -> dict:
     """{model: {pair: pair_r50 triple}} of the fine-tuned pair curves (mlst_v4.load_family: the one rule's rerun
     once pulled), {} until pulled."""
     return {m: {k: pair_r50(d, k) for k in d["curves"]} for m, d in V4.load_family(data, "pairs_ft").items()}
 
 
-def table_pairs(fits, runs, fmt_pm, status, rows, ft=None) -> str:
+def table_pairs(fits, runs, fmt_pm, status, rows, ft=None, lp=None) -> str:
     """A11, pairs of JetClass-II classes: R50 of each pair (the lower-bound rule above), under one heading over the
     pairs, in the class-pair figures' panel order; a dagger marks a pair the label set merges. The linear probes
     (binary probes, fits) first; ft (load_pairs_ft; {} prints the group pending) adds the fine-tuned networks as a
@@ -898,14 +906,16 @@ def table_pairs(fits, runs, fmt_pm, status, rows, ft=None) -> str:
             st = [status.get(a, {}).get(key, "apart") for a in RAND]
             return "merged" if all(x == "merged" for x in st) else "apart" if all(x == "apart" for x in st) else "some"
         status = {**status, RAND_POOLED: {key: pooled(key) for key, *_ in PAIRS}}
-    modes = [("lp", tuple(rows), lambda m, key: _pair_r50(fits, m, key))]
+    # the probes' values off their pair curves at PAIR_EPS (lp, load_pairs_lp); the fit files store only R50 and R30
+    modes = [("lp", tuple(rows), (lambda m, key: lp.get(m, {}).get(key)) if lp is not None
+              else (lambda m, key: _pair_r50(fits, m, key)))]
     if ft is not None:          # until pulled ({}), one pending row in place of the group's rows
         modes.append(("ft", tuple(r for r in rows if r not in (INIT, INIT_BN)) + (SCRATCH,) if ft else (),
                       lambda m, key: ft.get(m, {}).get(key)))
         runs = {**runs, SCRATCH: list(FT_SCRATCH_MODELS)}
     n = len(PAIRS_FIG)
     out = [r"\begin{tabular}{l" + "c" * n + "}", r"\toprule",
-           rf" & \multicolumn{{{n}}}{{c}}{{$R_{{50}}$}} \\", rf"\cmidrule(lr){{2-{1 + n}}}",
+           rf" & \multicolumn{{{n}}}{{c}}{{$R_{{{round(100 * PAIR_EPS)}}}$}} \\", rf"\cmidrule(lr){{2-{1 + n}}}",
            " & " + " & ".join(h for _, h, *_ in PAIRS_FIG) + r" \\", r"\midrule"]
     for k, (mode, arms, get) in enumerate(modes):
         if len(modes) > 1:
@@ -4783,7 +4793,7 @@ CAPTIONS = {
               "scored on the pair's jets among \\LpNTestJcii{} JetClass-II test jets of the mixed test sample by the "
               "summed output scores of the first side over those of both sides. The two modes are scored on different "
               "test jets, so they are compared within a mode only. "
-              "$R_{50}$, the inverse background efficiency at 50\\% signal efficiency with the first side as signal. "
+              "$R_{90}$, the inverse background efficiency at 90\\% signal efficiency with the first side as signal. "
               "No pretraining: fine-tuned from scratch, three seeds, no probe. $^{\\dagger}$: the label set merges the two "
               "sides into one class; $^{\\ddagger}$: it merges the first side with part of the second; $^{\\parallel}$: some of the five random partitions merge the two sides. " + SPREAD_POOLED
               + " The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label "
@@ -4800,7 +4810,7 @@ CAPTIONS = {
               "scored on the pair's jets among \\LpNTestJcii{} JetClass-II test jets of the mixed test sample by the "
               "summed output scores of the first side over those of both sides. The two modes are scored on different "
               "test jets, so they are compared within a mode only. "
-              "$R_{50}$, the inverse background efficiency at 50\\% signal efficiency with the first side as signal. "
+              "$R_{90}$, the inverse background efficiency at 90\\% signal efficiency with the first side as signal. "
               "No pretraining: fine-tuned from scratch, three seeds, no probe. $^{\\dagger}$: the label set merges the two "
               "sides into one class; $^{\\ddagger}$: it merges the first side with part of the second. " + SPREAD
               + " The $b$-quark boundary and the random flavor boundary lie only in the four-quark decays; every label "
@@ -5249,7 +5259,7 @@ def _runs(*kinds) -> str:
 
 
 # the pair tables' lower limit (table_pairs' rule, PI 2026-11-18)
-PAIR_GT_NOTE = (" $>$~marks a lower limit where fewer than \\MlstMinBkgPass{} background jets pass at 50\\% signal "
+PAIR_GT_NOTE = (" $>$~marks a lower limit where fewer than \\MlstMinBkgPass{} background jets pass at 90\\% signal "
                 "efficiency in a run, the number of background jets over \\MlstMinBkgPass{}, the smallest over the runs.")
 # a mark that only some tables carry: its sentence is added when a cell of the printed table has it
 KEY_MARKS = {
@@ -5331,7 +5341,7 @@ CAPTION_SHORT = {
                    "validation. The network pretrained with \\Kfull{} classes on kinematic inputs only has one run, "
                    "on top tagging only, and the released Sophon checkpoint, set apart by a rule, is outside the "
                    "controlled comparison." + BN_DEF + PART_DEF + _runs("set", "flav", "mass", "rand1"),
-    "pairs": ("The rejection at 50\\% signal efficiency, $R_{50}$, separating pairs of JetClass-II classes, "
+    "pairs": ("The rejection at 90\\% signal efficiency, $R_{90}$, separating pairs of JetClass-II classes, "
              "for linear probes and networks fine-tuned on a million class-balanced jets, the modes on different test "
              "jets. BatchNorm recomputed means batch-normalization statistics re-estimated on \\DesignBnJets{} training jets."
              + _runs("set", "flav", "mass", "rand")),
@@ -6441,6 +6451,9 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     fits_s = {**fits, SOPHON_MODEL: V4.remap(sophon)} if sophon else fits
     runs_s = {**runs, SOPHON: [SOPHON_MODEL]}
     pairs_ft = load_pairs_ft(data)
+    pairs_lp = load_pairs_lp(data)
+    if not pairs_lp:
+        missing.append("linear-probe class-pair curves -- experiments/FIGS/data/v2/curves_v2/pairs_v5/")
     if not pairs_ft:
         missing.append(f"fine-tuned class pairs -- experiments/FIGS/data/v2/{PAIRS_FT}/ (or its rerun {PAIRS_FT}_fixed/)")
     # the paper's tables pool the five random partitions into one row and print no ratio column; the supplement's
@@ -6461,10 +6474,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
            "tables/mlst_probes_n_full.tex": _longtable("probes_n_full", table_probes_n(
                fits, runs, TAB, ALL_ROWS + (INIT,), fill, chosen, kin=True)),
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, _pooled(runs), TAB, status,
-                                                                _paper_rows(rows_init), pairs_ft), True,
+                                                                _paper_rows(rows_init), pairs_ft, pairs_lp), True,
                                            label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK),
            "tables/mlst_pairs_full.tex": _float("pairs_full", table_pairs(fits, runs, TAB, status,
-                                                                          rows_init, pairs_ft),
+                                                                          rows_init, pairs_ft, pairs_lp),
                                                 True, label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK, pad=True),
            "tables/mlst_balance.tex": _float("balance", table_balance(fits3, fits_v4, runs, TAB, ALL_ROWS + (INIT_BN,)))}
     comparisons(em, fits, runs, status, index, fmt_pm)

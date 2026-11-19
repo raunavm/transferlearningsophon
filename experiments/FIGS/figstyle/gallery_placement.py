@@ -212,7 +212,7 @@ _TABLES = (
     ("tab:jetclassrej", APPENDIX, "Fine-tuned on JetClass, 162, 43 and 17 classes reject QCD jets as 188 classes do "
                                   "in every class, within three standard deviations."),
     ("tab:pairs", APPENDIX, "[[tab:pairs]] gives every class-pair separation of [[F4-mech]] to [[F4-light-ft]] as the "
-                            "rejection at 50% signal efficiency, as a linear probe and fine-tuned, with a lower bound "
+                            "rejection at 90% signal efficiency, as a linear probe and fine-tuned, with a lower bound "
                             "where too few background jets pass to measure it."),
     # the training-size points below Table 1's (plan "tables": restored)
     ("tab:probesn", APPENDIX, "[[tab:probesn]] gives every point of [[A10]] and [[A10-part]] below the training-set "

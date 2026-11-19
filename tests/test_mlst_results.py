@@ -2835,8 +2835,8 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
     assert "on JetClass averaged over the classes, each against the rest" in M.printed_caption("published")
     # the sentence on the Particle Transformer paper's average over class pairs is in the JetClass tables' captions
     assert M.AUC_JC.strip() in M.printed_caption("jetclass_all") and "Particle Transformer paper" in M.AUC_JC
-    # PI 2026-11-18: the pairs as the rejection at 50% signal efficiency, no AUC
-    assert "rejection at 50\\% signal efficiency" in M.printed_caption("pairs")
+    # PI 2026-11-19: the pairs as the rejection at 90% signal efficiency, no AUC
+    assert "rejection at 90\\% signal efficiency" in M.printed_caption("pairs")
     assert "receiver operating characteristic" not in M.printed_caption("pairs")
     assert "averaged over" not in M.printed_caption("pairs") and "averaged over the target's groups, each against the rest" in M.printed_caption("coarse")
     # the definitions the brief asked for by name: the recomputed random network in the tables that show it (BN_DEF in
@@ -2929,7 +2929,7 @@ def test_the_generated_paper_tables_follow_the_table_rules():
     # Table A10 (PI 2026-11-18): R50 once in each header, no AUC and no ratio, a lower limit where fewer than 20
     # background jets pass in a run (X->ee vs mumu at 188 classes)
     pairs = read("tab:pairs")
-    assert r"{c}{$R_{50}$} \\" in pairs and "AUC" not in _caption_and_body(pairs)[1] and r"\rho" not in pairs
+    assert r"{c}{$R_{90}$} \\" in pairs and "AUC" not in _caption_and_body(pairs)[1] and r"\rho" not in pairs
     assert M.PAIR_GT in _caption_and_body(pairs)[1]
     # the rows the brief moved out: BatchNorm recomputed named on its row only in tab:pairs (tab:fill's one random
     # network is the recomputed one, named by the common name, its caption says so); Sophon in the headline tables (on

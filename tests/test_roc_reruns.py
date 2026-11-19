@@ -30,7 +30,7 @@ def test_r50_is_measured_from_20_passing_background_jets_and_is_a_lower_limit_be
     """A run with fewer than PAIR_MIN_PASS (the figures' 20) background jets passing at 50% signal efficiency gives
     the limit n_background / 20; a cell with such a run prints '>' and the smallest of its runs' values and limits,
     with no spread; every run measured prints _cell's mean +- SD."""
-    assert (M.PAIR_EPS, M.PAIR_MIN_PASS, M.PAIR_GT) == (0.5, 20, r"$>$") and M.PAIR_MIN_PASS == M.V4.JC1_MIN_BKG
+    assert (M.PAIR_EPS, M.PAIR_MIN_PASS, M.PAIR_GT) == (0.9, 20, r"$>$") and M.PAIR_MIN_PASS == M.V4.JC1_MIN_BKG
     assert M.pair_cell([(500.0, 400, 200_000), (520.0, 385, 200_000)], 2, MT.fmt_pm) == M._cell([500.0, 520.0], 2, MT.fmt_pm)
     # none passes (a fit's 1e12 sentinel) or 19 pass: each run the limit 200,000 / 20
     assert M.pair_cell([(1e12, 0, 200_000), (200_000 / 19, 19, 200_000)], 2, MT.fmt_pm) == r"$>$10{,}000"
@@ -42,15 +42,16 @@ def test_r50_is_measured_from_20_passing_background_jets_and_is_a_lower_limit_be
     assert M.pair_cell([None, None], 2, MT.fmt_pm) == M._cell([], 2, MT.fmt_pm)
 
 
-def test_a_pair_curve_gives_its_r50_at_the_grid_point_of_50_percent():
-    doc = {"eps_grid": [0.3, 0.5, 0.7],
+def test_a_pair_curve_gives_its_rejection_at_the_grid_point_of_90_percent():
+    # PI 2026-11-19: the pair tables at 90% signal efficiency
+    doc = {"eps_grid": [0.3, 0.9, 0.95],
            "curves": {"bb_vs_cc": {"rejection": [900.0, None, 50.0], "n_bkg_pass": [40, 0, 900], "n_background": 18_000},
                       "qcd_bb_vs_cc": {"rejection": [90.0, 30.0, 5.0], "n_bkg_pass": [600, 1800, 9000],
                                        "n_background": 54_000}}}
     assert M.pair_r50(doc, "bb_vs_cc") == (None, 0, 18_000) and M.pair_r50(doc, "qcd_bb_vs_cc") == (30.0, 1800, 54_000)
     assert M.pair_r50(doc, "ee_vs_mm") is None
     with pytest.raises(SystemExit, match="no point"):
-        M.pair_r50({**doc, "eps_grid": [0.3, 0.55, 0.7]}, "bb_vs_cc")
+        M.pair_r50({**doc, "eps_grid": [0.3, 0.85, 0.95]}, "bb_vs_cc")
 
 
 def test_a_column_with_a_lower_limit_has_no_bold_and_the_caption_explains_the_mark():
