@@ -27,10 +27,10 @@ from matplotlib.colors import to_hex  # noqa: E402
 
 def test_rows_merge_consecutive_items_of_one_sentence_and_carry_their_evidence():
     supp = [i for i in G.FIGURES if i[2] == G.BACKS["FJ-ctrl"]]
-    # PI 2026-11-14 (audit 3): the linear probes first, then FJ (its own sentence) between them and the fine-tuned slices
+    # PI 2026-11-18: the class-against-rest JetClass curves, FJ-app and FJ first, then their slices, one sentence
     span = f"{G.number('FJ-app')}–{G.number('FJ-s').split()[-1]}"
-    assert span == "Fig. S23–S29" and G.number("FJ") == "Fig. S26" and V._rows(tuple(supp)) == [
-        (span, "FJ-app, FJ-ctrl-app, FJ-mass-app, FJ-ctrl, FJ-mass, FJ-s", G.BACKS["FJ-ctrl"])]
+    assert int(G.number("FJ").split("S")[-1]) == int(G.number("FJ-app").split("S")[-1]) + 1 and V._rows(tuple(supp)) == [
+        (span, "FJ-app, FJ, FJ-ctrl-app, FJ-mass-app, FJ-ctrl, FJ-mass, FJ-s", G.BACKS["FJ-ctrl"])]
     # with the tables it also rests on
     flav = tuple(i for i in G.FIGURES if i[0] in ("F10b-flav", "F10c", "F10a-flav"))
     rows = V._rows(flav)
@@ -703,3 +703,19 @@ def test_a_figure_of_one_mode_names_it_in_a_heading_above_its_panels(tmp_path):
     assert (ax.get_window_extent().y1, leg.get_window_extent().y1) == pytest.approx(before, abs=0.01 * cm)
     assert [t.get_text() for t in fig.texts] == ["Linear probe"]
     matplotlib.pyplot.close(fig)
+
+
+@pytest.mark.parametrize("draw", ["draw_roc_main", "draw_roc_main_ft"])
+def test_the_main_roc_figures_hold_every_jetclass_class_against_qcd_and_fit_the_page(monkeypatch, draw):
+    """PI 2026-11-18: one figure a mode, the nine JetClass signal classes against QCD jets, then top and quark/gluon,
+    in a 4 x 3 grid with the legend in the free slot; every panel the label sets and mass networks."""
+    figs = []
+    monkeypatch.setattr(R.S, "save", lambda fig, path: figs.append(fig))
+    getattr(R, draw)(None)
+    fig = figs[0]
+    panels = [ax for ax in fig.axes if ax.get_title()[:1] == "("]
+    assert len(panels) == 11 and len(R.MAIN_JC1) == 9 and "label_QCD" not in R.MAIN_JC1
+    assert [ax.get_title()[4:].split(", pending")[0] for ax in panels[:9]] == [R.S.JC1_TEX[c] for c in R.MAIN_JC1]
+    assert len({ax.get_ylim() for ax in panels}) == 1 and len(fig.legends) == 1
+    import make_results_book as B
+    assert fig.get_figheight() / R.S.CM <= B.MAX_H_CM

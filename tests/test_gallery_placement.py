@@ -92,13 +92,12 @@ def test_the_main_text_is_the_pis_list_in_order():
     # figure is one mode a figure (F6, F6-ft)
     # PI 2026-11-14 (steps 5, 6): the appendix by family, linear probes first (F4-other and F4-light before the
     # fine-tuned pairs); the mass probe on frozen features beside F9b; the embeddings as two task grids
-    # PI 2026-11-18: F2a and F2b (AUC only) and F6/F6-ft (now ROC-main's second row) to the supplement; the full
-    # JetClass ROC set (FJ-app, FJ) behind ROC-main in the appendix
+    # PI 2026-11-18: F2a and F2b (AUC only), F6/F6-ft (now in ROC-main / ROC-main-ft) and the class-against-rest
+    # JetClass curves (FJ-app, FJ; every class against QCD is in ROC-main / ROC-main-ft) to the supplement
     assert appendix == ["PC-jc1", "F4-other", "F4-light", "F4-mech-ft", "F4-other-ft", "F4-light-ft",
-                        "A10", "FJ-app", "FJ", "PT", "F9b", "A17-probe", "F10b", "F11-part", "UMAP-frozen", "UMAP-ft",
-                        "VAL"]
-    assert [k for k, t, _ in G.FIGURES if t == G.MAIN] == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "ROC-main", "A8",
-                                                          "F11"]
+                        "A10", "PT", "F9b", "A17-probe", "F10b", "F11-part", "UMAP-frozen", "UMAP-ft", "VAL"]
+    assert [k for k, t, _ in G.FIGURES if t == G.MAIN] == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "ROC-main",
+                                                          "ROC-main-ft", "A8", "F11"]
     assert [f for f, _ in G.APPENDIX_FAMILIES] == ["Headline metrics", "Per class", "Class pairs", "Training size",
                                                    "ROC curves", "Jet pT", "Mass", "Sculpting", "Resonance tagging",
                                                    "Embeddings", "Training details"]
@@ -214,7 +213,7 @@ def test_every_number_in_a_sentence_comes_from_number():
         filled = G.BACKS[key]
         assert "[[" not in filled and re.findall(r"(?:Fig\.|Table) [AS]?\d+", filled) == [G.number(r) for r in refs]
     # plain sentences that name their items (2026-11-13: no "Cited beside ...:" form, no colon)
-    assert G.BACKS["FJ"].startswith(f"Fine-tuned, {G.number('FJ')} gives the ROC curve of every JetClass class against")
+    assert G.BACKS["FJ"].startswith(f"Each JetClass class's ROC curve against the other nine is in {G.number('FJ-app')}")
     assert G.BACKS["PC-conf"] == (f"The JetClass confusion matrices of every pretrained network are in {G.number('PC-conf')}, "
                                   f"{G.number('PC-conf-part')} and {G.number('PC-conf-mass')}.")
     assert not any(s.startswith("Cited") or ": " in s for s in G.BACKS.values())
@@ -254,7 +253,7 @@ def test_the_new_pages_are_marked_new():
     review = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(review)
     for page in ("F2", "PC-jc2", "PC-jc1", "F4-other-ft", "F4-ee", "F4-rand", "F6-part", "A8-part", "A10-part", "F10-ft",
-                 "F11-part", "F11-probe", "A17-ridge", "F10-ft-part", "VAL-part", "ROC-main"):
+                 "F11-part", "F11-probe", "A17-ridge", "F10-ft-part", "VAL-part", "ROC-main", "ROC-main-ft"):
         assert review.CHANGES[page].startswith("NEW: "), page
     for page in ("F2a", "F2b", "PC-conf", "F4-mech", "F4-mech-ft", "F4-other", "F6", "A8", "A10", "F10b-flav", "F11", "VAL"):
         assert review.CHANGES[page].startswith("CHANGED: "), page

@@ -600,20 +600,19 @@ def draw_f6_part_ft(path: pathlib.Path) -> None:
     _bench_grid(path, "ft", PARTITIONS + ("RAND",))
 
 
-# ------------------------------------------------------------------ ROC-main (PI 2026-11-18): the main text's ROC figure.
-# Rows 1 and 2 JetClass, four signal classes against QCD (ParT's discriminant): linear probes (curves_v2/jc1_probe), then
-# fine-tuned on 1e6 jets (curves_v2/jc1_ft), both modes as in every family (PI 2026-11-18); row 3 F6's and F6-ft's top
-# and quark/gluon (Pythia) panels without their ratio panels. Every row the label sets and mass networks (NETWORK_RULE),
-# fine-tuned rows with from scratch. Four panels a row (L20 asks two a row, which would take six rows and overrun the
-# page), one y range a row. A panel whose data are not pulled says so and the others are drawn.
-MAIN_JC1 = ("label_Hbb", "label_Hcc", "label_Hgg", "label_Tbqq")
-MAIN_JC1_ROWS = (("jc1_probe", "linear probe", LABEL_SETS), ("jc1_ft", "fine-tuned", LABEL_SETS + ("SCRATCH",)))
-MAIN_BENCH = (("top_probe", "top", "Top tagging,\nlinear probe", LABEL_SETS),
-              ("top_ft", "top", "Top tagging,\nfine-tuned", LABEL_SETS + ("SCRATCH",)),
-              ("qg_probe", "qg", "Quark/gluon,\nlinear probe", LABEL_SETS),
-              ("qg_ft", "qg", "Quark/gluon,\nfine-tuned", LABEL_SETS + ("SCRATCH",)))
+# ------------------------------------------------------------------ ROC-main, ROC-main-ft (PI 2026-11-18): the main
+# text's ROC figures, one a mode (L20, as F2 / F2-ft): every JetClass signal class against QCD jets (ParT's convention;
+# QCD is the background of every panel, so all ten classes are in) and top and quark/gluon tagging (Pythia), F6's and
+# F6-ft's panels without their ratio panels; a 4 x 3 grid with the legend in the free twelfth slot. Every panel the
+# label sets and mass networks (NETWORK_RULE), fine-tuned with from scratch. One y range for the figure, so the y tick
+# labels of the first column hold for every panel. A panel whose data are not pulled says so; the others are drawn.
+MAIN_JC1 = tuple(c for c in S.JC1_CLASSES if c != "label_QCD")
+MAIN_MODES = {"probe": ("jc1_probe", "top_probe", "qg_probe", LABEL_SETS),
+              "ft": ("jc1_ft", "top_ft", "qg_ft", LABEL_SETS + ("SCRATCH",))}
+MAIN_COLS, MAIN_ROWS = 4, 3
 MAIN_LEFT, MAIN_GAP = 1.3, 0.2          # cm: room for the tick labels and y label; between panels (no y labels inside)
-MAIN_W = (S.PRINT_W - MAIN_LEFT - 0.1 - 3 * MAIN_GAP) / 4
+MAIN_W = (S.PRINT_W - MAIN_LEFT - 0.1 - (MAIN_COLS - 1) * MAIN_GAP) / MAIN_COLS
+MAIN_TOP, MAIN_HGAP = 0.6, 1.35         # cm: one-line titles; _roc_grid's gap for the x tick labels and a title
 PENDING = "pending"
 
 
@@ -647,38 +646,44 @@ def _main_panel(ax, docs: dict, key: str, nets: tuple, handles: dict) -> None:
         handles.setdefault(net, Line2D([], [], **S.look(_style(net)), linewidth=S.LW_CURVE, label=S.LEGEND[_style(net)]))
 
 
-def draw_roc_main(path: pathlib.Path) -> None:
-    rows = [[(ROC.get(fam) or {}, c, f"{S.JC1_TEX[c]},\n{mode}", nets) for c in MAIN_JC1]
-            for fam, mode, nets in MAIN_JC1_ROWS]
-    rows.append([(ROC.get(fam) or {}, key, name, nets) for fam, key, name, nets in MAIN_BENCH])
-    legend_rows = max(len(c) for c in _legend_cols({n for r in rows for p in r for n in p[3]}))
-    top = S.LEGEND_TOP + 0.45 * legend_rows + 0.65
-    h, hgap = MAIN_W, 1.35 + TITLE_LINE          # _roc_grid's gap; every row's titles take two lines
-    fig = S.figure_cm(S.PRINT_W, top + len(rows) * h + (len(rows) - 1) * hgap + 1.0)
+def _draw_roc_main(path: pathlib.Path, mode: str) -> None:
+    jc1, top, qg, nets = MAIN_MODES[mode]
+    panels = [(ROC.get(jc1) or {}, c, S.JC1_TEX[c]) for c in MAIN_JC1]
+    panels += [(ROC.get(top) or {}, "top", "Top tagging"), (ROC.get(qg) or {}, "qg", "Quark/gluon tagging")]
+    h = MAIN_W
+    fig = S.figure_cm(S.PRINT_W, MAIN_TOP + MAIN_ROWS * h + (MAIN_ROWS - 1) * MAIN_HGAP + 1.0)
     handles, axes = {}, []
-    for i, row in enumerate(rows):
-        row_axes = []
-        for j, (docs, key, name, nets) in enumerate(row):
-            ax = S.axes_cm(fig, MAIN_LEFT + j * (MAIN_W + MAIN_GAP), top + i * (h + hgap), MAIN_W, h)
-            _roc_axes(ax, x_step=0.5)
-            _main_panel(ax, docs, key, nets, handles)
-            # a panel with no curve says so in its title (L7: no text inside a panel)
-            S.title(ax, name if ax.lines else f"{name}, {PENDING}")
-            row_axes.append(ax)
-        drawn = [ax for ax in row_axes if ax.lines]
-        if drawn:
-            _y_range(drawn)
-        for j, ax in enumerate(row_axes):
-            ax.set_ylim(drawn[0].get_ylim() if drawn else (0.8, 1e3))
-            ax.tick_params(labelleft=j == 0)
-        S.labels(row_axes[0], ylabel=r"Rejection ($1/\varepsilon_B$)")
-        S.labels(row_axes[-1], xlabel=S.X_EPS)      # one x label a row: four would not fit beside each other
-        axes += row_axes
+    for k, (docs, key, name) in enumerate(panels):
+        r, c = divmod(k, MAIN_COLS)
+        ax = S.axes_cm(fig, MAIN_LEFT + c * (MAIN_W + MAIN_GAP), MAIN_TOP + r * (h + MAIN_HGAP), MAIN_W, h)
+        _roc_axes(ax, x_step=0.5)
+        _main_panel(ax, docs, key, nets, handles)
+        S.title(ax, name if ax.lines else f"{name}, {PENDING}")      # L7: no text inside a panel
+        ax.tick_params(labelleft=c == 0)
+        if c == 0:
+            S.labels(ax, ylabel=r"Rejection ($1/\varepsilon_B$)")
+        axes.append(ax)
     if not handles:
-        raise Absent("no curve of ROC-main: curves_v2 jc1_probe, jc1_ft, top_probe, top_ft, qg_probe and qg_ft hold none")
-    _group_legend(fig, handles)
+        raise Absent(f"no curve of ROC-main ({mode}): curves_v2 {jc1}, {top} and {qg} hold none")
+    drawn = [ax for ax in axes if ax.lines]
+    _y_range(drawn)
+    for ax in axes:
+        ax.set_ylim(drawn[0].get_ylim())
+    S.labels(axes[-1], xlabel=S.X_EPS)      # one x label: four would not fit beside each other
+    r, c = divmod(len(panels), MAIN_COLS)      # the free slot
+    order = [n for col in _legend_cols(handles) for n in col]
+    S.slot_legend(fig, [handles[n] for n in order], MAIN_LEFT + c * (MAIN_W + MAIN_GAP), MAIN_TOP + r * (h + MAIN_HGAP),
+                  MAIN_W, h, labels=[S.LEGEND[_style(n)] for n in order])
     S.letter_panels(axes)
     S.save(fig, path)
+
+
+def draw_roc_main(path: pathlib.Path) -> None:
+    _draw_roc_main(path, "probe")
+
+
+def draw_roc_main_ft(path: pathlib.Path) -> None:
+    _draw_roc_main(path, "ft")
 
 
 EVERY_CLASS_LW = 1.0     # 188 curves a panel: thin, opaque, and the legend handles as thin
@@ -916,24 +921,23 @@ PAGES = [
          differs="F4-rand-qcd after fine-tuning.",
          data_note="Reads curves_v2/pairs_ft.",
          draw=lambda path: draw_f4_rand(path, "pairs_ft", PAIR_ORDER[3:6])),
-    Page(id="ROC-main", title="ROC curves, JetClass against QCD and top and quark/gluon tagging",
+    Page(id="ROC-main", title="ROC curves, linear probes: JetClass against QCD, top and quark/gluon tagging",
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
-         caption="Background rejection against signal efficiency, the mean over runs, with the standard deviation over "
-                 "runs as a band. (a)–(d) Networks pretrained with 188 and 17 classes and a network trained from "
-                 "scratch, fine-tuned on one million JetClass jets: H→bb̄, H→cc̄, H→gg and t→bqq′ against QCD jets. "
-                 "(e)–(h) Top and quark/gluon tagging (Pythia), linear probes and fine-tuned, for the label sets and "
-                 "mass networks; only 188 classes and from scratch carry bands. Curves end where fewer than 20 "
-                 "background jets remain.",
-         differs="Four panels a row (the PI's two rows of four, 2026-11-18; L20's two a row would take four rows and "
-                 "overrun the page), one y range a row, one x label a row. The upper row is ParT's discriminant "
-                 "p_S/(p_S+p_QCD) with bands of the run spread; the lower row is F6's and F6-ft's Pythia panels without "
-                 "their ratio panels (F6 and F6-ft keep them, and Herwig), bands as L21.",
-         data_note="(a)-(d) read curves_v2/jc1_ft: the one rule's cells (jc1_ft_fixed) once pulled, until then the "
-                   "long-budget cells, which the one rule supersedes. (e) and (g) read top_probe and qg_probe: the v5 "
-                   "refit (top_probe_v5, qg_probe_v5) once pulled, until then v4. A panel with no data says pending. "
-                   + SUBST_NOTE,
+         caption="",
+         differs="A 4 x 3 grid, one figure a mode as F2 / F2-ft (PI 2026-11-18: all ten JetClass classes; both modes in one figure would overrun the page): the nine signal classes against QCD jets, ParT's discriminant p_S/(p_S+p_QCD), then F6's and F6-ft's Pythia panels without their ratio panels (F6 and F6-ft keep them, and Herwig); the legend in the free twelfth slot; one y range for the figure, one x label; bands as L21.",
+         data_note="(a)-(i) read curves_v2/jc1_probe, (j) top_probe and (k) qg_probe: the v5 refit (jc1_probe_v5, "
+                   "top_probe_v5, qg_probe_v5) once pulled, until then v4. A panel with no data says pending. " + SUBST_NOTE,
          draw=draw_roc_main),
+    Page(id="ROC-main-ft", title="ROC curves, fine-tuned: JetClass against QCD, top and quark/gluon tagging",
+         precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
+         precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",
+         caption="",
+         differs="A 4 x 3 grid, one figure a mode as F2 / F2-ft (PI 2026-11-18: all ten JetClass classes; both modes in one figure would overrun the page): the nine signal classes against QCD jets, ParT's discriminant p_S/(p_S+p_QCD), then F6's and F6-ft's Pythia panels without their ratio panels (F6 and F6-ft keep them, and Herwig); the legend in the free twelfth slot; one y range for the figure, one x label; bands as L21.",
+         data_note="(a)-(i) read curves_v2/jc1_ft: the one rule's 1e6 cells (jc1_ft_fixed) once pulled, until then the "
+                   "long-budget cells, which the one rule supersedes. (j) top_ft and (k) qg_ft: the full sets on "
+                   "ParT's recipe. A panel with no data says pending.",
+         draw=draw_roc_main_ft),
     Page(id="F6", title="ROC curves, top and quark/gluon tagging, linear probes",
          precedent=["1902.09914/fig5.png", "1902.08570/fig3.png", "1902.08570/fig4.png"],
          precedent_label="Landscape Fig. 5, ParticleNet Figs. 3-4",

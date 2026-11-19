@@ -96,12 +96,19 @@ CAPTIONS = {
         '{tab:pairs} the values and other spreads.'
     ),
     "ROC-main": (
-        'Background rejection against signal efficiency, the mean over runs. (a)-(d) JetClass, H→bb̄, H→cc̄, H→gg '
-        'and t→bqq′, each against QCD jets, with linear probes on frozen features; (e)-(h) the same after fine-tuning '
-        'on one million JetClass jets, with training from scratch (grey). (i)-(l) Top and quark/gluon tagging (Pythia), '
-        'linear probes and fine-tuned. Every panel shows the label sets and mass networks; only 188 classes and the '
-        'reference carry bands of the standard deviation over runs. Curves end where fewer than 20 background jets '
-        'remain. Values are in tables {tab:jetclassrej}, {tab:probes} and {tab:labelsets}.'
+        'Background rejection against signal efficiency with linear probes on frozen features, the mean over runs. '
+        '(a)-(i) Every JetClass signal class against QCD jets, as the Particle Transformer reports JetClass; (j) top and '
+        '(k) quark/gluon tagging (Pythia). Every panel shows the label sets and mass networks; only 188 classes carries a '
+        'band of the standard deviation over runs. Curves end where fewer than 20 background jets remain. Figure '
+        '{fig:ROC-main-ft} shows the fine-tuned networks, and tables {tab:probes} and {tab:summary} the values.'
+    ),
+    "ROC-main-ft": (
+        'Background rejection against signal efficiency after fine-tuning, the mean over runs. (a)-(i) Every JetClass '
+        'signal class against QCD jets, fine-tuned on one million JetClass jets, as the Particle Transformer reports '
+        'JetClass; (j) top and (k) quark/gluon tagging (Pythia), fine-tuned on the full sets. Every panel shows the label '
+        'sets and mass networks, with training from scratch (grey); only 188 classes and from scratch carry bands of the '
+        'standard deviation over runs. Curves end where fewer than 20 background jets remain. Values are in tables '
+        '{tab:jetclassrej}, {tab:labelsets} and {tab:summary}.'
     ),
     "A8": (
         'After fine-tuning, 17 classes are less accurate than 188 classes on JetClass-II at every training-set size and'
