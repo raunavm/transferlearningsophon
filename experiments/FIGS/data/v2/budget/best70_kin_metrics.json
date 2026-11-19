@@ -1,0 +1,98 @@
+{
+ "cells": {
+  "leg_top/l188kin-s1/N1200000/s1": {
+   "accuracy": 0.9407153465346535,
+   "auc": 0.9862009255083335,
+   "cell": "/data/results/ft_v2/best70_kin/leg_top/l188kin-s1/N1200000/s1",
+   "early_stop": {
+    "best_epoch": 17,
+    "best_metric": 0.9395833333333333,
+    "epochs_completed": 20,
+    "source": "best_epoch.json",
+    "stopped_early": false
+   },
+   "gpu": "Tesla V100-SXM2-32GB",
+   "init_checkpoint": {
+    "epoch": 74,
+    "metric": "val.acc",
+    "path": "/data/results/mtx_v2/mtx-l188kin-s1/net_epoch-74_state.pt",
+    "rule": "best70",
+    "run_dir": "/data/results/mtx_v2/mtx-l188kin-s1",
+    "sha256": "ee50bd01fb24b82e54478c48abbbecb461836609f5c4d919e604eb3afb46dfc3",
+    "value": 0.2810195418352308,
+    "window": [
+     70,
+     79
+    ]
+   },
+   "label188_sha256": "b9a6f5fc3a18e2465e3f33a57f13ff5c12bfa0ec8329ffec5429e7390107524e",
+   "log1m_auc": -4.283153754889258,
+   "log1m_auc_censored": false,
+   "n_background": 201914,
+   "n_jets": 404000,
+   "n_score_saturated": 0,
+   "n_signal": 202086,
+   "r30": 1802.8035714285713,
+   "r30_eps_b": 0.0005546916013748428,
+   "r30_is_bound": false,
+   "r30_n_bkg_pass": 112,
+   "r30_rel_stat": 0.0944911182523068,
+   "r50": 442.79385964912285,
+   "r50_eps_b": 0.0022583872341690025,
+   "r50_is_bound": false,
+   "r50_n_bkg_pass": 456,
+   "r50_rel_stat": 0.0468292905790847,
+   "recipe": {
+    "checkpoint": "/workspace/ckpt/l188kin-s1.pt",
+    "early_stop_patience": null,
+    "head_lr_mult": "50",
+    "init": "l188kin-s1",
+    "lr": "1e-4",
+    "lr_schedule": "constant",
+    "max_epochs": null,
+    "steps_per_epoch": "2343",
+    "subset": "/data/finetune/top_sub/train_N1200000_s1.parquet",
+    "weight_decay": "0.01"
+   },
+   "run": {
+    "batch_size": 512,
+    "lr_scheduler": "none",
+    "num_epochs": 20,
+    "optimizer": "ranger",
+    "samples_per_epoch": 1200000,
+    "samples_per_epoch_val": 200000,
+    "start_lr": 0.0001,
+    "steps_per_epoch": 2343,
+    "steps_per_epoch_val": 390
+   },
+   "setup": {
+    "batch_size": "512",
+    "ckpt_rule": "best70",
+    "data_config": "configs/finetune/TopReference_kin.yaml",
+    "network": null,
+    "num_classes": "2",
+    "repo_commit": "2d6a2426bcabf6307fbe7ebe49aca9894f37cee8",
+    "samples_per_epoch": "1200000",
+    "samples_per_epoch_val": "200000",
+    "subset_sha256": "8c94c18ab0e28935e91475df23f2ce8eb77ed201455656ae40b93949d1b67479",
+    "torch_version": "2.5.1+cu121",
+    "training_code_sha256": {
+     "configs/finetune/TopReference_kin.yaml": "b08be29cec9b92abf2c11b2d8a64e90f23ac3dc9273e13ffc5afca5385744ab3",
+     "experiments/E1/seed_weaver.py": "48a3ce7ccc4834aee2ffc314368410cfdffe75abe985a162b6dd81e3dbcdd2b5",
+     "experiments/FT/early_stop.py": "f2d8fa6455d409caf381e1820ea8ecf64684b718891969c3066520935e6f921e",
+     "experiments/FT/fill_config.py": "de9d5ac8227795a7312e3028d3ba4a93ef6aa9508f4603dbf7ec0afcd28a8423",
+     "experiments/FT/ft_weaver.py": "1475105036e30bebdb94b2f228cbdb86e43e1ac335a9fbb94b3ffc07040e2be8"
+    },
+    "val": "/data/finetune/top_sub/val.parquet",
+    "val_rule": "rotating-stream",
+    "val_sha256": "c30050dfe1e0b884ac7336bc3cdfbb5bf0f276537233ef9cec7be03542ca00e7",
+    "weaver_version": "0.4.17"
+   },
+   "train_subset": "/data/finetune/top_sub/train_N1200000_s1.parquet"
+  }
+ },
+ "missing": [],
+ "root": "/data/results/ft_v2/best70_kin",
+ "script": "experiments/FT/budget_metrics.py",
+ "script_sha256": "e038e43fc4d2e74d66a21cabc25719ac6c577359a0b01410f2e3aa374673911e"
+}
