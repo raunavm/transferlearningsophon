@@ -83,11 +83,11 @@ _FIGURES = (
     # against from scratch (F8) is a named slice in the supplement. L3: JetClass at 10,000 jets 3.5 sigma on run SDs
     # with no bootstrap stored at that size (not claimed, round-1 fix 2026-11-13), at 100,000 1.6 sigma (not claimed);
     # top and quark/gluon, Pythia and Herwig, |z| < 2.2 everywhere
-    # PI 2026-11-18: ROC curves in the main text. Row 1 the fine-tuned JetClass flavour classes against QCD at 1e6 jets
-    # (ParT's convention), row 2 top and quark/gluon, linear probe and fine-tuned (F6 and F6-ft, now in the supplement)
-    ("ROC-main", MAIN, "Fine-tuned on a million JetClass jets, 17 classes reject QCD jets less well than 188 classes in "
-                       "the flavour classes, while on top and quark/gluon tagging the label sets' ROC curves agree, as "
-                       "linear probes and fine-tuned."),
+    # PI 2026-11-18: ROC curves in the main text. Rows 1-2 the JetClass flavour classes against QCD (ParT's convention),
+    # linear probes then fine-tuned at 1e6 jets; row 3 top and quark/gluon in both modes (F6 and F6-ft, now supplement)
+    ("ROC-main", MAIN, "On JetClass, 17 classes reject QCD jets less well than 188 classes in the flavour classes, as "
+                       "linear probes and after fine-tuning on a million jets, while on top and quark/gluon tagging the "
+                       "label sets' ROC curves agree in both modes."),
     # PI 2026-11-18: Fig. 7 carries the AUC as its second row (A8-auc folded in)
     ("A8", MAIN, "Fine-tuned, 17 classes stay below 188 classes on JetClass-II at every size and on JetClass at a "
                  "million jets; on top and quark/gluon tagging, Pythia and Herwig, the label sets and mass networks "
@@ -116,10 +116,10 @@ _FIGURES = (
     ("A10", APPENDIX, "With linear probes, 43 and 17 classes fall behind 188 classes on JetClass-II at every training "
                       "size."),
     # PI 2026-11-18: the full JetClass ROC set behind ROC-main's four classes, linear probe then fine-tuned
-    ("FJ-app", APPENDIX, "With linear probes, [[FJ-app]] gives every JetClass class's rejection of QCD jets against "
-                         "signal efficiency, the full set behind the four classes of [[ROC-main]]."),
-    ("FJ", APPENDIX, "Fine-tuned, [[FJ]] gives every JetClass class's rejection of QCD jets against signal efficiency, "
-                     "the full set behind the four classes of [[ROC-main]]."),
+    ("FJ-app", APPENDIX, "With linear probes, [[FJ-app]] gives the ROC curve of every JetClass class against the other "
+                         "nine, beside the four classes against QCD jets of [[ROC-main]]."),
+    ("FJ", APPENDIX, "Fine-tuned, [[FJ]] gives the ROC curve of every JetClass class against the other nine, beside "
+                     "the four classes against QCD jets of [[ROC-main]]."),
     # the jet-pT family (PI 2026-11-13, L4): L3 per bin with the run SDs and the binomial test-jet term of each side:
     # probes on JetClass-II 43 and 17 - 188 at least 9.5 sigma in every bin; fine-tuned 17 - 188 at least 4.5 sigma
     # in every JetClass-II bin, 7.1 and 3.4 in the two lowest JetClass bins, at most 2.6 above them; JetClass probes

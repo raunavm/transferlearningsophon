@@ -214,7 +214,7 @@ def test_every_number_in_a_sentence_comes_from_number():
         filled = G.BACKS[key]
         assert "[[" not in filled and re.findall(r"(?:Fig\.|Table) [AS]?\d+", filled) == [G.number(r) for r in refs]
     # plain sentences that name their items (2026-11-13: no "Cited beside ...:" form, no colon)
-    assert G.BACKS["FJ"].startswith(f"Fine-tuned, {G.number('FJ')} gives every JetClass class's rejection")
+    assert G.BACKS["FJ"].startswith(f"Fine-tuned, {G.number('FJ')} gives the ROC curve of every JetClass class against")
     assert G.BACKS["PC-conf"] == (f"The JetClass confusion matrices of every pretrained network are in {G.number('PC-conf')}, "
                                   f"{G.number('PC-conf-part')} and {G.number('PC-conf-mass')}.")
     assert not any(s.startswith("Cited") or ": " in s for s in G.BACKS.values())

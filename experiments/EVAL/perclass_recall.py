@@ -199,7 +199,7 @@ def recall_doc(preds: dict, y: np.ndarray, k: int, groups: dict, b: int, seed: i
         delta = rec[:, ja].mean(1) - rec[:, jb].mean(1)
         bsd = (boot[:, :, ja].mean(2) - boot[:, :, jb].mean(2)).std(0, ddof=1)
         sd = [rec[:, j].std(1, ddof=1) if len(j) > 1 else None for j in (ja, jb)]
-        sigma = np.sqrt(sd[0] ** 2 + sd[1] ** 2 + bsd ** 2) if None not in sd else None
+        sigma = np.sqrt(sd[0] ** 2 + sd[1] ** 2 + bsd ** 2) if all(x is not None for x in sd) else None
         diffs[f"{a}-{bb}"] = {
             "a": full[a], "b": full[bb], "delta": delta.tolist(), "boot_sd": bsd.tolist(),
             "sd_a": None if sd[0] is None else sd[0].tolist(), "sd_b": None if sd[1] is None else sd[1].tolist(),

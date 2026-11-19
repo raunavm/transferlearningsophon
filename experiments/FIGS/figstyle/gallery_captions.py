@@ -96,12 +96,12 @@ CAPTIONS = {
         '{tab:pairs} the values and other spreads.'
     ),
     "ROC-main": (
-        'Background rejection against signal efficiency, the mean over runs. (a)-(d) Networks pretrained with 188 and '
-        '17 classes and a network trained from scratch, fine-tuned on one million JetClass jets: H→bb̄, H→cc̄, H→gg '
-        'and t→bqq′, each against QCD jets; bands are the standard deviation over runs. (e)-(h) Top and quark/gluon '
-        'tagging (Pythia), linear probes and fine-tuned, for the label sets and mass networks; only 188 classes and '
-        'from scratch carry bands. Curves end where fewer than 20 background jets remain. Values are in tables '
-        '{tab:jetclassrej}, {tab:probes} and {tab:labelsets}.'
+        'Background rejection against signal efficiency, the mean over runs. (a)-(d) JetClass, H→bb̄, H→cc̄, H→gg '
+        'and t→bqq′, each against QCD jets, with linear probes on frozen features; (e)-(h) the same after fine-tuning '
+        'on one million JetClass jets, with training from scratch (grey). (i)-(l) Top and quark/gluon tagging (Pythia), '
+        'linear probes and fine-tuned. Every panel shows the label sets and mass networks; only 188 classes and the '
+        'reference carry bands of the standard deviation over runs. Curves end where fewer than 20 background jets '
+        'remain. Values are in tables {tab:jetclassrej}, {tab:probes} and {tab:labelsets}.'
     ),
     "A8": (
         'After fine-tuning, 17 classes are less accurate than 188 classes on JetClass-II at every training-set size and'

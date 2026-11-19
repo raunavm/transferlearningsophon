@@ -601,12 +601,13 @@ def draw_f6_part_ft(path: pathlib.Path) -> None:
 
 
 # ------------------------------------------------------------------ ROC-main (PI 2026-11-18): the main text's ROC figure.
-# Upper row the fine-tuned JetClass networks at 1e6 jets, four signal classes against QCD (ParT's discriminant,
-# curves_v2/jc1_ft); lower row F6's and F6-ft's top and quark/gluon (Pythia) panels without their ratio panels. Four
-# panels a row (the brief's two rows of four; L20 asks two a row, which would take four rows and overrun the page),
-# one y range a row. A panel whose data are not pulled says so and the others are drawn.
+# Rows 1 and 2 JetClass, four signal classes against QCD (ParT's discriminant): linear probes (curves_v2/jc1_probe), then
+# fine-tuned on 1e6 jets (curves_v2/jc1_ft), both modes as in every family (PI 2026-11-18); row 3 F6's and F6-ft's top
+# and quark/gluon (Pythia) panels without their ratio panels. Every row the label sets and mass networks (NETWORK_RULE),
+# fine-tuned rows with from scratch. Four panels a row (L20 asks two a row, which would take six rows and overrun the
+# page), one y range a row. A panel whose data are not pulled says so and the others are drawn.
 MAIN_JC1 = ("label_Hbb", "label_Hcc", "label_Hgg", "label_Tbqq")
-MAIN_JC1_NETS = ("L188", "R16_Q1", "SCRATCH")
+MAIN_JC1_ROWS = (("jc1_probe", "linear probe", LABEL_SETS), ("jc1_ft", "fine-tuned", LABEL_SETS + ("SCRATCH",)))
 MAIN_BENCH = (("top_probe", "top", "Top tagging,\nlinear probe", LABEL_SETS),
               ("top_ft", "top", "Top tagging,\nfine-tuned", LABEL_SETS + ("SCRATCH",)),
               ("qg_probe", "qg", "Quark/gluon,\nlinear probe", LABEL_SETS),
@@ -647,13 +648,13 @@ def _main_panel(ax, docs: dict, key: str, nets: tuple, handles: dict) -> None:
 
 
 def draw_roc_main(path: pathlib.Path) -> None:
-    jc1 = ROC.get("jc1_ft") or {}
-    rows = [[(jc1, c, S.JC1_TEX[c], MAIN_JC1_NETS) for c in MAIN_JC1],
-            [(ROC.get(fam) or {}, key, name, nets) for fam, key, name, nets in MAIN_BENCH]]
+    rows = [[(ROC.get(fam) or {}, c, f"{S.JC1_TEX[c]},\n{mode}", nets) for c in MAIN_JC1]
+            for fam, mode, nets in MAIN_JC1_ROWS]
+    rows.append([(ROC.get(fam) or {}, key, name, nets) for fam, key, name, nets in MAIN_BENCH])
     legend_rows = max(len(c) for c in _legend_cols({n for r in rows for p in r for n in p[3]}))
     top = S.LEGEND_TOP + 0.45 * legend_rows + 0.65
-    h, hgap = MAIN_W, 1.35 + TITLE_LINE          # _roc_grid's gap; the lower row's titles take two lines
-    fig = S.figure_cm(S.PRINT_W, top + 2 * h + hgap + 1.0)
+    h, hgap = MAIN_W, 1.35 + TITLE_LINE          # _roc_grid's gap; every row's titles take two lines
+    fig = S.figure_cm(S.PRINT_W, top + len(rows) * h + (len(rows) - 1) * hgap + 1.0)
     handles, axes = {}, []
     for i, row in enumerate(rows):
         row_axes = []
@@ -674,7 +675,7 @@ def draw_roc_main(path: pathlib.Path) -> None:
         S.labels(row_axes[-1], xlabel=S.X_EPS)      # one x label a row: four would not fit beside each other
         axes += row_axes
     if not handles:
-        raise Absent("no curve of ROC-main: curves_v2 jc1_ft, top_probe, top_ft, qg_probe and qg_ft hold none")
+        raise Absent("no curve of ROC-main: curves_v2 jc1_probe, jc1_ft, top_probe, top_ft, qg_probe and qg_ft hold none")
     _group_legend(fig, handles)
     S.letter_panels(axes)
     S.save(fig, path)
