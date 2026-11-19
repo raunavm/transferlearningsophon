@@ -164,7 +164,7 @@ def test_numbers_count_within_each_tier_and_kind():
     assert sup[-13:] == ["UMAP-jc2-had", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "UMAP-xbx",
                          "UMAP-mass-jc2-had", "UMAP-mass-jc1", "UMAP-mass-jc2-lep", "UMAP-mass-top", "UMAP-mass-qg",
                          "UMAP-mass-xbx", "VAL-part"]
-    assert G.number("UMAP-xbx") == "Fig. S56" and G.number("VAL-part") == "Fig. S63" and len(sup) == 63
+    assert G.number("UMAP-xbx") == "Fig. S58" and G.number("VAL-part") == "Fig. S65" and len(sup) == 65
 
 
 def test_the_coverage_map_has_a_row_a_family_and_no_blank_cell():

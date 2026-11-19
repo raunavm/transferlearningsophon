@@ -2835,7 +2835,9 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
     assert "on JetClass averaged over the classes, each against the rest" in M.printed_caption("published")
     # the sentence on the Particle Transformer paper's average over class pairs is in the JetClass tables' captions
     assert M.AUC_JC.strip() in M.printed_caption("jetclass_all") and "Particle Transformer paper" in M.AUC_JC
-    assert "area under the receiver operating characteristic curve" in M.printed_caption("pairs")
+    # PI 2026-11-18: the pairs as the rejection at 50% signal efficiency, no AUC
+    assert "rejection at 50\\% signal efficiency" in M.printed_caption("pairs")
+    assert "receiver operating characteristic" not in M.printed_caption("pairs")
     assert "averaged over" not in M.printed_caption("pairs") and "averaged over the target's groups, each against the rest" in M.printed_caption("coarse")
     # the definitions the brief asked for by name: the recomputed random network in the tables that show it (BN_DEF in
     # the supplement's copies, a shorter sentence in the paper's, L16); the flavor boundary in the supplement's
