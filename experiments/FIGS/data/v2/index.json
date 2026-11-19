@@ -1265,6 +1265,8 @@
  "partrepro/head.json": "37b82ba0a0fe92991f8fa6c4d75f1eef2b472c6d110163863e2e27bf1d5a8352",
  "partrepro/part.json": "0d44b997af9e64488f281fc09e0b0f2d0574b6d6b35bc4ab0729ce94baa9c8b6",
  "partrepro/rescale.json": "0a9f1401047d07ffb4343a6ec7e428c923c2e214d8246f22c228c0adb9253226",
+ "perclass_recall/probe_jc1.json": "cd8a1be38d7fc7775dd3b24797d770ec9059fd1432d005af0b7c53e45d8bf176",
+ "perclass_recall/probe_jc2.json": "44a5b7526145875bd17e261a78f2577209f994e1c69e94c3a1dd90a4b8fa2ac1",
  "perf_vs_pt/jc1/mtx-flavf0-s1.json": "8b7cdb9055efff0650d3ed4f5ac841aad456708e61b2ecacc97d0b34c7b9517e",
  "perf_vs_pt/jc1/mtx-flavf0-s2.json": "060e761f971ecf2f694005e5e2f528a2c4e567257d5182990d9b75dc51cc0fa8",
  "perf_vs_pt/jc1/mtx-flavf1-s1.json": "8c1a315bfc2adbd3e4ce39244c9679180df0ecbd22e8f938ff3d2278257ee383",

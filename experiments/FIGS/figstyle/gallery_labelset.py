@@ -32,7 +32,8 @@ PUBLISHED_AUC = {"jc1": (2_000_000, 0.9834), "top": (1_200_000, 0.9858), "qg": (
 # the published standard deviations (ParT Tables 5 and 6, literature_benchmarks.json), drawn on the star (PI 2026-11-14):
 # R30 only; ParT gives no uncertainty for its accuracies and AUCs
 PUBLISHED_SD = {"top": 81.0, "qg": 1.1}
-Y_OF = {"accuracy": "Accuracy", "r30": r"Rejection ($R_{30}$)", "macro_auc_ovr": "Mean AUC over classes", "auc": "AUC"}
+# "Mean AUC": the training-size panels are 2.5 cm tall since the AUC rows (PI 2026-11-18); the captions say over what
+Y_OF = {"accuracy": "Accuracy", "r30": r"Rejection ($R_{30}$)", "macro_auc_ovr": "Mean AUC", "auc": "AUC"}
 
 
 def _chosen() -> dict:
