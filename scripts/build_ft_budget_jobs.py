@@ -216,6 +216,13 @@ FIXED_SWEEP_17 = ("3e-3", "1e-2", "3e-2")
 FIXED_SWEEP_JC2B = ("1e-4", "3e-4", "1e-3", "3e-3")
 
 
+def fixed_head_jc2b_cells() -> list:
+    """PI 2026-11-20: the head's rate tied to the backbone's (multiplier 1), 188 classes at 1e-3, JetClass-II 1e6; the
+    sweep never varies the head (50x the backbone capped at 5e-3 is 5e-3 at every rate of the grid)."""
+    c = fixed_sweep_cells(("1e-3",), (), "l188-s1", 1_000_000, ("jc2b",))[0]
+    return [{**c, "mult": "1.0", "out": c["out"].replace("_lr1e-3/", "_lr1e-3_head1x/")}]
+
+
 def fixed_sweep_jc2b_cells() -> list:
     return [c for r in ("l188-s1", "r16q1-s1")
             for c in fixed_sweep_cells(FIXED_SWEEP_JC2B, (), r, 1_000_000, ("jc2b",))]
@@ -668,7 +675,7 @@ def main(argv=None) -> int:
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
-                                                 "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows",
+                                                 "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b",
                                                  "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
@@ -701,6 +708,7 @@ def main(argv=None) -> int:
                      "fixed-sweep-17": lambda: fixed_sweep_cells(FIXED_SWEEP_17, (), "r16q1-s1"),
                      "fixed-sweep-jc2b": fixed_sweep_jc2b_cells,
                      "fixed-sweep-rows": fixed_sweep_rows_cells,
+                     "fixed-head-jc2b": fixed_head_jc2b_cells,
                      "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
             # small cells ~16 GiB before the in-memory checks; 1e6 set from the smoke cell (fixed-bench index 2)
