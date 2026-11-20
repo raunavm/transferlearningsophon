@@ -90,7 +90,9 @@ HV_PARTITIONS = ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")
 HV_HEAD = "17-class partitions"
 # the references of a mode (L5): the random network beside linear probes, the released Sophon checkpoint where the text
 # cites it (F2a, beside tab:probes), from scratch beside fine-tuned networks
-HV_REFS = {"probe": (M.INIT,), "probe_all": (M.INIT, M.SOPHON), "ft": ("SCRATCH",)}
+HV_REFS = {"probe": (M.INIT,), "probe_all": (M.INIT, M.SOPHON), "ft": ("SCRATCH",),
+           # PI 2026-11-20 (meeting, C): the random network leaves Fig. 2 (its values in Table 1, its range in the caption)
+           "probe_paper": (M.SOPHON,)}
 HV_KEY = {M.INIT: "INIT_BN", M.SOPHON: "SOPHON"}            # their colour and name in style_v5 (INIT: "random network")
 X_F2 = {"accuracy": "Accuracy", "r30": "$R_{30}$", "macro_auc_ovr": "AUC", "auc": "AUC"}
 MEAN_DOT = 4.6                   # pt: the mean over runs
@@ -98,7 +100,7 @@ HV_UNIT = 0.31                   # cm per network row: a name with $b$ (0.36 cm)
 HV_ASPECT = 0.72                 # a panel's least height over its width
 HV_WGAP, HV_RIGHT = 0.45, 0.12   # cm between panels (beyond figcheck's 3 mm to a break piece); right of the last
 HV_STUB, HV_STUB_GAP = 0.55, 0.1  # cm: the part of a panel beyond an axis break, and the break
-HV_BREAK = 1.5                   # a reference further from the other rows than this many times their span: a break
+HV_BREAK = math.inf              # PI 2026-11-20 (meeting, A): no axis breaks anywhere; every row on one axis
 HV_INDENT = "   "                # the partitions under their subheading, as in the tables
 HV_TITLE_PT = S.TITLE_PT5
 HV_TICK_GAP, HV_TICK_PANEL = 0.15, 0.12      # cm at least between two x tick labels; a label and another panel
@@ -204,7 +206,7 @@ def _break_marks(ax, side: str) -> None:
             color="#000000", markeredgewidth=S.LW_THIN, clip_on=False, zorder=5)
 
 
-def _hv_panel(fig, x, top, w, h, rows, dividers, series, ref188, met):
+def _hv_panel(fig, x, top, w, h, rows, dividers, series, ref188, met, rel=None):
     """One task's panel: series [(row, values, colour, reference?)], the dividers at their y; a reference far beyond the
     other rows' span goes to a stub beyond an axis break. Returns (its axes from left to right, the main axes, bars,
     bars hidden under the circle)."""
@@ -233,7 +235,11 @@ def _hv_panel(fig, x, top, w, h, rows, dividers, series, ref188, met):
         if vals:
             ax = stub if r in far else main
             xs[ax] += _f2_row(ax, rows[r], vals, colour)
-    main.set_xlim(*_hv_limits(xs[main], mw))
+    if rel is None:
+        main.set_xlim(*_hv_limits(xs[main], mw))
+    else:           # every panel the same relative range about its 188-class mean, ticks in absolute units
+        m = float(np.mean(ref188))
+        main.set_xlim(*_hv_limits([m * (1 - rel), m * (1 + rel)], mw))
     main.xaxis.set_major_locator(ticker.MaxNLocator(nbins=3 if mw > 1.6 else 2, steps=[1, 2, 5, 10]))
     if stub is not None:
         scale = np.diff(main.get_xlim())[0] / mw                    # data units per cm, as the main part
@@ -272,7 +278,7 @@ def _sd_ends(vals: list) -> list:
     return [m - sd, m + sd]
 
 
-def _draw_hv(path, value, refs: tuple, cells: list, absent: str) -> None:
+def _draw_hv(path, value, refs: tuple, cells: list, absent: str, span: str = "own") -> None:
     """One mode a figure (L20: points-only panels at least 4.5 cm, so two a row): cells, the five tasks' (task key, n,
     data set, metric), in HV_SLOTS, the row names left of each row's first panel, the legend in the sixth slot.
     value(*cell): the values of a network (_hv_values); refs: the mode's references (HV_REFS)."""
@@ -280,6 +286,19 @@ def _draw_hv(path, value, refs: tuple, cells: list, absent: str) -> None:
     gets = [value(*cell) for cell in cells]
     if not any(gets):
         raise C.Absent(absent)
+    rel = {}
+    if span == "relative":      # PI 2026-11-20 (Jason): one relative range about the 188-class mean for the panels of
+        # one metric (accuracy, R30), the largest deviation from 188 classes among them: R30 moves by tens of per cent
+        # on top tagging, so one range over both metrics leaves the accuracy panels unreadable
+        devs = {}
+        for cell, get in zip(cells, gets):
+            ref = _hv_values("L188", get, cell)
+            if ref:
+                m = float(np.mean(ref))
+                devs.setdefault(cell[3], []).extend(abs(v / m - 1) for r in HV_ROWS + HV_PARTITIONS + refs
+                                                    for vals in [_hv_values(r, get, cell)] if vals
+                                                    for v in vals + _sd_ends(vals))
+        rel = {met: max(d) for met, d in devs.items()}
     # the row names: measured at the tick size, the partitions indented, the subheading in italic
     probe = plt.figure()
     rend = probe.canvas.get_renderer()
@@ -312,7 +331,7 @@ def _draw_hv(path, value, refs: tuple, cells: list, absent: str) -> None:
             parts, main = [ax], ax
         else:
             parts, main, b, hd = _hv_panel(fig, x, y0, w, h, rows, dividers, series, _hv_values("L188", get, cell),
-                                           cell[3])
+                                           cell[3], rel.get(cell[3]))
             bars, hidden = bars + b, hidden + hd
         # the title centred over the whole panel, both parts of a broken axis
         fx0, fx1 = main.get_position().x0, main.get_position().x1
@@ -457,15 +476,15 @@ def _head(auc: bool = False) -> list:
     return [(key, n, ds, F2_AUC[key] if auc else met) for key, n, ds, met, _ in HV_PANELS]
 
 
-def draw_f2(path) -> None:
+def draw_f2(path, span: str = "own") -> None:
     """Fig. 2: the linear probes, each task's headline metric (L20: the fine-tuned networks are F2-ft); the released
-    Sophon checkpoint as in Table 1 and the AUC version (audit 3, 2026-11-14)."""
-    _draw_hv(path, _probe_value, HV_REFS["probe_all"], _head(), "no linear probes (linprobe/fits_v4)")
+    Sophon checkpoint as in Table 1, no random network (PI 2026-11-20)."""
+    _draw_hv(path, _probe_value, HV_REFS["probe_paper"], _head(), "no linear probes (linprobe/fits_v4)", span)
 
 
-def draw_f2_ft(path) -> None:
+def draw_f2_ft(path, span: str = "own") -> None:
     """The fine-tuned networks, each task's headline metric."""
-    _draw_hv(path, _ft_value, HV_REFS["ft"], _head(), "no fine-tuning read-outs (ft_mlst, budget)")
+    _draw_hv(path, _ft_value, HV_REFS["ft"], _head(), "no fine-tuning read-outs (ft_mlst, budget)", span)
 
 
 def draw_f2a(path) -> None:
