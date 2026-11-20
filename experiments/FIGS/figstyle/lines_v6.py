@@ -91,6 +91,15 @@ def scan(ax, xs, mean, lo, hi, *, color: str, linestyle: str, probe: bool, label
         raise ValueError(f"scan: style {style!r} is not B or C (A is each figure's own code)")
 
 
+def steps(ax, edges, mean, sd, *, color: str, linestyle: str, band: bool, label: str) -> None:
+    """Binned measurements as a step line, flat across each bin, with a +-1 SD band under it (band) at BAND opacity
+    (PI 2026-11-20: the binned mass figures as step lines with bands, not points; keeps_band decides band)."""
+    e, m, sd = (np.asarray(a, float) for a in (edges, mean, sd))
+    if band and np.any(sd):
+        ax.stairs(m + sd, e, baseline=m - sd, fill=True, color=color, alpha=BAND, linewidth=0, zorder=1.0)
+    ax.stairs(m, e, baseline=None, color=color, linestyle=linestyle, linewidth=S.LW_CURVE, label=label, zorder=2.6)
+
+
 def binned(ax, edges, mean, lo, hi, *, color: str, probe: bool, label: str, shape: str = "o", k: int = 0,
            n: int = 1) -> None:
     """Binned measurements (PI 2026-11-14, step 8): the mean of the k-th of n series as a point near the bin centre,

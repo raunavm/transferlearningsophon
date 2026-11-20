@@ -109,16 +109,17 @@ CAPTIONS = {
         'generator-mass bin, 20 to 50 GeV. Panels (a) and (b) show the median of r = m/m_gen, estimated over '
         'generator-level soft-drop mass, with its distance from one below, and (c) and (d) the resolution, half the '
         'central 68% range of r over its median, on a logarithmic axis, with the ratio to the soft-drop value below on a linear one. '
-        'Points sit in their bin, the horizontal bar spanning it; error bars combine the standard deviation over two '
-        'pretraining runs with the bootstrap over test jets. Values are in table {tab:mass}.'
+        'Lines are means over two pretraining runs, flat across each bin, and bands of ±1 standard deviation combine '
+        'the spread over runs with the bootstrap over test jets. Values are in table {tab:mass}.'
     ),
     "A17-probe": (
         'On frozen features, a multilayer-perceptron probe resolves the jet mass better on the networks with an added '
         'mass regression (+ mass) than on the same label sets without it. The panels have the form of figure '
         '{fig:F9b}, for a probe trained to regress the jet mass from the frozen features of each label set, mass '
-        'network and the random network (crosses), with the soft-drop mass in black. {probe_note} Points sit in their bin, the horizontal bar spanning it, and error bars combine the '
-        'standard deviation over three pretraining runs, two for + mass, or three random initializations, with the '
-        'bootstrap over test jets. Values are in table {tab:mass}.'
+        'network and the random network (dashed), with the soft-drop mass in black. {probe_note} Lines are means over '
+        'three pretraining runs, two for + mass, or three random initializations, flat across each bin; the bands, for '
+        '188 classes, the random network and the soft-drop mass only, are ±1 standard deviation combining the spread '
+        'over runs with the bootstrap over test jets. Values, and the other standard deviations, are in table {tab:mass}.'
     ),
     "F11": (
         'At 1% QCD efficiency, 17 classes keep fewer X→bb̄ and X→bs jets than 188 classes, a gap of 0.6 and 1.0 in the '

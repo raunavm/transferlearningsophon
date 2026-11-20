@@ -152,10 +152,12 @@ PROBE_ESTS = ("mlp", "ridge")      # regressions on frozen features, against the
 
 
 def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
-    """One column of one row: the median (which="median") or the resolution against axis, binned, so points at the bin
-    centres with +-1 SD bars over runs and no lines (PI 2026-11-11), the soft-drop mass first in black, the series
-    with a bar across the bin (lines_v6.binned); below, the ratio to the soft-drop mass. The y range holds every point and
-    bar (PI 2026-11-11: nothing off the axes); the resolution is on a log axis. Returns (soft-drop values, bin edges)."""
+    """One column of one row: the median (which="median") or the resolution against axis, binned, so step lines flat
+    across each bin with +-1 SD bands (PI 2026-11-20, replacing the points of 2026-11-11/14: "those dots in the middle
+    look horrible"), the soft-drop mass first in black; bands by L21's rule (lines_v6.keeps_band: every band in a panel
+    of at most three series, else 188 classes, the random network and the soft-drop mass only); the random network
+    dashed beside the black soft-drop line; below, the ratio to the soft-drop mass. The y range holds every line and
+    band (PI 2026-11-11: nothing off the axes); the resolution is on a log axis. Returns (soft-drop values, bin edges)."""
     g = P._groomed(atlas, group)[axis]
     e = np.asarray(g["edges"], float)
     ref = P._arr(g[which])
@@ -165,28 +167,33 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     mixed = len({est in PROBE_ESTS for _, est, _, _, _ in drawn}) > 1
     boot = lambda b: P._arr(b[f"{which}_sd"]) if b.get(f"{which}_sd") is not None else np.zeros(len(e) - 1)  # noqa: E731
     ref_sd = boot(g)
-    n = len(drawn) + 1                               # L21: the soft-drop mass and each series dodged within the bin
+    n = len(drawn) + 1                               # the soft-drop mass and the series: L21's band rule counts them
+    refs = {S.SERIES[k] for k in L.BAND_REFS if k in S.SERIES}
     # PI 2026-11-14 (step 8, audit 3): the median row's lower panel is each estimate's distance from one, |median - 1|
     # (a ratio of two medians says nothing about which is closer to one); the resolution row's the ratio to the
     # soft-drop resolution
     lower = (lambda v: np.abs(v - 1.0)) if which == "median" else (lambda v: v / ref)     # noqa: E731
-    L.binned(ax, e, ref, ref_sd, ref_sd, color=GROOMED_LOOK["color"], probe=False, label=GROOMED, n=n)
+    black = {"color": GROOMED_LOOK["color"], "linestyle": "-", "band": True}
+    L.steps(ax, e, ref, ref_sd, **black, label=GROOMED)
     if which == "median":
-        L.binned(rx, e, lower(ref), ref_sd, ref_sd, color=GROOMED_LOOK["color"], probe=False, label="_nolegend_", n=n)
+        L.steps(rx, e, lower(ref), ref_sd, **black, label="_nolegend_")
     else:
         rx.axhline(1.0, **S.REFERENCE, zorder=1.5)       # the ratio's unity line: a reference, dotted (L6)
     ends, lows = [ref - ref_sd, ref + ref_sd], [lower(ref)]
-    for k, (runs, est, line, mark, label) in enumerate(drawn, 1):
+    for runs, est, line, mark, label in drawn:
         blocks = [b[axis] for m in runs if (b := P._block(atlas, m, est, group))]
         per = np.array([P._arr(b[which]) for b in blocks], float)
         st = [P.F._spread(list(per[:, i])) for i in range(per.shape[1])]
         mean = np.array([s_[0] for s_ in st])
         # the bar is the uncertainty the claims use (L3): the SD over runs and the mean bootstrap SD over test jets
         sd = np.sqrt(np.array([s_[1] or 0.0 for s_ in st]) ** 2 + np.mean([boot(b) for b in blocks], axis=0) ** 2)
-        probe, shape = mixed and est in PROBE_ESTS, mark or "o"
-        L.binned(ax, e, mean, sd, sd, color=line["color"], probe=probe, label=label, shape=shape, k=k, n=n)
+        # a probe beside a network's own output, and the random network beside the black soft-drop line, dashed
+        dashed = (mixed and est in PROBE_ESTS) or mark == "x"
+        look = {"color": line["color"], "linestyle": "--" if dashed else "-",
+                "band": n <= L.BAND_ALL or line["color"] in refs}
+        L.steps(ax, e, mean, sd, **look, label=label)
         rs = sd if which == "median" else sd / ref
-        L.binned(rx, e, lower(mean), rs, rs, color=line["color"], probe=probe, label="_nolegend_", shape=shape, k=k, n=n)
+        L.steps(rx, e, lower(mean), rs, **look, label="_nolegend_")
         ends += [mean - sd, mean + sd]
         lows += [lower(mean) - rs, lower(mean) + rs]
     if which == "resolution":
@@ -196,7 +203,7 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     else:
         _fit_y(ax, ends, pad=0.12)       # a point's marker clear of the frame (2026-11-12 review)
     _fit_y(rx, lows, pad=0.18)       # the reference at 1 clear of the frame, its tick labelled
-    ax.set_xlim(*_pad_x(e))
+    ax.set_xlim(e[0], e[-1])         # the steps end at the outer bin edges
     for a_ in (ax, rx):
         S.fine_grid(a_)
     return ref, e
@@ -866,20 +873,22 @@ SUPPLEMENT_CAPTIONS = {
         f"The {est} probe of figure {{fig:{ref}}} on the frozen features of the 17-class partitions, with no, a b-quark "
         f"and a random flavor boundary and the five random partitions, beside 188 and 17 classes, in the form of "
         f"figure {{fig:F9b}}: the median of r = m/m_gen in (a) and (b), its distance from one below, and the resolution "
-        f"sigma_r in (c) and (d), with the soft-drop mass in black. {{probe_note}} Points sit in their bin, the "
-        f"horizontal bar spanning it, and error bars combine the standard deviation over two pretraining runs per "
-        f"flavor-boundary partition, three for 188 and 17 classes, or the five random partitions, with the bootstrap "
-        f"over test jets. The values are in table {{tab:massdetail}}."
+        f"sigma_r in (c) and (d), with the soft-drop mass in black. {{probe_note}} Lines are means over two pretraining "
+        f"runs per flavor-boundary partition, three for 188 and 17 classes, or the five random partitions, flat across "
+        f"each bin; the bands, for 188 classes and the soft-drop mass only, are ±1 standard deviation combining the "
+        f"spread over runs with the bootstrap over test jets. The values and the other standard deviations are in "
+        f"table {{tab:massdetail}}."
     ) for pid, est, ref in (("A17-probe-part", "multilayer-perceptron", "A17-probe"),
                             ("A17-ridge-part", "ridge", "A17-ridge"))},
     "A17-ridge": (
         'A linear regression of the jet mass on frozen features (a ridge probe) also gives a better mass resolution on '
         'the networks pretrained with an added mass regression (+ mass) than on the same label sets without it. The '
         'panels have the form of figure {fig:A17-probe}, with the median of r = m/m_gen in (a) and (b), its distance '
-        'from one below, the resolution sigma_r in (c) and (d), the soft-drop mass in black and the random network as '
-        'crosses. {probe_note} Points sit in their bin, the horizontal bar spanning it, and error bars '
-        'combine the standard deviation over three pretraining runs, two for + mass, or three random initializations, '
-        'with the bootstrap over test jets. The values are in table {tab:massdetail}.'
+        'from one below, the resolution sigma_r in (c) and (d), the soft-drop mass in black and the random network '
+        'dashed. {probe_note} Lines are means over three pretraining runs, two for + mass, or three random '
+        'initializations, flat across each bin; the bands, for 188 classes, the random network and the soft-drop mass '
+        'only, are ±1 standard deviation combining the spread over runs with the bootstrap over test jets. The values '
+        'and the other standard deviations are in table {tab:massdetail}.'
     ),
     "F9a": (
         "The panels show the response r = m/m_gen, a jet's estimated mass over its generator-level soft-drop mass, of the mass "
@@ -894,8 +903,8 @@ SUPPLEMENT_CAPTIONS = {
         f"regression (+ mass) on {group} JetClass-II test jets, in the form of figure {{fig:F9b}}, the median of "
         f"r = m/m_gen in (a) and (b) and the resolution sigma_r, half the central 68% range of r divided by its "
         f"median, in (c) and (d) against jet transverse momentum pT and generator-level soft-drop mass, with the soft-drop "
-        f"mass in black. Points sit in their bin, the horizontal bar spanning it, error bars combine the standard "
-        f"deviation over two pretraining runs with the bootstrap over test jets, and the lower panels show the "
+        f"mass in black. Lines are means over two pretraining runs, flat across each bin, bands of ±1 standard "
+        f"deviation combine the spread over runs with the bootstrap over test jets, and the lower panels show the "
         f"median's distance from one and the ratio to the soft-drop resolution. "
         f"The values are in table {{tab:massdetail}}."
     ) for key, group in (("res", "resonant"), ("qcd", "QCD"))},
