@@ -221,6 +221,22 @@ def fixed_sweep_jc2b_cells() -> list:
             for c in fixed_sweep_cells(FIXED_SWEEP_JC2B, (), r, 1_000_000, ("jc2b",))]
 
 
+# PI 2026-11-20 (D2, "those rows get the same sweep"): every other row where a fine-tuned network ends below its own
+# linear probe (JetClass-II at 1e4 and 1e5) or has its best check first (quark/gluon at 1e3, 18 of 29 cells, two of
+# the three from-scratch seeds among them, so from scratch is swept there too around its 1e-3)
+FIXED_SWEEP_ROWS = (("jc2b", 10_000), ("jc2b", 100_000), ("qg", 1_000))
+FIXED_SWEEP_SCRATCH_QG1E3 = ("1e-4", "3e-4", "3e-3")
+
+
+def fixed_sweep_rows_cells() -> list:
+    out = []
+    for task, n in FIXED_SWEEP_ROWS:
+        scratch = FIXED_SWEEP_SCRATCH_QG1E3 if (task, n) == ("qg", 1_000) else ()
+        out += fixed_sweep_cells(FIXED_SWEEP_JC2B, scratch, "l188-s1", n, (task,))
+        out += fixed_sweep_cells(FIXED_SWEEP_JC2B, (), "r16q1-s1", n, (task,))
+    return out
+
+
 def fixed_smoke_1e3_cells() -> list:
     return [c for r in ("l188-s1", "r16q1-s1") for c in fixed_sweep_cells((FIXED_LR_PRE,), (), r, 1_000, ("top",))]
 
@@ -652,7 +668,7 @@ def main(argv=None) -> int:
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
-                                                 "fixed-sweep-ext", "fixed-sweep-jc2b",
+                                                 "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows",
                                                  "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
@@ -684,6 +700,7 @@ def main(argv=None) -> int:
                      "fixed-sweep-ext": lambda: fixed_sweep_cells(FIXED_SWEEP_PRE_EXT, ()),
                      "fixed-sweep-17": lambda: fixed_sweep_cells(FIXED_SWEEP_17, (), "r16q1-s1"),
                      "fixed-sweep-jc2b": fixed_sweep_jc2b_cells,
+                     "fixed-sweep-rows": fixed_sweep_rows_cells,
                      "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
             # small cells ~16 GiB before the in-memory checks; 1e6 set from the smoke cell (fixed-bench index 2)
