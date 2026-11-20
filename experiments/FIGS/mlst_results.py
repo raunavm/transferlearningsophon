@@ -2188,7 +2188,31 @@ def merge_fixed(per: dict, path: pathlib.Path, preview: bool = False) -> dict:
             for key, (t, _) in BUDGET_TREE.items():
                 if t == tree:
                     out.get(key, {}).get(SCRATCH, {}).pop(int(n[1:]), None)
+    # the edge rule (PI 2026-11-15), applied where the cells are read (PI 2026-11-20: it lived only in
+    # test_comparisons_identical, which never saw the cells that broke it): no best check first or in the last 10% of
+    # the schedule. The paper build stops; a preview leaves the whole row out, since the row is rerun at a swept rate
+    edge = edge_failures(_budget_cells(path))
+    if edge and not preview:
+        raise SystemExit(f"FATAL: {path}: {len(edge)} cells with the best check at an edge of the schedule: {edge[:10]}")
+    for key, n in {(key, n) for key, _, n, _ in edge}:
+        for by_n in out.get(key, {}).values():
+            by_n.pop(n, None)
     return out
+
+
+def edge_failures(cells: dict) -> list:
+    """[(task, init, N, best check of max)] of the cells whose best validation check is the first (0) or within the
+    last 10% of the schedule, the one rule's edge rule."""
+    bad = []
+    for (key, init, n), recs in sorted(cells.items()):
+        if BUDGET_TREE[key][1]:         # a re-scoring of another key's cells (Herwig): its training record is there
+            continue
+        for rec in recs:
+            e = rec.get("early_stop") or {}
+            best, ep = e.get("best_epoch"), e.get("max_epochs")
+            if best is None or ep is None or best < 1 or best >= 0.9 * ep:
+                bad.append((key, init, n, f"{best} of {ep}"))
+    return bad
 
 
 def merge_kin(out: dict, path: pathlib.Path) -> dict:

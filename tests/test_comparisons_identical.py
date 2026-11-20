@@ -136,3 +136,13 @@ def test_the_full_top_and_quark_gluon_sets_are_trained_identically():
         if d:
             bad[leg] = d
     assert not bad, json.dumps(bad, indent=1)[:20000]
+
+
+def test_the_edge_rule_binds_where_the_tables_read_the_cells():
+    """mlst_results.edge_failures (PI 2026-11-20): the best check first or in the last 10% fails, the Herwig re-scoring
+    of a quark/gluon cell is judged by its training record."""
+    cells = {("jc2", "a", 1_000_000): [{"early_stop": {"best_epoch": 0, "max_epochs": 160}}],
+             ("top", "a", 1_000): [{"early_stop": {"best_epoch": 360, "max_epochs": 400}}],
+             ("qg", "a", 1_000): [{"early_stop": {"best_epoch": 1, "max_epochs": 400}}],
+             ("qg_herwig", "a", 1_000): [{}]}
+    assert [c[:3] for c in M.edge_failures(cells)] == [("jc2", "a", 1_000_000), ("top", "a", 1_000)]
