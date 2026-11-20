@@ -95,6 +95,8 @@ HV_REFS = {"probe": (M.INIT,), "probe_all": (M.INIT, M.SOPHON), "ft": ("SCRATCH"
            "probe_paper": (M.SOPHON,)}
 HV_KEY = {M.INIT: "INIT_BN", M.SOPHON: "SOPHON"}            # their colour and name in style_v5 (INIT: "random network")
 X_F2 = {"accuracy": "Accuracy", "r30": "$R_{30}$", "macro_auc_ovr": "AUC", "auc": "AUC"}
+HV_XNAME = {"jc2": "JetClass-II", "jc1": "JetClass", "top": "top tagging", "qg": "quark/gluon (Pythia)",
+            "qg_herwig": "quark/gluon (Herwig)"}
 MEAN_DOT = 4.6                   # pt: the mean over runs
 HV_UNIT = 0.31                   # cm per network row: a name with $b$ (0.36 cm) clears its neighbours (0.25 cm)
 HV_ASPECT = 0.72                 # a panel's least height over its width
@@ -174,8 +176,9 @@ def _f2_row(ax, y: float, v: list, color: str) -> list:
         sd = float(np.std(v, ddof=1))
         ax.errorbar([mean], [y], xerr=[[sd], [sd]], fmt="none", ecolor=color, elinewidth=L.BAR, capsize=0, zorder=2.5)
         out += [mean - sd, mean + sd]
-    ax.plot([mean], [y], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor=color,
-            markeredgecolor="white", markeredgewidth=0.5, zorder=2.6)
+    one = len(v) == 1               # PI 2026-11-20 (A): a single-run row (the released Sophon checkpoint) open, "one run"
+    ax.plot([mean], [y], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor="white" if one else color,
+            markeredgecolor=color if one else "white", markeredgewidth=1.0 if one else 0.5, zorder=2.6)
     return out
 
 
@@ -312,9 +315,9 @@ def _draw_hv(path, value, refs: tuple, cells: list, absent: str, span: str = "ow
     rows, head, dividers = _hv_rows(refs)
     # at least HV_UNIT a row, and the panel at least HV_ASPECT of its width high (figcheck's aspect rule)
     h = max((max(rows.values()) + 1.2) * HV_UNIT, HV_ASPECT * w)
-    top, hgap = 0.6, 0.95 + 0.5                       # a title; under a row its x tick labels and label, then a title
+    top, hgap = 0.6, 0.95 + 0.8                       # a title; under a row its x tick labels and label, then a title
     nrows = max(i for i, _ in HV_SLOTS + (HV_LEGEND_SLOT,)) + 1
-    fig = S.figure_cm(S.PRINT_W, top + nrows * h + (nrows - 1) * hgap + 0.95)
+    fig = S.figure_cm(S.PRINT_W, top + nrows * h + (nrows - 1) * hgap + 1.3)     # the last x label inside (2026-11-20)
     hidden = bars = 0
     panels = []
     # audit 3 (2026-11-14): a reference with no value in any panel of a row of panels (the released Sophon checkpoint
@@ -337,6 +340,7 @@ def _draw_hv(path, value, refs: tuple, cells: list, absent: str, span: str = "ow
         fx0, fx1 = main.get_position().x0, main.get_position().x1
         xc = ((x + w / 2) / S.PRINT_W - fx0) / (fx1 - fx0)
         main.set_title(f"({'abcdefghij'[k]}) {title}", fontsize=HV_TITLE_PT, pad=4.0, x=xc)
+        S.labels(main, f"{X_F2[met]}, {HV_XNAME[key]}", None)     # PI 2026-11-20 (A): each panel names what it shows
         if j == 0:                                   # the row names on the panel's leftmost part, left-aligned
             ax = parts[0]
             ax.yaxis.set_major_formatter(ticker.FixedFormatter([_hv_name(r) for r in rows]))
@@ -353,9 +357,13 @@ def _draw_hv(path, value, refs: tuple, cells: list, absent: str, span: str = "ow
                       markerfacecolor="#000000", markeredgecolor="white", markeredgewidth=0.5),
                (Patch(facecolor=S.SERIES["L188"], alpha=L.BAND, linewidth=0),
                 Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_THIN))]
+    labels = ["a row's mean over its runs,\nbar \u00b11 SD over them", "188 classes, mean \u00b11 SD,\ndrawn across all rows"]
+    if any(len(_hv_values(r, g, c)) == 1 for c, g in zip(cells, gets) for r in refs):
+        handles.append(Line2D([], [], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor="white",
+                              markeredgecolor="#000000", markeredgewidth=1.0))
+        labels.append("one run")
     i, j = HV_LEGEND_SLOT
-    S.slot_legend(fig, handles, left + j * (w + HV_WGAP), top + i * (h + hgap), w, h,
-                  labels=["mean and standard deviation", "188 classes, mean and\nstandard deviation"])
+    S.slot_legend(fig, handles, left + j * (w + HV_WGAP), top + i * (h + hgap), w, h, labels=labels)
     _hv_ticks(fig, panels)
     print(f"{path.name}: {hidden} of {bars} SD bars are shorter than the mean's circle")
     S.save(fig, path)
@@ -476,13 +484,13 @@ def _head(auc: bool = False) -> list:
     return [(key, n, ds, F2_AUC[key] if auc else met) for key, n, ds, met, _ in HV_PANELS]
 
 
-def draw_f2(path, span: str = "own") -> None:
+def draw_f2(path, span: str = "relative") -> None:
     """Fig. 2: the linear probes, each task's headline metric (L20: the fine-tuned networks are F2-ft); the released
     Sophon checkpoint as in Table 1, no random network (PI 2026-11-20)."""
     _draw_hv(path, _probe_value, HV_REFS["probe_paper"], _head(), "no linear probes (linprobe/fits_v4)", span)
 
 
-def draw_f2_ft(path, span: str = "own") -> None:
+def draw_f2_ft(path, span: str = "relative") -> None:
     """The fine-tuned networks, each task's headline metric."""
     _draw_hv(path, _ft_value, HV_REFS["ft"], _head(), "no fine-tuning read-outs (ft_mlst, budget)", span)
 
