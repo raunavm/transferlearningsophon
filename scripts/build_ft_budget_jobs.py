@@ -210,6 +210,17 @@ def fixed_sweep_cells(pre=FIXED_SWEEP_PRE, scratch=FIXED_SWEEP_SCRATCH, init="l1
 FIXED_SWEEP_17 = ("3e-3", "1e-2", "3e-2")
 
 
+# PI 2026-11-20 (D2): JetClass-II at 1e6 under the one rule had its best check first in all three 188-class runs and a
+# training accuracy that never rose above 0.39, below the linear probe's 0.4348; its rate came from the top and
+# quark/gluon sweep at 1e4. The rate is swept on the row itself, 188 and 17 classes, seed 1 (1e-2 exists in FIXED_ROOT)
+FIXED_SWEEP_JC2B = ("1e-4", "3e-4", "1e-3", "3e-3")
+
+
+def fixed_sweep_jc2b_cells() -> list:
+    return [c for r in ("l188-s1", "r16q1-s1")
+            for c in fixed_sweep_cells(FIXED_SWEEP_JC2B, (), r, 1_000_000, ("jc2b",))]
+
+
 def fixed_smoke_1e3_cells() -> list:
     return [c for r in ("l188-s1", "r16q1-s1") for c in fixed_sweep_cells((FIXED_LR_PRE,), (), r, 1_000, ("top",))]
 
@@ -641,7 +652,7 @@ def main(argv=None) -> int:
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
-                                                 "fixed-sweep-ext",
+                                                 "fixed-sweep-ext", "fixed-sweep-jc2b",
                                                  "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
@@ -672,6 +683,7 @@ def main(argv=None) -> int:
                      "fixed-sweep": fixed_sweep_cells,
                      "fixed-sweep-ext": lambda: fixed_sweep_cells(FIXED_SWEEP_PRE_EXT, ()),
                      "fixed-sweep-17": lambda: fixed_sweep_cells(FIXED_SWEEP_17, (), "r16q1-s1"),
+                     "fixed-sweep-jc2b": fixed_sweep_jc2b_cells,
                      "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
             # small cells ~16 GiB before the in-memory checks; 1e6 set from the smoke cell (fixed-bench index 2)
