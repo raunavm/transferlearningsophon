@@ -248,8 +248,6 @@ _TABLES = (
     ("tab:xbxrej", APPENDIX, "[[tab:xbxrej]] gives the QCD rejections at 50% and 30% signal efficiency for the networks "
                              "of [[tab:xbx]]."),
     # PI 2026-11-20 (meeting, B): from the supplement into the appendix
-    ("tab:xbxnode", APPENDIX, "The X→bs rejection of the pretrained output of the class that holds X→bq is in "
-                                "[[tab:xbxnode]]."),
     # audit 3 (B): only fine-tuning sets the missing inputs to zero; the linear probes use the substitution chosen on
     # validation, random draws on top and the training mean on quark/gluon
     ("tab:inputs", APPENDIX, "Top and quark/gluon data lack some inputs, which fine-tuning sets to zero and the linear "
@@ -342,7 +340,7 @@ APPENDIX_FAMILIES = (
     ("Jet pT", ("PT",)),
     ("Mass", ("F9b", "A17-probe", "tab:masseffect", "tab:massdetail")),
     ("Sculpting", ("F10b", "tab:sculpt", "tab:sculptboot")),
-    ("Resonance tagging", ("F11-part", "tab:xbxrej", "tab:xbxnode")),
+    ("Resonance tagging", ("F11-part", "tab:xbxrej")),
     ("Embeddings", ("UMAP-frozen", "UMAP-ft")),
     ("Training details", ("VAL", "tab:inputs", "tab:fill", "tab:partrepro", "tab:lrsweep", "tab:compute")),
 )

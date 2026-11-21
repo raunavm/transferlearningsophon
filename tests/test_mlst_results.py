@@ -2305,12 +2305,12 @@ def test_the_probe_and_pair_tables_of_the_paper_print_no_ratio_column():
 def test_both_resonance_tables_have_the_same_rows_and_the_rejection_table_shows_both_from_scratch_signals():
     """tab:xbx and tab:xbxrej (PI 2026-11-13): one page per signal with the read-outs of tab:xbx (the classifier on the
     frozen features, the linear probe, X->bb's direct discriminant), the rows in the one order (L5), from scratch in
-    the classifier's columns; the X->bs closest-class output is the supplement's tab:xbxnode."""
+    the classifier's columns; the X->bs closest-class output on the X->bs page (PI 2026-11-21: tab:xbxnode merged in)."""
     runs = M._paper(ROOT)
     end = lambda r30: {"r50": r30 / 3, "r30": r30}      # noqa: E731
     scr = {"xbb": [end(900.0), end(950.0), end(1000.0)], "xbs": [end(600.0), end(610.0), end(620.0)]}
-    assert M.XBX_REJ_PAGES == (("xbb", ("head", "linear", "zero_shot_xbb")), ("xbs", ("head", "linear")))
-    assert M.XBX_NODE_PAGES == (("xbs", ("zero_shot_xbq",)),)
+    assert M.XBX_REJ_PAGES == (("xbb", ("head", "linear", "zero_shot_xbb")), ("xbs", ("head", "linear", "zero_shot_xbq")))
+    assert not hasattr(M, "XBX_NODE_PAGES")
     t = M.table_xbx_rej({}, scr, runs, M.TAB)
     pages = t.split("%SPLIT%")
     assert len(pages) == 2
@@ -2334,9 +2334,8 @@ def test_both_resonance_tables_have_the_same_rows_and_the_rejection_table_shows_
     assert one[0].splitlines()[-3].rstrip(r" \\").split(" & ")[1:] == ["300" + M.SINGLE, "900" + M.SINGLE] + ["--"] * 4
     assert one[1].splitlines()[-3].rstrip(r" \\").split(" & ")[1:5] == [r"203.3\,$\pm$\,3.3", r"610\,$\pm$\,10", "--", "--"]
     assert not any(M.SINGLE in M.uniform_columns(pg) for pg in pages)       # three seeds each: no mark
-    # the closest-class output on its own (supplement) table, without from scratch
-    node = M.table_xbx_rej({}, scr, runs, M.TAB, M.XBX_NODE_PAGES)
-    assert "%SPLIT%" not in node and M.XBX_READOUT["zero_shot_xbq"] in node and M.SCRATCH_LABEL not in node
+    # the closest-class output on the X->bs page, never from scratch
+    assert M.XBX_READOUT["zero_shot_xbq"] in pages[1] and M.XBX_READOUT["zero_shot_xbq"] not in pages[0]
 
 
 @pytest.mark.skipif(not (DATA / "index.json").exists(), reason="no pulled data")

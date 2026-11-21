@@ -3980,10 +3980,9 @@ XBX_ROWS = SETS + FLAV + (RAND_POOLED,) + (INIT,)     # the rows of both X->bb /
 
 
 # the pages of the X->bb / X->bs rejection table (PI 2026-11-13): per signal, the read-outs of tab:xbx (the classifier on
-# the frozen features, the linear probe, the direct discriminant); the X->bs closest-class output, which no sentence
-# cites, is the supplement's tab:xbxnode (L13)
-XBX_REJ_PAGES = (("xbb", ("head", "linear", "zero_shot_xbb")), ("xbs", ("head", "linear")))
-XBX_NODE_PAGES = (("xbs", ("zero_shot_xbq",)),)
+# the frozen features, the linear probe, the direct discriminant); the X->bs closest-class output joins the X->bs page
+# (PI 2026-11-21: the old tab:xbxnode merged in)
+XBX_REJ_PAGES = (("xbb", ("head", "linear", "zero_shot_xbb")), ("xbs", ("head", "linear", "zero_shot_xbq")))
 XBX_READOUT = {"head": "classifier", "linear": "linear probe", "zero_shot_xbb": "direct", "zero_shot_xbq": "closest class"}
 XBX_SIGNAL = {"xbb": r"$X\to b\bar b$ against QCD jets", "xbs": r"$X\to bs$ against QCD jets"}
 
@@ -4043,7 +4042,6 @@ def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> t
             SimpleNamespace(fmt_pm=TAB), runs, xfits, scr))
         out["tables/mlst_xbx_rej.tex"] = _float("xbx_rej", table_xbx_rej(xfits, scr, runs, TAB), True, pages=True,
                                                 whole="turned", colsep_pt=6)
-        out["tables/mlst_xbx_node.tex"] = _float("xbx_node", table_xbx_rej(xfits, scr, runs, TAB, XBX_NODE_PAGES))
         xbx_ratio_macros(em, xfits, scr, runs, index, fmt_pm)
     else:
         missing.append("X->bb and X->bs fits -- experiments/FIGS/data/v2/xbx/")
@@ -5112,7 +5110,6 @@ CAPTIONS = {
                 "30\\% signal efficiency. Transfer: the classifier on frozen features; direct: Sophon's discriminant "
                 "from the output scores; closest node: the pretrained $X\\to bq$ output against QCD; from scratch: "
                 "the network trained on each signal, three seeds. " + SPREAD_POOLED),
-    "xbx_node": ("tab:xbxnode", "Resonance tagging, the $X\\to bs$ closest-class output: rejection of QCD jets."),
     "published": ("tab:published", "Comparison with published models on JetClass, top tagging and quark/gluon tagging. "
                   "Our rows are the network trained from scratch and fine-tuned from the network pretrained with "
                   "\\Kfull{} classes, as the mean $\\pm$ SD over three runs, with the inputs that the top and "
@@ -5160,7 +5157,7 @@ PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes
                 ("sculpt", "mlst_sculpt", True, {"__SCULPT_BINS__": r"\pending{bins}", "__SCULPT_FLAV__": "", "__SCULPT_SIG__": "", "__SCULPT_CUT__": "", "__SCULPT_RUNS__": ""}), ("sculpt_boot", "mlst_sculpt_boot", False, {"__REPLICAS__": r"\pending{n}", "__SCULPT_BOOT_RAND__": ""}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, {"__JC2COMP__": "class-balanced"}),
                 ("bench_top", "mlst_bench_top", True, None), ("bench_qg", "mlst_bench_qg", True, None),
-                ("xbx", "mlst_xbx", False, None), ("xbx_rej", "mlst_xbx_rej", True, None), ("xbx_node", "mlst_xbx_node", False, None),
+                ("xbx", "mlst_xbx", False, None), ("xbx_rej", "mlst_xbx_rej", True, None),
                 ("rand_prong", "mlst_rand_prong", True, {"__PRONG__": ""}),
                 ("lrsweep", "mlst_lrsweep", False, None), ("inputs", "mlst_inputs", True, None),
                 ("partrepro", "mlst_partrepro", False, None), ("compute", "compute", False, None),
@@ -5558,14 +5555,9 @@ CAPTION_SHORT = {
     "xbx_rej": ("Rejection of QCD jets when tagging $X\\to b\\bar b$ and $X\\to bs$ jets with soft-drop mass "
                "\\XbxWindowLo--\\XbxWindowHi~GeV, for the networks and read-outs of table~\\ref{tab:xbx}, $R_{50}$ and "
                "$R_{30}$ being the inverse QCD efficiencies at 50\\% and 30\\% signal efficiency. A dash marks a "
-               "read-out a network lacks, and the supplementary material gives the $X\\to bs$ output of the closest "
-               "class. From scratch, trained on each signal, stands in the classifier columns."
+               "read-out a network lacks. Closest class: the pretrained output of the class that contains $X\\to bq$ "
+               "against the QCD outputs, nothing trained; the random network has none. From scratch, trained on each signal, stands in the classifier columns."
                + _runs("set", "flav", "mass", "rand")),
-    "xbx_node": "Rejection of QCD jets when tagging $X\\to bs$ jets with the pretrained output of the class that "
-                "contains $X\\to bq$ against the QCD outputs, nothing trained, in the soft-drop mass window of "
-                "table~\\ref{tab:xbx}. $R_{50}$ and $R_{30}$ are the inverse QCD efficiencies at 50\\% and 30\\% "
-                "signal efficiency. The random network has no pretrained class output and is not listed." + PART_DEF
-                + _runs("set", "flav", "mass", "rand"),
     "per_run": "The value of each run of " + PNETS + ", of the two networks with an added mass regression (+ mass), "
                "of the 17-class partitions, of the random network "
                "and of training from scratch, at each task's largest training set, as a linear probe on the frozen "
