@@ -193,7 +193,7 @@ def test_the_new_output_layer_trains_at_5e_3_at_every_rate():
             assert abs(float(c["lr"]) * float(c["mult"]) - B.HEAD_CAP) < 1e-12, (c["out"], c["lr"], c["mult"])
 
 
-def test_table_a15_marks_the_chosen_rate_and_divergences_and_shows_the_frozen_limit_beside_a_floor_row():
+def test_table_a15_is_validation_only_and_marks_the_chosen_rate_and_divergences():
     import sys
     sys.path.insert(0, str(ROOT / "experiments/FIGS"))
     import mlst_results as M
@@ -203,10 +203,9 @@ def test_table_a15_marks_the_chosen_rate_and_divergences_and_shows_the_frozen_li
              "values": {"3e-3": 0.90, "1e-2": 0.91, "3e-2": "diverged"}},
             {"task": "top", "n": 1_000, "kind": "scratch", "status": "running", "best": "3e-3",
              "values": {"1e-3": None, "3e-3": 0.88, "1e-2": 0.87}}]
-    t = M.table_lrsweep(rows, {("jc2b", 1_000_000): 0.3981})
-    lines = t.splitlines()
-    assert any(ln.startswith("JetClass-II") and "0.4400$^{\\ast}$" in ln and ln.rstrip(" \\").endswith("0.3981") for ln in lines)
+    lines = M.table_lrsweep(rows).splitlines()
+    assert any(ln.startswith("JetClass-II") and "0.4400$^{\\ast}$" in ln for ln in lines)
     top = [ln for ln in lines if "pretrained" in ln and "0.9100" in ln][0]
     assert "0.9100$^{\\ast}$" in top and "diverged" in top
-    assert any("\\pending{run}" in ln for ln in lines) and "frozen features" in lines[2]
-    assert "frozen features" not in M.table_lrsweep(rows[1:], {("jc2b", 1_000_000): 0.3981})
+    assert any("\\pending{run}" in ln for ln in lines)
+    assert "frozen" not in "\n".join(lines) and "test" not in M.printed_caption("lrsweep")

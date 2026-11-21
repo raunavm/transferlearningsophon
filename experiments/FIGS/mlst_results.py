@@ -3836,8 +3836,6 @@ def partrepro(em, data: pathlib.Path, per, fmt_pm, missing: list, runs: dict | N
 # facts that pull_mlst_data.rate_search_scan writes to budget/rate_search.json). Table A15 lists every rate tried.
 RATE_SEARCH = "rate_search.json"
 RATE_TASKS = (("top", "top tagging"), ("qg", "quark/gluon"), ("jc1", "JetClass"), ("jc2b", "JetClass-II"))
-RATE_MLP_DIRS = ("fits_v5_mlp", "fits_v4_mlp")      # the MLP probe on frozen features, newest first
-RATE_SEARCH_INITS = ("mtx-l188-s1", "mtx-r16q1-s1")
 
 
 def _rate_search_module():
@@ -3860,29 +3858,14 @@ def rate_search_rows(scan: dict, preview: bool = False) -> list:
     return rows
 
 
-def frozen_mlp_limit(lp_dir: pathlib.Path) -> dict:
-    """{(task, n): the MLP probe's test accuracy on the frozen features, mean of seed 1 of 188 and of 17 classes} where
-    it was fitted at that training size (JetClass-II only), from the newest MLP refit pulled."""
-    for d in RATE_MLP_DIRS:
-        fs = [lp_dir / d / f"{m}.json" for m in RATE_SEARCH_INITS]
-        if all(f.exists() for f in fs):
-            recs = [json.loads(f.read_text())["cells"]["best70"]["jc2bal"] for f in fs]
-            if len({r["train_size"] for r in recs}) == 1:
-                return {("jc2b", int(recs[0]["train_size"])): float(np.mean([r["accuracy"] for r in recs]))}
-    return {}
-
-
-def table_lrsweep(rows: list, mlp: dict | None = None) -> str:
+def table_lrsweep(rows: list) -> str:
     """A15: the best validation accuracy at every rate tried, per task, training size and mode (pretrained: the mean of
     seed 1 of 188 and of 17 classes; from scratch: seed 1); a star on the rate chosen; "diverged" where the training loss
-    became non-finite; beside a row settled at the floor, the MLP probe on frozen features at that size."""
+    became non-finite. Validation accuracy only (PI 2026-11-21): the comparison with frozen features is in the probe and
+    fine-tuned tables, on test jets."""
     rates = sorted({lr for r in rows for lr in r["values"]}, key=float)
-    floor = [r for r in rows if r["status"] == "settled at the floor"]
-    lim = {(r["task"], r["n"]) for r in floor if r["kind"] == "pre"} & set(mlp or {})
-    cols = "lll" + "c" * len(rates) + ("c" if lim else "")
-    head = (r" & training jets & & " + " & ".join(_power(lr) for lr in rates)
-            + (r" & frozen features" if lim else "") + r" \\")
-    out = [rf"\begin{{tabular}}{{{cols}}}", r"\toprule", head, r"\midrule"]
+    out = [rf"\begin{{tabular}}{{lll{'c' * len(rates)}}}", r"\toprule",
+           r" & training jets & & " + " & ".join(_power(lr) for lr in rates) + r" \\", r"\midrule"]
     star = r"$^{\ast}$"
     for i, (task, name) in enumerate(RATE_TASKS):
         block = [r for r in rows if r["task"] == task]
@@ -3900,8 +3883,6 @@ def table_lrsweep(rows: list, mlp: dict | None = None) -> str:
                     cells.append("diverged")
                 else:
                     cells.append(f"{v:.4f}" + (star if r["status"].startswith("settled") and lr == r["best"] else ""))
-            if lim:
-                cells.append(f"{mlp[(task, r['n'])]:.4f}" if r in floor and (task, r["n"]) in lim else "")
             first = name if j == 0 else ""
             size = _power(str(r["n"])) if r["kind"] == "pre" else ""
             mode = "pretrained" if r["kind"] == "pre" else SCRATCH_LABEL
@@ -5351,10 +5332,7 @@ KEY_MARKS = {
     "jetclass_rej": ((r"\dagger", " $^\\dagger$~marks a value with fewer than \\MlstMinBkgPass{} QCD jets passing in a "
                                   "run."),),
     "lrsweep": ((r"^{\ast}", " $^{\\ast}$~marks the rate chosen. ``diverged'': the training loss became "
-                             "non-finite, which counts as lower than any rate that trained; --: not tried."),
-                ("frozen features", " Frozen features: the MLP probe on the frozen features of the same two networks "
-                                    "at that training size, test accuracy, beside a row whose chosen rate is the lowest "
-                                    "tried, where fine-tuning approaches training only the new output layer."),),
+                             "non-finite, which counts as lower than any rate that trained; --: not tried."),),
     "pairs": ((r"\dagger", " $^{\\dagger}$~marks a pair the label set merges into one class."),
               (r"\ddagger", " $^{\\ddagger}$~marks a pair the label set merges in part."),
               (r"\parallel", " $^{\\parallel}$~marks a pair some random partitions merge."), (PAIR_GT, PAIR_GT_NOTE)),
@@ -6798,8 +6776,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     sweep = data / "budget" / RATE_SEARCH
     if sweep.exists():
         rows = rate_search_rows(json.loads(sweep.read_text()), preview=ft_preview())
-        out["tables/mlst_lrsweep.tex"] = _float("lrsweep", table_lrsweep(rows, frozen_mlp_limit(data / "linprobe")),
-                                                wide=True)
+        out["tables/mlst_lrsweep.tex"] = _float("lrsweep", table_lrsweep(rows), wide=True)
     else:
         missing.append(f"the rate search of every row -- experiments/FIGS/data/v2/budget/{RATE_SEARCH}")
     offsets = data / "head" / "input_bn_offsets.json"

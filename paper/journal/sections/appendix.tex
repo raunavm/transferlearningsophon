@@ -219,8 +219,9 @@ layers train at a constant learning rate and the new output layer at \FtHeadCap.
 scratch train every weight at one rate with the training framework's default schedule, constant and then
 lowered near the end. The weight decay is \FtBudgetWeightDecay{} throughout. Top and quark/gluon are
 fine-tuned on \FtSizeEThree, \FtSizeEFour{} and \FtSizeEFive{} jets below their full sets; JetClass and
-class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix. On JetClass-II the fine-tuned
-models are the levels of the class hierarchy and the models with the auxiliary mass regression.
+class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix. On JetClass-II all \FtJcTwoNetsESix{}
+pretrained networks, controls included, are fine-tuned on \FtSizeESix{} jets; on \FtSizeEFour{} and \FtSizeEFive{} jets,
+the \FtJcTwoNetsSmall{} networks of the four label sets and the two with the auxiliary mass regression.
 % CHECK: FIXED_STEPS, FIXED_CHECK, FIXED_VAL, HEAD_CAP in scripts/build_ft_budget_jobs.py; head_mult gives HEAD_CAP at every rate
 
 The full top-tagging and quark/gluon training sets use the fine-tuning recipe of Ref.~\cite{part}. For every

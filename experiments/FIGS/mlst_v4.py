@@ -199,6 +199,13 @@ def design_macros(em, root: pathlib.Path, data: pathlib.Path, missing: list, fmt
         em.macro(f"FtCheck{word}", _int(fmt_int, bfb.FIXED_CHECK[n]), src, f"FIXED_CHECK[{n}]",
                  "steps between validation checks at that training size")
     em.macro("FtValJetsFixed", _int(fmt_int, bfb.FIXED_VAL), src, "FIXED_VAL", "validation jets of every check")
+    jc2 = {n: sum(c["task"] == "jc2b" and c["init"] != "" for c in bfb.fixed_cells({n})) for n in (10_000, 100_000, 1_000_000)}
+    if jc2[10_000] != jc2[100_000]:
+        raise SystemExit(f"FATAL: JetClass-II fine-tunes {jc2} networks at 1e4 and 1e5")
+    em.macro("FtJcTwoNetsSmall", str(jc2[10_000]), src, "fixed_cells, task jc2b, pretrained, 1e4 and 1e5",
+             "pretrained networks fine-tuned on JetClass-II below 1e6: the four label sets and the two mass networks")
+    em.macro("FtJcTwoNetsESix", str(jc2[1_000_000]), src, "fixed_cells, task jc2b, pretrained, 1e6",
+             "pretrained networks fine-tuned on JetClass-II at 1e6: every paper run")
     em.macro("FtSearchFloor", _sci(bfb.FIXED_SEARCH_FLOOR), src, "FIXED_SEARCH_FLOOR", "the lowest rate the search tries")
     em.macro("FtHeadMult", f"{bfb.HEAD_MULT:g}", src, "HEAD_MULT", "the head's learning-rate multiplier")
     em.macro("FtHeadCap", _sci(repr(bfb.HEAD_CAP)), src, "HEAD_CAP", "the head's largest learning rate")

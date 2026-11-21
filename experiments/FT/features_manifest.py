@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""The one-time removal of superseded fine-tuning cells' features.npy (PI 2026-11-15, option A of the disk decision).
+"""Removals of superseded fine-tuning outputs, one named set at a time, each with a reviewed manifest:
+  features            the superseded trees' features.npy (PI 2026-11-15, option A of the disk decision)
+  jc2b-1e-2-logits    the test logits (features/logits.npy) of the pretrained JetClass-II cells at 1e4, 1e5 and 1e6 run
+                      at the old rate 1e-2 in ft_v2/fixed, every attempt (PI 2026-11-21): none can be chosen, 1e4 settled
+                      at 1e-3 and 1e-2 scores lowest of the rates tried at 1e5 and 1e6. Checkpoints and everything else stay.
 
     manifest  every features.npy under the superseded trees: path, size, sha256, the checkpoint its
               extract_manifest.json says regenerates it, that checkpoint's recorded and actual sha256; writes the CSV
@@ -12,6 +16,7 @@ from the checkpoint). Checkpoints, logits, manifests and logs stay.
 
     python3 experiments/FT/features_manifest.py manifest --out /data/results/deleted_features_manifest.csv
     python3 experiments/FT/features_manifest.py delete --manifest /data/results/deleted_features_manifest.csv
+    python3 experiments/FT/features_manifest.py manifest --set jc2b-1e-2-logits --out /data/results/deleted_jc2b_1e-2_logits.csv
 """
 from __future__ import annotations
 
@@ -39,10 +44,33 @@ def sha256(p: pathlib.Path) -> str:
     return h.hexdigest()
 
 
-def manifest(out: pathlib.Path) -> int:
+JC2B_SIZES = ("N10000", "N100000", "N1000000")
+
+
+def _jc2b_logit(f: pathlib.Path) -> bool:
+    """features/logits.npy of a pretrained cell (not from scratch) of ft_v2/fixed/leg_jc2b at 1e4-1e6, any attempt,
+    whose own manifest says rate 1e-2."""
+    try:
+        tree, net, size, attempt, sub, name = f.relative_to(FT / "fixed").parts
+    except ValueError:
+        return False
+    m = f.parent.parent / "ft_manifest.json"
+    return (tree == "leg_jc2b" and net != "scratch" and size in JC2B_SIZES and attempt.split(".partial.")[0] == "s1"
+            and sub == "features" and name == "logits.npy" and m.exists() and json.loads(m.read_text()).get("lr") == "1e-2")
+
+
+SETS = {"features": (lambda: [f for tree in SUPERSEDED for f in sorted((FT / tree).rglob("features.npy"))],
+                     lambda f: f.is_relative_to(FT) and f.name == "features.npy" and f.relative_to(FT).parts[0] in SUPERSEDED),
+        "jc2b-1e-2-logits": (lambda: [f for size in JC2B_SIZES
+                                      for f in sorted((FT / "fixed" / "leg_jc2b").glob(f"*/{size}/s1*/features/logits.npy"))
+                                      if _jc2b_logit(f)],
+                             _jc2b_logit)}
+
+
+def manifest(out: pathlib.Path, which: str = "features") -> int:
     if out.exists():
         raise SystemExit(f"FATAL: {out} exists")
-    files = [f for tree in SUPERSEDED for f in sorted((FT / tree).rglob("features.npy"))]
+    files = SETS[which][0]()
     ems = {f: f.parent / "extract_manifest.json" for f in files}
     meta = {f: json.loads(e.read_text()) if e.exists() else {} for f, e in ems.items()}
     cks = sorted({m.get("checkpoint", "") for m in meta.values()} - {""})
@@ -69,14 +97,14 @@ def manifest(out: pathlib.Path) -> int:
     return 0
 
 
-def delete(man: pathlib.Path) -> int:
+def delete(man: pathlib.Path, which: str = "features") -> int:
     log = man.with_suffix(".deleted.log")
     rows = list(csv.DictReader(open(man)))
     freed, kept = 0, 0
     for r in rows:
         f = pathlib.Path(r["path"])
-        if not f.is_relative_to(FT) or f.name != "features.npy" or f.relative_to(FT).parts[0] not in SUPERSEDED:
-            raise SystemExit(f"FATAL: {f} is not a superseded cell's features.npy")
+        if not SETS[which][1](f):
+            raise SystemExit(f"FATAL: {f} is not in the set {which}")
     with ThreadPoolExecutor(THREADS) as ex:
         now = list(ex.map(lambda r: sha256(pathlib.Path(r["path"])) if pathlib.Path(r["path"]).exists() else "", rows))
     with open(log, "a") as lg:
@@ -98,8 +126,9 @@ def main(argv=None) -> int:
     ap.add_argument("mode", choices=("manifest", "delete"))
     ap.add_argument("--out", type=pathlib.Path)
     ap.add_argument("--manifest", type=pathlib.Path)
+    ap.add_argument("--set", default="features", choices=sorted(SETS))
     a = ap.parse_args(argv)
-    return manifest(a.out) if a.mode == "manifest" else delete(a.manifest)
+    return manifest(a.out, a.set) if a.mode == "manifest" else delete(a.manifest, a.set)
 
 
 if __name__ == "__main__":

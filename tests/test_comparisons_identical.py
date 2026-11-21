@@ -27,6 +27,14 @@ TRAINING_CODE = ("experiments/FT/ft_weaver.py", "experiments/E1/seed_weaver.py",
 KIN = "l188kin-s1"
 SCRATCH_MAY_DIFFER = {"lr", "head_lr_mult", "lr_schedule", "patience_from"}     # ParT's from-scratch recipe
 KIN_MAY_DIFFER = {"data_config", "code:data_config"}                            # kinematic inputs, by design
+# The one accepted change of training code within a comparison (PI 2026-11-21), by both git blobs and nothing else:
+# early_stop.py before (mtx-s3.10 to mtx-s3.17) and after the divergence rule (mtx-s3.18, commit 5e49098a), which adds
+# only the stop at the first non-finite training loss (a run that trains is stopped, checked and scored the same way).
+# Rows mix the two, e.g. the JetClass-II 1e6 rerun at mtx-s3.18 beside its from-scratch cells at mtx-s3.13.
+ACCEPTED_CODE_CHANGES = {
+    "experiments/FT/early_stop.py": ({"f087e30f1ae576dcdc2f2588f8bd2a612df8fb7c", "e2b74d430bfabce7a464eb6e05872d73b1d303db"},
+                                     "the divergence rule: stop at the first non-finite training loss (PI 2026-11-21)"),
+}
 FIXED_STEPS = {1_000: 20_000, 10_000: 3_000, 100_000: 20_000, 1_000_000: 80_000}
 FIXED_CHECK = {1_000: 50, 10_000: 25, 100_000: 50, 1_000_000: 500}
 
@@ -35,6 +43,13 @@ FIXED_CHECK = {1_000: 50, 10_000: 25, 100_000: 50, 1_000_000: 500}
 def _blob(commit: str, path: str) -> str:
     r = subprocess.run(["git", "rev-parse", f"{commit}:{path}"], cwd=ROOT, capture_output=True, text=True)
     return r.stdout.strip() if r.returncode == 0 else f"absent at {commit[:7]}"
+
+
+def _accepted(path: str, blob: str) -> str:
+    """A blob of one accepted change (ACCEPTED_CODE_CHANGES) reads as that change, so its two versions compare equal;
+    any other blob is itself."""
+    blobs, reason = ACCEPTED_CODE_CHANGES.get(path, (set(), ""))
+    return f"accepted change: {reason}" if blob in blobs else blob
 
 
 def _settings(rec: dict) -> dict:
@@ -48,7 +63,7 @@ def _settings(rec: dict) -> dict:
     out.update({"patience": e.get("patience"), "patience_from": e.get("patience_from")})
     commit = s.get("repo_commit")
     files = TRAINING_CODE + tuple(f for f in (s.get("network"),) if f)
-    out.update({f"code:{f}": _blob(commit, f) if commit else None for f in files})
+    out.update({f"code:{f}": _accepted(f, _blob(commit, f)) if commit else None for f in files})
     out["code:data_config"] = _blob(commit, s["data_config"]) if commit and s.get("data_config") else None
     return out
 
@@ -136,6 +151,16 @@ def test_the_full_top_and_quark_gluon_sets_are_trained_identically():
         if d:
             bad[leg] = d
     assert not bad, json.dumps(bad, indent=1)[:20000]
+
+
+def test_the_accepted_code_change_is_exactly_the_divergence_rule_and_nothing_else():
+    """Both blobs exist at their tags, differ, and are the only versions between mtx-s3.10 and mtx-s3.18; a third
+    version of the file would compare as itself and fail the identity test."""
+    blobs, reason = ACCEPTED_CODE_CHANGES["experiments/FT/early_stop.py"]
+    assert {_blob("mtx-s3.13", "experiments/FT/early_stop.py"), _blob("mtx-s3.18", "experiments/FT/early_stop.py")} == blobs
+    assert _accepted("experiments/FT/early_stop.py", "0" * 40) == "0" * 40
+    assert _accepted("experiments/FT/ft_weaver.py", next(iter(blobs))) == next(iter(blobs))
+    assert set(ACCEPTED_CODE_CHANGES) == {"experiments/FT/early_stop.py"} and "non-finite" in reason
 
 
 def test_the_edge_rule_binds_where_the_tables_read_the_cells():
