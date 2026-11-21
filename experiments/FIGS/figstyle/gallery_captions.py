@@ -15,8 +15,8 @@ MIXED = "the mixed test sample (38.7% two-prong, 40.8% three- and four-prong, 20
 # a figure without the random partitions in a class-pair figure (PI 2026-11-14): one clause why
 NO_RAND = "Random partitions, which merge the pair's classes differently, are in the supplementary material."
 COUNTS = {}       # PC-jc2, PC-jc1: the computed count sentence (gallery_perclass), "" without per-class values
-# a sentence that depends on the data read, {name} in a caption (gallery_physics sets "probe_note": how the mass probe
-# is centred, on the jet's true class in atlas_res, on one training median in the truth-free refit atlas_res_v3)
+# a sentence that depends on the data read, {name} in a caption (gallery_physics sets "probe_note": the mass probe is
+# centred on one training median, the truth-free refit atlas_res_v3, the only mass files read)
 FILLS = {"probe_note": ""}
 
 CAPTIONS = {

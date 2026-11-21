@@ -143,10 +143,15 @@ def head_doc(head: pathlib.Path, label_set: str | None = None) -> dict:
     lab = z["label188"].astype(np.int64)
     qcd = (lab >= QCD_LABELS[0]) & (lab < QCD_LABELS[1])
     res = (lab >= 0) & (lab < QCD_LABELS[0])
-    logits = z["logits"]
-    if logits.shape[1] != man["num_classes"] or max(nodes) >= logits.shape[1]:
-        raise SystemExit(f"FATAL: {logits.shape[1]} logits for {label_set}'s {man['num_classes']} classes")
-    s_all = score(logits, nodes)
+    if "logits" in z:
+        logits = z["logits"]
+        if logits.shape[1] != man["num_classes"] or max(nodes) >= logits.shape[1]:
+            raise SystemExit(f"FATAL: {logits.shape[1]} logits for {label_set}'s {man['num_classes']} classes")
+        s_all = score(logits, nodes)
+    else:       # the reduced file (slim_head_outputs.py): the score itself, for exactly this label set's QCD nodes
+        if str(z["score_label_set"]) != label_set or z["qcd_nodes"].tolist() != list(nodes):
+            raise SystemExit(f"FATAL: {head}: a reduced file for {z['score_label_set']}, not {label_set}")
+        s_all = z["score_notqcd"]
     s, msd = s_all[qcd], z["jet_sdmass"][qcd].astype(np.float64)
     return {"head": str(head), "run_dir": man["run_dir"], "rung": rung, "label_set": label_set,
             "tag": man["tag"],

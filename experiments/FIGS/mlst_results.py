@@ -2212,6 +2212,10 @@ def merge_fixed(per: dict, path: pathlib.Path, preview: bool = False) -> dict:
     return out
 
 
+# The mass items read only the truth-free refit (PI 2026-11-16/21): experiments/EVAL/atlas_resolution.py --centre
+# global, one training median for every jet, never the jet's class; atlas_res (class-centred, the old
+# mass_resolution.py path) is read by nothing. Absent: the items are pending, never filled from the old files.
+MASS_RES, MASS_RES_FINE = "head/atlas_res_v3", "head/atlas_res_fine_v3"
 BUDGET_TASK = {"top": "top", "qg": "qg", "qg_herwig": "qg", "jc1": "jc1", "jc2": "jc2b", "jc2_qcd": "jc2b"}
 
 
@@ -5221,12 +5225,12 @@ REQUIRED = (
     ("MlstLpTopRthirtyFullOverInitBn", "fill fits", "Pr"), ("MlstLpQgRthirtyFullOverInitBn", "fill fits", "Pr"),
     ("MlstLpTopRthirtyFullOverInitBnZero", "probes", "Pr"), ("MlstLpQgRthirtyFullOverInitBnZero", "probes", "Pr"),
     ("MlstLpJcOneGapFracEFour", "fixed-budget fine-tuning (budget_metrics.json)", "Pr"),
-    ("MlstMassHeadResMassOverUncorr", "head/atlas_res", "Pr PrMax"),
-    ("MlstMassHeadResMassOverMlpRes", "head/atlas_res", "Pr PrMax"),
-    ("MlstCmpMlpResMassOverRes", "head/atlas_res", "Pr PrMax"), ("MlstCmpMlpCoarseOverFull", "head/atlas_res", "Pr"),
-    ("MlstMassHeadResMassResponse", "head/atlas_res", ""), ("MlstMassHeadCoarseMassResponse", "head/atlas_res", ""),
-    ("MlstMassUncorrectedResponse", "head/atlas_res", ""),
-    ("MlstMassRespAxesShareQcd", "head/atlas_res", ""),
+    ("MlstMassHeadResMassOverUncorr", "head/atlas_res_v3", "Pr PrMax"),
+    ("MlstMassHeadResMassOverMlpRes", "head/atlas_res_v3", "Pr PrMax"),
+    ("MlstCmpMlpResMassOverRes", "head/atlas_res_v3", "Pr PrMax"), ("MlstCmpMlpCoarseOverFull", "head/atlas_res_v3", "Pr"),
+    ("MlstMassHeadResMassResponse", "head/atlas_res_v3", ""), ("MlstMassHeadCoarseMassResponse", "head/atlas_res_v3", ""),
+    ("MlstMassUncorrectedResponse", "head/atlas_res_v3", ""),
+    ("MlstMassRespAxesShareQcd", "head/atlas_res_v3", ""),
     ("MlstCmpJcTwoResMassOverRes", "probes", "Pr PrMax"),
     ("MlstSculptFullOverFloorOne", "sculpting", "Pr"), ("MlstSculptCoarseOverFullOne", "sculpting", "Pr"),
     ("MlstSculptMidOne", "sculpting", ""), ("MlstSculptCoarseMassOverCoarseOne", "sculpting", "Pr PrMax"),
@@ -6625,17 +6629,13 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     out["tables/mlst_fill_main.tex"] = _float("fill_main", table_fill(raw_v4, fill, fits, runs, TAB, MAIN), True)
     fill_macros(em, raw_v4, fill, fits, runs, index, fmt_pm, missing)
     loss_share_macros(em, comp, runs, index, fmt_pm, root)
-    atlas = _load(data / V4.pick(data, "head/atlas_res"))
+    atlas = _load(data / MASS_RES)
     if atlas:
-        # how the probe is centred (audit 3, P3): on the jet's true class in atlas_res, on one training median in the
-        # truth-free refit atlas_res_v3 (PI 2026-11-15)
-        centre = (" The probe is centred on one training median, with no generator truth."
-                  if V4.pick(data, "head/atlas_res") != "head/atlas_res" else
-                  " Centred on the jet's true class, the probe compares only with other probes.")
+        centre = " The probe is centred on one training median, with no generator truth."
         out["tables/mlst_mass.tex"] = _float("mass", table_mass(atlas, runs, TAB), fill={"__PROBE_CENTRE__": centre})
-        # the binned values as the mass figures draw them (atlas_res_fine: ten jet-pT bins, the same jets and inclusive
-        # values as atlas_res)
-        fine = _load(data / V4.pick(data, "head/atlas_res_fine")) or atlas
+        # the binned values as the mass figures draw them (atlas_res_fine_v3: ten jet-pT bins, the same jets and
+        # inclusive values as atlas_res_v3)
+        fine = _load(data / MASS_RES_FINE) or atlas
         out["tables/mlst_mass_detail.tex"] = _float("mass_detail", md := table_mass_detail(fine, runs, TAB), True, fill={"__BLANK__": (
             r"bins with fewer than \MlstMassMinJets{} jets are blank." if " & --" in md.split("%SPLIT%", 1)[-1]
             else r"every bin holds at least \MlstMassMinJets{} jets."),
@@ -6643,7 +6643,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             else _runs("set", "mass", "init")})
         mass_macros(em, atlas, runs, index, fmt_pm)
     else:
-        missing.append("ATLAS mass resolution -- experiments/FIGS/data/v2/head/atlas_res/")
+        missing.append(f"ATLAS mass resolution, truth-free refit -- experiments/FIGS/data/v2/{MASS_RES}/")
     head = _load(data / "head")
     sculpt_v2 = {k.removesuffix("_sculpting_v2"): v for k, v in _load(data / "head" / "curves_v2").items()
                  if k.endswith("_sculpting_v2")}

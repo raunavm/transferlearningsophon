@@ -30,6 +30,13 @@ discriminants are reused here.
                from-scratch seeds (scratch-s<k>, budget_long_fulldecay) go into the one pairs_ft directory.
     top_probe, qg_probe  the linear probes at the full sets, the "s" each file stores, with --ckpt naming
                the substitution of the missing inputs (2026-11-05); keys as top_ft and qg_ft
+    pairs188_probe, pairs188_ft  the class pairs of both modes with one read-out on the same jets (PI 2026-11-21):
+               the 188-way output on the class-balanced JetClass-II test set (at most 5,000 jets a class), ranked by
+               log(g_a/g_b) = logsumexp(z_a) - logsumexp(z_b), z the 188 logits: the v5 linear probe's, recomputed in
+               float64 from its saved coefficients and scaler on the stored test features (the saved p is float16);
+               the fine-tuned cell's at each row's recorded rate (build_ft_budget_jobs.paper_cells, 1e6). PAIRS188:
+               the pair table's pairs and the two pre-registered pairs that were missing (X->bb vs X->YY->bbbb,
+               X->YY->bbqq vs X->YY->cq tau_h nu). The dedicated two-class pair probes (pairs) leave the paper.
 
 ROC AND THE CUT. fpr, tpr = roc_curve(y, D, drop_intermediate=False) with fps = rint(fpr N_B);
 eps_B at each grid point by linear interpolation (ft_curves' convention), rejection 1/eps_B (null
@@ -100,11 +107,18 @@ DISCR = {"jc1": "p_S/(p_S+p_QCD), p renormalised over the 10 classes (ParT Eq. 2
          "pairs": "binary linear probe P(signal)",
          "jc2_ovr": "p_c, one-vs-rest: background = every other class of the balanced test set",
          "jc1_ovr": "p_c, p renormalised over the 10 classes, one-vs-rest: background = every other class",
-         "pairs_ft": "g_a/(g_a+g_b), g = summed softmax of a side's classes; ranked by logsumexp(z_a) - logsumexp(z_b)"}
+         "pairs_ft": "g_a/(g_a+g_b), g = summed softmax of a side's classes; ranked by logsumexp(z_a) - logsumexp(z_b)",
+         "pairs188": "g_a/(g_a+g_b), g = the summed 188-way softmax of a side's classes; ranked by logsumexp(z_a) - "
+                     "logsumexp(z_b)"}
 FT_MANIFEST_KEYS = ("subset", "ft_seed", "lr", "head_lr_mult", "recipe", "gpu_device_name")
 PAIR_SIDES = {**LP.PAIRS, **LP.QCD_PAIRS, **PB.SIBLING_PAIRS}
 # the pairs of the pair table (mlst_results.PAIRS, in its order; signal first)
 FT_PAIRS = ("bc_vs_bq_cs", "bb_vs_cc", "bbqq_vs_ccqq", "ee_vs_mm", "qcd_bb_vs_cc", "qcd_b_vs_light", "qcd_c_vs_light")
+# PI 2026-11-21: the pairs of both modes from the 188-way output; the two pre-registered pairs added
+EXTRA_PAIRS = {"bb_vs_bbbb": (("label_X_bb",), ("label_X_YY_bbbb",)),
+               "bbqq_vs_cqtauhv": (("label_X_YY_bbqq",), ("label_X_YY_cqtauhv",))}
+PAIRS188 = FT_PAIRS + tuple(EXTRA_PAIRS)
+PROBE_BAL = pathlib.Path("/data/results/eval/v2_linprobe_bal")
 FT_HEAD_ROOT = pathlib.Path("/data/results/eval/v2_ft_head")     # build_head_jobs.FT_HEAD_ROOT
 FT_CKPT = "net_best_epoch_state.pt"
 CKPTS = {"init": "init", "init_bn": "initbn"}   # an untrained trunk's checkpoint -> its model name prefix
@@ -210,6 +224,89 @@ def pair_sides() -> dict:
     sides = {**LP.native_pair_groups(native_names()),
              **{k: tuple(tuple(nat[c] for c in s) for s in v) for k, v in PB.SIBLING_PAIRS.items()}}
     return {k: sides[k] for k in FT_PAIRS}
+
+
+def pair_sides188() -> dict:
+    """{pair: (signal native classes, background native classes)} of PAIRS188."""
+    nat = {v: k for k, v in native_names().items()}
+    missing = [c for a, b in EXTRA_PAIRS.values() for c in a + b if c not in nat]
+    if missing:
+        raise SystemExit(f"FATAL: no native class {missing}")
+    sides = {**LP.native_pair_groups(native_names()),
+             **{k: tuple(tuple(nat[c] for c in side) for side in v) for k, v in {**PB.SIBLING_PAIRS, **EXTRA_PAIRS}.items()}}
+    return {k: sides[k] for k in PAIRS188}
+
+
+def pair188_curves(z: np.ndarray, y: np.ndarray, n_train, source: pathlib.Path) -> dict:
+    """Each pair of PAIRS188 on its two sides' jets, ranked by logsumexp(z_a) - logsumexp(z_b) of 188 logits."""
+    if z.shape != (y.size, LP.DATASETS["jc2_188"][0]):
+        raise SystemExit(f"FATAL: {source}: logits {z.shape} for {y.size} jets, not the 188-class task")
+    names, out = native_names(), {}
+    for key, (a, b) in pair_sides188().items():
+        a, b = list(a), list(b)
+        m = np.isin(y, a) | np.isin(y, b)
+        zm = z[m].astype(np.float64)
+        out[key] = curve(np.isin(y[m], a).astype(np.int64), _lse(zm[:, a]) - _lse(zm[:, b]), [names[c] for c in a],
+                         [names[c] for c in b], DISCR["pairs188"], n_train, source)
+    return out
+
+
+def probe_logits188(model: str, ck: str = "best70") -> tuple:
+    """(188 logits in float32, true classes, source) of a v5 linear probe on the balanced JetClass-II test jets:
+    recomputed in float64 from the saved coefficients, intercept and scaler on the stored test features (as
+    experiments/EVAL/perclass_recall.probe_pred), a class the probe never saw at -inf; its argmax accuracy must equal
+    the fit's stored accuracy."""
+    npz = PROBE_BAL / "fits_v5_probs" / model / ck / "jc2bal_N1000000.npz"
+    fdir = PROBE_BAL / model / "jc2bal" / "test" / ck
+    fit = PROBE_BAL / "fits_v5" / f"{model}.json"
+    d = np.load(npz)
+    y = np.load(fdir / "label188.npy").astype(np.int64)
+    x = np.load(fdir / "features.npy", mmap_mode="r")
+    if not (np.array_equal(d["rows"], np.arange(y.size)) and np.array_equal(d["y"].astype(np.int64), y)):
+        raise SystemExit(f"FATAL: {npz} and {fdir} do not hold the same test jets in order")
+    k = LP.DATASETS["jc2_188"][0]
+    z = np.full((y.size, k), -np.inf, np.float32)
+    cols = d["classes"].astype(np.int64)
+    for i in range(0, y.size, 200_000):
+        a = np.asarray(x[i:i + 200_000], dtype=np.float32).copy()
+        a -= d["scaler_mean"]
+        a /= d["scaler_scale"]
+        z[i:i + 200_000, cols] = a.astype(np.float64) @ d["coef"].T + d["intercept"]
+    stored = json.loads(fit.read_text())["cells"][ck]["jc2bal"]["1000000"]["accuracy"]
+    if abs(stored * y.size - int((z.argmax(1) == y).sum())) > 0.5:
+        raise SystemExit(f"FATAL: {model}: the recomputed probe's accuracy is not the fit's {stored}")
+    return z, y, npz
+
+
+def run_pairs188(a, odir: pathlib.Path) -> None:
+    """pairs188_probe / pairs188_ft: every model, the same balanced test jets in both modes (labels and jet pT)."""
+    ref = PROBE_BAL / "mtx-l188-s1" / "jc2bal" / "test" / "best70"
+    y_ref = np.load(ref / "label188.npy").astype(np.int64)
+    if a.mode == "ft":
+        spec = importlib.util.spec_from_file_location("build_ft_budget_jobs", REPO / "scripts/build_ft_budget_jobs.py")
+        bfb = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bfb)
+        cells = {m: pathlib.Path(c) for m, c in bfb.paper_cells("jc2b", 1_000_000).items()}
+    for model in a.models:
+        out = odir / f"{model}.json"
+        if out.exists():
+            continue
+        if a.mode == "probe":
+            ck = "init" if model.startswith("init-") else "best70"        # the random network's checkpoint (CKPTS)
+            z, y, src = probe_logits188(model, ck)
+            method, man = "linear probe on the frozen features, 188-way output", None
+        else:
+            cell = cells[model]
+            if not (cell / "DONE").exists():
+                raise SystemExit(f"FATAL: {cell} not finished")
+            src = cell / "features" / "logits.npy"
+            z, y = np.load(src), np.load(cell / "features" / "label188.npy").astype(np.int64)
+            method, ck, man = "fine-tuned, 188-way output", FT_CKPT, ft_manifest(cell)
+        if not np.array_equal(y, y_ref):
+            raise SystemExit(f"FATAL: {model}: not the balanced test jets of the probes ({ref})")
+        FC.write_json(out, curve_doc(a.family, model, method, ck, man, pair188_curves(z, y, None, src)))
+        print(f"  {out}", flush=True)
+    (odir / "DONE").touch()
 
 
 def pair_ft_curves(z: np.ndarray, y: np.ndarray, n_train, source: pathlib.Path) -> dict:
@@ -413,12 +510,17 @@ def main(argv=None) -> int:
     p.add_argument("--fits-root", nargs="*", default=[], type=pathlib.Path, help="pairs: the fit files' roots")
     p.add_argument("--files", required=True, nargs="+", help="file stems or globs, e.g. jc1_N1000000 'jc2bal_pairs_*'")
     p.add_argument("--models", nargs="+", help="default: every model directory under the --probs-roots")
-    for s in (f, p):
+    q = sub.add_parser("pairs188")
+    q.add_argument("--mode", required=True, choices=("probe", "ft"))
+    q.add_argument("--models", required=True, nargs="+")
+    for s in (f, p, q):
         s.add_argument("--out-dir", required=True, type=pathlib.Path)
         s.add_argument("--allow-out", type=pathlib.Path, help="tests: another root for --out-dir")
     a = ap.parse_args(argv)
+    if a.cmd == "pairs188":
+        a.family = f"pairs188_{a.mode}"
     odir = out_dir(a.out_dir, a.family, a.allow_out)
-    (run_ft if a.cmd == "ft" else run_probes)(a, odir)
+    {"ft": run_ft, "probes": run_probes, "pairs188": run_pairs188}[a.cmd](a, odir)
     return 0
 
 

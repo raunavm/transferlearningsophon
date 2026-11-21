@@ -3677,3 +3677,23 @@ def test_one_rejection_convention_where_no_background_jet_passes():
     assert V.background_count([{"eps_b": 0.0, "n_bkg_pass": 0}, {"eps_b": 0.000165, "n_bkg_pass": 33}]) == 200000
     assert M.Bound is V.Bound and M._rej({"r30": 1e12, "r30_is_bound": True, "r30_n_bkg_pass": 0}, "r30") is None
     assert M.MARK_NOTES[-1][0] == r"$\geq$" and M._mark_notes("C.", r"a & $\geq$5") == "C." + M.MARK_NOTES[-1][1]
+
+
+def test_every_mass_item_reads_the_truth_free_refit_only(tmp_path):
+    """PI 2026-11-21: Table 3, Table A9, Figs. A9 and A10 and the mass detail table read head/atlas_res_v3 (and its
+    fine-binned twin) only, never the class-centred head/atlas_res: no generator nor figure module names the old
+    folders, and with only the old folders present the mass items stay pending."""
+    import re
+    old = re.compile(r"""["']head/atlas_res(_fine)?["']""")
+    for f in ("experiments/FIGS/mlst_results.py", "experiments/FIGS/mlst_v4.py", "experiments/FIGS/paper_figures.py",
+              "experiments/FIGS/figstyle/gallery_physics.py", "experiments/FIGS/figstyle/gallery_captions.py",
+              "experiments/FIGS/make_tables.py"):
+        p = ROOT / f
+        if p.exists():
+            hits = [ln for ln in p.read_text().splitlines() if old.search(ln)]
+            assert not hits, (f, hits[:3])
+    assert (M.MASS_RES, M.MASS_RES_FINE) == ("head/atlas_res_v3", "head/atlas_res_fine_v3")
+    assert "head/atlas_res" not in M.V4.V5 and not any(v.startswith("head/atlas_res") for v in M.V4.V5.values())
+    (tmp_path / "head" / "atlas_res").mkdir(parents=True)
+    (tmp_path / "head" / "atlas_res" / "mtx-l188-s1.json").write_text("{}")
+    assert M._load(tmp_path / M.MASS_RES) == {}

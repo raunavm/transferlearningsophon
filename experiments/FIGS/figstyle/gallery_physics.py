@@ -88,7 +88,7 @@ def draw_f1(path: pathlib.Path) -> None:
 
 
 # ------------------------------------------------------------------ F9a, F9b, A17
-ATLAS_FINE = M._load(P.DATA / M.V4.pick(P.DATA, "head/atlas_res_fine"))     # ten pT bins (atlas_rebin.py); the same jets and inclusive values
+ATLAS_FINE = M._load(P.DATA / M.MASS_RES_FINE)     # ten pT bins (atlas_rebin.py), truth-free refit only (mlst_results.MASS_RES)
 
 
 def _atlas() -> dict:
@@ -304,15 +304,10 @@ def draw_a17_ridge(path: pathlib.Path) -> None:
     _probe_figure(path, "ridge")
 
 
-# how the mass probes are centred (audit 3, P3): on the jet's true class in atlas_res, on one training median with no
-# generator truth in the refit atlas_res_v3 (PI 2026-11-15), which mlst_v4.pick reads once pulled
-TRUTH_FREE = M.V4.pick(P.DATA, "head/atlas_res") != "head/atlas_res"
+# the mass probes are centred on one training median, with no class information (atlas_res_v3 only, PI 2026-11-21)
 import gallery_captions as _K  # noqa: E402
-_K.FILLS["probe_note"] = (
-    "The probe regresses the mass on frozen features alone, centred on one training median, with no generator-level "
-    "class information." if TRUTH_FREE else
-    "The probe predicts the mass relative to the training median of the jet's true class, so its values compare probes "
-    "with each other, not with the soft-drop mass.")
+_K.FILLS["probe_note"] = ("The probe regresses the mass on frozen features alone, centred on one training median, with "
+                          "no generator-level class information.")
 
 # PI 2026-11-14 (step 7): the partitions' mass probes, drawn once fitted, in the supplement (the paper's figures of the
 # mass family show the label sets and mass networks)

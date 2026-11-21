@@ -304,13 +304,27 @@ def ft_head_jobs() -> dict[str, list[tuple[str, str]]]:
             FT_HEAD_SCRATCH_NAME: [c for c in cells if c[0].startswith("scratch-")]}
 
 
+FT_HEAD_COPY = """mkdir -p ${{OUT}}
+cp ${{H}}/head_outputs.npz ${{OUT}}/head_outputs.npz.tmp && mv ${{OUT}}/head_outputs.npz.tmp ${{OUT}}/head_outputs.npz
+cp ${{H}}/manifest.json ${{OUT}}/manifest.json.tmp && mv ${{OUT}}/manifest.json.tmp ${{OUT}}/manifest.json
+"""
+# PI 2026-11-21 (storage): only what the sculpting read-out and Table A10 read, and each jet's class label; the full
+# file stays on the pod's disk, and the reduced one is written only if the sculpting document from both is identical
+FT_HEAD_REDUCED = """rm -rf ${{OUT}}.tmp
+python3 experiments/EVAL/slim_head_outputs.py --full ${{H}} --label-set L188 --out ${{OUT}}.tmp || exit 42
+mv ${{OUT}}.tmp ${{OUT}}
+"""
+
+
 def ft_head_spec(name: str = FT_HEAD_NAME, tag: str = FT_HEAD_PIN, parallelism: int = FT_HEAD_PARALLELISM,
-                 cells=None, root: str = FT_HEAD_ROOT, mem: str = X_MEM, line: int = 85, what=None) -> str:
+                 cells=None, root: str = FT_HEAD_ROOT, mem: str = X_MEM, line: int = 85, what=None,
+                 reduced: bool = False) -> str:
     """One Indexed GPU job of the module docstring (plan 2026-11-08 step 2), on the cells ft_head_jobs gives it
     (cells, root, mem, line and what: the one rule's job, ft_head_fixed_spec)."""
     cells = ft_head_jobs()[name] if cells is None else cells
     cases = "".join(f"  {i}) MODEL={m}; CELL={c};;\n" for i, (m, c) in enumerate(cells))
-    body = FT_HEAD_BODY.format(start=BJ._start(tag), cases=cases, root=root,
+    body = (FT_HEAD_BODY.replace(FT_HEAD_COPY, FT_HEAD_REDUCED) if reduced else FT_HEAD_BODY).format(
+        start=BJ._start(tag), cases=cases, root=root,
                                ref=f"{HEAD_ROOT}/{OBS_MODEL}/test/best70", gpu_check=BJ.GPU_CHECK, cpu=4,
                                config=CONFIG, n=N_TEST, files=BF.test2m_list(), line=line)
     which = "from scratch" if name == FT_HEAD_SCRATCH_NAME else "pretrained"
@@ -354,8 +368,9 @@ def ft_head_fixed_cells() -> list[tuple[str, str]]:
 
 def ft_head_fixed_spec(tag: str, line: int) -> str:
     return ft_head_spec(FT_HEAD_FIXED_NAME, tag, FT_HEAD_PARALLELISM, ft_head_fixed_cells(), FT_HEAD_FIXED_ROOT,
-                        FT_HEAD_FIXED_MEM, line, "the one rule's fine-tuned JetClass-II networks at 1e6 (ft_v2/fixed) "
-                        "on the TEST2M jets of the head sculpting, for the fine-tuned class pairs (PI 2026-11-18). GPU")
+                        FT_HEAD_FIXED_MEM, line, "the one rule's fine-tuned JetClass-II networks at 1e6, each row at its "
+                        "recorded rate, on the TEST2M jets of the head sculpting; the reduced head outputs only (PI 2026-11-21). GPU",
+                        reduced=True)
 
 
 def build(only=None) -> dict[str, str]:

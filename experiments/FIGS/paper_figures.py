@@ -153,7 +153,7 @@ def inputs(M) -> dict:
     fits, raw = M.V4.load_fits(DATA)
     census = DATA / "jc2bal" / "census.json"
     return {"fits": fits, "raw": raw, "mlp": M.load_mlp(DATA), "fill": M._load(DATA / M.V4.pick(DATA, M.FITS_FILL)),
-            "per": M.load_ft(DATA)[1], "atlas": M._load(DATA / M.V4.pick(DATA, "head/atlas_res")),
+            "per": M.load_ft(DATA)[1], "atlas": M._load(DATA / M.MASS_RES),
             # mass_sculpting.py of 2026-11-07 (eps_S, R50, the flavor controls) replaces the older files run by run
             "sculpt": {**F._curves("sculpting_v2"), **{p.stem.removesuffix("_sculpting"): json.loads(p.read_text())
                                                        for p in sorted((DATA / "head/sculpting_v3").glob("*.json"))}},

@@ -117,9 +117,10 @@ V5_PULL = ((EVAL / "v2_linprobe_bal" / "fits_v5", "linprobe/fits_v5"),
            (EVAL / "v2_linprobe_bal" / "fits_v5_mlp", "linprobe/fits_v5_mlp"),
            (EVAL / "v2_linprobe" / "fits_v5_nat", "linprobe/fits_v5_nat"),
            (EVAL / "v2_linprobe_sophon" / "fits_v5", "linprobe/sophon_v5"),
-           (EVAL / "v2_linprobe_sophon" / "fits_v5_fill", "linprobe/sophon_v5_fill"),
-           (EVAL / "atlas_res_v3", "head/atlas_res_v3"),
-           (EVAL / "atlas_res_fine_v3", "head/atlas_res_fine_v3"))
+           (EVAL / "v2_linprobe_sophon" / "fits_v5_fill", "linprobe/sophon_v5_fill"))
+# the truth-free mass refit (PI 2026-11-16/21): the only mass files the paper reads, pulled whole once each wrote DONE,
+# not behind V5_PASS (the class-centred atlas_res is never read)
+MASS_V3_PULL = ((EVAL / "atlas_res_v3", "head/atlas_res_v3"), (EVAL / "atlas_res_fine_v3", "head/atlas_res_fine_v3"))
 V5_BOOT = ("probe_v5", "l3_v5")
 # the rerun's read-outs (PI 2026-11-15/16): (folder, name pulled), each taken whole once its job wrote DONE; the v5
 # probes' only with the v5 refits
@@ -368,6 +369,7 @@ def main() -> int:
               (EVAL / "v2_head", "head", "sculpting_boot.json"))
         # the v5 refits (PI 2026-11-14, scripts/build_refit_v5_jobs.py): every family at once, and only after the
         # refit-checks job passed (its PASS file), so a pull never takes part of them (mlst_v4.pick refuses a part)
+        v4 += tuple((d, name, "*.json") for d, name in MASS_V3_PULL if (d / "DONE").exists())
         if V5_PASS.exists():
             v4 += tuple((d, name, "*.json") for d, name in V5_PULL)
             for s in ("xbb", "xbs"):
