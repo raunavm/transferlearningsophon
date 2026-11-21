@@ -182,3 +182,12 @@ def test_the_pulled_read_out_is_at_every_rows_recorded_rate():
     sys.path.insert(0, str(ROOT / "experiments/FIGS"))
     import mlst_results as M
     assert M.rate_mismatches(M._budget_cells(p)) == []
+
+
+def test_the_new_output_layer_trains_at_5e_3_at_every_rate():
+    """The methods sentence (PI 2026-11-21): the head trains at 5e-3 whatever the backbone rate, the 1e-5 floor included."""
+    cells = (B.paper_fixed_cells() + B.fixed_sweep_rows_cells() + B.fixed_sweep_jc2b_cells() + B.fixed_sweep_all_cells()
+             + B.fixed_sweep_edge_cells() + B.fixed_sweep_edge2_cells() + B.fixed_sweep_1e4_cells() + B.fixed_rate_cells())
+    for c in cells:
+        if c["init"]:
+            assert abs(float(c["lr"]) * float(c["mult"]) - B.HEAD_CAP) < 1e-12, (c["out"], c["lr"], c["mult"])

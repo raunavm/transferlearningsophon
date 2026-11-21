@@ -139,8 +139,12 @@ FIXED_JC2B_SMALL_RUNS = ("l188", "l162", "r42q1", "r16q1", "l162mass", "r16q1mas
 
 
 def head_mult(lr: str) -> str:
-    """The head's multiplier: 50x the backbone rate, capped at 5e-3 for the head."""
-    return repr(min(HEAD_MULT, HEAD_CAP / float(lr)))
+    """The head's multiplier: the new output layer trains at HEAD_CAP (5e-3) at every backbone rate (PI 2026-11-21,
+    the methods sentence). At and above 1e-4 this is the old rule, 50x the backbone rate capped at 5e-3, to the
+    last digit; below 1e-4 the old rule would have slowed the head (1.5e-3 at 3e-5, 5e-4 at 1e-5)."""
+    if float(lr) >= 1e-4 and min(HEAD_MULT, HEAD_CAP / float(lr)) != HEAD_CAP / float(lr):
+        raise SystemExit(f"FATAL: head multiplier at {lr}")
+    return repr(HEAD_CAP / float(lr))
 
 
 def paper_runs() -> list:
