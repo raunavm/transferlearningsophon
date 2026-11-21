@@ -140,20 +140,22 @@ def test_r30_is_ft_curves_rejection_on_the_resample_ties_included():
 def test_headline_metrics_and_group_differences(tmp_path):
     y, s = _binary(4000, seed=5)
     rng = np.random.default_rng(6)
-    m = {f"a{k}": _npz(tmp_path / f"a{k}.npz", y, s=(s + 0.1 * rng.normal(size=y.size)).astype(np.float32))
-         for k in (1, 2, 3)}
+    m_s = {f"a{k}": (s + 0.1 * rng.normal(size=y.size)).astype(np.float32) for k in (1, 2, 3)}
+    m = {k: _npz(tmp_path / f"{k}.npz", y, s=v) for k, v in m_s.items()}
     m |= {f"b{k}": _npz(tmp_path / f"b{k}.npz", y, s=(s + 2.0 * rng.normal(size=y.size)).astype(np.float32))
           for k in (1, 2)}
     out = tmp_path / "boot.json"
     PB.main([x for v in m.values() for x in ("--model", v)] + ["--headline", "--pair", "b1/a1", "--b", "40",
              "--diff", "b-a=b1,b2/a1,a2,a3", "--diff", "same=a1/a1", "--out", str(out)])
     d = json.loads(out.read_text())
-    assert set(d["models"]["a1"]) == {"input", "auc", "r30"} and d["models"]["a1"]["r30"]["sd"] > 0
+    # every metric the tables print for a two-class score (PI 2026-11-21): accuracy, R50, R30
+    assert set(d["models"]["a1"]) == {"input", "auc", "accuracy", "r50", "r30"} and d["models"]["a1"]["r30"]["sd"] > 0
+    assert d["models"]["a1"]["accuracy"]["value"] == pytest.approx(np.mean((m_s["a1"] > 0.5) == (y == 1)))
     assert set(d["pairs"]["b1/a1"]) == {"auc"}                   # R30 is never a ratio of 1 - AUC
     r = d["diffs"]["b-a"]
-    for k, q in (("auc", "one_minus_auc"), ("r30", "r30")):
-        va = [d["models"][f"b{i}"][k]["value" if k == "r30" else "one_minus_auc"] for i in (1, 2)]
-        vb = [d["models"][f"a{i}"][k]["value" if k == "r30" else "one_minus_auc"] for i in (1, 2, 3)]
+    for k, q in (("auc", "one_minus_auc"), ("r30", "r30"), ("r50", "r50"), ("accuracy", "accuracy")):
+        va = [d["models"][f"b{i}"][k]["value" if k != "auc" else "one_minus_auc"] for i in (1, 2)]
+        vb = [d["models"][f"a{i}"][k]["value" if k != "auc" else "one_minus_auc"] for i in (1, 2, 3)]
         assert r[k]["quantity"] == q and r[k]["delta"] == pytest.approx(np.mean(va) - np.mean(vb))
         assert r[k]["sd_a"] == pytest.approx(np.std(va, ddof=1)) and r[k]["sd_b"] == pytest.approx(np.std(vb, ddof=1))
         assert r[k]["sigma"] == pytest.approx(np.sqrt(r[k]["sd_a"] ** 2 + r[k]["sd_b"] ** 2 + r[k]["boot_sd"] ** 2))

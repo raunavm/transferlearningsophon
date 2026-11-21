@@ -59,7 +59,8 @@ B_DEFAULT = 200
 SEED_DEFAULT = 20261029
 TASKS = ("jc1", "jc1_all", "top", "qg", "qg_herwig", "jc2_188", "jc2b", "npz")
 EPS_S_R30 = 0.3
-HEADLINE = ("accuracy", "r30")          # not ratios of 1 - AUC: kept out of the pairs
+HEADLINE = ("accuracy", "r50", "r30")   # not ratios of 1 - AUC: kept out of the pairs
+EPS_S_R50 = 0.5
 
 
 @functools.cache
@@ -145,10 +146,17 @@ class RejScorer:
 
 
 def headline(y: np.ndarray, s: np.ndarray, c: np.ndarray) -> dict:
-    """{"accuracy" | "r30": (value, resampled values)}: the argmax share for probabilities, R30 for a score."""
+    """{metric: (value, resampled values)}: the argmax share for probabilities; for a two-class score every metric the
+    tables print (PI 2026-11-21): accuracy (the argmax of the two outputs, signal when s > 0.5), R50 and R30."""
     if s.ndim == 1:
-        sc = RejScorer(y == 1, s, EPS_S_R30)
-        return {"r30": (sc(), np.array([sc(c[k]) for k in range(c.shape[0])]))}
+        out = {}
+        for key, eps in (("r50", EPS_S_R50), ("r30", EPS_S_R30)):
+            sc = RejScorer(y == 1, s, eps)
+            out[key] = (sc(), np.array([sc(c[k]) for k in range(c.shape[0])]))
+        ok = ((s > 0.5) == (y == 1)).astype(np.float64)
+        w = c.astype(np.float64)
+        out["accuracy"] = (float(ok.mean()), (w @ ok) / w.sum(1))
+        return out
     ok = (s.argmax(1) == y).astype(np.float64)
     w = c.astype(np.float64)
     return {"accuracy": (float(ok.mean()), (w @ ok) / w.sum(1))}

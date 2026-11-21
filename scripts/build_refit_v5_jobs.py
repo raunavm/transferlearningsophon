@@ -443,11 +443,12 @@ def boot_spec(tag: str) -> str:
 def bootl3_spec(tag: str) -> str:
     """decision L3's probe parts (build_boot_l3_jobs parts 2 and 7) on the v5 probes, into L3_V5."""
     bl = _load("build_boot_l3_jobs", "scripts/build_boot_l3_jobs.py")
-    bl.OUT = L3_V5
-    jc = [bl.pb("npz", bl.probes(V5["fits_v5_probs"], "best70", f), f"probe_{f}.json")
+    # into L3_V5 explicitly (2026-11-21): pb's default root is bound to build_boot_l3_jobs.OUT when that module loads,
+    # so setting bl.OUT here changed nothing; the job skipped on the v4 files in l3/ and never wrote l3_v5
+    jc = [bl.pb("npz", bl.probes(V5["fits_v5_probs"], "best70", f), f"probe_{f}.json", root=L3_V5)
           for f in ("jc2bal_N1000000", "jc1_N1000000")]
     fill = [bl.pb("npz", bl.probes(V5["fits_v5_fill_probs"], f"best70.{FILL_TAG[ds]}", f"{ds}_N{n}"),
-                  f"probe_{ds}_N{n}.{FILL_TAG[ds]}.json")
+                  f"probe_{ds}_N{n}.{FILL_TAG[ds]}.json", root=L3_V5)
             for ds, n in (("top", 1_200_000), ("qg", 1_600_000), ("qg_herwig", 1_600_000))]
     runs = bl.runs()
     rows = ["\n    ".join(jc), "\n    ".join(fill)]
