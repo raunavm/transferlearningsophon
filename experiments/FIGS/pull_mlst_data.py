@@ -55,6 +55,8 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    fixed_metrics_partial.json its preview read-out (job-budget-readout-fixed-preview),
                                    best70_kin_metrics.json the kinematic-only network on the full top set
   budget/fixed_sweep.json          the one rule's rate sweep at 1e4 jets (fixed_sweep below, from each cell's files)
+  head/mass_sd_boot.json           each mass estimator against the soft-drop mass, paired bootstrap (mass_sd_boot.py)
+  stats/confusion_share.json       the confusion-share test of the 17-group label sets (confusion_share.py)
   budget/rate_search.json          every row's rate search and the reruns at the chosen rates, raw per cell
                                    (rate_search_scan below; the rules in experiments/FT/rate_search.py)
   budget/jc1_acc_boot_N<N>.json    the paired bootstrap of the JetClass accuracy differences (experiments/FT/jc1_acc_boot.py)
@@ -366,7 +368,11 @@ def main() -> int:
               (EVAL / "confusion_jc1_fulldecay", "confusion_jc1_fulldecay", "*.json"),
               (EVAL / "umap_v3", "umap_v3", "*.json"),
               # plan 2026-11-08 step 2: the sculpting bootstrap (the fine-tuned sculpting below, once DONE)
-              (EVAL / "v2_head", "head", "sculpting_boot.json"))
+              (EVAL / "v2_head", "head", "sculpting_boot.json"),
+              # PI 2026-11-21: each mass estimator against the soft-drop mass, paired on the same jets (the mass claims),
+              # and the pre-specified confusion-share test of the 17-group label sets
+              (EVAL / "mass_sd_boot", "head", "mass_sd_boot.json"),
+              (EVAL / "confusion_share", "stats", "confusion_share.json"))
         # the v5 refits (PI 2026-11-14, scripts/build_refit_v5_jobs.py): every family at once, and only after the
         # refit-checks job passed (its PASS file), so a pull never takes part of them (mlst_v4.pick refuses a part)
         v4 += tuple((d, name, "*.json") for d, name in MASS_V3_PULL if (d / "DONE").exists())
