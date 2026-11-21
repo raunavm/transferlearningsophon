@@ -232,7 +232,10 @@ FIXED_SCRATCH_ROWS = (("top", 1_000), ("top", 100_000), ("qg", 100_000), ("jc1",
 # the rate each searched row settled on where it is not FIXED_LR_PRE (PI-approved per row), and the tree of those
 # reruns; a row keeps its FIXED_ROOT cells where its search keeps 1e-2
 FIXED_RATE_ROOT = "/data/results/ft_v2/fixed_rate"
-FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3"}        # 2026-11-21: mean 0.3665 at 1e-3 (3e-3 0.3654, 1e-2 0.3594)
+FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1e-3 (3e-3 0.3654, 1e-2 0.3594)
+                  ("qg", 1_000): "3e-4"}          # 2026-11-21: mean 0.7903 at 3e-4 (1e-4 0.7895, 1e-3 0.7874)
+# from scratch, seeds SCRATCH_SEEDS, where its search moved it: qg 1e3 best 1e-4 0.7826 (3e-5 0.7817, 3e-4 0.7705)
+FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4"}
 
 
 # searches whose best rate landed on an edge, extended outward (PI 2026-11-20: "extend outward only when the best rate
@@ -250,10 +253,32 @@ def fixed_sweep_edge_cells() -> list:
     return out
 
 
+# 2026-11-21, second round (init "pre": 188 and 17 classes seed 1; "": from scratch seed 1), by memory and pool:
+# A100 first (JetClass-II 1e6), then 48Gi, then 24Gi. Edges: JetClass-II 1e6 and 1e5 pretrained best at 1e-4 (lower);
+# JetClass 1e6 and JetClass-II 1e4 from scratch best at 3e-3 (upper). Ahead of the row's last cell, 1e-3 where 3e-3
+# already beats 1e-2 and only 3e-2 is out (top 1e3, JetClass 1e6 pretrained), to save a round
+FIXED_EDGE_EXT2 = (("jc2b", 1_000_000, "pre", ("3e-5", "1e-5")),
+                   ("jc2b", 100_000, "pre", ("3e-5", "1e-5")), ("jc1", 1_000_000, "", ("1e-2", "3e-2")),
+                   ("jc2b", 10_000, "", ("1e-2", "3e-2")), ("jc1", 1_000_000, "pre", ("1e-3",)),
+                   ("top", 1_000, "pre", ("1e-3",)))
+
+
+def fixed_sweep_edge2_cells() -> list:
+    out = []
+    for task, n, init, rates in FIXED_EDGE_EXT2:
+        if init:
+            out += [c for r in ("l188-s1", "r16q1-s1") for c in fixed_sweep_cells(rates, (), r, n, (task,))]
+        else:
+            out += fixed_sweep_cells((), rates, "", n, (task,))
+    return out
+
+
 def fixed_rate_cells() -> list:
     """Every pretrained cell of each row in FIXED_ROW_RATE at that row's rate, into FIXED_RATE_ROOT."""
-    return [fixed_cell(task, c["init"], n, c["s"], lr, FIXED_RATE_ROOT) for (task, n), lr in FIXED_ROW_RATE.items()
-            for c in fixed_cells({n}) if c["task"] == task and c["init"]]
+    pre = [fixed_cell(task, c["init"], n, c["s"], lr, FIXED_RATE_ROOT) for (task, n), lr in FIXED_ROW_RATE.items()
+           for c in fixed_cells({n}) if c["task"] == task and c["init"]]
+    return pre + [fixed_cell(task, "", n, s, lr, FIXED_RATE_ROOT) for (task, n), lr in FIXED_ROW_RATE_SCRATCH.items()
+                  for s in SCRATCH_SEEDS]
 
 
 def fixed_sweep_all_cells() -> list:
@@ -726,7 +751,7 @@ def main(argv=None) -> int:
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
-                                                 "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-sweep-all", "fixed-rate", "fixed-sweep-edge",
+                                                 "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-sweep-all", "fixed-rate", "fixed-sweep-edge", "fixed-sweep-edge2",
                                                  "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
@@ -763,6 +788,7 @@ def main(argv=None) -> int:
                      "fixed-sweep-all": fixed_sweep_all_cells,
                      "fixed-rate": fixed_rate_cells,
                      "fixed-sweep-edge": fixed_sweep_edge_cells,
+                     "fixed-sweep-edge2": fixed_sweep_edge2_cells,
                      "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
             # small cells ~16 GiB before the in-memory checks; 1e6 set from the smoke cell (fixed-bench index 2)
