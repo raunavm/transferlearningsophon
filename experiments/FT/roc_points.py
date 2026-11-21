@@ -252,7 +252,7 @@ def pair188_curves(z: np.ndarray, y: np.ndarray, n_train, source: pathlib.Path) 
 
 
 def probe_logits188(model: str, ck: str = "best70") -> tuple:
-    """(188 logits in float32, true classes, source) of a v5 linear probe on the balanced JetClass-II test jets:
+    """(188 logits in float64, true classes, source) of a v5 linear probe on the balanced JetClass-II test jets:
     recomputed in float64 from the saved coefficients, intercept and scaler on the stored test features (as
     experiments/EVAL/perclass_recall.probe_pred), a class the probe never saw at -inf; its argmax accuracy must equal
     the fit's stored accuracy."""
@@ -265,7 +265,7 @@ def probe_logits188(model: str, ck: str = "best70") -> tuple:
     if not (np.array_equal(d["rows"], np.arange(y.size)) and np.array_equal(d["y"].astype(np.int64), y)):
         raise SystemExit(f"FATAL: {npz} and {fdir} do not hold the same test jets in order")
     k = LP.DATASETS["jc2_188"][0]
-    z = np.full((y.size, k), -np.inf, np.float32)
+    z = np.full((y.size, k), -np.inf, np.float64)     # float64 as the fit: float32 flips the argmax of a few jets
     cols = d["classes"].astype(np.int64)
     for i in range(0, y.size, 200_000):
         a = np.asarray(x[i:i + 200_000], dtype=np.float32).copy()
