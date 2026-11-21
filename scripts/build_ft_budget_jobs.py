@@ -229,13 +229,46 @@ FIXED_SCRATCH_ROWS = (("top", 1_000), ("top", 100_000), ("qg", 100_000), ("jc1",
                       ("jc1", 1_000_000), ("jc2b", 10_000), ("jc2b", 100_000), ("jc2b", 1_000_000))
 
 
-# the rate each searched row settled on where it is not FIXED_LR_PRE (PI-approved per row), and the tree of those
-# reruns; a row keeps its FIXED_ROOT cells where its search keeps 1e-2
+# THE SINGLE SOURCE OF EACH ROW'S RATE (PI 2026-11-21): the rate every searched row settled on, pretrained and from
+# scratch, in the order the rows settled (fixed_rate_cells' job indices follow it, so a new row is appended, never
+# inserted). The builder (fixed_rate_cells), the read-out (paper_fixed_cells, experiments/FT/budget_metrics.py
+# --expect-fixed) and Table A15 (experiments/FT/rate_search.py) read it; tests/test_rate_search.py fails when a row is
+# read at any other rate or mixes rates. A row at its original rate (FIXED_LR_PRE, FIXED_LR_SCRATCH) keeps its
+# FIXED_ROOT cells; a row at another rate is rerun whole into FIXED_RATE_ROOT. A row absent here has not settled.
 FIXED_RATE_ROOT = "/data/results/ft_v2/fixed_rate"
 FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1e-3 (3e-3 0.3654, 1e-2 0.3594)
-                  ("qg", 1_000): "3e-4"}          # 2026-11-21: mean 0.7903 at 3e-4 (1e-4 0.7895, 1e-3 0.7874)
+                  ("qg", 1_000): "3e-4",          # 2026-11-21: mean 0.7903 at 3e-4 (1e-4 0.7895, 1e-3 0.7874)
+                  ("top", 100_000): "1e-2"}       # 2026-11-21: 0.9332 at 1e-2 (3e-3 0.9327, 3e-2 diverged); no rerun
 # from scratch, seeds SCRATCH_SEEDS, where its search moved it: qg 1e3 best 1e-4 0.7826 (3e-5 0.7817, 3e-4 0.7705)
 FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4"}
+# PI 2026-11-21: the search goes no lower than 1e-5 (below it fine-tuning approaches training only the new output layer
+# on frozen features); a row whose best is still its lowest rate there takes 1e-5
+FIXED_SEARCH_FLOOR = "1e-5"
+# the searched rows: every one-rule (task, size); the networks whose validation accuracy is averaged, pretrained (seed 1
+# of 188 and of 17 classes) and from scratch (seed 1)
+FIXED_SEARCH_ROWS = tuple((t, n) for t, sizes in FIXED_SIZES.items() if t != "topkin" for n in sizes)
+FIXED_SEARCH_INITS = {"pre": ("l188-s1", "r16q1-s1"), "scratch": ("",)}
+
+
+def original_rate(task: str, kind: str) -> str:
+    return FIXED_LR_PRE if kind == "pre" else FIXED_LR_SCRATCH.get(task, "1e-3")
+
+
+def row_rate(task: str, n: int, kind: str):
+    """The recorded rate of a row (FIXED_ROW_RATE, FIXED_ROW_RATE_SCRATCH), or None while it has not settled. The
+    kinematic-only network fine-tuned on top is a pretrained network of top's row."""
+    return (FIXED_ROW_RATE if kind == "pre" else FIXED_ROW_RATE_SCRATCH).get(("top" if task == "topkin" else task, n))
+
+
+def paper_fixed_cells() -> list:
+    """Every one-rule cell the paper reads, at its row's recorded rate: the FIXED_ROOT cell where the row keeps its
+    original rate (or has not settled: the preview), the FIXED_RATE_ROOT rerun where it moved."""
+    out = []
+    for c in fixed_cells(set(FIXED_STEPS)):
+        kind = "pre" if c["init"] else "scratch"
+        lr = row_rate(c["task"], c["n"], kind)
+        out.append(c if lr in (None, c["lr"]) else fixed_cell(c["task"], c["init"], c["n"], c["s"], lr, FIXED_RATE_ROOT))
+    return out
 
 
 # searches whose best rate landed on an edge, extended outward (PI 2026-11-20: "extend outward only when the best rate
@@ -274,11 +307,57 @@ def fixed_sweep_edge2_cells() -> list:
 
 
 def fixed_rate_cells() -> list:
-    """Every pretrained cell of each row in FIXED_ROW_RATE at that row's rate, into FIXED_RATE_ROOT."""
+    """Every pretrained cell of each row in FIXED_ROW_RATE whose rate is not the original, at that row's rate, into
+    FIXED_RATE_ROOT; then the from-scratch seeds of each such row of FIXED_ROW_RATE_SCRATCH. Job indices follow the
+    order the rows settled (0-15 JetClass-II 1e4, 16-42 quark/gluon 1e3 pretrained, 43-45 its from-scratch seeds)."""
     pre = [fixed_cell(task, c["init"], n, c["s"], lr, FIXED_RATE_ROOT) for (task, n), lr in FIXED_ROW_RATE.items()
-           for c in fixed_cells({n}) if c["task"] == task and c["init"]]
+           if lr != FIXED_LR_PRE for c in fixed_cells({n}) if c["task"] in (task, f"{task}kin") and c["init"]]
     return pre + [fixed_cell(task, "", n, s, lr, FIXED_RATE_ROOT) for (task, n), lr in FIXED_ROW_RATE_SCRATCH.items()
-                  for s in SCRATCH_SEEDS]
+                  if lr != original_rate(task, "scratch") for s in SCRATCH_SEEDS]
+
+
+# PI 2026-11-21: the top and quark/gluon 1e4 neighbours of the old sweep ran 20,000 steps checked every 50 (the 1e4 rule
+# became 3,000 in checks of 25 on 2026-11-16), so they are rerun on the 1e4 schedule, seed 1, into their own tree; the
+# old ones (FIXED_SWEEP_ROOT .../N10000, and the 40,000-step top 1e3 smoke cells) carry a SUPERSEDED file and are not read
+FIXED_SWEEP_1E4_ROOT = "/data/results/ft_v2/fixed_sweep_1e4"
+
+
+def fixed_sweep_1e4_cells() -> list:
+    out = []
+    for task in ("top", "qg"):
+        for r in FIXED_SEARCH_INITS["pre"]:
+            out += fixed_sweep_cells(("3e-3", "3e-2"), (), r, 10_000, (task,))
+        out += fixed_sweep_cells((), FIXED_SCRATCH_AROUND[task], "", 10_000, (task,))
+    for c in out:
+        c["out"] = c["out"].replace(FIXED_SWEEP_ROOT + "/", FIXED_SWEEP_1E4_ROOT + "/")
+    return out
+
+
+def fixed_smoke_diverge_cells() -> list:
+    """The smoke of the one divergence rule (2026-11-21): top 1e3 from 188 classes at a backbone rate of 10, which must
+    stop at its first non-finite training loss, write DIVERGED and fail its index without a retry; and a normal top 1e4
+    cell cut to 5 checks, the unchanged path. Into ft_v2/fixed_smoke; not results."""
+    root = "/data/results/ft_v2/fixed_smoke"
+    bad = fixed_cell("top", "l188-s1", 1_000, 1, "10", root)
+    ok = {**fixed_cell("top", "l188-s1", 10_000, 1, FIXED_LR_PRE, root), "epochs": 5}
+    return [bad, ok]
+
+
+def fixed_search_plan() -> dict:
+    """{(task, n, kind): {rate: [cell directory of each network averaged]}} of every searched row: the FIXED_ROOT cell
+    at the row's original rate, and the cells of every search kind. The superseded cells are not in it."""
+    plan = {}
+    for c in fixed_cells(set(FIXED_STEPS)):
+        kind = "pre" if c["init"] else "scratch"
+        if c["task"] != "topkin" and c["s"] == 1 and c["init"] in FIXED_SEARCH_INITS[kind]:
+            plan.setdefault((c["task"], c["n"], kind), {}).setdefault(c["lr"], []).append(c["out"])
+    for c in (fixed_sweep_rows_cells() + fixed_sweep_jc2b_cells() + fixed_sweep_all_cells() + fixed_sweep_edge_cells()
+              + fixed_sweep_edge2_cells() + fixed_sweep_1e4_cells()):
+        kind = "pre" if c["init"] else "scratch"
+        cells = plan.setdefault((c["task"], c["n"], kind), {}).setdefault(c["lr"], [])
+        if c["out"] not in cells:
+            cells.append(c["out"])
+    return {row: dict(sorted(rates.items(), key=lambda x: float(x[0]))) for row, rates in sorted(plan.items())}
 
 
 def fixed_sweep_all_cells() -> list:
@@ -539,6 +618,7 @@ else
   VALF=${VALF:-${SUB}/val.parquet}
   TRAINARGS=(--samples-per-epoch ${SPE}); VALARGS=(--samples-per-epoch-val ${VAL}); PRUNE=(); VALRULE=fixed-file
 fi
+[ ! -f ${CELL}/DIVERGED ] || { echo "${CELL} diverged: not retried"; exit ${HALT}; }
 [ ! -f ${CELL}/DONE ] || { echo "${CELL} is done"; exit 0; }
 [ -d ${CELL} ] && mv ${CELL} ${CELL}.partial.$(date -u +%s)
 mkdir -p ${CELL}
@@ -576,9 +656,13 @@ python3 experiments/FT/early_stop.py watch --log ${RUN}/train.log --pid ${PID} -
   --max-epochs ${EP} ${PRUNE[@]+"${PRUNE[@]}"} --out ${CELL}/early_stop.json || ES=$?
 wait ${PID} || true
 cp ${RUN}/train.log ${RUN}/stdout.log ${CELL}/
+# PI 2026-11-21, one divergence rule: a non-finite training loss is the rate's outcome, not a fault: recorded, never retried
+if [ "${ES}" -eq 3 ] || grep -Eq "AvgLoss: (nan|inf|-inf)" ${RUN}/train.log; then
+  cp ${CELL}/early_stop.json ${CELL}/DIVERGED 2>/dev/null || echo '{"diverged": true}' > ${CELL}/DIVERGED
+  echo "FATAL: ${CELL} diverged (non-finite training loss)"; exit ${HALT}
+fi
 [ "${ES}" -eq 0 ] || { echo "FATAL: ${CELL}: training did not finish (early_stop rc=${ES})"; tail -30 ${RUN}/stdout.log; exit 1; }
 grep -q "('steps_per_epoch', $((SPE / __BATCH__)))" ${RUN}/train.log || { echo "FATAL: weaver did not run $((SPE / __BATCH__)) steps per epoch"; exit 1; }
-if grep -q "AvgLoss: nan" ${RUN}/train.log; then echo "FATAL: ${CELL} diverged (NaN training loss)"; exit 1; fi
 if [ -n "${RUN_DIR}" ]; then
   python3 experiments/FT/smoke_checks.py load-log --log ${RUN}/stdout.log
   grep -q "Parameters with lr multiplied by" ${RUN}/stdout.log || { echo "FATAL: weaver did not apply the head lr multiplier"; exit 1; }
@@ -752,7 +836,7 @@ def main(argv=None) -> int:
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
                                                  "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-sweep-all", "fixed-rate", "fixed-sweep-edge", "fixed-sweep-edge2",
-                                                 "fixed-sweep-17", "fixed-smoke-1e3",
+                                                 "fixed-sweep-1e4", "fixed-smoke-diverge", "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
     if a.part and not a.indices:
@@ -789,6 +873,8 @@ def main(argv=None) -> int:
                      "fixed-rate": fixed_rate_cells,
                      "fixed-sweep-edge": fixed_sweep_edge_cells,
                      "fixed-sweep-edge2": fixed_sweep_edge2_cells,
+                     "fixed-sweep-1e4": fixed_sweep_1e4_cells,
+                     "fixed-smoke-diverge": fixed_smoke_diverge_cells,
                      "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
             # small cells ~16 GiB before the in-memory checks; 1e6 set from the smoke cell (fixed-bench index 2)

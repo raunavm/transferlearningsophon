@@ -12,8 +12,9 @@ Walks <root>/<tree>/<init>/N<N>/s<S>/ for every cell with DONE and scores it:
 Every cell also carries its early_stop.json (best epoch, validation metric, epochs run, stopped early;
 a full-set cell of ParT's recipe has best_epoch.json instead, read into the same keys) and its manifest's
 recipe. A cell without DONE is listed as missing; the read-out never fills it. With --expect-fixed the
-cells are the one rule's (scripts/build_ft_budget_jobs.py fixed_cells), and one not yet started is
-missing too, so a partial read-out names every cell it lacks.
+cells are the one rule's at each row's recorded rate (scripts/build_ft_budget_jobs.py paper_fixed_cells, from
+ft_v2/fixed and ft_v2/fixed_rate; --root names the main tree only), and one not yet started is missing too,
+so a partial read-out names every cell it lacks.
 
     python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/budget --out budget_metrics.json
     python3 experiments/FT/budget_metrics.py --root /data/results/ft_v2/lrsweep_v2 --out lrsweep_metrics.json
@@ -84,10 +85,11 @@ def jc2b_metrics(cell: pathlib.Path, lp) -> dict:
         lp.AUC_STRIDE = old
 
 
-def fixed_keys() -> set:
-    """{tree/init/N<N>/s<S>} of every cell of the one rule at every size (build_ft_budget_jobs.fixed_cells)."""
+def fixed_keys() -> dict:
+    """{tree/init/N<N>/s<S>: cell directory} of every cell of the one rule at every size, at its row's recorded rate
+    (build_ft_budget_jobs.paper_fixed_cells: ft_v2/fixed, or ft_v2/fixed_rate where the row's search moved its rate)."""
     b = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
-    return {"/".join(pathlib.Path(c["out"]).parts[-4:]) for c in b.fixed_cells(set(b.FIXED_STEPS))}
+    return {"/".join(pathlib.Path(c["out"]).parts[-4:]): pathlib.Path(c["out"]) for c in b.paper_fixed_cells()}
 
 
 def early_stop(cell: pathlib.Path) -> dict:
@@ -120,12 +122,11 @@ def main(argv=None) -> int:
     if expect is not None:
         doc["expected"] = len(expect)
     for tree in a.trees:
-        found = sorted((a.root / tree).glob("*/N*/s*")) if expect is None else \
-            [a.root / k for k in sorted(expect) if k.startswith(tree + "/")]
-        for cell in found:
+        found = [(f"{tree}/{c.relative_to(a.root / tree)}", c) for c in sorted((a.root / tree).glob("*/N*/s*"))] \
+            if expect is None else [(k, expect[k]) for k in sorted(expect) if k.startswith(tree + "/")]
+        for key, cell in found:
             if cell.name.endswith(".lock") or ".partial." in cell.name:
                 continue
-            key = f"{tree}/{cell.relative_to(a.root / tree)}"
             if not (cell / "DONE").exists():
                 doc["missing"].append(key)
                 continue

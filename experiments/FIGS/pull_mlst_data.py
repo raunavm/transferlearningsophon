@@ -55,6 +55,8 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
                                    fixed_metrics_partial.json its preview read-out (job-budget-readout-fixed-preview),
                                    best70_kin_metrics.json the kinematic-only network on the full top set
   budget/fixed_sweep.json          the one rule's rate sweep at 1e4 jets (fixed_sweep below, from each cell's files)
+  budget/rate_search.json          every row's rate search and the reruns at the chosen rates, raw per cell
+                                   (rate_search_scan below; the rules in experiments/FT/rate_search.py)
   budget/jc1_acc_boot_N<N>.json    the paired bootstrap of the JetClass accuracy differences (experiments/FT/jc1_acc_boot.py)
   partrepro/<variant>.json         ParT's top-tagging script reproduced (scripts/build_partrepro_jobs.py)
   dup_check/<file>.json            per-jet comparisons of near-identical results (experiments/EVAL/dup_check.py)
@@ -194,6 +196,48 @@ def fixed_sweep() -> dict:
             "final_train_loss": None if last is None or last != last else last,
             "final_train_acc": float(train[-1][1]) if train else None}
     return {"root": str(FIXED_SWEEP), "cells": out}
+
+
+# PI 2026-11-21: the rate search of every row (build_ft_budget_jobs.fixed_search_plan) and the reruns at the chosen rates,
+# read as raw facts per cell; experiments/FT/rate_search.py applies the rules (one divergence rule, the floor, the
+# schedule check, the recorded rate). Also run alone by the watcher: python3 - rate_search < pull_mlst_data.py
+RATE_SEARCH_GLOBS = ("fixed_sweep/*/*/N*/s*", "fixed_sweep_1e4/*/*/N*/s*", "fixed_rate/*/*/N*/s*",
+                     "fixed/*/l188-s1/N*/s1", "fixed/*/r16q1-s1/N*/s1", "fixed/*/scratch/N*/s1")
+NONFINITE = ("nan", "inf", "-inf")
+
+
+def _attempt(d: pathlib.Path) -> dict:
+    rec = {"dir": str(d.relative_to(FT))}
+    log = d / "train.log"
+    losses = re.findall(r"Train AvgLoss: ([^,\s]+)", log.read_text(errors="ignore")) if log.exists() else []
+    bad = [i for i, x in enumerate(losses) if x.lower() in NONFINITE]
+    rec["first_nonfinite_check"] = bad[0] if bad else None
+    if (d / "ft_manifest.json").exists():
+        m = json.loads((d / "ft_manifest.json").read_text())
+        rec["manifest"] = {k: m.get(k) for k in ("lr", "head_lr_mult", "steps_per_epoch", "max_epochs", "init",
+                                                 "n_train", "ft_seed", "lr_schedule")}
+    if (d / "early_stop.json").exists():
+        es = json.loads((d / "early_stop.json").read_text())
+        rec.update({k: es.get(k) for k in ("best_metric", "best_epoch", "epochs_completed", "max_epochs")})
+    return rec
+
+
+def rate_search_scan() -> dict:
+    """{cell directory under ft_v2: record} for every cell of RATE_SEARCH_GLOBS: DONE (a DONE that says the cell is not a
+    result is not), its DIVERGED record, SUPERSEDED, and each attempt (the cell and its s1.partial.<time> siblings,
+    oldest first) with its first non-finite training loss, manifest (rate, schedule) and best validation check."""
+    out = {}
+    for g in RATE_SEARCH_GLOBS:
+        for d in sorted(FT.glob(g)):
+            if ".partial." in d.name or d.name.endswith(".lock") or not d.is_dir():
+                continue
+            done = (d / "DONE").exists() and "not a result" not in (d / "DONE").read_text(errors="ignore")
+            tries = sorted(d.parent.glob(d.name + ".partial.*"), key=lambda p: int(p.name.rsplit(".", 1)[1])) + [d]
+            out[str(d.relative_to(FT))] = {
+                "done": done, "superseded": (d / "SUPERSEDED").exists(),
+                "diverged_record": json.loads((d / "DIVERGED").read_text()) if (d / "DIVERGED").exists() else None,
+                "attempts": [_attempt(t) for t in tries]}
+    return {"root": str(FT), "cells": out}
 
 
 def compute(run: pathlib.Path) -> dict:
@@ -370,6 +414,7 @@ def main() -> int:
                 json.loads(b)
                 add(f"xbx_scratch/{f.parent.parent.name}/{f.parent.name}.json", b)
         add("budget/fixed_sweep.json", (json.dumps(fixed_sweep(), indent=1, sort_keys=True) + "\n").encode())
+        add("budget/rate_search.json", (json.dumps(rate_search_scan(), indent=1, sort_keys=True) + "\n").encode())
         add("ft_mlst/manifests.json", (json.dumps(manifests(), indent=1) + "\n").encode())
         add("jc2_test/counts.json", (json.dumps(jc2_test_counts()) + "\n").encode())
         for run in sorted(MTX.glob("mtx-*")):
@@ -381,4 +426,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["rate_search"]:
+        print(json.dumps(rate_search_scan(), sort_keys=True))
+        sys.exit(0)
     sys.exit(main())

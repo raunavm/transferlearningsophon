@@ -51,6 +51,7 @@ from __future__ import annotations
 import collections
 import csv
 import importlib.util
+import functools
 import json
 import math
 import pathlib
@@ -2191,6 +2192,17 @@ def merge_fixed(per: dict, path: pathlib.Path, preview: bool = False) -> dict:
     # the edge rule (PI 2026-11-15), applied where the cells are read (PI 2026-11-20: it lived only in
     # test_comparisons_identical, which never saw the cells that broke it): no best check first or in the last 10% of
     # the schedule. The paper build stops; a preview leaves the whole row out, since the row is rerun at a swept rate
+    # one rate per row (PI 2026-11-21): every cell read at its row's recorded rate (build_ft_budget_jobs.FIXED_ROW_RATE,
+    # FIXED_ROW_RATE_SCRATCH; the original rate while a row has not settled). The paper build stops on any other; a
+    # preview leaves the row out, as it waits for its rerun
+    wrong = rate_mismatches(_budget_cells(path))
+    if wrong and not preview:
+        raise SystemExit(f"FATAL: {path}: {len(wrong)} cells not at their row's recorded rate: {wrong[:10]}")
+    if not preview and any(row_unsettled(key, n) for key, _, n in _budget_cells(path)):
+        raise SystemExit(f"FATAL: {path}: a row whose rate search has not settled (build_ft_budget_jobs.FIXED_ROW_RATE)")
+    for key, n in {(key, n) for key, _, n, _ in wrong}:
+        for by_n in out.get(key, {}).values():
+            by_n.pop(n, None)
     edge = edge_failures(_budget_cells(path))
     if edge and not preview:
         raise SystemExit(f"FATAL: {path}: {len(edge)} cells with the best check at an edge of the schedule: {edge[:10]}")
@@ -2198,6 +2210,45 @@ def merge_fixed(per: dict, path: pathlib.Path, preview: bool = False) -> dict:
         for by_n in out.get(key, {}).values():
             by_n.pop(n, None)
     return out
+
+
+BUDGET_TASK = {"top": "top", "qg": "qg", "qg_herwig": "qg", "jc1": "jc1", "jc2": "jc2b", "jc2_qcd": "jc2b"}
+
+
+@functools.lru_cache(maxsize=1)
+def _rate_builder():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("build_ft_budget_jobs", pathlib.Path(__file__).resolve().parents[2]
+                                                  / "scripts/build_ft_budget_jobs.py")
+    b = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(b)
+    return b
+
+
+def expected_rate(key: str, init: str, n: int) -> str:
+    """The rate a one-rule cell must have: its row's recorded rate, or the original while the row has not settled."""
+    b, kind = _rate_builder(), "scratch" if init == SCRATCH else "pre"
+    task = "topkin" if init == KIN_INIT else BUDGET_TASK[key]
+    return b.row_rate(task, n, kind) or b.original_rate(BUDGET_TASK[key], kind)
+
+
+def row_unsettled(key: str, n: int) -> bool:
+    b = _rate_builder()
+    return any(b.row_rate(BUDGET_TASK[key], n, kind) is None for kind in ("pre", "scratch"))
+
+
+def rate_mismatches(cells: dict) -> list:
+    """[(task, init, N, 'rate x, recorded y')] of the cells not at their row's recorded rate."""
+    bad = []
+    for (key, init, n), recs in sorted(cells.items()):
+        if BUDGET_TREE[key][1]:         # a re-scoring of another key's cells (Herwig): its recipe is there
+            continue
+        want = expected_rate(key, init, n)
+        for rec in recs:
+            got = (rec.get("recipe") or {}).get("lr")
+            if got != want:
+                bad.append((key, init, n, f"rate {got}, recorded {want}"))
+    return bad
 
 
 def edge_failures(cells: dict) -> list:

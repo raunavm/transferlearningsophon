@@ -19,6 +19,7 @@ best-state copy, and only when that epoch is at least `patience` epochs after th
 """
 import argparse
 import json
+import math
 import os
 import re
 import signal
@@ -27,6 +28,20 @@ import time
 
 EXACT = re.compile(r"Epoch #(\d+): exact validation metric (\S+)")
 CURRENT = re.compile(r"Epoch #(\d+): Current validation metric")
+TRAIN_LOSS = re.compile(r"Train AvgLoss: ([^,\s]+)")
+DIVERGED_RC = 3       # a non-finite training loss: the trainer is stopped and the cell is a divergence, never retried
+
+
+def nonfinite_check(lines) -> int | None:
+    """The index of the first check whose training loss is not finite (nan, inf), or None (PI 2026-11-21: one divergence
+    rule; the rate counts as lower-scoring than any rate that trained, whatever its best check before)."""
+    for i, x in enumerate(TRAIN_LOSS.findall("".join(lines))):
+        try:
+            if not math.isfinite(float(x)):
+                return i
+        except ValueError:
+            return i
+    return None
 
 
 def scan(lines) -> tuple:
@@ -89,38 +104,53 @@ def prune(prefix: str, metrics: dict, current: set) -> None:
                     pass
 
 
+def stop_trainer(pid: int) -> None:
+    os.kill(pid, signal.SIGTERM)
+    for _ in range(120):
+        if not alive(pid):
+            break
+        time.sleep(1)
+    if alive(pid):
+        os.kill(pid, signal.SIGKILL)
+
+
 def watch(a) -> int:
-    stopped, last, be = False, None, None
+    stopped, last, be, diverged = False, None, None, None
     while True:
         lines = open(a.log).readlines() if os.path.exists(a.log) else []
         metrics, current = scan(lines)
         if a.prune:
             prune(a.prune, metrics, current)
+        diverged = nonfinite_check(lines)
+        if diverged is not None:
+            stop_trainer(a.pid)
+            break
         stop, last, be = decide(metrics, current, a.patience, a.patience_from)
         if stop:
-            os.kill(a.pid, signal.SIGTERM)
-            for _ in range(120):
-                if not alive(a.pid):
-                    break
-                time.sleep(1)
-            if alive(a.pid):
-                os.kill(a.pid, signal.SIGKILL)
+            stop_trainer(a.pid)
             stopped = True
             break
         if not alive(a.pid):
             break
         time.sleep(a.poll)
-    metrics, current = scan(open(a.log).readlines())
+    lines = open(a.log).readlines()
+    metrics, current = scan(lines)
+    if diverged is None:
+        diverged = nonfinite_check(lines)
     done = {e: metrics[e] for e in metrics if e in current}
     be, bv = best_epoch(done)
     rec = {"rule": "best validation metric (weaver's, on ft_weaver.py's exact values); stop after "
                    f"{a.patience} epochs without improvement",
            "patience": a.patience, "patience_from": a.patience_from, "max_epochs": a.max_epochs, "epochs_completed": len(done),
            "last_epoch": max(done) if done else None, "best_epoch": be, "best_metric": bv,
-           "stopped_early": stopped, "metrics": {str(e): done[e] for e in sorted(done)}}
+           "stopped_early": stopped, "diverged": diverged is not None, "first_nonfinite_check": diverged,
+           "metrics": {str(e): done[e] for e in sorted(done)}}
     with open(a.out, "w") as f:
         json.dump(rec, f, indent=1)
     print(json.dumps({k: v for k, v in rec.items() if k != "metrics"}))
+    if diverged is not None:
+        print(f"DIVERGED: non-finite training loss at check {diverged}")
+        return DIVERGED_RC
     if not done:
         return 1
     if not stopped and len(done) != a.max_epochs:
