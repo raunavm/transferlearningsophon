@@ -3399,6 +3399,50 @@ def _recall(doc: dict, m: str) -> dict | None:
     return {(doc["classes"][k] if doc.get("classes") else k): v for k, v in enumerate(r["recall"])}
 
 
+# PI 2026-11-21: Table A2 marks each class whose recall lies more than 3 sigma below or above 188 classes (the
+# perclass_recall differences: run spreads and the paired test-jet bootstrap, decision L3)
+RECALL_LOW, RECALL_HIGH = r"$^{\downarrow}$", r"$^{\uparrow}$"
+RECALL_DIFF_KEY = {RAND_POOLED: "RAND"}
+
+
+def recall_marks(doc: dict, arm) -> tuple:
+    """(class indices lower, higher) beyond 3 sigma than 188 classes for arm, in the file's class order mapped to
+    JC1_AUC_COLS; empty for 188 classes itself and for the references."""
+    d = ((doc or {}).get("diffs") or {}).get(f"{RECALL_DIFF_KEY.get(arm, arm)}-L188") if arm else None
+    if not d:
+        return set(), set()
+    order = [doc["classes"].index(c) for c, _ in JC1_AUC_COLS]
+    return ({order.index(i) for i in d["lower"]}, {order.index(i) for i in d["higher"]})
+
+
+def jc1_recall_sentence(probe_doc: dict, ft_doc: dict, arms) -> str:
+    """One sentence: how many network-class cells lie more than 3 sigma below (above) 188 classes, per mode, and the
+    largest drop with its network and class."""
+    names = dict(JC1_AUC_COLS)
+    parts = []
+    for mode, doc in (("with linear probes", probe_doc), ("after fine-tuning", ft_doc)):
+        if not doc:
+            continue
+        low = high = 0
+        worst = None
+        for a in arms:
+            d = (doc.get("diffs") or {}).get(f"{RECALL_DIFF_KEY.get(a, a)}-L188")
+            if not d:
+                continue
+            low, high = low + len(d["lower"]), high + len(d["higher"])
+            for i in d["lower"]:
+                if worst is None or d["delta"][i] < worst[0]:
+                    worst = (d["delta"][i], a, doc["classes"][i])
+        n = sum(1 for a in arms if (doc.get("diffs") or {}).get(f"{RECALL_DIFF_KEY.get(a, a)}-L188")) * len(JC1_AUC_COLS)
+        txt = f"{mode}, {low} of {n} network--class cells lie more than three standard deviations below 188 classes"
+        txt += f" and {high} above" if high else " and none above"
+        if worst:
+            txt += (f", the largest drop being {abs(worst[0]) * 100:.1f} percentage points for {names[worst[2]]} with "
+                    f"{_row(worst[1], {}).replace(' classes', ' classes') if worst[1] in LABEL else worst[1]}")
+        parts.append(txt)
+    return ("Marked against 188 classes: " + "; ".join(parts) + ".") if parts else ""
+
+
 def table_jc1_class_recall(ft_doc: dict, probe_doc: dict, runs: dict, fmt_pm, arms=ALL_ROWS, init=INIT) -> str:
     """Table A2 (tab:jc1_class_auc; PI 2026-11-18: recall, not AUC): each JetClass class's recall, the fraction of its
     test jets the network labels as that class, at 10^6 training jets (perclass_recall probe_jc1, ft_jc1_N1000000; the
@@ -3409,10 +3453,13 @@ def table_jc1_class_recall(ft_doc: dict, probe_doc: dict, runs: dict, fmt_pm, ar
 
     def rows(doc: dict, extra: list) -> list:
         out = []
-        for name, ms in [(_row(a, runs), runs[a]) for a in arms] + extra:
+        for key, name, ms in [(a, _row(a, runs), runs[a]) for a in arms] + [(None, n, m) for n, m in extra]:
             per = [p for m in ms if (p := _recall(doc, m))]
+            low, high = recall_marks(doc, key)
             out.append(name + " & " + " & ".join(
-                _cell([p[c] for p in per], len(ms) or 3, fmt_pm, frac=True) for c, _ in JC1_AUC_COLS) + r" \\")
+                _cell([p[c] for p in per], len(ms) or 3, fmt_pm, frac=True)
+                + (RECALL_LOW if i in low else RECALL_HIGH if i in high else "")
+                for i, (c, _) in enumerate(JC1_AUC_COLS)) + r" \\")
         return out
 
     head = [r"\begin{tabular}{l" + "c" * len(JC1_AUC_COLS) + "}", r"\toprule",
@@ -4797,7 +4844,9 @@ SPREAD = ("Mean $\\pm$ SD over the \\MlstNRunsWord{} pretraining runs of each le
           "\\Kfull-class run of that seed. The random network without pretraining: three initializations.")
 SPREAD3 = "Mean $\\pm$ SD over the \\MlstNRunsWord{} pretraining runs."
 # the paper's tables (PI 2026-11-12): the five random partitions as one row
-POOLED = "Random partitions: mean $\\pm$ SD over the five partitions into 17 classes, one run each."
+# PI 2026-11-21, the one description of the random partitions, everywhere
+RAND_WORDS = "the 161 resonant classes split at random into 16 groups, with QCD kept as the 17th"
+POOLED = ("Random partitions (" + RAND_WORDS + "): mean $\\pm$ SD over the five partitions, one run each.")
 SPREAD_POOLED = ("Mean $\\pm$ SD over the \\MlstNRunsWord{} pretraining runs of each level of the class hierarchy; "
                  "configurations with \\RandFlavRuns{} runs: over those. " + POOLED + " The random network "
                  "without pretraining: three initializations.")
@@ -5278,8 +5327,8 @@ PNETS = "the networks pretrained with 188, 162, 43 and 17 classes"
 PART_DEF = " A flavor boundary keeps apart decays that differ only in quark flavor."
 # the network names, defined once among the paper tables, in Table 1 (blind page review 2026-11-13); the rest of the
 # definitions are in the paper text (L16, 2026-11-13: captions at most 135 words with their end notes)
-NET_DEF = (" A network marked + mass has an added jet-mass regression output, and the 17-class partitions regroup "
-           "the 188 classes into 17.")
+NET_DEF = (" A network marked + mass has an added jet-mass regression output; the 17-class partitions regroup "
+           "the 188 classes into 17, and the random partitions are " + RAND_WORDS + ".")
 PUBLISHED_NOTE = "A dash marks a value not reported or not applicable."
 MASSEFFECT_NOTE = "Quark/gluon tagging trains on Pythia jets."
 
@@ -5328,6 +5377,8 @@ PAIR_GT_NOTE = (" $>$~marks a lower limit where fewer than \\MlstMinBkgPass{} ba
                 "efficiency in a run, the number of background jets over \\MlstMinBkgPass{}, the smallest over the runs.")
 # a mark that only some tables carry: its sentence is added when a cell of the printed table has it
 KEY_MARKS = {
+    "jc1_class_auc": ((r"\downarrow", " $^{\\downarrow}$ ($^{\\uparrow}$)~marks a recall more than three standard "
+                                       "deviations, of the runs and the test jets, below (above) that of 188 classes."),),
     "probes": (("^{*}", " $^{*}$~marks a probe that did not converge."),),
     "qcdhf": ((r"\dagger", " $^\\dagger$~marks a value for which fewer than \\MlstMinBkgPass{} jets pass in a run."),),
     "jetclass_rej": ((r"\dagger", " $^\\dagger$~marks a value with fewer than \\MlstMinBkgPass{} QCD jets passing in a "
@@ -5450,8 +5501,8 @@ CAPTION_SHORT = {
           + _runs("set", "flav", "mass"),
     "jc1_class_auc": ("The recall of each JetClass class, the fraction of its test jets the network assigns to it, "
                      "for linear probes and fine-tuned networks trained on one million JetClass jets, "
-                     "beside the random network (linear probes) and training from scratch (fine-tuned). The 17-class partitions are in the supplementary material."
-                     + _runs("set", "mass")),
+                     "beside the random network (linear probes) and training from scratch (fine-tuned). __JC1_RECALL__"
+                     + PART_DEF + _runs("set", "flav", "mass", "rand")),
     # the supplement's copy with the 17-class partitions (the network rule, PI 2026-11-14)
     "jc1_class_auc_full": ("Every row of table~\\ref{tab:jc1_class_auc} and the 17-class partitions, the recall of "
                            "each JetClass class, the fraction of its test jets the network assigns to it, "
@@ -6571,8 +6622,11 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     rec = _load(data / RECALL_DIR)
     ft_rec = {t: rec.get(f"ft_{t}_N{FT_RATIO_N}", {}) for t in ("jc1", "jc2")}
     if rec.get("probe_jc1"):
+        # PI 2026-11-21: every network (the random partitions pooled), with the 3-sigma marks and one sentence
+        rows_a2 = _paper_rows(ALL_ROWS)
         out["tables/mlst_jc1_class_auc.tex"] = _float("jc1_class_auc", table_jc1_class_recall(
-            ft_rec["jc1"], rec["probe_jc1"], _pooled(runs), TAB, SETS), True)
+            ft_rec["jc1"], rec["probe_jc1"], _pooled(runs), TAB, rows_a2), True,
+            fill={"__JC1_RECALL__": jc1_recall_sentence(rec["probe_jc1"], ft_rec["jc1"], rows_a2)})
         out["tables/mlst_jc1_class_auc_full.tex"] = _float("jc1_class_auc_full", table_jc1_class_recall(
             ft_rec["jc1"], rec["probe_jc1"], _pooled(runs), TAB, _paper_rows(ALL_ROWS)), True)
     if rec.get("probe_jc2"):

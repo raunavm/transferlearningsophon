@@ -70,8 +70,8 @@ order and start from the same initial weights, as figure~\ref{fig:design} shows.
 label sets are four levels of a class hierarchy, with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, whose
 merges remove in turn the quark content of QCD jets, the number of $b$ or $c$ quarks together with the
 distinctions between gluons and light quarks and between electrons and muons, and quark flavor. Our first
-control is a set of random partitions, which assign the resonant classes to groups at random and have as
-many classes as the \Kcoarse-class level. Our second control is three random partitions that differ only
+control is a set of random partitions, in which the 161 resonant classes are split at random into 16 groups,
+with QCD kept as the 17th, as many classes as the \Kcoarse-class level. Our second control is three random partitions that differ only
 in their flavor boundaries, the class boundaries between decays that differ only in quark flavor. Following
 GloParT, which regresses the jet mass together with the classification~\cite{glopart,glopartdp}, we also
 pretrain the \Kres- and \Kcoarse-class models with an auxiliary regression of the jet mass. We evaluate every model with linear
