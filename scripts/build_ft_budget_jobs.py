@@ -229,6 +229,18 @@ FIXED_SCRATCH_ROWS = (("top", 1_000), ("top", 100_000), ("qg", 100_000), ("jc1",
                       ("jc1", 1_000_000), ("jc2b", 10_000), ("jc2b", 100_000), ("jc2b", 1_000_000))
 
 
+# the rate each searched row settled on where it is not FIXED_LR_PRE (PI-approved per row), and the tree of those
+# reruns; a row keeps its FIXED_ROOT cells where its search keeps 1e-2
+FIXED_RATE_ROOT = "/data/results/ft_v2/fixed_rate"
+FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3"}        # 2026-11-21: mean 0.3665 at 1e-3 (3e-3 0.3654, 1e-2 0.3594)
+
+
+def fixed_rate_cells() -> list:
+    """Every pretrained cell of each row in FIXED_ROW_RATE at that row's rate, into FIXED_RATE_ROOT."""
+    return [fixed_cell(task, c["init"], n, c["s"], lr, FIXED_RATE_ROOT) for (task, n), lr in FIXED_ROW_RATE.items()
+            for c in fixed_cells({n}) if c["task"] == task and c["init"]]
+
+
 def fixed_sweep_all_cells() -> list:
     """The pretrained cells of the passing rows, then the from-scratch cells of every row not yet searched."""
     out = []
@@ -699,7 +711,7 @@ def main(argv=None) -> int:
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
-                                                 "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-sweep-all",
+                                                 "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-sweep-all", "fixed-rate",
                                                  "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
@@ -734,6 +746,7 @@ def main(argv=None) -> int:
                      "fixed-sweep-rows": fixed_sweep_rows_cells,
                      "fixed-head-jc2b": fixed_head_jc2b_cells,
                      "fixed-sweep-all": fixed_sweep_all_cells,
+                     "fixed-rate": fixed_rate_cells,
                      "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
             # small cells ~16 GiB before the in-memory checks; 1e6 set from the smoke cell (fixed-bench index 2)
