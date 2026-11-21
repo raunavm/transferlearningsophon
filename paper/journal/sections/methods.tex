@@ -262,9 +262,9 @@ from random initial weights, is the reference for what pretraining adds over the
 trained with \MlstFtRefSeedsWord{} seeds. On the full training sets of top tagging and quark/gluon
 discrimination, fine-tuning uses ParT's fine-tuning settings, and the network trained from scratch uses ParT's
 from-scratch settings~\cite{part}. All other training sets, including every JetClass and JetClass-II set, use
-one rule, identical for pretrained and from-scratch networks: a fixed maximum number of steps, larger for
-\FtSizeESix{} jets, early stopping on the validation set and a learning rate chosen on validation
-(appendix~\ref{sec:app-ft}). Missing inputs are set to zero in every fine-tuning. On JetClass-II the levels of
+one rule, identical for pretrained and from-scratch networks: a fixed number of steps set by the
+training-set size, the checkpoint with the best validation accuracy, and a learning rate chosen on validation
+for each task and size (appendix~\ref{sec:app-ft}). Missing inputs are set to zero in every fine-tuning. On JetClass-II the levels of
 the hierarchy and the models with the auxiliary mass regression are fine-tuned, while the controls are
 evaluated with linear probes only.
 Fine-tuning on JetClass-II has the \Kfull-class pretraining task itself as its target, so it measures how

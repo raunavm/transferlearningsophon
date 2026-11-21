@@ -3832,72 +3832,80 @@ def partrepro(em, data: pathlib.Path, per, fmt_pm, missing: list, runs: dict | N
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
-# The one rule's rate sweep (pull_mlst_data.fixed_sweep, budget/FIXED_SWEEP; build_ft_budget_jobs fixed_sweep_cells): top
-# and quark/gluon at 1e4 jets, seed 1 of 188 classes and (PI 2026-11-15: the other end of the label-set range) of 17,
-# and from scratch. Pretrained, the rate with the largest summed best validation accuracy averaged over SWEEP_ARMS, among
-# the rates both ran; from scratch, each task's best (PI 2026-11-15/16, RUNS.csv ft-budget-fixed-sweep-17-raunav).
-FIXED_SWEEP = "fixed_sweep.json"
-SWEEP_INIT = {"l188-s1": "L188", "r16q1-s1": "R16_Q1"}
-SWEEP_ARMS = ("L188", "R16_Q1")
-SWEEP_TREES = (("leg_top", "top"), ("leg_qg", "quark/gluon"))
-DIVERGED = r"$^{\dagger}$"
+# The rate search of every row (PI 2026-11-20/21; experiments/FT/rate_search.py applies the rules to the raw per-cell
+# facts that pull_mlst_data.rate_search_scan writes to budget/rate_search.json). Table A15 lists every rate tried.
+RATE_SEARCH = "rate_search.json"
+RATE_TASKS = (("top", "top tagging"), ("qg", "quark/gluon"), ("jc1", "JetClass"), ("jc2b", "JetClass-II"))
+RATE_MLP_DIRS = ("fits_v5_mlp", "fits_v4_mlp")      # the MLP probe on frozen features, newest first
+RATE_SEARCH_INITS = ("mtx-l188-s1", "mtx-r16q1-s1")
 
 
-def _sweep_diverged(c: dict) -> bool:
-    """A NaN training loss, or a final training loss of a constant prediction (ln 2, chance on the balanced binary tasks)."""
-    return bool(c["nan_loss"]) or (c["final_train_loss"] is not None and c["final_train_loss"] >= 0.99 * math.log(2))
+def _rate_search_module():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("rate_search", pathlib.Path(__file__).resolve().parents[2]
+                                                  / "experiments/FT/rate_search.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
 
 
-def sweep_rates(doc: dict) -> tuple:
-    """({arm: {rate: {tree: (best validation accuracy, diverged)}}}, from scratch {rate: {tree: ...}}, {rate: the summed
-    accuracy averaged over SWEEP_ARMS} at the rates every arm ran on both tasks, {"pre": rate, tree: from-scratch rate})."""
-    pre, scr = collections.defaultdict(dict), collections.defaultdict(dict)
-    for c in doc["cells"].values():
-        v = (c["best_metric"], _sweep_diverged(c))
-        if c["init"] == BUDGET_SCRATCH:
-            scr[c["lr"]][c["tree"]] = v
-        else:
-            pre[SWEEP_INIT[c["init"]]].setdefault(c["lr"], {})[c["tree"]] = v
-    trees = [t for t, _ in SWEEP_TREES]
-    common = set.intersection(*({lr for lr, v in pre[a].items() if all(t in v for t in trees)} for a in SWEEP_ARMS))
-    if not common or any(sum(t in v for v in scr.values()) == 0 for t in trees):
-        raise SystemExit("FATAL: the rate sweep lacks a rate both label sets ran on both tasks, or a task from scratch")
-    mean = {lr: float(np.mean([sum(pre[a][lr][t][0] for t in trees) for a in SWEEP_ARMS])) for lr in common}
-    chosen = {"pre": max(mean, key=mean.get),
-              **{t: max((lr for lr in scr if t in scr[lr]), key=lambda lr, t=t: scr[lr][t][0]) for t in trees}}
-    return dict(pre), dict(scr), mean, chosen
+def rate_search_rows(scan: dict, preview: bool = False) -> list:
+    """Every row of the search, evaluated; the paper build stops unless every row has settled at its recorded rate with
+    no issue (a cell off its schedule, a superseded cell, a recorded rate the search does not select)."""
+    rows = _rate_search_module().evaluate(scan)
+    bad = [r for r in rows if r["issues"] or not r["status"].startswith("settled")]
+    if bad and not preview:
+        raise SystemExit("FATAL: the rate search is not settled: " + "; ".join(
+            f"{r['task']} {r['n']} {r['kind']}: {r['status']} {r['issues'][:2]}" for r in bad[:6]))
+    return rows
 
 
-def table_lrsweep(doc: dict) -> str:
-    """A4: the one rule's learning-rate sweep at 10^4 top and quark/gluon jets: each rate's best validation accuracy per
-    task and their sum, for 188 and 17 classes, their mean at the rates both ran, and from scratch; a star on the rates
-    chosen (sweep_rates: the mean's sum for the pretrained weights, each task's accuracy from scratch), a dagger on a run
-    whose training diverged (its best validation accuracy is from before)."""
-    pre, scr, mean, chosen = sweep_rates(doc)
+def frozen_mlp_limit(lp_dir: pathlib.Path) -> dict:
+    """{(task, n): the MLP probe's test accuracy on the frozen features, mean of seed 1 of 188 and of 17 classes} where
+    it was fitted at that training size (JetClass-II only), from the newest MLP refit pulled."""
+    for d in RATE_MLP_DIRS:
+        fs = [lp_dir / d / f"{m}.json" for m in RATE_SEARCH_INITS]
+        if all(f.exists() for f in fs):
+            recs = [json.loads(f.read_text())["cells"]["best70"]["jc2bal"] for f in fs]
+            if len({r["train_size"] for r in recs}) == 1:
+                return {("jc2b", int(recs[0]["train_size"])): float(np.mean([r["accuracy"] for r in recs]))}
+    return {}
+
+
+def table_lrsweep(rows: list, mlp: dict | None = None) -> str:
+    """A15: the best validation accuracy at every rate tried, per task, training size and mode (pretrained: the mean of
+    seed 1 of 188 and of 17 classes; from scratch: seed 1); a star on the rate chosen; "diverged" where the training loss
+    became non-finite; beside a row settled at the floor, the MLP probe on frozen features at that size."""
+    rates = sorted({lr for r in rows for lr in r["values"]}, key=float)
+    floor = [r for r in rows if r["status"] == "settled at the floor"]
+    lim = {(r["task"], r["n"]) for r in floor if r["kind"] == "pre"} & set(mlp or {})
+    cols = "lll" + "c" * len(rates) + ("c" if lim else "")
+    head = (r" & training jets & & " + " & ".join(_power(lr) for lr in rates)
+            + (r" & frozen features" if lim else "") + r" \\")
+    out = [rf"\begin{{tabular}}{{{cols}}}", r"\toprule", head, r"\midrule"]
     star = r"$^{\ast}$"
-    trees = [t for t, _ in SWEEP_TREES]
-    val = lambda x, mark="": "--" if x is None else f"{x[0]:.4f}" + (DIVERGED if x[1] else "") + mark    # noqa: E731
-
-    def line(name, lr, cells, total, mark=""):
-        return f"{name} & {_power(lr)} & " + " & ".join(cells) + f" & {total}{mark}" + r" \\"
-    out = [r"\begin{tabular}{llccc}", r"\toprule",
-           r" & learning rate & " + " & ".join(h for _, h in SWEEP_TREES) + r" & sum \\", r"\midrule"]
-    for arm in SWEEP_ARMS:
-        for lr in sorted(pre[arm], key=float):
-            v = [pre[arm][lr].get(t) for t in trees]
-            out.append(line(LABEL[arm], lr, [val(x) for x in v],
-                            f"{sum(x[0] for x in v):.4f}" if None not in v else "--"))
-    out.append(r"\midrule")
-    for lr in sorted(mean, key=float):
-        v = [(float(np.mean([pre[a][lr][t][0] for a in SWEEP_ARMS])), any(pre[a][lr][t][1] for a in SWEEP_ARMS))
-             for t in trees]
-        out.append(line(f"mean of {LABEL['L188']} and {LABEL['R16_Q1']}", lr, [val(x) for x in v], f"{mean[lr]:.4f}",
-                        star if lr == chosen["pre"] else ""))
-    out.append(r"\midrule")
-    for lr in sorted(scr, key=float):
-        v = [scr[lr].get(t) for t in trees]
-        out.append(line(SCRATCH_LABEL, lr, [val(x, star if chosen[t] == lr else "") for t, x in zip(trees, v)],
-                        f"{sum(x[0] for x in v):.4f}" if None not in v else "--"))
+    for i, (task, name) in enumerate(RATE_TASKS):
+        block = [r for r in rows if r["task"] == task]
+        if i:
+            out.append(r"\midrule")
+        for j, r in enumerate(sorted(block, key=lambda r: (r["n"], r["kind"] != "pre"))):
+            cells = []
+            for lr in rates:
+                v = r["values"].get(lr, "--")
+                if v == "--":
+                    cells.append("--")
+                elif v is None:
+                    cells.append(r"\pending{run}")
+                elif v == "diverged":
+                    cells.append("diverged")
+                else:
+                    cells.append(f"{v:.4f}" + (star if r["status"].startswith("settled") and lr == r["best"] else ""))
+            if lim:
+                cells.append(f"{mlp[(task, r['n'])]:.4f}" if r in floor and (task, r["n"]) in lim else "")
+            first = name if j == 0 else ""
+            size = _power(str(r["n"])) if r["kind"] == "pre" else ""
+            mode = "pretrained" if r["kind"] == "pre" else SCRATCH_LABEL
+            out.append(f"{first} & {size} & {mode} & " + " & ".join(cells) + r" \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -5342,10 +5350,11 @@ KEY_MARKS = {
     "qcdhf": ((r"\dagger", " $^\\dagger$~marks a value for which fewer than \\MlstMinBkgPass{} jets pass in a run."),),
     "jetclass_rej": ((r"\dagger", " $^\\dagger$~marks a value with fewer than \\MlstMinBkgPass{} QCD jets passing in a "
                                   "run."),),
-    "lrsweep": ((r"^{\ast}", " $^{\\ast}$~marks the rate chosen, by the sum averaged over the two label sets for "
-                             "fine-tuning and by each task's accuracy from scratch."),
-                (r"\dagger", " $^{\\dagger}$~marks a run whose training diverged, to a NaN training loss or a constant "
-                              "prediction; its best validation accuracy is from before."),),
+    "lrsweep": ((r"^{\ast}", " $^{\\ast}$~marks the rate chosen. ``diverged'': the training loss became "
+                             "non-finite, which counts as lower than any rate that trained; --: not tried."),
+                ("frozen features", " Frozen features: the MLP probe on the frozen features of the same two networks "
+                                    "at that training size, test accuracy, beside a row whose chosen rate is the lowest "
+                                    "tried, where fine-tuning approaches training only the new output layer."),),
     "pairs": ((r"\dagger", " $^{\\dagger}$~marks a pair the label set merges into one class."),
               (r"\ddagger", " $^{\\ddagger}$~marks a pair the label set merges in part."),
               (r"\parallel", " $^{\\parallel}$~marks a pair some random partitions merge."), (PAIR_GT, PAIR_GT_NOTE)),
@@ -5492,15 +5501,13 @@ CAPTION_SHORT = {
             "between their label sets at the largest training set, as the SD of the logarithm of "
             "the ratio over the pretraining runs / that from the finite test sample. JetClass-II: the ratio of "
             "$1-\\mathrm{AUC}$; top and quark/gluon: the ratio of $R_{30}$.",
-    "lrsweep": "Best validation accuracy at each learning rate tried for fine-tuning the networks pretrained with "
-               "\\Kfull{} and \\Kcoarse{} classes and for training from scratch, on $10^{4}$ top-tagging jets and on "
-               "$10^{4}$ quark/gluon jets, with the sum of the two in the last column. For fine-tuning, the rate is that "
-               "of the pretrained layers, and the new output head trains at 50 times that rate, at most "
-               "$5\\times10^{-3}$, so at $5\\times10^{-3}$ at every rate tried. The grid for \\Kfull{} classes was "
-               "extended past its upper edge, where it peaked, and the upper rates were tried with \\Kcoarse{} classes. "
-               "The rate with the largest sum averaged over the two is used for every pretrained network below the full "
-               "top and quark/gluon training sets. Training from scratch on JetClass and JetClass-II uses $10^{-3}$, the "
-               "Particle Transformer's rate, which the sweep does not cover. Every value is from a single run.",
+    "lrsweep": "Learning rates tried for fine-tuning and for training from scratch, at every task and training-set size "
+               "below the full top-tagging and quark/gluon sets: the best validation accuracy at each rate. Pretrained: "
+               "the mean over one run each of the networks pretrained with \\Kfull{} and \\Kcoarse{} classes, the "
+               "rate being that of the pretrained layers; the new output layer trains at $5\\times10^{-3}$ at every "
+               "rate. From scratch: one run, every weight at that rate. From the earlier rate, rates spaced by factors "
+               "of about 3 are added until the best one has a lower-scoring rate on each side, and none below "
+               "$10^{-5}$. Every network of a task and size uses the rate chosen there.",
     "mass_detail": "Jet-mass resolution and median response on JetClass-II in detail, defined as in "
                    "table~\\ref{tab:mass}. In the upper part a cell over all jets is empty where "
                    "table~\\ref{tab:mass} holds it. The lower parts give the bins of jet $p_{\\mathrm{T}}$ and "
@@ -6788,11 +6795,13 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     t = partrepro(em, data, per if tag else {}, fmt_pm, missing, runs={**runs, "__bench__": MAIN})
     if t:
         out["tables/mlst_partrepro.tex"] = _float("partrepro", t)
-    sweep = data / "budget" / FIXED_SWEEP
+    sweep = data / "budget" / RATE_SEARCH
     if sweep.exists():
-        out["tables/mlst_lrsweep.tex"] = _float("lrsweep", table_lrsweep(json.loads(sweep.read_text())))
+        rows = rate_search_rows(json.loads(sweep.read_text()), preview=ft_preview())
+        out["tables/mlst_lrsweep.tex"] = _float("lrsweep", table_lrsweep(rows, frozen_mlp_limit(data / "linprobe")),
+                                                wide=True)
     else:
-        missing.append(f"the one rule's rate sweep -- experiments/FIGS/data/v2/budget/{FIXED_SWEEP}")
+        missing.append(f"the rate search of every row -- experiments/FIGS/data/v2/budget/{RATE_SEARCH}")
     offsets = data / "head" / "input_bn_offsets.json"
     out["tables/mlst_inputs.tex"] = _float("inputs", table_inputs(root, json.loads(offsets.read_text())["offsets"]
                                                                   if offsets.exists() else None), True)

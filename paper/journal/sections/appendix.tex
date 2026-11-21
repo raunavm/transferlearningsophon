@@ -210,36 +210,29 @@ on top with the same settings and has no missing input.
 
 Below the full training sets of top and quark/gluon, and on JetClass and JetClass-II at every size,
 pretrained networks and networks trained from scratch follow one rule. They train in batches of
-\FtBudgetBatch{} jets for at most \FtBudgetSteps{} steps, or \FtLongSteps{} steps with \FtSizeESix{}
-training jets, and are evaluated on a fixed validation set every \FtBudgetEvalSmall{} steps below
-\FtBudgetEvalSmallBelow{} training jets and every \FtBudgetEval{} steps at and above that size. The
-validation set holds \FtValJets{} jets, or on JetClass-II the \FtValJetsBal{} jets of the class-balanced
-validation set. Training stops after \FtBudgetPatience{} evaluations without improvement, and the
-checkpoint with the best validation metric is kept. The pretrained weights train at a constant learning
-rate of \FtLrPre{} and the head at \FtHeadMult{} times that rate, at most \FtHeadCap. The networks trained
-from scratch train every weight at the rates given below with the training framework's default schedule, which is
-constant and lowered only near the end of the maximum training length; with \FtSizeESix{} training
-jets they count the evaluations without improvement only from the start of that decrease, so that a
-plateau before it cannot stop them. The weight decay is \FtBudgetWeightDecay{} throughout. Top and
-quark/gluon are fine-tuned on \FtSizeEThree, \FtSizeEFour{} and \FtSizeEFive{} jets below their full sets;
-JetClass on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix{}; and class-balanced JetClass-II on
-\FtSizeEFour, \FtSizeEFive{} and \FtSizeESix{}. The pretrained runs on \FtSizeESix{} JetClass-II jets that
-stopped before \FtBudgetSteps{} steps under the shorter limit were not repeated with the longer one: at a
-constant learning rate the stopping rule does not depend on the limit.
-% CHECK: long budget = build_ft_budget_jobs.py long_cells (LONG_EPOCHS 160 x STEPS 500, PATIENCE 10, patience_from 112 = start of flat+decay for scratch only, lr 1e-3, head x5 = HEAD_CAP/lr); JetClass-II reran scratch + r16q1-s1, r16q1mass-s1/s2 only (LONG_JC2B), the others stopped early under 20,000 steps and stand (DECISIONS_PENDING YELLOW 2026-11-05)
-On JetClass-II the fine-tuned models are the levels of the class hierarchy and the models with the auxiliary
-mass regression.
-% CHECK: rewrite when ft-budget-long-jc2b-ctrl reads out
+\FtBudgetBatch{} jets for a number of steps set by the training-set size alone: \FtStepsEThree{} steps with
+\FtSizeEThree{} training jets, \FtStepsEFour{} with \FtSizeEFour, \FtStepsEFive{} with \FtSizeEFive{} and
+\FtStepsESix{} with \FtSizeESix. Every \FtCheckEThree, \FtCheckEFour, \FtCheckEFive{} and \FtCheckESix{} steps,
+respectively, the accuracy is measured on the same \FtValJetsFixed{} validation jets, and the checkpoint with
+the best validation accuracy over the whole schedule is kept; training never stops early. The pretrained
+layers train at a constant learning rate and the new output layer at \FtHeadCap. The networks trained from
+scratch train every weight at one rate with the training framework's default schedule, constant and then
+lowered near the end. The weight decay is \FtBudgetWeightDecay{} throughout. Top and quark/gluon are
+fine-tuned on \FtSizeEThree, \FtSizeEFour{} and \FtSizeEFive{} jets below their full sets; JetClass and
+class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix. On JetClass-II the fine-tuned
+models are the levels of the class hierarchy and the models with the auxiliary mass regression.
+% CHECK: FIXED_STEPS, FIXED_CHECK, FIXED_VAL, HEAD_CAP in scripts/build_ft_budget_jobs.py; head_mult gives HEAD_CAP at every rate
 
-The learning rates of these sets were chosen on validation (table~\ref{tab:lrsweep}). The
-\Kfull-class model of seed one was fine-tuned with its pretrained weights at \FtSweepPre{}, and the
-network trained from scratch at \FtSweepScratch{}, each on \FtSweepN{} jets of top and of quark/gluon.
-The pretrained weights take the rate with the largest best validation accuracy summed over the two tasks,
-the largest one swept. For the networks trained from scratch each task keeps its own best rate,
-\FtLrScratchTop{} on top, inside the grid, and \FtLrScratchQg{} on quark/gluon, the largest swept; JetClass
-and JetClass-II, which have no sweep, take the rate of top. The test jets play no part, and the accuracies
-of the three rates lie close together.
-% CHECK: FtLrPre is the largest value of FtSweepPre (sums 1.742/1.741/1.739); FtLrScratchTop inside FtSweepScratch (0.9152/0.9188/0.9177), FtLrScratchQg its largest (0.8052/0.8029/0.8059); the generator stops if the launched specs differ
+The full top-tagging and quark/gluon training sets use the fine-tuning recipe of Ref.~\cite{part}. For every
+other combination of task and training-set size, the learning rate is chosen separately from rates spaced by
+factors of about 3. The chosen rate has the highest validation accuracy, averaged over one run each of the
+networks pretrained with \Kfull{} and \Kcoarse{} classes (one run when training from scratch), and the rates
+tried extend until it has a lower-scoring rate on each side. A rate at which training diverges counts as
+lower-scoring. Every pretrained network at a given task and size uses the chosen rate, and the new output
+layer trains at \FtHeadCap{} at every rate. Table~\ref{tab:lrsweep} lists every rate tried.
+% PENDING (PI 2026-11-21): if any row stops at the floor, add: "The search goes no lower than \FtSearchFloor, where
+% fine-tuning approaches training only the new output layer on frozen features; for [rows] the chosen rate is \FtSearchFloor."
+% CHECK: experiments/FT/rate_search.py (rules), build_ft_budget_jobs.FIXED_ROW_RATE(_SCRATCH) (the recorded rates)
 
 \input{tables/mlst_lrsweep}
 

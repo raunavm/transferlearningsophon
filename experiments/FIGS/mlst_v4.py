@@ -192,6 +192,14 @@ def design_macros(em, root: pathlib.Path, data: pathlib.Path, missing: list, fmt
              "training jets below which the validation runs every SMALL_STEPS steps")
     em.macro("FtBudgetPatience", str(bfb.PATIENCE), src, "PATIENCE",
              "validation passes without improvement before training stops")
+    # the one rule (PI 2026-11-15/16) and the rate search (PI 2026-11-21): steps and check interval per training size
+    for n, word in ((1_000, "EThree"), (10_000, "EFour"), (100_000, "EFive"), (1_000_000, "ESix")):
+        em.macro(f"FtSteps{word}", _int(fmt_int, bfb.FIXED_STEPS[n]), src, f"FIXED_STEPS[{n}]",
+                 "optimizer steps of every one-rule cell at that training size")
+        em.macro(f"FtCheck{word}", _int(fmt_int, bfb.FIXED_CHECK[n]), src, f"FIXED_CHECK[{n}]",
+                 "steps between validation checks at that training size")
+    em.macro("FtValJetsFixed", _int(fmt_int, bfb.FIXED_VAL), src, "FIXED_VAL", "validation jets of every check")
+    em.macro("FtSearchFloor", _sci(bfb.FIXED_SEARCH_FLOOR), src, "FIXED_SEARCH_FLOOR", "the lowest rate the search tries")
     em.macro("FtHeadMult", f"{bfb.HEAD_MULT:g}", src, "HEAD_MULT", "the head's learning-rate multiplier")
     em.macro("FtHeadCap", _sci(repr(bfb.HEAD_CAP)), src, "HEAD_CAP", "the head's largest learning rate")
     em.macro("FtBudgetBatch", str(bfb.BATCH), src, "BATCH")

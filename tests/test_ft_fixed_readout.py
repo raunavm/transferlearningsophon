@@ -122,45 +122,6 @@ def test_the_kinematic_only_full_top_cell_is_added_alone(tmp_path):
     assert M.merge_kin({"x": 1}, tmp_path / "absent.json") == {"x": 1}
 
 
-def _sweep() -> dict:
-    acc = {("leg_top", "l188-s1"): {"1e-3": .9205, "3e-3": .9234, "1e-2": .9249, "3e-2": .9233},
-           ("leg_qg", "l188-s1"): {"1e-3": .8215, "3e-3": .8233, "1e-2": .8260, "3e-2": .8233},
-           ("leg_top", "r16q1-s1"): {"3e-3": .9218, "1e-2": .9246, "3e-2": .9227},
-           ("leg_qg", "r16q1-s1"): {"3e-3": .8181, "1e-2": .8195, "3e-2": .8197},
-           ("leg_top", "scratch"): {"1e-3": .9164, "3e-3": .9172}, ("leg_qg", "scratch"): {"1e-3": .8053, "3e-3": .8040}}
-    cells = {}
-    for (tree, init), by in acc.items():
-        for lr, a in by.items():
-            div = lr == "3e-2" and (tree == "leg_top" or init == "l188-s1")      # NaN on top, a constant on q/g
-            cells[f"{tree}/{init}_lr{lr}"] = {"tree": tree, "init": init, "lr": lr, "best_metric": a,
-                                              "nan_loss": div and tree == "leg_top",
-                                              "final_train_loss": None if div and tree == "leg_top" else
-                                              0.69316 if div else 0.01}
-    return {"cells": cells}
-
-
-def test_the_rate_table_reads_the_one_rule_sweep():
-    _, _, mean, chosen = M.sweep_rates(_sweep())
-    assert chosen == {"pre": "1e-2", "leg_top": "3e-3", "leg_qg": "1e-3"} and set(mean) == {"3e-3", "1e-2", "3e-2"}
-    rows = M.table_lrsweep(_sweep()).splitlines()
-    starred = [ln for ln in rows if r"$^{\ast}$" in ln]
-    assert len(starred) == 3 and starred[0].startswith("mean of") and r"\ensuremath{10^{-2}}" in starred[0]
-    assert [ln.split(" & ")[0] for ln in starred[1:]] == [M.SCRATCH_LABEL] * 2
-    diverged = [ln for ln in rows if r"\dagger" in ln]
-    assert len(diverged) == 3 and all(r"3\times10^{-2}" in ln for ln in diverged)
-    assert M.printed_caption("lrsweep").endswith("Every value is from a single run.")
-
-
-def test_the_pulled_sweep_chooses_the_launched_rates():
-    f = DATA / "budget" / M.FIXED_SWEEP
-    if not f.exists():
-        pytest.skip("budget/fixed_sweep.json not pulled")
-    _, _, mean, chosen = M.sweep_rates(json.loads(f.read_text()))
-    assert chosen == {"pre": B.FIXED_LR_PRE, "leg_top": B.FIXED_LR_SCRATCH["top"], "leg_qg": B.FIXED_LR_SCRATCH["qg"]}
-    # RUNS.csv ft-budget-fixed-sweep-17-raunav: 1.74330, 1.74748, 1.74450 (to the fifth decimal, truncated)
-    assert [mean[lr] for lr in ("3e-3", "1e-2", "3e-2")] == pytest.approx([1.74330, 1.74748, 1.74450], abs=2e-5)
-
-
 def test_the_readout_names_every_one_rule_cell_and_reads_a_full_set_cell_without_early_stop(tmp_path):
     bm = _load("budget_metrics_fx", "experiments/FT/budget_metrics.py")
     assert sorted(bm.fixed_keys()) == _keys()
