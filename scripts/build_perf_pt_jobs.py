@@ -88,7 +88,7 @@ def full_jc1_cells() -> list[str]:
 
 def fixed_cells(task: str) -> list[str]:
     """The one rule's 30 cells at 1e6 of a task ("jc1" or "jc2b"): every paper run and three seeds from scratch."""
-    return [c["out"] for c in BFB.fixed_cells({1_000_000}) if c["task"] == task]
+    return [c["out"] for c in BFB.paper_fixed_cells() if c["n"] == 1_000_000 and c["task"] == task]
 
 
 def v5_models(init: bool) -> list[str]:
@@ -163,10 +163,11 @@ def spec(tag: str, parts, commit: bool = False, line: int = storage_line.GENERAL
     if "jc2fixed" in parts:
         tree = f"{BFB.FIXED_ROOT}/leg_jc2b"
         calls += [f"python3 {SCRIPT} jc2ft --out-dir {OUT_FIXED}/jc2_ft --trees {tree} --scratch-tree {tree} "
-                  f"--probe-dir {OUT_V5}/jc2",
+                  f"--probe-dir {OUT_V5}/jc2 --paper-cells",
                   f"touch {OUT_FIXED}/jc2_ft/DONE"]
     if "jc1fixed" in parts:
-        calls += [f"python3 {SCRIPT} jc1 --tree {BFB.FIXED_ROOT}/leg2 --out-dir {OUT_FIXED}/jc1 --confusion-out {CONF_FIXED}",
+        calls += [f"python3 {SCRIPT} jc1 --tree {BFB.FIXED_ROOT}/leg2 --out-dir {OUT_FIXED}/jc1 --confusion-out {CONF_FIXED} "
+                  "--paper-cells",
                   f"touch {OUT_FIXED}/jc1/DONE {CONF_FIXED}/DONE"]
     if "jc1probev5" in parts:
         # last, as jc1probe above: its row map is checked in the pod and a refusal stops the pod

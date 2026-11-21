@@ -150,11 +150,15 @@ def ft_pred(task: str, cell: pathlib.Path) -> tuple[np.ndarray, np.ndarray, dict
 def ft_cells(task: str, n: int, runs: list) -> tuple[dict, list]:
     """({model: cell}, [missing cell]) of the cells build_ft_budget_jobs.fixed_cells plans: each paper run (training
     seed 1, one fine-tuning per run) as mtx-<init>, and from scratch with training seeds 1-3 as scratch-s<k>."""
-    tree = FT_ROOT / TASKS[task][3]
-    plan = {m: tree / m.removeprefix("mtx-") / f"N{n}" / "s1" for m in runs}
-    plan.update({f"scratch-s{s}": tree / "scratch" / f"N{n}" / f"s{s}" for s in SCRATCH_SEEDS})
+    # each row at its recorded rate (build_ft_budget_jobs.paper_cells: ft_v2/fixed, or ft_v2/fixed_rate where it moved)
+    spec = importlib.util.spec_from_file_location("build_ft_budget_jobs", pathlib.Path(__file__).resolve().parents[2]
+                                                  / "scripts/build_ft_budget_jobs.py")
+    bfb = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bfb)
+    cells_at = bfb.paper_cells({"jc2": "jc2b", "jc1": "jc1"}[task], n)
+    plan = {m: pathlib.Path(cells_at[m]) for m in list(runs) + [f"scratch-s{s}" for s in SCRATCH_SEEDS]}
     cells = {m: c for m, c in plan.items() if (c / "DONE").exists()}
-    return cells, [str(c.relative_to(FT_ROOT)) for m, c in plan.items() if m not in cells]
+    return cells, [str(c.relative_to(FT_ROOT.parent)) for m, c in plan.items() if m not in cells]
 
 
 # ------------------------------------------------------------------ recall, its identity and its test-jet spread

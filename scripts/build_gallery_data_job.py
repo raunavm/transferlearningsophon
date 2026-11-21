@@ -348,7 +348,7 @@ def calls_probe_v5_fill() -> str:
 def fixed_cells(task: str) -> list:
     """The one rule's cells of task at 1e6 (build_ft_budget_jobs.fixed_cells): each paper run, then from scratch."""
     bfb = _bfb()
-    return [c for c in bfb.fixed_cells({bfb.LONG_N}) if c["task"] == task]
+    return [c for c in bfb.paper_fixed_cells() if c["n"] == bfb.LONG_N and c["task"] == task]   # each row's recorded rate
 
 
 def calls_jc1_fixed() -> str:

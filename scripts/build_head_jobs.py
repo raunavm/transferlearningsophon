@@ -344,10 +344,11 @@ FT_HEAD_FIXED_MEM = RAND_MEM
 def ft_head_fixed_cells() -> list[tuple[str, str]]:
     """(model, cell) of the one rule's JetClass-II cells at 1e6: each paper run (v2_paper_runs.txt order), then the
     from-scratch seeds as scratch-s<k>."""
-    cells = [c for c in BFB.fixed_cells({BFB.LONG_N}) if c["task"] == "jc2b"]
+    cells = [c for c in BFB.paper_fixed_cells() if c["n"] == BFB.LONG_N and c["task"] == "jc2b"]   # recorded rate
     out = [(f"mtx-{c['init']}" if c["init"] else f"scratch-s{c['s']}", c["out"]) for c in cells]
     assert [m for m, _c in out] == [f"mtx-{r}" for r in BFB.paper_runs()] + [f"scratch-s{s}" for s in BFB.SCRATCH_SEEDS]
-    assert all(c.startswith(f"{BFB.FIXED_ROOT}/leg_jc2b/") and f"/N{BFB.LONG_N}/s" in c for _m, c in out), out
+    assert all(c.startswith((f"{BFB.FIXED_ROOT}/leg_jc2b/", f"{BFB.FIXED_RATE_ROOT}/leg_jc2b/")) and f"/N{BFB.LONG_N}/s" in c
+               for _m, c in out), out
     return out
 
 

@@ -61,15 +61,14 @@ REUSE = {"jc1": ("frozen",), "jc2": ("frozen",), "top": ("frozen", "ft"), "qg": 
 XBX_ROOT, XBX_SPLITS = "/data/results/eval/xbx", ("xbb", "xbs", "qcd")   # umap_class_token.XBX_SPLITS
 DEADLINE_S = 86400                       # 32 extractions, 12 at a time; the JetClass-II ones take hours each
 FT = "/data/results/ft_v2"
-FIXED = FT + "/fixed"        # build_ft_budget_jobs.FIXED_ROOT: the one rule's cells (PI 2026-11-15)
 LP_OLD, LP_BAL = "/data/results/eval/v2_linprobe", "/data/results/eval/v2_linprobe_bal"
 # task -> (data config, stride, test files, K, fine-tuned cell (None: chosen in the pod), frozen-probe manifest);
 # configs and test files as the fine-tuning read-outs (build_ft_budget_jobs.TASKS, TEST_CFG; build_ft_jobs bench)
 TASKS = {
     "jc1": ("configs/finetune/JetClassI_sophon_noweight.yaml", 10, "${JC1}", 10,
-            FIXED + "/leg2/{m}/N1000000/s1", LP_OLD + "/mtx-{m}/jc1/test/best70/manifest.json"),
+            "{root}/leg2/{m}/N1000000/s1", LP_OLD + "/mtx-{m}/jc1/test/best70/manifest.json"),
     "jc2": ("configs/data/JetClassII_base.yaml", 2, "/data/finetune/jc2_bal/test.parquet", 188,
-            FIXED + "/leg_jc2b/{m}/N1000000/s1", LP_BAL + "/mtx-{m}/jc2bal/test/best70/manifest.json"),
+            "{root}/leg_jc2b/{m}/N1000000/s1", LP_BAL + "/mtx-{m}/jc2bal/test/best70/manifest.json"),
     "top": ("configs/finetune/TopReference.yaml", 20, "/data/finetune/top/top_test.parquet", 2,
             FT + "/best70/leg_top/{m}/N1200000/s1", LP_OLD + "/mtx-{m}/top/test/best70/manifest.json"),
     "qg": ("configs/finetune/EnergyFlowQG.yaml", 10,
@@ -97,6 +96,7 @@ def spec(commit: str, out_name: str, reuse: str | None = None, line: int = stora
     kept = REUSE if old else {}
     # every checkpoint is resolved and checked, and every reused extraction matched to it, before the first extraction
     blocks, runs, links = [], {t: [] for t in TASKS}, []
+    bfb = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
     for i, (m, k, reg) in enumerate(MODELS):
         mans = " ".join(t[5].format(m=m) for t in TASKS.values())
         # the frozen checkpoint: the one every task's frozen probes read
@@ -106,7 +106,9 @@ def spec(commit: str, out_name: str, reuse: str | None = None, line: int = stora
                    f'echo "mtx-{m} frozen: ${{CK{i}}}"']
         for task, (cfg, stride, files, kt, cell, _) in TASKS.items():
             c = f"C_{task}_{i}"
-            blocks.append(f"{c}={cell.format(m=m)}; done_cell ${{{c}}}")
+            # the one rule's cells at each row's recorded rate (build_ft_budget_jobs.paper_root: fixed or fixed_rate)
+            root = bfb.paper_root({"jc1": "jc1", "jc2": "jc2b"}.get(task, task), 1_000_000) if "{root}" in cell else ""
+            blocks.append(f"{c}={cell.format(m=m, root=root)}; done_cell ${{{c}}}")
             for kind, ck, nk, nr in (("frozen", f"${{CK{i}}}", k, reg), ("ft", f"${{{c}}}/net_best_epoch_state.pt", kt, 0)):
                 if kind in kept.get(task, ()):
                     links.append(f"features/{task}/mtx-{m}/{kind}")

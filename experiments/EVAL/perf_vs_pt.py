@@ -271,8 +271,21 @@ def run_jc2(a) -> None:
 
 # ------------------------------------------------------------------ JetClass, fine-tuned
 
-def jc1_cells(tree: pathlib.Path, n: int) -> list[tuple[str, pathlib.Path]]:
-    """[(model, cell)] of every DONE cell at N=n: mtx-<init>, or scratch-s<S> from scratch."""
+def paper_cells(task: str, n: int) -> dict:
+    """{model: cell} at each row's recorded rate (build_ft_budget_jobs.paper_cells), for the one rule's read-outs."""
+    b = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
+    return {m: pathlib.Path(c) for m, c in b.paper_cells(task, n).items()}
+
+
+def jc1_cells(tree: pathlib.Path, n: int, paper: bool = False) -> list[tuple[str, pathlib.Path]]:
+    """[(model, cell)] of every DONE cell at N=n: mtx-<init>, or scratch-s<S> from scratch; with paper, the cells at
+    each row's recorded rate (paper_cells), every one DONE."""
+    if paper:
+        cells = paper_cells("jc1", n)
+        miss = [str(c) for c in cells.values() if not (c / "DONE").exists()]
+        if miss:
+            raise SystemExit(f"FATAL: JetClass cells not finished: {miss[:5]}")
+        return sorted(cells.items())
     out = []
     for cell in sorted(tree.glob(f"*/N{n}/s*")):
         init = cell.parent.parent.name
@@ -382,7 +395,7 @@ def confusion(p: np.ndarray, y: np.ndarray) -> dict:
 
 def run_jc1(a) -> None:
     cache = {}
-    for model, cell in jc1_cells(a.tree, JC1_N):
+    for model, cell in jc1_cells(a.tree, JC1_N, a.paper_cells):
         out, cout = a.out_dir / f"{model}.json", a.confusion_out / f"{model}.json"
         if out.exists() and cout.exists():
             print(f"{out}, {cout} exist", flush=True)
@@ -404,12 +417,16 @@ def run_jc1(a) -> None:
 
 # ------------------------------------------------------------------ JetClass-II, fine-tuned
 
-def jc2ft_cells(models, trees, scratch_tree: pathlib.Path, n: int) -> list[tuple[str, pathlib.Path]]:
-    """[(model, cell)]: mtx-<init> from the first of trees whose cell is DONE, scratch-s<S> from scratch_tree;
-    FATAL for a model with no finished cell or a NaN loss."""
+def jc2ft_cells(models, trees, scratch_tree: pathlib.Path, n: int, paper: bool = False) -> list[tuple[str, pathlib.Path]]:
+    """[(model, cell)]: mtx-<init> from the first of trees whose cell is DONE, scratch-s<S> from scratch_tree, or with
+    paper the cell at each row's recorded rate (paper_cells) and nothing else; FATAL for a model with no finished cell
+    or a NaN loss."""
     out = []
+    at = paper_cells("jc2b", n) if paper else {}
     for m in models:
-        if m.startswith("scratch-s"):
+        if paper:
+            cands = [at[m]]
+        elif m.startswith("scratch-s"):
             cands = [scratch_tree / "scratch" / f"N{n}" / m.removeprefix("scratch-")]
         else:
             cands = [t / m.removeprefix("mtx-") / f"N{n}" / "s1" for t in trees]
@@ -447,7 +464,7 @@ def run_jc2ft(a) -> None:
     bb, cc = (names[n] for n in BB_CC)
     models = a.models or paper_models() + [f"scratch-s{k}" for k in SCRATCH_SEEDS]
     ref = probe_sha(a.probe_dir)
-    for model, cell in jc2ft_cells(models, a.trees, a.scratch_tree, JC1_N):
+    for model, cell in jc2ft_cells(models, a.trees, a.scratch_tree, JC1_N, a.paper_cells):
         out = a.out_dir / f"{model}.json"
         if out.exists():
             print(f"{out} exists", flush=True)
@@ -536,12 +553,14 @@ def main(argv=None) -> int:
     j1.add_argument("--out-dir", required=True, type=pathlib.Path)
     j1.add_argument("--confusion-out", required=True, type=pathlib.Path)
     j1.add_argument("--tree", type=pathlib.Path, default=JC1_TREE)
+    j1.add_argument("--paper-cells", action="store_true", help="the cells at each row's recorded rate (build_ft_budget_jobs.paper_cells), not the trees")
     f2 = sub.add_parser("jc2ft")
     f2.add_argument("--out-dir", required=True, type=pathlib.Path)
     f2.add_argument("--models", nargs="+", help="default: configs/arms/v2_paper_runs.txt and scratch-s1..3")
     f2.add_argument("--trees", nargs="+", type=pathlib.Path, default=list(JC2FT_TREES),
                     help="the pretrained cells' trees, the first with a DONE cell wins")
     f2.add_argument("--scratch-tree", type=pathlib.Path, default=JC2FT_SCRATCH)
+    f2.add_argument("--paper-cells", action="store_true", help="the cells at each row's recorded rate (build_ft_budget_jobs.paper_cells), not the trees")
     f2.add_argument("--probe-dir", type=pathlib.Path, help="the linear probe's jc2 files, whose jets_sha256 is recorded")
     p1 = sub.add_parser("jc1probe")
     p1.add_argument("--out-dir", required=True, type=pathlib.Path)

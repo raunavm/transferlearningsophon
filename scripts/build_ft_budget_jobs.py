@@ -310,6 +310,19 @@ def fixed_sweep_edge2_cells() -> list:
     return out
 
 
+def paper_cells(task: str, n: int) -> dict:
+    """{model: cell directory} the read-outs take at (task, n): paper_fixed_cells, mtx-<init> pretrained, scratch-s<k>
+    from scratch; every downstream read-out (per-pT, pairs, sculpting heads, per-class recall, UMAP) reads these."""
+    return {(f"mtx-{c['init']}" if c["init"] else f"scratch-s{c['s']}"): c["out"] for c in paper_fixed_cells()
+            if c["task"] == task and c["n"] == n}
+
+
+def paper_root(task: str, n: int, kind: str = "pre") -> str:
+    """The tree of a row's cells: FIXED_RATE_ROOT where its recorded rate moved from the original, else FIXED_ROOT."""
+    lr = row_rate(task, n, kind)
+    return FIXED_RATE_ROOT if lr not in (None, original_rate(task, kind)) else FIXED_ROOT
+
+
 def fixed_rate_cells() -> list:
     """Every pretrained cell of each row in FIXED_ROW_RATE whose rate is not the original, at that row's rate, into
     FIXED_RATE_ROOT; then the from-scratch seeds of each such row of FIXED_ROW_RATE_SCRATCH. Job indices follow the
