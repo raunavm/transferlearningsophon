@@ -33,10 +33,27 @@ def _rec(v):
             "r50_is_bound": False, "r30_is_bound": False, "r50_n_bkg_pass": 400, "r30_n_bkg_pass": 120}
 
 
+TREE_KEY = {"leg_top": "top", "leg_qg": "qg", "leg2": "jc1", "leg_jc2b": "jc2"}
+
+
+def _cell(k: str) -> dict:
+    """One cell's record at 0.7, at its row's recorded rate, its best check inside the schedule (the edge rule)."""
+    tree, init, n, _ = k.split("/")
+    lr = M.expected_rate(TREE_KEY[tree], M.SCRATCH if init == M.BUDGET_SCRATCH else init, int(n[1:]))
+    return {**_rec(0.7), "recipe": {"lr": lr}, "early_stop": {"best_epoch": 5, "max_epochs": 100},
+            **({"herwig": _rec(0.7)} if tree == "leg_qg" else {})}
+
+
 def _doc(drop=()) -> dict:
     """A read-out of the one rule at 0.7 everywhere, the cells in drop missing."""
-    cells = {k: {**_rec(0.7), **({"herwig": _rec(0.7)} if k.startswith("leg_qg/") else {})} for k in _keys() if k not in drop}
+    cells = {k: _cell(k) for k in _keys() if k not in drop}
     return {"cells": cells, "missing": sorted(drop), "expected": len(_keys())}
+
+
+@pytest.fixture(autouse=True)
+def _rows_settled(monkeypatch):
+    """The paper build stops on a row whose rate search has not settled; these tests are about the merge, not the search."""
+    monkeypatch.setattr(M, "row_unsettled", lambda key, n: False)
 
 
 def _per() -> dict:

@@ -140,6 +140,8 @@ NUMBER_WORD = re.compile(
 # with the reason it cannot change. Matched as PHRASES and removed before the
 # scan, so the allowance never extends to the bare word.
 ALLOWED_WORDS = [
+    (r"\bfactors\s+of\s+about\s+three\b",
+     "the PI's methods sentence (2026-11-21): the spacing of the learning-rate grid, a description of the search"),
     (r"\b(?:one|two|three|four)-(?=[^.;]{0,40}?prong)",
      "prong counts name decay topologies (two-prong, three- and four-prong)"),
     (r"\b(?:two|three|four)-quark\b",

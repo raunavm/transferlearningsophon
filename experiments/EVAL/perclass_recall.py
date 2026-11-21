@@ -156,7 +156,10 @@ def ft_cells(task: str, n: int, runs: list) -> tuple[dict, list]:
     bfb = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bfb)
     cells_at = bfb.paper_cells({"jc2": "jc2b", "jc1": "jc1"}[task], n)
-    plan = {m: pathlib.Path(cells_at[m]) for m in list(runs) + [f"scratch-s{s}" for s in SCRATCH_SEEDS]}
+    # the builder's paths are under /data/results/ft_v2; read them under FT_ROOT's parent (a test's tree)
+    base = FT_ROOT.parent
+    plan = {m: base / pathlib.Path(cells_at[m]).relative_to("/data/results/ft_v2")
+            for m in list(runs) + [f"scratch-s{s}" for s in SCRATCH_SEEDS]}
     cells = {m: c for m, c in plan.items() if (c / "DONE").exists()}
     return cells, [str(c.relative_to(FT_ROOT.parent)) for m, c in plan.items() if m not in cells]
 
