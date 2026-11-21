@@ -18,14 +18,14 @@ spec:
         - |
           set -euo pipefail
           retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
-          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.21 https://github.com/raunavm/transferlearningsophon.git tls; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.22 https://github.com/raunavm/transferlearningsophon.git tls; }
           retry clone || exit 1
           cd /workspace/tls
           python3 experiments/FT/roc_points.py pairs188 --mode probe --models mtx-l188-s1 mtx-l188-s2 mtx-l188-s3 mtx-l162-s1 mtx-l162-s2 mtx-l162-s3 mtx-r42q1-s1 mtx-r42q1-s2 mtx-r42q1-s3 mtx-r16q1-s1 mtx-r16q1-s2 mtx-r16q1-s3 mtx-l162mass-s1 mtx-l162mass-s2 mtx-r16q1mass-s1 mtx-r16q1mass-s2 mtx-rand2p1-s1 mtx-rand2p2-s2 mtx-rand2p3-s1 mtx-rand2p4-s2 mtx-rand2p5-s2 mtx-flavf0-s1 mtx-flavf0-s2 mtx-flavf1-s1 mtx-flavf1-s2 mtx-flavf1r-s1 mtx-flavf1r-s2  init-s1 init-s2 init-s3 \
             --out-dir /data/results/ft_v2/curves_v2/pairs188_probe
         resources:
-          requests: { memory: "8Gi", cpu: "4", ephemeral-storage: "5Gi" }
-          limits:   { memory: "8Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          requests: { memory: "10Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "10Gi", cpu: "4", ephemeral-storage: "5Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
       affinity:
