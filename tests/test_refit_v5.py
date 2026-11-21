@@ -125,7 +125,7 @@ def specs():
 def test_every_spec_is_ours_cpu_only_but_the_one_extraction_and_guards_at_the_finishing_line(specs):
     b, s = specs
     assert set(s) == {"fit", "fill", "sib", "coarse", "qcdhf", "nat", "sophonx", "sophon", "xbx", "mlp", "atlas",
-                      "rebin", "boot", "bootl3", "checks"}
+                      "atlas-part", "rebin", "boot", "bootl3", "bootall", "checks"}
     for kind, text in s.items():
         name = next(ln.split(":", 1)[1].strip() for ln in text.splitlines() if ln.strip().startswith("name: ")
                     and "raunav" in ln)
@@ -180,3 +180,14 @@ def test_the_reader_takes_a_v5_family_whole_and_refuses_a_part_or_an_edge(tmp_pa
     # one grid for every linear probe: fits_v5_fill without the other v5 families stops the build
     with pytest.raises(SystemExit, match="one grid"):
         V4.check_v5(tmp_path)
+
+
+
+def test_the_v5_bootstraps_write_l3_v5_and_cover_every_printed_network(specs):
+    """2026-11-21: bootl3 wrote to l3/ (build_boot_l3_jobs.pb's default root bound at import) and skipped; bootall adds
+    every printed top and quark/gluon network against 188 classes and each mass network against its own label set."""
+    b, s = specs
+    assert "/data/results/bootstrap/l3/" not in s["bootl3"] and s["bootl3"].count(b.L3_V5 + "/probe_") >= 10
+    for d in ("rand-188", "flavf0-188", "r16q1mass-188", "l162mass-188", "162mass-162", "17mass-17"):
+        assert f"--diff {d}=" in s["bootall"], d
+    assert s["bootall"].count("--model ") == 3 * 27
