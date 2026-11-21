@@ -463,6 +463,43 @@ mkdir -p {L3_V5}
                    "decision L3's probe bootstraps on the v5 probes")
 
 
+# PI 2026-11-21: every network the top and quark/gluon tables print, against 188 classes (the 17-class partitions, the
+# random ones as one side, and the mass networks), and each mass network against its own label set, in every metric
+# they print (paired_bootstrap --headline: accuracy, R50, R30, and 1 - AUC); new files beside bootl3's
+BOOTALL_ARMS = {"l188": ("l188-s1", "l188-s2", "l188-s3"), "l162": ("l162-s1", "l162-s2", "l162-s3"),
+                "r42q1": ("r42q1-s1", "r42q1-s2", "r42q1-s3"), "r16q1": ("r16q1-s1", "r16q1-s2", "r16q1-s3"),
+                "l162mass": ("l162mass-s1", "l162mass-s2"), "r16q1mass": ("r16q1mass-s1", "r16q1mass-s2"),
+                "flavf0": ("flavf0-s1", "flavf0-s2"), "flavf1": ("flavf1-s1", "flavf1-s2"),
+                "flavf1r": ("flavf1r-s1", "flavf1r-s2"),
+                "rand": ("rand2p1-s1", "rand2p2-s2", "rand2p3-s1", "rand2p4-s2", "rand2p5-s2")}
+BOOTALL_DIFFS = {**{f"{a}-188": (a, "l188") for a in BOOTALL_ARMS if a != "l188"},
+                 "162mass-162": ("l162mass", "l162"), "17mass-17": ("r16q1mass", "r16q1")}
+
+
+def bootall_spec(tag: str) -> str:
+    """The paired test-jet bootstrap of every printed top and quark/gluon network (BOOTALL_*), into L3_V5/*.all.json."""
+    bl = _load("build_boot_l3_jobs", "scripts/build_boot_l3_jobs.py")
+    side = lambda a: ",".join(f"mtx-{r}" for r in BOOTALL_ARMS[a])  # noqa: E731
+    diffs = " ".join(f"--diff {n}={side(a)}/{side(b)}" for n, (a, b) in BOOTALL_DIFFS.items())
+    runs = [f"mtx-{r}" for rs in BOOTALL_ARMS.values() for r in rs]
+    rows = []
+    for ds, n in (("top", 1_200_000), ("qg", 1_600_000), ("qg_herwig", 1_600_000)):
+        tagd = FILL_TAG[ds]
+        models = " ".join(f"--model {m}={V5['fits_v5_fill_probs']}/{m}/best70.{tagd}/{ds}_N{n}.npz" for m in runs)
+        out = f"{L3_V5}/probe_{ds}_N{n}.{tagd}.all.json"
+        rows.append(f"[ -e {out} ] || python3 experiments/STATS/paired_bootstrap.py --task npz {models} --headline "
+                    f"{diffs} --b {bl.REPLICAS} --out {out}")
+    body = f"""set -euo pipefail
+{JB._start(tag)}
+{threads(bl.CPU)}
+{guard()}
+mkdir -p {L3_V5}
+{case_block(rows)}echo "REFIT5 BOOT ALL PART ${{IDX}} COMPLETE"
+"""
+    return indexed("refit5-bootall-raunav", body, len(rows), len(rows), bl.MEM, bl.CPU,
+                   "the paired test-jet bootstrap of every printed top and quark/gluon network, every printed metric")
+
+
 def check_families() -> list[tuple[str, list[str], bool]]:
     """(folder, expected models, one CPU model) of every refitted family."""
     ms = model_names()
@@ -500,7 +537,7 @@ def build(tag: str, parallelism: int) -> dict[str, str]:
             "sophonx": sophonx_spec(tag), "sophon": sophon_spec(tag), "xbx": xbx_spec(tag, parallelism),
             "mlp": mlp_spec(tag, parallelism), "atlas": atlas_spec(tag, parallelism),
             "atlas-part": atlas_part_spec(tag, parallelism), "rebin": rebin_spec(tag),
-            "boot": boot_spec(tag), "bootl3": bootl3_spec(tag), "checks": checks_spec(tag)}
+            "boot": boot_spec(tag), "bootl3": bootl3_spec(tag), "bootall": bootall_spec(tag), "checks": checks_spec(tag)}
 
 
 def main(argv=None) -> int:
@@ -509,7 +546,7 @@ def main(argv=None) -> int:
     ap.add_argument("--parallelism", type=int, default=5)
     ap.add_argument("kinds", nargs="+", choices=("all", "fit", "fill", "sib", "coarse", "qcdhf", "nat", "sophonx",
                                                  "sophon", "xbx", "mlp", "atlas", "atlas-part", "rebin", "boot", "bootl3",
-                                                 "checks"))
+                                                 "bootall", "checks"))
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
         raise SystemExit(f"FATAL: --tag {a.tag} is not an mtx-sN.NN tag")
