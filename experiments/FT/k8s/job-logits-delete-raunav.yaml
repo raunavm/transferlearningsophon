@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Deletes the test logits of the superseded 1e-2 pretrained JetClass-II cells at 1e4-1e6 (PI 2026-11-21): exactly the
+  # reviewed manifest's rows (its sha256 checked first) that re-hash to it; checkpoints and everything else kept. CPU.
+  name: logits-delete-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.19 https://github.com/raunavm/transferlearningsophon.git tls; }
+          retry clone || exit 1
+          cd /workspace/tls
+          M=/data/results/deleted_jc2b_1e-2_logits.csv
+          echo "a9019c523ce64ac928d6a4cef31f7c6e092907a13f5611ae9d351dfcf78fdfa3  ${M}" | sha256sum -c - || { echo "FATAL: ${M} is not the reviewed manifest"; exit 1; }
+          python3 experiments/FT/features_manifest.py delete --set jc2b-1e-2-logits --manifest ${M}
+          cat /data/results/deleted_jc2b_1e-2_logits.deleted.log | cut -d" " -f1 | sort | uniq -c; df -h /data | tail -1
+        resources:
+          requests: { memory: "4Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "4Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

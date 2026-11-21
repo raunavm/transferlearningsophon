@@ -130,6 +130,11 @@ def main(argv=None) -> int:
             if not (cell / "DONE").exists():
                 doc["missing"].append(key)
                 continue
+            if tree == "leg_jc2b" and not (cell / "features" / "logits.npy").exists():
+                # a superseded cell whose test logits were removed (features_manifest.py --set jc2b-1e-2-logits): never
+                # read again, listed as missing so a preview leaves it out
+                doc["missing"].append(key)
+                continue
             if tree in ("leg_top", "leg_qg"):
                 m = bm.cell_metrics(cell, probe)
                 if tree == "leg_qg":
