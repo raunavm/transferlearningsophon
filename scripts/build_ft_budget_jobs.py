@@ -252,6 +252,9 @@ FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1
 FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
                           # 2026-11-22: JetClass-II 1e6 best 3e-3 0.3812 (1e-3 0.3769, 3e-4 0.3736, 1e-2 diverged)
                           ("jc2b", 1_000_000): "3e-3",
+                          # 2026-11-22: JetClass-II 1e5 best 3e-3 0.3077 (1e-3 0.3020, 3e-4 0.2808, 1e-2 diverged);
+                          # quark/gluon 1e5 best at its original 1e-3 0.8266 (3e-3 0.8255, 3e-4 0.8250): no rerun
+                          ("jc2b", 100_000): "3e-3", ("qg", 100_000): "1e-3",
                           # 2026-11-22: JetClass 1e6 best 3e-3 0.8307 (1e-3 0.8294, 1e-2 and 3e-2 diverged); JetClass-II
                           # 1e4 best 1e-2 0.1615 (3e-3 0.1608, 3e-2 diverged)
                           ("jc1", 1_000_000): "3e-3", ("jc2b", 10_000): "1e-2",
@@ -264,7 +267,7 @@ FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000,
                     ("jc1", 1_000_000, "scratch"), ("jc2b", 10_000, "scratch"),
                     # 2026-11-22, settled together, in the PI's rerun order (JetClass-II 1e6, JetClass-II 1e5, top 1e3 last)
                     ("jc2b", 1_000_000, "pre"), ("jc2b", 100_000, "pre"), ("top", 1_000, "pre"),
-                    ("jc2b", 1_000_000, "scratch"))
+                    ("jc2b", 1_000_000, "scratch"), ("jc2b", 100_000, "scratch"))
 # PI 2026-11-21: the search goes no lower than 1e-5 (below it fine-tuning approaches training only the new output layer
 # on frozen features); a row whose best is still its lowest rate there takes 1e-5
 FIXED_SEARCH_FLOOR = "1e-5"
@@ -432,7 +435,8 @@ def fixed_rate_cells() -> list:
     from-scratch seeds of each such row of FIXED_ROW_RATE_SCRATCH, into FIXED_RATE_ROOT. Job indices follow
     FIXED_RATE_ORDER (0-15 JetClass-II 1e4, 16-42 quark/gluon 1e3 pretrained, 43-45 its from-scratch seeds, 46-48
     JetClass 1e6 from scratch, 49-51 JetClass-II 1e4 from scratch, 52-78 JetClass-II 1e6, 79-94 JetClass-II 1e5, 95-122
-    top 1e3 with the kinematic-only network, 123-125 JetClass-II 1e6 from scratch)."""
+    top 1e3 with the kinematic-only network, 123-125 JetClass-II 1e6 from scratch, 126-128 JetClass-II 1e5
+    from scratch)."""
     moved = ({(t, n, "pre") for (t, n), lr in FIXED_ROW_RATE.items() if lr != FIXED_LR_PRE}
              | {(t, n, "scratch") for (t, n), lr in FIXED_ROW_RATE_SCRATCH.items() if lr != original_rate(t, "scratch")})
     if moved != set(FIXED_RATE_ORDER) or len(set(FIXED_RATE_ORDER)) != len(FIXED_RATE_ORDER):
