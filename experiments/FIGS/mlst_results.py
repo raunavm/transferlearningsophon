@@ -4249,11 +4249,11 @@ def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> t
         if len(ns) > 1:
             raise SystemExit(f"FATAL: xbx_scratch/{sig}: the seeds train on different jet counts {sorted(ns)}")
         if ns:
-            em.macro(f"MlstXbxScratchTrain{w}", fmt_int(ns.pop()), data / "xbx_scratch" / sig, "training.n_train_per_class",
-                     "training jets a class of the from-scratch network")
+            em.macro(f"MlstXbxScratchTrain{w}", fmt_int(ns.pop()), sorted((data / "xbx_scratch" / sig).glob("s*.json"))[0],
+                     "training.n_train_per_class", "training jets a class of the from-scratch network, every seed")
         else:
-            em.macro(f"MlstXbxScratchTrain{w}", r"\pending{from-scratch jets}", data / "xbx_scratch" / sig, "missing",
-                     "pending until xbx_scratch is pulled")
+            em.macro(f"MlstXbxScratchTrain{w}", r"\pending{from-scratch jets}", root / "experiments/XBS/xbx_report.py",
+                     "pending", "pending until xbx_scratch is pulled")
     if not scr:
         missing.append("X->bs from scratch -- experiments/FIGS/data/v2/xbx_scratch/")
     for name in XBX_MACROS:
