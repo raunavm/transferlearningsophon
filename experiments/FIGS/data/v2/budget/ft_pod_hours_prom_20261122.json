@@ -1,0 +1,3603 @@
+{
+ "source": "https://prometheus.nrp-nautilus.io/api/v1/query",
+ "query": "sum by (pod) (sum_over_time(kube_pod_status_phase{namespace=\"cms-ml\",phase=\"Running\",pod=~\"ft-.*\"}[9d:5m])) * 5/60",
+ "taken_utc": "2026-11-22T05:52:23Z",
+ "note": "Running time per fine-tuning pod in 5-minute samples (1 GPU each); Prometheus keeps about a week, so snapshots are merged by taking each pod's largest value",
+ "pods": {
+  "ft-budget-fixed-1e3-qg-raunav-0-9bjkj": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-18T21:00Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-0-v7dsp": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-19T07:55Z",
+   "last_running_utc": "2026-11-19T12:40Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-1-hg6q8": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-19T13:05Z",
+   "last_running_utc": "2026-11-19T17:45Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-10-c7phw": {
+   "running_hours": 9.25,
+   "first_running_utc": "2026-11-19T07:05Z",
+   "last_running_utc": "2026-11-19T16:30Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-11-6cxjc": {
+   "running_hours": 9.25,
+   "first_running_utc": "2026-11-19T03:45Z",
+   "last_running_utc": "2026-11-19T13:15Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-12-c6cjq": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-19T20:50Z",
+   "last_running_utc": "2026-11-20T00:10Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-13-ghbsc": {
+   "running_hours": 2.6667,
+   "first_running_utc": "2026-11-20T04:10Z",
+   "last_running_utc": "2026-11-20T06:45Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-14-8zslw": {
+   "running_hours": 9.4167,
+   "first_running_utc": "2026-11-19T23:15Z",
+   "last_running_utc": "2026-11-20T08:40Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-15-gxtls": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T05:05Z",
+   "last_running_utc": "2026-11-20T09:45Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-16-qzltj": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-20T02:20Z",
+   "last_running_utc": "2026-11-20T07:00Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-17-pvt4x": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T00:15Z",
+   "last_running_utc": "2026-11-20T05:00Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-18-tkbkl": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T00:55Z",
+   "last_running_utc": "2026-11-20T05:40Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-19-jhb7h": {
+   "running_hours": 9.5,
+   "first_running_utc": "2026-11-20T05:45Z",
+   "last_running_utc": "2026-11-20T15:10Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-2-7tcvd": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-19T09:35Z",
+   "last_running_utc": "2026-11-19T14:15Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-20-xhk76": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T07:00Z",
+   "last_running_utc": "2026-11-20T11:40Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-21-nxmxw": {
+   "running_hours": 9.5,
+   "first_running_utc": "2026-11-20T05:05Z",
+   "last_running_utc": "2026-11-20T14:30Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-22-4lxr2": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T05:50Z",
+   "last_running_utc": "2026-11-20T10:30Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-23-qdx5c": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-20T06:50Z",
+   "last_running_utc": "2026-11-20T11:35Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-24-4qj6k": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T07:20Z",
+   "last_running_utc": "2026-11-20T12:00Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-25-t4zn4": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-20T09:05Z",
+   "last_running_utc": "2026-11-20T13:50Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-26-twgg9": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T23:00Z",
+   "last_running_utc": "2026-11-21T03:40Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-26-v9n8l": {
+   "running_hours": 8.0833,
+   "first_running_utc": "2026-11-20T09:55Z",
+   "last_running_utc": "2026-11-20T17:55Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-27-kn5lw": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-20T10:35Z",
+   "last_running_utc": "2026-11-20T15:15Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-28-rplrw": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T11:40Z",
+   "last_running_utc": "2026-11-20T16:20Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-29-z64xk": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-20T11:45Z",
+   "last_running_utc": "2026-11-20T16:30Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-3-s45bt": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-19T14:20Z",
+   "last_running_utc": "2026-11-19T19:05Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-4-l62n6": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-19T14:30Z",
+   "last_running_utc": "2026-11-19T19:10Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-5-2l7wr": {
+   "running_hours": 5.6667,
+   "first_running_utc": "2026-11-19T18:15Z",
+   "last_running_utc": "2026-11-19T23:50Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-6-s2x2v": {
+   "running_hours": 5.75,
+   "first_running_utc": "2026-11-19T18:20Z",
+   "last_running_utc": "2026-11-20T00:00Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-7-hq48f": {
+   "running_hours": 9.4167,
+   "first_running_utc": "2026-11-19T18:25Z",
+   "last_running_utc": "2026-11-20T03:50Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-8-jr97h": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-19T18:25Z",
+   "last_running_utc": "2026-11-19T23:10Z"
+  },
+  "ft-budget-fixed-1e3-qg-raunav-9-b59hg": {
+   "running_hours": 9.25,
+   "first_running_utc": "2026-11-19T05:40Z",
+   "last_running_utc": "2026-11-19T15:10Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-0-2d67t": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-18T17:45Z",
+   "last_running_utc": "2026-11-18T22:45Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-0-kvspd": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T13:25Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-0-qgc56": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T15:15Z",
+   "last_running_utc": "2026-11-18T15:30Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-1-vf8vp": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T13:25Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-1-wqflv": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T15:20Z",
+   "last_running_utc": "2026-11-18T15:30Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-1-xrh8c": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-18T16:20Z",
+   "last_running_utc": "2026-11-18T21:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-10-f5f8b": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T22:55Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-10-th5bc": {
+   "running_hours": 2.8333,
+   "first_running_utc": "2026-11-19T13:25Z",
+   "last_running_utc": "2026-11-19T16:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-11-9phg4": {
+   "running_hours": 10.1667,
+   "first_running_utc": "2026-11-19T13:55Z",
+   "last_running_utc": "2026-11-20T00:00Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-12-hm2ng": {
+   "running_hours": 10.0,
+   "first_running_utc": "2026-11-19T18:55Z",
+   "last_running_utc": "2026-11-20T04:55Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-13-l4rtg": {
+   "running_hours": 4.25,
+   "first_running_utc": "2026-11-19T15:55Z",
+   "last_running_utc": "2026-11-19T20:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-14-2fgxl": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-19T15:05Z",
+   "last_running_utc": "2026-11-19T20:00Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-15-tx98f": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-19T16:30Z",
+   "last_running_utc": "2026-11-19T21:25Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-16-xbk9n": {
+   "running_hours": 5.0833,
+   "first_running_utc": "2026-11-19T20:00Z",
+   "last_running_utc": "2026-11-20T01:00Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-17-np48j": {
+   "running_hours": 4.0833,
+   "first_running_utc": "2026-11-19T17:15Z",
+   "last_running_utc": "2026-11-19T21:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-18-s6j7d": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-19T19:15Z",
+   "last_running_utc": "2026-11-20T00:10Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-19-6v5jm": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-19T23:25Z",
+   "last_running_utc": "2026-11-20T04:10Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-2-cvnjg": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-19T09:45Z",
+   "last_running_utc": "2026-11-19T14:40Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-2-m74pd": {
+   "running_hours": 3.8333,
+   "first_running_utc": "2026-11-18T19:10Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-2-p7mwj": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T13:25Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-20-dqh6t": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-19T23:30Z",
+   "last_running_utc": "2026-11-20T04:25Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-21-gnzmd": {
+   "running_hours": 10.0833,
+   "first_running_utc": "2026-11-19T22:00Z",
+   "last_running_utc": "2026-11-20T08:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-22-xbcg5": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-20T01:15Z",
+   "last_running_utc": "2026-11-20T06:10Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-23-rqj9s": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-20T00:25Z",
+   "last_running_utc": "2026-11-20T05:20Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-24-7r6wf": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-20T00:15Z",
+   "last_running_utc": "2026-11-20T05:10Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-25-6xxnz": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-20T01:05Z",
+   "last_running_utc": "2026-11-20T06:00Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-26-dp664": {
+   "running_hours": 5.1667,
+   "first_running_utc": "2026-11-20T04:20Z",
+   "last_running_utc": "2026-11-20T09:25Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-27-w7fz4": {
+   "running_hours": 5.1667,
+   "first_running_utc": "2026-11-20T07:20Z",
+   "last_running_utc": "2026-11-20T12:25Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-28-4c4rp": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-20T05:05Z",
+   "last_running_utc": "2026-11-20T10:00Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-29-xbnlc": {
+   "running_hours": 2.8333,
+   "first_running_utc": "2026-11-20T06:40Z",
+   "last_running_utc": "2026-11-20T09:25Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-3-4dc75": {
+   "running_hours": 2.25,
+   "first_running_utc": "2026-11-18T20:45Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-3-59fv9": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-19T07:40Z",
+   "last_running_utc": "2026-11-19T12:35Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-3-wvpqt": {
+   "running_hours": 0.6667,
+   "first_running_utc": "2026-11-18T13:40Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-30-jpb8q": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-20T06:45Z",
+   "last_running_utc": "2026-11-20T11:40Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-4-dfqx4": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-19T09:45Z",
+   "last_running_utc": "2026-11-19T14:40Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-4-qs427": {
+   "running_hours": 2.25,
+   "first_running_utc": "2026-11-18T20:45Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-4-qvprj": {
+   "running_hours": 0.5833,
+   "first_running_utc": "2026-11-18T13:45Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-5-2dphb": {
+   "running_hours": 0.5833,
+   "first_running_utc": "2026-11-18T13:45Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-5-6c8tn": {
+   "running_hours": 4.25,
+   "first_running_utc": "2026-11-19T12:15Z",
+   "last_running_utc": "2026-11-19T16:25Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-5-f6czf": {
+   "running_hours": 3.0833,
+   "first_running_utc": "2026-11-18T19:55Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-6-h6h2w": {
+   "running_hours": 5.8333,
+   "first_running_utc": "2026-11-19T12:25Z",
+   "last_running_utc": "2026-11-19T18:10Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-6-mhpf9": {
+   "running_hours": 2.25,
+   "first_running_utc": "2026-11-18T20:45Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-6-r4t8j": {
+   "running_hours": 0.5833,
+   "first_running_utc": "2026-11-18T13:45Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-7-26zvz": {
+   "running_hours": 0.5,
+   "first_running_utc": "2026-11-18T13:50Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-7-qkjcn": {
+   "running_hours": 3.5,
+   "first_running_utc": "2026-11-18T17:00Z",
+   "last_running_utc": "2026-11-18T20:35Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-8-8cx94": {
+   "running_hours": 1.5,
+   "first_running_utc": "2026-11-18T21:35Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-8-xjgf4": {
+   "running_hours": 3.5833,
+   "first_running_utc": "2026-11-19T07:40Z",
+   "last_running_utc": "2026-11-19T11:15Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-9-62td6": {
+   "running_hours": 0.75,
+   "first_running_utc": "2026-11-18T22:20Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e3-top-raunav-9-ps4qd": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-19T11:05Z",
+   "last_running_utc": "2026-11-19T16:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-0-5qvd4": {
+   "running_hours": 0.75,
+   "first_running_utc": "2026-11-17T23:50Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-0-g54m4": {
+   "running_hours": 0.5833,
+   "first_running_utc": "2026-11-18T06:25Z",
+   "last_running_utc": "2026-11-18T07:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-0-lbs7r": {
+   "running_hours": 1.9167,
+   "first_running_utc": "2026-11-18T07:40Z",
+   "last_running_utc": "2026-11-18T09:35Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-0-n5v9x": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-0-vsvng": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T02:30Z",
+   "last_running_utc": "2026-11-18T02:40Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-1-2llgq": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-18T09:05Z",
+   "last_running_utc": "2026-11-18T10:50Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-1-2t9v5": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-1-ds7bt": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T23:05Z",
+   "last_running_utc": "2026-11-18T00:25Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-1-gmld5": {
+   "running_hours": 0.5833,
+   "first_running_utc": "2026-11-18T06:25Z",
+   "last_running_utc": "2026-11-18T07:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-1-q7nwl": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-18T03:45Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-10-6kmcd": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T03:55Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-10-bkxq7": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-18T08:20Z",
+   "last_running_utc": "2026-11-18T10:55Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-10-h8b8m": {
+   "running_hours": 0.1667,
+   "first_running_utc": "2026-11-18T00:25Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-10-p98xg": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-11-7b257": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-11-8rv4h": {
+   "running_hours": 2.3333,
+   "first_running_utc": "2026-11-18T08:20Z",
+   "last_running_utc": "2026-11-18T10:40Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-11-mgjcn": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T03:50Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-12-5vb6n": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-18T08:20Z",
+   "last_running_utc": "2026-11-18T10:55Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-12-bp5fw": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T03:55Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-12-jj76d": {
+   "running_hours": 0.6667,
+   "first_running_utc": "2026-11-17T23:55Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-12-m6tfd": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-13-b75sl": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-13-n6qjm": {
+   "running_hours": 0.1667,
+   "first_running_utc": "2026-11-18T02:35Z",
+   "last_running_utc": "2026-11-18T02:40Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-13-ngrkb": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-18T08:20Z",
+   "last_running_utc": "2026-11-18T09:20Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-13-wx7nv": {
+   "running_hours": 0.1667,
+   "first_running_utc": "2026-11-18T04:00Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-14-2kx77": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T03:50Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-14-4mb6r": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-18T08:20Z",
+   "last_running_utc": "2026-11-18T10:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-14-5c5sg": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-14-mdlrz": {
+   "running_hours": 0.6667,
+   "first_running_utc": "2026-11-17T23:55Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-15-68bc5": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-18T10:25Z",
+   "last_running_utc": "2026-11-18T11:40Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-16-8vbdh": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-18T05:10Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-16-k2m9g": {
+   "running_hours": 1.5833,
+   "first_running_utc": "2026-11-18T10:25Z",
+   "last_running_utc": "2026-11-18T11:55Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-16-v5bj9": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-18T00:10Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-16-xbcj7": {
+   "running_hours": 0.8333,
+   "first_running_utc": "2026-11-17T22:50Z",
+   "last_running_utc": "2026-11-17T23:45Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-17-7smbc": {
+   "running_hours": 1.8333,
+   "first_running_utc": "2026-11-18T10:25Z",
+   "last_running_utc": "2026-11-18T12:10Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-17-xmdm4": {
+   "running_hours": 0.5,
+   "first_running_utc": "2026-11-18T05:05Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-18-7tnqb": {
+   "running_hours": 0.75,
+   "first_running_utc": "2026-11-18T04:45Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-18-wlfbt": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-18T08:30Z",
+   "last_running_utc": "2026-11-18T09:50Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-18-x2mf2": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-18T00:40Z",
+   "last_running_utc": "2026-11-18T00:45Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-19-527b7": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-18T09:05Z",
+   "last_running_utc": "2026-11-18T10:50Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-19-ksj2v": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T00:15Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-2-59v6f": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-18T10:00Z",
+   "last_running_utc": "2026-11-18T11:20Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-2-96jjl": {
+   "running_hours": 0.5,
+   "first_running_utc": "2026-11-18T06:35Z",
+   "last_running_utc": "2026-11-18T07:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-2-knjkp": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-18T03:45Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-2-qx9mk": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-20-8r2tx": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-18T08:25Z",
+   "last_running_utc": "2026-11-18T09:25Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-20-b997m": {
+   "running_hours": 0.1667,
+   "first_running_utc": "2026-11-18T05:25Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-21-7h2qx": {
+   "running_hours": 1.6667,
+   "first_running_utc": "2026-11-18T09:25Z",
+   "last_running_utc": "2026-11-18T11:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-22-p7h9r": {
+   "running_hours": 1.6667,
+   "first_running_utc": "2026-11-18T09:35Z",
+   "last_running_utc": "2026-11-18T11:15Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-23-ddmxv": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-18T09:40Z",
+   "last_running_utc": "2026-11-18T10:40Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-24-mjz6v": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-18T09:55Z",
+   "last_running_utc": "2026-11-18T11:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-25-vs59v": {
+   "running_hours": 2.1667,
+   "first_running_utc": "2026-11-18T11:00Z",
+   "last_running_utc": "2026-11-18T13:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-26-hxfch": {
+   "running_hours": 2.3333,
+   "first_running_utc": "2026-11-18T10:45Z",
+   "last_running_utc": "2026-11-18T13:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-27-lcs76": {
+   "running_hours": 2.3333,
+   "first_running_utc": "2026-11-18T10:45Z",
+   "last_running_utc": "2026-11-18T13:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-28-d8jnt": {
+   "running_hours": 2.1667,
+   "first_running_utc": "2026-11-18T10:50Z",
+   "last_running_utc": "2026-11-18T12:55Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-29-drhzr": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-18T12:05Z",
+   "last_running_utc": "2026-11-18T13:45Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-3-87fr9": {
+   "running_hours": 1.25,
+   "first_running_utc": "2026-11-17T23:10Z",
+   "last_running_utc": "2026-11-18T00:20Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-3-bvjpp": {
+   "running_hours": 0.0833,
+   "first_running_utc": null,
+   "last_running_utc": "2026-11-18T00:45Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-3-cw8rx": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-3-k2ftm": {
+   "running_hours": 0.1667,
+   "first_running_utc": "2026-11-18T00:25Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-3-n6vmd": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-18T10:00Z",
+   "last_running_utc": "2026-11-18T11:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-3-s622r": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-18T03:45Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-4-2zwpz": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-18T10:30Z",
+   "last_running_utc": "2026-11-18T12:10Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-4-847mf": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-4-ddqz4": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T03:50Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-4-j4gkn": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-18T00:10Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-5-6s625": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T03:50Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-5-kdfgk": {
+   "running_hours": 1.1667,
+   "first_running_utc": "2026-11-18T09:55Z",
+   "last_running_utc": "2026-11-18T11:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-5-l7fq8": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T00:15Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-5-pzkm6": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-5-ttvfz": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-17T23:50Z",
+   "last_running_utc": "2026-11-18T00:10Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-6-2qltm": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-18T00:45Z",
+   "last_running_utc": "2026-11-18T00:45Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-6-gd7vn": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-6-nckw6": {
+   "running_hours": 1.6667,
+   "first_running_utc": "2026-11-18T10:50Z",
+   "last_running_utc": "2026-11-18T12:25Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-6-xkcjg": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T03:50Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-7-c9qzm": {
+   "running_hours": 2.3333,
+   "first_running_utc": "2026-11-18T08:20Z",
+   "last_running_utc": "2026-11-18T10:40Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-7-n6pzl": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-7-rsgcm": {
+   "running_hours": 0.5,
+   "first_running_utc": "2026-11-18T06:30Z",
+   "last_running_utc": "2026-11-18T07:00Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-7-trrhw": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T03:55Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-8-9ht64": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T00:15Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-8-w7m6w": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-8-z9hfk": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T03:50Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-8-zdqnz": {
+   "running_hours": 5.5,
+   "first_running_utc": "2026-11-18T08:20Z",
+   "last_running_utc": "2026-11-18T13:50Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-9-fft49": {
+   "running_hours": 0.0833,
+   "first_running_utc": null,
+   "last_running_utc": "2026-11-18T00:20Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-9-l8xlw": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-9-xv4sl": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-18T08:20Z",
+   "last_running_utc": "2026-11-18T10:55Z"
+  },
+  "ft-budget-fixed-1e4-jc1-raunav-9-z8vkn": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T03:50Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-0-4n872": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-17T12:25Z",
+   "last_running_utc": "2026-11-17T14:25Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-1-s8h5g": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-17T14:30Z",
+   "last_running_utc": "2026-11-17T16:25Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-10-59k4t": {
+   "running_hours": 1.9167,
+   "first_running_utc": "2026-11-18T20:45Z",
+   "last_running_utc": "2026-11-18T22:45Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-10-df9wq": {
+   "running_hours": 1.9167,
+   "first_running_utc": "2026-11-18T12:25Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-11-6nwvs": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-18T12:25Z",
+   "last_running_utc": "2026-11-18T14:05Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-12-47bzq": {
+   "running_hours": 0.5,
+   "first_running_utc": "2026-11-18T22:40Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-12-d978h": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-19T07:40Z",
+   "last_running_utc": "2026-11-19T09:40Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-12-hng57": {
+   "running_hours": 1.9167,
+   "first_running_utc": "2026-11-18T12:25Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-13-jsmvh": {
+   "running_hours": 3.8333,
+   "first_running_utc": "2026-11-18T16:30Z",
+   "last_running_utc": "2026-11-18T20:20Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-13-qftnp": {
+   "running_hours": 1.9167,
+   "first_running_utc": "2026-11-18T12:25Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-14-6zz2n": {
+   "running_hours": 3.25,
+   "first_running_utc": "2026-11-19T06:15Z",
+   "last_running_utc": "2026-11-19T09:40Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-14-ddp24": {
+   "running_hours": 0.5,
+   "first_running_utc": "2026-11-18T22:40Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-14-vdl45": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-18T12:35Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-15-d92vr": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T22:50Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-15-gwzvw": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-19T03:45Z",
+   "last_running_utc": "2026-11-19T07:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-15-v8srb": {
+   "running_hours": 1.6667,
+   "first_running_utc": "2026-11-18T12:40Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-16-4lb96": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T22:55Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-16-5slzj": {
+   "running_hours": 2.25,
+   "first_running_utc": "2026-11-19T16:05Z",
+   "last_running_utc": "2026-11-19T18:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-16-8vsrn": {
+   "running_hours": 1.5,
+   "first_running_utc": "2026-11-18T12:45Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-17-jx2ln": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-18T13:15Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-17-xct2l": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-19T12:25Z",
+   "last_running_utc": "2026-11-19T14:25Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-18-mppcf": {
+   "running_hours": 1.5833,
+   "first_running_utc": "2026-11-19T12:00Z",
+   "last_running_utc": "2026-11-19T13:35Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-18-s4r2d": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-18T13:15Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-2-5q478": {
+   "running_hours": 2.1667,
+   "first_running_utc": "2026-11-17T16:40Z",
+   "last_running_utc": "2026-11-17T18:45Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-3-hkh8x": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-17T18:50Z",
+   "last_running_utc": "2026-11-17T20:45Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-4-5687d": {
+   "running_hours": 0.1667,
+   "first_running_utc": "2026-11-18T00:40Z",
+   "last_running_utc": "2026-11-18T00:45Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-4-7rdfv": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-18T08:20Z",
+   "last_running_utc": "2026-11-18T10:20Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-4-frdjz": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-4-sfq8d": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T03:50Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-5-82cpp": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-19T16:15Z",
+   "last_running_utc": "2026-11-19T18:10Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-5-gs9zc": {
+   "running_hours": 2.25,
+   "first_running_utc": "2026-11-18T12:05Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-6-njpb2": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-18T17:05Z",
+   "last_running_utc": "2026-11-18T19:10Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-6-tjssx": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-18T12:20Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-7-bcgl6": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-18T12:20Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-7-r78kb": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-18T20:05Z",
+   "last_running_utc": "2026-11-18T22:10Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-8-4pzk8": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-18T12:20Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-8-6b7hv": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-18T19:00Z",
+   "last_running_utc": "2026-11-18T21:00Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-9-7wfzn": {
+   "running_hours": 1.9167,
+   "first_running_utc": "2026-11-18T19:45Z",
+   "last_running_utc": "2026-11-18T21:45Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-9-d4r6b": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T15:20Z",
+   "last_running_utc": "2026-11-18T15:30Z"
+  },
+  "ft-budget-fixed-1e4-jc2b-raunav-9-gngt6": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-18T12:20Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-0-b6kfn": {
+   "running_hours": 0.5833,
+   "first_running_utc": "2026-11-17T22:15Z",
+   "last_running_utc": "2026-11-17T22:55Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-1-57bs2": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-18T04:05Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-1-7bbg8": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-18T08:30Z",
+   "last_running_utc": "2026-11-18T09:50Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-1-dd2rs": {
+   "running_hours": 0.75,
+   "first_running_utc": "2026-11-18T04:45Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-1-fszmv": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T02:30Z",
+   "last_running_utc": "2026-11-18T02:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-1-mbkmh": {
+   "running_hours": 0.1667,
+   "first_running_utc": "2026-11-18T00:40Z",
+   "last_running_utc": "2026-11-18T00:45Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-10-pf58m": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T04:40Z",
+   "last_running_utc": "2026-11-18T05:30Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-10-zq6z4": {
+   "running_hours": 1.25,
+   "first_running_utc": "2026-11-18T09:40Z",
+   "last_running_utc": "2026-11-18T10:55Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-11-wjbjx": {
+   "running_hours": 0.8333,
+   "first_running_utc": "2026-11-18T09:45Z",
+   "last_running_utc": "2026-11-18T10:35Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-12-9dbjn": {
+   "running_hours": 2.5,
+   "first_running_utc": "2026-11-18T09:50Z",
+   "last_running_utc": "2026-11-18T12:20Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-13-xbqbg": {
+   "running_hours": 1.25,
+   "first_running_utc": "2026-11-18T10:05Z",
+   "last_running_utc": "2026-11-18T11:20Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-14-cw2xb": {
+   "running_hours": 2.75,
+   "first_running_utc": "2026-11-18T11:00Z",
+   "last_running_utc": "2026-11-18T13:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-15-t74n8": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-18T10:40Z",
+   "last_running_utc": "2026-11-18T12:00Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-16-gsjrn": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-18T10:45Z",
+   "last_running_utc": "2026-11-18T12:05Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-17-k5h5b": {
+   "running_hours": 2.6667,
+   "first_running_utc": "2026-11-18T11:00Z",
+   "last_running_utc": "2026-11-18T13:35Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-18-8kxgq": {
+   "running_hours": 1.5,
+   "first_running_utc": "2026-11-18T12:15Z",
+   "last_running_utc": "2026-11-18T13:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-19-4hnpx": {
+   "running_hours": 1.5,
+   "first_running_utc": "2026-11-18T12:15Z",
+   "last_running_utc": "2026-11-18T13:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-2-2dcmb": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-17T23:40Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-2-vldw4": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-18T08:35Z",
+   "last_running_utc": "2026-11-18T11:10Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-2-zbhpc": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T02:30Z",
+   "last_running_utc": "2026-11-18T02:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-20-6jppq": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T11:50Z",
+   "last_running_utc": "2026-11-18T12:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-21-l48bv": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-18T11:55Z",
+   "last_running_utc": "2026-11-18T13:20Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-22-svwnh": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-18T12:00Z",
+   "last_running_utc": "2026-11-18T13:20Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-23-n9pkn": {
+   "running_hours": 1.5,
+   "first_running_utc": "2026-11-18T11:55Z",
+   "last_running_utc": "2026-11-18T13:20Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-24-fh7c6": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-18T12:00Z",
+   "last_running_utc": "2026-11-18T13:20Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-25-n29h6": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-18T12:00Z",
+   "last_running_utc": "2026-11-18T12:55Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-26-thnqf": {
+   "running_hours": 1.25,
+   "first_running_utc": "2026-11-18T12:00Z",
+   "last_running_utc": "2026-11-18T13:10Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-27-5l7r5": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-18T12:00Z",
+   "last_running_utc": "2026-11-18T13:20Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-28-nv9dx": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-18T12:00Z",
+   "last_running_utc": "2026-11-18T12:55Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-29-745zz": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-18T12:00Z",
+   "last_running_utc": "2026-11-18T12:55Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-3-8zs6l": {
+   "running_hours": 0.6667,
+   "first_running_utc": "2026-11-17T23:55Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-3-fvt8m": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T02:30Z",
+   "last_running_utc": "2026-11-18T02:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-3-kq7kr": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T03:55Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-3-p82mj": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-18T08:30Z",
+   "last_running_utc": "2026-11-18T09:30Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-5-g7ww6": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T02:30Z",
+   "last_running_utc": "2026-11-18T02:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-5-gkxsk": {
+   "running_hours": 0.6667,
+   "first_running_utc": "2026-11-17T23:55Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-5-sgmj5": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-18T09:05Z",
+   "last_running_utc": "2026-11-18T10:25Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-6-94r4m": {
+   "running_hours": 0.75,
+   "first_running_utc": "2026-11-17T23:30Z",
+   "last_running_utc": "2026-11-18T00:05Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-7-mrqcn": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T08:45Z",
+   "last_running_utc": "2026-11-18T09:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-8-8tsc4": {
+   "running_hours": 0.0833,
+   "first_running_utc": null,
+   "last_running_utc": "2026-11-18T00:45Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-8-mf4p5": {
+   "running_hours": 0.6667,
+   "first_running_utc": "2026-11-17T23:55Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-8-q772f": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-18T08:50Z",
+   "last_running_utc": "2026-11-18T10:05Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-9-kv7sr": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-18T09:05Z",
+   "last_running_utc": "2026-11-18T11:40Z"
+  },
+  "ft-budget-fixed-1e4-qg-raunav-9-zjgjr": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-18T00:15Z",
+   "last_running_utc": "2026-11-18T00:30Z"
+  },
+  "ft-budget-fixed-1e4-qgretry-raunav-0-56crl": {
+   "running_hours": 0.1667,
+   "first_running_utc": "2026-11-18T04:00Z",
+   "last_running_utc": "2026-11-18T04:05Z"
+  },
+  "ft-budget-fixed-1e4-qgretry-raunav-0-dz2ss": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-18T00:45Z",
+   "last_running_utc": "2026-11-18T00:45Z"
+  },
+  "ft-budget-fixed-1e4-qgretry-raunav-0-zqn86": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T09:40Z",
+   "last_running_utc": "2026-11-18T10:40Z"
+  },
+  "ft-budget-fixed-1e4-qgretry-raunav-1-tgbfc": {
+   "running_hours": 1.6667,
+   "first_running_utc": "2026-11-18T10:55Z",
+   "last_running_utc": "2026-11-18T12:30Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-0-2jl6x": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T12:25Z",
+   "last_running_utc": "2026-11-17T13:45Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-1-tftcq": {
+   "running_hours": 1.8333,
+   "first_running_utc": "2026-11-17T13:50Z",
+   "last_running_utc": "2026-11-17T15:35Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-10-2q4fm": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T14:55Z",
+   "last_running_utc": "2026-11-17T16:15Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-11-wdxvq": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-17T15:40Z",
+   "last_running_utc": "2026-11-17T16:55Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-12-rxbd5": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T16:15Z",
+   "last_running_utc": "2026-11-17T17:35Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-13-mghh6": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T16:15Z",
+   "last_running_utc": "2026-11-17T17:35Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-14-xz79l": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T16:15Z",
+   "last_running_utc": "2026-11-17T17:35Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-15-425dn": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T16:15Z",
+   "last_running_utc": "2026-11-17T17:35Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-16-4vkbf": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T16:15Z",
+   "last_running_utc": "2026-11-17T17:35Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-17-58tl2": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T16:15Z",
+   "last_running_utc": "2026-11-17T17:35Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-18-rf474": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-17T16:15Z",
+   "last_running_utc": "2026-11-17T17:35Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-19-zb84g": {
+   "running_hours": 2.75,
+   "first_running_utc": "2026-11-17T16:25Z",
+   "last_running_utc": "2026-11-17T19:05Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-2-dsspp": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T14:50Z",
+   "last_running_utc": "2026-11-17T16:10Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-20-2l2t4": {
+   "running_hours": 1.8333,
+   "first_running_utc": "2026-11-17T17:45Z",
+   "last_running_utc": "2026-11-17T19:30Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-20-4hkw4": {
+   "running_hours": 0.75,
+   "first_running_utc": "2026-11-17T17:00Z",
+   "last_running_utc": "2026-11-17T17:40Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-21-zhcsq": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T17:35Z",
+   "last_running_utc": "2026-11-17T19:00Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-22-f6njr": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-17T17:40Z",
+   "last_running_utc": "2026-11-17T18:55Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-23-l9jrq": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-17T17:40Z",
+   "last_running_utc": "2026-11-17T17:40Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-23-m8wc5": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T17:45Z",
+   "last_running_utc": "2026-11-17T19:05Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-24-vlrl4": {
+   "running_hours": 2.75,
+   "first_running_utc": "2026-11-17T17:40Z",
+   "last_running_utc": "2026-11-17T20:25Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-25-jwmpw": {
+   "running_hours": 1.8333,
+   "first_running_utc": "2026-11-17T17:40Z",
+   "last_running_utc": "2026-11-17T19:25Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-26-2x4c2": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T17:40Z",
+   "last_running_utc": "2026-11-17T19:00Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-27-97nrr": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-17T17:40Z",
+   "last_running_utc": "2026-11-17T17:40Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-27-fbnw5": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T17:45Z",
+   "last_running_utc": "2026-11-17T19:05Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-28-69jn9": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T17:40Z",
+   "last_running_utc": "2026-11-17T19:00Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-29-s4k4n": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T19:00Z",
+   "last_running_utc": "2026-11-17T20:25Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-3-h5jcc": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T14:50Z",
+   "last_running_utc": "2026-11-17T16:10Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-30-tnr7g": {
+   "running_hours": 1.25,
+   "first_running_utc": "2026-11-17T19:05Z",
+   "last_running_utc": "2026-11-17T20:20Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-4-wpd6s": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T14:50Z",
+   "last_running_utc": "2026-11-17T16:10Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-5-fpw5h": {
+   "running_hours": 2.8333,
+   "first_running_utc": "2026-11-17T14:50Z",
+   "last_running_utc": "2026-11-17T17:35Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-6-6lt22": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T14:50Z",
+   "last_running_utc": "2026-11-17T16:10Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-7-nfgvg": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T14:50Z",
+   "last_running_utc": "2026-11-17T16:10Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-8-qmw45": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T14:50Z",
+   "last_running_utc": "2026-11-17T16:10Z"
+  },
+  "ft-budget-fixed-1e4-top-raunav-9-2pztk": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-17T14:55Z",
+   "last_running_utc": "2026-11-17T16:15Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-0-2qnqh": {
+   "running_hours": 3.0,
+   "first_running_utc": "2026-11-16T11:25Z",
+   "last_running_utc": "2026-11-16T14:20Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-1-ndprj": {
+   "running_hours": 3.0,
+   "first_running_utc": "2026-11-16T11:40Z",
+   "last_running_utc": "2026-11-16T14:35Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-10-gg6tb": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-16T23:15Z",
+   "last_running_utc": "2026-11-16T23:15Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-10-kqk9n": {
+   "running_hours": 2.6667,
+   "first_running_utc": "2026-11-16T23:40Z",
+   "last_running_utc": "2026-11-17T02:30Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-11-jkmbx": {
+   "running_hours": 1.5,
+   "first_running_utc": "2026-11-16T22:25Z",
+   "last_running_utc": "2026-11-17T00:00Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-11-nd6l7": {
+   "running_hours": 2.75,
+   "first_running_utc": "2026-11-17T05:20Z",
+   "last_running_utc": "2026-11-17T08:10Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-12-lrsws": {
+   "running_hours": 2.6667,
+   "first_running_utc": "2026-11-17T09:20Z",
+   "last_running_utc": "2026-11-17T12:05Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-13-rlthf": {
+   "running_hours": 2.6667,
+   "first_running_utc": "2026-11-17T04:00Z",
+   "last_running_utc": "2026-11-17T06:45Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-14-6fqmn": {
+   "running_hours": 3.1667,
+   "first_running_utc": "2026-11-17T11:20Z",
+   "last_running_utc": "2026-11-17T14:30Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-2-nzjcz": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-16T13:35Z",
+   "last_running_utc": "2026-11-16T16:55Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-3-wksnr": {
+   "running_hours": 3.0,
+   "first_running_utc": "2026-11-16T14:15Z",
+   "last_running_utc": "2026-11-16T17:10Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-4-9ftnb": {
+   "running_hours": 3.0,
+   "first_running_utc": "2026-11-16T16:40Z",
+   "last_running_utc": "2026-11-16T19:35Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-5-hjz78": {
+   "running_hours": 3.0,
+   "first_running_utc": "2026-11-16T16:40Z",
+   "last_running_utc": "2026-11-16T19:35Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-6-62th5": {
+   "running_hours": 3.0,
+   "first_running_utc": "2026-11-16T17:15Z",
+   "last_running_utc": "2026-11-16T20:10Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-7-4dhx2": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-16T19:10Z",
+   "last_running_utc": "2026-11-16T22:05Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-8-svjf8": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-16T23:15Z",
+   "last_running_utc": "2026-11-16T23:15Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-8-zjn4c": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-16T23:40Z",
+   "last_running_utc": "2026-11-17T02:25Z"
+  },
+  "ft-budget-fixed-1e5-a100-raunav-9-4zlbt": {
+   "running_hours": 2.6667,
+   "first_running_utc": "2026-11-16T23:50Z",
+   "last_running_utc": "2026-11-17T02:35Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-0-xnlcp": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-15T17:15Z",
+   "last_running_utc": "2026-11-15T22:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-1-lnkdb": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-15T17:20Z",
+   "last_running_utc": "2026-11-15T22:15Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-10-bc986": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-15T18:45Z",
+   "last_running_utc": "2026-11-15T23:35Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-11-g6rgn": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-15T17:05Z",
+   "last_running_utc": "2026-11-15T22:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-12-r7w7t": {
+   "running_hours": 3.6667,
+   "first_running_utc": "2026-11-15T20:00Z",
+   "last_running_utc": "2026-11-15T23:35Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-13-89r84": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-15T22:05Z",
+   "last_running_utc": "2026-11-16T03:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-14-dvp4p": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-15T23:10Z",
+   "last_running_utc": "2026-11-16T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-15-lk6xw": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-15T23:10Z",
+   "last_running_utc": "2026-11-16T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-16-tqvj8": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-15T23:15Z",
+   "last_running_utc": "2026-11-16T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-17-l2zmz": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-15T23:20Z",
+   "last_running_utc": "2026-11-16T04:15Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-18-fb9c4": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-15T23:40Z",
+   "last_running_utc": "2026-11-16T04:35Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-19-5ghts": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-15T23:55Z",
+   "last_running_utc": "2026-11-16T04:45Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-2-lrrtk": {
+   "running_hours": 10.0833,
+   "first_running_utc": "2026-11-15T17:25Z",
+   "last_running_utc": "2026-11-16T03:30Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-20-z6xrv": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-16T00:25Z",
+   "last_running_utc": "2026-11-16T05:20Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-21-jl4zv": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-16T03:05Z",
+   "last_running_utc": "2026-11-16T08:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-22-tfndt": {
+   "running_hours": 4.1667,
+   "first_running_utc": "2026-11-16T03:40Z",
+   "last_running_utc": "2026-11-16T07:45Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-23-8m4km": {
+   "running_hours": 4.25,
+   "first_running_utc": "2026-11-16T04:10Z",
+   "last_running_utc": "2026-11-16T08:20Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-24-zhzlj": {
+   "running_hours": 5.5833,
+   "first_running_utc": "2026-11-16T04:10Z",
+   "last_running_utc": "2026-11-16T09:40Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-25-rwhsc": {
+   "running_hours": 5.1667,
+   "first_running_utc": "2026-11-16T04:10Z",
+   "last_running_utc": "2026-11-16T09:15Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-26-k24bt": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-16T04:20Z",
+   "last_running_utc": "2026-11-16T09:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-27-kd9kb": {
+   "running_hours": 9.4167,
+   "first_running_utc": "2026-11-16T04:25Z",
+   "last_running_utc": "2026-11-16T13:45Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-28-qwppd": {
+   "running_hours": 5.75,
+   "first_running_utc": "2026-11-16T04:25Z",
+   "last_running_utc": "2026-11-16T10:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-29-bj77j": {
+   "running_hours": 9.4167,
+   "first_running_utc": "2026-11-16T04:45Z",
+   "last_running_utc": "2026-11-16T14:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-3-k29wt": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-15T18:20Z",
+   "last_running_utc": "2026-11-15T23:20Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-30-vrvn2": {
+   "running_hours": 9.3333,
+   "first_running_utc": "2026-11-16T04:50Z",
+   "last_running_utc": "2026-11-16T14:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-31-nk4bc": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-16T05:30Z",
+   "last_running_utc": "2026-11-16T10:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-32-gfcrr": {
+   "running_hours": 4.0,
+   "first_running_utc": "2026-11-16T07:50Z",
+   "last_running_utc": "2026-11-16T11:45Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-33-2n48n": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-16T11:55Z",
+   "last_running_utc": "2026-11-16T16:35Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-33-qcjnq": {
+   "running_hours": 3.8333,
+   "first_running_utc": "2026-11-16T08:05Z",
+   "last_running_utc": "2026-11-16T11:50Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-34-tfwg6": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T08:30Z",
+   "last_running_utc": "2026-11-16T13:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-35-rbqg5": {
+   "running_hours": 3.9167,
+   "first_running_utc": "2026-11-16T09:10Z",
+   "last_running_utc": "2026-11-16T13:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-36-jb4wg": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-16T09:20Z",
+   "last_running_utc": "2026-11-16T14:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-37-p6kkg": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-16T09:25Z",
+   "last_running_utc": "2026-11-16T14:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-38-vdl5r": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T09:25Z",
+   "last_running_utc": "2026-11-16T14:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-39-5gvp6": {
+   "running_hours": 5.5833,
+   "first_running_utc": "2026-11-16T09:25Z",
+   "last_running_utc": "2026-11-16T14:55Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-4-xksmv": {
+   "running_hours": 5.8333,
+   "first_running_utc": "2026-11-15T18:20Z",
+   "last_running_utc": "2026-11-16T00:15Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-40-489vp": {
+   "running_hours": 9.4167,
+   "first_running_utc": "2026-11-16T10:00Z",
+   "last_running_utc": "2026-11-16T19:20Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-41-5hvz6": {
+   "running_hours": 5.5833,
+   "first_running_utc": "2026-11-16T09:45Z",
+   "last_running_utc": "2026-11-16T15:15Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-42-r2bfx": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T09:55Z",
+   "last_running_utc": "2026-11-16T14:30Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-43-tcrz8": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T09:25Z",
+   "last_running_utc": "2026-11-16T14:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-44-dzkm8": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-16T09:50Z",
+   "last_running_utc": "2026-11-16T14:30Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-45-6ql9q": {
+   "running_hours": 4.5,
+   "first_running_utc": "2026-11-16T09:45Z",
+   "last_running_utc": "2026-11-16T14:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-46-5l5rd": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-16T10:10Z",
+   "last_running_utc": "2026-11-16T15:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-47-5cqsp": {
+   "running_hours": 3.8333,
+   "first_running_utc": "2026-11-16T10:15Z",
+   "last_running_utc": "2026-11-16T14:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-48-jp42f": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T11:50Z",
+   "last_running_utc": "2026-11-16T16:25Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-49-79mtw": {
+   "running_hours": 10.8333,
+   "first_running_utc": "2026-11-16T12:55Z",
+   "last_running_utc": "2026-11-17T01:35Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-5-bv8tp": {
+   "running_hours": 10.0833,
+   "first_running_utc": "2026-11-15T18:10Z",
+   "last_running_utc": "2026-11-16T04:20Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-50-7wmm7": {
+   "running_hours": 3.8333,
+   "first_running_utc": "2026-11-16T13:00Z",
+   "last_running_utc": "2026-11-16T16:50Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-51-zq2g6": {
+   "running_hours": 7.0833,
+   "first_running_utc": "2026-11-16T13:10Z",
+   "last_running_utc": "2026-11-16T20:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-52-j4dsw": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-16T14:00Z",
+   "last_running_utc": "2026-11-16T18:45Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-53-9rdqp": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-16T14:05Z",
+   "last_running_utc": "2026-11-16T18:45Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-54-r5tn2": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-16T14:05Z",
+   "last_running_utc": "2026-11-16T18:50Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-55-bfsf7": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-16T14:05Z",
+   "last_running_utc": "2026-11-16T18:45Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-56-lklpw": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T14:10Z",
+   "last_running_utc": "2026-11-16T18:45Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-57-56h2v": {
+   "running_hours": 3.8333,
+   "first_running_utc": "2026-11-16T14:10Z",
+   "last_running_utc": "2026-11-16T17:55Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-58-snp69": {
+   "running_hours": 6.5,
+   "first_running_utc": "2026-11-16T14:10Z",
+   "last_running_utc": "2026-11-16T22:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-59-cz6tt": {
+   "running_hours": 6.4167,
+   "first_running_utc": "2026-11-16T14:15Z",
+   "last_running_utc": "2026-11-16T22:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-6-jldvd": {
+   "running_hours": 10.0833,
+   "first_running_utc": "2026-11-15T18:15Z",
+   "last_running_utc": "2026-11-16T04:20Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-60-vqh4j": {
+   "running_hours": 4.4167,
+   "first_running_utc": "2026-11-16T14:15Z",
+   "last_running_utc": "2026-11-16T18:35Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-61-8759j": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T14:35Z",
+   "last_running_utc": "2026-11-16T19:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-62-9dlj2": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-16T14:35Z",
+   "last_running_utc": "2026-11-16T19:20Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-63-zj6hg": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T15:00Z",
+   "last_running_utc": "2026-11-16T19:35Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-64-p4sdv": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T15:00Z",
+   "last_running_utc": "2026-11-16T19:40Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-65-nq2lz": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-16T15:20Z",
+   "last_running_utc": "2026-11-16T19:55Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-66-rdcfp": {
+   "running_hours": 3.75,
+   "first_running_utc": "2026-11-16T16:30Z",
+   "last_running_utc": "2026-11-16T20:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-67-wzwnh": {
+   "running_hours": 3.5833,
+   "first_running_utc": "2026-11-16T16:40Z",
+   "last_running_utc": "2026-11-16T20:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-68-r9g89": {
+   "running_hours": 3.3333,
+   "first_running_utc": "2026-11-16T16:55Z",
+   "last_running_utc": "2026-11-16T20:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-68-xfhqs": {
+   "running_hours": 5.8333,
+   "first_running_utc": "2026-11-16T21:35Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-69-77zhv": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-17T03:10Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-69-8sfw7": {
+   "running_hours": 2.25,
+   "first_running_utc": "2026-11-16T18:00Z",
+   "last_running_utc": "2026-11-16T20:10Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-69-z94zk": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-16T21:25Z",
+   "last_running_utc": "2026-11-17T03:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-7-gglb8": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-15T17:10Z",
+   "last_running_utc": "2026-11-15T22:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-70-lw8td": {
+   "running_hours": 7.4167,
+   "first_running_utc": "2026-11-16T18:40Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-71-42vg2": {
+   "running_hours": 3.8333,
+   "first_running_utc": "2026-11-16T18:50Z",
+   "last_running_utc": "2026-11-17T00:25Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-71-c76xf": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-17T00:30Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-72-2tc89": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-16T18:50Z",
+   "last_running_utc": "2026-11-16T23:00Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-72-d6qpt": {
+   "running_hours": 4.0833,
+   "first_running_utc": "2026-11-16T23:15Z",
+   "last_running_utc": "2026-11-17T03:35Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-72-rdlhj": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-17T03:55Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-73-mhpr9": {
+   "running_hours": 7.25,
+   "first_running_utc": "2026-11-16T18:50Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-74-vk7cg": {
+   "running_hours": 3.3333,
+   "first_running_utc": "2026-11-17T00:35Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-74-zjp96": {
+   "running_hours": 3.9167,
+   "first_running_utc": "2026-11-16T18:50Z",
+   "last_running_utc": "2026-11-17T00:30Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-75-gvdx7": {
+   "running_hours": 3.3333,
+   "first_running_utc": "2026-11-17T00:35Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-75-rtcmp": {
+   "running_hours": 3.8333,
+   "first_running_utc": "2026-11-16T18:55Z",
+   "last_running_utc": "2026-11-17T00:30Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-76-gxlhh": {
+   "running_hours": 3.9167,
+   "first_running_utc": "2026-11-16T19:15Z",
+   "last_running_utc": "2026-11-17T00:55Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-76-r6fgx": {
+   "running_hours": 2.9167,
+   "first_running_utc": "2026-11-17T01:00Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-77-2qb2k": {
+   "running_hours": 4.1667,
+   "first_running_utc": "2026-11-16T19:25Z",
+   "last_running_utc": "2026-11-17T01:25Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-77-tcljs": {
+   "running_hours": 2.3333,
+   "first_running_utc": "2026-11-17T01:35Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-78-d8bt5": {
+   "running_hours": 6.6667,
+   "first_running_utc": "2026-11-16T19:25Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-79-cqxc4": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-16T19:40Z",
+   "last_running_utc": "2026-11-17T02:30Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-79-m7w9x": {
+   "running_hours": 1.5,
+   "first_running_utc": "2026-11-17T02:35Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-8-rxclz": {
+   "running_hours": 19.9167,
+   "first_running_utc": "2026-11-15T16:50Z",
+   "last_running_utc": "2026-11-16T12:50Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-80-7fjtg": {
+   "running_hours": 3.75,
+   "first_running_utc": "2026-11-16T19:45Z",
+   "last_running_utc": "2026-11-17T01:15Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-80-xlxkq": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-17T01:25Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-81-28c2j": {
+   "running_hours": 6.0833,
+   "first_running_utc": "2026-11-16T20:00Z",
+   "last_running_utc": "2026-11-17T04:05Z"
+  },
+  "ft-budget-fixed-1e5-gpu-raunav-9-gz59x": {
+   "running_hours": 2.75,
+   "first_running_utc": "2026-11-15T16:30Z",
+   "last_running_utc": "2026-11-15T19:10Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-0-qcxff": {
+   "running_hours": 11.8333,
+   "first_running_utc": "2026-11-17T04:10Z",
+   "last_running_utc": "2026-11-17T16:20Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-1-4l7ql": {
+   "running_hours": 5.8333,
+   "first_running_utc": "2026-11-17T04:40Z",
+   "last_running_utc": "2026-11-17T10:45Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-10-4q682": {
+   "running_hours": 5.75,
+   "first_running_utc": "2026-11-17T05:10Z",
+   "last_running_utc": "2026-11-17T11:10Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-11-nz7kt": {
+   "running_hours": 12.0833,
+   "first_running_utc": "2026-11-17T05:05Z",
+   "last_running_utc": "2026-11-17T17:30Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-12-6qr4j": {
+   "running_hours": 6.25,
+   "first_running_utc": "2026-11-17T05:05Z",
+   "last_running_utc": "2026-11-17T11:35Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-13-m5wtm": {
+   "running_hours": 11.8333,
+   "first_running_utc": "2026-11-17T05:05Z",
+   "last_running_utc": "2026-11-17T17:20Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-14-mk94b": {
+   "running_hours": 5.75,
+   "first_running_utc": "2026-11-17T05:10Z",
+   "last_running_utc": "2026-11-17T11:10Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-15-c6vxg": {
+   "running_hours": 12.1667,
+   "first_running_utc": "2026-11-17T05:10Z",
+   "last_running_utc": "2026-11-17T17:40Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-16-rljpg": {
+   "running_hours": 11.8333,
+   "first_running_utc": "2026-11-17T05:10Z",
+   "last_running_utc": "2026-11-17T17:20Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-17-l87nd": {
+   "running_hours": 11.8333,
+   "first_running_utc": "2026-11-17T05:10Z",
+   "last_running_utc": "2026-11-17T17:20Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-18-wsqwb": {
+   "running_hours": 5.75,
+   "first_running_utc": "2026-11-17T05:10Z",
+   "last_running_utc": "2026-11-17T11:10Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-2-wmmkc": {
+   "running_hours": 11.8333,
+   "first_running_utc": "2026-11-17T04:10Z",
+   "last_running_utc": "2026-11-17T16:20Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-3-7chj8": {
+   "running_hours": 5.6667,
+   "first_running_utc": "2026-11-17T04:55Z",
+   "last_running_utc": "2026-11-17T10:50Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-4-qwhj9": {
+   "running_hours": 11.8333,
+   "first_running_utc": "2026-11-17T04:10Z",
+   "last_running_utc": "2026-11-17T16:20Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-5-sv8kk": {
+   "running_hours": 5.6667,
+   "first_running_utc": "2026-11-17T04:50Z",
+   "last_running_utc": "2026-11-17T10:45Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-6-9xr6b": {
+   "running_hours": 5.75,
+   "first_running_utc": "2026-11-17T04:55Z",
+   "last_running_utc": "2026-11-17T10:55Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-7-l8s54": {
+   "running_hours": 6.25,
+   "first_running_utc": "2026-11-17T04:30Z",
+   "last_running_utc": "2026-11-17T11:00Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-8-5m6d2": {
+   "running_hours": 11.9167,
+   "first_running_utc": "2026-11-17T05:05Z",
+   "last_running_utc": "2026-11-17T17:20Z"
+  },
+  "ft-budget-fixed-1e5-jc2b-raunav-9-p8bqg": {
+   "running_hours": 5.75,
+   "first_running_utc": "2026-11-17T05:10Z",
+   "last_running_utc": "2026-11-17T11:10Z"
+  },
+  "ft-budget-fixed-1e5-raunav-0-9v8jz": {
+   "running_hours": 0.0833,
+   "first_running_utc": null,
+   "last_running_utc": "2026-11-15T04:25Z"
+  },
+  "ft-budget-fixed-1e5-raunav-15-jszkg": {
+   "running_hours": 0.0833,
+   "first_running_utc": null,
+   "last_running_utc": "2026-11-15T04:30Z"
+  },
+  "ft-budget-fixed-1e5-raunav-6-65zmw": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-15T04:25Z",
+   "last_running_utc": "2026-11-15T04:40Z"
+  },
+  "ft-budget-fixed-1e5-raunav-8-9lsdl": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-15T05:15Z",
+   "last_running_utc": "2026-11-15T05:25Z"
+  },
+  "ft-budget-fixed-1e5-raunav-9-96z92": {
+   "running_hours": 0.0833,
+   "first_running_utc": null,
+   "last_running_utc": "2026-11-15T05:25Z"
+  },
+  "ft-budget-fixed-1e5-raunav-9-lhnmd": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-15T05:05Z",
+   "last_running_utc": "2026-11-15T05:20Z"
+  },
+  "ft-budget-fixed-1e5-tail-raunav-0-xr54p": {
+   "running_hours": 9.0,
+   "first_running_utc": "2026-11-17T04:55Z",
+   "last_running_utc": "2026-11-17T14:15Z"
+  },
+  "ft-budget-fixed-1e5-tail-raunav-1-9jxcc": {
+   "running_hours": 7.6667,
+   "first_running_utc": "2026-11-17T05:10Z",
+   "last_running_utc": "2026-11-17T13:10Z"
+  },
+  "ft-budget-fixed-1e5-tail-raunav-2-n686p": {
+   "running_hours": 4.0833,
+   "first_running_utc": "2026-11-17T11:50Z",
+   "last_running_utc": "2026-11-17T15:50Z"
+  },
+  "ft-budget-fixed-1e5-tail-raunav-3-gv4nb": {
+   "running_hours": 5.25,
+   "first_running_utc": "2026-11-17T11:50Z",
+   "last_running_utc": "2026-11-17T17:00Z"
+  },
+  "ft-budget-fixed-1e5-tail-raunav-4-4gdct": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-17T11:50Z",
+   "last_running_utc": "2026-11-17T16:35Z"
+  },
+  "ft-budget-fixed-1e5-tail-raunav-5-vqc54": {
+   "running_hours": 8.0833,
+   "first_running_utc": "2026-11-17T11:50Z",
+   "last_running_utc": "2026-11-17T19:50Z"
+  },
+  "ft-budget-fixed-1e5-tail-raunav-6-4ztj9": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-17T11:50Z",
+   "last_running_utc": "2026-11-17T16:30Z"
+  },
+  "ft-budget-fixed-1e5-tail-raunav-7-b44qg": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-17T11:50Z",
+   "last_running_utc": "2026-11-17T16:30Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-0-r6lnp": {
+   "running_hours": 3.5,
+   "first_running_utc": "2026-11-19T08:50Z",
+   "last_running_utc": "2026-11-19T12:25Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-1-gfkcd": {
+   "running_hours": 3.5,
+   "first_running_utc": "2026-11-19T09:15Z",
+   "last_running_utc": "2026-11-19T12:50Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-10-fncjz": {
+   "running_hours": 4.0,
+   "first_running_utc": "2026-11-19T19:40Z",
+   "last_running_utc": "2026-11-19T23:35Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-11-klj5b": {
+   "running_hours": 3.1667,
+   "first_running_utc": "2026-11-19T21:30Z",
+   "last_running_utc": "2026-11-20T00:35Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-12-cgfrg": {
+   "running_hours": 4.0833,
+   "first_running_utc": "2026-11-20T07:35Z",
+   "last_running_utc": "2026-11-20T11:35Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-13-q9pt2": {
+   "running_hours": 3.1667,
+   "first_running_utc": "2026-11-20T08:05Z",
+   "last_running_utc": "2026-11-20T11:10Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-14-dk9z5": {
+   "running_hours": 3.25,
+   "first_running_utc": "2026-11-20T09:25Z",
+   "last_running_utc": "2026-11-20T12:40Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-15-24hqj": {
+   "running_hours": 3.6667,
+   "first_running_utc": "2026-11-20T05:45Z",
+   "last_running_utc": "2026-11-20T09:20Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-16-f48l2": {
+   "running_hours": 3.3333,
+   "first_running_utc": "2026-11-20T14:40Z",
+   "last_running_utc": "2026-11-20T17:55Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-16-l54wb": {
+   "running_hours": 3.6667,
+   "first_running_utc": "2026-11-21T00:10Z",
+   "last_running_utc": "2026-11-21T03:45Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-17-2nm22": {
+   "running_hours": 3.1667,
+   "first_running_utc": "2026-11-20T11:15Z",
+   "last_running_utc": "2026-11-20T14:20Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-2-bnknx": {
+   "running_hours": 3.0833,
+   "first_running_utc": "2026-11-19T09:20Z",
+   "last_running_utc": "2026-11-19T12:30Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-3-rpcmw": {
+   "running_hours": 3.1667,
+   "first_running_utc": "2026-11-19T13:00Z",
+   "last_running_utc": "2026-11-19T16:05Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-4-rgzlt": {
+   "running_hours": 3.6667,
+   "first_running_utc": "2026-11-19T14:30Z",
+   "last_running_utc": "2026-11-19T18:05Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-5-9zz8j": {
+   "running_hours": 3.1667,
+   "first_running_utc": "2026-11-19T12:35Z",
+   "last_running_utc": "2026-11-19T15:40Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-6-5v2v9": {
+   "running_hours": 3.5833,
+   "first_running_utc": "2026-11-19T14:00Z",
+   "last_running_utc": "2026-11-19T17:35Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-7-l89fx": {
+   "running_hours": 3.6667,
+   "first_running_utc": "2026-11-19T17:50Z",
+   "last_running_utc": "2026-11-19T21:25Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-8-w2lgl": {
+   "running_hours": 3.9167,
+   "first_running_utc": "2026-11-19T23:40Z",
+   "last_running_utc": "2026-11-20T03:35Z"
+  },
+  "ft-budget-fixed-1e6-a100jc1-raunav-9-f9vms": {
+   "running_hours": 3.1667,
+   "first_running_utc": "2026-11-20T00:00Z",
+   "last_running_utc": "2026-11-20T03:05Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-0-jhjjn": {
+   "running_hours": 4.4167,
+   "first_running_utc": "2026-11-19T15:35Z",
+   "last_running_utc": "2026-11-19T19:55Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-1-vv8w5": {
+   "running_hours": 4.3333,
+   "first_running_utc": "2026-11-19T17:10Z",
+   "last_running_utc": "2026-11-19T21:25Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-10-4xzjq": {
+   "running_hours": 4.3333,
+   "first_running_utc": "2026-11-20T13:40Z",
+   "last_running_utc": "2026-11-20T17:55Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-11-jvl5t": {
+   "running_hours": 5.1667,
+   "first_running_utc": "2026-11-20T12:05Z",
+   "last_running_utc": "2026-11-20T17:10Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-12-kxw7k": {
+   "running_hours": 3.0833,
+   "first_running_utc": "2026-11-20T15:00Z",
+   "last_running_utc": "2026-11-20T18:00Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-13-277hl": {
+   "running_hours": 1.6667,
+   "first_running_utc": "2026-11-20T16:25Z",
+   "last_running_utc": "2026-11-20T18:00Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-2-wt547": {
+   "running_hours": 4.4167,
+   "first_running_utc": "2026-11-19T17:10Z",
+   "last_running_utc": "2026-11-19T21:30Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-3-sll47": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T00:45Z",
+   "last_running_utc": "2026-11-20T05:30Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-4-j5f5b": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T01:40Z",
+   "last_running_utc": "2026-11-20T06:25Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-5-nwhq7": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-19T21:40Z",
+   "last_running_utc": "2026-11-20T02:25Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-6-hxkb7": {
+   "running_hours": 4.4167,
+   "first_running_utc": "2026-11-20T05:55Z",
+   "last_running_utc": "2026-11-20T10:15Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-7-bvpfm": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-20T06:15Z",
+   "last_running_utc": "2026-11-20T11:05Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-8-gjj5t": {
+   "running_hours": 4.3333,
+   "first_running_utc": "2026-11-20T11:15Z",
+   "last_running_utc": "2026-11-20T15:30Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2b-raunav-9-8j9wz": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-20T08:50Z",
+   "last_running_utc": "2026-11-20T13:40Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2bs-raunav-0-l28rk": {
+   "running_hours": 4.25,
+   "first_running_utc": "2026-11-21T05:25Z",
+   "last_running_utc": "2026-11-21T09:40Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2bs-raunav-1-rsk2v": {
+   "running_hours": 4.3333,
+   "first_running_utc": "2026-11-21T06:25Z",
+   "last_running_utc": "2026-11-21T10:40Z"
+  },
+  "ft-budget-fixed-1e6-a100jc2bs-raunav-2-8z2hs": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-21T09:55Z",
+   "last_running_utc": "2026-11-21T14:45Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-0-jsscn": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-18T13:55Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-0-kkbc5": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-18T23:05Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-0-nxmwx": {
+   "running_hours": 5.9167,
+   "first_running_utc": "2026-11-19T11:20Z",
+   "last_running_utc": "2026-11-19T17:15Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-1-4rfcz": {
+   "running_hours": 5.6667,
+   "first_running_utc": "2026-11-19T04:10Z",
+   "last_running_utc": "2026-11-19T10:00Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-1-cxkdr": {
+   "running_hours": 3.6667,
+   "first_running_utc": "2026-11-18T19:20Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-10-z24zr": {
+   "running_hours": 9.0833,
+   "first_running_utc": "2026-11-20T00:05Z",
+   "last_running_utc": "2026-11-20T09:10Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-11-hwdwb": {
+   "running_hours": 9.0,
+   "first_running_utc": "2026-11-20T02:05Z",
+   "last_running_utc": "2026-11-20T11:05Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-2-2g9nc": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T15:20Z",
+   "last_running_utc": "2026-11-18T15:30Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-2-6kcfn": {
+   "running_hours": 4.5,
+   "first_running_utc": "2026-11-19T04:30Z",
+   "last_running_utc": "2026-11-19T09:05Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-3-bd2xm": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T15:20Z",
+   "last_running_utc": "2026-11-18T15:30Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-3-x928z": {
+   "running_hours": 9.0833,
+   "first_running_utc": "2026-11-19T18:00Z",
+   "last_running_utc": "2026-11-20T03:00Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-4-v728v": {
+   "running_hours": 9.0,
+   "first_running_utc": "2026-11-19T10:40Z",
+   "last_running_utc": "2026-11-19T19:40Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-5-hdl8j": {
+   "running_hours": 6.0,
+   "first_running_utc": "2026-11-19T19:10Z",
+   "last_running_utc": "2026-11-20T01:10Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-5-tck9s": {
+   "running_hours": 3.75,
+   "first_running_utc": "2026-11-18T19:15Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-6-8wxgw": {
+   "running_hours": 5.8333,
+   "first_running_utc": "2026-11-19T04:55Z",
+   "last_running_utc": "2026-11-19T10:55Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-6-tt5lf": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-18T15:20Z",
+   "last_running_utc": "2026-11-18T15:30Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-7-zwss7": {
+   "running_hours": 6.0,
+   "first_running_utc": "2026-11-19T11:05Z",
+   "last_running_utc": "2026-11-19T17:10Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-8-jl567": {
+   "running_hours": 6.25,
+   "first_running_utc": "2026-11-20T03:55Z",
+   "last_running_utc": "2026-11-20T10:05Z"
+  },
+  "ft-budget-fixed-1e6-jc1-raunav-9-xnjs2": {
+   "running_hours": 9.0,
+   "first_running_utc": "2026-11-20T05:30Z",
+   "last_running_utc": "2026-11-20T14:30Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-0-5xbzq": {
+   "running_hours": 7.75,
+   "first_running_utc": "2026-11-20T00:25Z",
+   "last_running_utc": "2026-11-20T08:10Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-0-mr7cv": {
+   "running_hours": 3.3333,
+   "first_running_utc": "2026-11-18T19:40Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-0-p2j9h": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-18T13:15Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-1-lvhfm": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-18T13:15Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-1-psrch": {
+   "running_hours": 7.8333,
+   "first_running_utc": "2026-11-19T12:25Z",
+   "last_running_utc": "2026-11-19T20:10Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-1-sphhb": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-18T21:50Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-10-wqrg6": {
+   "running_hours": 5.0833,
+   "first_running_utc": "2026-11-19T06:35Z",
+   "last_running_utc": "2026-11-19T11:50Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-11-mtxlp": {
+   "running_hours": 5.4167,
+   "first_running_utc": "2026-11-20T06:50Z",
+   "last_running_utc": "2026-11-20T12:10Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-2-hj6ht": {
+   "running_hours": 6.0833,
+   "first_running_utc": "2026-11-18T16:40Z",
+   "last_running_utc": "2026-11-18T22:55Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-2-s2hg2": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-18T13:15Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-3-f4bjh": {
+   "running_hours": 2.8333,
+   "first_running_utc": "2026-11-18T20:10Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-3-f8tfs": {
+   "running_hours": 7.75,
+   "first_running_utc": "2026-11-19T06:45Z",
+   "last_running_utc": "2026-11-19T14:40Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-3-rmz7t": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-18T13:15Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-4-27558": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-18T13:15Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-4-rrsdf": {
+   "running_hours": 6.1667,
+   "first_running_utc": "2026-11-19T17:50Z",
+   "last_running_utc": "2026-11-19T23:55Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-4-stbd9": {
+   "running_hours": 0.5,
+   "first_running_utc": "2026-11-18T22:40Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-5-6fm8s": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-18T13:20Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-5-q5nkz": {
+   "running_hours": 2.75,
+   "first_running_utc": "2026-11-18T20:15Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-5-szvkl": {
+   "running_hours": 13.5833,
+   "first_running_utc": "2026-11-20T03:35Z",
+   "last_running_utc": "2026-11-20T17:05Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-6-45p5w": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T13:25Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-6-qgvx7": {
+   "running_hours": 13.6667,
+   "first_running_utc": "2026-11-19T11:45Z",
+   "last_running_utc": "2026-11-20T01:25Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-6-rx57p": {
+   "running_hours": 1.25,
+   "first_running_utc": "2026-11-18T21:55Z",
+   "last_running_utc": "2026-11-18T23:05Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-7-692lv": {
+   "running_hours": 7.4167,
+   "first_running_utc": "2026-11-19T23:10Z",
+   "last_running_utc": "2026-11-20T06:35Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-7-glhkx": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-18T13:25Z",
+   "last_running_utc": "2026-11-18T14:15Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-8-f4gdt": {
+   "running_hours": 7.8333,
+   "first_running_utc": "2026-11-20T06:15Z",
+   "last_running_utc": "2026-11-20T14:00Z"
+  },
+  "ft-budget-fixed-1e6-jc2b-raunav-9-5k7m4": {
+   "running_hours": 7.75,
+   "first_running_utc": "2026-11-20T04:30Z",
+   "last_running_utc": "2026-11-20T12:10Z"
+  },
+  "ft-budget-fixed-bench-retry-raunav-0-gxdfj": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-15T05:55Z",
+   "last_running_utc": "2026-11-15T06:05Z"
+  },
+  "ft-budget-fixed-bench-retry-raunav-0-z96w4": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-15T04:30Z",
+   "last_running_utc": "2026-11-15T04:45Z"
+  },
+  "ft-budget-fixed-bench-retry-raunav-1-6h4kc": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-15T06:00Z",
+   "last_running_utc": "2026-11-15T06:55Z"
+  },
+  "ft-budget-fixed-head-jc2b-raunav-0-q7wcl": {
+   "running_hours": 5.1667,
+   "first_running_utc": "2026-11-21T03:05Z",
+   "last_running_utc": "2026-11-21T08:10Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-0-629qr": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-21T18:00Z",
+   "last_running_utc": "2026-11-21T22:45Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-1-rv5vc": {
+   "running_hours": 11.5,
+   "first_running_utc": "2026-11-21T18:25Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-10-228lp": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-22T00:30Z",
+   "last_running_utc": "2026-11-22T05:10Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-11-2vwpv": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-22T01:00Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-12-rfw5v": {
+   "running_hours": 0.5,
+   "first_running_utc": "2026-11-22T05:25Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-2-6p7qp": {
+   "running_hours": 3.9167,
+   "first_running_utc": "2026-11-21T18:20Z",
+   "last_running_utc": "2026-11-21T22:15Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-3-575m6": {
+   "running_hours": 8.9167,
+   "first_running_utc": "2026-11-21T21:00Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-4-2cgj9": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-21T20:35Z",
+   "last_running_utc": "2026-11-21T23:55Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-5-cznk9": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-21T20:30Z",
+   "last_running_utc": "2026-11-21T23:50Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-6-fv5tx": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-22T01:00Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-7-6xx6z": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-22T00:25Z",
+   "last_running_utc": "2026-11-22T05:05Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-8-p7lmh": {
+   "running_hours": 5.5833,
+   "first_running_utc": "2026-11-22T00:20Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-qg1e3-raunav-9-fgk6t": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-22T00:30Z",
+   "last_running_utc": "2026-11-22T05:15Z"
+  },
+  "ft-budget-fixed-rate-raunav-0-grpdj": {
+   "running_hours": 2.1667,
+   "first_running_utc": "2026-11-21T05:15Z",
+   "last_running_utc": "2026-11-21T07:20Z"
+  },
+  "ft-budget-fixed-rate-raunav-1-pswwg": {
+   "running_hours": 2.1667,
+   "first_running_utc": "2026-11-21T05:15Z",
+   "last_running_utc": "2026-11-21T07:20Z"
+  },
+  "ft-budget-fixed-rate-raunav-10-2cmcj": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-21T07:25Z",
+   "last_running_utc": "2026-11-21T09:25Z"
+  },
+  "ft-budget-fixed-rate-raunav-11-scnbv": {
+   "running_hours": 2.1667,
+   "first_running_utc": "2026-11-21T07:45Z",
+   "last_running_utc": "2026-11-21T09:50Z"
+  },
+  "ft-budget-fixed-rate-raunav-12-ggg9q": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-21T09:05Z",
+   "last_running_utc": "2026-11-21T11:00Z"
+  },
+  "ft-budget-fixed-rate-raunav-13-pvkq8": {
+   "running_hours": 2.1667,
+   "first_running_utc": "2026-11-21T08:55Z",
+   "last_running_utc": "2026-11-21T11:00Z"
+  },
+  "ft-budget-fixed-rate-raunav-14-47l9g": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-21T09:25Z",
+   "last_running_utc": "2026-11-21T11:25Z"
+  },
+  "ft-budget-fixed-rate-raunav-15-pq64t": {
+   "running_hours": 2.6667,
+   "first_running_utc": "2026-11-21T09:25Z",
+   "last_running_utc": "2026-11-21T12:00Z"
+  },
+  "ft-budget-fixed-rate-raunav-2-hcdgv": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-21T05:15Z",
+   "last_running_utc": "2026-11-21T07:15Z"
+  },
+  "ft-budget-fixed-rate-raunav-3-7pcc2": {
+   "running_hours": 3.5,
+   "first_running_utc": "2026-11-21T05:15Z",
+   "last_running_utc": "2026-11-21T08:40Z"
+  },
+  "ft-budget-fixed-rate-raunav-4-7k9q8": {
+   "running_hours": 3.5,
+   "first_running_utc": "2026-11-21T05:15Z",
+   "last_running_utc": "2026-11-21T08:40Z"
+  },
+  "ft-budget-fixed-rate-raunav-5-gxsnn": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-21T05:20Z",
+   "last_running_utc": "2026-11-21T07:15Z"
+  },
+  "ft-budget-fixed-rate-raunav-6-qpg7h": {
+   "running_hours": 3.5,
+   "first_running_utc": "2026-11-21T06:25Z",
+   "last_running_utc": "2026-11-21T09:50Z"
+  },
+  "ft-budget-fixed-rate-raunav-7-ttk4z": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-21T07:20Z",
+   "last_running_utc": "2026-11-21T09:20Z"
+  },
+  "ft-budget-fixed-rate-raunav-8-67m9k": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-21T07:20Z",
+   "last_running_utc": "2026-11-21T09:20Z"
+  },
+  "ft-budget-fixed-rate-raunav-9-87fv6": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-21T07:25Z",
+   "last_running_utc": "2026-11-21T09:25Z"
+  },
+  "ft-budget-fixed-rate-scratchjc1-raunav-0-s7q6v": {
+   "running_hours": 3.5833,
+   "first_running_utc": "2026-11-22T02:20Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-scratchjc1-raunav-1-bsmtj": {
+   "running_hours": 3.25,
+   "first_running_utc": "2026-11-22T02:40Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-scratchjc1-raunav-2-wnm8g": {
+   "running_hours": 3.5833,
+   "first_running_utc": "2026-11-22T02:20Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-scratchjc2b-raunav-0-xv4zv": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-22T05:40Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-rate-scratchjc2b-raunav-1-lvlqv": {
+   "running_hours": 2.25,
+   "first_running_utc": "2026-11-22T02:15Z",
+   "last_running_utc": "2026-11-22T04:25Z"
+  },
+  "ft-budget-fixed-smoke-1e3-raunav-0-fl5jd": {
+   "running_hours": 9.8333,
+   "first_running_utc": "2026-11-15T21:30Z",
+   "last_running_utc": "2026-11-16T07:15Z"
+  },
+  "ft-budget-fixed-smoke-1e3-raunav-1-b99rf": {
+   "running_hours": 20.1667,
+   "first_running_utc": "2026-11-15T20:45Z",
+   "last_running_utc": "2026-11-16T16:50Z"
+  },
+  "ft-budget-fixed-sweep-17-raunav-0-dc24c": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-15T21:30Z",
+   "last_running_utc": "2026-11-16T02:25Z"
+  },
+  "ft-budget-fixed-sweep-17-raunav-1-gq6x2": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-15T21:00Z",
+   "last_running_utc": "2026-11-16T01:55Z"
+  },
+  "ft-budget-fixed-sweep-17-raunav-2-6n96t": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-16T01:40Z",
+   "last_running_utc": "2026-11-16T06:20Z"
+  },
+  "ft-budget-fixed-sweep-17-raunav-2-8m84p": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-15T20:55Z",
+   "last_running_utc": "2026-11-16T01:35Z"
+  },
+  "ft-budget-fixed-sweep-17-raunav-2-brnmg": {
+   "running_hours": 2.9167,
+   "first_running_utc": "2026-11-16T06:30Z",
+   "last_running_utc": "2026-11-16T09:20Z"
+  },
+  "ft-budget-fixed-sweep-17-raunav-3-fm5wp": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-15T21:35Z",
+   "last_running_utc": "2026-11-16T02:15Z"
+  },
+  "ft-budget-fixed-sweep-17-raunav-4-ghtn2": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-15T21:35Z",
+   "last_running_utc": "2026-11-16T02:10Z"
+  },
+  "ft-budget-fixed-sweep-17-raunav-5-cgtsg": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-15T21:25Z",
+   "last_running_utc": "2026-11-16T02:05Z"
+  },
+  "ft-budget-fixed-sweep-1e4-qg-raunav-0-mwm4m": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-21T23:55Z",
+   "last_running_utc": "2026-11-22T01:10Z"
+  },
+  "ft-budget-fixed-sweep-1e4-qg-raunav-1-4wfpr": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-21T21:10Z",
+   "last_running_utc": "2026-11-21T22:10Z"
+  },
+  "ft-budget-fixed-sweep-1e4-qg-raunav-2-jnnlh": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-21T21:40Z",
+   "last_running_utc": "2026-11-21T23:00Z"
+  },
+  "ft-budget-fixed-sweep-1e4-qg-raunav-3-jrbss": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-22T01:15Z",
+   "last_running_utc": "2026-11-22T02:30Z"
+  },
+  "ft-budget-fixed-sweep-1e4-qg-raunav-4-q4skq": {
+   "running_hours": 1.3333,
+   "first_running_utc": "2026-11-22T00:25Z",
+   "last_running_utc": "2026-11-22T01:40Z"
+  },
+  "ft-budget-fixed-sweep-1e4-qg-raunav-5-ljr67": {
+   "running_hours": 1.5833,
+   "first_running_utc": "2026-11-22T01:15Z",
+   "last_running_utc": "2026-11-22T02:45Z"
+  },
+  "ft-budget-fixed-sweep-1e4-top-raunav-0-tg5gm": {
+   "running_hours": 2.75,
+   "first_running_utc": "2026-11-21T21:35Z",
+   "last_running_utc": "2026-11-22T00:20Z"
+  },
+  "ft-budget-fixed-sweep-1e4-top-raunav-1-w58qs": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-21T19:40Z",
+   "last_running_utc": "2026-11-21T21:40Z"
+  },
+  "ft-budget-fixed-sweep-1e4-top-raunav-2-lphq5": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-21T22:20Z",
+   "last_running_utc": "2026-11-21T23:15Z"
+  },
+  "ft-budget-fixed-sweep-1e4-top-raunav-3-9ml6q": {
+   "running_hours": 2.8333,
+   "first_running_utc": "2026-11-21T21:45Z",
+   "last_running_utc": "2026-11-22T00:30Z"
+  },
+  "ft-budget-fixed-sweep-1e4-top-raunav-4-lnpf9": {
+   "running_hours": 1.1667,
+   "first_running_utc": "2026-11-21T23:20Z",
+   "last_running_utc": "2026-11-22T00:25Z"
+  },
+  "ft-budget-fixed-sweep-1e4-top-raunav-5-47kk8": {
+   "running_hours": 1.5,
+   "first_running_utc": "2026-11-22T02:00Z",
+   "last_running_utc": "2026-11-22T03:25Z"
+  },
+  "ft-budget-fixed-sweep-a100-raunav-0-4rs65": {
+   "running_hours": 2.8333,
+   "first_running_utc": "2026-11-15T06:55Z",
+   "last_running_utc": "2026-11-15T09:45Z"
+  },
+  "ft-budget-fixed-sweep-a100-raunav-1-lffd7": {
+   "running_hours": 2.9167,
+   "first_running_utc": "2026-11-15T07:05Z",
+   "last_running_utc": "2026-11-15T10:05Z"
+  },
+  "ft-budget-fixed-sweep-a100-raunav-2-t9r2h": {
+   "running_hours": 3.25,
+   "first_running_utc": "2026-11-15T07:05Z",
+   "last_running_utc": "2026-11-15T10:20Z"
+  },
+  "ft-budget-fixed-sweep-a100-raunav-3-5wrnp": {
+   "running_hours": 2.9167,
+   "first_running_utc": "2026-11-15T07:00Z",
+   "last_running_utc": "2026-11-15T09:55Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-0-mqv5j": {
+   "running_hours": 9.0833,
+   "first_running_utc": "2026-11-21T05:15Z",
+   "last_running_utc": "2026-11-21T14:15Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-1-4gc8l": {
+   "running_hours": 8.0,
+   "first_running_utc": "2026-11-21T10:20Z",
+   "last_running_utc": "2026-11-21T18:20Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-1-snw49": {
+   "running_hours": 5.0833,
+   "first_running_utc": "2026-11-21T05:15Z",
+   "last_running_utc": "2026-11-21T10:15Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-10-kshh4": {
+   "running_hours": 13.5,
+   "first_running_utc": "2026-11-21T14:55Z",
+   "last_running_utc": "2026-11-22T04:25Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-11-cmgdx": {
+   "running_hours": 7.75,
+   "first_running_utc": "2026-11-21T14:45Z",
+   "last_running_utc": "2026-11-21T22:30Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-2-66b5n": {
+   "running_hours": 9.1667,
+   "first_running_utc": "2026-11-21T05:20Z",
+   "last_running_utc": "2026-11-21T14:25Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-3-262j8": {
+   "running_hours": 8.0,
+   "first_running_utc": "2026-11-21T10:20Z",
+   "last_running_utc": "2026-11-21T18:20Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-3-pslt9": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-21T05:20Z",
+   "last_running_utc": "2026-11-21T10:10Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-4-zzfcx": {
+   "running_hours": 6.0833,
+   "first_running_utc": "2026-11-21T05:35Z",
+   "last_running_utc": "2026-11-21T11:35Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-5-t69sp": {
+   "running_hours": 6.1667,
+   "first_running_utc": "2026-11-21T05:40Z",
+   "last_running_utc": "2026-11-21T11:45Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-6-wsdnl": {
+   "running_hours": 2.1667,
+   "first_running_utc": "2026-11-21T12:05Z",
+   "last_running_utc": "2026-11-21T14:10Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-7-5987r": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-21T12:05Z",
+   "last_running_utc": "2026-11-21T14:35Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-8-jmvkt": {
+   "running_hours": 6.0,
+   "first_running_utc": "2026-11-21T14:15Z",
+   "last_running_utc": "2026-11-21T20:15Z"
+  },
+  "ft-budget-fixed-sweep-all-big-raunav-9-kn2w4": {
+   "running_hours": 12.1667,
+   "first_running_utc": "2026-11-21T14:25Z",
+   "last_running_utc": "2026-11-22T02:40Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-0-mzqhj": {
+   "running_hours": 5.0833,
+   "first_running_utc": "2026-11-21T05:15Z",
+   "last_running_utc": "2026-11-21T10:15Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-1-4qvcf": {
+   "running_hours": 4.0,
+   "first_running_utc": "2026-11-21T14:10Z",
+   "last_running_utc": "2026-11-21T18:05Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-1-j6bmx": {
+   "running_hours": 4.0833,
+   "first_running_utc": "2026-11-21T10:05Z",
+   "last_running_utc": "2026-11-21T14:05Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-1-ltkr6": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-21T05:15Z",
+   "last_running_utc": "2026-11-21T10:00Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-10-xcdf7": {
+   "running_hours": 3.3333,
+   "first_running_utc": "2026-11-21T17:45Z",
+   "last_running_utc": "2026-11-21T21:05Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-11-q6wmf": {
+   "running_hours": 7.1667,
+   "first_running_utc": "2026-11-21T22:45Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-12-dppsr": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-22T00:20Z",
+   "last_running_utc": "2026-11-22T01:40Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-13-m88zb": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-22T00:40Z",
+   "last_running_utc": "2026-11-22T02:20Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-14-b997z": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-21T18:15Z",
+   "last_running_utc": "2026-11-21T19:55Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-15-c7tdr": {
+   "running_hours": 1.25,
+   "first_running_utc": "2026-11-21T18:25Z",
+   "last_running_utc": "2026-11-21T19:35Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-15-wx86s": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-22T01:45Z",
+   "last_running_utc": "2026-11-22T03:25Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-16-gwjkb": {
+   "running_hours": 1.5833,
+   "first_running_utc": "2026-11-22T04:20Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-17-w2mhk": {
+   "running_hours": 3.25,
+   "first_running_utc": "2026-11-22T02:40Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-18-829lr": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-22T05:30Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-19-b9zl7": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-22T04:30Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-2-22pvj": {
+   "running_hours": 5.0833,
+   "first_running_utc": "2026-11-21T08:10Z",
+   "last_running_utc": "2026-11-21T13:10Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-20-hst7z": {
+   "running_hours": 1.0833,
+   "first_running_utc": "2026-11-22T04:50Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-21-v7n9p": {
+   "running_hours": 0.9167,
+   "first_running_utc": "2026-11-22T05:00Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-3-cz9mv": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-21T08:50Z",
+   "last_running_utc": "2026-11-21T13:35Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-3-hblt2": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-21T13:40Z",
+   "last_running_utc": "2026-11-21T18:20Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-4-jd6rq": {
+   "running_hours": 6.5833,
+   "first_running_utc": "2026-11-21T09:05Z",
+   "last_running_utc": "2026-11-21T15:35Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-5-rtpf7": {
+   "running_hours": 5.0833,
+   "first_running_utc": "2026-11-21T09:25Z",
+   "last_running_utc": "2026-11-21T14:30Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-6-jqzfd": {
+   "running_hours": 6.1667,
+   "first_running_utc": "2026-11-21T10:20Z",
+   "last_running_utc": "2026-11-21T16:25Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-7-f76hb": {
+   "running_hours": 0.1667,
+   "first_running_utc": "2026-11-21T18:15Z",
+   "last_running_utc": "2026-11-21T18:20Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-7-rssxq": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-21T13:15Z",
+   "last_running_utc": "2026-11-21T17:55Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-8-zmxnk": {
+   "running_hours": 5.75,
+   "first_running_utc": "2026-11-21T14:50Z",
+   "last_running_utc": "2026-11-21T20:35Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-9-5dprx": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-22T02:25Z",
+   "last_running_utc": "2026-11-22T02:35Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-9-l2l57": {
+   "running_hours": 0.6667,
+   "first_running_utc": "2026-11-22T01:35Z",
+   "last_running_utc": "2026-11-22T02:10Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-9-mmphc": {
+   "running_hours": 4.25,
+   "first_running_utc": "2026-11-21T21:05Z",
+   "last_running_utc": "2026-11-22T01:20Z"
+  },
+  "ft-budget-fixed-sweep-all-small-raunav-9-vltxq": {
+   "running_hours": 5.3333,
+   "first_running_utc": "2026-11-21T15:40Z",
+   "last_running_utc": "2026-11-21T21:00Z"
+  },
+  "ft-budget-fixed-sweep-edge-raunav-0-w4q6p": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-21T08:30Z",
+   "last_running_utc": "2026-11-21T13:10Z"
+  },
+  "ft-budget-fixed-sweep-edge-raunav-1-6ctqq": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-21T08:45Z",
+   "last_running_utc": "2026-11-21T13:30Z"
+  },
+  "ft-budget-fixed-sweep-edge2-a100-raunav-0-jtmfc": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-21T18:50Z",
+   "last_running_utc": "2026-11-21T23:40Z"
+  },
+  "ft-budget-fixed-sweep-edge2-a100-raunav-0-ksmpc": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-21T18:20Z",
+   "last_running_utc": "2026-11-21T18:30Z"
+  },
+  "ft-budget-fixed-sweep-edge2-a100-raunav-3-9tw2z": {
+   "running_hours": 0.25,
+   "first_running_utc": "2026-11-21T19:20Z",
+   "last_running_utc": "2026-11-21T19:30Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-0-vxzc9": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-21T19:10Z",
+   "last_running_utc": "2026-11-21T23:50Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-1-895g7": {
+   "running_hours": 4.5833,
+   "first_running_utc": "2026-11-21T20:40Z",
+   "last_running_utc": "2026-11-22T01:10Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-2-ddqnt": {
+   "running_hours": 6.25,
+   "first_running_utc": "2026-11-21T20:05Z",
+   "last_running_utc": "2026-11-22T02:15Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-3-bh768": {
+   "running_hours": 5.75,
+   "first_running_utc": "2026-11-22T00:05Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-4-dsw6c": {
+   "running_hours": 1.0,
+   "first_running_utc": "2026-11-22T00:35Z",
+   "last_running_utc": "2026-11-22T01:30Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-5-5x8wz": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-21T18:15Z",
+   "last_running_utc": "2026-11-21T18:30Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-5-b22wv": {
+   "running_hours": 0.3333,
+   "first_running_utc": "2026-11-21T22:50Z",
+   "last_running_utc": "2026-11-21T23:05Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-6-ps4kp": {
+   "running_hours": 3.5,
+   "first_running_utc": "2026-11-21T21:05Z",
+   "last_running_utc": "2026-11-22T00:30Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-7-rmmjr": {
+   "running_hours": 0.5833,
+   "first_running_utc": "2026-11-22T01:10Z",
+   "last_running_utc": "2026-11-22T01:40Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-8-g777l": {
+   "running_hours": 5.4167,
+   "first_running_utc": "2026-11-22T00:30Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge2-big-raunav-9-v8fhz": {
+   "running_hours": 3.6667,
+   "first_running_utc": "2026-11-22T01:15Z",
+   "last_running_utc": "2026-11-22T04:50Z"
+  },
+  "ft-budget-fixed-sweep-edge2-gpu1e6-raunav-0-vdcvp": {
+   "running_hours": 7.8333,
+   "first_running_utc": "2026-11-21T21:35Z",
+   "last_running_utc": "2026-11-22T05:20Z"
+  },
+  "ft-budget-fixed-sweep-edge2-gpu1e6-raunav-1-2npkw": {
+   "running_hours": 8.0,
+   "first_running_utc": "2026-11-21T21:55Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge2-gpu1e6-raunav-2-w7q8x": {
+   "running_hours": 7.5833,
+   "first_running_utc": "2026-11-21T22:15Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge2-small-raunav-0-4rgtt": {
+   "running_hours": 5.9167,
+   "first_running_utc": "2026-11-21T18:15Z",
+   "last_running_utc": "2026-11-22T00:05Z"
+  },
+  "ft-budget-fixed-sweep-edge2-small-raunav-1-7fw9h": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-21T18:25Z",
+   "last_running_utc": "2026-11-21T23:20Z"
+  },
+  "ft-budget-fixed-sweep-edge3-raunav-0-8p2cz": {
+   "running_hours": 5.9167,
+   "first_running_utc": "2026-11-21T21:25Z",
+   "last_running_utc": "2026-11-22T03:15Z"
+  },
+  "ft-budget-fixed-sweep-edge3-raunav-1-cb78d": {
+   "running_hours": 5.25,
+   "first_running_utc": "2026-11-21T21:30Z",
+   "last_running_utc": "2026-11-22T02:40Z"
+  },
+  "ft-budget-fixed-sweep-edge4-raunav-0-zz8kc": {
+   "running_hours": 5.0833,
+   "first_running_utc": "2026-11-22T00:50Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge4-raunav-1-29sfk": {
+   "running_hours": 4.5,
+   "first_running_utc": "2026-11-22T01:25Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge5-raunav-0-sxcfj": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-22T02:45Z",
+   "last_running_utc": "2026-11-22T04:45Z"
+  },
+  "ft-budget-fixed-sweep-edge5-raunav-1-2zgzd": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-22T05:30Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge7-jc1-raunav-0-zlxn7": {
+   "running_hours": 3.1667,
+   "first_running_utc": "2026-11-22T02:45Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge7-jc1-raunav-1-bbr66": {
+   "running_hours": 2.3333,
+   "first_running_utc": "2026-11-22T03:30Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge7-jc2b-raunav-0-kt7zp": {
+   "running_hours": 3.1667,
+   "first_running_utc": "2026-11-22T02:40Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-edge8-raunav-0-9t8lq": {
+   "running_hours": 1.4167,
+   "first_running_utc": "2026-11-22T04:30Z",
+   "last_running_utc": "2026-11-22T05:50Z"
+  },
+  "ft-budget-fixed-sweep-ext-raunav-0-4rrwd": {
+   "running_hours": 4.9167,
+   "first_running_utc": "2026-11-15T09:10Z",
+   "last_running_utc": "2026-11-15T14:10Z"
+  },
+  "ft-budget-fixed-sweep-ext-raunav-1-8qrgq": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-15T14:10Z",
+   "last_running_utc": "2026-11-15T18:55Z"
+  },
+  "ft-budget-fixed-sweep-ext-raunav-1-d6nft": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-15T09:20Z",
+   "last_running_utc": "2026-11-15T14:00Z"
+  },
+  "ft-budget-fixed-sweep-ext-raunav-1-llf6g": {
+   "running_hours": 2.75,
+   "first_running_utc": "2026-11-15T19:00Z",
+   "last_running_utc": "2026-11-15T21:45Z"
+  },
+  "ft-budget-fixed-sweep-ext-raunav-2-crxnz": {
+   "running_hours": 2.5833,
+   "first_running_utc": "2026-11-15T09:20Z",
+   "last_running_utc": "2026-11-15T11:50Z"
+  },
+  "ft-budget-fixed-sweep-ext-raunav-3-c64qk": {
+   "running_hours": 5.0833,
+   "first_running_utc": "2026-11-15T09:20Z",
+   "last_running_utc": "2026-11-15T14:20Z"
+  },
+  "ft-budget-fixed-sweep-gpu-raunav-0-vpgxk": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-15T06:35Z",
+   "last_running_utc": "2026-11-15T11:35Z"
+  },
+  "ft-budget-fixed-sweep-gpu-raunav-1-jqs7f": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-15T06:30Z",
+   "last_running_utc": "2026-11-15T11:10Z"
+  },
+  "ft-budget-fixed-sweep-gpu-raunav-2-wlmct": {
+   "running_hours": 6.0833,
+   "first_running_utc": "2026-11-15T06:50Z",
+   "last_running_utc": "2026-11-15T12:55Z"
+  },
+  "ft-budget-fixed-sweep-gpu-raunav-3-hhsn2": {
+   "running_hours": 4.4167,
+   "first_running_utc": "2026-11-15T06:50Z",
+   "last_running_utc": "2026-11-15T11:20Z"
+  },
+  "ft-budget-fixed-sweep-gpu-raunav-4-z2khl": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-15T06:35Z",
+   "last_running_utc": "2026-11-15T11:35Z"
+  },
+  "ft-budget-fixed-sweep-gpu-raunav-5-ghf8q": {
+   "running_hours": 5.5833,
+   "first_running_utc": "2026-11-15T06:50Z",
+   "last_running_utc": "2026-11-15T12:25Z"
+  },
+  "ft-budget-fixed-sweep-gpu-raunav-6-pslgj": {
+   "running_hours": 9.3333,
+   "first_running_utc": "2026-11-15T06:35Z",
+   "last_running_utc": "2026-11-15T15:55Z"
+  },
+  "ft-budget-fixed-sweep-gpu-raunav-7-mr2bf": {
+   "running_hours": 2.6667,
+   "first_running_utc": "2026-11-15T06:30Z",
+   "last_running_utc": "2026-11-15T09:05Z"
+  },
+  "ft-budget-fixed-sweep-gpu2-raunav-0-gtw5v": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-15T08:20Z",
+   "last_running_utc": "2026-11-15T13:05Z"
+  },
+  "ft-budget-fixed-sweep-gpu2-raunav-1-vwxtq": {
+   "running_hours": 7.5833,
+   "first_running_utc": "2026-11-15T08:45Z",
+   "last_running_utc": "2026-11-15T16:20Z"
+  },
+  "ft-budget-fixed-sweep-gpu2-raunav-2-gkbf5": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-15T08:20Z",
+   "last_running_utc": "2026-11-15T13:20Z"
+  },
+  "ft-budget-fixed-sweep-gpu2-raunav-3-wp84q": {
+   "running_hours": 5.25,
+   "first_running_utc": "2026-11-15T08:20Z",
+   "last_running_utc": "2026-11-15T13:35Z"
+  },
+  "ft-budget-fixed-sweep-jc2b-raunav-0-jj6ws": {
+   "running_hours": 4.3333,
+   "first_running_utc": "2026-11-21T03:25Z",
+   "last_running_utc": "2026-11-21T07:40Z"
+  },
+  "ft-budget-fixed-sweep-jc2b-raunav-1-q9lmr": {
+   "running_hours": 4.4167,
+   "first_running_utc": "2026-11-21T02:00Z",
+   "last_running_utc": "2026-11-21T06:20Z"
+  },
+  "ft-budget-fixed-sweep-jc2b-raunav-2-szmv2": {
+   "running_hours": 4.4167,
+   "first_running_utc": "2026-11-20T23:40Z",
+   "last_running_utc": "2026-11-21T04:00Z"
+  },
+  "ft-budget-fixed-sweep-jc2b-raunav-3-8hxhx": {
+   "running_hours": 5.1667,
+   "first_running_utc": "2026-11-21T03:50Z",
+   "last_running_utc": "2026-11-21T08:55Z"
+  },
+  "ft-budget-fixed-sweep-jc2b-raunav-4-vlhc5": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-21T04:55Z",
+   "last_running_utc": "2026-11-21T09:55Z"
+  },
+  "ft-budget-fixed-sweep-jc2b-raunav-5-bd7n7": {
+   "running_hours": 4.25,
+   "first_running_utc": "2026-11-21T00:15Z",
+   "last_running_utc": "2026-11-21T04:25Z"
+  },
+  "ft-budget-fixed-sweep-jc2b-raunav-6-5mvvh": {
+   "running_hours": 5.0,
+   "first_running_utc": "2026-11-20T23:20Z",
+   "last_running_utc": "2026-11-21T04:20Z"
+  },
+  "ft-budget-fixed-sweep-jc2b-raunav-7-jhpwq": {
+   "running_hours": 4.4167,
+   "first_running_utc": "2026-11-21T04:30Z",
+   "last_running_utc": "2026-11-21T08:50Z"
+  },
+  "ft-budget-fixed-sweep-raunav-0-t48kb": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-15T06:20Z",
+   "last_running_utc": "2026-11-15T06:20Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-0-m4kmg": {
+   "running_hours": 2.1667,
+   "first_running_utc": "2026-11-20T23:00Z",
+   "last_running_utc": "2026-11-21T01:05Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-1-qphg4": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-20T23:00Z",
+   "last_running_utc": "2026-11-21T00:55Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-10-zzhnw": {
+   "running_hours": 6.75,
+   "first_running_utc": "2026-11-21T03:00Z",
+   "last_running_utc": "2026-11-21T09:40Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-11-fp87g": {
+   "running_hours": 6.3333,
+   "first_running_utc": "2026-11-21T03:05Z",
+   "last_running_utc": "2026-11-21T09:20Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-12-t7bqh": {
+   "running_hours": 6.3333,
+   "first_running_utc": "2026-11-21T03:15Z",
+   "last_running_utc": "2026-11-21T09:30Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-13-twmzj": {
+   "running_hours": 6.5,
+   "first_running_utc": "2026-11-21T03:15Z",
+   "last_running_utc": "2026-11-21T09:40Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-14-2w8ch": {
+   "running_hours": 6.1667,
+   "first_running_utc": "2026-11-21T07:10Z",
+   "last_running_utc": "2026-11-21T13:15Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-15-7tmdv": {
+   "running_hours": 7.0,
+   "first_running_utc": "2026-11-21T08:10Z",
+   "last_running_utc": "2026-11-21T15:10Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-2-j7km7": {
+   "running_hours": 3.5,
+   "first_running_utc": "2026-11-20T23:25Z",
+   "last_running_utc": "2026-11-21T02:50Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-3-7x9xc": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-20T23:00Z",
+   "last_running_utc": "2026-11-21T00:55Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-4-g5zrf": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-20T23:00Z",
+   "last_running_utc": "2026-11-21T02:20Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-5-fpklx": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-20T23:00Z",
+   "last_running_utc": "2026-11-21T00:55Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-6-v8jgw": {
+   "running_hours": 2.0,
+   "first_running_utc": "2026-11-21T01:00Z",
+   "last_running_utc": "2026-11-21T02:55Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-7-q2k66": {
+   "running_hours": 2.0833,
+   "first_running_utc": "2026-11-21T01:00Z",
+   "last_running_utc": "2026-11-21T03:00Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-8-kn2v5": {
+   "running_hours": 6.1667,
+   "first_running_utc": "2026-11-21T01:00Z",
+   "last_running_utc": "2026-11-21T07:05Z"
+  },
+  "ft-budget-fixed-sweep-rows-jc2b-raunav-9-kd7d8": {
+   "running_hours": 7.0833,
+   "first_running_utc": "2026-11-21T01:10Z",
+   "last_running_utc": "2026-11-21T08:10Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-0-992z9": {
+   "running_hours": 9.6667,
+   "first_running_utc": "2026-11-20T23:05Z",
+   "last_running_utc": "2026-11-21T08:40Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-1-w57xw": {
+   "running_hours": 4.75,
+   "first_running_utc": "2026-11-20T23:30Z",
+   "last_running_utc": "2026-11-21T04:10Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-10-5dxq6": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-21T05:50Z",
+   "last_running_utc": "2026-11-21T10:35Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-2-zjlkq": {
+   "running_hours": 9.5,
+   "first_running_utc": "2026-11-20T23:15Z",
+   "last_running_utc": "2026-11-21T08:40Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-3-xbmrv": {
+   "running_hours": 4.6667,
+   "first_running_utc": "2026-11-20T23:15Z",
+   "last_running_utc": "2026-11-21T03:50Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-4-gnh55": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-20T23:00Z",
+   "last_running_utc": "2026-11-21T02:20Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-5-5czmt": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-20T23:00Z",
+   "last_running_utc": "2026-11-21T02:20Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-6-fmjbz": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-21T03:20Z",
+   "last_running_utc": "2026-11-21T08:05Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-7-5r4pq": {
+   "running_hours": 3.4167,
+   "first_running_utc": "2026-11-21T02:25Z",
+   "last_running_utc": "2026-11-21T05:45Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-8-l8mm9": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-21T04:00Z",
+   "last_running_utc": "2026-11-21T08:45Z"
+  },
+  "ft-budget-fixed-sweep-rows-qg-raunav-9-9nhdv": {
+   "running_hours": 4.8333,
+   "first_running_utc": "2026-11-21T04:15Z",
+   "last_running_utc": "2026-11-21T09:00Z"
+  },
+  "ft-extract-memprobe-raunav-0-h954c": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-17T06:35Z",
+   "last_running_utc": "2026-11-17T06:35Z"
+  },
+  "ft-extract-memprobe-raunav-1-xwcht": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-17T06:40Z",
+   "last_running_utc": "2026-11-17T06:40Z"
+  },
+  "ft-extract-memprobe-raunav-2-6p4ch": {
+   "running_hours": 0.6667,
+   "first_running_utc": "2026-11-17T06:45Z",
+   "last_running_utc": "2026-11-17T07:20Z"
+  },
+  "ft-extract-memprobe-raunav-3-nlpzr": {
+   "running_hours": 0.5833,
+   "first_running_utc": "2026-11-17T06:55Z",
+   "last_running_utc": "2026-11-17T07:25Z"
+  },
+  "ft-extract-memprobe2-raunav-0-s2pcx": {
+   "running_hours": 0.0833,
+   "first_running_utc": "2026-11-17T08:25Z",
+   "last_running_utc": "2026-11-17T08:25Z"
+  },
+  "ft-extract-memprobe2-raunav-1-6qxfd": {
+   "running_hours": 0.4167,
+   "first_running_utc": "2026-11-17T09:25Z",
+   "last_running_utc": "2026-11-17T09:45Z"
+  },
+  "ft-extract-memprobe2-raunav-2-jvqfg": {
+   "running_hours": 0.5833,
+   "first_running_utc": "2026-11-17T10:05Z",
+   "last_running_utc": "2026-11-17T10:40Z"
+  },
+  "ft-extract-memprobe2-raunav-3-g2pnh": {
+   "running_hours": 0.5,
+   "first_running_utc": "2026-11-17T10:20Z",
+   "last_running_utc": "2026-11-17T10:45Z"
+  },
+  "ft-v2-bench-best70-kinfull-raunav-svvjw": {
+   "running_hours": 1.75,
+   "first_running_utc": "2026-11-15T04:05Z",
+   "last_running_utc": "2026-11-15T05:45Z"
+  }
+ }
+}
