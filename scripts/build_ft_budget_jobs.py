@@ -468,6 +468,24 @@ def fixed_rate_cells() -> list:
     return out
 
 
+# PI 2026-11-22: every 1e3-1e5 rerun not yet started is built in two parts with the same indices and cell folders.
+# A: the networks the paper's training-size figure and table draw (the label sets, mlst_results.SETS) and from scratch,
+# run to the end; B: every other pretrained network (flavour boundaries, random partitions, kinematic-only), shown only
+# in the results book, run after A, and cancelled where not finished by Wed 25 Nov 18:00 UTC.
+FIXED_RATE_A_INITS = ("l188-", "l162-", "l162mass-", "r42q1-", "r16q1-", "r16q1mass-")
+
+
+def fixed_rate_parts(task: str, n: int, kind: str) -> dict:
+    """{"a": [...], "b": [...]}: the fixed_rate_cells indices of one row of FIXED_RATE_ORDER, split as above."""
+    if (task, n, kind) not in FIXED_RATE_ORDER:
+        raise SystemExit(f"FATAL: {task} {n} {kind} is not a rerun row")
+    parts = {"a": [], "b": []}
+    for i, c in enumerate(fixed_rate_cells()):
+        if (c["task"].removesuffix("kin"), c["n"], "pre" if c["init"] else "scratch") == (task, n, kind):
+            parts["a" if not c["init"] or c["init"].startswith(FIXED_RATE_A_INITS) else "b"].append(i)
+    return parts
+
+
 # PI 2026-11-21: the top and quark/gluon 1e4 neighbours of the old sweep ran 20,000 steps checked every 50 (the 1e4 rule
 # became 3,000 in checks of 25 on 2026-11-16), so they are rerun on the 1e4 schedule, seed 1, into their own tree; the
 # old ones (FIXED_SWEEP_ROOT .../N10000, and the 40,000-step top 1e3 smoke cells) carry a SUPERSEDED file and are not read

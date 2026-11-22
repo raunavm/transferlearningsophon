@@ -240,3 +240,17 @@ def test_table_a15_is_validation_only_and_marks_the_chosen_rate_and_divergences(
     assert "0.9100$^{\\ast}$" in top and "diverged" in top
     assert any("\\pending{run}" in ln for ln in lines)
     assert "frozen" not in "\n".join(lines) and "test" not in M.printed_caption("lrsweep")
+
+
+def test_rerun_parts_split_the_label_sets_and_scratch_from_the_rest():
+    # PI 2026-11-22: A = the label sets and from scratch, B = every other pretrained network
+    cells = B.fixed_rate_cells()
+    for row in B.FIXED_RATE_ORDER:
+        p = B.fixed_rate_parts(*row)
+        assert p["a"] and not set(p["a"]) & set(p["b"]), row
+        for i in p["a"]:
+            assert not cells[i]["init"] or cells[i]["init"].startswith(B.FIXED_RATE_A_INITS), (row, cells[i])
+        for i in p["b"]:
+            assert cells[i]["init"].startswith(("rand", "flav", "l188kin")), (row, cells[i])
+    # the top 1e3 parts as launched (ft-budget-fixed-rate-top1e3a/b-raunav)
+    assert B.fixed_rate_parts("top", 1_000, "pre") == {"a": list(range(95, 111)), "b": list(range(111, 123))}
