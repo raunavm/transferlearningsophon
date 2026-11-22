@@ -157,11 +157,11 @@ def _scratch_value(key, n, ds, met) -> list:
 
 def _hv_values(row: str, value, cell) -> list:
     """The values a row draws in a cell: its runs (the five random partitions pooled), from scratch its seeds; the
-    released Sophon checkpoint only on JetClass-II and JetClass, the top and quark/gluon probes having its missing
-    inputs at zero where ours are substituted (mlst_results._bench_rec)."""
+    released Sophon checkpoint on top and quark/gluon only with the substitutions ours use (mlst_results.
+    with_sophon_fill, the same-fill refit; PI 2026-11-22), never zero-filled."""
     if row == "SCRATCH":
         return _scratch_value(*cell)
-    if row == M.SOPHON and cell[2] in ("top", "qg", "qg_herwig"):
+    if row == M.SOPHON and cell[2] in M.SUMMARY_NO_SOPHON and M.SOPHON_MODEL not in I["fill"]:
         return []
     models = [M.SOPHON_MODEL] if row == M.SOPHON else M._pooled(RUNS)[M.RAND_POOLED if row == "RAND" else row]
     return [x for m in models if (x := value(m)) is not None] if value else []
@@ -1022,10 +1022,9 @@ SUPPLEMENT_CAPTIONS = {
         'In the area under the receiver operating characteristic curve (AUC), linear probes with 162, 43 and 17 classes '
         'separate the JetClass-II classes less well than 188 classes, and on top tagging 17 classes + mass separates '
         'better. The panels show the AUC of the linear probes of figure {fig:F2}, on JetClass-II and JetClass averaged '
-        'over the classes, each against the rest, with the random network beyond the // breaks in (a) and (b). Tasks, '
-        'networks and run counts are those of figure {fig:F2}, and the line and band repeat the 188-class values. The '
-        'released Sophon checkpoint appears on JetClass-II and JetClass only, as its top and quark/gluon probes set '
-        'the missing inputs to zero. Values are in tables {tab:summary} and {tab:summaryauc}.'
+        'over the classes, each against the rest, with the random network. Tasks, '
+        'networks and run counts are those of figure {fig:F2}, and the line and band repeat the 188-class values. Values are in '
+        'tables {tab:summary} and {tab:summaryauc}.'
     ),
     "F2b": (
         'After fine-tuning, every pretrained network separates the JetClass-II and JetClass classes better than '
@@ -1045,8 +1044,7 @@ SUPPLEMENT_CAPTIONS = {
     ),
     "F8": (
         'Fine-tuning the network pretrained with 188 classes is more accurate than training from scratch on JetClass-II'
-        ' and JetClass at every training-set size. The panels show accuracy or R30, the inverse background efficiency '
-        'at 30% signal efficiency, against the number of training jets, for that network fine-tuned (solid) or as a '
+        ' and JetClass at every training-set size. The panels show accuracy or R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, against the number of training jets, for that network fine-tuned (solid) or as a '
         'linear probe on its frozen features (dashed) and for training from scratch (grey). Points, offset slightly in '
         'size, are means and error bars ±1 standard deviation over three pretraining runs or three trainings from '
         'scratch, and open stars mark the published Particle Transformer, trained from scratch, at its training-set '
@@ -1068,7 +1066,7 @@ SUPPLEMENT_CAPTIONS = {
     "A8-part": (
         'The networks pretrained with the four 17-class partitions in the form of figure {fig:A8}, fine-tuned and '
         'scored on class-balanced JetClass-II and JetClass (accuracy) and on top and quark/gluon tagging, Pythia and '
-        'Herwig, in R30, the inverse background efficiency at 30% signal efficiency, against the number of training '
+        'Herwig, in R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, against the number of training '
         'jets, with 188 and 17 classes for reference. The partitions were fine-tuned on JetClass-II at one million jets'
         ' only, so that panel shows one point for each, fine-tuning on JetClass starts at 10,000 jets, and the particle'
         ' inputs that the top and quark/gluon data lack are set to zero. Points, offset slightly in size, are means and'
@@ -1265,6 +1263,23 @@ def top_qg_passes(doc: dict) -> dict:
                 out[(name, m)] = "above" if (x["delta"] < 0 if m == "auc" else x["delta"] > 0) else "below"
     return out
 
+
+def _init_range() -> str:
+    """Fig. 2's clause for the random network it no longer draws (PI 2026-11-20, C: its range in one clause, its values
+    in Table 1): each panel's mean over the three initializations, as Table 1's source reads them (summary_probe), at
+    two significant figures."""
+    v = {}
+    for key, n, ds, met, _ in HV_PANELS:
+        get = _probe_value(key, n, ds, met)
+        xs = [x for m in RUNS[M.INIT] if get and (x := get(m)) is not None]
+        if not xs:
+            return ""
+        v[ds] = float(np.mean(xs))
+    s = lambda x: f"{x:.2g}" if x < 10 else f"{x:.0f}"      # noqa: E731
+    return (f" The untrained random network, not drawn, scores about {s(v['jc2_188'])}, {s(v['jc1'])}, {s(v['top'])}, "
+            f"{s(v['qg'])} and {s(v['qg_herwig'])} in panel order.")
+
+gallery_captions.FILLS["init_range"] = _init_range()
 
 PAGES = [dataclasses.replace(p, caption=gallery_captions.fill(SUPPLEMENT_CAPTIONS[p.id])) if p.id in SUPPLEMENT_CAPTIONS
          else p for p in gallery_captions.apply(PAGES)]

@@ -1027,19 +1027,18 @@ SUPPLEMENT_CAPTIONS = {
     # PI 2026-11-18: in the supplement (paper captions, gallery_captions, until then)
     "F6": (
         'With linear probes, no label set or mass network differs from 188 classes by more than three standard '
-        'deviations in R30, the inverse background efficiency at 30% signal efficiency, on top and quark/gluon '
+        'deviations in R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, on top and quark/gluon '
         'tagging, Pythia and Herwig; 17 classes + mass, the highest curve in (a), lies two standard deviations above. '
-        'Panels show background rejection against signal efficiency, means over the runs of figure {fig:F1} down to '
+        'Panels show background rejection against signal efficiency, means over the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition) down to '
         '20 passing background jets. The lower panels give the ratio to 188 classes on a linear axis from a signal '
         'efficiency of 0.1, with a band of run spread and binomial uncertainty for 188 classes only. Figure {fig:F6-ft} '
         'shows the fine-tuned networks, and values and the other standard deviations are in tables {tab:summary}, '
         '{tab:summaryauc} and {tab:probes}.'
     ),
     "F6-ft": (
-        "After fine-tuning, no label set or mass network differs from 188 classes in R30, the inverse background "
-        "efficiency at 30% signal efficiency, by more than three standard deviations on top and quark/gluon tagging, "
+        "After fine-tuning, no label set or mass network differs from 188 classes in R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, by more than three standard deviations on top and quark/gluon tagging, "
         "Pythia and Herwig. Panels show background rejection against signal efficiency for the networks of figure "
-        "{fig:F6} fine-tuned and for training from scratch, means over the runs of figure {fig:F1} or three trainings "
+        "{fig:F6} fine-tuned and for training from scratch, means over the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition) or three trainings "
         "from scratch, down to 20 passing background jets. Lower panels give the ratio to 188 classes on a linear axis "
         "from a signal efficiency of 0.1, with bands for the run spread and binomial uncertainty of 188 classes and from "
         "scratch only, the other standard deviations being in the tables. Values are in tables {tab:summary}, "
@@ -1098,7 +1097,7 @@ SUPPLEMENT_CAPTIONS = {
         "pretraining runs for each flavor-boundary partition, over the five random partitions with one run each, and "
         "over three runs for 188 and 17 classes. The lower panels show the ratio to 188 classes, the band of 188 "
         "classes its standard deviation over runs and the binomial uncertainty of its passing background count in "
-        "quadrature, the others' being in the tables. R30, the inverse background efficiency at 30% signal efficiency, "
+        "quadrature, the others' being in the tables. R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, "
         "and the area under the receiver operating characteristic curve are in tables {tab:summary} and "
         "{tab:summaryauc}, the rejection at 50% signal efficiency in table {tab:probes}."
     ),
@@ -1108,8 +1107,7 @@ SUPPLEMENT_CAPTIONS = {
         "Curves are means over two pretraining runs for each flavor-boundary partition, over the five random partitions"
         " with one run each, and over three runs for 188 and 17 classes. The lower panels show the ratio to 188 "
         "classes, the band of 188 classes its standard deviation over runs and the binomial uncertainty of its passing "
-        "background count in quadrature, the others' being in the tables. R30, the inverse background efficiency at 30%"
-        " signal efficiency, and the area under the receiver operating characteristic curve are in tables {tab:summary}"
+        "background count in quadrature, the others' being in the tables. R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, and the area under the receiver operating characteristic curve are in tables {tab:summary}"
         " and {tab:summaryauc}, the rejection at 50% signal efficiency in table {tab:labelsets}."
     ),
     # the JetClass and JetClass-II class-against-rest pages (their figures lost the heading in this round): the brief's

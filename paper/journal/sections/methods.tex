@@ -70,7 +70,8 @@ can be checked.
 The label set is the one variable of the study. Each JetClass-II jet $x$ belongs to one of the \Kfull{} classes,
 $y\in\{1,\dots,\Kfull\}$, and a label set with $\Nout$ classes is a map $\pi$ from these classes onto
 $\{1,\dots,\Nout\}$; a model pretrained on it learns to predict $\pi(y)$. The four label sets we pretrain form the
-class hierarchy of figure~\ref{fig:design}(a), and each merge removes a named set of physics distinctions. The
+class hierarchy of figure~\ref{fig:design}(a), and each merge removes a named set of physics distinctions.
+Table~\ref{tab:sets} lists them with the controls of this section, their classes and their runs. The
 \Kfull-class label set is Sophon's. It has one class for each resonant decay
 and divides the QCD jets into \LitJetClassTwoNQcdClasses{} classes by their numbers of $b$, $c$ and $s$
 quarks. The \Kres-class level merges these QCD classes into one and keeps every resonant class, so it removes
@@ -86,6 +87,8 @@ The levels remove flavor before structure, so the coarsest still describes the d
 selects on. At every level a class holds only QCD jets, only decays into quarks and gluons, or only decays with
 leptons. The step from \Kres{} to \Kmid{} classes is the only one that removes more than one kind of
 distinction, so no result in this paper attributes an effect of that step to one of its three.
+
+\input{tables/mlst_sets}
 
 Merging classes removes analysis discriminants outright, not only information. Analyses build discriminants by
 summing the output scores of classes. The head maps the frozen features $z(x)$ to one output $f_i(x)$ per class

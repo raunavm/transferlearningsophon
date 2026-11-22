@@ -2540,12 +2540,11 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     assert f.index("top tagging} \\\\") < f.index("(continued)}") < f.index("quark/gluon tagging} \\\\")
     assert rf"\textit{{{M.HEADING['ft']}}}" not in f and M.PARTITIONS not in f and not _sizes_in(f)
     assert M.CAPTIONS["published"][0] == "tab:published" and "published" not in M.MODES
-    # the second page starts a page; the caption says what bold marks, once, in this table's words (BOLD "of"), and
-    # how a value printed without a standard deviation counts (published values, single runs)
+    # the second page starts a page; the caption says what bold marks, once (PI 2026-11-19, restated 2026-11-22:
+    # "Bold marks the best value in each column."; published values take part like any other)
     assert f.count(r"\newpage") == 1 and f.index("top tagging} \\\\") < f.index(r"\newpage") < f.index("(continued)}")
     assert M.BOLD["published"]["of"] == "their column and task"
-    assert f.count(M.BOLD_NOTE.format("their column and task")) == 1 and M.BOLD_NOTE.format("their column") not in f
-    assert f.count(M.NONE_NOTE) == 0 and f.count(M.PUBLISHED_NONE_NOTE) == 1      # the single run is a reference row
+    assert f.count(M.BOLD_NOTE) == 1 and "within three standard deviations" not in f and "never bold." in f
     assert "The kinematic-inputs network is a reference, never bold." in f
     assert r"\textbf" not in f and f.count(M.BOLD_ON) == t.count(M.BOLD_ON) > 0
 
@@ -2599,8 +2598,7 @@ def test_the_label_set_table_holds_the_fine_tuned_rows_the_comparison_table_does
     f = M._float("labelsets", t, True, pages=True, whole="turned", colsep_pt=6)
     assert f.count(r"\label{tab:labelsets}") == 1 and f.count(rf"\textit{{{M.HEADING['ft']}}}") == 1 and not _sizes_in(f)
     assert M.CAPTIONS["labelsets"][0] == "tab:labelsets" and "labelsets" not in M.MODES
-    assert f.count(M.BOLD_NOTE.format("their column")) == 1
-    assert M.BOLD_NOTE.format("their column under their italic heading") not in f
+    assert f.count(M.BOLD_NOTE) == 1 and "three standard deviations" not in f     # PI 2026-11-19 / 2026-11-22
     assert M.printed_caption("labelsets").startswith("The fine-tuned networks of table~\\ref{tab:summary} and training "
                                                       "from scratch")
 
@@ -2859,7 +2857,8 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
     assert M.PART_DEF == " A flavor boundary keeps apart decays that differ only in quark flavor."
     assert [lab for lab, (k, _) in _paper_tables().items() if M.PART_DEF in M.printed_caption(k)] == []
     assert M.PART_DEF in M.printed_caption("per_run") and M.PART_DEF in M.printed_caption("coarse")
-    assert (ROOT / "paper/journal/tables/mlst_summary.tex").read_text().count(M.NET_DEF.strip()) == 1
+    # PI 2026-11-22 (Part 2): the networks are defined in tab:sets, not in Table 1's end note
+    assert not hasattr(M, "NET_DEF") and "tab:sets" in M.CAPTIONS["sets"][0]
     assert "__SCULPT_CUT__" in M.CAPTION_SHORT["sculpt"] and "resonant" in M.sculpt_fill({"m": {"sig_eff_50": {}}}, {a: [] for a in M.FLAV})["__SCULPT_CUT__"]
     assert all(h in M.printed_caption("mass") for h in ("mass output of the pretraining head", "multilayer-perceptron probe"))
     assert "which are not combined" in M.printed_caption("partrepro") and "cumulative" not in M.printed_caption("partrepro")
@@ -3024,7 +3023,7 @@ def test_a_bold_value_is_in_the_bold_series_that_is_not_extended_and_its_mark_st
     13% wider and put three tables off the page, so the wrapper is the plain bold series; the width model reads a
     bold value as a light one, so no layout decision depends on which cells are bold."""
     assert M.BOLD_ON == r"{\fontseries{b}\selectfont " and M._b("0.94") == r"{\fontseries{b}\selectfont 0.94}"
-    assert r"\textbf" not in M.BOLD_ON and M.BOLD_SIGMA == 3.0
+    assert r"\textbf" not in M.BOLD_ON and not hasattr(M, "BOLD_SIGMA")      # PI 2026-11-19: the single best, no 3 sigma
     # _render: an upper-case token kind is the lower-case one printed bold
     pm = r"0.500\,$\pm$\,0.010"          # PI 2026-11-14: per cell as the PDG rounds
     assert M._render("p", [0.5, 0.01], 2) == pm and M._render("P", [0.5, 0.01], 2) == M._b(pm)
@@ -3186,29 +3185,30 @@ def test_a_column_whose_best_value_prints_as_a_bound_has_no_bold():
 
 
 def test_the_caption_says_what_bold_marks_once_and_only_where_a_cell_is_bold():
-    """_float (PI 2026-11-12): bold from the tokens before the column is rounded; one sentence in the caption, "in
-    their column" or "in their column under their italic heading" (round 3 wording: the SDs added in quadrature, before
-    rounding); none where no cell is bold or the table is not one of BOLD."""
+    """_float: one sentence in the caption, PI 2026-11-19 (restated 2026-11-22) "Bold marks the best value in each
+    column.", the single best value per block and column and every value tied with it at the printed precision; none
+    where no cell is bold or the table is not one of BOLD."""
     T, lab = M.TAB, M.LABEL
-    col, blk = (M.BOLD_NOTE.format(x) for x in ("their column", "their column under their italic heading"))
-    # A3 (PI 2026-11-14): the run spreads and, where stored, the test-jet bootstrap of the difference (L3)
-    assert col == (" Bold marks the best value in their column and those within three standard deviations (run "
-                   "spreads and any stored test-jet bootstrap).")
-    assert blk == (" Bold marks the best value in their column under their italic heading and those within three "
-                   "standard deviations (run spreads and any stored test-jet bootstrap).")
+    col = blk = M.BOLD_NOTE
+    assert col == " Bold marks the best value in each column." and M.BOLD_NOTE_ROW == " Bold marks the best value in each row."
     rows = [f"{lab['L188']} & {T(100.0, 2.0)} \\\\", f"{lab['L162']} & {T(95.0, 1.0)} \\\\", f"{lab['R42_Q1']} & {T(93.0, 1.0)} \\\\",
             f"{lab[M.INIT]} & {T(200.0, 1.0)} \\\\"]
     f = M._float("xbx", _frame(rows, 1))
-    assert f.count(col) == 1 and blk not in f and r"\textbf" not in f and M.V4.TOK_OPEN not in f
-    assert lab["L188"] + " & " + M._b(r"100.0\,$\pm$\,2.0") + r" \\" in f and lab["L162"] + " & " + M._b(r"95.0\,$\pm$\,1.0") + r" \\" in f
+    assert f.count(col) == 1 and r"\textbf" not in f and M.V4.TOK_OPEN not in f
+    # the single best (95 is within three standard deviations of 100 but is not the best: no longer bold)
+    assert lab["L188"] + " & " + M._b(r"100.0\,$\pm$\,2.0") + r" \\" in f and lab["L162"] + r" & 95.0\,$\pm$\,1.0 \\" in f
     assert lab["R42_Q1"] + r" & 93.0\,$\pm$\,1.0 \\" in f and lab[M.INIT] + r" & 200.0\,$\pm$\,1.0 \\" in f
-    assert f.count(M.BOLD_ON) == 2 and f.index(col) < f.index(M.BOLD_ON)          # the sentence is the caption's
+    assert f.count(M.BOLD_ON) == 1 and f.index(col) < f.index(M.BOLD_ON)          # the sentence is the caption's
+    # values tied at the printed precision are all bold (0.9001 and 0.9004 both print 0.900 beside SDs of 0.010)
+    tie = M._float("xbx", _frame([f"{lab['L188']} & {T(0.9001, 0.01)} \\\\", f"{lab['L162']} & {T(0.9004, 0.01)} \\\\",
+                                  f"{lab['R42_Q1']} & {T(0.85, 0.01)} \\\\"], 1))
+    assert tie.count(M.BOLD_ON) == 2 and lab["R42_Q1"] + r" & 0.850\,$\pm$\,0.010 \\" in tie
     # a table of blocks; its soft-drop row is no run's
     head, mlp = (M._full_row(2, M.HEADING[k], italic=True) for k in ("head", "mlp"))
     mass = _frame([head, f"{lab['L162_MASS']} & {T(0.10, 0.01)} \\\\", f"{lab['R16_Q1_MASS']} & {T(0.20, 0.01)} \\\\", r"\midrule",
                    mlp, f"{lab['L188']} & {T(0.30, 0.01)} \\\\", f"{lab['L162']} & {T(0.50, 0.01)} \\\\"], 1)
     g = M._float("mass", mass)
-    assert g.count(blk) == 1 and col not in g and g.count(M.BOLD_ON) == 2
+    assert g.count(M.BOLD_NOTE) == 1 and g.count(M.BOLD_ON) == 2
     assert lab["L162_MASS"] + " & " + M._b(r"0.100\,$\pm$\,0.010") + r" \\" in g and lab["L188"] + " & " + M._b(r"0.300\,$\pm$\,0.010") + r" \\" in g
     # nothing to compare: no bold cell, no sentence
     lone = M._float("xbx", _frame(rows[:1] + rows[3:], 1))
@@ -3236,9 +3236,12 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
     # round 2 (package 3); the final round (2026-11-13): the released Sophon checkpoint's dashes explained by pointing
     # to tab:probes, the network names in Table 1's end note (NET_DEF), the flavor boundary in the paper text
     cap, auc = M.printed_caption("summary"), M.printed_caption("summary_auc")
-    assert "$R_{30}$, the inverse background efficiency at 30\\% signal efficiency" in cap and "class pairs" not in cap
-    assert re.findall(r"\\ref\{([^}]*)\}", cap) == ["tab:probes"] and "Sophon checkpoint's zero-filled" in cap
-    assert M.PART_DEF not in cap and M.NET_DEF.strip() not in cap
+    # PI 2026-11-19 (A): R30 in plain words with why 30%; PI 2026-11-22: the released checkpoint's top and quark/gluon
+    # probes use the same substitutions (the same-fill refit), so no zero-filled note
+    assert ("$R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of the signal jets, the "
+            "working point of the top-tagging comparison") in cap and "class pairs" not in cap
+    assert re.findall(r"\\ref\{([^}]*)\}", cap) == [] and "zero-filled" not in cap
+    assert M.PART_DEF not in cap
     assert auc.count("averaged on JetClass-II and JetClass over the classes, each against the rest.") == 1
     assert "table~\\ref{tab:summary}" in auc and "class pairs" not in auc
     assert M.BOLD["summary"] == M.BOLD["summary_auc"] == {"blocks": True} and not {"summary", "summary_auc"} & set(M.MODES)
@@ -3253,8 +3256,8 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
         assert tex.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}") == 2 and r"\setlength{\tabcolsep}{6pt}" in tex
         assert tex.count(r"\captionof{table}{") == tex.count(rf"\label{{tab:{label}}}") == 1
         assert tex.count(rf"\textit{{Table~\ref{{tab:{label}}} (continued)}}") == tex.count(r"\newpage") == 1
-        assert tex.count(M.BOLD_NOTE.format("their column under their italic heading").strip()) == 1
-        assert tex.count(M.NET_DEF.strip()) == int(label == "summary")         # the end note of Table 1 only
+        assert tex.count(M.BOLD_NOTE.strip()) == 1 and "three standard deviations (run" not in tex
+        assert "regroup the 188 classes into 17" not in tex      # PI 2026-11-22: no end note; tab:sets defines them
         for tab, mode in zip(tabs, ("lp", "ft"), strict=True):
             lines = tab.splitlines()
             assert lines[2] == r" & JetClass-II & JetClass & top tagging & \multicolumn{2}{c}{quark/gluon tagging} \\"
@@ -3281,17 +3284,16 @@ def test_the_generated_tables_are_bold_where_the_rule_applies_and_say_so_once():
     the ones their headers name."""
     tables = _paper_tables()
     plain = {"tab:inputs", "tab:partrepro", "tab:lrsweep", "tab:sculptboot"}
-    # the words of the bold sentence: a table, a table of blocks, tab:masseffect (built transposed: along its rows),
-    # tab:published (its task blocks)
-    words = ("their column", "their column under their italic heading", "their row", "their column and task")
-    notes = [M.BOLD_NOTE.format(x).strip() for x in words]
-    refs = M.NEVER_BOLD + ("soft-drop mass", "random selection")
+    # PI 2026-11-19 / 2026-11-22: one sentence, "in each column" (tab:masseffect, built transposed: "in each row")
+    words = ("column", "row")
+    notes = [M.BOLD_NOTE.strip(), M.BOLD_NOTE_ROW.strip()]
+    refs = M.NEVER_BOLD + M.REFERENCE_ROWS
     for label, (key, path) in tables.items():
         tex = path.read_text()
         cap, body = _caption_and_body(tex)
         assert r"\textbf" not in tex and M.BOLD_ON not in cap, label
         assert (M.BOLD_ON in body) == (key in M.BOLD) == (label not in plain), label
-        want = (M.BOLD[key].get("of") or words[bool(M.BOLD[key].get("blocks"))]) if key in M.BOLD else None
+        want = ("row" if M.BOLD[key].get("of") == "their row" else "column") if key in M.BOLD else None
         assert [cap.count(n) for n in notes] == [int(x == want) for x in words], label
         spans = _bold_spans(body)
         assert all(M.PLAIN.fullmatch(x) for x in spans), label
