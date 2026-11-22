@@ -117,6 +117,10 @@ def main(argv=None) -> int:
         cells = spec_cells(sp)
         st = jobs.get(name, {}).get("status", {})
         finished = indices(st.get("completedIndexes")) | indices(st.get("failedIndexes"))
+        if st.get("failedIndexes"):
+            # a failed index is taken as a diverged cell (exit 42); a cell refused at the storage line fails the same
+            # way, so they are listed for a check rather than silently dropped
+            print(f"CHECK: {name} failed indexes {st['failedIndexes']} counted as finished (diverged or refused)")
         for i, c in cells.items():
             p = pods[name].get(i)
             if i in finished:
@@ -135,7 +139,9 @@ def main(argv=None) -> int:
     # the rows still searching: what each still needs, assuming its current best holds
     assume = ["each unsettled row's current best holds: its pending neighbours score lower",
               "a row at the edge of the rates tried needs one more step (3x past it), which then scores lower",
-              "a rerun starts when its row's search cells have all finished"]
+              "a rerun starts when its row's search cells have all finished",
+              "a running cell past its median gets a quarter of the median more",
+              "A100s run only the A100 jobs of the launch list"]
     future = []
     for r in RS.evaluate(json.loads(pathlib.Path(a.scan).read_text())):
         task, n, kind = r["task"], r["n"], r["kind"]
@@ -199,11 +205,13 @@ def main(argv=None) -> int:
     for k in queue:
         c = plan[k]
         if c["start"]:
-            left = max(est(c) - (now - c["start"]).total_seconds() / 3600, 0.25)
+            # a cell past its median gets a quarter of it more (independent review 2026-11-22: 15 min hid
+            # five overdue cells, one gating a rerun)
+            left = max(est(c) - (now - c["start"]).total_seconds() / 3600, 0.25 * est(c))
             heapq.heappush(events, (now + dt.timedelta(hours=left), k))
             busy[c["pool"]] += 1
     waiting = [k for k in queue if not plan[k]["start"]]
-    gpu_h = sum(max(est(plan[k]) - (now - plan[k]["start"]).total_seconds() / 3600, 0.25) if plan[k]["start"]
+    gpu_h = sum(max(est(plan[k]) - (now - plan[k]["start"]).total_seconds() / 3600, 0.25 * est(plan[k])) if plan[k]["start"]
                 else est(plan[k]) for k in queue)
     while waiting or events:
         started = True
@@ -228,7 +236,7 @@ def main(argv=None) -> int:
     print(f"now {fmt(now)}; GPUs assumed: {a.gen} general, {a.a100} A100")
     print("assumptions: " + "; ".join(assume) + "; hours: median finished attempt, same task/size/kind/pool "
           "(other pool x1.6 or /1.6, else same size)")
-    left = lambda k: (max(est(plan[k]) - (now - plan[k]["start"]).total_seconds() / 3600, 0.25)  # noqa: E731
+    left = lambda k: (max(est(plan[k]) - (now - plan[k]["start"]).total_seconds() / 3600, 0.25 * est(plan[k]))  # noqa: E731
                       if plan[k]["start"] else est(plan[k]))
     jc2b6 = sum(left(k) for k in queue if (plan[k]["task"], plan[k]["n"]) == ("jc2b", 1_000_000))
     print(f"remaining GPU-hours {gpu_h:.0f}: JetClass-II 1e6 {jc2b6:.0f} (counted apart from the 2,000 ceiling), "
