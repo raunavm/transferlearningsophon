@@ -17,7 +17,7 @@ NO_RAND = "Random partitions, which merge the pair's classes differently, are in
 COUNTS = {}       # PC-jc2, PC-jc1: the computed count sentence (gallery_perclass), "" without per-class values
 # a sentence that depends on the data read, {name} in a caption (gallery_physics sets "probe_note": the mass probe is
 # centred on one training median, the truth-free refit atlas_res_v3, the only mass files read)
-FILLS = {"probe_note": ""}
+FILLS = {"probe_note": "", "xbs_widen": ""}
 
 CAPTIONS = {
     "F1": (
@@ -123,7 +123,7 @@ CAPTIONS = {
     ),
     "F11": (
         'At 1% QCD efficiency, 17 classes keep fewer X→bb̄ and X→bs jets than 188 classes, a gap of 0.6 and 1.0 in the '
-        'figure of merit, which widens below 0.1% for X→bs. The figure of merit, signal efficiency over the square '
+        'figure of merit{xbs_widen}. The figure of merit, signal efficiency over the square '
         'root of QCD efficiency, is shown for (a) X→bb̄ and (b) X→bs against QCD, all jets with soft-drop mass 150 to '
         '230 GeV and efficiencies relative to them. Solid curves are a multilayer-perceptron classifier on frozen '
         'features starting from the pretrained output head, grey curves training from scratch, and dash-dotted curves '

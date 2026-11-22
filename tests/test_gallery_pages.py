@@ -719,3 +719,16 @@ def test_the_main_roc_figures_hold_every_jetclass_class_against_qcd_and_fit_the_
     assert len({ax.get_ylim() for ax in panels}) == 1 and len(fig.legends) == 1
     import make_results_book as B
     assert fig.get_figheight() / R.S.CM <= B.MAX_H_CM
+
+
+def test_fig_9s_widening_clause_appears_only_when_its_3_sigma_test_passes():
+    """PI 2026-11-21: "the gap widens below 0.1% for X->bs" only if the widening of the 188 - 17 figure-of-merit gap
+    over its value at 1% QCD efficiency passes 3 sigma (run spreads, the QCD-jet and signal counting terms) at 1e-3 and
+    1e-4 (gallery_physics.xbs_widening)."""
+    import gallery_physics as G
+    import gallery_captions as K
+    w = G._XBS_WIDEN
+    text = K.fill(K.CAPTIONS["F11"])
+    assert ("widens below 0.1% for X→bs" in text) == bool(w["pass"])
+    if "widening" in w:
+        assert w["pass"] == all(d > 3 * s for d, s in w["widening"].values())

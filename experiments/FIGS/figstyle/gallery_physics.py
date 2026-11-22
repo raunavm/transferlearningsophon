@@ -620,6 +620,46 @@ def _xbx_runs(XR, signal: str, net: str, readout: str) -> list:
     return [r for m in POOLED[net] if (r := XR.readout(fits.get(m, {}).get(signal, {}), readout))]
 
 
+def xbs_widening(fits: dict, XR) -> dict:
+    """PI 2026-11-21: Fig. 9's "the gap widens below 0.1% for X->bs" stands only if the widening passes 3 sigma. The
+    figure of merit eps_S/sqrt(eps_B) of the classifier (seeds averaged per run) at eps_B = 1e-2, 1e-3, 1e-4; the gap,
+    188 minus 17 classes; sigma = the two run SDs (+) for each side the QCD-jet term, half the relative Poisson error
+    of the QCD jets passing, and the signal binomial term; widening = gap(e) - gap(1e-2), its sigma the two in
+    quadrature; the clause stands when it passes at 1e-3 and at 1e-4."""
+    side = {}
+    for net in ("L188", "R16_Q1"):
+        rs, ns = [], []
+        for m in POOLED[net]:
+            sd = fits.get(m, {}).get("xbs", {})
+            r = XR.readout(sd, CLASSIFIER)
+            if r:
+                rs.append(r)
+                ns.append((sd["n_qcd_in_window"], sd["n_sig_in_window"]))
+        if len(rs) < 2:
+            return {"pass": False, "reason": f"{net}: {len(rs)} runs"}
+        side[net] = (rs, ns[0])
+    eb = np.asarray(side["L188"][0][0]["curve"]["eps_b"], float)
+    out = {}
+    for e in (1e-2, 1e-3, 1e-4):
+        i = int(np.argmin(abs(np.log(eb) - np.log(e))))
+        terms, means = [], []
+        for net in ("L188", "R16_Q1"):
+            rs, (nq, nsig) = side[net]
+            f = np.array([float(np.asarray(r["curve"]["eps_s_over_sqrt_eps_b"], float)[i]) for r in rs])
+            es = f.mean() * np.sqrt(eb[i])
+            stat = f.mean() * np.hypot(0.5 / np.sqrt(eb[i] * nq), np.sqrt(es * (1 - es) / nsig) / es)
+            terms += [f.std(ddof=1), stat]
+            means.append(f.mean())
+        out[e] = (means[0] - means[1], float(np.sqrt(np.sum(np.square(terms)))))
+    wid = {e: ((out[e][0] - out[1e-2][0]), float(np.hypot(out[e][1], out[1e-2][1]))) for e in (1e-3, 1e-4)}
+    return {"gap": out, "widening": wid, "pass": all(w > 3 * s for w, s in wid.values())}
+
+
+# Fig. 9's widening clause, decided by its test; without the fits pulled there is no figure and no clause
+_XBS_WIDEN = xbs_widening(I["xbx"], P._xr()) if I.get("xbx") else {"pass": False, "reason": "no X->bx fits"}
+_K.FILLS["xbs_widen"] = ", which widens below 0.1% for X→bs" if _XBS_WIDEN["pass"] else ""
+
+
 def _xbx_series(XR, signal: str, nets: tuple, readout: str, direct: bool, scratch: bool) -> list:
     """(key, label, look, readouts per run) of one signal: each network's readout, solid in its colour (the mass
     networks in their lighter shades); from scratch grey solid; for X->bb the direct discriminant dash-dot for every
