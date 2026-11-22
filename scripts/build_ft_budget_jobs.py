@@ -244,7 +244,10 @@ FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1
                   ("qg", 1_000): "3e-4",          # 2026-11-21: mean 0.7903 at 3e-4 (1e-4 0.7895, 1e-3 0.7874)
                   ("top", 100_000): "1e-2",       # 2026-11-21: 0.9332 at 1e-2 (3e-3 0.9327, 3e-2 diverged); no rerun
                   ("top", 10_000): "1e-2",        # 2026-11-22, 1e4 schedule: 0.9241 (3e-3 0.9210, 3e-2 diverged); no rerun
-                  ("qg", 10_000): "1e-2"}         # 2026-11-22, 1e4 schedule: 0.8214 (3e-3 0.8187, 3e-2 lower); no rerun
+                  ("qg", 10_000): "1e-2",         # 2026-11-22, 1e4 schedule: 0.8214 (3e-3 0.8187, 3e-2 lower); no rerun
+                  ("jc2b", 1_000_000): "1e-4",    # 2026-11-22: 0.43047 at 1e-4 (3e-5 0.43025, 3e-4 0.4293, 1e-5 0.4290)
+                  ("jc2b", 100_000): "1e-4",      # 2026-11-22: 0.41235 at 1e-4 (3e-5 0.41226, 3e-4 0.4105, 1e-5 0.4092)
+                  ("top", 1_000): "1e-3"}         # 2026-11-22: 0.90862 at 1e-3 (1e-2 0.90786, 3e-4 0.9073, 3e-3 0.9068)
 # from scratch, seeds SCRATCH_SEEDS, where its search moved it: qg 1e3 best 1e-4 0.7826 (3e-5 0.7817, 3e-4 0.7705)
 FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
                           # 2026-11-22: JetClass 1e6 best 3e-3 0.8307 (1e-3 0.8294, 1e-2 and 3e-2 diverged); JetClass-II
@@ -256,7 +259,9 @@ FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
 # the rows whose recorded rate moved from the original, in the order they settled: fixed_rate_cells' job indices follow
 # it, so a row recorded later appends and never shifts the index of a launched cell
 FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000, "scratch"),
-                    ("jc1", 1_000_000, "scratch"), ("jc2b", 10_000, "scratch"))
+                    ("jc1", 1_000_000, "scratch"), ("jc2b", 10_000, "scratch"),
+                    # 2026-11-22, settled together, in the PI's rerun order (JetClass-II 1e6, JetClass-II 1e5, top 1e3 last)
+                    ("jc2b", 1_000_000, "pre"), ("jc2b", 100_000, "pre"), ("top", 1_000, "pre"))
 # PI 2026-11-21: the search goes no lower than 1e-5 (below it fine-tuning approaches training only the new output layer
 # on frozen features); a row whose best is still its lowest rate there takes 1e-5
 FIXED_SEARCH_FLOOR = "1e-5"
@@ -406,7 +411,8 @@ def fixed_rate_cells() -> list:
     """Every pretrained cell of each row in FIXED_ROW_RATE whose rate is not the original, at that row's rate, and the
     from-scratch seeds of each such row of FIXED_ROW_RATE_SCRATCH, into FIXED_RATE_ROOT. Job indices follow
     FIXED_RATE_ORDER (0-15 JetClass-II 1e4, 16-42 quark/gluon 1e3 pretrained, 43-45 its from-scratch seeds, 46-48
-    JetClass 1e6 from scratch, 49-51 JetClass-II 1e4 from scratch)."""
+    JetClass 1e6 from scratch, 49-51 JetClass-II 1e4 from scratch, 52-78 JetClass-II 1e6, 79-94 JetClass-II 1e5, 95-122
+    top 1e3 with the kinematic-only network)."""
     moved = ({(t, n, "pre") for (t, n), lr in FIXED_ROW_RATE.items() if lr != FIXED_LR_PRE}
              | {(t, n, "scratch") for (t, n), lr in FIXED_ROW_RATE_SCRATCH.items() if lr != original_rate(t, "scratch")})
     if moved != set(FIXED_RATE_ORDER) or len(set(FIXED_RATE_ORDER)) != len(FIXED_RATE_ORDER):

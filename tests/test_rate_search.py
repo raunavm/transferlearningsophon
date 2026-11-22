@@ -62,6 +62,17 @@ def test_the_rerun_job_indices_keep_the_launched_order():
     assert _spec_cells("job-ft-budget-fixed-rate-raunav.yaml") == dict(enumerate(cells[:16]))
     launched = _spec_cells("job-ft-budget-fixed-rate-qg1e3-raunav.yaml")
     assert launched == {i: cells[16 + i] for i in range(len(launched))}
+    # every part launched since (--indices --part): a contiguous run of the rerun's cells in their order, and the parts
+    # together never run a cell twice
+    seen = []
+    for f in sorted(SPECS.glob("job-ft-budget-fixed-rate-*-raunav.yaml")):
+        if f.name == "job-ft-budget-fixed-rate-qg1e3-raunav.yaml":
+            continue
+        part = [c for _, c in sorted(_spec_cells(f.name).items())]
+        k = cells.index(part[0])
+        assert part == cells[k:k + len(part)], f.name
+        seen += part
+    assert len(seen) == len(set(seen))
 
 
 def test_the_plan_averages_both_pretrained_networks_and_one_from_scratch_run_at_every_rate():
