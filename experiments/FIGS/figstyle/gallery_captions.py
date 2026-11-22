@@ -52,22 +52,12 @@ CAPTIONS = {
         '{tab:summaryauc} the area under the receiver operating characteristic curve.'
     ),
     "PC-jc2": (
-        "{counts} Each point is one JetClass-II class's recall, the fraction of its test jets the network assigns to "
-        "it, for the panel's network (vertical) against 188 classes (horizontal), as linear probes (left) or "
-        "fine-tuned (right) on one million class-balanced jets; rows are 162, 43 and 17 classes, and points below the "
-        "dotted diagonal are classes the panel's network recalls less often. Averaged with each class's test jets, the "
-        "recalls give the accuracy of figures {fig:F2} and {fig:F2-ft}. Points are means over three pretraining runs "
-        "with bars of ±1 standard deviation over runs and test jets, colored by what the 17-class labels merge the "
-        "class with: decays differing only in quark flavor, only in lepton flavor, both or neither, and the QCD "
-        "classes. Values are in the supplementary material."
-    ),
-    "PC-jc1": (
-        "{counts} Each point is one JetClass class's recall, the fraction of its test jets the network assigns to it, "
-        "for the panel's network (vertical) against 188 classes (horizontal), rows as in figure {fig:PC-jc2}, as "
-        "linear probes (left column) or fine-tuned (right column) on one million JetClass jets. Points below the "
-        "dotted diagonal are classes the panel's network recalls less often. Points are means over three pretraining "
-        "runs, with bars of ±1 standard deviation over runs and test jets. Values, also for the mass networks and "
-        "partitions, are in table {tab:jc1_class_auc}."
+        "{counts} Each point is one JetClass-II class's recall, the share of its test jets assigned to it, for the "
+        "row's network against 188 classes, as linear probes (left) or fine-tuned (right) on one million "
+        "class-balanced jets; points below the diagonal are recalled less often. Their test-jet-weighted mean is the "
+        "accuracy of figures {fig:F2} and {fig:F2-ft}. Means over three pretraining runs with ±1 standard deviation "
+        "bars over runs and test jets; colors give what the 17 classes merge the class with. Values are in table "
+        "{tab:perclass}."
     ),
     "F4-mech": (
         'Linear probes on 17 classes separate decays differing only in quark flavor worse than 188 classes; the b-quark '

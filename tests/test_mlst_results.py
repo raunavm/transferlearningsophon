@@ -1963,8 +1963,9 @@ def _r50(r: float, k: int = 400, n: int = 200_000) -> dict:
 
 
 def test_the_pair_table_groups_the_rows_by_mode_with_the_mode_in_the_group_heading():
-    """PI 2026-11-08, 2026-11-12, 2026-11-18: the pair table gives R50 (no AUC, no ratio), one column per pair under one
-    R50 heading in the class-pair figures' panel order; the probed and the fine-tuned rows as two row groups under the
+    """PI 2026-11-08, 2026-11-12, 2026-11-18, 2026-11-19: the pair table gives R90, the rejection at 90% signal
+    efficiency (no AUC, no ratio; the names say R50 for history), one column per pair under one R90 heading in the
+    class-pair figures' panel order; the probed and the fine-tuned rows as two row groups under the
     italic headings of every table (HEADING) and no tag on the rows; from scratch has no probe, the random networks no
     fine-tuning; the fine-tuned group is one pending row until the read-out is pulled."""
     pairs = lambda r: {M.PAIR_N: {k: _r50(r) for k, *_ in M.PAIRS}}      # noqa: E731
@@ -1978,7 +1979,7 @@ def test_the_pair_table_groups_the_rows_by_mode_with_the_mode_in_the_group_headi
     t = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", "R16_Q1", M.INIT), ft)
     n = len(M.PAIRS)
     lines = t.splitlines()
-    assert lines[2:6] == [rf" & \multicolumn{{{n}}}{{c}}{{$R_{{50}}$}} \\", rf"\cmidrule(lr){{2-{1 + n}}}",
+    assert lines[2:6] == [rf" & \multicolumn{{{n}}}{{c}}{{$R_{{90}}$}} \\", rf"\cmidrule(lr){{2-{1 + n}}}",
                           " & " + " & ".join(h for _, h, *_ in M.PAIRS_FIG) + r" \\", r"\midrule"]
     assert [k for k, *_ in M.PAIRS_FIG] == list(M.PAIR_ORDER) and "AUC" not in t and r"\rho" not in t
     lp, f = (lines.index(M._full_row(1 + n, M.HEADING[m], italic=True)) for m in ("lp", "ft"))
@@ -2771,7 +2772,7 @@ def _paper_tables() -> dict:
     """{label: (caption key, generated file)} of the tables placed in the main text and the appendix."""
     G = _load("gallery_placement_tables_t", "experiments/FIGS/figstyle/gallery_placement.py")
     key = {label: k for k, (label, _) in M.CAPTIONS.items()}
-    name = {k: f for k, f, *_ in M.PLACEHOLDERS}
+    name = {k: f for k, f, *_ in M.PLACEHOLDERS} | dict(M.LONGTABLES)      # tab:perclass is a longtable (appendix)
     return {lab: (key[lab], ROOT / "paper/journal/tables" / f"{name[key[lab]]}.tex")
             for item, tier, _ in G.TABLES if tier in (G.MAIN, G.APPENDIX) for lab in item.split(" + ")}
 

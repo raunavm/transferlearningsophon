@@ -401,6 +401,12 @@ PAGES = [
 ]
 
 # the supplement members' captions, filled like the paper's (gallery_captions holds the main-text and appendix ones)
+PC_JC1 = ("Each point is one JetClass class's recall, the fraction of its test jets the network assigns to it, for the "
+          "panel's network (vertical) against 188 classes (horizontal), rows as in figure {fig:PC-jc2}, as linear probes "
+          "(left column) or fine-tuned (right column) on one million JetClass jets. Points below the dotted diagonal are "
+          "classes the panel's network recalls less often. Points are means over three pretraining runs, with bars of ±1 "
+          "standard deviation over runs and test jets. Values, also for the mass networks and partitions, are in table "
+          "{tab:jc1_class_auc}.")
 SUPPLEMENT_CAPTIONS = {
     "PC-jc2-part": (
         "The networks pretrained with the 17-class partitions with no and with a b-quark flavor boundary in the form of "
@@ -493,20 +499,28 @@ def counts_sentence(test: str) -> str:
     c = {(a, k): l3_counts(test, (a, b), k) for a, b in FIG4 for k in (0, 1)}
     if any(c[a, 0] is None for a, _ in FIG4):
         return ""
-    seq = lambda k: (", ".join(str(c[a, k]["lower"]) for a, _ in FIG4[:-1])      # noqa: E731
-                     + f" and {c[FIG4[-1][0], k]['lower']}")
+    def seq(k: int, note: str = "") -> str:
+        v = [str(c[a, k]["lower"]) for a, _ in FIG4]
+        v[0] += note
+        return ", ".join(v[:-1]) + f" and {v[-1]}"
     ft = all(c[a, 1] is not None for a, _ in FIG4)
     raised = sum(v["higher"] for v in c.values() if v)
-    qcd = f" ({c['L162', 0]['lower_qcd']} of the 162-class ones QCD classes)" if test == "jc2" else ""
+    q, n162 = c["L162", 0]["lower_qcd"], c["L162", 0]["lower"]
+    qcd = ("" if test != "jc2" or not n162 else " (all QCD)" if q == n162 else f" ({q} of them QCD)")
     what = "JetClass-II" if test == "jc2" else "JetClass"
-    return (f"Beyond three standard deviations of the spread over runs and test jets, 162, 43 and 17 classes, 162 "
-            f"classes + mass and 17 classes + mass have a lower recall than 188 classes on {seq(0)} of the "
-            f"{c[FIG4[0][0], 0]['n']} {what} classes as linear probes{qcd}"
-            + (f" and on {seq(1)} after fine-tuning" if ft else "")
-            + (", and none a higher one." if not raised else f", and a higher one on {raised} in all."))
+    # 2026-11-22: the figure's networks only (FIG4: 162, 43 and 17 classes); the sentence named the two mass networks
+    # too, from when FIG4 held them, and gave three counts for five networks
+    nums = [S.LEGEND[a].removesuffix(" classes") for a, _ in FIG4]
+    names = ", ".join(nums[:-1]) + f" and {nums[-1]} classes"
+    return (f"Beyond three standard deviations over runs and test jets, {names} recall {seq(0, qcd)} of the "
+            f"{c[FIG4[0][0], 0]['n']} {what} classes less often than 188 classes as linear probes"
+            + (f" and {seq(1)} after fine-tuning" if ft else "")
+            + (", and none more often." if not raised else f", and {raised} more often in all."))
 
 
 import gallery_captions  # noqa: E402
-gallery_captions.COUNTS.update({"PC-jc2": counts_sentence("jc2"), "PC-jc1": counts_sentence("jc1")})
+gallery_captions.COUNTS.update({"PC-jc2": counts_sentence("jc2")})
+# PC-jc1 is a supplement figure since the 19 Nov placement: its caption, with its computed counts, is the page's
+SUPPLEMENT_CAPTIONS["PC-jc1"] = " ".join((counts_sentence("jc1") + " " + PC_JC1).split())
 PAGES = [dataclasses.replace(p, caption=gallery_captions.fill(SUPPLEMENT_CAPTIONS[p.id])) if p.id in SUPPLEMENT_CAPTIONS
          else p for p in gallery_captions.apply(PAGES)]
