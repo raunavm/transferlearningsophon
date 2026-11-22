@@ -127,7 +127,7 @@ def test_every_spec_is_ours_cpu_only_but_the_one_extraction_and_guards_at_the_fi
     b, s = specs
     assert set(s) == {"fit", "fill", "sib", "coarse", "qcdhf", "nat", "sophonx", "sophon", "xbx", "mlp", "atlas",
                       "atlas-part", "rebin", "boot", "bootl3", "bootall", "checks", "mlp-cpu", "mlp-init-cpu",
-                      "atlas-cpu", "atlas-part-cpu", "cpu-after"}
+                      "atlas-cpu", "atlas-part-cpu", "cpu-after", "bootall-ft"}
     for kind, text in s.items():
         name = next(ln.split(":", 1)[1].strip() for ln in text.splitlines() if ln.strip().startswith("name: ")
                     and "raunav" in ln)
@@ -193,6 +193,11 @@ def test_the_v5_bootstraps_write_l3_v5_and_cover_every_printed_network(specs):
     for d in ("rand-188", "flavf0-188", "r16q1mass-188", "l162mass-188", "162mass-162", "17mass-17"):
         assert f"--diff {d}=" in s["bootall"], d
     assert s["bootall"].count("--model ") == 3 * 27
+    assert s["bootall-ft"].count("--model ") == 3 * 27 and s["bootall-ft"].count("--headline") == 3
+    for d in ("rand-188", "17mass-17", "162mass-162"):
+        assert s["bootall-ft"].count(f"--diff {d}=") == 3, d
+    assert "best70/leg_top/rand2p5-s2/N1200000/s1" in s["bootall-ft"] and "--task qg_herwig" in s["bootall-ft"]
+    assert "/data/results/bootstrap/l3/ft_top_N1200000.all.json" in s["bootall-ft"]
 
 
 def test_every_cpu_fit_is_pinned_to_the_nodes_of_one_cpu_model_and_checks_it(specs):

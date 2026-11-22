@@ -37,6 +37,7 @@ storage_line.FINISHING. Specs in experiments/EVAL/k8s/v2/refit_v5/; plan and lau
            (CPU_MINORITY), refitted on the family's majority model (FAMILY_CPU) at the majority's tag, the old fit
            moved aside first; every fit kind is pinned by hostname to one CPU model (CPU_NODES, pin_cpu)
   cpu-after  after the checks pass: atlas_rebin.py for the refitted mass networks, then mass_sd_boot.py -> v3
+  bootall-ft bootall's bootstrap on the full-set fine-tuned top and quark/gluon networks -> bootstrap/l3/ft_*.all.json
 
     python3 scripts/build_refit_v5_jobs.py --tag mtx-s2.98 all
 """
@@ -585,6 +586,30 @@ mkdir -p {L3_V5}
                    "the paired test-jet bootstrap of every printed top and quark/gluon network, every printed metric")
 
 
+def bootall_ft_spec(tag: str) -> str:
+    """bootall's bootstrap on the full-set fine-tuned top and quark/gluon networks (PI 2026-11-21, for Fig. 3's caption):
+    the same networks, differences and metrics, into bootstrap/l3/ft_<task>_N<n>.all.json beside the L3 files (the
+    fine-tuned cells are no refit, so no v5 gate)."""
+    bl = _load("build_boot_l3_jobs", "scripts/build_boot_l3_jobs.py")
+    side = lambda a: ",".join(f"mtx-{r}" for r in BOOTALL_ARMS[a])  # noqa: E731
+    diffs = " ".join(f"--diff {n}={side(a)}/{side(b)}" for n, (a, b) in BOOTALL_DIFFS.items())
+    runs = [r for rs in BOOTALL_ARMS.values() for r in rs]
+    rows = []
+    for ds, leg, n in (("top", "leg_top", 1_200_000), ("qg", "leg_qg", 1_600_000), ("qg_herwig", "leg_qg", 1_600_000)):
+        models = " ".join(f"--model mtx-{r}={bl.FT}/best70/{leg}/{r}/N{n}/s1" for r in runs)
+        out = f"{bl.OUT}/ft_{ds}_N{n}.all.json"
+        rows.append(f"[ -e {out} ] || python3 experiments/STATS/paired_bootstrap.py --task {ds} {models} --headline "
+                    f"{diffs} --b {bl.REPLICAS} --out {out}")
+    body = f"""set -euo pipefail
+{JB._start(tag)}
+{threads(bl.CPU)}
+{guard()}
+{case_block(rows)}echo "REFIT5 BOOT ALL FT PART ${{IDX}} COMPLETE"
+"""
+    return indexed("refit5-bootall-ft-raunav", body, len(rows), len(rows), "24Gi", bl.CPU,
+                   "the paired test-jet bootstrap of every fine-tuned top and quark/gluon network, every printed metric")
+
+
 def check_families() -> list[tuple[str, list[str], bool]]:
     """(folder, expected models, one CPU model) of every refitted family."""
     ms = model_names()
@@ -667,7 +692,7 @@ def build(tag: str, parallelism: int) -> dict[str, str]:
              "mlp": mlp_spec(tag, parallelism), "atlas": atlas_spec(tag, parallelism),
              "atlas-part": atlas_part_spec(tag, parallelism), "rebin": rebin_spec(tag),
              "boot": boot_spec(tag), "bootl3": bootl3_spec(tag), "bootall": bootall_spec(tag), "checks": checks_spec(tag),
-             **cpu_refit_specs(parallelism), "cpu-after": cpu_after_spec(tag)}
+             **cpu_refit_specs(parallelism), "cpu-after": cpu_after_spec(tag), "bootall-ft": bootall_ft_spec(tag)}
     return {k: pin_cpu(v, FAMILY_CPU[PINNED[k]]) if k in PINNED else v for k, v in specs.items()}
 
 
@@ -678,7 +703,7 @@ def main(argv=None) -> int:
     ap.add_argument("kinds", nargs="+", choices=("all", "fit", "fill", "sib", "coarse", "qcdhf", "nat", "sophonx",
                                                  "sophon", "xbx", "mlp", "atlas", "atlas-part", "rebin", "boot", "bootl3",
                                                  "bootall", "checks", "mlp-cpu", "mlp-init-cpu", "atlas-cpu",
-                                                 "atlas-part-cpu", "cpu-after"))
+                                                 "atlas-part-cpu", "cpu-after", "bootall-ft"))
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
         raise SystemExit(f"FATAL: --tag {a.tag} is not an mtx-sN.NN tag")
