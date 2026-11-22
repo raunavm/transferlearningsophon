@@ -31,9 +31,8 @@ are a random sample of these that meets a balance rule: each of \RandVtwoNPairs{
 them the pairs of the linear probes on class pairs, is merged in \RandVtwoMergedMin{} or
 \RandVtwoMergedMax{} partitions and kept apart in the others. The balance rule makes every one of these
 pairs available both merged and kept apart, which the comparison of merged against separated classes
-needs. Because the refinement pushes the partitions away from the grouping by decay topology, a group can
-mix decays with different numbers of prongs and the partitions keep many flavor boundaries;
-table~\ref{tab:randprong} lists the prong-count boundaries each one keeps. Each partition is pretrained
+needs. No partition keeps a boundary between two, three and four prongs: each has groups that mix decays
+with different numbers of prongs, which table~\ref{tab:randprong} counts. Each partition is pretrained
 once, the first and third with the initial weights and training examples of seed one and the other three
 with those of seed two, and is compared with the \Kfull-class model of its seed.
 
@@ -128,7 +127,9 @@ label set against epoch.
 \centering
 \paperfig{\linewidth}{VAL}
 \caption{Validation accuracy of the pretraining against epoch for the \Kfull-, \Kres-, \Kmid- and
-\Kcoarse-class label sets, each on its own classes, as the mean over \MlstNRunsWord{} runs. A coarser label set
+\Kcoarse-class label sets and the \Kres- and \Kcoarse-class models with the auxiliary mass regression, each on
+its own classes, as the mean over its runs: \MlstNRunsWord{} for a label set, \MlstMassNRunsWord{} for a model
+with the mass regression. A coarser label set
 has fewer classes to tell apart, so its accuracy is not comparable with that of a finer set.}
 \label{fig:val}
 \end{figure}
@@ -166,8 +167,7 @@ from files that no pretraining run trained or validated on, and they are nested 
 \FtSizeESix{} jets, each contained in the next. At \FtSizeESix{} jets, \JcBalShortTrainESix{} classes
 have fewer held-out jets than their share and contribute all they have. The regularization is chosen on
 up to \JcBalValPerClass{} validation jets per class. The AUC averaged over classes takes each of the
-\Kfull{} classes against the rest on every test jet, and table~\ref{tab:probes} also gives it over the
-classes with a full test sample and over the resonant and the QCD classes.
+\Kfull{} classes against the rest on every test jet.
 
 The linear probes on class pairs are binary. They are trained on up to \JcBalPairTrainPerSide{} jets
 per side and tested on up to \JcBalPairTestPerSide, each side's classes at their shares in the mixed test sample, and choose
@@ -184,7 +184,7 @@ features are substituted as appendix~\ref{sec:app-inputs} describes.
 
 The full-set linear probe on top is not limited by the number of training jets: for the \Kfull-class
 model, its rejection at 30\% signal efficiency with \FtSizeEFive{} training jets and with the full set
-agree within the spread over pretraining runs (table~\ref{tab:probesn}).
+agree within the spread over pretraining runs (tables~\ref{tab:probesn} and~\ref{tab:summary}).
 
 \subsection{Fine-tuning and training from scratch}\label{sec:app-ft}
 
@@ -237,11 +237,7 @@ layer trains at \FtHeadCap{} at every rate. Table~\ref{tab:lrsweep} lists every 
 
 \input{tables/mlst_lrsweep}
 
-Fine-tuning keeps the missing inputs at zero for every model. Replacing zero by the training mean in the
-fine-tuning of the \Kfull-class model of seed one on the full top training set moves its rejection at
-30\% signal efficiency by less than the spread over pretraining runs, so the benchmark comparison does
-not depend on that choice.
-% CHECK: (no macro) fine-tuning zero-versus-mean check on top (188-class seed 1, full set): |R30 change| < seed SD of MlstFtTopRthirtyFull
+Fine-tuning keeps the missing inputs at zero for every model.
 
 \subsection{Transfer to $X\to b\bar b$ and $X\to bs$}\label{sec:app-xbx}
 % CHECK: pending XbbNTrainPerClass, XbsNTrainPerClass, XbbRepetition, XbsRepetition (samples due 2026-11-03; drop with F9 if not staged by 2026-11-12)
@@ -252,24 +248,24 @@ token, with the hidden layer initialized from that of the pretrained head. It is
 over \LitSophonTransferSamplesMillion{} million samples in batches of \LitSophonTransferBatch{} at a
 constant learning rate of \LitSophonTransferLr. Sophon states neither an optimizer nor a
 regularization; we use RAdam with the settings of pretraining, dropout after the hidden layer and no
-weight decay, and train several seeds per pretraining run, which the tables average.
+weight decay, and train three seeds per pretraining run, which the tables average.
 
 The signal and QCD training jets are drawn in matched bins of $(p_{\mathrm{T}}, \msd)$,
 \XbbNTrainPerClass{} per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$. They are kept
 in a fixed shuffled order, repeated \XbbRepetition{} and \XbsRepetition{} times to reach Sophon's number
 of samples. The training QCD jets come from JetClass-II files that no pretraining run trained or validated on (the pretraining
 reweighting histograms read them) and the evaluation QCD jets
-from its test files, so no pretraining jet enters either. Whether the signal mass is fixed or variable is
-recorded for every fit; Sophon trains its $X\to bs$ transfer head on a variable mass and evaluates it at
-\LitSophonXMass~GeV~\cite[Sec.~III]{sophon}.
+from its test files, so no pretraining jet enters either. Sophon trains its $X\to bs$ transfer head on a
+variable mass and evaluates it at \LitSophonXMass~GeV~\cite[Sec.~III]{sophon}.
 
 Sophon's direct discriminant can be formed only by the \Kfull- and \Kres-class models, in which
 $X\to b\bar b$ is a class of its own. The closest-output-node control scores the pretrained $X\to bq$
 output against QCD; where a label set merges $X\to bq$ with other decays, it scores the output of that
-group. The network trained from scratch for $X\to bs$ is the Sophon network on the same inputs and jets,
-trained for Sophon's number of epochs for its reference, \LitSophonScratchEpochs, with weight
-decay~\cite[App.~B.3]{sophon}, its epoch chosen on our validation jets, with three seeds. No network is
-trained from scratch for $X\to b\bar b$.
+group. The network trained from scratch for each signal is the Sophon network on the same inputs and jets,
+trained with three seeds for Sophon's number of epochs for its reference, \LitSophonScratchEpochs, with weight
+decay~\cite[App.~B.3]{sophon}, its epoch chosen on our validation jets. Each of these epochs is one pass over
+the \XbbNTrainPerClass{} ($X\to b\bar b$) or \XbsNTrainPerClass{} ($X\to bs$) training jets of each class,
+fewer samples than an epoch of Sophon's reference.
 
 \subsection{Compute}\label{sec:app-compute}
 
@@ -322,8 +318,10 @@ pretraining particle has is the joint one, with no flag set.
 
 The substitution for each task is chosen on validation jets and applied to every model, the randomly
 initialized network included: \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon.
-Table~\ref{tab:fill} gives all three substitutions for every configuration and so completes
-table~\ref{tab:fill_main}, which shows the four levels of the class hierarchy.
+Table~\ref{tab:fill_main} gives all three substitutions for the four levels of the class hierarchy.
+Table~\ref{tab:fill} gives $R_{30}$ on top and quark/gluon tagging under the two substitutions not chosen
+for the label sets, the models with the auxiliary mass regression, the \Kcoarse-class partitions and the
+random network with recomputed BatchNorm statistics; table~\ref{tab:summary} gives the chosen one.
 
 \input{tables/mlst_inputs}
 \input{tables/mlst_fill}
@@ -337,13 +335,8 @@ table~\ref{tab:fill_main}, which shows the four levels of the class hierarchy.
 MLP probes answer whether a linear null means that the information is absent or only that a linear
 classifier cannot read it. Table~\ref{tab:mlp} gives the MLP probe on the same frozen features at the largest
 training set of JetClass-II, JetClass and the class pairs other than $X\to ee$ against $X\to\mu\mu$, and of
-top and quark/gluon with the missing inputs set to zero. On JetClass-II and the class pairs the MLP probes of
-the levels of the hierarchy, the partitions with controlled flavor boundaries and the randomly initialized
-network use the class-balanced test set of the linear probes. Those of the models with the auxiliary mass
-regression and the \RandVtwoNPartitions{} random partitions use the mixed test sample, so the table
-gives them in a block of their own beside the levels of the hierarchy on that set, and no ratio crosses the
-two test sets.
-% CHECK: every linear null in the main text between the mass models or the random partitions has its mixed-test-sample MLP value quoted (results_mass.tex, results_jc.tex); fits_v4_mlp still holds none of these nine models.
+top and quark/gluon with the missing inputs set to zero. On JetClass-II and the class pairs every MLP probe
+uses the class-balanced test set of the linear probes.
 
 The last rows of the same table address a second question: whether the hidden layer of the head, where
 Sophon's transfer head starts, holds information that a linear probe cannot read from the class
@@ -363,21 +356,20 @@ repeated on the copy of the selected checkpoint whose BatchNorm statistics were 
 the checkpoints as trained, which is why this check runs on the mixed test sample. The ratio of
 the class-averaged $1-\AUC$ of a label set to the \Kfull-class model of its seed changes by at most
 \MlstBnMaxDev, less than the smallest difference between label sets that the main text reports. On the class
-pairs other than $X\to ee$ against $X\to\mu\mu$, whose probe ran only on the checkpoints as trained, the ratio
+pairs other than $X\to ee$ against $X\to\mu\mu$, which has no fit on the recomputed copy, the ratio
 moves by at most \MlstBnMaxDevPair{} for the levels of the hierarchy, the models with the
-auxiliary mass regression and the partitions with controlled flavor boundaries, and by more in one random
-partition, whose regularization, chosen on few validation jets, changes. No result checked here therefore rests
+auxiliary mass regression and the partitions with controlled flavor boundaries. No result checked here therefore rests
 on the statistics accumulated in pretraining.
-% CHECK: MlstBnMaxDev well below |MlstCmpJcTwoResOverFull - 1| (2.6% today); only one random-partition cell above MlstBnMaxDevPair (today rand2p4-s2 bb_vs_cc, 8.8%, C 0.1 to 0.01 on 510 validation jets)
+% CHECK: MlstBnMaxDev well below |MlstCmpJcTwoResOverFull - 1| (2.6% today)
 
 The comparisons of the linear and MLP probes with the randomly initialized network use its recomputed
 form, because its saved statistics are PyTorch's defaults, zero mean and unit variance, which do not
 normalize the inputs; a comparison with it would otherwise set a normalized network against an
-unnormalized one. The probe tables give it both ways (tables~\ref{tab:probes}, \ref{tab:probesn},
-\ref{tab:mlp}, \ref{tab:pairs} and~\ref{tab:bn}). The jet-mass regression on frozen features
+unnormalized one. Tables~\ref{tab:mlp}, \ref{tab:pairs} and~\ref{tab:bn} give it both ways. The linear
+probes of tables~\ref{tab:probes} and~\ref{tab:probesn}, the jet-mass regression on frozen features
 (tables~\ref{tab:mass} and~\ref{tab:massdetail}) and the transfer to $X\to b\bar b$ and $X\to bs$
 (tables~\ref{tab:xbx} and~\ref{tab:xbxrej}) use only the network as initialized, with its saved
-statistics.
+statistics, which do not normalize the inputs.
 
 \input{tables/mlst_bn}
 
@@ -393,22 +385,20 @@ ratio of $R_{30}$ follows from the number of background jets that pass the cut. 
 each beside the standard deviation over pretraining runs. The test sample contributes at most
 \MlstBootTestMaxProbe\% to a ratio from the linear probes on JetClass-II and \MlstBootTestMaxFt\% after
 fine-tuning there. It contributes at most \MlstBootTestMaxRthirtyProbe\% to a ratio of $R_{30}$ from the linear
-probe on top and quark/gluon, below the standard deviation over pretraining runs of the same ratio. After fine-tuning
+probe on top and quark/gluon. After fine-tuning
 few background jets pass the cut on $R_{30}$, and the counting uncertainty, at most
-\MlstBootTestMaxRthirtyFt\% if the two counts are taken as independent, is larger than that standard
-deviation. The two counts come from the same test jets and are correlated, so this figure overestimates the
+\MlstBootTestMaxRthirtyFt\% if the two counts are taken as independent, is larger than the standard
+deviation over pretraining runs. The two counts come from the same test jets and are correlated, so this figure overestimates the
 uncertainty of a ratio, and we use it only as a conservative threshold (section~\ref{sec:uncertainties}).
-% CHECK: pending MlstBootTestMaxProbe, MlstBootTestMaxFt (class-balanced bootstraps); say how each JetClass-II test-sample SD compares with the seed SD once tab:boot has them. MlstBootTestMaxRthirtyProbe below the seed SD in all six R30 linear-probe cells (tightest today 3.6 against 9.8); MlstBootTestMaxRthirtyFt above the seed SD in the fine-tuned R30 cells (today 13 against 3.2, 7.3, 9.9; 4.6 against 2.6, 2.8, 2.6)
+% CHECK: pending MlstBootTestMaxProbe, MlstBootTestMaxFt (class-balanced bootstraps); say how each JetClass-II test-sample SD compares with the seed SD once tab:boot has them. MlstBootTestMaxRthirtyFt above the seed SD in the fine-tuned R30 cells (today 13 against 3.2, 7.3, 9.9; 4.6 against 2.6, 2.8, 2.6)
 
 \input{tables/mlst_boot}
 
 \subsection{The class-balanced test set and the mixed test sample}\label{sec:app-balance}
 
-Comparing two test sets tests whether class balancing changes the order of the label sets on JetClass-II.
 Table~\ref{tab:balance} gives the linear probes with \FtSizeESix{} training jets on the
 mixed test sample, whose class shares follow the selection, beside those on the class-balanced
-set of the main text. The label sets fall in the same order on both.
-% CHECK: tab:balance gives the order 188 < 162 < 43 < 17 in the ratio of 1-AUC on both test sets (v3 natural 1.171 and 1.538; v4 balanced 1.227 and 1.557 for 43 and 17)
+set of the main text.
 
 \input{tables/mlst_balance}
 
@@ -418,10 +408,9 @@ To locate the gap between our network trained from scratch and ParT on top taggi
 training script~\cite{part} was run on our cluster unchanged and then with Sophon's changes added one at a
 time (table~\ref{tab:partrepro}). Unchanged, it reaches a rejection at 30\% signal efficiency of
 \MlstPartreproRthirtyPart, within twice the published standard deviation of ParT's
-\LitPartTopRejScratch, so ParT reproduces here. Adding Sophon's output head gives
-\MlstPartreproRthirtyHeadOverPartPr{} than the unchanged script, which stays within ParT's published
-spread. Adding Sophon's rescaling of every jet to a common transverse momentum on top of the head gives
-\MlstPartreproRthirtyRescaleOverPartPr{} than the unchanged script. Each variant is a single run. The
+\LitPartTopRejScratch, so ParT reproduces here. With Sophon's output head it reaches
+\MlstPartreproRthirtyHead, within the published standard deviation. With Sophon's rescaling of every jet to a
+common transverse momentum instead, it reaches \MlstPartreproRthirtyRescale. Each variant is a single run. The
 network trained from scratch in table~\ref{tab:benchtop} keeps the rescaling because the pretrained models use it, so the comparison of
 pretrained and from-scratch networks shares every preprocessing step.
 % CHECK: |MlstPartreproRthirtyPart - 1602| < 2 x 81 and |MlstPartreproRthirtyHead - 1602| < 81 (1,711 and 1,577 today)
@@ -433,20 +422,23 @@ pretrained and from-scratch networks shares every preprocessing step.
 % ----------------------------------------------------------------------------
 
 The tables and figures of this appendix complete the results of the main text, each for the item named
-with it. Their uncertainties follow the convention of the main text, and a configuration with two runs
-shows both values.
+with it. Their uncertainties are the standard deviation over the runs of each configuration, two runs
+included.
 
 \subsection{Linear probes and fine-tuning for every configuration}\label{sec:app-all}
 
-Table~\ref{tab:probes} gives the linear probes at the largest training set of every task for every
-configuration, each random partition included; on JetClass-II it gives the accuracy beside the averages
-of the AUC defined in appendix~\ref{sec:app-probes}. Table~\ref{tab:probesn} gives the linear probes
+Table~\ref{tab:probes} gives the accuracy and $R_{50}$ of the linear probes on top and quark/gluon tagging
+at their largest training sets for every configuration, with the random partitions pooled into one row;
+table~\ref{tab:randparts} gives each random partition. Table~\ref{tab:probesn} gives the linear probes
 against the number of training jets in each task's metric, with the random partitions pooled into one row.
 Figure~\ref{fig:a10} draws the
 four label sets against the number of training jets, to show whether their order holds at every size.
-Fine-tuning is in table~\ref{tab:ft} against the number of training jets and in table~\ref{tab:ftrej} on
-the full top and quark/gluon training sets, for every configuration. Table~\ref{tab:perrun} gives each
+Fine-tuning is in table~\ref{tab:ft} against the number of training jets below the largest training sets,
+for the label sets and the models with the auxiliary mass regression, and in table~\ref{tab:ftrej} on the
+full top and quark/gluon training sets, for every configuration. Table~\ref{tab:perrun} gives each
 pretraining run's own values.
+
+\input{tables/mlst_randparts}
 
 \input{tables/mlst_probes}
 \input{tables/mlst_probes_n}
@@ -454,10 +446,11 @@ pretraining run's own values.
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{A10}
-\caption{Linear probes on the frozen features of the four label sets against the number of training jets:
-(a) accuracy on the \Kfull{} classes of class-balanced JetClass-II and (b) on JetClass, and $R_{30}$, the
-background rejection at 30\% signal efficiency, on (c) top tagging and (d) quark/gluon discrimination with the
-Pythia sample, with the network trained from scratch in black. Points are means over runs. Stars are ParT's
+\caption{Linear probes on the frozen features of the four label sets and of the \Kres- and \Kcoarse-class
+models with the auxiliary mass regression against the number of training jets: (a) accuracy on the \Kfull{}
+classes of class-balanced JetClass-II and (b) on JetClass, and $R_{30}$, the background rejection at 30\% signal
+efficiency, on (c) top tagging and on quark/gluon discrimination scored on the (d) Pythia and (e) Herwig
+samples. Lines are means over runs and bands one standard deviation. Stars are ParT's
 published results, as in figure~\ref{fig:f8}. On top and quark/gluon discrimination the missing inputs are
 substituted as chosen on validation.}
 \label{fig:a10}
@@ -469,10 +462,12 @@ on the public benchmarks in the form of figure~\ref{fig:f6}.
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{A8}
-\caption{Fine-tuned models of the four label sets against the number of training jets: (a) accuracy on the
-\Kfull{} classes of class-balanced JetClass-II and (b) on JetClass, and $R_{30}$, the background rejection at
-30\% signal efficiency, on (c) top tagging and (d) quark/gluon discrimination with the Pythia sample, with the
-network trained from scratch in black. Points are means over runs. Stars are ParT's published results, as in
+\caption{Fine-tuned models of the four label sets and of the \Kres- and \Kcoarse-class models with the
+auxiliary mass regression against the number of training jets: (a) accuracy on the \Kfull{} classes of
+class-balanced JetClass-II and (b) on JetClass, and $R_{30}$, the background rejection at 30\% signal
+efficiency, on (c) top tagging and on quark/gluon discrimination scored on the (d) Pythia and (e) Herwig
+samples, with the network trained from scratch in grey. Lines are means over runs and bands one standard
+deviation. Stars are ParT's published results, as in
 figure~\ref{fig:f8}. On top and quark/gluon discrimination the missing inputs are set to zero.}
 \label{fig:a8}
 \end{figure}
@@ -499,13 +494,13 @@ Table~\ref{tab:jetclassall} extends table~\ref{tab:jetclass} to every configurat
 table~\ref{tab:jetclassprobe} gives the linear probes in the same columns; figure~\ref{fig:fjapp} draws the
 ROC curves of these linear probes in the layout of figure~\ref{fig:fj}, figure~\ref{fig:fjctrlapp} those of the
 random partitions, and figure~\ref{fig:fjs} the network trained from scratch. Table~\ref{tab:jc1_class_auc}
-gives the AUC of each JetClass class against the other nine for every configuration, after fine-tuning and
-from linear probes. The rejection of every
+gives the recall of each JetClass class, the fraction of its test jets assigned to it, for every
+configuration, after fine-tuning and from linear probes. The rejection of every
 signal class rests on the QCD jets that pass its working point, and table~\ref{tab:jetclassnbkg} gives
 these counts, from which the daggers of both tables follow.
 
-Table~\ref{tab:randprong} lists the prong-count boundaries each partition keeps beside its fine-tuned rejection of each signal class,
-relative to the \Kfull-class model of its seed.
+Table~\ref{tab:randprong} gives the number of groups of each partition that mix prong counts beside its
+fine-tuned rejection of each signal class, relative to the \Kfull-class model of its seed.
 
 \input{tables/mlst_jetclass_all}
 \input{tables/mlst_jetclass_probe}
@@ -541,7 +536,7 @@ nine as background, and begins where $\nmin$ background jets remain. Colors as i
 \caption{Background rejection $1/\epsB$ against signal efficiency $\epsS$ on JetClass for the network trained
 from scratch on \FtSizeESix{} jets, with no pretraining. Each curve takes one of the ten JetClass classes as
 signal and the other nine as background, and is the mean over the \MlstFtRefSeedsWord{} training seeds; curves
-begin where $\nmin$ background jets remain. The legend gives the AUC of each class, the title their mean.}
+begin where $\nmin$ background jets remain. The legend gives the AUC of each class.}
 \label{fig:fjs}
 \end{figure}
 
@@ -550,11 +545,10 @@ begin where $\nmin$ background jets remain. The legend gives the AUC of each cla
 
 \subsection{JetClass-II class pairs and classes}\label{sec:app-pairs}
 
-Table~\ref{tab:pairs} completes figure~\ref{fig:f4} with every configuration and seven class pairs. Beside
-the four pairs of the main text it gives QCD $b\bar b$ against QCD $c\bar c$, QCD jets with a $b$ quark against
-QCD jets without $b$, $c$ or $s$ quarks, and QCD jets with a $c$ but no $b$ quark against the same light QCD
-jets. Each pair has its AUC and, in a separate column, the ratio $\rho$ of equation~(\ref{eq:ratio}) to the
-\Kfull-class model. Figure~\ref{fig:f4app} draws four of these pairs for the random partitions with
+Table~\ref{tab:pairs} gives, for every configuration, the rejection at 90\% signal efficiency, $R_{90}$, of
+the linear probes and of the fine-tuned networks on six class pairs: pairs (a)--(c) of figure~\ref{fig:f4},
+QCD $b\bar b$ against QCD $c\bar c$, QCD jets with a $b$ quark against QCD jets without $b$, $c$ or $s$
+quarks, and QCD jets with a $c$ but no $b$ quark against the same light QCD jets. Figure~\ref{fig:f4app} draws four of these pairs for the random partitions with
 controlled flavor boundaries. The data release's per-class table (\texttt{jetclass2\_per\_class.csv}) gives the
 numbers behind figure~\ref{fig:f3}, one row per JetClass-II class. To show each class's cost on the AUC itself,
 figures~\ref{fig:f3scatter} and~\ref{fig:f3app} set the AUC of every class for each configuration against
@@ -669,48 +663,47 @@ and of $X\to ee$ and $X\to\mu\mu$ (lower); a row has the same jets in both panel
 Table~\ref{tab:massdetail} completes table~\ref{tab:mass} and figures~\ref{fig:f9a} and~\ref{fig:f9b}. It gives the
 resolution and the median response of the regressed mass and of ridge and MLP regressions on frozen
 features, over all test jets and over resonant and QCD jets separately, and against jet $p_{\mathrm{T}}$
-and generator soft-drop mass. The median response of the regressed mass lies close to one because its
-target $\theta$, equation~(\ref{eq:masstarget}), is the logarithm of the mass ratio itself.
+and generator soft-drop mass.
 Figures~\ref{fig:a17res} and~\ref{fig:a17qcd} draw the median response and the resolution against jet
 $p_{\mathrm{T}}$ and generator mass for resonant and for QCD jets.
-% CHECK: MlstMassHeadResMassResponse, MlstMassHeadCoarseMassResponse within a few per cent of 1 (today 0.995, 1.003 and 1.005, 1.005)
 
 \input{tables/mlst_mass_detail}
 
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{\FigIdAseventeen-res}
-\caption{Median jet mass response (a, c) and relative mass resolution $\sigma_r$ of
-equation~(\ref{eq:resolution}) (b, d) for resonant jets of the JetClass-II test set with a generator-level
-match, against the reconstructed jet $p_{\mathrm{T}}$ (a, b) and the generator-level soft-drop mass $\mgen$ (c,
+\caption{Median jet mass response (a, b) and relative mass resolution $\sigma_r$ of
+equation~(\ref{eq:resolution}) (c, d) for resonant jets of the JetClass-II test set with a generator-level
+match, against the reconstructed jet $p_{\mathrm{T}}$ (a, c) and the generator-level soft-drop mass $\mgen$ (b,
 d): the reconstructed soft-drop mass and the regressed mass of the \Kres- and \Kcoarse-class models with the
 auxiliary mass regression, each the mean over its \MlstMassNRunsWord{} pretraining runs. Below each panel are
-the ratio of the median and the root-square difference of the resolution to those of the soft-drop mass.}
+the distance of each median from one and the ratio of each resolution to that of the soft-drop mass.}
 \label{fig:a17res}
 \end{figure}
 
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{\FigIdAseventeen-qcd}
-\caption{As figure~\ref{fig:a17res}, for QCD jets: median jet mass response (a, c) and relative mass resolution
-(b, d) against the reconstructed jet $p_{\mathrm{T}}$ (a, b) and the generator-level soft-drop mass $\mgen$ (c,
+\caption{As figure~\ref{fig:a17res}, for QCD jets: median jet mass response (a, b) and relative mass resolution
+(c, d) against the reconstructed jet $p_{\mathrm{T}}$ (a, c) and the generator-level soft-drop mass $\mgen$ (b,
 d), for the reconstructed soft-drop mass and the regressed mass of the \Kres- and \Kcoarse-class models with
 the auxiliary mass regression, each the mean over its \MlstMassNRunsWord{} pretraining runs. The last
-$p_{\mathrm{T}}$ bin of the soft-drop mass sets the scale of (b).}
+$p_{\mathrm{T}}$ bin of the soft-drop mass sets the scale of (c) and (d).}
 \label{fig:a17qcd}
 \end{figure}
 
-The mass that the frozen features carry is compared with the mass output in figure~\ref{fig:a17probe}.
+Figure~\ref{fig:a17probe} shows the mass that the frozen features carry.
 
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{\FigIdAseventeen-probe}
-\caption{Median jet mass response (a) and relative mass resolution $\sigma_r$ (b) against the reconstructed jet
-$p_{\mathrm{T}}$, for all JetClass-II test jets with a generator-level match: the reconstructed soft-drop
-mass, an MLP regressing the mass from the frozen features of the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class
-models, and the regressed mass of the \Kres- and \Kcoarse-class models with the auxiliary mass regression,
-each the mean over runs. Below are the ratio of each median and the root-square difference of each
-resolution to those of the soft-drop mass.}
+\caption{Median jet mass response (a, b) and relative mass resolution $\sigma_r$ (c, d) against the reconstructed
+jet $p_{\mathrm{T}}$ (a, c) and the generator-level soft-drop mass $\mgen$ (b, d), for all JetClass-II test
+jets with a generator-level match: the reconstructed soft-drop mass and an MLP regressing the mass from the
+frozen features of the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, of the \Kres- and \Kcoarse-class
+models with the auxiliary mass regression and of the randomly initialized network, each the mean over runs.
+Below each panel are the distance of each median from one and the ratio of each resolution to that of the
+soft-drop mass.}
 \label{fig:a17probe}
 \end{figure}
 
@@ -723,8 +716,8 @@ at the two working points beside that of a random selection of as many QCD jets,
 table~\ref{tab:sculptboot} tests the differences between models as section~\ref{sec:evaluation} describes. No difference exceeds three times its uncertainty, the three random partitions with controlled flavor boundaries
 (figures~\ref{fig:f10bflav} and~\ref{fig:f10aflav}) among them. Figure~\ref{fig:f10c} places every model in the plane of the DisCo
 paper~\cite[figure~3]{disco}, the background rejection against the inverse Jensen--Shannon divergence at the cut
-that keeps 50\% of the resonant jets; there no difference reaches three times its uncertainty
-(table~\ref{tab:sculptboot}).
+that keeps 50\% of the resonant jets; at that cut no difference in the Jensen--Shannon distance reaches three
+times its uncertainty (table~\ref{tab:sculptboot}).
 % CHECK: no difference passes, as gallery_placement.F10B_STATED (empty under L3, bootstrap/l3/sculpting_boot_l3.json)
 
 \begin{figure}[tbp]
@@ -733,9 +726,9 @@ that keeps 50\% of the resonant jets; there no difference reaches three times it
 \caption{Soft-drop mass distribution of the QCD jets of the JetClass-II test set before any selection
 (inclusive) and after a cut on the pretraining head, on one minus the summed score of the QCD classes, at QCD
 efficiencies $\epsB$ of \SculptEffHigh{} and \SculptEffLow, for the networks pretrained on (a) \Kfull, (b)
-\Kres, (c) \Kmid{} and (d) \Kcoarse{} classes, each the mean over its \MlstNRunsWord{} runs. Horizontal bars
-show the bin width. The lower panels give the ratio to the inclusive distribution. The values are in
-table~\ref{tab:sculpt}.}
+\Kres, (c) \Kmid{} and (d) \Kcoarse{} classes, each the mean over its \MlstNRunsWord{} runs. The lower panels
+give the ratio to the inclusive distribution. Their Jensen--Shannon distances from the inclusive distribution
+are in table~\ref{tab:sculpt}.}
 \label{fig:f10a}
 \end{figure}
 
@@ -754,8 +747,10 @@ runs). Black dashed: a random selection of as many QCD jets.}
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{F10b-flav}
-\caption{As figure~\ref{fig:f10b}, for the random partitions with no flavor boundary, a $b$-quark boundary and a
-random flavor boundary (\RandFlavRuns{} runs each), with the \Kfull-class networks for reference.}
+\caption{As figure~\ref{fig:f10b}, for the pretraining heads of the random partitions with no flavor boundary, a
+$b$-quark boundary and a random flavor boundary (\RandFlavRuns{} runs each) and of the \RandVtwoNPartitions{}
+random partitions (\RandVtwoRuns{} run each, averaged), with the \Kfull- and \Kcoarse-class networks for
+reference.}
 \label{fig:f10bflav}
 \end{figure}
 
@@ -763,7 +758,8 @@ random flavor boundary (\RandFlavRuns{} runs each), with the \Kfull-class networ
 \centering
 \paperfig{\linewidth}{F10a-flav}
 \caption{As figure~\ref{fig:f10a}, for the random partitions with (a) no flavor boundary, (b) a $b$-quark
-boundary and (c) a random flavor boundary, each the mean over its \RandFlavRuns{} runs.}
+boundary and (c) a random flavor boundary, each the mean over its \RandFlavRuns{} runs, and (d) the
+\RandVtwoNPartitions{} random partitions, \RandVtwoRuns{} run each, averaged.}
 \label{fig:f10aflav}
 \end{figure}
 
