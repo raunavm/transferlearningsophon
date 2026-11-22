@@ -36,8 +36,8 @@ CAPTIONS = {
         'standard deviations; in accuracy, R50 and AUC some do (tables {tab:probes} and {tab:summaryauc}). '
         'Points are means ±1 standard deviation over the runs '
         'of figure {fig:F1}, over the five random partitions, or over three initializations of the untrained random '
-        'network, the linear-probe reference, beyond the // breaks in (a) and (b). The released Sophon checkpoint, one '
-        'network, appears on JetClass-II and JetClass only. R30 is the inverse background efficiency at 30% signal '
+        'network, the linear-probe reference, beyond the // breaks in (a) and (b). The released Sophon checkpoint appears on '
+        'JetClass-II and JetClass only. R30 is the inverse background efficiency at 30% signal '
         'efficiency, and quark/gluon tagging trains on Pythia jets. Values are in table {tab:summary}, figure '
         '{fig:F2-ft} shows the fine-tuned networks and table {tab:summaryauc} the area under the receiver '
         'operating characteristic curve.'
@@ -97,10 +97,10 @@ CAPTIONS = {
     "F9b": (
         'Each network with an added mass regression (+ mass) resolves the jet mass better than the soft-drop mass in '
         'every bin of jet pT and generator mass, and is less biased in 13 of the 15 bins but more biased in the lowest '
-        'generator-mass bin, 20 to 50 GeV. Panels (a) and (b) show the median of r = m/m_gen, estimated over '
+        'generator-mass bin, 20 to 50 GeV. Panels (a) and (b) show the median of r = m/m_gen, m_gen the '
         'generator-level soft-drop mass, with its distance from one below, and (c) and (d) the resolution, half the '
         'central 68% range of r over its median, on a logarithmic axis, with the ratio to the soft-drop value below on a linear one. '
-        'Lines are means over two pretraining runs, flat across each bin, and bands of ±1 standard deviation combine '
+        'Lines are means over two pretraining runs, and bands of ±1 standard deviation combine '
         'the spread over runs with the bootstrap over test jets. Values are in table {tab:mass}.'
     ),
     "A17-probe": (
@@ -199,7 +199,7 @@ CAPTIONS = {
         'the Jensen-Shannon distance (base 2) between the soft-drop mass distributions of all JetClass-II QCD test '
         'jets and those passing a cut on the summed QCD output, against QCD efficiency eps_B, of (a) the pretraining '
         'head used directly (dash-dotted) and (b) the networks fine-tuned on JetClass-II, with training from scratch '
-        'in grey, on logarithmic axes but for the linear y axis of (b). Bands, for 188 classes and from scratch only, are ±1 standard deviation over '
+        'in grey, on logarithmic axes. Bands, for 188 classes and from scratch only, are ±1 standard deviation over '
         'runs; the dotted line in each panel is a random selection of as many QCD jets. Values are in table {tab:sculpt}.'
     ),
     **{k: (

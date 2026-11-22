@@ -54,39 +54,48 @@ def test_every_builder_defaults_to_85_and_takes_90_but_never_more():
         btj.spec("a" * 40, "full", [], True, 91)
 
 
-def test_the_parameter_changes_nothing_in_the_launched_equal_stopping_job(tmp_path, monkeypatch):
-    """Regenerated at the default line, the launched spec is byte-identical: the line is the only knob."""
-    monkeypatch.setattr(bfb, "OUT_DIR", tmp_path)
-    bfb.main(["--tag", "mtx-s2.87", "--lr-pre", "1e-3", "--lr-scratch", "1e-3", "--mem", "48Gi", "--cpu", "3",
-              "--parallelism", "8", "pre-full"])
-    assert (tmp_path / "job-ft-budget-pre-full-raunav.yaml").read_text() == \
-        (K8S / "job-ft-budget-pre-full-raunav.yaml").read_text()
+PRE_FULL_ARGS = ["--tag", "mtx-s2.87", "--lr-pre", "1e-3", "--lr-scratch", "1e-3", "--mem", "48Gi", "--cpu", "3",
+                 "--parallelism", "8"]
 
 
-def _cases(text: str) -> dict:
-    return {int(m[1]): m[2] for m in re.finditer(r"^\s+(\d+)\) (TASK=.*;;)$", text, re.M)}
+def _script(text):       # the pod's script without its case lines and its guard
+    s = yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["args"][0]
+    return re.sub(r"^\s*\d+\) TASK=.*;;\n", "", LINE.sub("", s), flags=re.M)
+
+
+def test_the_line_is_the_only_knob_of_the_equal_stopping_job(tmp_path, monkeypatch):
+    """Built at the default line and at 90, the equal-stopping job differs in the line alone. (2026-11-22: the byte
+    comparison with the launched spec of mtx-s2.87 is gone; the builder has since added the VALF/VALMEM case fields
+    and their script lines, so today's build cannot equal the 15 Nov file, which stays the record of what ran.)"""
+    for d, extra in (("a", []), ("b", ["--storage-line", "90"])):
+        (tmp_path / d).mkdir()
+        monkeypatch.setattr(bfb, "OUT_DIR", tmp_path / d)
+        bfb.main(PRE_FULL_ARGS + extra + ["pre-full"])
+    a, b = ((tmp_path / d / "job-ft-budget-pre-full-raunav.yaml").read_text() for d in ("a", "b"))
+    assert _lines(a) == {85} and _lines(b) == {90} and LINE.sub("", a) == LINE.sub("", b)
+    assert _lines((K8S / "job-ft-budget-pre-full-raunav.yaml").read_text()) <= {85, 90}
 
 
 def test_a_retry_of_refused_equal_stopping_cells_is_the_launched_cell_at_90(tmp_path, monkeypatch):
     """A cell the 85% guard refused is retried as itself: the same tag, the same case line, the same script, only the
-    line at 90; every committed retry spec is checked the same way."""
+    line at 90. A retry built today against today's full build; every committed retry spec against the launched spec
+    it was built beside."""
     monkeypatch.setattr(bfb, "OUT_DIR", tmp_path)
+    bfb.main(PRE_FULL_ARGS + ["pre-full"])
+    fresh_full = (tmp_path / "job-ft-budget-pre-full-raunav.yaml").read_text()
+    bfb.main(PRE_FULL_ARGS + ["--storage-line", "90", "--indices", "30,35", "pre-full"])
     launched = (K8S / "job-ft-budget-pre-full-raunav.yaml").read_text()
-    bfb.main(["--tag", "mtx-s2.87", "--lr-pre", "1e-3", "--lr-scratch", "1e-3", "--mem", "48Gi", "--cpu", "3",
-              "--parallelism", "8", "--storage-line", "90", "--indices", "30,35", "pre-full"])
-    specs = [tmp_path / "job-ft-budget-pre-full-retry-raunav.yaml", *K8S.glob("job-ft-budget-pre-full-retry*-raunav.yaml")]
-    old = _cases(launched)
-
-    def script(text):       # the pod's script without its case lines and its guard
-        s = yaml.safe_load(text)["spec"]["template"]["spec"]["containers"][0]["args"][0]
-        return re.sub(r"^\s*\d+\) TASK=.*;;\n", "", LINE.sub("", s), flags=re.M)
-
-    for p in specs:
-        t = p.read_text()
+    pairs = [((tmp_path / "job-ft-budget-pre-full-retry-raunav.yaml").read_text(), fresh_full)]
+    pairs += [(p.read_text(), launched) for p in K8S.glob("job-ft-budget-pre-full-retry*-raunav.yaml")]
+    for t, full in pairs:
         assert _lines(t) == {90} and 'value: "mtx-s2.87"' in t
-        new = _cases(t)
+        new, old = _cases(t), _cases(full)
         assert set(new.values()) <= set(old.values()) and len(new) == int(re.search(r"completions: (\d+)", t)[1])
-        assert script(t) == script(launched)
+        assert _script(t) == _script(full)
+
+
+def _cases(text: str) -> dict:
+    return {int(m[1]): m[2] for m in re.finditer(r"^\s+(\d+)\) (TASK=.*;;)$", text, re.M)}
 
 
 @pytest.mark.parametrize("task,n,count", [("top", 1000, 22), ("top", 10000, 22), ("qg", 1000, 21), ("jc1", 10000, 21),

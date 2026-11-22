@@ -231,7 +231,8 @@ def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_p
     import gallery_captions as K
     paper = [k for k, t, _ in G.FIGURES if t in (G.MAIN, G.APPENDIX)]
     # PI 2026-11-14 (step 5): the mass probe joins the appendix, two task grids replace the JetClass-II UMAP grid
-    assert sorted(K.CAPTIONS) == sorted(paper) and len(paper) == 24      # PI 2026-11-18: 9 main-text and 15 appendix figures
+    # PI 2026-11-18: 9 main-text and 15 appendix figures; the 19 Nov placement: 7 and 16, PC-jc1 to the supplement
+    assert sorted(K.CAPTIONS) == sorted(paper) and len(paper) == 23
     for pid, raw in K.CAPTIONS.items():
         labels = re.findall(r"\{(tab:[a-z_0-9]+)\}", raw)
         assert set(labels) <= set(G.TIER) and not set(labels) & set(G.DROPPED_TABLES), pid

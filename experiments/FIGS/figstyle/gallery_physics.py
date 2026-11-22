@@ -306,8 +306,7 @@ def draw_a17_ridge(path: pathlib.Path) -> None:
 
 # the mass probes are centred on one training median, with no class information (atlas_res_v3 only, PI 2026-11-21)
 import gallery_captions as _K  # noqa: E402
-_K.FILLS["probe_note"] = ("The probe regresses the mass on frozen features alone, centred on one training median, with "
-                          "no generator-level class information.")
+_K.FILLS["probe_note"] = "The probe sees no generator-level class information."
 
 # PI 2026-11-14 (step 7): the partitions' mass probes, drawn once fitted, in the supplement (the paper's figures of the
 # mass family show the label sets and mass networks)

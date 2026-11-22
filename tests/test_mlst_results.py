@@ -1998,7 +1998,7 @@ def test_the_pair_table_groups_the_rows_by_mode_with_the_mode_in_the_group_headi
     # the caption: R50 in words, the recomputed random network defined in one sentence (the paper's copy a short one,
     # L16; BN_DEF in the supplement's), and a sentence for each mark a cell carries and for no other (17 classes merge
     # every pair: daggers; no double dagger, no pooled-partition mark, no lower limit here)
-    assert r"The rejection at 50\% signal efficiency, $R_{50}$," in tab and "AUC" not in tab
+    assert r"The rejection at 90\% signal efficiency, $R_{90}$," in tab and "AUC" not in tab
     assert ("BatchNorm recomputed means batch-normalization statistics re-estimated on \\DesignBnJets{} training jets."
             in tab) and M.BN_DEF not in tab and M.BN_DEF in M.printed_caption("pairs_full")
     dagger, ddagger, pooled, limit = (note for _, note in M.KEY_MARKS["pairs"])
