@@ -68,7 +68,9 @@ spec:
              || {{ echo "FATAL: TeX Live did not install"; tail -5 ${{OUT}}/apt.txt; exit 1; }}
           pip install --no-cache-dir -q {pins} pyarrow || exit 1
           latex --version | head -1
-{draw}          mkdir -p /workspace/tectonic && python3 -c "import urllib.request,sys; urllib.request.urlretrieve(sys.argv[1], '/workspace/tectonic/t.tgz')" \\
+{draw}          # 2026-11-22: the checkout carries a committed PDF; removed first, so a failed compile leaves none to copy
+          rm -f {texdir}/{texfile}.pdf
+          mkdir -p /workspace/tectonic && python3 -c "import urllib.request,sys; urllib.request.urlretrieve(sys.argv[1], '/workspace/tectonic/t.tgz')" \\
             "{tectonic}" && tar -xzf /workspace/tectonic/t.tgz -C /workspace/tectonic \\
             && (cd {texdir} && /workspace/tectonic/tectonic -X compile {texfile}.tex > ${{OUT}}/tectonic.txt 2>&1; echo "tectonic rc=$?") \\
             || echo "tectonic: could not fetch or run"
@@ -150,15 +152,17 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mockups", action="store_true", help="the figure mock-ups instead of the paper")
     ap.add_argument("--book", action="store_true", help="the results book (main text and appendix) instead of the paper")
-    ap.add_argument("--preview", action="store_true", help="with --book: today's partial results (MLST_FT_PREVIEW=1)")
+    ap.add_argument("--preview", action="store_true", help="today's partial results (MLST_FT_PREVIEW=1), the book or the paper")
     storage_line.add_argument(ap)
     a = ap.parse_args()
     mode = MOCKUPS if a.mockups else BOOK if a.book else PAPER
     if a.preview:
-        if mode is not BOOK:
-            raise SystemExit("FATAL: --preview is for --book")
-        mode = {**BOOK, "suffix": "-bookpreview", "what": "results book (preview of partial results)",
-                "draw": "          export MLST_FT_PREVIEW=1\n" + BOOK["draw"]}
+        if mode is MOCKUPS:
+            raise SystemExit("FATAL: --preview is for the book or the paper")
+        # PI 2026-11-22: the paper read end to end while the reruns run: its tables from the partial read-out
+        mode = {**mode, "suffix": "-bookpreview" if mode is BOOK else "-preview",
+                "what": f"{mode['what']} (preview of partial results)",
+                "draw": "          export MLST_FT_PREVIEW=1\n" + mode["draw"]}
     line = storage_line.check(a.storage_line)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True,
                             text=True, check=True).stdout.strip()
