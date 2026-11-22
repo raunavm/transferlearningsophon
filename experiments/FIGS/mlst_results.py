@@ -1553,10 +1553,20 @@ def table_mass(atlas, runs, fmt_pm) -> str:
             ms = runs[arm]
             out.append(LABEL[arm] + " & " + " & ".join(_cell([_ares(atlas, m, est, g, k) for m in ms], len(ms), fmt_pm)
                                                        for k in ("resolution", "median")) + r" \\")
-    out += [r"\midrule", "soft-drop mass & " + " & ".join(      # a reference, last (L5)
-        _cell([v], 1, fmt_pm, run=False) if (v := _groomed(atlas, g, k)) is not None else "--"
-        for k in ("resolution", "median")) + r" \\"]
+    out += [r"\midrule", "soft-drop mass & " + " & ".join(_groomed_cell(atlas, g, k, fmt_pm)      # a reference, last (L5)
+                                                      for k in ("resolution", "median")) + r" \\"]
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
+
+
+def _groomed_cell(atlas, g: str, k: str, fmt_pm, axis: str = "inclusive") -> str:
+    """The soft-drop mass's value with its SD over the test-jet bootstrap (atlas_resolution: <key>_sd), PI 2026-11-21:
+    every comparison with it is a claim, so it carries its own uncertainty."""
+    v, sd = _groomed(atlas, g, k, axis), _groomed(atlas, g, f"{k}_sd", axis)
+    if v is None:
+        return "--"
+    if sd is not None and V4.tokens(fmt_pm):
+        return V4.tok("p", float(v), float(sd))
+    return _cell([v], 1, fmt_pm, run=False)
 
 
 def _binned_one(atlas, axis: str) -> list | None:
@@ -1609,8 +1619,8 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
            rf" & \multicolumn{{{ng}}}{{c}}{{resolution}} & \multicolumn{{{ng}}}{{c}}{{median response}} \\",
            rf"\cmidrule(lr){{2-{1 + ng}}}\cmidrule(lr){{{2 + ng}-{1 + 2 * ng}}}",
            "jets & " + " & ".join(group[g] for _ in range(2) for g in groups) + r" \\", r"\midrule",
-           "soft-drop mass & " + " & ".join("" if g == "all" else f"{v:.4f}" if (v := _groomed(atlas, g, k)) is not None
-                                            else "--" for k in ("resolution", "median") for g in groups) + r" \\"]
+           "soft-drop mass & " + " & ".join("" if g == "all" else _groomed_cell(atlas, g, k, fmt_pm)
+                                            for k in ("resolution", "median") for g in groups) + r" \\"]
     # each of the two former tabulars at its own precision per column, as they printed apart
     for ests in ((("regressed", HEADING["head"], MASS), ("mlp", HEADING["mlp"], MASS_ROWS)), (("ridge", RIDGE, MASS_ROWS),)):
         part = []
@@ -1644,8 +1654,10 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
                     out += [r"\bottomrule", r"\end{tabular}", "%SPLIT%", *head]
                 if est == "regressed":          # the soft-drop mass once a jet group, above the network outputs
                     gv = _groomed(atlas, g, key, axis) or []
-                    out.append(f"soft-drop mass, {group[g]} jets & " + " & ".join("--" if x is None else f"{x:.4f}" for x in gv)
-                               + r" \\")
+                    gs = _groomed(atlas, g, f"{key}_sd", axis) or [None] * len(gv)
+                    out.append(f"soft-drop mass, {group[g]} jets & " + " & ".join(
+                        "--" if x is None else V4.tok("p", float(x), float(e)) if e is not None and V4.tokens(fmt_pm)
+                        else f"{x:.4f}" for x, e in zip(gv, gs)) + r" \\")
                 # italic, as every table's section headings; _turned_long breaks a page only at a mode heading (HEADING)
                 out.append(sec(f"{name}, {group[g]} jets", 1 + len(bins)))
                 for arm, ind in _mass_arms(atlas, runs, est, arms):
@@ -5032,8 +5044,8 @@ CAPTIONS = {
              "$r = m/m_{\\mathrm{gen}}$, a jet's mass over its generator-level soft-drop mass, divided by its median; "
              "and the median response, over all JetClass-II test jets with a generator match (resonant and QCD jets "
              "separately in table~\\ref{tab:massdetail}); lower resolution is better. The regression target is "
-             "centered on the training median of each of the \\Kfull{} classes, a truth-label input the soft-drop-mass "
-             "row does not have. A multilayer perceptron is used because the mass is not linear in the features "
+             "centered on one training median, with no class information, as for the soft-drop mass, whose SD is the "
+             "bootstrap over test jets. A multilayer perceptron is used because the mass is not linear in the features "
              "(ridge regression in table~\\ref{tab:massdetail}). The random network without pretraining shows what a "
              "network that never trained exposes. The mass regression in pretraining has the weight "
              "$\\lambda = \\MlstMassLambda{}$ at both label sets, a share of the training loss of "

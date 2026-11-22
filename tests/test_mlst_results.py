@@ -3723,3 +3723,28 @@ def test_the_book_refuses_figures_and_tables_built_from_different_fine_tuning_re
     assert M.ft_source(tmp_path) == M.FIXED_PARTIAL + " (preview)"
     (tmp_path / "budget" / M.FIXED).write_text("{}")
     assert M.ft_source(tmp_path) == M.FIXED
+
+
+def test_the_mass_figure_claims_are_the_soft_drop_bootstrap_s():
+    """PI 2026-11-21: every better/worse-than-soft-drop claim decided by the paired bootstrap (mass_sd_boot_v2.json) on
+    the 15 bins Figs. A9 and A10 draw (all jets: ten jet-pT bins, five generator-mass bins). Fig. A9: each mass network
+    better than the soft-drop mass in every bin, less biased in 13 and more in the 20-50 GeV bin; Fig. A10: the MLP probe
+    on each mass network better than on its label set alone in every bin."""
+    f = DATA / "head" / "mass_sd_boot_v2.json"
+    if not f.exists():
+        pytest.skip("head/mass_sd_boot_v2.json not pulled")
+    d = json.loads(f.read_text())
+    fig = lambda r: {k: v for k, v in r.items() if k.startswith(("all|pt_fine:", "all|mgen:"))}    # noqa: E731
+    sys.path.insert(0, str(ROOT / "experiments/FIGS/figstyle"))
+    import gallery_captions as K
+    a9, a10 = K.CAPTIONS["F9b"], K.CAPTIONS["A17-probe"]
+    for g in ("162 classes + mass", "17 classes + mass"):
+        r = fig(d["groups"][g]["regressed"])
+        assert len(r) == 15 and all(v["pass"] and v["better"] for v in r.values()), g
+        better_bias = sum(v["bias"]["pass"] and v["bias"]["better"] for v in r.values())
+        worse_bias = [k for k, v in r.items() if v["bias"]["pass"] and not v["bias"]["better"]]
+        assert better_bias == 13 and worse_bias == ["all|mgen:20-50"], (g, better_bias, worse_bias)
+        diff = fig(d["diffs"][f"{g} - {g.removesuffix(' + mass')}"]["mlp"])
+        assert len(diff) == 15 and all(v["resolution"]["pass"] and v["resolution"]["better"] for v in diff.values()), g
+    assert "better than the soft-drop mass in every bin" in a9 and "13 of the 15 bins" in a9 and "20 to 50 GeV" in a9
+    assert "better on the networks with an added mass regression" in a10 and "than on the same label sets" in a10
