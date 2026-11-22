@@ -142,6 +142,8 @@ def sha256(p: str) -> str:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--out", required=True)
+    ap.add_argument("--records-only", action="store_true", help="skip the load; re-hash the recorded files and list the "
+                    "absent ones (absent.tsv)")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     fails, n, nbytes, records = [], 0, 0, []
@@ -158,7 +160,7 @@ def main(argv=None) -> int:
                     continue
                 is_manifest = "manifest" in f.lower() or f == "MANIFEST.tsv"
                 inwin = LO <= st.st_mtime < HI and st.st_size > 0
-                if inwin:
+                if inwin and not a.records_only:
                     n, nbytes = n + 1, nbytes + st.st_size
                     try:
                         z = zero_filled(p, st.st_size)
@@ -181,10 +183,11 @@ def main(argv=None) -> int:
                     except Exception:                          # noqa: BLE001 -- a broken manifest is listed by load
                         pass
     print(f"loaded {n} files, {nbytes / 1e9:.1f} GB; {len(fails)} failures; {len(records)} recorded hashes", flush=True)
-    seen, rehashed, missing = {}, 0, 0
+    seen, rehashed, missing, absent = {}, 0, 0, []
     for q, h, man, mt in records:
         if not os.path.isfile(q):
             missing += 1
+            absent.append((q, h, man))
             continue
         if q not in seen:
             seen[q] = sha256(q)
@@ -199,6 +202,9 @@ def main(argv=None) -> int:
                "bytes_loaded": nbytes, "recorded_hashes": len(records), "files_rehashed": rehashed,
                "recorded_but_absent": missing, "failures": {k: sum(1 for f in fails if f[2] == k)
                                                             for k in sorted({f[2] for f in fails})}}
+    with open(os.path.join(a.out, "absent.tsv"), "w") as fh:     # a deletion manifest's own rows are expected here
+        fh.write("path\trecorded_sha256\tmanifest\n")
+        fh.writelines(f"{q}\t{h}\t{m}\n" for q, h, m in sorted(set(absent)))
     with open(os.path.join(a.out, "summary.json"), "w") as fh:
         json.dump(summary, fh, indent=1)
     print(json.dumps(summary, indent=1))

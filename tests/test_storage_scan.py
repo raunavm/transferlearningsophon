@@ -45,3 +45,4 @@ def test_every_kind_of_damage_is_listed_and_intact_files_pass(tmp_path, monkeypa
                    ("rec.bin", "hash differs")}, got
     s = json.loads((out / "summary.json").read_text())
     assert s["files_rehashed"] == 2 and s["files_loaded"] == 9
+    assert (out / "absent.tsv").read_text().splitlines() == ["path\trecorded_sha256\tmanifest"]
