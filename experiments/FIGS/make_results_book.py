@@ -230,9 +230,9 @@ def labels_of(tiers) -> set:
     return {lab for t in tiers for k in TIERS[t] for lab in (k.split(" + ") if k.startswith("tab:") else [f"fig:{k}"])}
 
 
-def check_ft_source(src: pathlib.Path, tables: pathlib.Path = PAPER / "tables") -> str:
+def check_ft_source(src: pathlib.Path, tables: pathlib.Path | None = None) -> str:
     """The figures and the tables read the same fine-tuning read-out (mlst_results.ft_source), or the book stops."""
-    f, t = src / "ft_source.txt", tables / "ft_source.txt"
+    f, t = src / "ft_source.txt", (tables or PAPER / "tables") / "ft_source.txt"
     if not (f.exists() and t.exists()):
         raise SystemExit(f"FATAL: no fine-tuning source stamp ({f} or {t}): rebuild the figures and the tables")
     if f.read_text() != t.read_text():

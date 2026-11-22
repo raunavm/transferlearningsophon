@@ -2088,7 +2088,9 @@ def test_the_sculpting_bootstrap_table_is_the_l3_file_recomputed_from_the_per_ru
     recomputed from head/sculpting_v3 over every run of each side (2026-11-13: 24 cells, no difference), and none
     beyond three standard deviations (L3; F10b's sentence states none)."""
     runs = M._paper(ROOT)
-    doc = json.loads((DATA / M.SCULPT_BOOT_L3).read_text())
+    # the file the generator reads: the rerun's copy (random partitions pooled) once pulled, else the first
+    doc = json.loads((DATA / (M.SCULPT_BOOT_L3_RERUN if (DATA / M.SCULPT_BOOT_L3_RERUN).exists()
+                              else M.SCULPT_BOOT_L3)).read_text())
     sculpt = {k.removesuffix("_sculpting"): v for k, v in M._load(DATA / "head/sculpting_v3").items()}
     body = M.table_sculpt_boot(doc, runs, sculpt)       # the recomputation stops the build on a mismatch
     tex = (ROOT / "paper/journal/tables/mlst_sculpt_boot.tex").read_text()
@@ -2132,6 +2134,8 @@ def test_the_results_book_is_the_gallery_placement_and_boxes_only_provisional_it
     pages.mkdir()
     write = lambda ids: (pages / "pages.json").write_text(json.dumps([{"id": i, "drawn": True} for i in ids]))
     write([i for i in figs if i != "F11"])
+    for d in (pages, tmp_path / "tables"):        # the figures and the tables stamp the same fine-tuning read-out
+        (d / "ft_source.txt").write_text("fixed_metrics.json\n")
     B.build(pages, "paper")
     out = capsys.readouterr().out
     assert "F11 is provisional" in out and "tab:mass is provisional" in out
