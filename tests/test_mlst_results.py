@@ -4,6 +4,7 @@ trailing zeros, the probe convergence rule, the merge marks from the label maps,
 pulled data checked against its index."""
 import csv
 import importlib.util
+import collections
 import json
 import pathlib
 import math
@@ -3829,3 +3830,38 @@ def test_no_sentence_claims_sculpting_at_a_working_point_within_three_sigma_of_t
     assert not f["0.01"]["pass"] and not f["eps_s=0.5"]["pass"] and 1.0 < f["0.01"]["z"] < 3.0, f
     assert abs(f["0.01"]["distance"] - 0.043) < 0.001 and abs(f["0.01"]["floor"] - 0.031) < 0.001, f
     assert f["0.1"]["pass"], f
+
+
+def test_every_fine_tuning_attempt_counts_its_hours_by_the_one_rule(tmp_path):
+    """PI 2026-11-22, the compute table counts every fine-tuning GPU-hour: a pod's Prometheus running time where a
+    snapshot holds its whole run (not one first seen at the snapshot's edge), else the attempt's own times; an
+    interrupted attempt outside the snapshots runs to the next attempt's start and is an upper bound; an attempt with
+    no start record starts when the one before it was set aside, or, the first, is counted without hours."""
+    b = tmp_path / "budget"
+    b.mkdir()
+    a = lambda start, end, kind, pod, gpu="NVIDIA L40", init="l188-s1": {     # noqa: E731
+        "start": start, "end": end, "end_kind": kind, "pod": pod, "gpu": gpu, "init": init}
+    cells = {
+        "fixed/leg2/l188-s1/N10000/s1": [a("2026-11-10T00:00:00Z", "2026-11-10T05:00:00Z", "next", "p-old"),   # bound, 5 h
+                                         a(None, "2026-11-10T07:00:00Z", "next", None, gpu=None),               # 2 h, bound
+                                         a("2026-11-10T07:00:00Z", "2026-11-10T08:15:00Z", "done", "p-done")],  # 1.25 h
+        "fixed_sweep/leg_top/scratch_lr1e-3/N1000/s1": [a("2026-11-20T00:00:00Z", "2026-11-20T09:00:00Z", "next", "p-prom", init=""),
+                                                        a("2026-11-20T09:00:00Z", "2026-11-20T10:00:00Z", "done", "p-edge", init="")],
+        "fixed/leg_qg/l162-s2/N10000/s1": [a(None, "2026-11-18T03:00:00Z", "next", None, gpu=None, init=None),  # no hours
+                                           a("2026-11-18T03:00:00Z", "2026-11-18T05:00:00Z", "done", "p-qg", init="l162-s2")]}
+    (b / "ft_attempts.json").write_text(json.dumps({"root": "/data/results/ft_v2", "cells": cells}))
+    pods = {"p-early": {"running_hours": 9.0, "first_running_utc": "2026-11-15T04:05Z"},
+            "p-edge": {"running_hours": 0.5, "first_running_utc": "2026-11-15T04:10Z"},     # within 15 min of the edge
+            "p-prom": {"running_hours": 2.25, "first_running_utc": "2026-11-20T00:05Z"}}
+    (b / "ft_pod_hours_prom_20261122.json").write_text(json.dumps({"pods": pods}))
+    h = M.ft_hours(tmp_path)
+    assert h["pre"] == collections.Counter({"L40": 5 + 1.25 + 2, "GPU not recorded": 2})    # the qg cell's last, 2 h
+    assert h["scratch"] == collections.Counter({"L40": 2.25 + 1.0})       # Prometheus for p-prom; p-edge by its times
+    assert h["bound"] == 7.0 and h["n_bound"] == 2 and h["n_unknown"] == 1
+    assert h["search"] == 3.25 and h["n_attempts"] == 7 and h["n_cells"] == 3
+    assert M.ft_hours(tmp_path / "nothing") is None
+    t, _ = M.table_compute({}, {}, MT.fmt_int, ft_h=h)
+    lines = t.splitlines()
+    k = lines.index(M._full_row(5, M.FT_HOURS_HEAD))
+    assert lines[k + 1].startswith(r"\quad of the pretrained networks & -- & \mbox{L40 (8)}, \mbox{GPU not recorded (2)} & 10 & --")
+    assert lines[k + 2].startswith(r"\quad from scratch & -- & \mbox{L40 (3)} & 3 & --")

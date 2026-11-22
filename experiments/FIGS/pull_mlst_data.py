@@ -272,7 +272,8 @@ def ft_attempts() -> dict:
             + ([d] if d.is_dir() else [])
         recs = []
         for t in tries:
-            lines = [ln.split() for ln in (t / "ATTEMPTS").read_text().splitlines() if ln.strip()] \
+            lines = [w for ln in (t / "ATTEMPTS").read_text(errors="replace").splitlines()   # one zero-filled file
+                     if (w := ln.split()) and re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ", w[0])] \
                 if (t / "ATTEMPTS").exists() else []
             kv = dict(x.split("=", 1) for x in (lines[-1][1:] if lines else []) if "=" in x)
             m = json.loads((t / "ft_manifest.json").read_text()) if (t / "ft_manifest.json").exists() else {}

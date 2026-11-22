@@ -48,6 +48,7 @@ mlst_xbx_rej (A15), mlst_fill (A16), mlst_mass_detail (A17), mlst_rand_prong (A1
 """
 from __future__ import annotations
 
+import calendar
 import collections
 import csv
 import importlib.util
@@ -57,6 +58,7 @@ import math
 import pathlib
 import re
 import statistics
+import time
 
 import numpy as np
 
@@ -4765,7 +4767,66 @@ def _val_acc(comp: dict, m: str):
     return e[-1].get("val_acc") if e else None
 
 
-def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) -> tuple[str, dict]:
+# PI 2026-11-22: the compute table counts every fine-tuning GPU-hour, the 15 Nov sweeps included (budget/ft_attempts.json,
+# every attempt of every cell under ft_v2). An attempt's hours: its pod's running time in the Prometheus snapshots
+# (budget/ft_pod_hours_prom_*.json, the largest over them) where a snapshot holds the pod's whole run, else its end less
+# its start. A completed attempt's own times agree with Prometheus (-20 h on 2,142 h, 483 attempts, 22 Nov); an
+# interrupted one writes nothing at its end, so before the snapshots its hours run to the next attempt's start, an upper
+# bound (over 177 interrupted attempts that bound was 3.9 times their running time). An attempt with no start record
+# (its ATTEMPTS lost) starts when the attempt before it was set aside, and is counted without hours when it is the first.
+FT_PROM_EDGE_S = 900          # a pod first running within 15 min of a snapshot's earliest sample may have started before it
+FT_SEARCH_TREES = ("lrsweep", "fixed_sweep")      # the rate searches: lrsweep, lrsweep_v2, fixed_sweep, fixed_sweep_1e4
+
+
+def ft_hours(data: pathlib.Path) -> dict | None:
+    """{"pre"/"scratch": Counter(GPU name: hours), "search": hours of the rate searches, "bound": hours that are upper
+    bounds, "n_bound": their attempts, "n_unknown": attempts counted without hours, "n_attempts", "n_cells"} of every
+    fine-tuning attempt, or None before budget/ft_attempts.json is pulled."""
+    f = data / "budget" / "ft_attempts.json"
+    if not f.exists():
+        return None
+    stamp = lambda t: calendar.timegm(time.strptime(t, "%Y-%m-%dT%H:%M:%SZ"))     # noqa: E731
+    prom = {}
+    for snap in sorted((data / "budget").glob("ft_pod_hours_prom_*.json")):
+        pods = json.loads(snap.read_text())["pods"]
+        first = lambda v: calendar.timegm(time.strptime(v["first_running_utc"], "%Y-%m-%dT%H:%MZ"))      # noqa: E731
+        edge = min(first(v) for v in pods.values() if v["first_running_utc"]) + FT_PROM_EDGE_S
+        for pod, v in pods.items():
+            if v["first_running_utc"] and first(v) > edge:
+                prom[pod] = max(prom.get(pod, 0.0), v["running_hours"])
+    out = {"pre": collections.Counter(), "scratch": collections.Counter(), "search": 0.0, "bound": 0.0, "n_bound": 0,
+           "n_unknown": 0, "n_attempts": 0}
+    cells = json.loads(f.read_text())["cells"]
+    for cell, atts in cells.items():
+        init = next((a["init"] for a in atts if a["init"] is not None), None)
+        kind = "scratch" if (init or "").startswith("scratch") or init == "" or (init is None and "scratch" in cell) \
+            else "pre"
+        prev = None
+        for a in atts:
+            out["n_attempts"] += 1
+            start, prev = a["start"] or prev, (a["end"] if a["end_kind"] == "next" else None)
+            if a["pod"] in prom:
+                h = prom[a["pod"]]
+            elif start:
+                h = (stamp(a["end"]) - stamp(start)) / 3600
+                if a["end_kind"] == "next":
+                    out["bound"] += h
+                    out["n_bound"] += 1
+            else:
+                out["n_unknown"] += 1
+                continue
+            out[kind][gpu_name(a["gpu"]) if a["gpu"] else "GPU not recorded"] += h
+            if cell.split("/")[0].startswith(FT_SEARCH_TREES):
+                out["search"] += h
+    out["n_cells"] = len(cells)
+    return out
+
+
+FT_HOURS_HEAD = "fine-tuning, every attempt of every cell"
+FT_HOURS_ROWS = (("pre", "of the pretrained networks"), ("scratch", "from scratch"))
+
+
+def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None, ft_h=None) -> tuple[str, dict]:
     """Per pretraining run: its validation accuracy at the last epoch, hours on each GPU type (completed epochs,
     training and validation passes, as each epoch recorded its device), their sum, and the GPU types its fine-tuning
     cells ran on (their manifests record the device, not the hours), with a marker counting its cells whose read-out
@@ -4806,6 +4867,12 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None) ->
         types = ", ".join(_whole(f"{g} ({h[g]:.0f})") for g in sorted(h, key=lambda g: -h[g]))
         a = _val_acc(comp, m)
         lines.append(rf"{name} & {'--' if a is None else V4.tok('o', a)} & {types} & {fmt_int(round(sum(h.values())))} & {ftg} \\")
+    if ft_h:                  # PI 2026-11-22: fine-tuning's GPU-hours, every attempt of every cell, under their heading
+        lines.append(_full_row(5, FT_HOURS_HEAD))
+        for k, name in FT_HOURS_ROWS:
+            h = ft_h[k]
+            types = ", ".join(_whole(f"{g} ({h[g]:.0f})") for g in sorted(h, key=lambda g: -h[g]))
+            lines.append(rf"\quad {name} & -- & {types or '--'} & {fmt_int(round(sum(h.values())))} & -- \\")
     # the partition rows and their subheading never break apart, nor from the row after them (D14: a page opened on
     # "b-quark boundary, seed 2", and the kinematic-inputs row then stood alone on the last page)
     group = [i for i, ln in enumerate(lines) if ln.startswith(r"\quad ") or ln == _full_row(5, PARTITIONS)]
@@ -4855,6 +4922,23 @@ def compute_macros(em, comp, runs, hours, index, fmt_int) -> None:
     t = ", ".join(types[:-1]) + " and " + types[-1] if len(types) > 1 else (types[0] if types else r"\pending{compute}")
     em.macro("ComputeGpuTypes", t, index, "GPU types any finished paper run trained on")
     em.macro("MlstComputeGpuTypes", t, index, "GPU types of the pretraining runs the paper reports")
+
+
+def ft_hours_macros(em, fth, index, fmt_int) -> None:
+    """The fine-tuning GPU-hours of tab:compute's last rows, for the text: the total, the rate searches' share, the
+    hours that are upper bounds and their attempts, and the attempts counted without hours."""
+    pend = r"\pending{fine-tuning GPU-hours}"
+    tot = round(sum(sum(fth[k].values()) for k, _ in FT_HOURS_ROWS)) if fth else None
+    for name, v, what in (("MlstFtGpuHours", tot, "GPU-hours of every fine-tuning attempt, the rate searches included"),
+                          ("MlstFtGpuHoursSearch", fth and round(fth["search"]), "of them, the rate searches'"),
+                          ("MlstFtGpuHoursBound", fth and round(fth["bound"]), "of them, upper bounds (attempts "
+                           "interrupted before the Prometheus snapshots, to the next attempt's start)"),
+                          ("MlstFtAttemptsBound", fth and fth["n_bound"], "those attempts (count)"),
+                          ("MlstFtAttemptsUnknown", fth and fth["n_unknown"], "attempts with no start record, counted "
+                           "without hours"),
+                          ("MlstFtAttempts", fth and fth["n_attempts"], "fine-tuning attempts in all (count)"),
+                          ("MlstFtCells", fth and fth["n_cells"], "fine-tuning cells in all (count)")):
+        em.macro(name, pend if v is None else fmt_int(v), index, what)
 
 
 # ------------------------------------------------------------------ per-run values (A1)
@@ -6974,10 +7058,14 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         if nodev:
             missing.append(f"GPU of {sum(nodev.values())} fixed-budget fine-tuning cells (JetClass, JetClass-II): "
                            "experiments/FT/budget_metrics.py records it for top and quark/gluon only")
+        fth = ft_hours(data)
+        if fth is None:
+            missing.append("fine-tuning GPU-hours -- experiments/FIGS/data/v2/budget/ft_attempts.json")
         body, hours = table_compute(comp, runs, fmt_int, extra=((LABEL["KIN"], KIN_MODEL),), ft_gpus=ftg,
-                                    ft_nodev=nodev)
+                                    ft_nodev=nodev, ft_h=fth)
         out["tables/compute.tex"] = body.replace("__CAPTION__", printed_caption("compute"))
         compute_macros(em, comp, runs, hours, index, fmt_int)
+        ft_hours_macros(em, fth, index, fmt_int)
         if len(set(pre_runs) & set(comp)) < len(pre_runs):
             missing.append(f"compute records: {len(set(pre_runs) & set(comp))} of {len(pre_runs)} paper runs")
     required_pass(em, index, missing)
