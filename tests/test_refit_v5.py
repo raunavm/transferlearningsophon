@@ -136,7 +136,9 @@ def test_every_spec_is_ours_cpu_only_but_the_one_extraction_and_guards_at_the_fi
         assert "backoffLimitPerIndex: 6" not in text and "backoffLimit: 6" not in text, kind
         if kind not in ("rebin", "checks"):
             assert '-le 90 ]' in text and "-lt 85" not in text and '-le 85 ]' not in text, kind
-        assert f"--branch {b.CPU_REFIT_TAG.get(kind.removesuffix('-cpu'), 'mtx-s2.98')}" in text, kind
+        # the one-CPU refit clones the tag its family's majority ran at; every other kind the tag build() was given
+        tag = b.CPU_REFIT_TAG[kind.removesuffix("-cpu")] if kind.endswith("-cpu") else "mtx-s2.98"
+        assert f"--branch {tag}" in text, kind
 
 
 def test_the_refits_write_new_folders_only_on_the_v5_grid(specs):

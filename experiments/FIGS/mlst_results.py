@@ -1620,12 +1620,15 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
     out = [r"\begin{tabular}{l" + "c" * 2 * ng + "}", r"\toprule",
            rf" & \multicolumn{{{ng}}}{{c}}{{resolution}} & \multicolumn{{{ng}}}{{c}}{{median response}} \\",
            rf"\cmidrule(lr){{2-{1 + ng}}}\cmidrule(lr){{{2 + ng}-{1 + 2 * ng}}}",
-           "jets & " + " & ".join(group[g] for _ in range(2) for g in groups) + r" \\", r"\midrule",
-           "soft-drop mass & " + " & ".join("" if g == "all" else _groomed_cell(atlas, g, k, fmt_pm)
-                                            for k in ("resolution", "median") for g in groups) + r" \\"]
+           "jets & " + " & ".join(group[g] for _ in range(2) for g in groups) + r" \\", r"\midrule"]
+    # the soft-drop row with its SD (2026-11-21) a token like the network rows, so it is in the first part's
+    # uniform_columns: printed at that part's precision per column, never left as a token
+    sd_row = "soft-drop mass & " + " & ".join("" if g == "all" else _groomed_cell(atlas, g, k, fmt_pm)
+                                              for k in ("resolution", "median") for g in groups) + r" \\"
     # each of the two former tabulars at its own precision per column, as they printed apart
-    for ests in ((("regressed", HEADING["head"], MASS), ("mlp", HEADING["mlp"], MASS_ROWS)), (("ridge", RIDGE, MASS_ROWS),)):
-        part = []
+    for i, ests in enumerate(((("regressed", HEADING["head"], MASS), ("mlp", HEADING["mlp"], MASS_ROWS)),
+                              (("ridge", RIDGE, MASS_ROWS),))):
+        part = [] if i else [sd_row]
         for est, name, arms in ests:
             # in \itshape, not \textit: _turned_long starts a page at a second mode heading, and these are not modes
             part.append(r"\multicolumn{" + str(1 + 2 * ng) + r"}{@{}l}{{\itshape " + name + r"}} \\")
@@ -2672,6 +2675,15 @@ def _whole(name: str) -> str:
     return r"\mbox{" + name + "}"
 
 
+# records kept beside the pulled files that no pull writes: the image provenance (2026-11-14) and the Prometheus snapshots of
+# the fine-tuning pods' running hours (taken from the laptop, 2026-11-22 on; ft_hours)
+LOCAL_RECORDS = ("ft_mlst/image_provenance.json", "budget/ft_pod_hours_prom_*.json")
+
+
+def _local_record(rel: pathlib.Path) -> bool:
+    return any(rel.match(g) for g in LOCAL_RECORDS)
+
+
 def check_index(data: pathlib.Path) -> pathlib.Path:
     """index.json against the files beside it: every file listed, with the bytes pulled."""
     import hashlib
@@ -2679,7 +2691,7 @@ def check_index(data: pathlib.Path) -> pathlib.Path:
     if not index.exists():
         raise SystemExit(f"FATAL: no {index}; pull with experiments/FIGS/pull_mlst_data.py")
     want = json.loads(index.read_text())
-    have = {str(p.relative_to(data)) for p in data.rglob("*.json") if p != index}
+    have = {str(p.relative_to(data)) for p in data.rglob("*.json") if p != index and not _local_record(p.relative_to(data))}
     if have != set(want):
         raise SystemExit(f"FATAL: {index} lists {len(want)} files, {data} holds {len(have)}: "
                          f"{sorted(have ^ set(want))[:5]}")

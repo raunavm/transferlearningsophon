@@ -179,7 +179,12 @@ def test_the_index_covers_every_kind_of_pulled_file():
         # 2026-11-13: the JetClass full-decay confusion matrices from scratch, and the UMAP grids of every task
         "confusion_jc1_fulldecay", "umap_v3",
         # the rerun's read-outs (PI 2026-11-15/16; pull_mlst_data.RERUN_PULL, RERUN_PULL_V5, L3_RERUN)
-        "perf_vs_pt_fixed", "perf_vs_pt_v5", "confusion_jc1_fixed", "umap_v4", "l3_rerun"}
+        "perf_vs_pt_fixed", "perf_vs_pt_v5", "confusion_jc1_fixed", "umap_v4", "l3_rerun",
+        # the v5 refits behind refit_v5_checks/PASS (pull_mlst_data V5_PULL, first pulled 2026-11-22), the X->bx v5
+        # probes, per-class recall, the confusion-share test
+        "linprobe/fits_v5", "linprobe/fits_v5_coarse", "linprobe/fits_v5_fill", "linprobe/fits_v5_mlp",
+        "linprobe/fits_v5_nat", "linprobe/fits_v5_qcdhf", "linprobe/fits_v5_sib2", "linprobe/sophon_v5",
+        "linprobe/sophon_v5_fill", "xbx_v5", "perclass_recall", "stats"}
 
 
 def _ft_tree(d, inits, n_seeds_scratch=3, bound=False, budget=True):
@@ -3773,8 +3778,8 @@ def test_the_top_and_quark_gluon_sentences_are_the_every_metric_bootstrap():
     sys.path.insert(0, str(ROOT / "experiments/FIGS/figstyle"))
     import gallery_captions as K
     src = (ROOT / "experiments/FIGS/figstyle/gallery_labelset.py").read_text()
-    ns = {}
-    exec(src[src.index("TOP_QG_BOOT = ("):src.index("PAGES = [dataclasses.replace")], {"json": json}, ns)
+    ns = {"json": json}         # one namespace: top_qg_passes reads TOP_QG_METRIC as a global
+    exec(src[src.index("TOP_QG_BOOT = ("):src.index("PAGES = [dataclasses.replace")], ns)
     f2 = K.CAPTIONS["F2"]
     assert "{top_qg_probe}" not in f2 and "no network differs from 188 classes in R30 by more than three" in f2
     assert "in accuracy, R50 and AUC some do (tables {tab:probes} and {tab:summaryauc})" in f2
