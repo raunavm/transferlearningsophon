@@ -375,6 +375,15 @@ def fixed_sweep_edge7_cells() -> list:
     return out
 
 
+# 2026-11-22: JetClass 1e6 pretrained, both networks at 3e-4 already at or above their 1e-3 cells (188 classes 0.8506 at
+# epoch 40 against 0.8484 at epoch 98), and 1e-3 above 3e-3: 1e-4, launched before the 3e-4 cells land
+FIXED_EDGE_EXT8 = (("jc1", 1_000_000, "pre", ("1e-4",)),)
+
+
+def fixed_sweep_edge8_cells() -> list:
+    return fixed_sweep_edge3_cells(FIXED_EDGE_EXT8)
+
+
 def fixed_sweep_edge6_cells() -> list:
     """2026-11-22: top 1e4 from scratch best at 1e-3, its lowest rate (0.9174429 against 0.9174179 at 3e-3, 5 of
     199,680 validation jets): 3e-4, seed 1, in the 1e4 tree beside the row's other searched cells."""
@@ -442,6 +451,7 @@ def fixed_search_plan() -> dict:
     for c in (fixed_sweep_rows_cells() + fixed_sweep_jc2b_cells() + fixed_sweep_all_cells() + fixed_sweep_edge_cells()
               + fixed_sweep_edge2_cells() + fixed_sweep_edge3_cells() + fixed_sweep_edge4_cells()
               + fixed_sweep_edge5_cells() + fixed_sweep_edge6_cells() + fixed_sweep_edge7_cells()
+              + fixed_sweep_edge8_cells()
               + fixed_sweep_1e4_cells()):
         kind = "pre" if c["init"] else "scratch"
         cells = plan.setdefault((c["task"], c["n"], kind), {}).setdefault(c["lr"], [])
@@ -926,7 +936,7 @@ def main(argv=None) -> int:
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
                                                  "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-sweep-all", "fixed-rate", "fixed-sweep-edge", "fixed-sweep-edge2",
-                                                 "fixed-sweep-1e4", "fixed-sweep-edge3", "fixed-sweep-edge4", "fixed-sweep-edge5", "fixed-sweep-edge6", "fixed-sweep-edge7", "fixed-smoke-diverge", "fixed-sweep-17", "fixed-smoke-1e3",
+                                                 "fixed-sweep-1e4", "fixed-sweep-edge3", "fixed-sweep-edge4", "fixed-sweep-edge5", "fixed-sweep-edge6", "fixed-sweep-edge7", "fixed-sweep-edge8", "fixed-smoke-diverge", "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
     if a.part and not a.indices:
@@ -969,6 +979,7 @@ def main(argv=None) -> int:
                      "fixed-sweep-edge5": fixed_sweep_edge5_cells,
                      "fixed-sweep-edge6": fixed_sweep_edge6_cells,
                      "fixed-sweep-edge7": fixed_sweep_edge7_cells,
+                     "fixed-sweep-edge8": fixed_sweep_edge8_cells,
                      "fixed-smoke-diverge": fixed_smoke_diverge_cells,
                      "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
