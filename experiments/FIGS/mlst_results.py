@@ -5403,7 +5403,7 @@ PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes
                 ("probes_n_full", "mlst_probes_n_full", True, None), ("ft_full", "mlst_ft_full", True, None),
                 ("pairs", "mlst_pairs", True, None), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
                 ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None), ("fill_main", "mlst_fill_main", True, None),
-                ("jc1_class_auc", "mlst_jc1_class_auc", True, None),
+                ("jc1_class_auc", "mlst_jc1_class_auc", True, {"__JC1_RECALL__": ""}),
                 ("mass", "mlst_mass", False, {"__PROBE_CENTRE__": ""}), ("mass_detail", "mlst_mass_detail", True, {"__BLANK__": "", "__MASS_RUNS__": ""}),
                 ("sculpt", "mlst_sculpt", True, {"__SCULPT_BINS__": r"\pending{bins}", "__SCULPT_FLAV__": "", "__SCULPT_SIG__": "", "__SCULPT_CUT__": "", "__SCULPT_RUNS__": ""}), ("sculpt_boot", "mlst_sculpt_boot", False, {"__REPLICAS__": r"\pending{n}", "__SCULPT_BOOT_RAND__": ""}), ("ft", "mlst_ft", True, None),
                 ("ft_rej", "mlst_ft_rej", True, {"__FEWEST__": r"\pending{n}"}), ("boot", "mlst_boot", True, {"__JC2COMP__": "class-balanced"}),
@@ -7082,10 +7082,14 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             missing.append(f"compute records: {len(set(pre_runs) & set(comp))} of {len(pre_runs)} paper runs")
     required_pass(em, index, missing)
     # a table whose data is not pulled yet is a marked placeholder, never the file an older generator left behind
+    # built only where the table is absent (setdefault evaluated the placeholder for every table, and a caption with a
+    # fill the data writes, tab:jc1classauc's __JC1_RECALL__, stopped the build, 2026-11-22)
     for key, name, wide, fill_ in PLACEHOLDERS:
-        out.setdefault(f"tables/{name}.tex", _float(key, r"\pending{no result yet}", wide, fill_))
+        if f"tables/{name}.tex" not in out:
+            out[f"tables/{name}.tex"] = _float(key, r"\pending{no result yet}", wide, fill_)
     for key, name in LONGTABLES:
-        out.setdefault(f"tables/{name}.tex", _float(key, r"\pending{no result yet}", True))
+        if f"tables/{name}.tex" not in out:
+            out[f"tables/{name}.tex"] = _float(key, r"\pending{no result yet}", True)
     left = [k for k, v in out.items() if V4.TOK_OPEN in v] + [n for n, b, _ in em.macros if V4.TOK_OPEN in b]
     if left:
         raise SystemExit(f"FATAL: unprinted value tokens in {left}")
