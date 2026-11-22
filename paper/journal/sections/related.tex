@@ -15,7 +15,10 @@ training set is used for fine-tuning, with masked-particle pretraining ahead onl
 model fine-tuned on \LitObjectivesFewJets{} jets, and concludes that the best objective is not a
 property of the model alone~\cite[Sec.~IV.A]{objectives}. A comparison on JetClass-II evaluates the
 objectives by fine-tuning alone, without linear probes~\cite{reprlearn}. Each of these studies keeps
-the classes of its supervised objective fixed, or changes them together with the jets. The label set
+the classes of its supervised objective fixed, or changes them together with the jets. The closest
+design pretrains on subsets of the JetClass-II classes at a fixed number of jets and fine-tunes on
+JetClass~\cite{datacomp}; it varies which jets enter pretraining, and the classes change with them.
+Here the pretraining jets stay fixed and only their labels change. The label set
 of the objective that does best when labeled jets are plentiful has therefore not been varied on its
 own.
 

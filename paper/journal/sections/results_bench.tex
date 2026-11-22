@@ -52,8 +52,9 @@ run unchanged on our hardware, reproduces the published ParT result. Adding the 
 trained from scratch, because every pretrained model uses it. After fine-tuning, the \Kfull-class model
 gives \MlstFtTopRthirtyFullOverPartPr{} than ParT pretrained on JetClass and fine-tuned~\cite{part}. The
 kinematic-only model has no missing inputs on this dataset. It reaches the same rejection as the
-\Kfull-class model fine-tuned with zeros. The difference from ParT therefore comes from the rescaling and
-from pretraining on JetClass-II, which includes pileup, instead of JetClass.
+\Kfull-class model fine-tuned with zeros. The rescaling accounts for part of the difference from ParT. The rest is not attributed: our
+networks are also pretrained on JetClass-II rather than JetClass, which adds pileup and has other classes
+and a wider range of jet transverse momentum.
 
 % CHECK: MlstLpTopRthirtyFullOverInitBnZero agrees with 1 (two seeds of the randomly initialized network; today 1.04 and 1.08); MlstMlpTopRthirtyFullOverInitBn agrees with 1 (today 1.00 +- 0.31)
 % CHECK: MlstLpJcTwoTopZeroAccDrop{Full,Res,Mid,Coarse,ResMass,CoarseMass,Fzero,Fone,Foner} each above MlstLpJcTwoTopZeroAccDropInitBn (today 85-90 vs 55-58)

@@ -198,11 +198,11 @@ training jets, on JetClass and JetClass-II the first training subset of that siz
 \MlstFtRefSeedsWord{} networks trained from scratch differ only in their training seed.
 % CHECK: every cell of job-ft-budget-* and job-ft-budget-long-* reads train_N<N>_s1 (build_ft_budget_jobs.py spec: subset=${SUB}/train_N${N}_s1.parquet); until budget_long_metrics.json is pulled the JetClass 10^6 numbers are still the old fixed-epoch cells, where from-scratch seed k read subset k (job-ft-v2-ref-v100-jc1)
 
-On the full training sets of top and quark/gluon, fine-tuning uses ParT's
-settings~\cite[Sec.~5.2]{part}. The pretrained weights train at a constant learning rate of \MlstFtLr{}
-and the head at \MlstFtHeadMult{} times that rate, with weight decay \MlstFtWeightDecay{} and batches of
-\MlstFtBatch{} jets, for \MlstFtBenchEpochs{} epochs. The epoch with the highest validation accuracy is
-kept, the earliest in a tie. The networks trained from scratch on these sets follow ParT's settings for
+On the full training sets of top and quark/gluon, fine-tuning takes its learning rates, weight decay
+and number of epochs from ParT~\cite[Sec.~5.2]{part}. The pretrained weights train at a constant
+learning rate of \MlstFtLr{} and the head at \MlstFtHeadMult{} times that rate, with weight decay
+\MlstFtWeightDecay{}, for \MlstFtBenchEpochs{} epochs. Batches hold \MlstFtBatch{} jets, and the epoch
+with the highest validation accuracy is kept, the earliest in a tie. The networks trained from scratch on these sets follow ParT's settings for
 training from scratch~\cite[Secs.~5.1 and~5.2]{part}: a learning rate of \MlstFtRefLr{} for every weight,
 constant and then lowered to \MlstFtHeadDecayTo{} of its value over the last \MlstFtHeadDecayShare{} of the
 epochs; weight decay \MlstFtRefWeightDecayBench; and the epochs and batches of fine-tuning. The kinematic-only model is fine-tuned
