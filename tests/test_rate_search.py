@@ -83,7 +83,8 @@ def test_no_superseded_cell_is_read():
 def test_every_search_cell_follows_its_sizes_schedule():
     cells = (B.fixed_sweep_rows_cells() + B.fixed_sweep_jc2b_cells() + B.fixed_sweep_all_cells()
              + B.fixed_sweep_edge_cells() + B.fixed_sweep_edge2_cells() + B.fixed_sweep_edge3_cells()
-             + B.fixed_sweep_edge4_cells() + B.fixed_sweep_edge5_cells() + B.fixed_sweep_1e4_cells()
+             + B.fixed_sweep_edge4_cells() + B.fixed_sweep_edge5_cells() + B.fixed_sweep_edge6_cells()
+             + B.fixed_sweep_1e4_cells()
              + B.fixed_rate_cells())
     for c in cells:
         assert c["spe"] == B.FIXED_CHECK[c["n"]] * B.BATCH and c["epochs"] * B.FIXED_CHECK[c["n"]] == B.FIXED_STEPS[c["n"]], c
@@ -111,6 +112,21 @@ def _plan(rates):
 
 def _scan(cells):
     return {"cells": {f"s/{lr}": c for lr, c in cells.items()}}
+
+
+def test_an_exact_tie_keeps_the_rate_the_row_was_first_run_at_and_a_near_tie_does_not():
+    """PI 2026-11-22: rates compared at full precision; exactly equal at the top, the original rate (here 1e-2) is kept,
+    with no rerun, and the row says so (the methods needs a clause); 5 jets apart is no tie."""
+    rates = ("3e-3", "1e-2", "3e-2")
+    tie = _scan({"3e-3": _cell("3e-3", 0.9174178685897436), "1e-2": _cell("1e-2", 0.9174178685897436),
+                 "3e-2": _cell("3e-2", 0.90)})
+    row = RS.evaluate(tie, _fake(_plan(rates), {("top", 1_000, "scratch"): "1e-2"}))[0]
+    assert row["best"] == "1e-2" and row["status"] == "settled" and row["tied"] == ["3e-3", "1e-2"]
+    assert any("exact tie" in i and "methods needs a clause" in i for i in row["issues"]), row["issues"]
+    near = _scan({"3e-3": _cell("3e-3", 0.9174429086538461), "1e-2": _cell("1e-2", 0.9174178685897436),
+                  "3e-2": _cell("3e-2", 0.90)})
+    row = RS.evaluate(near, _fake(_plan(rates)))[0]
+    assert row["best"] == "3e-3" and row["status"] == "edge: lowest rate" and row["tied"] == ["3e-3"]
 
 
 def test_a_divergence_in_any_attempt_scores_below_every_rate_that_trained():

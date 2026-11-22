@@ -93,11 +93,19 @@ def evaluate(scan: dict, b=None) -> list:
             if rerun_diverged and recorded in vals:
                 vals[recorded] = DIVERGED
         num = {lr: v for lr, v in vals.items() if isinstance(v, float)}
-        best = max(num, key=num.get) if num else None
+        # ties at full precision (PI 2026-11-22): rates exactly equal at the top keep the rate the row was first run at
+        # (no rerun; the methods then needs a clause, so the row says so); a tie without it is flagged for the PI
+        tied = [lr for lr, v in num.items() if v == max(num.values())] if num else []
+        best = (original if original in tied else tied[0]) if tied else None
+        if len(tied) > 1:
+            errs.append(f"exact tie at {num[best]!r} between {tied}: kept {best}" + (
+                " (the rate the row was first run at, no rerun; the methods needs a clause)" if best == original
+                else " (the original rate is not among them: ask the PI)"))
         complete = all(v is not None for v in vals.values())
         order = list(vals)
-        lower = [lr for lr in order if best and float(lr) < float(best) and (vals[lr] == DIVERGED or num.get(lr, math.inf) < num[best])]
-        upper = [lr for lr in order if best and float(lr) > float(best) and (vals[lr] == DIVERGED or num.get(lr, math.inf) < num[best])]
+        below = lambda lr: vals[lr] == DIVERGED or num.get(lr, math.inf) < num[best] or (lr in tied and lr != best)  # noqa: E731
+        lower = [lr for lr in order if best and float(lr) < float(best) and below(lr)]
+        upper = [lr for lr in order if best and float(lr) > float(best) and below(lr)]
         if not complete:
             status = "running"
         elif best is None:
@@ -116,7 +124,7 @@ def evaluate(scan: dict, b=None) -> list:
                         + ("_SCRATCH" if kind == "scratch" else ""))
         if not settled and recorded is not None:
             errs.append(f"recorded {recorded} but the row is {status}")
-        rows.append({"task": task, "n": n, "kind": kind, "values": vals, "best": best, "status": status,
+        rows.append({"task": task, "n": n, "kind": kind, "values": vals, "best": best, "status": status, "tied": tied,
                      "recorded": recorded, "original": original, "rerun_diverged": rerun_diverged, "issues": errs})
     return rows
 
