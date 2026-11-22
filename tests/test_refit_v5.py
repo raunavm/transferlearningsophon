@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import pathlib
 
 import numpy as np
@@ -125,7 +126,8 @@ def specs():
 def test_every_spec_is_ours_cpu_only_but_the_one_extraction_and_guards_at_the_finishing_line(specs):
     b, s = specs
     assert set(s) == {"fit", "fill", "sib", "coarse", "qcdhf", "nat", "sophonx", "sophon", "xbx", "mlp", "atlas",
-                      "atlas-part", "rebin", "boot", "bootl3", "bootall", "checks"}
+                      "atlas-part", "rebin", "boot", "bootl3", "bootall", "checks", "mlp-cpu", "mlp-init-cpu",
+                      "atlas-cpu", "atlas-part-cpu", "cpu-after"}
     for kind, text in s.items():
         name = next(ln.split(":", 1)[1].strip() for ln in text.splitlines() if ln.strip().startswith("name: ")
                     and "raunav" in ln)
@@ -134,7 +136,7 @@ def test_every_spec_is_ours_cpu_only_but_the_one_extraction_and_guards_at_the_fi
         assert "backoffLimitPerIndex: 6" not in text and "backoffLimit: 6" not in text, kind
         if kind not in ("rebin", "checks"):
             assert '-le 90 ]' in text and "-lt 85" not in text and '-le 85 ]' not in text, kind
-        assert "--branch mtx-s2.98" in text, kind
+        assert f"--branch {b.CPU_REFIT_TAG.get(kind.removesuffix('-cpu'), 'mtx-s2.98')}" in text, kind
 
 
 def test_the_refits_write_new_folders_only_on_the_v5_grid(specs):
@@ -191,3 +193,53 @@ def test_the_v5_bootstraps_write_l3_v5_and_cover_every_printed_network(specs):
     for d in ("rand-188", "flavf0-188", "r16q1mass-188", "l162mass-188", "162mass-162", "17mass-17"):
         assert f"--diff {d}=" in s["bootall"], d
     assert s["bootall"].count("--model ") == 3 * 27
+
+
+def test_every_cpu_fit_is_pinned_to_the_nodes_of_one_cpu_model_and_checks_it(specs):
+    """PI 2026-11-21: fits_v5_mlp ran on three EPYC models and atlas_res_v3 on two, all family 23 model 49 (CPU_PIN);
+    every CPU fit of a family is pinned by hostname to one model's nodes, and the pod stops before fitting on another."""
+    b, s = specs
+    assert set(b.PINNED) <= set(s) and {"boot", "bootl3", "bootall", "rebin", "checks", "sophonx"}.isdisjoint(b.PINNED)
+    assert b.FAMILY_CPU["mlp"] == "AMD EPYC 7402P 24-Core Processor" and b.FAMILY_CPU["atlas"] == "AMD EPYC 7742 64-Core Processor"
+    for kind, fam in b.PINNED.items():
+        cpu, text = b.FAMILY_CPU[fam], s[kind]
+        for other, nodes in b.CPU_NODES.items():
+            assert all((f'"{n}"' in text) == (other == cpu) for n in nodes), (kind, other)
+        assert text.count("key: kubernetes.io/hostname\n                operator: In\n") == 1, kind
+        assert text.count(f'[ "${{CPU}}" = "{cpu}" ] || {{') == 1 and "exit 42; }" in text, kind
+    assert not set(b.CPU_NODES["AMD EPYC 7402P 24-Core Processor"]) & set(b.CPU_NODES["AMD EPYC 7742 64-Core Processor"])
+
+
+def test_the_minority_refit_changes_nothing_but_the_node(specs):
+    """The refit of the minority networks (CPU_MINORITY) clones the tag the majority ran at, each network's row is the
+    launched spec's row character for character, and only those networks are refitted."""
+    b, s = specs
+    launched = {"mlp-cpu": "mlp", "mlp-init-cpu": "mlp-init", "atlas-cpu": "atlas", "atlas-part-cpu": "atlas-part"}
+    for kind, old in launched.items():
+        old_text = (b.OUT_DIR / f"job-refit5-{old}-raunav.yaml").read_text()
+        rows = [ln.split(") ", 1)[1] for ln in s[kind].splitlines() if re.match(r"^ +\d+\) MODEL=", ln)]
+        assert sorted(r.split(";")[0].removeprefix("MODEL=") for r in rows) == sorted(b.CPU_MINORITY[old]), kind
+        assert all(r in old_text for r in rows), kind
+        assert f"--branch {b.CPU_REFIT_TAG[old]}" in old_text and f"--branch {b.CPU_REFIT_TAG[old]}" in s[kind], kind
+        assert "aside " in s[kind] and s[kind].count("\n          aside ") == 1, kind
+    assert 'memory: "24Gi"' in s["mlp-init-cpu"] and 'memory: "12Gi"' in s["mlp-cpu"]
+    assert "--out /data/results/eval/mass_sd_boot/mass_sd_boot_v3.json" in s["cpu-after"]
+    assert s["cpu-after"].index("refit_v5_checks/PASS") < s["cpu-after"].index("atlas_rebin.py") < s["cpu-after"].index("mass_sd_boot.py")
+
+
+def test_aside_moves_only_a_fit_from_another_cpu_and_keeps_it(specs, tmp_path):
+    b, _ = specs
+    fam, fine = tmp_path / "fam", tmp_path / "fine"
+    fam.mkdir(); fine.mkdir()
+    (fam / "a.json").write_text(json.dumps({"cpu_model": "AMD EPYC 7402P 24-Core Processor"}))
+    (fam / "a_perjet.npz").write_bytes(b"x")
+    (fine / "a.json").write_text("{}")
+    (fam / "b.json").write_text(json.dumps({"cpu_model": "AMD EPYC 7742 64-Core Processor"}))
+    import subprocess
+    sh = b.aside_fn("AMD EPYC 7742 64-Core Processor") + f"aside {fam}/a.json {fam}/a_perjet.npz {fine}/a.json\naside {fam}/b.json\naside {fam}/c.json\n"
+    subprocess.run(["bash", "-euo", "pipefail", "-c", sh], check=True)
+    assert sorted(p.name for p in fam.iterdir()) == ["b.json"]
+    assert sorted(p.name for p in (tmp_path / "fam.cpu_aside").iterdir()) == ["MANIFEST.tsv", "a.json", "a_perjet.npz"]
+    assert (tmp_path / "fine.cpu_aside" / "a.json").exists() and not (fine / "a.json").exists()
+    rows = [ln.split("\t") for ln in (tmp_path / "fam.cpu_aside" / "MANIFEST.tsv").read_text().splitlines()]
+    assert [r[0] for r in rows] == ["a.json", "a_perjet.npz"] and rows[0][2] == "AMD EPYC 7402P 24-Core Processor"

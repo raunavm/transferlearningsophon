@@ -371,7 +371,7 @@ def main() -> int:
               (EVAL / "v2_head", "head", "sculpting_boot.json"),
               # PI 2026-11-21: each mass estimator against the soft-drop mass, paired on the same jets (the mass claims),
               # and the pre-specified confusion-share test of the 17-group label sets
-              (EVAL / "mass_sd_boot", "head", "mass_sd_boot_v2.json"),
+              (EVAL / "mass_sd_boot", "head", "mass_sd_boot_v3.json"),     # v3: after the one-CPU refit (PI 2026-11-21)
               (EVAL / "confusion_share", "stats", "confusion_share.json"))
         # the v5 refits (PI 2026-11-14, scripts/build_refit_v5_jobs.py): every family at once, and only after the
         # refit-checks job passed (its PASS file), so a pull never takes part of them (mlst_v4.pick refuses a part)

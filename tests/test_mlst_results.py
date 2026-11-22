@@ -3726,13 +3726,13 @@ def test_the_book_refuses_figures_and_tables_built_from_different_fine_tuning_re
 
 
 def test_the_mass_figure_claims_are_the_soft_drop_bootstrap_s():
-    """PI 2026-11-21: every better/worse-than-soft-drop claim decided by the paired bootstrap (mass_sd_boot_v2.json) on
+    """PI 2026-11-21: every better/worse-than-soft-drop claim decided by the paired bootstrap (mass_sd_boot_v3.json) on
     the 15 bins Figs. A9 and A10 draw (all jets: ten jet-pT bins, five generator-mass bins). Fig. A9: each mass network
     better than the soft-drop mass in every bin, less biased in 13 and more in the 20-50 GeV bin; Fig. A10: the MLP probe
     on each mass network better than on its label set alone in every bin."""
-    f = DATA / "head" / "mass_sd_boot_v2.json"
+    f = DATA / "head" / "mass_sd_boot_v3.json"
     if not f.exists():
-        pytest.skip("head/mass_sd_boot_v2.json not pulled")
+        pytest.skip("head/mass_sd_boot_v3.json not pulled")
     d = json.loads(f.read_text())
     fig = lambda r: {k: v for k, v in r.items() if k.startswith(("all|pt_fine:", "all|mgen:"))}    # noqa: E731
     sys.path.insert(0, str(ROOT / "experiments/FIGS/figstyle"))
@@ -3748,3 +3748,16 @@ def test_the_mass_figure_claims_are_the_soft_drop_bootstrap_s():
         assert len(diff) == 15 and all(v["resolution"]["pass"] and v["resolution"]["better"] for v in diff.values()), g
     assert "better than the soft-drop mass in every bin" in a9 and "13 of the 15 bins" in a9 and "20 to 50 GeV" in a9
     assert "better on the networks with an added mass regression" in a10 and "than on the same label sets" in a10
+    # PI 2026-11-21: no sentence says a probe beats the soft-drop mass in every bin; the bootstrap must show why
+    for g, est in (("188 classes", "mlp"), ("188 classes", "ridge")):
+        r = fig(d["groups"][g][est])
+        assert any(not (v["pass"] and v["better"]) for v in r.values()), (g, est)
+    import gallery_placement as P
+    texts = list(K.CAPTIONS.values()) + [r[2] for r in P._FIGURES + P._TABLES if isinstance(r[2], str)]
+    texts += [p.read_text() for p in sorted((ROOT / "paper/journal/sections").glob("*.tex"))]
+    every = re.compile(r"[^.]*\b(every|each|all)\b[^.]*\bbins?\b[^.]*", re.I)
+    for t in texts:
+        for s in (re.sub(r"\{[\w:]+\}", "", m.group(0)) for m in every.finditer(t)):
+            if (re.search(r"soft-drop|\\msd|groomed", s) and re.search(r"probe|MLP|multilayer|ridge|linear regression", s)
+                    and re.search(r"better|narrower|beat|outperform|resolves", s)):
+                raise AssertionError(f"a probe against the soft-drop mass in every bin: {s.strip()[:200]}")

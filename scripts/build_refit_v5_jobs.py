@@ -32,6 +32,11 @@ storage_line.FINISHING. Specs in experiments/EVAL/k8s/v2/refit_v5/; plan and lau
   bootl3   decision L3's probe parts (build_boot_l3_jobs: probe-jc, probe-bin) on the v5 probes -> bootstrap/l3_v5
   checks   refit_checks.py on every family above once all exist: grid edges, MLP best epochs in the last tenth,
            one CPU model for the mass MLP, every model present; the job fails if any rule fails
+  mlp-cpu, mlp-init-cpu, atlas-cpu, atlas-part-cpu
+           (PI 2026-11-21) the networks of fits_v5_mlp and atlas_res_v3 first fitted on another CPU model
+           (CPU_MINORITY), refitted on the family's majority model (FAMILY_CPU) at the majority's tag, the old fit
+           moved aside first; every fit kind is pinned by hostname to one CPU model (CPU_NODES, pin_cpu)
+  cpu-after  after the checks pass: atlas_rebin.py for the refitted mass networks, then mass_sd_boot.py -> v3
 
     python3 scripts/build_refit_v5_jobs.py --tag mtx-s2.98 all
 """
@@ -81,6 +86,38 @@ MASS_MLP_EPOCHS = 200
 # committed mass MLP values were reproduced bit for bit (latent_scale_probe.py, v1err-mass-pinned-check)
 CPU_PIN = {"feature.node.kubernetes.io/cpu-model.vendor_id": "AMD", "feature.node.kubernetes.io/cpu-model.family": "23",
            "feature.node.kubernetes.io/cpu-model.id": "49"}
+# ONE CPU MODEL PER FAMILY (PI 2026-11-21). CPU_PIN names the family and model id only, which the EPYC 7402P, 7742 and
+# 7F72 share: fits_v5_mlp ran on all three (17, 13 and 1 of 31 networks) and atlas_res_v3 on two (26 on the 7742, 4 on
+# the 7402P), and refit_checks failed both. No node label names the model, so every CPU fit of a family is pinned by
+# hostname to the us-west nodes of one model, found 2026-11-22 from the public Prometheus (node_cpu_frequency_max_hertz,
+# node_dmi_info) and the node capacity: the 7402P is 48 threads at 2.8 GHz (igrok-la, and pas.seat, a Dell R6515; the
+# other untainted us-west R6515 pas.* nodes report no frequency and are listed with it), the 7742 128 or 256 threads at
+# 2.25 GHz. The pod reads /proc/cpuinfo and stops (exit 42, nothing written) on any other model, so a node listed in
+# error fails loudly instead of fitting.
+CPU_NODES = {
+    "AMD EPYC 7402P 24-Core Processor": ("igrok-la.cenic.net", "pas.seat.net.internet2.edu", "pas.lasv.net.internet2.edu",
+                                         "pas.losa.net.internet2.edu", "pas.losa2.net.internet2.edu",
+                                         "pas.port.net.internet2.edu", "pas.reno.net.internet2.edu",
+                                         "pas.sunn.net.internet2.edu"),
+    "AMD EPYC 7742 64-Core Processor": ("node-2-6.sdsc.optiputer.net", "node-2-7.sdsc.optiputer.net",
+                                        "node-2-8.sdsc.optiputer.net", "node-2-9.sdsc.optiputer.net"),
+}
+# each family's model: the majority of its fit (the MLP and mass families); the linear-probe families recorded none, and
+# a refit of one takes the 7742, the SDSC nodes beside the volume
+FAMILY_CPU = {"mlp": "AMD EPYC 7402P 24-Core Processor", "atlas": "AMD EPYC 7742 64-Core Processor",
+              "linear": "AMD EPYC 7742 64-Core Processor"}
+# the networks first fitted on another model (refit_checks 2026-11-21T19:46Z), refitted on the family's model at the tag
+# the majority ran at, so nothing else changes: probe_bal.py --mlp at mtx-s2.98 (latent_scale_probe.py has changed since
+# in fit_ridge only, which the classification MLP does not call), atlas_resolution.py at mtx-s3.04 and, for the
+# partitions, mtx-s3.06 (unchanged since). The random-network MLPs need 24Gi (refit5-mlp-init, 2026-11-17).
+CPU_MINORITY = {
+    "mlp": ("mtx-flavf0-s1", "mtx-flavf0-s2", "mtx-flavf1-s1", "mtx-flavf1-s2", "mtx-flavf1r-s1", "mtx-flavf1r-s2",
+            "mtx-l162mass-s2", "mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3", "mtx-rand2p4-s2", "mtx-rand2p5-s2"),
+    "mlp-init": ("init-s2", "init-s3"),
+    "atlas": ("mtx-l162-s3", "mtx-r16q1-s3"),
+    "atlas-part": ("mtx-flavf0-s1", "mtx-rand2p2-s2"),
+}
+CPU_REFIT_TAG = {"mlp": "mtx-s2.98", "mlp-init": "mtx-s2.98", "atlas": "mtx-s3.04", "atlas-part": "mtx-s3.06"}
 BOOT_V5, L3_V5 = "/data/results/bootstrap/probe_v5", "/data/results/bootstrap/l3_v5"
 CHECKS_ROOT = "/data/results/eval/refit_v5_checks"     # outside the families, so a pull of a family takes no summary
 # the substitutions chosen on validation (mlst_results.chosen_substitutions on fits_v4_fill, 2026-11-14: top draws,
@@ -308,39 +345,83 @@ done
                    "v5 X->bb / X->bs linear probes, the linear probe only (PI 2026-11-14)")
 
 
-def mlp_spec(tag: str, parallelism: int) -> str:
-    """build_jc2bal_jobs.fit_spec(mlp=True)'s fits (and kin_spec's top MLP) for every network, pinned to CPU_PIN."""
-    rows = [f'MODEL={m}; CKPTS="{" ".join(c)}"; DS=jc2bal; NEED={LP}/{m}/DONE' for m, c, _v in models()]
-    rows.append(f'MODEL={KIN}; CKPTS="best70"; DS=top; NEED={JB.LP_OLD}/{KIN}/top/test/best70/manifest.json')
+def mlp_spec(tag: str, parallelism: int, only=None, name: str = "refit5-mlp-raunav", mem: str = "12Gi") -> str:
+    """build_jc2bal_jobs.fit_spec(mlp=True)'s fits (and kin_spec's top MLP) for every network (only: those), pinned to
+    the family's CPU model; with only, a fit made on another model is first moved aside."""
+    rows = [f'MODEL={m}; CKPTS="{" ".join(c)}"; DS=jc2bal; NEED={LP}/{m}/DONE' for m, c, _v in models()
+            if only is None or m in only]
+    if only is None:
+        rows.append(f'MODEL={KIN}; CKPTS="best70"; DS=top; NEED={JB.LP_OLD}/{KIN}/top/test/best70/manifest.json')
+    elif len(rows) != len(only):
+        raise SystemExit(f"FATAL: {sorted(set(only) - set(model_names()))} are not networks of the family")
+    cpu = FAMILY_CPU["mlp"]
+    pre = aside_fn(cpu) + f"aside {MLP_V5}/${{MODEL}}.json\n" if only else ""
     body = f"""set -euo pipefail
 {JB._start(tag)}
-{case_block(rows)}[ -f {MLP_V5}/${{MODEL}}.json ] && {{ echo "${{MODEL}} done"; exit 0; }}
+{case_block(rows)}{pre}[ -f {MLP_V5}/${{MODEL}}.json ] && {{ echo "${{MODEL}} done"; exit 0; }}
 [ -f ${{NEED}} ] || {{ echo "FATAL: ${{MODEL}}'s features are missing (${{NEED}})"; exit 42; }}
 {guard()}
 python3 experiments/EVAL/probe_bal.py --model ${{MODEL}} --checkpoints ${{CKPTS}} --mlp --mlp-datasets ${{DS}} --out {MLP_V5}
 echo "REFIT5 MLP ${{MODEL}} COMPLETE"
 """
     # fits_v4_mlp's job: CPU 8, 64Gi, no thread exports (probe.py pins the MLP's threads itself)
-    return pin_cpu(indexed("refit5-mlp-raunav", body, len(rows), parallelism, "12Gi", "8",
-                           "class-balanced JetClass-II MLP probes of every network on one CPU model (PI 2026-11-14)"))
+    return indexed(name, body, len(rows), parallelism, mem, "8",
+                   "class-balanced JetClass-II MLP probes of every network on one CPU model (PI 2026-11-14)")
 
 
-def pin_cpu(text: str) -> str:
-    """CPU_PIN added to a spec's required node affinity."""
+ASIDE = """# a fit made on another CPU model leaves the family before its refit (PI 2026-11-21): kept, never deleted, in
+# <folder>.cpu_aside/ with its sha256 and recorded CPU in MANIFEST.tsv; a fit on @CPU@ stays
+aside () {
+  local f=$1 got g d
+  [ -f "${f}" ] || return 0
+  got=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("cpu_model", ""))' "${f}")
+  [ "${got}" != "@CPU@" ] || { echo "${f}: fitted on @CPU@"; return 0; }
+  for g in "$@"; do
+    [ -f "${g}" ] || continue
+    d=$(dirname "${g}").cpu_aside; mkdir -p "${d}"
+    [ ! -e "${d}/$(basename "${g}")" ] || { echo "FATAL: ${d}/$(basename "${g}") exists"; exit 42; }
+    printf '%s\\t%s\\t%s\\t%s\\t%s\\n' "$(basename "${g}")" "$(sha256sum "${g}" | cut -d' ' -f1)" "${got}" "@CPU@" \\
+      "$(date -u +%FT%TZ)" >> "${d}/MANIFEST.tsv"
+    mv "${g}" "${d}/"
+  done
+}
+"""
+
+
+def aside_fn(cpu: str) -> str:
+    return ASIDE.replace("@CPU@", cpu)
+
+
+def cpu_check(cpu: str) -> str:
+    """The pod's CPU model (as latent_scale_probe.cpu_model reads it) must be the family's, before anything runs."""
+    return ('CPU=$(grep -m1 "^model name" /proc/cpuinfo | cut -d: -f2- | sed "s/^ *//;s/ *$//"); '
+            f'[ "${{CPU}}" = "{cpu}" ] || {{ echo "FATAL: this node\'s CPU is ${{CPU}}, not {cpu}: nothing fitted"; exit 42; }}')
+
+
+def pin_cpu(text: str, cpu: str) -> str:
+    """CPU_PIN and the nodes of one CPU model (CPU_NODES) added to a spec's required node affinity, and the pod's
+    CPU checked right after the clone."""
     old = '                values: ["us-west"]\n'
     if text.count(old) != 1:
         raise SystemExit("FATAL: the spec's region term changed")
-    return text.replace(old, old + "".join(f"              - key: {k}\n                operator: In\n                values: [\"{v}\"]\n"
-                                           for k, v in CPU_PIN.items()))
+    nodes = ", ".join(f'"{n}"' for n in CPU_NODES[cpu])
+    text = text.replace(old, old + "".join(f"              - key: {k}\n                operator: In\n                values: [\"{v}\"]\n"
+                                           for k, v in CPU_PIN.items())
+                        + f"              - key: kubernetes.io/hostname\n                operator: In\n                values: [{nodes}]\n")
+    hits = re.findall(r"^( *)cd /workspace/tls\n", text, flags=re.M)
+    if len(hits) != 1:
+        raise SystemExit(f"FATAL: the spec has {len(hits)} clone steps")
+    return re.sub(r"^( *)cd /workspace/tls\n", lambda m: m.group(0) + m.group(1) + cpu_check(cpu) + "\n", text, flags=re.M)
 
 
 def _atlas_module():
     return _load("build_atlas_res_job", "scripts/build_atlas_res_job.py")
 
 
-def atlas_spec(tag: str, parallelism: int, ms=None) -> str:
-    """build_atlas_res_job.spec into ATLAS_V2 with --grid v2 and the longer MLP cap, pinned to CPU_PIN
-    (ms: another model list in build_atlas_res_job.models' form)."""
+def atlas_spec(tag: str, parallelism: int, ms=None, refit: bool = False) -> str:
+    """build_atlas_res_job.spec into ATLAS_V2 with --grid v2 and the longer MLP cap (ms: another model list in
+    build_atlas_res_job.models' form; refit: a fit made on another CPU model is first moved aside, with its per-jet
+    values and its rebinned file)."""
     ba = _atlas_module()
     if ms is not None:
         ba.models = lambda: ms
@@ -357,11 +438,15 @@ def atlas_spec(tag: str, parallelism: int, ms=None) -> str:
              "# GENERATED by scripts/build_refit_v5_jobs.py (from build_atlas_res_job.spec) -- the v2 mass refit "
              "(PI 2026-11-14): alpha grid v2, MLP epochs recorded, one CPU model. CPU.", 1),
             ]
+    if refit:
+        skip = "          if [ -f ${OUT}/${MODEL}.json ]; then\n"
+        pre = aside_fn(FAMILY_CPU["atlas"]) + f"aside ${{OUT}}/${{MODEL}}.json ${{OUT}}/${{MODEL}}_perjet.npz {ATLAS_FINE_V2}/${{MODEL}}.json\n"
+        subs.append((skip, "".join(" " * 10 + ln + "\n" for ln in pre.splitlines()) + skip, 1))
     for old, new, n in subs:
         if text.count(old) != n:
             raise SystemExit(f"FATAL: build_atlas_res_job.spec changed: {old!r} found {text.count(old)} times")
         text = text.replace(old, new)
-    return pin_cpu(text)
+    return text
 
 
 def atlas_part_models() -> list[tuple[str, str, str, str, str]]:
@@ -372,10 +457,10 @@ def atlas_part_models() -> list[tuple[str, str, str, str, str]]:
             for m in hb.FLAV_RUNS + hb.RAND_RUNS]
 
 
-def atlas_part_spec(tag: str, parallelism: int) -> str:
+def atlas_part_spec(tag: str, parallelism: int, ms=None, refit: bool = False) -> str:
     """atlas_spec on the partitions into the same ATLAS_V2. Their head jobs ran the sculpting only, so they have no
     mass_v3.json and its cross-check (the same jets as mass_resolution.py) is skipped; DONE_PART when all are in."""
-    text = atlas_spec(tag, parallelism, atlas_part_models())
+    text = atlas_spec(tag, parallelism, atlas_part_models() if ms is None else ms, refit)
     subs = [("name: refit5-atlas-raunav\n", "name: refit5-atlas-part-raunav\n", 1),
             ("for F in ${OBS}/head_outputs.npz ${FEAT}/manifest.json ${MASSV3}; do",
              "for F in ${OBS}/head_outputs.npz ${FEAT}/manifest.json; do", 1),
@@ -531,13 +616,59 @@ echo "REFIT5 CHECKS PASS"
     return single("refit5-checks-raunav", body, "4Gi", "1", "the refit rules on every v5 family (PI 2026-11-14)")
 
 
+MASS_SD_BOOT = "/data/results/eval/mass_sd_boot/mass_sd_boot_v3.json"
+
+
+def cpu_refit_specs(parallelism: int) -> dict[str, str]:
+    """The networks first fitted on another CPU model (CPU_MINORITY), refitted on the family's model at the majority's
+    tag (CPU_REFIT_TAG), each old fit moved aside first; the tag argument does not apply."""
+    ba = _atlas_module()
+    main = [r for r in ba.models() if r[0] in CPU_MINORITY["atlas"]]
+    part = [r for r in atlas_part_models() if r[0] in CPU_MINORITY["atlas-part"]]
+    if len(main) != len(CPU_MINORITY["atlas"]) or len(part) != len(CPU_MINORITY["atlas-part"]):
+        raise SystemExit("FATAL: a mass network of CPU_MINORITY is not in the family")
+    rename = lambda t, a, b: t.replace(f"name: {a}\n", f"name: {b}\n", 1)  # noqa: E731
+    return {
+        "mlp-cpu": mlp_spec(CPU_REFIT_TAG["mlp"], parallelism, CPU_MINORITY["mlp"], "refit5-mlp-cpu-raunav"),
+        "mlp-init-cpu": mlp_spec(CPU_REFIT_TAG["mlp-init"], parallelism, CPU_MINORITY["mlp-init"],
+                                 "refit5-mlp-init-cpu-raunav", "24Gi"),
+        "atlas-cpu": rename(atlas_spec(CPU_REFIT_TAG["atlas"], parallelism, main, refit=True),
+                            "refit5-atlas-raunav", "refit5-atlas-cpu-raunav"),
+        "atlas-part-cpu": rename(atlas_part_spec(CPU_REFIT_TAG["atlas-part"], parallelism, part, refit=True),
+                                 "refit5-atlas-part-raunav", "refit5-atlas-part-cpu-raunav")}
+
+
+def cpu_after_spec(tag: str) -> str:
+    """Once the refit checks pass after the one-CPU refit (PI 2026-11-21): the rebinned files of the refitted mass
+    networks (atlas_rebin.py writes only the missing ones), then the soft-drop bootstrap on the refit (MASS_SD_BOOT)."""
+    body = f"""set -euo pipefail
+{JB._start(tag)}
+{_wait([f"{CHECKS_ROOT}/PASS"])}{guard()}
+python3 experiments/EVAL/atlas_rebin.py --in-dir {ATLAS_V2} --out-dir {ATLAS_FINE_V2}
+python3 -c "import json, glob; [json.load(open(f)) for f in glob.glob('{ATLAS_FINE_V2}/*.json')]; print('all valid')"
+touch {ATLAS_FINE_V2}/DONE
+[ -e {MASS_SD_BOOT} ] || python3 experiments/EVAL/mass_sd_boot.py --root {ATLAS_V2} --out {MASS_SD_BOOT}
+echo "REFIT5 CPU AFTER COMPLETE"
+"""
+    return single("refit5-cpu-after-raunav", body, "10Gi", "4",
+                  "the rebinned mass files and the soft-drop bootstrap after the one-CPU refit (PI 2026-11-21)")
+
+
+# every CPU fit of a family on one CPU model (PI 2026-11-21): the kind -> FAMILY_CPU key
+PINNED = {"fit": "linear", "fill": "linear", "sib": "linear", "coarse": "linear", "nat": "linear", "sophon": "linear",
+          "xbx": "linear", "mlp": "mlp", "atlas": "atlas", "atlas-part": "atlas", "mlp-cpu": "mlp",
+          "mlp-init-cpu": "mlp", "atlas-cpu": "atlas", "atlas-part-cpu": "atlas"}
+
+
 def build(tag: str, parallelism: int) -> dict[str, str]:
-    return {"fit": fit_spec(tag, parallelism), "fill": fill_spec(tag, parallelism), "sib": sib_spec(tag, parallelism),
-            "coarse": coarse_spec(tag, parallelism), "qcdhf": qcdhf_spec(tag), "nat": nat_spec(tag, parallelism),
-            "sophonx": sophonx_spec(tag), "sophon": sophon_spec(tag), "xbx": xbx_spec(tag, parallelism),
-            "mlp": mlp_spec(tag, parallelism), "atlas": atlas_spec(tag, parallelism),
-            "atlas-part": atlas_part_spec(tag, parallelism), "rebin": rebin_spec(tag),
-            "boot": boot_spec(tag), "bootl3": bootl3_spec(tag), "bootall": bootall_spec(tag), "checks": checks_spec(tag)}
+    specs = {"fit": fit_spec(tag, parallelism), "fill": fill_spec(tag, parallelism), "sib": sib_spec(tag, parallelism),
+             "coarse": coarse_spec(tag, parallelism), "qcdhf": qcdhf_spec(tag), "nat": nat_spec(tag, parallelism),
+             "sophonx": sophonx_spec(tag), "sophon": sophon_spec(tag), "xbx": xbx_spec(tag, parallelism),
+             "mlp": mlp_spec(tag, parallelism), "atlas": atlas_spec(tag, parallelism),
+             "atlas-part": atlas_part_spec(tag, parallelism), "rebin": rebin_spec(tag),
+             "boot": boot_spec(tag), "bootl3": bootl3_spec(tag), "bootall": bootall_spec(tag), "checks": checks_spec(tag),
+             **cpu_refit_specs(parallelism), "cpu-after": cpu_after_spec(tag)}
+    return {k: pin_cpu(v, FAMILY_CPU[PINNED[k]]) if k in PINNED else v for k, v in specs.items()}
 
 
 def main(argv=None) -> int:
@@ -546,7 +677,8 @@ def main(argv=None) -> int:
     ap.add_argument("--parallelism", type=int, default=5)
     ap.add_argument("kinds", nargs="+", choices=("all", "fit", "fill", "sib", "coarse", "qcdhf", "nat", "sophonx",
                                                  "sophon", "xbx", "mlp", "atlas", "atlas-part", "rebin", "boot", "bootl3",
-                                                 "bootall", "checks"))
+                                                 "bootall", "checks", "mlp-cpu", "mlp-init-cpu", "atlas-cpu",
+                                                 "atlas-part-cpu", "cpu-after"))
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
         raise SystemExit(f"FATAL: --tag {a.tag} is not an mtx-sN.NN tag")

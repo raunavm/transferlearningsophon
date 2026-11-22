@@ -25,8 +25,7 @@ model is as narrow, and both stay narrower in every bin of jet $p_{\mathrm{T}}$ 
 $\mgen$ (figures~\ref{fig:f9a} and~\ref{fig:f9b}, and figures~\ref{fig:a17res} and~\ref{fig:a17qcd};
 table~\ref{tab:massdetail}). The regressed mass also reaches % CHECK: MlstMassHeadResMassOverMlpRes below 1 in both runs
 \MlstMassHeadResMassOverMlpResPr{} of an MLP regression on the frozen features of the \Kres-class
-model pretrained without it, although that regression adds back the median of each jet's true class
-and the auxiliary mass regression never sees the class. Because its target $\theta$ of
+model pretrained without it, which, like the auxiliary mass regression, never sees the jet's class. Because its target $\theta$ of
 equation~(\ref{eq:masstarget}) is $\ln(\mgen/\msd)$, the regression learns from the jet's constituents how detector
 response, pileup removal and grooming have moved the reconstructed mass away from the generator-level
 one, which is the spread that $\msd$ carries. That correction depends on the constituents
