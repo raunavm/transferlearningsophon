@@ -257,6 +257,9 @@ NETWORKS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS", "FLA
 LABEL_SETS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")
 PARTITIONS = ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "L188", "R16_Q1")       # 188 and 17 classes for reference
 RANDOM = ("RAND", "L188", "R16_Q1")
+# PI 2026-11-20 (meeting, C5): the random partitions join the partitions row of the class-pair figures (their pooled
+# curve: the mean over the groupings that keep the pair apart, mean_over_runs skipping the ones that merge it)
+PAIR_PARTITIONS = PARTITIONS[:3] + ("RAND",) + PARTITIONS[3:]
 STYLE_KEY = {"INIT": "INIT_BN"}          # the random network (as initialized, Table 1's row) in style_v5's colour and name
 POOLED = M._pooled(RUNS)
 # the pairs in the family's one order (plan "Class pairs"): the main-text two, the four other flavor pairs, X->ee vs mumu
@@ -500,7 +503,7 @@ def _pair_grid(path: pathlib.Path, family: str, pairs: tuple, w: float, aspect: 
     ref = ("SCRATCH",) if family == "pairs_ft" else ()
     name = (lambda t: _two_lines(t)) if w < 3.5 else (lambda t: t)
     _roc_grid(path, [[(docs, k, LABEL_SETS + ref, name(PAIR_TITLE[k])) for k in pairs],
-                     [(docs, k, PARTITIONS, name(PAIR_TITLE[k])) for k in pairs]],
+                     [(docs, k, PAIR_PARTITIONS, name(PAIR_TITLE[k])) for k in pairs]],
               w=w, aspect=aspect, row_names=("Label sets", "17-class partitions"), share=lambda i, j: i,
               ratio_scale="log")      # the class-pair family: logarithmic ratio panels in every figure
 
