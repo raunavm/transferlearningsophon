@@ -4242,6 +4242,18 @@ def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> t
         xbx_ratio_macros(em, xfits, scr, runs, index, fmt_pm)
     else:
         missing.append("X->bb and X->bs fits -- experiments/FIGS/data/v2/xbx/")
+    # the from-scratch training jets a class of each signal (user 2026-11-19: the captions state them), one value over
+    # the seeds or the build stops
+    for sig, w in (("xbb", "Bb"), ("xbs", "Bs")):
+        ns = {d["n_train_per_class"] for d in scr.get(sig, [])}
+        if len(ns) > 1:
+            raise SystemExit(f"FATAL: xbx_scratch/{sig}: the seeds train on different jet counts {sorted(ns)}")
+        if ns:
+            em.macro(f"MlstXbxScratchTrain{w}", fmt_int(ns.pop()), data / "xbx_scratch" / sig, "n_train_per_class",
+                     "training jets a class of the from-scratch network")
+        else:
+            em.macro(f"MlstXbxScratchTrain{w}", r"\pending{from-scratch jets}", data / "xbx_scratch" / sig, "missing",
+                     "pending until xbx_scratch is pulled")
     if not scr:
         missing.append("X->bs from scratch -- experiments/FIGS/data/v2/xbx_scratch/")
     for name in XBX_MACROS:
@@ -5104,8 +5116,8 @@ def table_per_run(fits, per, runs, fmt_pm, fill=None, chosen=None) -> str:
 # ------------------------------------------------------------------ captions and assembly
 SPREAD = ("Mean $\\pm$ SD over the \\MlstNRunsWord{} pretraining runs of each level of the class "
           "hierarchy; configurations with \\RandFlavRuns{} runs: over those. Every random partition has 17 "
-          "classes; each numbered one (1--5) has a single run, numbered by the pretraining seed it shares with the "
-          "\\Kfull-class run of that seed. The random network without pretraining: three initializations.")
+          "classes; each numbered one (1--5) has a single run, whose pretraining seed its row "
+          "names. The random network without pretraining: three initializations.")
 SPREAD3 = "Mean $\\pm$ SD over the \\MlstNRunsWord{} pretraining runs."
 # the paper's tables (PI 2026-11-12): the five random partitions as one row
 # PI 2026-11-21, the one description of the random partitions, everywhere
@@ -5630,8 +5642,12 @@ MASSEFFECT_NOTE = "Quark/gluon tagging trains on Pythia jets."
 def _figures(*ids) -> str:
     """"figures A10, S28 and S29": the numbers of the day of the gallery figures ids (figstyle/gallery_placement, free
     of data loading), for a table caption that names its figures (the book has no \\ref to a figure in a table)."""
-    n = [_placement().number(i).removeprefix("Fig. ") for i in ids]
-    return "figures " + ", ".join(n[:-1]) + " and " + n[-1]
+    G = _placement()
+    # PI 2026-11-19 (A): one PDF; a results-book figure is never named in a paper caption
+    n = [G.number(i).removeprefix("Fig. ") for i in ids if G.TIER.get(i) in (G.MAIN, G.APPENDIX)]
+    if not n:
+        raise SystemExit(f"FATAL: none of {ids} is a paper figure")
+    return f"figure {n[0]}" if len(n) == 1 else "figures " + ", ".join(n[:-1]) + " and " + n[-1]
 
 
 def _placement():
@@ -5757,9 +5773,7 @@ CAPTION_SHORT = {
     "mlp": "Multilayer-perceptron probes, with one hidden layer of \\LpMlpHidden{} units, on the frozen features of "
            "every pretrained network and of the random networks, at each task's largest training set, scored on the AUC "
            "for JetClass-II and JetClass, on the AUC and $R_{30}$ for top and quark/gluon tagging, and on the AUC of "
-           "the class pairs of table~\\ref{tab:pairs}. On JetClass-II the mass networks and the random partitions "
-           "were probed only on its mixed test sample (the last block, beside the four label sets), and the other "
-           "partitions and the random network only on the class-balanced set. The linear-probe block gives the "
+           "the class pairs of table~\\ref{tab:pairs}. The linear-probe block gives the "
            "\\Kfull-class networks on the class token and on the pretraining head's 512-unit hidden layer, on "
            "JetClass-II and Pythia quark/gluon jets only, as the hidden layer was not scored on Herwig jets. The "
            "network on kinematic inputs only is probed on top tagging only. " + AUC_OVR[:-1] + ", or over the "
@@ -5835,7 +5849,8 @@ CAPTION_SHORT = {
                    "table~\\ref{tab:mass} holds it. The lower parts give the bins of jet $p_{\\mathrm{T}}$ and "
                    "generator-level soft-drop mass of " + _figures("F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge")
                    + ", the mass output over all, resonant and QCD jets and the two regression probes over all jets, and "
-                   "__BLANK__ The soft-drop mass has no run-to-run spread.__MASS_RUNS__",
+                   "__BLANK__ The soft-drop mass's $\\pm$ is its standard deviation over test-jet bootstrap "
+                   "resamples.__MASS_RUNS__",
     "sculpt": ("Jensen--Shannon distance (base 2) between the soft-drop mass distributions of all QCD "
               "test jets and those passing a cut on one minus the summed QCD output, of networks used directly (first "
               "part) and fine-tuned (second part). The cut keeps a fraction $\\epsB$ of QCD "
@@ -5940,7 +5955,9 @@ CAPTION_SHORT = {
            "\\XbxWindowLo--\\XbxWindowHi~GeV. The pretrained "
            "networks, not fine-tuned, are read out on frozen features by a multilayer-perceptron classifier starting "
            "from their output head or by a linear probe, or directly by the $X\\to b\\bar b$ output against the QCD "
-           "outputs. From scratch trains on each signal, and a dash marks a read-out a network lacks."
+           "outputs. From scratch is the same network trained on each signal alone, on \\MlstXbxScratchTrainBb{} "
+           "($X\\to b\\bar b$) or \\MlstXbxScratchTrainBs{} ($X\\to bs$) jets a class; a dash marks a read-out a "
+           "network lacks."
            + _runs("set", "flav", "mass", "rand")),
     "inputs": ("The per-particle inputs, with a bullet ($\\bullet$) where the top or quark/gluon data provide an input "
               "and a dash where they lack it. The last column, for inputs one data set lacks, gives where zero lies "
