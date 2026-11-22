@@ -4320,6 +4320,34 @@ def summary_scratch(per, key: str, n: int, met: str) -> list:
     return [r.get(met) for r in per.get(key, {}).get(SCRATCH, {}).get(n, []) if r.get(met) is not None]
 
 
+def table_randparts(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID) -> str:
+    """tab:randparts (PI 2026-11-19, E: each of the five random partitions on its own row, in an appendix table): Table
+    1's tasks and metrics, as linear probes and fine-tuned, each partition's one run, then their mean +- SD (the
+    random-partitions row of the other tables). No bold: single runs of one control."""
+    rand = [a for a in runs if a.startswith("RAND2_p")]
+    pooled = _pooled(runs)[RAND_POOLED]
+    tasks = {"jc2": "JetClass-II", "jc1": "JetClass", "top": "top tagging", "qg": r"\multicolumn{2}{c}{quark/gluon tagging}"}
+    qg = [i for i, (k, *_) in enumerate(grid, 2) if k.startswith("qg")]
+    gen = {"qg": ", Pythia", "qg_herwig": ", Herwig"}
+    head = [r"\begin{tabular}{l" + "c" * len(grid) + "}", r"\toprule",
+            " & " + " & ".join(tasks[k] for k, *_ in grid if k in tasks) + r" \\", rf"\cmidrule(lr){{{qg[0]}-{qg[-1]}}}",
+            " & " + " & ".join(SUMMARY_HEAD[met] + gen.get(k, "") for k, _, _, met in grid) + r" \\", r"\midrule"]
+    parts = []
+    for mode in ("lp", "ft"):
+        get = ([summary_probe(fits, fill, chosen, ds, met) for _, _, ds, met in grid] if mode == "lp"
+               else [summary_ft(per, k, n, met) for k, n, _, met in grid])
+        body = [_full_row(1 + len(grid), HEADING[mode], italic=True)]
+        for name, ms in [(LABEL[a], runs[a]) for a in rand] + [(LABEL[RAND_POOLED], pooled)]:
+            c = []
+            for g, (_, _, _, met) in zip(get, grid):
+                v = [g(m) for m in ms] if g else []
+                c.append(_cell(v, len(ms), fmt_pm, frac=met != "r30") if any(x is not None for x in v) else "--")
+            body.append(f"{name} & " + " & ".join(c) + r" \\")
+        parts.append("\n".join(body))
+    parts = uniform_columns("\n%MODEBREAK%\n".join(parts)).split("\n%MODEBREAK%\n")
+    return "%SPLIT%".join("\n".join(head + q.split("\n") + [r"\bottomrule", r"\end{tabular}", ""]) for q in parts)
+
+
 def table_summary(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID, key="summary", data=None) -> str:
     """The values of the headline family on grid, one %SPLIT% part (a turned page) per mode: linear probes (the label
     sets, each mass network under its own, the 17-class partitions with the five random partitions as one row, the
@@ -5407,6 +5435,12 @@ CAPTIONS = {
                          "regroup the decays: a flavor boundary keeps apart decays that differ only in quark flavor. A "
                          "network with a mass output also regresses the jet mass. The random network and training from "
                          "scratch are references without pretraining."),
+    "randparts": ("tab:randparts", "Each of the five random partitions, one pretraining run each, as a linear probe and "
+                                   "fine-tuned, in the tasks and metrics of table~\\ref{tab:summary}; the last row of each "
+                                   "block is their mean $\\pm$ standard deviation, the random-partitions row of the other "
+                                   "tables. Each partition groups the 161 resonant classes at random into 16 groups, with "
+                                   "QCD as the 17th, each group holding the training-jet share of one 17-class group. "
+                                   "Values are as in table~\\ref{tab:summary}; a dash marks a value not yet read out."),
     "inputs": ("tab:inputs", "The per-particle inputs: which the top and the quark/gluon data provide ($\\bullet$), "
                "and where a zero lies after the network's input normalization, in SDs of the training particles. The "
                "mean substitution puts the running mean of the input normalization in every missing slot; the "
@@ -7018,6 +7052,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             per, runs, MAIN, LABEL, SCRATCH, TAB, TAB.two))
         out["tables/mlst_summary.tex"] = _float("summary", table_summary(fits_s, fill, chosen, per, runs_s, TAB, data=data),
                                                 True, pages=True, whole="turned", colsep_pt=6)     # PI 2026-11-22: tab:sets defines the networks
+        out["tables/mlst_randparts.tex"] = _float("randparts", table_randparts(fits_s, fill, chosen, per, runs_s, TAB),
+                                                  True, pages=True, whole="turned", colsep_pt=6)
         out["tables/mlst_summary_auc.tex"] = _float("summary_auc", table_summary(
             fits_s, fill, chosen, per, runs_s, TAB, SUMMARY_AUC_GRID, "summary_auc", data=data), True, pages=True,
             whole="turned", colsep_pt=6)
