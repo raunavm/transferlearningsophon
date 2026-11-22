@@ -4949,13 +4949,16 @@ SOPHON_NOTE = ("Below the rule, the released Sophon checkpoint~\\cite{sophon}, p
 TOPQG_PROBE_SET = (" Beyond three standard deviations of the runs and the test jets, \\Kcoarse{} classes + mass is more accurate "
                    "than \\Kfull{} classes on top tagging, with a higher $R_{50}$; no other label set or mass network "
                    "differs from \\Kfull{} classes in these metrics, nor a mass network from its own label set.")
-TOPQG_PROBE_R30 = (" In $R_{30}$ on top and quark/gluon tagging no linear probe differs from \\Kfull{} classes by more "
-                   "than three standard deviations of the runs and the test jets, nor a mass network from its own label "
-                   "set.")
+TOPQG_PROBE_R30 = (" In $R_{30}$ on top and quark/gluon tagging no pretrained network, as a linear probe or fine-tuned, differs from "
+                   "\\Kfull{} classes by more than three standard deviations of the runs and the test jets, nor a mass "
+                   "network from its own label set.")
 TOPQG_PROBE_AUC = (" As linear probes, beyond three standard deviations of the runs and the test jets, \\Kcoarse{} classes + mass "
                    "has a higher AUC than \\Kfull{} classes on top tagging and a lower one on Pythia quark/gluon tagging, "
                    "and the random partitions a lower one on top tagging; no other top or quark/gluon AUC of a linear "
-                   "probe differs from \\Kfull{} classes, nor of a mass network from its own label set.")
+                   "probe differs from \\Kfull{} classes, nor of a mass network from its own label set. Fine-tuned, "
+                   "only \\Kcoarse{} classes + mass differs, with a lower AUC on Pythia quark/gluon tagging.")
+TOPQG_FT_SET = (" Beyond three standard deviations of the runs and the test jets, no pretrained network fine-tuned here differs from "
+                "\\Kfull{} classes in these metrics, nor a mass network from its own label set.")
 TOPQG_PROBE_FULL = (" Beyond three standard deviations of the runs and the test jets, on top tagging \\Kcoarse{} classes + mass "
                     "has a higher accuracy, $R_{50}$ and AUC than \\Kfull{} classes and the random partitions, taken "
                     "together, a lower $R_{50}$ and AUC, and on Pythia quark/gluon tagging \\Kcoarse{} classes + mass has a lower "
@@ -5775,10 +5778,10 @@ CAPTION_SHORT = {
                  "quark/gluon training sets, in accuracy and $R_{50}$, the inverse background efficiency at 50\\% "
                  "signal efficiency, with top jets and quarks as signal, scored on Pythia and Herwig jets (top tagging "
                  "Pythia only). The rows for \\Kfull{} classes and from scratch repeat those of "
-                 "table~\\ref{tab:published}. The 17-class partitions are in the supplementary material." + _runs("set", "mass")),
+                 "table~\\ref{tab:published}." + TOPQG_FT_SET + " The 17-class partitions are in the supplementary material." + _runs("set", "mass")),
     "labelsets_full": ("Every row of table~\\ref{tab:labelsets} and the 17-class partitions, fine-tuned on the full top "
                        "and quark/gluon training sets, in accuracy and $R_{50}$, the inverse background efficiency at "
-                       "50\\% signal efficiency, scored on Pythia and Herwig jets." + PART_DEF
+                       "50\\% signal efficiency, scored on Pythia and Herwig jets." + TOPQG_FT_SET + PART_DEF
                        + _runs("set", "flav", "mass", "rand")),
 
 }

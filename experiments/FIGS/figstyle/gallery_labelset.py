@@ -1249,6 +1249,10 @@ TOP_QG_PROBE_CLAIMS = {("top tagging", "r16q1mass-188", "accuracy"): "above", ("
                        ("top tagging", "r16q1mass-188", "auc"): "above", ("top tagging", "rand-188", "r50"): "below",
                        ("top tagging", "rand-188", "auc"): "below",
                        ("quark/gluon tagging on Pythia jets", "r16q1mass-188", "auc"): "below"}
+# the same for the networks fine-tuned on the full sets (bootstrap/l3/ft_*.all.json, Fig. 3 and the fine-tuned tables)
+TOP_QG_FT_BOOT = (("top tagging", "ft_top_N1200000.all.json"), ("quark/gluon tagging on Pythia jets", "ft_qg_N1600000.all.json"),
+                  ("quark/gluon tagging on Herwig jets", "ft_qg_herwig_N1600000.all.json"))
+TOP_QG_FT_CLAIMS = {("quark/gluon tagging on Pythia jets", "r16q1mass-188", "auc"): "below"}
 
 
 def top_qg_passes(doc: dict) -> dict:

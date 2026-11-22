@@ -3783,13 +3783,23 @@ def test_the_top_and_quark_gluon_sentences_are_the_every_metric_bootstrap():
         assert word.replace("17", "\\Kcoarse{}") in M.printed_caption(key) or word in M.printed_caption(key), key
     assert "random partitions a lower one on top tagging" in M.printed_caption("summary_auc")
     assert "random partitions, taken together, a lower $R_{50}$ and AUC" in M.CAPTIONS["probes_full"][1]
-    files = [(task, DATA / "bootstrap" / "l3_v5" / name) for task, name in ns["TOP_QG_BOOT"]]
-    if not all(p.exists() for _t, p in files):
-        pytest.skip("bootstrap/l3_v5/*.all.json not pulled (the v5 gate)")
-    got = {}
-    for task, p in files:
-        got.update({(task, d, m): side for (d, m), side in ns["top_qg_passes"](json.loads(p.read_text())).items()})
-    assert got == claims, (sorted(set(got.items()) - set(claims.items())), sorted(set(claims.items()) - set(got.items())))
+    f3 = K.CAPTIONS["F2-ft"]
+    assert "no network differs from 188 classes in R30 by more than three" in f3 and "in AUC one does" in f3
+    assert not [k for k in ns["TOP_QG_FT_CLAIMS"] if k[2] != "auc"]       # Fig. 3's "in AUC one does"
+    assert "Fine-tuned, only \\Kcoarse{} classes + mass differs" in M.printed_caption("summary_auc")
+    assert "no pretrained network fine-tuned here differs" in M.printed_caption("labelsets")
+    checked = 0
+    for boot, sub, want in ((ns["TOP_QG_BOOT"], "l3_v5", claims), (ns["TOP_QG_FT_BOOT"], "l3", ns["TOP_QG_FT_CLAIMS"])):
+        files = [(task, DATA / "bootstrap" / sub / name) for task, name in boot]
+        if not all(p.exists() for _t, p in files):
+            continue
+        got = {}
+        for task, p in files:
+            got.update({(task, d, m): side for (d, m), side in ns["top_qg_passes"](json.loads(p.read_text())).items()})
+        assert got == want, (sub, sorted(set(got.items()) - set(want.items())), sorted(set(want.items()) - set(got.items())))
+        checked += 1
+    if not checked:
+        pytest.skip("no every-metric bootstrap pulled (bootstrap/l3_v5 waits for the v5 gate, bootstrap/l3/ft_*.all.json)")
 
 
 def test_no_sentence_claims_sculpting_at_a_working_point_within_three_sigma_of_the_floor():

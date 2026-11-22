@@ -44,7 +44,8 @@ CAPTIONS = {
     ),
     "F2-ft": (
         'After fine-tuning, 17 classes stay below 188 classes on JetClass-II and make about 3% more errors on '
-        'JetClass. Points are means ±1 standard deviation over the runs '
+        'JetClass. On top and quark/gluon tagging no network differs from 188 classes in R30 by more than three '
+        'standard deviations; in AUC one does (table {tab:summaryauc}). Points are means ±1 standard deviation over the runs '
         'of figure {fig:F1}, over the five random partitions, or over three trainings from scratch, the fine-tuned '
         'reference. R30 is the inverse background efficiency at 30% signal efficiency, and quark/gluon tagging trains '
         'on Pythia jets. Values are in table {tab:summary}, figure {fig:F2} shows the linear probes and table '
