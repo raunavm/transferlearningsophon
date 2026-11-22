@@ -4245,11 +4245,11 @@ def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> t
     # the from-scratch training jets a class of each signal (user 2026-11-19: the captions state them), one value over
     # the seeds or the build stops
     for sig, w in (("xbb", "Bb"), ("xbs", "Bs")):
-        ns = {d["n_train_per_class"] for d in scr.get(sig, [])}
+        ns = {d["training"]["n_train_per_class"] for d in scr.get(sig, [])}
         if len(ns) > 1:
             raise SystemExit(f"FATAL: xbx_scratch/{sig}: the seeds train on different jet counts {sorted(ns)}")
         if ns:
-            em.macro(f"MlstXbxScratchTrain{w}", fmt_int(ns.pop()), data / "xbx_scratch" / sig, "n_train_per_class",
+            em.macro(f"MlstXbxScratchTrain{w}", fmt_int(ns.pop()), data / "xbx_scratch" / sig, "training.n_train_per_class",
                      "training jets a class of the from-scratch network")
         else:
             em.macro(f"MlstXbxScratchTrain{w}", r"\pending{from-scratch jets}", data / "xbx_scratch" / sig, "missing",
