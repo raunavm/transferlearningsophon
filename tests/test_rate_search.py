@@ -84,7 +84,7 @@ def test_every_search_cell_follows_its_sizes_schedule():
     cells = (B.fixed_sweep_rows_cells() + B.fixed_sweep_jc2b_cells() + B.fixed_sweep_all_cells()
              + B.fixed_sweep_edge_cells() + B.fixed_sweep_edge2_cells() + B.fixed_sweep_edge3_cells()
              + B.fixed_sweep_edge4_cells() + B.fixed_sweep_edge5_cells() + B.fixed_sweep_edge6_cells()
-             + B.fixed_sweep_edge7_cells() + B.fixed_sweep_edge8_cells()
+             + B.fixed_sweep_edge7_cells() + B.fixed_sweep_edge8_cells() + B.fixed_sweep_edge9_cells()
              + B.fixed_sweep_1e4_cells()
              + B.fixed_rate_cells())
     for c in cells:

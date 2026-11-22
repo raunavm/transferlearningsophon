@@ -384,6 +384,15 @@ def fixed_sweep_edge8_cells() -> list:
     return fixed_sweep_edge3_cells(FIXED_EDGE_EXT8)
 
 
+# 2026-11-22: JetClass 1e4 pretrained, 1e-3 above 3e-3 whatever its last checks give (17 classes 0.80275 at check 109 of
+# 120, the best so far, so the mean is at least 0.80917 against 0.80876): 1e-3 is the lowest rate tried, so 3e-4
+FIXED_EDGE_EXT9 = (("jc1", 10_000, "pre", ("3e-4",)),)
+
+
+def fixed_sweep_edge9_cells() -> list:
+    return fixed_sweep_edge3_cells(FIXED_EDGE_EXT9)
+
+
 def fixed_sweep_edge6_cells() -> list:
     """2026-11-22: top 1e4 from scratch best at 1e-3, its lowest rate (0.9174429 against 0.9174179 at 3e-3, 5 of
     199,680 validation jets): 3e-4, seed 1, in the 1e4 tree beside the row's other searched cells."""
@@ -451,7 +460,7 @@ def fixed_search_plan() -> dict:
     for c in (fixed_sweep_rows_cells() + fixed_sweep_jc2b_cells() + fixed_sweep_all_cells() + fixed_sweep_edge_cells()
               + fixed_sweep_edge2_cells() + fixed_sweep_edge3_cells() + fixed_sweep_edge4_cells()
               + fixed_sweep_edge5_cells() + fixed_sweep_edge6_cells() + fixed_sweep_edge7_cells()
-              + fixed_sweep_edge8_cells()
+              + fixed_sweep_edge8_cells() + fixed_sweep_edge9_cells()
               + fixed_sweep_1e4_cells()):
         kind = "pre" if c["init"] else "scratch"
         cells = plan.setdefault((c["task"], c["n"], kind), {}).setdefault(c["lr"], [])
@@ -936,7 +945,7 @@ def main(argv=None) -> int:
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
                                                  "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-sweep-all", "fixed-rate", "fixed-sweep-edge", "fixed-sweep-edge2",
-                                                 "fixed-sweep-1e4", "fixed-sweep-edge3", "fixed-sweep-edge4", "fixed-sweep-edge5", "fixed-sweep-edge6", "fixed-sweep-edge7", "fixed-sweep-edge8", "fixed-smoke-diverge", "fixed-sweep-17", "fixed-smoke-1e3",
+                                                 "fixed-sweep-1e4", "fixed-sweep-edge3", "fixed-sweep-edge4", "fixed-sweep-edge5", "fixed-sweep-edge6", "fixed-sweep-edge7", "fixed-sweep-edge8", "fixed-sweep-edge9", "fixed-smoke-diverge", "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
     if a.part and not a.indices:
@@ -980,6 +989,7 @@ def main(argv=None) -> int:
                      "fixed-sweep-edge6": fixed_sweep_edge6_cells,
                      "fixed-sweep-edge7": fixed_sweep_edge7_cells,
                      "fixed-sweep-edge8": fixed_sweep_edge8_cells,
+                     "fixed-sweep-edge9": fixed_sweep_edge9_cells,
                      "fixed-smoke-diverge": fixed_smoke_diverge_cells,
                      "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
