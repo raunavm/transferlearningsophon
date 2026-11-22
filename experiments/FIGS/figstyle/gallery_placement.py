@@ -205,10 +205,10 @@ _TABLES = (
     ("tab:xbx", MAIN, XBX),
     # the appendix by family (PI 2026-11-14, step 6; APPENDIX_FAMILIES), each table beside its family's figures
     # PI 2026-11-18: the AUC as the secondary metric, beside every headline value
-    # PI 2026-11-19 (E): each random partition on its own row
-    ("tab:randparts", APPENDIX, "Each random partition's linear-probe and fine-tuned values are in [[tab:randparts]]."),
     ("tab:summaryauc", APPENDIX, "[[tab:summaryauc]] gives the area under the ROC curve beside every value of "
                                  "[[tab:summary]]."),
+    # PI 2026-11-19 (E): each random partition on its own row
+    ("tab:randparts", APPENDIX, "Each random partition's linear-probe and fine-tuned values are in [[tab:randparts]]."),
     # PI 2026-11-20 (meeting, B): from the supplement into the appendix
     ("tab:mlp", APPENDIX, "Multilayer-perceptron probes for the comparisons of [[tab:summary]] are in [[tab:mlp]]."),
     ("tab:coarse", APPENDIX, "Linear probes scored on the 43 and 17 merged classes are in [[tab:coarse]]."),
