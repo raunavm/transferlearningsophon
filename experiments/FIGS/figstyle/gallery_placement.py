@@ -65,7 +65,7 @@ _FIGURES = (
     # panels at least 4.5 cm) splits it one mode a figure, linear probes (F2) and fine-tuned (F2-ft), one sentence; the
     # same in the AUC (F2a, F2b) opens the appendix
     # PI 2026-11-21: no "no difference on top" while any printed metric passes 3 sigma; the top and quark/gluon clause
-    # comes from the bootstrap of every printed metric (gallery_labelset.top_qg_probe_clause), not from this sentence
+    # is written by hand in F2's caption, R30 only, and tested against the bootstrap (gallery_labelset.TOP_QG_PROBE_CLAIMS)
     *((k, MAIN, "With linear probes, 43 and 17 classes and every 17-class partition are less accurate on JetClass-II "
                 "than 188 classes, and after fine-tuning 17 classes stay below 188 on JetClass-II and JetClass.")
       for k in ("F2", "F2-ft")),

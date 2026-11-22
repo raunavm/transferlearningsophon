@@ -10,6 +10,7 @@ import math
 import re
 import shutil
 import statistics
+import sys
 
 import pytest
 
@@ -3761,3 +3762,60 @@ def test_the_mass_figure_claims_are_the_soft_drop_bootstrap_s():
             if (re.search(r"soft-drop|\\msd|groomed", s) and re.search(r"probe|MLP|multilayer|ridge|linear regression", s)
                     and re.search(r"better|narrower|beat|outperform|resolves", s)):
                 raise AssertionError(f"a probe against the soft-drop mass in every bin: {s.strip()[:200]}")
+
+
+def test_the_top_and_quark_gluon_sentences_are_the_every_metric_bootstrap():
+    """PI 2026-11-21: Fig. 2's top and quark/gluon sentence is written by hand, R30 only, with a pointer to the tables,
+    and the captions of the tables that print accuracy, R50 and AUC name the networks that differ; every claim is
+    gallery_labelset.TOP_QG_PROBE_CLAIMS, and the paired bootstrap of the v5 probes (bootstrap/l3_v5/*.all.json)
+    must give exactly those passes."""
+    sys.path.insert(0, str(ROOT / "experiments/FIGS/figstyle"))
+    import gallery_captions as K
+    src = (ROOT / "experiments/FIGS/figstyle/gallery_labelset.py").read_text()
+    ns = {}
+    exec(src[src.index("TOP_QG_BOOT = ("):src.index("PAGES = [dataclasses.replace")], {"json": json}, ns)
+    f2 = K.CAPTIONS["F2"]
+    assert "{top_qg_probe}" not in f2 and "no network differs from 188 classes in R30 by more than three" in f2
+    assert "in accuracy, R50 and AUC some do (tables {tab:probes} and {tab:summaryauc})" in f2
+    claims = ns["TOP_QG_PROBE_CLAIMS"]
+    assert not [k for k in claims if k[2] == "r30"]                     # Fig. 2 and table 1 print R30: no claim
+    for key, word in (("probes", "17 classes + mass is more accurate"), ("summary", "In $R_{30}$")):
+        assert word.replace("17", "\\Kcoarse{}") in M.printed_caption(key) or word in M.printed_caption(key), key
+    assert "random partitions a lower one on top tagging" in M.printed_caption("summary_auc")
+    assert "random partitions, taken together, a lower $R_{50}$ and AUC" in M.CAPTIONS["probes_full"][1]
+    files = [(task, DATA / "bootstrap" / "l3_v5" / name) for task, name in ns["TOP_QG_BOOT"]]
+    if not all(p.exists() for _t, p in files):
+        pytest.skip("bootstrap/l3_v5/*.all.json not pulled (the v5 gate)")
+    got = {}
+    for task, p in files:
+        got.update({(task, d, m): side for (d, m), side in ns["top_qg_passes"](json.loads(p.read_text())).items()})
+    assert got == claims, (sorted(set(got.items()) - set(claims.items())), sorted(set(claims.items()) - set(got.items())))
+
+
+def test_no_sentence_claims_sculpting_at_a_working_point_within_three_sigma_of_the_floor():
+    """PI 2026-11-21: no caption or sentence claims sculpting at a working point unless the distance passes 3 sigma above
+    the random-selection floor (the run SD and the floor's SD combined, mlst_results.sculpt_above_floor). The audit's
+    two cells, 17 classes + mass at 1% QCD efficiency and at 50% signal efficiency, are about 2 sigma above it; and a
+    sentence that says a network sculpts (or distorts) the mass at a working point, without a negation, fails here."""
+    sys.path.insert(0, str(ROOT / "experiments/FIGS/figstyle"))
+    import gallery_captions as K
+    import gallery_placement as P
+    texts = list(K.CAPTIONS.values()) + [r[2] for r in P._FIGURES + P._TABLES if isinstance(r[2], str)]
+    texts += [M.printed_caption(k) for k in M.CAPTIONS]
+    texts += [p.read_text() for p in sorted((ROOT / "paper/journal/sections").glob("*.tex"))]
+    verb = re.compile(r"\bsculpts?\b|\bsculpting by\b|\bdistorts?\b", re.I)
+    wp = re.compile(r"\d+\s?\\?%|\\SculptEff(High|Low)|half (of )?the resonant|working point", re.I)
+    neg = re.compile(r"\b(no|not|neither|nor|none|whether|asks)\b", re.I)
+    for t in texts:
+        t = re.sub(r"(?m)%.*$", "", t)
+        t = re.sub(r"\\(ref|label|input|paperfig)\{[^}]*\}|\{(tab|fig|sec):[^}]*\}|\[\[[^\]]*\]\]", "", t)
+        for s in re.split(r"(?<=[.;])\s+|\n\s*\n", t):
+            assert not (verb.search(s) and wp.search(s) and not neg.search(s)), f"a sculpting claim: {s.strip()[:200]}"
+    d = DATA / "head" / "sculpting_v3"
+    if not d.exists():
+        pytest.skip("head/sculpting_v3 not pulled")
+    sc = {p.stem.removesuffix("_sculpting"): json.loads(p.read_text()) for p in sorted(d.glob("*.json"))}
+    f = M.sculpt_above_floor(sc, ["mtx-r16q1mass-s1", "mtx-r16q1mass-s2"])
+    assert not f["0.01"]["pass"] and not f["eps_s=0.5"]["pass"] and 1.0 < f["0.01"]["z"] < 3.0, f
+    assert abs(f["0.01"]["distance"] - 0.043) < 0.001 and abs(f["0.01"]["floor"] - 0.031) < 0.001, f
+    assert f["0.1"]["pass"], f

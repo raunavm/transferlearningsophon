@@ -1846,6 +1846,35 @@ def _floor50_cell(sculpt: dict, ms: list, fmt_pm) -> str:
     return V4.tok("p", float(np.mean(fl)), sd) if V4.tokens(fmt_pm) else fmt_pm(float(np.mean(fl)), sd)
 
 
+SCULPT_FLOOR_WPS = ("0.1", "0.01", "eps_s=0.5")       # tab:sculpt's working points: eps_B 10%, 1%; eps_S 50%
+
+
+def sculpt_above_floor(sculpt: dict, ms: list) -> dict:
+    """PI 2026-11-21: how far a network's Jensen-Shannon distance (the mean over its runs ms) lies above the distance a
+    random selection of as many QCD jets shows, at each working point of tab:sculpt: {wp: {distance, sd_runs, floor,
+    sd_floor, z, pass}}, sigma^2 = the run SD^2 + the floor's SD^2 over random selections (_floor_sd), pass when the
+    distance exceeds the floor by more than 3 sigma. At 50% signal efficiency each run's cut passes its own number of QCD
+    jets, so the floor is the mean over runs (_floor50_cell). No caption or sentence claims sculpting at a working point
+    that does not pass (tests/test_mlst_results.py)."""
+    ds = [sculpt[m] for m in ms if m in sculpt]
+    k = {int(np.count_nonzero(d["hist_before"])) for d in ds}
+    if len(k) != 1:
+        raise SystemExit(f"FATAL: the soft-drop histograms of {ms} have different filled bins")
+    k, out = k.pop(), {}
+    for wp in SCULPT_FLOOR_WPS:
+        if wp.startswith("eps_s") and not all("sig_eff_50" in d for d in ds):
+            continue
+        at = [d["sig_eff_50"] if wp.startswith("eps_s") else d["working_points"][wp] for d in ds]
+        dist = [math.sqrt(a["jsd"]) for a in at]
+        floor = float(np.mean([_floor_distance(k, a["n_pass"], d.get("n_qcd")) for a, d in zip(at, ds)]))
+        sd_floor = _floor_sd(k, int(round(np.mean([a["n_pass"] for a in at]))), ds[0].get("n_qcd"))
+        sd_runs = float(np.std(dist, ddof=1)) if len(dist) > 1 else 0.0
+        mu, sigma = float(np.mean(dist)), math.hypot(sd_runs, sd_floor)
+        out[wp] = {"distance": mu, "sd_runs": sd_runs, "floor": floor, "sd_floor": sd_floor, "z": (mu - floor) / sigma,
+                   "pass": mu - floor > 3 * sigma}
+    return out
+
+
 def table_sculpt(sculpt, runs, fmt_pm, rows, label: dict | None = None) -> str:
     """A14 with M2 (PI 2026-11-07): at each QCD efficiency, the Jensen-Shannon distance (x 10^2) between the
     soft-drop mass distributions of all QCD test jets and of those passing the cut on 1 - p_QCD, and the share of
@@ -4914,6 +4943,24 @@ SOPHON_NOTE = ("Below the rule, the released Sophon checkpoint~\\cite{sophon}, p
                "controlled comparison: it was pretrained on another stream of training jets, read by weaver's loader (our "
                "runs draw a fresh seeded stream every epoch), from its own initialization, and selected by its own "
                "checkpoint rule (ours: the best validation epoch of the last ten).")
+# the top and quark/gluon claims of the tables that print each metric (PI 2026-11-21), from the paired test-jet bootstrap
+# of every printed network and metric on the v5 probes (bootstrap/l3_v5/*.all.json, |delta| > 3 sigma of the runs and the
+# test jets); gallery_labelset.TOP_QG_PROBE_CLAIMS holds them, and tests/test_mlst_results.py checks both
+TOPQG_PROBE_SET = (" Beyond three standard deviations of the runs and the test jets, \\Kcoarse{} classes + mass is more accurate "
+                   "than \\Kfull{} classes on top tagging, with a higher $R_{50}$; no other label set or mass network "
+                   "differs from \\Kfull{} classes in these metrics, nor a mass network from its own label set.")
+TOPQG_PROBE_R30 = (" In $R_{30}$ on top and quark/gluon tagging no linear probe differs from \\Kfull{} classes by more "
+                   "than three standard deviations of the runs and the test jets, nor a mass network from its own label "
+                   "set.")
+TOPQG_PROBE_AUC = (" As linear probes, beyond three standard deviations of the runs and the test jets, \\Kcoarse{} classes + mass "
+                   "has a higher AUC than \\Kfull{} classes on top tagging and a lower one on Pythia quark/gluon tagging, "
+                   "and the random partitions a lower one on top tagging; no other top or quark/gluon AUC of a linear "
+                   "probe differs from \\Kfull{} classes, nor of a mass network from its own label set.")
+TOPQG_PROBE_FULL = (" Beyond three standard deviations of the runs and the test jets, on top tagging \\Kcoarse{} classes + mass "
+                    "has a higher accuracy, $R_{50}$ and AUC than \\Kfull{} classes and the random partitions, taken "
+                    "together, a lower $R_{50}$ and AUC, and on Pythia quark/gluon tagging \\Kcoarse{} classes + mass has a lower "
+                    "AUC; no other difference from \\Kfull{} classes, or of a mass network from its own label set, "
+                    "passes in these metrics.")
 SOPHON_SHORT = "Below the rule, the released Sophon checkpoint, outside the controlled comparison (table~\\ref{tab:probes})."
 SOPHON_ZERO = (" Its top and quark/gluon probes set the missing inputs to zero, where our rows use the substitution "
                "chosen on validation.")
@@ -4941,7 +4988,7 @@ CAPTIONS = {
                "accuracy, AUC and the background rejections $R_{50}$ and $R_{30}$, $1/\\epsB$ at 50\\% and 30\\% signal "
                "efficiency. "
                + RATIO_COL + " " + SPREAD
-               + " " + KIN_NOTE + " " + SOPHON_NOTE + SOPHON_ZERO + " " + AUC_DEF + " $^{*}$: a probe that did not converge."),
+               + TOPQG_PROBE_FULL + " " + KIN_NOTE + " " + SOPHON_NOTE + SOPHON_ZERO + " " + AUC_DEF + " $^{*}$: a probe that did not converge."),
     "probes_n": ("tab:probesn", "The training-size points of the linear probes below each task's largest training set."),
     "ft": ("tab:ft", "The training-size points of the fine-tuned networks below each task's full training set."),
     "probes_n_full": ("tab:probesnfull", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, trained on "
@@ -5465,7 +5512,7 @@ CAPTION_SHORT = {
     "probes": ("Linear probes of table~\\ref{tab:summary} on top and quark/gluon tagging, Pythia and Herwig, in accuracy "
               "and $R_{50}$, the inverse background efficiency at 50\\% signal efficiency. The missing inputs "
               "(table~\\ref{tab:inputs}) are \\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon, "
-              "chosen on validation, and zero for the released Sophon checkpoint. The 17-class partitions are in the supplementary material." + _runs("set", "mass")),
+              "chosen on validation, and zero for the released Sophon checkpoint." + TOPQG_PROBE_SET + " The 17-class partitions are in the supplementary material." + _runs("set", "mass")),
     "probes_n": ("Linear probes of table~\\ref{tab:summary} at the smaller training sets in the header, in accuracy "
                 "on class-balanced JetClass-II and JetClass and in $R_{30}$, the inverse background efficiency at "
                 "30\\% signal efficiency, on top and quark/gluon tagging, Pythia and Herwig. Training jets are counted "
@@ -5683,7 +5730,7 @@ CAPTION_SHORT = {
     "summary": ("Accuracy on class-balanced JetClass-II (at most 5,000 test jets a class) and JetClass and $R_{30}$, the "
                "inverse background efficiency at 30\\% signal efficiency, on top and quark/gluon tagging, of linear "
                "probes and fine-tuned networks. The released Sophon checkpoint's zero-filled top and quark/gluon probes "
-               "are in table~\\ref{tab:probes}."
+               "are in table~\\ref{tab:probes}." + TOPQG_PROBE_R30
                + _runs("set", "flav", "mass", "rand")),
     "masseffect": ("The networks pretrained with 162 and 17 classes, without and with an added mass output, on every "
                   "task, metric and read-out (rows). Definitions, training sets and inputs are those of "
@@ -5693,7 +5740,7 @@ CAPTION_SHORT = {
     "summary_auc": ("The area under the receiver operating characteristic curve (AUC) of the linear probes and "
                    "fine-tuned networks of table~\\ref{tab:summary}, on the same sets, averaged on JetClass-II and "
                    "JetClass over the classes, each against the rest. The released Sophon checkpoint's dashes are "
-                   "those of table~\\ref{tab:summary}." + _runs("set", "flav", "mass", "rand")),
+                   "those of table~\\ref{tab:summary}." + TOPQG_PROBE_AUC + _runs("set", "flav", "mass", "rand")),
     "published": ("Published models beside ours, the mean $\\pm$ standard deviation over three runs. Models marked "
                  "fine-tuned and OmniLearned are pretrained on other data, training jets counting the downstream set. "
                  "AUC is the area under the receiver operating characteristic curve, on JetClass "

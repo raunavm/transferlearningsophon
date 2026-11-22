@@ -17,7 +17,7 @@ NO_RAND = "Random partitions, which merge the pair's classes differently, are in
 COUNTS = {}       # PC-jc2, PC-jc1: the computed count sentence (gallery_perclass), "" without per-class values
 # a sentence that depends on the data read, {name} in a caption (gallery_physics sets "probe_note": the mass probe is
 # centred on one training median, the truth-free refit atlas_res_v3, the only mass files read)
-FILLS = {"probe_note": "", "xbs_widen": "", "top_qg_probe": ""}
+FILLS = {"probe_note": "", "xbs_widen": ""}
 
 CAPTIONS = {
     "F1": (
@@ -32,7 +32,9 @@ CAPTIONS = {
     ),
     "F2": (
         'With linear probes, 43 and 17 classes and every 17-class partition are less accurate on JetClass-II than 188 '
-        'classes{top_qg_probe}. Points are means ±1 standard deviation over the runs '
+        'classes. On top and quark/gluon tagging no network differs from 188 classes in R30 by more than three '
+        'standard deviations; in accuracy, R50 and AUC some do (tables {tab:probes} and {tab:summaryauc}). '
+        'Points are means ±1 standard deviation over the runs '
         'of figure {fig:F1}, over the five random partitions, or over three initializations of the untrained random '
         'network, the linear-probe reference, beyond the // breaks in (a) and (b). The released Sophon checkpoint, one '
         'network, appears on JetClass-II and JetClass only. R30 is the inverse background efficiency at 30% signal '
@@ -207,7 +209,7 @@ CAPTIONS = {
         'jets and those passing a cut on the summed QCD output, against QCD efficiency eps_B, of (a) the pretraining '
         'head used directly (dash-dotted) and (b) the networks fine-tuned on JetClass-II, with training from scratch '
         'in grey, on logarithmic axes but for the linear y axis of (b). Bands, for 188 classes and from scratch only, are ±1 standard deviation over '
-        'runs; the dotted line in (a) is a random selection. Values are in table {tab:sculpt}.'
+        'runs; the dotted line in each panel is a random selection of as many QCD jets. Values are in table {tab:sculpt}.'
     ),
     **{k: (
         'Qualitatively and in this projection, the 188-class frozen features separate X→bb̄, X→cc̄ and X→qq̄ more '

@@ -1231,9 +1231,8 @@ PAGES = [
 import dataclasses  # noqa: E402
 import gallery_captions  # noqa: E402  the paper's captions replace those above (PI 2026-11-12)
 
-# PI 2026-11-21: Fig. 2's clause on top and quark/gluon tagging from the paired test-jet bootstrap of every printed
-# network and metric (bootstrap/l3_v5/*.all.json, the v5 probes the figure draws): no caption says "no difference"
-# while any printed metric passes 3 sigma; without that bootstrap (the v4 probes) the caption makes no claim there
+# PI 2026-11-21: the paired test-jet bootstrap of every printed top and quark/gluon network and metric on the v5 probes
+# (bootstrap/l3_v5/*.all.json): no caption says "no difference" while any metric it prints passes 3 sigma
 TOP_QG_BOOT = (("top tagging", "probe_top_N1200000.itop4.all.json"), ("quark/gluon tagging on Pythia jets",
                "probe_qg_N1600000.nqg.all.json"), ("quark/gluon tagging on Herwig jets", "probe_qg_herwig_N1600000.nqg.all.json"))
 TOP_QG_NAMES = {"l162": "162 classes", "r42q1": "43 classes", "r16q1": "17 classes", "l162mass": "162 classes + mass",
@@ -1242,35 +1241,26 @@ TOP_QG_NAMES = {"l162": "162 classes", "r42q1": "43 classes", "r16q1": "17 class
 TOP_QG_METRIC = {"accuracy": "accuracy", "r50": "R50", "r30": "R30", "auc": "AUC"}
 
 
-def _and(xs: list) -> str:
-    return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " and " + xs[-1]
+# the top and quark/gluon claims of the captions (PI 2026-11-21: written by hand, each scoped to what its figure or table
+# prints, Fig. 2 to R30 with a pointer to the tables): (bootstrap task, difference, metric) -> "above" or "below" 188
+# classes (or the own label set) beyond 3 sigma; every other difference of TOP_QG_BOOT's files in TOP_QG_METRIC claims
+# none. tests/test_mlst_results.py fails when the bootstrap of the v5 probes disagrees, or a caption lacks a claim.
+TOP_QG_PROBE_CLAIMS = {("top tagging", "r16q1mass-188", "accuracy"): "above", ("top tagging", "r16q1mass-188", "r50"): "above",
+                       ("top tagging", "r16q1mass-188", "auc"): "above", ("top tagging", "rand-188", "r50"): "below",
+                       ("top tagging", "rand-188", "auc"): "below",
+                       ("quark/gluon tagging on Pythia jets", "r16q1mass-188", "auc"): "below"}
 
 
-def top_qg_probe_clause(data, use_v5: bool) -> str:
-    """'; beyond three standard deviations ...' naming, per task, every network that differs from 188 classes beyond
-    3 sigma in a printed metric (above or below), or that none does; '' when the v5 probes or their bootstrap are not
-    in use (no claim)."""
-    if not use_v5:
-        return ""
-    parts = []
-    for task, f in TOP_QG_BOOT:
-        p = data / "bootstrap" / "l3_v5" / f
-        if not p.exists():
-            return ""
-        hits = []
-        for name, d in json.loads(p.read_text())["diffs"].items():
-            a = name.removesuffix("-188")
-            if a == name:
-                continue
-            better = lambda m, x: x["delta"] < 0 if m == "auc" else x["delta"] > 0      # noqa: E731 (1 - AUC)
-            got = {side: [TOP_QG_METRIC[m] for m in TOP_QG_METRIC if (x := d.get(m)) and x.get("pass")
-                          and better(m, x) == (side == "above")] for side in ("above", "below")}
-            hits += [f"{TOP_QG_NAMES[a]} {side} in {_and(ms)}" for side, ms in got.items() if ms]
-        parts.append(f"on {task}, " + (_and(hits) if hits else "no network"))
-    return ("; against 188 classes beyond three standard deviations of the runs and the test jets, "
-            + "; ".join(parts))
+def top_qg_passes(doc: dict) -> dict:
+    """{(difference, metric): "above" | "below"} of a TOP_QG_BOOT file: each difference passing 3 sigma (AUC as 1 - AUC)."""
+    out = {}
+    for name, d in doc["diffs"].items():
+        for m in TOP_QG_METRIC:
+            x = d.get(m)
+            if x and x.get("pass"):
+                out[(name, m)] = "above" if (x["delta"] < 0 if m == "auc" else x["delta"] > 0) else "below"
+    return out
 
 
-gallery_captions.FILLS["top_qg_probe"] = top_qg_probe_clause(P.DATA, M.V4.check_v5(P.DATA))
 PAGES = [dataclasses.replace(p, caption=gallery_captions.fill(SUPPLEMENT_CAPTIONS[p.id])) if p.id in SUPPLEMENT_CAPTIONS
          else p for p in gallery_captions.apply(PAGES)]

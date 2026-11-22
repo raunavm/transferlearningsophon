@@ -39,11 +39,11 @@ flavor: merging them leaves the resonant classes unchanged but costs the QCD pai
 (table~\ref{tab:pairs}) and the one discriminant that sums QCD classes
 (table~\ref{tab:usecase}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of tab:pairs show 162 above 188
 Add an auxiliary mass regression: it puts the jet mass into the frozen features (table~\ref{tab:mass} and
-figure~\ref{fig:f9a}). Its effect on mass sculpting is resolved only for the \Kres-class model at a QCD
-efficiency of \SculptEffHigh, where it reduces it (table~\ref{tab:sculptboot}). Its cost to the classification of the pretraining classes
+figure~\ref{fig:f9a}). Its effect on mass sculpting is not resolved: no mass network differs from its own label set by more
+than three times the uncertainty (table~\ref{tab:sculptboot}). Its cost to the classification of the pretraining classes
 is small; after fine-tuning on top tagging neither label set with it shows a change beyond the uncertainty
 of $R_{30}$, and \MlstMassNRunsWord{} runs per model cannot exclude a modest one
-(section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; the sculpting clause is gallery_placement.F10B_STATED's 162mass-162 at eps_B 10% (the only mass-regression difference beyond 3 sigma in sculpting_boot.json, PI 2026-11-09); as section 4.6 states, MlstFtTopRthirtyResMassOverResPr and MlstFtTopRthirtyCoarseMassOverCoarsePr read "equal within" under the Methods two-run rule (raw R30 today: 1.12 and 0.89; 0.90 and 0.92); if either states a direction beyond MlstBootTestMaxRthirtyFt, rewrite both sections
+(section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; the sculpting clause: gallery_placement.F10B_STATED is empty under L3 (no mass-regression difference beyond 3 sigma); as section 4.6 states, MlstFtTopRthirtyResMassOverResPr and MlstFtTopRthirtyCoarseMassOverCoarsePr read "equal within" under the Methods two-run rule (raw R30 today: 1.12 and 0.89; 0.90 and 0.92); if either states a direction beyond MlstBootTestMaxRthirtyFt, rewrite both sections
 For benchmarks with missing inputs, compare label sets by fine-tuning with the missing input features
 set to zero, which gives every label set identical inputs; input dropout during pretraining, which
 replaces some inputs with zeros, is the published alternative~\cite{omnilearn,jpjepa}. The label set matters most where the features stay frozen or the fine-tuning set is small: after

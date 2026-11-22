@@ -96,17 +96,14 @@ classes, the larger loss share at \Kcoarse{} classes shows no larger cost; with 
 per model a modest one cannot be excluded, and a pair of models with the same loss share at both label
 sets would test it.
 
-% PI 2026-11-09: the main text reports exactly the sculpting differences beyond 3 sigma (tab:sculptboot,
-% gallery_placement.F10B_STATED, tested against sculpting_boot.json) and nothing else; figures, tables and the
-% floor are in appendix sec:app-sculpt.
-A cut on the pretraining head of the \Kmid- or the \Kcoarse-class model sculpts the QCD mass distribution
-more than a cut on the \Kfull-class head, each at one working point, and the auxiliary mass regression reduces
-the sculpting by the \Kres-class head. These are the only differences between pretraining heads that exceed
-three times their uncertainty (table~\ref{tab:sculptboot}): the \Kcoarse-class head at a QCD efficiency of
-\SculptEffLow, the \Kmid-class head at \SculptEffHigh{} and the \Kres-class head with the auxiliary mass
-regression at \SculptEffHigh. Every other difference lies within its uncertainty, among them the auxiliary mass
-regression at \Kcoarse{} classes and the three random partitions with controlled flavor boundaries against
-the \Kfull-class model (appendix~\ref{sec:app-sculpt}).
+% PI 2026-11-13 (L3): no sculpting difference passes (gallery_placement.F10B_STATED is empty); PI 2026-11-21: no
+% sentence claims sculpting at a working point unless the distance passes 3 sigma above the random-selection floor
+% (mlst_results.sculpt_above_floor, tests/test_mlst_results.py); figures, tables and the floor are in sec:app-sculpt.
+No difference between pretraining heads in how much a cut on them sculpts the QCD mass distribution exceeds
+three times its uncertainty, at a QCD efficiency of \SculptEffHigh{} or \SculptEffLow{} or at the cut that keeps
+half of the resonant jets (table~\ref{tab:sculptboot}): neither a coarser label set against the \Kfull-class
+model, nor the auxiliary mass regression against its own label set, nor the three random partitions with
+controlled flavor boundaries (appendix~\ref{sec:app-sculpt}).
 
 % BEGIN XBX
 \subsection{$X\to b\bar b$ and $X\to bs$ resonance tagging}\label{sec:xbx}

@@ -351,6 +351,15 @@ def _sculpt_ratios(sc: dict, ms: list, wp: str, before: np.ndarray) -> tuple:
     return np.mean(r, axis=0), (np.std(r, axis=0, ddof=1) if len(ms) > 1 else np.zeros(r.shape[1]))
 
 
+def _random_ratio_sd(d: dict, wp: str, before: np.ndarray) -> np.ndarray:
+    """PI 2026-11-21 (the floor on every sculpting figure, in its units): the SD per bin of the ratio a random selection
+    of the working point's n_pass QCD jets shows, sqrt((1 - p) / (n p) (1 - n / N)), drawn without replacement from the
+    N QCD test jets of the inclusive distribution p (mlst_results._floor_distance's finite-population correction)."""
+    n, big = d["working_points"][wp]["n_pass"], d["n_qcd"]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return np.where(before > 0, np.sqrt((1 - before) / (n * before) * (1 - n / big)), np.nan)
+
+
 def _sculpt_ratio_range(sc: dict) -> list:
     """Every ratio and band edge of the family's three figures, so they share one ratio range."""
     out = [1.0]
@@ -362,7 +371,8 @@ def _sculpt_ratio_range(sc: dict) -> list:
         before = before / before.sum()
         for wp, _ in P.WPS:
             r, sd = _sculpt_ratios(sc, ms, wp, before)
-            out += [x for x in np.concatenate([r - sd, r + sd]) if np.isfinite(x)]
+            rnd = _random_ratio_sd(sc[ms[0]], wp, before)
+            out += [x for x in np.concatenate([r - sd, r + sd, 1 - rnd, 1 + rnd]) if np.isfinite(x)]
     return out
 
 
@@ -398,6 +408,11 @@ def _sculpt_panels(path: pathlib.Path, rows: tuple) -> None:
             if len(ms) > 1:         # +-1 SD over runs around each ratio step
                 rx.fill_between(e, np.append(r - sd, (r - sd)[-1]), np.append(r + sd, (r + sd)[-1]), step="post",
                                 color=SELECTION_COLOUR[k_wp], alpha=L.BAND, linewidth=0)
+            # the floor: +-1 SD of a random selection of as many QCD jets, a reference (black dotted, L6); the 1% pair
+            # is always the outer one (fewer jets)
+            rnd = _random_ratio_sd(sc[ms[0]], wp, before)
+            for sgn in (-1, 1):
+                rx.stairs(1 + sgn * rnd, e, baseline=None, **S.REFERENCE, zorder=1.2)
             peak = max(peak, after.max())
         ax.set_xlim(e[0], e[-1])
         ax.tick_params(labelbottom=False)
@@ -487,7 +502,7 @@ def _sculpt_panel(ax, sc: dict, rows: tuple, runs: dict | None = None, direct: b
     ax.set_yscale("log")
     ax.autoscale_view()
     S.log_axis(ax, "x", force=True)
-    S.log_axis(ax, "y", force=floor)        # without the floor the range is under a decade: linear labels
+    S.log_axis(ax, "y", force=True)
     S.labels(ax, r"QCD efficiency ($\varepsilon_B$)", "Jensen–Shannon distance")
 
 
@@ -517,7 +532,7 @@ def draw_f10b(path: pathlib.Path) -> None:
     fig = S.figure_cm(S.PRINT_W, top + h + 1.0)
     axes = [S.axes_cm(fig, 1.6, top, w, h), S.axes_cm(fig, 1.6 + w + 1.45, top, w, h)]
     _sculpt_panel(axes[0], _sculpt(), SCULPT_ROWS, direct=True)
-    _sculpt_panel(axes[1], sc_ft, SCULPT_ROWS + ("SCRATCH",), {**RUNS, "SCRATCH": scratch}, floor=False)
+    _sculpt_panel(axes[1], sc_ft, SCULPT_ROWS + ("SCRATCH",), {**RUNS, "SCRATCH": scratch})
     S.title(axes[0], "pretraining head used directly")
     S.title(axes[1], "fine-tuned")
     handles = dict(zip(*reversed(axes[1].get_legend_handles_labels())))
@@ -559,7 +574,7 @@ def draw_f10_ft(path: pathlib.Path) -> None:
     scratch = [f"scratch-s{k}" for k in (1, 2, 3)]
     if not all(m in sc for m in scratch):
         raise Absent(f"the three from-scratch networks' sculpting files ({SCULPT_FT}/scratch-s<k>.json)")
-    _sculpt_curves(path, sc, SCULPT_ROWS + ("SCRATCH",), {**RUNS, "SCRATCH": scratch}, floor=False)
+    _sculpt_curves(path, sc, SCULPT_ROWS + ("SCRATCH",), {**RUNS, "SCRATCH": scratch})
 
 
 def draw_f10_ft_part(path: pathlib.Path) -> None:
@@ -568,7 +583,7 @@ def draw_f10_ft_part(path: pathlib.Path) -> None:
     sc = _sculpt_ft()
     if not any(m in sc for a in S.CONTROLS for m in RUNS[a]):
         raise Absent("no fine-tuned sculpting file of the flavor-boundary partitions")
-    _sculpt_curves(path, sc, SCULPT_PARTITIONS, POOLED, floor=False)
+    _sculpt_curves(path, sc, SCULPT_PARTITIONS, POOLED)
 
 
 # ------------------------------------------------------------------ F10c (DisCo Fig. 3's plane)
@@ -596,6 +611,14 @@ def draw_f10c(path: pathlib.Path) -> None:
         drawn += 1
     if not drawn:
         raise Absent(f"no {F10C_KEY} in the sculpting files (head/sculpting_v3/*_sculpting.json)")
+    # the floor (PI 2026-11-21): a random selection of the n = N / R50 QCD jets a cut at that rejection passes shows a
+    # divergence of (k - 1) / (8 n ln 2) (1 - n / N) (mlst_results._sculpt_floor, finite-population corrected)
+    d0 = next(sc[m] for row in F10C_ROWS for m in POOLED[row] if F10C_KEY in sc.get(m, {}))
+    k, big = int(np.count_nonzero(d0["hist_before"])), d0["n_qcd"]
+    ax.autoscale_view()
+    rej = np.geomspace(*ax.get_xlim(), 64)
+    n = big / rej
+    ax.plot(rej, 8 * n * np.log(2) / ((k - 1) * (1 - n / big)), **S.REFERENCE, zorder=1.5, label="random selection")
     S.log_axis(ax, "x")         # the autoscaled limits hold the bars
     S.log_axis(ax)
     S.labels(ax, r"QCD rejection at 50% resonant efficiency ($R_{50}$)", r"$1/\mathrm{JSD}_{50}$")
@@ -948,7 +971,8 @@ SUPPLEMENT_CAPTIONS = {
         f"cut on 1 - g_QCD, one minus the summed QCD score of the network output used directly, at QCD efficiencies "
         f"of 10% (dark grey) and 1% (light grey), for the networks pretrained with {nets}, each named above its panel. Each "
         f"histogram is the mean over {runs}, and the lower panels show the ratio to the inclusive "
-        f"distribution with a band of ±1 standard deviation over runs, on one ratio range for figures "
+        f"distribution with a band of ±1 standard deviation over runs and, dotted, ±1 standard deviation of a "
+        f"random selection of as many QCD jets (the outer pair at 1%), on one ratio range for figures "
         f"{{fig:F10a}}, {{fig:F10a-mass}} and {{fig:F10a-flav}}. Above about 300 GeV few jets pass the 1% cut, so "
         f"the ratio swings from bin to bin. Figure {{fig:{dist}}} summarizes each distortion as a distance."
     ) for pid, nets, runs, dist in (
@@ -974,7 +998,8 @@ SUPPLEMENT_CAPTIONS = {
         "Points higher up distort the QCD mass less and points further right reject more QCD jets. Points are means "
         "over three pretraining runs, two for networks with an added mass regression (+ mass, lighter shades) and the "
         "flavor-boundary partitions, the five random partitions with one run each, and bars show the standard "
-        "deviation over runs. The values are in tables {tab:sculpt} and, for the 17-class partitions, {tab:sculptfull}, "
+        "deviation over runs; the dotted line is a random selection of as many QCD jets as a cut at that rejection "
+        "passes. The values are in tables {tab:sculpt} and, for the 17-class partitions, {tab:sculptfull}, "
         "at 50% resonant efficiency."
     ),
     "F10-ft": (
@@ -983,7 +1008,7 @@ SUPPLEMENT_CAPTIONS = {
         'class-balanced JetClass-II jets and scored on two million jets of the mixed test sample (38.7% two-prong, '
         '40.8% three- and four-prong, 20.5% QCD jets), with training from scratch in grey. Bands, for 188 classes and from scratch only (the others in the tables), show ±1 standard deviation '
         'over three pretraining runs, two for networks with an added mass regression (+ mass), or three trainings from '
-        'scratch. The random-selection floor, the dotted line of figure {fig:F10b}, lies below the range shown, and the'
+        'scratch. The dotted line is a random selection of as many QCD jets, and the'
         ' values at 10% and 1% QCD efficiency are in table {tab:sculpt}.'
     ),
     "F10-ft-part": (
@@ -992,8 +1017,8 @@ SUPPLEMENT_CAPTIONS = {
         ' for the 17-class partitions fine-tuned on one million class-balanced JetClass-II jets, with 188 and 17 '
         'classes for reference. Curves are means over two pretraining runs per partition with a named '
         'flavor boundary, three for 188 and 17 classes, or the five random partitions, and the band, for 188 classes '
-        'only, shows ±1 standard deviation, the others being in the tables. The random-selection floor of figure '
-        '{fig:F10b} lies below the range shown, and the values at 10% and 1% QCD efficiency are in table {tab:sculpt}.'
+        'only, shows ±1 standard deviation, the others being in the tables. The dotted line is a random selection of '
+        'as many QCD jets, and the values at 10% and 1% QCD efficiency are in table {tab:sculpt}.'
     ),
     "PT-part": (
         'With linear probes on JetClass-II, every 17-class partition is less accurate than the network pretrained with '
