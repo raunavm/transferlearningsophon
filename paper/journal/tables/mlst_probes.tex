@@ -1,9 +1,13 @@
 \begin{landscape}
-\begin{table*}[t]
-\centering
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
 \setlength{\tabcolsep}{6pt}
-\caption{Linear probes of table~\ref{tab:summary} on top and quark/gluon tagging, Pythia and Herwig, in accuracy and $R_{50}$, the inverse background efficiency at 50\% signal efficiency. The missing inputs (table~\ref{tab:inputs}) are \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon, chosen on validation, and zero for the released Sophon checkpoint. The 17-class partitions are in the supplementary material. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network. Bold marks the best value in their column and those within three standard deviations (run spreads and any stored test-jet bootstrap). References (random network, kinematic-inputs network, released Sophon checkpoint) are never bold. $^{\S}$~marks a value from a single run.}
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\setlength{\abovecaptionskip}{0pt}
+\captionof{table}{Linear probes of table~\ref{tab:summary} on top and quark/gluon tagging, Pythia and Herwig, in accuracy and $R_{50}$, the inverse background efficiency at 50\% signal efficiency. The missing inputs (table~\ref{tab:inputs}) are \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon, chosen on validation, and zero for the released Sophon checkpoint. Beyond three standard deviations of the runs and the test jets, \Kcoarse{} classes + mass is more accurate than \Kfull{} classes on top tagging, with a higher $R_{50}$; no other label set or mass network differs from \Kfull{} classes in these metrics, nor a mass network from its own label set. The 17-class partitions are in the supplementary material. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network. Bold marks the best value in their column and those within three standard deviations (run spreads and any stored test-jet bootstrap). References (random network, kinematic-inputs network, released Sophon checkpoint) are never bold. $^{\S}$~marks a value from a single run. $^{\P}$~marks a run spread below the last digit shown.}
 \label{tab:probes}
+\par\medskip
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
  & \multicolumn{2}{c}{top tagging} & \multicolumn{2}{c}{quark/gluon, Pythia jets} & \multicolumn{2}{c}{quark/gluon, Herwig jets} \\
@@ -11,17 +15,19 @@
  & accuracy & $R_{50}$ & accuracy & $R_{50}$ & accuracy & $R_{50}$ \\
 \midrule
 \multicolumn{7}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & 0.9112\,$\pm$\,0.0015 & 87\,$\pm$\,4 & {\fontseries{b}\selectfont 0.8076\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 26.17\,$\pm$\,0.35} & {\fontseries{b}\selectfont 0.7229\,$\pm$\,0.0033} & {\fontseries{b}\selectfont 11.81\,$\pm$\,0.10} \\
+\Kfull{} classes & 0.9112\,$\pm$\,0.0015 & 87\,$\pm$\,4 & {\fontseries{b}\selectfont 0.8076\,$\pm$\,0.0004} & {\fontseries{b}\selectfont 26.17\,$\pm$\,0.34} & {\fontseries{b}\selectfont 0.7229\,$\pm$\,0.0033} & {\fontseries{b}\selectfont 11.81\,$\pm$\,0.10} \\
 \Kres{} classes & {\fontseries{b}\selectfont 0.9098\,$\pm$\,0.0031} & 79\,$\pm$\,9 & {\fontseries{b}\selectfont 0.8051\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 25.6\,$\pm$\,0.4} & {\fontseries{b}\selectfont 0.7234\,$\pm$\,0.0022} & {\fontseries{b}\selectfont 11.6\,$\pm$\,0.4} \\
-\Kres{} classes + mass & {\fontseries{b}\selectfont 0.9145\,$\pm$\,0.0030} & {\fontseries{b}\selectfont 100\,$\pm$\,5} & {\fontseries{b}\selectfont 0.80740\,$\pm$\,0.00020} & {\fontseries{b}\selectfont 25.61\,$\pm$\,0.11} & {\fontseries{b}\selectfont 0.7223\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 11.83\,$\pm$\,0.17} \\
-\Kmid{} classes & 0.9101\,$\pm$\,0.0019 & 87.7\,$\pm$\,3.5 & {\fontseries{b}\selectfont 0.8055\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 25.7\,$\pm$\,0.6} & 0.7206\,$\pm$\,0.0005 & {\fontseries{b}\selectfont 11.52\,$\pm$\,0.23} \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.9145\,$\pm$\,0.0030} & {\fontseries{b}\selectfont 100\,$\pm$\,4} & {\fontseries{b}\selectfont 0.80740\,$\pm$\,0.00020} & {\fontseries{b}\selectfont 25.61\,$\pm$\,0.11} & {\fontseries{b}\selectfont 0.7223\,$\pm$\,0.0006} & {\fontseries{b}\selectfont 11.83\,$\pm$\,0.17} \\
+\Kmid{} classes & 0.9101\,$\pm$\,0.0019 & 87.8\,$\pm$\,3.5 & {\fontseries{b}\selectfont 0.8055\,$\pm$\,0.0009} & {\fontseries{b}\selectfont 25.7\,$\pm$\,0.6} & 0.7206\,$\pm$\,0.0005 & {\fontseries{b}\selectfont 11.52\,$\pm$\,0.23} \\
 \Kcoarse{} classes & {\fontseries{b}\selectfont 0.9152\,$\pm$\,0.0010} & {\fontseries{b}\selectfont 97\,$\pm$\,4} & {\fontseries{b}\selectfont 0.8064\,$\pm$\,0.0014} & {\fontseries{b}\selectfont 25.8\,$\pm$\,0.7} & {\fontseries{b}\selectfont 0.7201\,$\pm$\,0.0028} & {\fontseries{b}\selectfont 11.50\,$\pm$\,0.16} \\
-\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.9196\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 118\,$\pm$\,9} & {\fontseries{b}\selectfont 0.8051\,$\pm$\,0.0016} & {\fontseries{b}\selectfont 25.836\,$\pm$\,0.024} & {\fontseries{b}\selectfont 0.7248\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 11.921\,$\pm$\,0.009} \\
-random network & 0.8867\,$\pm$\,0.0013 & 25.0\,$\pm$\,0.8 & 0.7851\,$\pm$\,0.0018 & 19.40\,$\pm$\,0.28 & 0.7205\,$\pm$\,0.0021 & 10.58\,$\pm$\,0.11 \\
+\Kcoarse{} classes + mass & {\fontseries{b}\selectfont 0.9196\,$\pm$\,0.0015} & {\fontseries{b}\selectfont 118\,$\pm$\,9} & {\fontseries{b}\selectfont 0.8051\,$\pm$\,0.0016} & {\fontseries{b}\selectfont 25.86\,$\pm$\,0.09} & {\fontseries{b}\selectfont 0.7249\,$\pm$\,0.0011} & {\fontseries{b}\selectfont 11.93}$^{\P}$ \\
+random network & 0.8867\,$\pm$\,0.0013 & 25.0\,$\pm$\,0.8 & 0.7851\,$\pm$\,0.0018 & 19.40\,$\pm$\,0.29 & 0.7205\,$\pm$\,0.0021 & 10.58\,$\pm$\,0.11 \\
 \Kfull{} classes, kinematic inputs only & 0.9163$^{\S}$ & 94$^{\S}$ & -- & -- & -- & -- \\
 \midrule
-released Sophon checkpoint & 0.8882$^{\S}$ & 39$^{\S}$ & 0.7917$^{\S}$ & 19.30$^{\S}$ & 0.7153$^{\S}$ & 10.32$^{\S}$ \\
+released Sophon checkpoint & 0.9114$^{\S}$ & 77$^{\S}$ & 0.8065$^{\S}$ & 25.3$^{\S}$ & 0.7215$^{\S}$ & 11.69$^{\S}$ \\
 \bottomrule
 \end{tabular*}
-\end{table*}
+\end{minipage}
+\end{center}
+}
 \end{landscape}

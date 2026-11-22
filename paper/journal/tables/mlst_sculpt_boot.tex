@@ -4,7 +4,7 @@
 \setlength{\tabcolsep}{6pt}
 \addtolength{\belowcaptionskip}{\medskipamount}
 \begin{longtable}{@{\extracolsep{\fill}}lccccc@{}}
-\caption{Differences in mass sculpting between pairs of pretraining heads used directly (the first part of table~\ref{tab:sculpt}), first minus second, at the cuts of that table. Each mass network is compared with its own label set and every other network with \Kfull{} classes. $\Delta$, positive where the first sculpts more, is the difference of mean Jensen--Shannon distances. The run columns give each network's standard deviation over its runs, the bootstrap column that of $\Delta$ over 200 replicas of the test jets, and $\sigma$ adds the three in quadrature, a difference counting where $|\Delta|/\sigma$ exceeds three. A label set has \MlstNRunsWord{} pretraining runs, a mass network and a flavor-boundary partition \MlstMassNRunsWord{}.}\label{tab:sculptboot}\\
+\caption{Differences in mass sculpting between pairs of pretraining heads used directly (the first part of table~\ref{tab:sculpt}), first minus second, at the cuts of that table. Each mass network is compared with its own label set and every other network with \Kfull{} classes. $\Delta$, positive where the first sculpts more, is the difference of mean Jensen--Shannon distances. The run columns give each network's standard deviation over its runs, the bootstrap column that of $\Delta$ over 200 replicas of the test jets, and $\sigma$ adds the three in quadrature, a difference counting where $|\Delta|/\sigma$ exceeds three. A label set has \MlstNRunsWord{} pretraining runs, a mass network and a flavor-boundary partition \MlstMassNRunsWord{}, and the five random partitions, one run each, form one side.}\label{tab:sculptboot}\\
 \toprule
 & $\Delta$ & run SD, first & run SD, second & bootstrap SD & $\Delta/\sigma$ \\
 \midrule
@@ -16,36 +16,45 @@
 \endhead
 \multicolumn{6}{@{}l}{\textit{$\epsB = 10\%$}} \\*
 \Kres{} classes $-$ \Kfull{} classes & 0.0007 & 0.0009 & 0.0034 & 0.0006 & 0.20 \\*
+\Kres{} classes + mass $-$ \Kfull{} classes & $-$0.0082 & 0.0030 & 0.0034 & 0.0008 & $-$1.78 \\*
 \Kres{} classes + mass $-$ \Kres{} classes & $-$0.0089 & 0.0030 & 0.0009 & 0.0008 & $-$2.76 \\*
 \Kmid{} classes $-$ \Kfull{} classes & 0.0036 & 0.0027 & 0.0034 & 0.0007 & 0.81 \\*
 \Kcoarse{} classes $-$ \Kfull{} classes & 0.0019 & 0.0010 & 0.0034 & 0.0008 & 0.52 \\*
+\Kcoarse{} classes + mass $-$ \Kfull{} classes & $-$0.0052 & 0.0070 & 0.0034 & 0.0010 & $-$0.66 \\*
 \Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$0.0071 & 0.0070 & 0.0010 & 0.0008 & $-$1.00 \\*
 \multicolumn{6}{@{}l}{\textit{17-class partitions}} \\*
 \quad no flavor boundary $-$ \Kfull{} classes & 0.0024 & 0.0002 & 0.0034 & 0.0008 & 0.68 \\*
 \quad $b$-quark boundary $-$ \Kfull{} classes & 0.0016 & 0.0044 & 0.0034 & 0.0008 & 0.28 \\*
 \quad random flavor boundary $-$ \Kfull{} classes & 0.0008 & 0.0008 & 0.0034 & 0.0008 & 0.23 \\*
+\quad random partitions $-$ \Kfull{} classes & 0.0007 & 0.0012 & 0.0034 & 0.0006 & 0.19 \\*
 \noalign{\penalty-100}\addlinespace
 \multicolumn{6}{@{}l}{\textit{$\epsB = 1\%$}} \\*
 \Kres{} classes $-$ \Kfull{} classes & $-$0.0010 & 0.0029 & 0.0024 & 0.0028 & $-$0.22 \\*
+\Kres{} classes + mass $-$ \Kfull{} classes & $-$0.0006 & 0.0012 & 0.0024 & 0.0041 & $-$0.12 \\*
 \Kres{} classes + mass $-$ \Kres{} classes & 0.0004 & 0.0012 & 0.0029 & 0.0040 & 0.08 \\*
 \Kmid{} classes $-$ \Kfull{} classes & 0.0067 & 0.0074 & 0.0024 & 0.0035 & 0.79 \\*
 \Kcoarse{} classes $-$ \Kfull{} classes & 0.0122 & 0.0017 & 0.0024 & 0.0038 & 2.55 \\*
+\Kcoarse{} classes + mass $-$ \Kfull{} classes & $-$0.0011 & 0.0033 & 0.0024 & 0.0042 & $-$0.18 \\*
 \Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$0.0133 & 0.0033 & 0.0017 & 0.0039 & $-$2.45 \\*
 \multicolumn{6}{@{}l}{\textit{17-class partitions}} \\*
 \quad no flavor boundary $-$ \Kfull{} classes & 0.0070 & 0.0001 & 0.0024 & 0.0043 & 1.42 \\*
 \quad $b$-quark boundary $-$ \Kfull{} classes & 0.0082 & 0.0007 & 0.0024 & 0.0041 & 1.69 \\*
 \quad random flavor boundary $-$ \Kfull{} classes & 0.0047 & 0.0006 & 0.0024 & 0.0038 & 1.04 \\*
+\quad random partitions $-$ \Kfull{} classes & 0.0012 & 0.0035 & 0.0024 & 0.0029 & 0.24 \\*
 \noalign{\penalty-100}\addlinespace
 \multicolumn{6}{@{}l}{\textit{$\epsS = 50\%$}} \\*
 \Kres{} classes $-$ \Kfull{} classes & 0.0008 & 0.0015 & 0.0048 & 0.0039 & 0.13 \\*
+\Kres{} classes + mass $-$ \Kfull{} classes & 0.0001 & 0.0032 & 0.0048 & 0.0052 & 0.02 \\*
 \Kres{} classes + mass $-$ \Kres{} classes & $-$0.0007 & 0.0032 & 0.0015 & 0.0049 & $-$0.11 \\*
 \Kmid{} classes $-$ \Kfull{} classes & 0.0091 & 0.0023 & 0.0048 & 0.0043 & 1.33 \\*
 \Kcoarse{} classes $-$ \Kfull{} classes & 0.0122 & 0.0022 & 0.0048 & 0.0052 & 1.66 \\*
+\Kcoarse{} classes + mass $-$ \Kfull{} classes & $-$0.0035 & 0.0042 & 0.0048 & 0.0063 & $-$0.39 \\*
 \Kcoarse{} classes + mass $-$ \Kcoarse{} classes & $-$0.0157 & 0.0042 & 0.0022 & 0.0055 & $-$2.16 \\*
 \multicolumn{6}{@{}l}{\textit{17-class partitions}} \\*
 \quad no flavor boundary $-$ \Kfull{} classes & 0.0051 & 0.0045 & 0.0048 & 0.0055 & 0.60 \\*
 \quad $b$-quark boundary $-$ \Kfull{} classes & 0.0046 & 0.0055 & 0.0048 & 0.0051 & 0.52 \\*
-\quad random flavor boundary $-$ \Kfull{} classes & 0.0055 & 0.0036 & 0.0048 & 0.0051 & 0.70 \\
+\quad random flavor boundary $-$ \Kfull{} classes & 0.0055 & 0.0036 & 0.0048 & 0.0051 & 0.70 \\*
+\quad random partitions $-$ \Kfull{} classes & 0.0032 & 0.0038 & 0.0048 & 0.0043 & 0.43 \\
 \noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}
 \end{longtable}
 }
