@@ -3,7 +3,7 @@ kind: Job
 metadata:
   # Every mass estimator against the soft-drop mass, paired on the same jets (PI 2026-11-21): experiments/EVAL/
   # mass_sd_boot.py on the truth-free refit's per-jet values (atlas_res_v3). CPU, nothing trained.
-  name: mass-sd-boot-raunav
+  name: mass-sd-boot2-raunav
   namespace: cms-ml
 spec:
   backoffLimit: 1
@@ -18,10 +18,10 @@ spec:
         - |
           set -euo pipefail
           retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
-          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.21 https://github.com/raunavm/transferlearningsophon.git tls; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.24 https://github.com/raunavm/transferlearningsophon.git tls; }
           retry clone || exit 1
           cd /workspace/tls
-          O=/data/results/eval/mass_sd_boot/mass_sd_boot.json
+          O=/data/results/eval/mass_sd_boot/mass_sd_boot_v2.json
           [ ! -e ${O} ] || { echo "FATAL: ${O} exists"; exit 42; }
           python3 experiments/EVAL/mass_sd_boot.py --root /data/results/eval/atlas_res_v3 --out ${O}
           ls -la ${O}
