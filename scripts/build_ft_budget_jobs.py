@@ -249,7 +249,10 @@ FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1
 FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
                           # 2026-11-22: JetClass 1e6 best 3e-3 0.8307 (1e-3 0.8294, 1e-2 and 3e-2 diverged); JetClass-II
                           # 1e4 best 1e-2 0.1615 (3e-3 0.1608, 3e-2 diverged)
-                          ("jc1", 1_000_000): "3e-3", ("jc2b", 10_000): "1e-2"}
+                          ("jc1", 1_000_000): "3e-3", ("jc2b", 10_000): "1e-2",
+                          # 2026-11-22: quark/gluon 1e4 at its original 1e-3, 0.8056039663 (160,863 of 199,680 validation
+                          # jets) against 0.8055989583 at 3e-3 (160,862; no tie) and 0.8050 at 3e-4; no rerun
+                          ("qg", 10_000): "1e-3"}
 # the rows whose recorded rate moved from the original, in the order they settled: fixed_rate_cells' job indices follow
 # it, so a row recorded later appends and never shifts the index of a launched cell
 FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000, "scratch"),
