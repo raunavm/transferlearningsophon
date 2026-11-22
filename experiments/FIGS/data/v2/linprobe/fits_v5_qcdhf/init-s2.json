@@ -1,0 +1,557 @@
+{
+ "cells": {
+  "init": {
+   "background": {
+    "b": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.0460655737704918,
+       "is_bound": false,
+       "n_bkg_pass": 1124,
+       "rejection": 21.708185053380785,
+       "rel_stat": 0.02982749931359468
+      },
+      "r50": {
+       "eps_b": 0.11672131147540983,
+       "is_bound": false,
+       "n_bkg_pass": 2848,
+       "rejection": 8.567415730337078,
+       "rel_stat": 0.018738292224896536
+      }
+     },
+     "classes": [
+      170,
+      171,
+      172,
+      173,
+      174,
+      175,
+      176,
+      177,
+      178
+     ],
+     "n_bkg": 24400,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.04647706590086658,
+       "is_bound": false,
+       "n_bkg_pass": 1124,
+       "rejection": 21.515988167862265,
+       "rel_stat": 0.04546554066378345
+      },
+      "r50": {
+       "eps_b": 0.12065960291129774,
+       "is_bound": false,
+       "n_bkg_pass": 2838,
+       "rejection": 8.287777979305506,
+       "rel_stat": 0.028426638864961353
+      }
+     }
+    },
+    "bb": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.053756520560937604,
+       "is_bound": false,
+       "n_bkg_pass": 1587,
+       "rejection": 18.60239445494644,
+       "rel_stat": 0.025102185616940248
+      },
+      "r50": {
+       "eps_b": 0.12356886389810988,
+       "is_bound": false,
+       "n_bkg_pass": 3648,
+       "rejection": 8.09265350877193,
+       "rel_stat": 0.016556654463313048
+      }
+     },
+     "classes": [
+      161,
+      162,
+      163,
+      164,
+      165,
+      166,
+      167,
+      168,
+      169
+     ],
+     "n_bkg": 29522,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.06598539730872154,
+       "is_bound": false,
+       "n_bkg_pass": 1586,
+       "rejection": 15.15486821002783,
+       "rel_stat": 0.0401461054855624
+      },
+      "r50": {
+       "eps_b": 0.14708896242383726,
+       "is_bound": false,
+       "n_bkg_pass": 3635,
+       "rejection": 6.798606663078479,
+       "rel_stat": 0.026779528731473292
+      }
+     }
+    },
+    "c": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.030233333333333334,
+       "is_bound": false,
+       "n_bkg_pass": 907,
+       "rejection": 33.0760749724366,
+       "rel_stat": 0.03320445500854597
+      },
+      "r50": {
+       "eps_b": 0.08293333333333333,
+       "is_bound": false,
+       "n_bkg_pass": 2488,
+       "rejection": 12.057877813504824,
+       "rel_stat": 0.020048173494115636
+      }
+     },
+     "classes": [
+      179,
+      180,
+      181,
+      182,
+      183,
+      184
+     ],
+     "n_bkg": 30000,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.03362705214269663,
+       "is_bound": false,
+       "n_bkg_pass": 906,
+       "rejection": 29.737962035937407,
+       "rel_stat": 0.04502832296303405
+      },
+      "r50": {
+       "eps_b": 0.09058199971605957,
+       "is_bound": false,
+       "n_bkg_pass": 2479,
+       "rejection": 11.039720950460612,
+       "rel_stat": 0.02722276710560039
+      }
+     }
+    },
+    "light": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.0186,
+       "is_bound": false,
+       "n_bkg_pass": 279,
+       "rejection": 53.763440860215056,
+       "rel_stat": 0.05986843400892496
+      },
+      "r50": {
+       "eps_b": 0.056933333333333336,
+       "is_bound": false,
+       "n_bkg_pass": 854,
+       "rejection": 17.56440281030445,
+       "rel_stat": 0.034219295541457743
+      }
+     },
+     "classes": [
+      185,
+      186,
+      187
+     ],
+     "n_bkg": 15000,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.017792105662564693,
+       "is_bound": false,
+       "n_bkg_pass": 279,
+       "rejection": 56.20470218452222,
+       "rel_stat": 0.07591980460627598
+      },
+      "r50": {
+       "eps_b": 0.05496513128444883,
+       "is_bound": false,
+       "n_bkg_pass": 850,
+       "rejection": 18.193352342322665,
+       "rel_stat": 0.04351734698944925
+      }
+     }
+    },
+    "qcd_all": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.03939467459210287,
+       "is_bound": false,
+       "n_bkg_pass": 3897,
+       "rejection": 25.384141647421092,
+       "rel_stat": 0.016018977711073756
+      },
+      "r50": {
+       "eps_b": 0.09945209356867027,
+       "is_bound": false,
+       "n_bkg_pass": 9838,
+       "rejection": 10.0550924984753,
+       "rel_stat": 0.010081997627141645
+      }
+     },
+     "classes": [
+      161,
+      162,
+      163,
+      164,
+      165,
+      166,
+      167,
+      168,
+      169,
+      170,
+      171,
+      172,
+      173,
+      174,
+      175,
+      176,
+      177,
+      178,
+      179,
+      180,
+      181,
+      182,
+      183,
+      184,
+      185,
+      186,
+      187
+     ],
+     "n_bkg": 98922,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.02273408789303727,
+       "is_bound": false,
+       "n_bkg_pass": 3895,
+       "rejection": 43.98680979439111,
+       "rel_stat": 0.048533179878178616
+      },
+      "r50": {
+       "eps_b": 0.06538844219933422,
+       "is_bound": false,
+       "n_bkg_pass": 9802,
+       "rejection": 15.29322256908243,
+       "rel_stat": 0.029742159341247798
+      }
+     }
+    }
+   },
+   "features": "/data/results/eval/v2_linprobe_bal/init-s2/jc2bal/test/init",
+   "max_abs_p_diff": 0.0002442302896936699,
+   "n_test": 903922,
+   "probs": "/data/results/eval/v2_linprobe_bal/fits_v5_probs/init-s2/init/jc2bal_N1000000.npz",
+   "probs_sha256": "d7c1f2bda318c0bd7d9431ecb3e852202fc212831fa332d5a6dc23bb9103e1a8"
+  },
+  "init_bn": {
+   "background": {
+    "b": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.03114754098360656,
+       "is_bound": false,
+       "n_bkg_pass": 760,
+       "rejection": 32.10526315789473,
+       "rel_stat": 0.03627381250550058
+      },
+      "r50": {
+       "eps_b": 0.08766393442622951,
+       "is_bound": false,
+       "n_bkg_pass": 2139,
+       "rejection": 11.407199625993455,
+       "rel_stat": 0.02162193750322053
+      }
+     },
+     "classes": [
+      170,
+      171,
+      172,
+      173,
+      174,
+      175,
+      176,
+      177,
+      178
+     ],
+     "n_bkg": 24400,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.03353213348516405,
+       "is_bound": false,
+       "n_bkg_pass": 760,
+       "rejection": 29.8221406175196,
+       "rel_stat": 0.05481273222495412
+      },
+      "r50": {
+       "eps_b": 0.09318019507845594,
+       "is_bound": false,
+       "n_bkg_pass": 2138,
+       "rejection": 10.731894252400085,
+       "rel_stat": 0.03270160357721966
+      }
+     }
+    },
+    "bb": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.04393333784973918,
+       "is_bound": false,
+       "n_bkg_pass": 1297,
+       "rejection": 22.761757902852736,
+       "rel_stat": 0.027767067240353285
+      },
+      "r50": {
+       "eps_b": 0.11469412641419958,
+       "is_bound": false,
+       "n_bkg_pass": 3386,
+       "rejection": 8.718842291789722,
+       "rel_stat": 0.017185276463055118
+      }
+     },
+     "classes": [
+      161,
+      162,
+      163,
+      164,
+      165,
+      166,
+      167,
+      168,
+      169
+     ],
+     "n_bkg": 29522,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.05173023270445388,
+       "is_bound": false,
+       "n_bkg_pass": 1297,
+       "rejection": 19.3310555108696,
+       "rel_stat": 0.04499036471835572
+      },
+      "r50": {
+       "eps_b": 0.13316141849685897,
+       "is_bound": false,
+       "n_bkg_pass": 3384,
+       "rejection": 7.509682694042405,
+       "rel_stat": 0.027969247978229538
+      }
+     }
+    },
+    "c": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.009666666666666667,
+       "is_bound": false,
+       "n_bkg_pass": 290,
+       "rejection": 103.44827586206895,
+       "rel_stat": 0.058722021951470346
+      },
+      "r50": {
+       "eps_b": 0.0343,
+       "is_bound": false,
+       "n_bkg_pass": 1029,
+       "rejection": 29.15451895043732,
+       "rel_stat": 0.03117398431942748
+      }
+     },
+     "classes": [
+      179,
+      180,
+      181,
+      182,
+      183,
+      184
+     ],
+     "n_bkg": 30000,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.009855145922485497,
+       "is_bound": false,
+       "n_bkg_pass": 290,
+       "rejection": 101.46983188938891,
+       "rel_stat": 0.07941099877187342
+      },
+      "r50": {
+       "eps_b": 0.03743607560792511,
+       "is_bound": false,
+       "n_bkg_pass": 1028,
+       "rejection": 26.71220163334382,
+       "rel_stat": 0.04209718859680479
+      }
+     }
+    },
+    "light": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.004266666666666667,
+       "is_bound": false,
+       "n_bkg_pass": 64,
+       "rejection": 234.375,
+       "rel_stat": 0.125
+      },
+      "r50": {
+       "eps_b": 0.017333333333333333,
+       "is_bound": false,
+       "n_bkg_pass": 260,
+       "rejection": 57.69230769230769,
+       "rel_stat": 0.062017367294604234
+      }
+     },
+     "classes": [
+      185,
+      186,
+      187
+     ],
+     "n_bkg": 15000,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.004575747573798355,
+       "is_bound": false,
+       "n_bkg_pass": 64,
+       "rejection": 218.54352406286566,
+       "rel_stat": 0.15560397963228087
+      },
+      "r50": {
+       "eps_b": 0.01810132301503442,
+       "is_bound": false,
+       "n_bkg_pass": 260,
+       "rejection": 55.24458069553423,
+       "rel_stat": 0.07744379378107358
+      }
+     }
+    },
+    "qcd_all": {
+     "balanced": {
+      "r30": {
+       "eps_b": 0.024372738116900185,
+       "is_bound": false,
+       "n_bkg_pass": 2411,
+       "rejection": 41.02944836167565,
+       "rel_stat": 0.020365796262448638
+      },
+      "r50": {
+       "eps_b": 0.06888255393138028,
+       "is_bound": false,
+       "n_bkg_pass": 6814,
+       "rejection": 14.51746404461403,
+       "rel_stat": 0.012114317043433485
+      }
+     },
+     "classes": [
+      161,
+      162,
+      163,
+      164,
+      165,
+      166,
+      167,
+      168,
+      169,
+      170,
+      171,
+      172,
+      173,
+      174,
+      175,
+      176,
+      177,
+      178,
+      179,
+      180,
+      181,
+      182,
+      183,
+      184,
+      185,
+      186,
+      187
+     ],
+     "n_bkg": 98922,
+     "n_signal": 5000,
+     "natural": {
+      "r30": {
+       "eps_b": 0.008031777977838843,
+       "is_bound": false,
+       "n_bkg_pass": 2411,
+       "rejection": 124.50543363613691,
+       "rel_stat": 0.07316042024689279
+      },
+      "r50": {
+       "eps_b": 0.027517610672093847,
+       "is_bound": false,
+       "n_bkg_pass": 6810,
+       "rejection": 36.340364427574364,
+       "rel_stat": 0.04183114486327925
+      }
+     }
+    }
+   },
+   "features": "/data/results/eval/v2_linprobe_bal/init-s2/jc2bal/test/init_bn",
+   "max_abs_p_diff": 0.0002442324454968725,
+   "n_test": 903922,
+   "probs": "/data/results/eval/v2_linprobe_bal/fits_v5_probs/init-s2/init_bn/jc2bal_N1000000.npz",
+   "probs_sha256": "476a74b87724409744843520812b969a5576c8a93b6d45cc1d3cb16af9973e33"
+  }
+ },
+ "census": "/data/finetune/jc2_bal/census.json",
+ "census_sha256": "a4379ee0817254cf5917316b155ac132cdd25884293fec8bbb6c0c1deca4f8eb",
+ "discriminant": "p(X->bb) / (p(X->bb) + sum of the 27 QCD p)",
+ "model": "init-s2",
+ "script_sha256": "0efe034231a1c1896c430de8dbe2edd66ae39d6b3dc5f5fb7c6e4b72b99da95c",
+ "signal": "label_X_bb",
+ "subclasses": {
+  "b": [
+   "label_QCD_bccss",
+   "label_QCD_bccs",
+   "label_QCD_bcc",
+   "label_QCD_bcss",
+   "label_QCD_bcs",
+   "label_QCD_bc",
+   "label_QCD_bss",
+   "label_QCD_bs",
+   "label_QCD_b"
+  ],
+  "bb": [
+   "label_QCD_bbccss",
+   "label_QCD_bbccs",
+   "label_QCD_bbcc",
+   "label_QCD_bbcss",
+   "label_QCD_bbcs",
+   "label_QCD_bbc",
+   "label_QCD_bbss",
+   "label_QCD_bbs",
+   "label_QCD_bb"
+  ],
+  "c": [
+   "label_QCD_ccss",
+   "label_QCD_ccs",
+   "label_QCD_cc",
+   "label_QCD_css",
+   "label_QCD_cs",
+   "label_QCD_c"
+  ],
+  "light": [
+   "label_QCD_ss",
+   "label_QCD_s",
+   "label_QCD_light"
+  ]
+ },
+ "working_points": {
+  "r30": 0.3,
+  "r50": 0.5
+ }
+}

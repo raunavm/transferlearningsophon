@@ -1,0 +1,90 @@
+{
+ "script": "experiments/EVAL/confusion_share.py",
+ "inputs_sha256": {
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s1/best70/jc2bal_N1000000.npz": "c63fafd646f9ea333773e8c63d5775de397070741ff56a16bc189a21b6bc5e8e",
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s2/best70/jc2bal_N1000000.npz": "b1e90d396e4b7e890025087c30ca7365c56f65a79e05cdd89e12bb8521d00982",
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s3/best70/jc2bal_N1000000.npz": "df02312f6631b99945ecb65d80432019631e2f6a6232ba12da14ae40f07d415d"
+ },
+ "pass_rho": 0.8,
+ "groupings": {
+  "17 classes": {
+   "share_apart": 0.4736998725962594,
+   "pairs_apart": 0.9071428571428571,
+   "accuracy": 0.33413834379515045,
+   "accuracy_runs": {
+    "mtx-r16q1-s1": 0.3404408787483876,
+    "mtx-r16q1-s2": 0.3349005777047135,
+    "mtx-r16q1-s3": 0.32707357493235034
+   }
+  },
+  "no flavor boundary": {
+   "share_apart": 0.6049779468020999,
+   "pairs_apart": 0.8980590062111802,
+   "accuracy": 0.3746009058303703,
+   "accuracy_runs": {
+    "mtx-flavf0-s1": 0.37692522142397245,
+    "mtx-flavf0-s2": 0.37227659023676823
+   }
+  },
+  "b-quark boundary": {
+   "share_apart": 0.6082305966258317,
+   "pairs_apart": 0.9008540372670808,
+   "accuracy": 0.395369843858209,
+   "accuracy_runs": {
+    "mtx-flavf1-s1": 0.3944687705355108,
+    "mtx-flavf1-s2": 0.3962709171809072
+   }
+  },
+  "random flavor boundary": {
+   "share_apart": 0.6464550344371399,
+   "pairs_apart": 0.9008540372670808,
+   "accuracy": 0.40799980529293456,
+   "accuracy_runs": {
+    "mtx-flavf1r-s1": 0.4071014976955976,
+    "mtx-flavf1r-s2": 0.4088981128902715
+   }
+  },
+  "random partition 1": {
+   "share_apart": 0.8385984428063307,
+   "pairs_apart": 0.921972049689441,
+   "accuracy": 0.4199632269155967,
+   "accuracy_runs": {
+    "mtx-rand2p1-s1": 0.4199632269155967
+   }
+  },
+  "random partition 2": {
+   "share_apart": 0.8572017098792194,
+   "pairs_apart": 0.9244565217391304,
+   "accuracy": 0.42134830217651525,
+   "accuracy_runs": {
+    "mtx-rand2p2-s2": 0.42134830217651525
+   }
+  },
+  "random partition 3": {
+   "share_apart": 0.846029636911773,
+   "pairs_apart": 0.9247670807453416,
+   "accuracy": 0.423111728666854,
+   "accuracy_runs": {
+    "mtx-rand2p3-s1": 0.423111728666854
+   }
+  },
+  "random partition 4": {
+   "share_apart": 0.8254543887148634,
+   "pairs_apart": 0.9108695652173913,
+   "accuracy": 0.4227798416235029,
+   "accuracy_runs": {
+    "mtx-rand2p4-s2": 0.4227798416235029
+   }
+  },
+  "random partition 5": {
+   "share_apart": 0.851085998768237,
+   "pairs_apart": 0.9273291925465839,
+   "accuracy": 0.4204267624861437,
+   "accuracy_runs": {
+    "mtx-rand2p5-s2": 0.4204267624861437
+   }
+  }
+ },
+ "spearman": 0.8166666666666667,
+ "pass": true
+}
