@@ -279,8 +279,14 @@ validation passes of the run's epochs as each epoch recorded its device. A run c
 GPU type after an interruption, so several runs list more than one. The
 pretraining runs used \MlstComputeTotalGpuHours{} GPU-hours on \MlstComputeGpuTypes{} GPUs; the
 \ComputeMainGpu{} carries the most hours, between \ComputeMainGpuShareMin{} and \ComputeMainGpuShareMax{}
-of each label set's. The fine-tuning records hold the device but not the time, so the table gives the GPU
-types of each run's fine-tuning without hours.
+of each label set's. The last column lists the GPU types each run's fine-tuning used, and the table's last two
+rows give the GPU-hours of all fine-tuning, every attempt of every training included: \MlstFtGpuHours{}
+GPU-hours, \MlstFtGpuHoursSearch{} of them spent choosing the learning rates on validation. An attempt's hours
+are its running time as the cluster's monitoring recorded it, where that record covers the whole attempt (from
+\MlstFtPromFrom{} on), and otherwise the time between its own start and end. An attempt interrupted before then
+recorded no end, so the \MlstFtGpuHoursBound{} GPU-hours of those \MlstFtAttemptsBound{} attempts
+run to the next attempt's start and are an upper bound; \MlstFtAttemptsUnknown{} attempts whose start was not
+recorded are not counted.
 
 \input{tables/compute}
 

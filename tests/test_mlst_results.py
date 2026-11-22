@@ -3868,6 +3868,7 @@ def test_every_fine_tuning_attempt_counts_its_hours_by_the_one_rule(tmp_path):
     assert h["scratch"] == collections.Counter({"L40": 2.25 + 1.0})       # Prometheus for p-prom; p-edge by its times
     assert h["bound"] == 7.0 and h["n_bound"] == 2 and h["n_unknown"] == 1
     assert h["search"] == 3.25 and h["n_attempts"] == 7 and h["n_cells"] == 3
+    assert h["prom_from"] == "15 November 2026"      # the snapshots' earliest sample, 15 Nov 04:05
     assert M.ft_hours(tmp_path / "nothing") is None
     t, _ = M.table_compute({}, {}, MT.fmt_int, ft_h=h)
     lines = t.splitlines()

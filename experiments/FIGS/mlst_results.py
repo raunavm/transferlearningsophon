@@ -4798,11 +4798,12 @@ def ft_hours(data: pathlib.Path) -> dict | None:
     if not f.exists():
         return None
     stamp = lambda t: calendar.timegm(time.strptime(t, "%Y-%m-%dT%H:%M:%SZ"))     # noqa: E731
-    prom = {}
+    prom, earliest = {}, None
     for snap in sorted((data / "budget").glob("ft_pod_hours_prom_*.json")):
         pods = json.loads(snap.read_text())["pods"]
         first = lambda v: calendar.timegm(time.strptime(v["first_running_utc"], "%Y-%m-%dT%H:%MZ"))      # noqa: E731
         edge = min(first(v) for v in pods.values() if v["first_running_utc"]) + FT_PROM_EDGE_S
+        earliest = min(earliest or edge, edge - FT_PROM_EDGE_S)
         for pod, v in pods.items():
             if v["first_running_utc"] and first(v) > edge:
                 prom[pod] = max(prom.get(pod, 0.0), v["running_hours"])
@@ -4831,6 +4832,8 @@ def ft_hours(data: pathlib.Path) -> dict | None:
             if cell.split("/")[0].startswith(FT_SEARCH_TREES):
                 out["search"] += h
     out["n_cells"] = len(cells)
+    # the day of the snapshots' earliest sample: every pod first running after it (FT_PROM_EDGE_S) is measured whole
+    out["prom_from"] = time.strftime("%d %B %Y", time.gmtime(earliest)).lstrip("0") if earliest else None
     return out
 
 
@@ -4951,6 +4954,8 @@ def ft_hours_macros(em, fth, index, fmt_int) -> None:
                           ("MlstFtAttempts", fth and fth["n_attempts"], "fine-tuning attempts in all (count)"),
                           ("MlstFtCells", fth and fth["n_cells"], "fine-tuning cells in all (count)")):
         em.macro(name, pend if v is None else fmt_int(v), index, what)
+    em.macro("MlstFtPromFrom", (fth or {}).get("prom_from") or pend, index,
+             "the first day the monitoring snapshots hold every fine-tuning attempt's running time")
 
 
 # ------------------------------------------------------------------ per-run values (A1)
