@@ -59,6 +59,8 @@ Runs in one of our pods (it reads /data) and writes a gzipped tar to stdout:
   stats/confusion_share.json       the confusion-share test of the 17-group label sets (confusion_share.py)
   budget/rate_search.json          every row's rate search and the reruns at the chosen rates, raw per cell
                                    (rate_search_scan below; the rules in experiments/FT/rate_search.py)
+  budget/ft_attempts.json          every attempt of every fine-tuning cell under ft_v2: pod, start, end, GPU
+                                   (ft_attempts below), for the compute table's fine-tuning GPU-hours
   budget/jc1_acc_boot_N<N>.json    the paired bootstrap of the JetClass accuracy differences (experiments/FT/jc1_acc_boot.py)
   partrepro/<variant>.json         ParT's top-tagging script reproduced (scripts/build_partrepro_jobs.py)
   dup_check/<file>.json            per-jet comparisons of near-identical results (experiments/EVAL/dup_check.py)
@@ -99,6 +101,7 @@ import pathlib
 import re
 import sys
 import tarfile
+import time
 
 LP = pathlib.Path("/data/results/eval/v2_linprobe")
 FT = pathlib.Path("/data/results/ft_v2")
@@ -240,6 +243,49 @@ def rate_search_scan() -> dict:
                 "done": done, "superseded": (d / "SUPERSEDED").exists(),
                 "diverged_record": json.loads((d / "DIVERGED").read_text()) if (d / "DIVERGED").exists() else None,
                 "attempts": [_attempt(t) for t in tries]}
+    return {"root": str(FT), "cells": out}
+
+
+# PI 2026-11-22: the appendix counts every fine-tuning GPU-hour, the 15 Nov sweeps included. An interrupted attempt writes
+# nothing when it stops; its folder is set aside (s1.partial.<time>) when the next attempt starts, which bounds its end.
+# mlst_results takes a pod's own running time from the Prometheus snapshots (budget/ft_pod_hours_prom_*.json) where they
+# hold its whole run.
+def _utc(t: float) -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))
+
+
+def ft_attempts() -> dict:
+    """{cell directory under ft_v2: [attempt, oldest first]} for every cell with an ATTEMPTS file or an ft_manifest.json
+    (the first V100 references have no ATTEMPTS): each attempt's pod, node and start (its ATTEMPTS line, else its
+    manifest's time), GPU, network and task (its ft_manifest.json), and end: DONE's time ("done"), the time its folder
+    was set aside as the next attempt started ("next", an upper bound), or the newest file it wrote ("last write": a
+    cell stopped without DONE, or still running)."""
+    import os
+    cells = set()
+    for dp, _dn, fn in os.walk(FT):
+        if "ATTEMPTS" in fn or "ft_manifest.json" in fn:
+            d = pathlib.Path(dp)
+            cells.add(d.parent / d.name.split(".partial.")[0])
+    out = {}
+    for d in sorted(cells):
+        tries = sorted(d.parent.glob(d.name + ".partial.*"), key=lambda q: int(q.name.rsplit(".", 1)[1])) \
+            + ([d] if d.is_dir() else [])
+        recs = []
+        for t in tries:
+            lines = [ln.split() for ln in (t / "ATTEMPTS").read_text().splitlines() if ln.strip()] \
+                if (t / "ATTEMPTS").exists() else []
+            kv = dict(x.split("=", 1) for x in (lines[-1][1:] if lines else []) if "=" in x)
+            m = json.loads((t / "ft_manifest.json").read_text()) if (t / "ft_manifest.json").exists() else {}
+            if t is not d:
+                end, kind = int(t.name.rsplit(".", 1)[1]), "next"
+            elif (d / "DONE").exists():
+                end, kind = (d / "DONE").stat().st_mtime, "done"
+            else:
+                end, kind = max((q.stat().st_mtime for q in d.iterdir() if q.is_file()), default=d.stat().st_mtime), "last write"
+            recs.append({"start": lines[-1][0] if lines else m.get("written_utc"), "end": _utc(end), "end_kind": kind,
+                         "pod": kv.get("pod"), "node": kv.get("node"), "gpu": m.get("gpu_device_name"),
+                         "init": m.get("init"), "task": m.get("task"), "n_train": m.get("n_train"), "lr": m.get("lr")})
+        out[str(d.relative_to(FT))] = recs
     return {"root": str(FT), "cells": out}
 
 
@@ -426,6 +472,7 @@ def main() -> int:
                 add(f"xbx_scratch/{f.parent.parent.name}/{f.parent.name}.json", b)
         add("budget/fixed_sweep.json", (json.dumps(fixed_sweep(), indent=1, sort_keys=True) + "\n").encode())
         add("budget/rate_search.json", (json.dumps(rate_search_scan(), indent=1, sort_keys=True) + "\n").encode())
+        add("budget/ft_attempts.json", (json.dumps(ft_attempts(), indent=1, sort_keys=True) + "\n").encode())
         add("ft_mlst/manifests.json", (json.dumps(manifests(), indent=1) + "\n").encode())
         add("jc2_test/counts.json", (json.dumps(jc2_test_counts()) + "\n").encode())
         for run in sorted(MTX.glob("mtx-*")):
@@ -439,5 +486,8 @@ def main() -> int:
 if __name__ == "__main__":
     if sys.argv[1:] == ["rate_search"]:
         print(json.dumps(rate_search_scan(), sort_keys=True))
+        sys.exit(0)
+    if sys.argv[1:] == ["ft_attempts"]:
+        print(json.dumps(ft_attempts(), sort_keys=True))
         sys.exit(0)
     sys.exit(main())
