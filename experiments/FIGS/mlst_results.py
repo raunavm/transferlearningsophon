@@ -5515,6 +5515,7 @@ PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes
                 ("jetclass_nbkg", "mlst_jetclass_nbkg", True, None),
                 ("coarse", "mlst_coarse", True, None), ("qcdhf", "mlst_qcdhf", False, {"__QCDHF_C__": r"\pending{n}", "__QCDHF_LIGHT__": r"\pending{n}"}),
                 ("summary", "mlst_summary", False, None), ("summary_auc", "mlst_summary_auc", True, None),
+                ("sets", "mlst_sets", False, None), ("randparts", "mlst_randparts", True, None),
                 ("masseffect", "mlst_masseffect", True, None), ("jc1_conf", "mlst_jc1_conf", True, None), ("bench_qg_herwig", "mlst_bench_qg_herwig", False, None),
                 ("published", "mlst_published", True, None), ("labelsets", "mlst_labelsets", True, None),
                 ("labelsets_full", "mlst_labelsets_full", True, None),

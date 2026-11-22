@@ -335,7 +335,7 @@ if PREVIEW:
 # heading; within a family linear probes before fine-tuned networks, each table beside the figures it holds.
 # _FIGURES and _TABLES list the appendix in this order (checked below), so number() and the book agree.
 APPENDIX_FAMILIES = (
-    ("Headline metrics", ("tab:summaryauc", "tab:mlp", "tab:coarse")),
+    ("Headline metrics", ("tab:summaryauc", "tab:randparts", "tab:mlp", "tab:coarse")),
     ("Per class", ("tab:jc1_class_auc", "tab:perclass", "tab:jetclassrej", "tab:jetclassall", "tab:jetclassnbkg",
                    "tab:jetclassprobe")),
     ("Class pairs", ("F4-other", "F4-light", "F4-mech-ft", "F4-other-ft", "F4-light-ft", "tab:pairs")),
