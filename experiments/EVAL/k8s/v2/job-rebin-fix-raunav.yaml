@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # atlas_res_fine_v3/mtx-flavf1r-s2.json was found zero-filled (59,328 NUL bytes, written 2026-11-18 00:41, the
+  # storage fault of that day): moved aside (not deleted) and rebuilt by atlas_rebin.py from its per-jet file. CPU.
+  name: rebin-fix-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.23 https://github.com/raunavm/transferlearningsophon.git tls; }
+          retry clone || exit 1
+          cd /workspace/tls
+          F=/data/results/eval/atlas_res_fine_v3/mtx-flavf1r-s2.json
+          if [ -f ${F} ] && [ -z "$(tr -d '\000' < ${F} | head -c 1)" ]; then mv ${F} ${F}.zerofilled.20261121; fi
+          python3 experiments/EVAL/atlas_rebin.py --in-dir /data/results/eval/atlas_res_v3 --out-dir /data/results/eval/atlas_res_fine_v3
+          python3 -c "import json, glob; [json.load(open(f)) for f in glob.glob('/data/results/eval/atlas_res_fine_v3/*.json')]; print('all valid')"
+        resources:
+          requests: { memory: "10Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "10Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol

@@ -383,7 +383,10 @@ def main() -> int:
         for d, name, pattern in v4:
             for f in sorted(d.glob(pattern)):
                 b = f.read_bytes()
-                json.loads(b)
+                try:
+                    json.loads(b)
+                except ValueError as e:     # a file still being written stops the pull; say which
+                    raise SystemExit(f"FATAL: {f} is not valid JSON ({len(b)} bytes): {e}")
                 rel = f"{f.parent.name}.json" if name == "partrepro" else f.name
                 add(f"{name}/{rel}", b)
         for d, name in RERUN_PULL + (RERUN_PULL_V5 if V5_PASS.exists() else ()):
