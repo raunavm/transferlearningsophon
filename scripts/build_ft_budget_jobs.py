@@ -245,7 +245,14 @@ FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1
                   ("top", 100_000): "1e-2",       # 2026-11-21: 0.9332 at 1e-2 (3e-3 0.9327, 3e-2 diverged); no rerun
                   ("top", 10_000): "1e-2"}        # 2026-11-22, 1e4 schedule: 0.9241 (3e-3 0.9210, 3e-2 diverged); no rerun
 # from scratch, seeds SCRATCH_SEEDS, where its search moved it: qg 1e3 best 1e-4 0.7826 (3e-5 0.7817, 3e-4 0.7705)
-FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4"}
+FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
+                          # 2026-11-22: JetClass 1e6 best 3e-3 0.8307 (1e-3 0.8294, 1e-2 and 3e-2 diverged); JetClass-II
+                          # 1e4 best 1e-2 0.1615 (3e-3 0.1608, 3e-2 diverged)
+                          ("jc1", 1_000_000): "3e-3", ("jc2b", 10_000): "1e-2"}
+# the rows whose recorded rate moved from the original, in the order they settled: fixed_rate_cells' job indices follow
+# it, so a row recorded later appends and never shifts the index of a launched cell
+FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000, "scratch"),
+                    ("jc1", 1_000_000, "scratch"), ("jc2b", 10_000, "scratch"))
 # PI 2026-11-21: the search goes no lower than 1e-5 (below it fine-tuning approaches training only the new output layer
 # on frozen features); a row whose best is still its lowest rate there takes 1e-5
 FIXED_SEARCH_FLOOR = "1e-5"
@@ -342,13 +349,23 @@ def fixed_sweep_edge4_cells() -> list:
 
 
 def fixed_rate_cells() -> list:
-    """Every pretrained cell of each row in FIXED_ROW_RATE whose rate is not the original, at that row's rate, into
-    FIXED_RATE_ROOT; then the from-scratch seeds of each such row of FIXED_ROW_RATE_SCRATCH. Job indices follow the
-    order the rows settled (0-15 JetClass-II 1e4, 16-42 quark/gluon 1e3 pretrained, 43-45 its from-scratch seeds)."""
-    pre = [fixed_cell(task, c["init"], n, c["s"], lr, FIXED_RATE_ROOT) for (task, n), lr in FIXED_ROW_RATE.items()
-           if lr != FIXED_LR_PRE for c in fixed_cells({n}) if c["task"] in (task, f"{task}kin") and c["init"]]
-    return pre + [fixed_cell(task, "", n, s, lr, FIXED_RATE_ROOT) for (task, n), lr in FIXED_ROW_RATE_SCRATCH.items()
-                  if lr != original_rate(task, "scratch") for s in SCRATCH_SEEDS]
+    """Every pretrained cell of each row in FIXED_ROW_RATE whose rate is not the original, at that row's rate, and the
+    from-scratch seeds of each such row of FIXED_ROW_RATE_SCRATCH, into FIXED_RATE_ROOT. Job indices follow
+    FIXED_RATE_ORDER (0-15 JetClass-II 1e4, 16-42 quark/gluon 1e3 pretrained, 43-45 its from-scratch seeds, 46-48
+    JetClass 1e6 from scratch, 49-51 JetClass-II 1e4 from scratch)."""
+    moved = ({(t, n, "pre") for (t, n), lr in FIXED_ROW_RATE.items() if lr != FIXED_LR_PRE}
+             | {(t, n, "scratch") for (t, n), lr in FIXED_ROW_RATE_SCRATCH.items() if lr != original_rate(t, "scratch")})
+    if moved != set(FIXED_RATE_ORDER) or len(set(FIXED_RATE_ORDER)) != len(FIXED_RATE_ORDER):
+        raise SystemExit(f"FATAL: FIXED_RATE_ORDER {FIXED_RATE_ORDER} is not the moved rows {sorted(moved)}")
+    out = []
+    for task, n, kind in FIXED_RATE_ORDER:
+        if kind == "pre":
+            lr = FIXED_ROW_RATE[(task, n)]
+            out += [fixed_cell(task, c["init"], n, c["s"], lr, FIXED_RATE_ROOT) for c in fixed_cells({n})
+                    if c["task"] in (task, f"{task}kin") and c["init"]]
+        else:
+            out += [fixed_cell(task, "", n, s, FIXED_ROW_RATE_SCRATCH[(task, n)], FIXED_RATE_ROOT) for s in SCRATCH_SEEDS]
+    return out
 
 
 # PI 2026-11-21: the top and quark/gluon 1e4 neighbours of the old sweep ran 20,000 steps checked every 50 (the 1e4 rule
