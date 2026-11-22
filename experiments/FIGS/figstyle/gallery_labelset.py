@@ -676,14 +676,14 @@ def draw_a10(path, auc: bool = False) -> None:
     if auc:
         _size(path, probes + [_probe(M.INIT)], absent, True)
     else:
-        _size(path, probes, absent, False, auc_makers=probes + [_probe(M.INIT)])
+        _size(path, probes, absent, False)      # PI 2026-11-19 (B): accuracy and R30 panels only, the AUC in the tables
 
 
 def draw_a8(path, auc: bool = False, style: str = L.SIZE) -> None:
     """A10's form after fine-tuning: the label sets, the mass networks and from scratch, the AUC block under the headline
     block (PI 2026-11-18: Fig. 7). auc: the AUC alone (A8-auc, superseded)."""
     tuned = [_tuned(r) for r in SIZE_ROWS] + [_tuned("SCRATCH")]
-    _size(path, tuned, "no fine-tuning read-outs", auc, style, auc_makers=None if auc else tuned)
+    _size(path, tuned, "no fine-tuning read-outs", auc, style)      # PI 2026-11-19 (B): no AUC block
 
 
 def draw_a10_part(path) -> None:

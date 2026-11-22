@@ -31,7 +31,9 @@ BAR = 0.8               # pt, error bars (L21: thin)
 XBAR = 0.5              # pt, the bars of scan B and binned, on every point of a discrete-x figure (PI 2026-11-13)
 BAND = 0.15             # opacity of C's bands
 SCAN = "C"              # the chosen style of every continuous scan (a cut's efficiency)
-SIZE = "B"              # L21: the training-set size scan, error bars dodged in log x
+# PI 2026-11-19 (A): scans against training size as lines with light +-1 SD bands (C), never error bars at shared x
+# positions (Figs. 8 and A7, and every other size scan with them); supersedes L21's bars for the size scan
+SIZE = "C"
 THIN = 0.75            # pt, L21: the line joining a series' points
 BAND_ALL = 3           # L21: a panel of at most this many series keeps every band
 BAND_REFS = ("L188", "SCRATCH", "INIT", "INIT_BN")     # L21: 188 classes and the modes' references keep theirs in any panel

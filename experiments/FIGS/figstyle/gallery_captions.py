@@ -88,11 +88,11 @@ CAPTIONS = {
     "A8": (
         'After fine-tuning, 17 classes are less accurate than 188 classes on JetClass-II at every training-set size and'
         ' on JetClass at one million jets, while on top and quark/gluon tagging, Pythia and Herwig, no label set or '
-        'mass network differs from 188 classes in R30 by more than three standard deviations. The upper panels show '
-        'accuracy and R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, and the lower panels the area '
-        'under the ROC curve, averaged over the classes on JetClass-II and JetClass. Error bars are ±1 standard deviation over '
-        'the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition) or three trainings from scratch (grey); open stars mark the published Particle '
-        'Transformer. Figure {fig:A10} shows the linear probes, and values are in tables {tab:ft} and {tab:summary}.'
+        'mass network differs from 188 classes in R30 by more than three standard deviations. The panels show '
+        'accuracy and R30, one over the fraction of background jets kept when the cut keeps 30% of signal jets, the '
+        'top-tagging working point. Lines are means and light bands ±1 standard deviation over the pretraining runs '
+        '(three a label set, two a mass network) or three trainings from scratch (grey); open stars mark the published '
+        'Particle Transformer. The AUC and every value are in tables {tab:ft} and {tab:summary}.'
     ),
     "F9b": (
         'Each network with an added mass regression (+ mass) resolves the jet mass better than the soft-drop mass in '
@@ -184,12 +184,12 @@ CAPTIONS = {
     ),
     "A10": (
         'With linear probes, 43 and 17 classes are less accurate on JetClass-II than 188 classes at every training-set '
-        'size. The upper panels show accuracy on class-balanced JetClass-II and JetClass and R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, on top and quark/gluon tagging, Pythia and Herwig, and the '
-        'lower panels the area under the ROC curve (AUC), averaged over the classes on JetClass-II and JetClass, '
-        'against training-set size. Error bars are ±1 standard deviation over the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition), with points offset by at most 10% '
-        'in size. Open stars mark the published Particle Transformer, trained from scratch on 2, 1.2 and 1.6 million '
-        'jets, with its published standard deviation on R30, above every probe. The random network, far below every '
-        'pretrained network, and every value are in tables {tab:probesn} and {tab:summary}.'
+        'size. The panels show accuracy on class-balanced JetClass-II and JetClass and R30, one over the fraction of '
+        'background jets kept when the cut keeps 30% of signal jets, the top-tagging working point, on top and '
+        'quark/gluon tagging, Pythia and Herwig, against training-set size. Lines are means and light bands ±1 '
+        'standard deviation over the pretraining runs (three a label set, two a mass network). Open stars mark the published Particle Transformer, trained from scratch on 2, 1.2 and 1.6 million '
+        'jets, with its published standard deviation on R30, above every probe. The random network, the AUC and every '
+        'value are in tables {tab:probesn} and {tab:summary}.'
     ),
     "F10b": (
         'Used directly, no label set differs from 188 classes, nor a mass network from its own label set, in how much '
