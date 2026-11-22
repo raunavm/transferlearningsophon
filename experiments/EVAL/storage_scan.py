@@ -15,6 +15,9 @@ zero_fill_scan.py read the first 4 KB only and misses a file that lost its tail)
           after its record" when the file is newer than the manifest
 
     python3 experiments/EVAL/storage_scan.py --out /data/results/eval/storage_scan_1117_1119
+    python3 experiments/EVAL/storage_scan.py --since 2026-11-23T01:00:00Z --until 2026-11-23T02:30:00Z \
+        --roots /data/results --no-records --out /data/results/eval/storage_scan_window/<since>_<until>
+                                               # a storage failure's window (guard v7, PI 2026-11-22): the load only
 """
 from __future__ import annotations
 
@@ -26,6 +29,7 @@ import json
 import os
 import re
 import sys
+import time
 import zipfile
 
 import numpy as np
@@ -144,7 +148,15 @@ def main(argv=None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--records-only", action="store_true", help="skip the load; re-hash the recorded files and list the "
                     "absent ones (absent.tsv)")
+    ap.add_argument("--since", help="window start, UTC YYYY-MM-DDTHH:MM:SSZ (default 2026-11-17T00:00:00Z)")
+    ap.add_argument("--until", help="window end, UTC (default 2026-11-20T00:00:00Z)")
+    ap.add_argument("--roots", help="comma-separated folders to walk (default /data)")
+    ap.add_argument("--no-records", action="store_true", help="the load only: no manifest's recorded hashes")
     a = ap.parse_args(argv)
+    global LO, HI, ROOTS
+    utc = lambda t: calendar.timegm(time.strptime(t, "%Y-%m-%dT%H:%M:%SZ"))      # noqa: E731
+    LO, HI = (utc(a.since) if a.since else LO), (utc(a.until) if a.until else HI)
+    ROOTS = tuple(a.roots.split(",")) if a.roots else ROOTS
     os.makedirs(a.out, exist_ok=True)
     fails, n, nbytes, records = [], 0, 0, []
     for root in ROOTS:
@@ -171,7 +183,7 @@ def main(argv=None) -> int:
                         fails.append((p, st.st_size, "load", f"{type(e).__name__}: {e}"[:300]))
                     if n % 2000 == 0:
                         print(f"{n} files, {nbytes / 1e9:.1f} GB loaded; {len(fails)} failures", flush=True)
-                if (inwin or is_manifest) and st.st_size > 0:
+                if (inwin or is_manifest) and st.st_size > 0 and not a.no_records:
                     try:
                         if f.endswith(".json"):
                             got = []
@@ -198,7 +210,8 @@ def main(argv=None) -> int:
     with open(os.path.join(a.out, "report.tsv"), "w") as fh:
         fh.write("path\tbytes\tkind\tdetail\n")
         fh.writelines(f"{p}\t{s}\t{k}\t{d}\n" for p, s, k, d in fails)
-    summary = {"window_utc": ["2026-11-17T00:00Z", "2026-11-20T00:00Z"], "roots": ROOTS, "files_loaded": n,
+    summary = {"window_utc": [time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t)) for t in (LO, HI)], "roots": ROOTS,
+               "files_loaded": n,
                "bytes_loaded": nbytes, "recorded_hashes": len(records), "files_rehashed": rehashed,
                "recorded_but_absent": missing, "failures": {k: sum(1 for f in fails if f[2] == k)
                                                             for k in sorted({f[2] for f in fails})}}
