@@ -64,9 +64,18 @@ def test_the_rerun_job_indices_keep_the_launched_order():
     assert launched == {i: cells[16 + i] for i in range(len(launched))}
     # every part launched since (--indices --part): a contiguous run of the rerun's cells in their order, and the parts
     # together never run a cell twice
+    # a job deleted before it ran (its last RUNS.csv row "deleted", e.g. top1e3 when it was split into parts A and B,
+    # PI 2026-11-22) runs no cell; its spec stays on disk as the record
+    import csv
+    last = {}
+    for r in csv.reader((ROOT / "experiments/RUNS.csv").open()):
+        if len(r) > 2:
+            last[r[0]] = r[2]
     seen = []
     for f in sorted(SPECS.glob("job-ft-budget-fixed-rate-*-raunav.yaml")):
         if f.name == "job-ft-budget-fixed-rate-qg1e3-raunav.yaml":
+            continue
+        if last.get(f.name.removeprefix("job-").removesuffix(".yaml")) == "deleted":
             continue
         part = [c for _, c in sorted(_spec_cells(f.name).items())]
         k = cells.index(part[0])
