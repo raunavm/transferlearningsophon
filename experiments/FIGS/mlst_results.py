@@ -5142,9 +5142,12 @@ SOPHON_NOTE = ("Below the rule, the released Sophon checkpoint~\\cite{sophon}, p
 # the top and quark/gluon claims of the tables that print each metric (PI 2026-11-21), from the paired test-jet bootstrap
 # of every printed network and metric on the v5 probes (bootstrap/l3_v5/*.all.json, |delta| > 3 sigma of the runs and the
 # test jets); gallery_labelset.TOP_QG_PROBE_CLAIMS holds them, and tests/test_mlst_results.py checks both
+# PI 2026-11-22: tab:probes now holds the 17-class partitions, so its sentence covers them (bootstrap/l3_v5
+# probe_top/qg .all files hold every partition's difference; TOP_QG_PROBE_CLAIMS: rand-188 r50 below on top)
 TOPQG_PROBE_SET = (" Beyond three standard deviations of the runs and the test jets, \\Kcoarse{} classes + mass is more accurate "
-                   "than \\Kfull{} classes on top tagging, with a higher $R_{50}$; no other label set or mass network "
-                   "differs from \\Kfull{} classes in these metrics, nor a mass network from its own label set.")
+                   "than \\Kfull{} classes on top tagging, with a higher $R_{50}$, and the random partitions have a lower "
+                   "$R_{50}$ on top tagging; no other label set, mass network or 17-class partition differs from "
+                   "\\Kfull{} classes in these metrics, nor a mass network from its own label set.")
 TOPQG_PROBE_R30 = (" In $R_{30}$ on top and quark/gluon tagging no pretrained network, as a linear probe or fine-tuned, differs from "
                    "\\Kfull{} classes by more than three standard deviations of the runs and the test jets, nor a mass "
                    "network from its own label set.")
