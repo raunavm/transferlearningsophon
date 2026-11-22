@@ -228,7 +228,7 @@ def test_the_minority_refit_changes_nothing_but_the_node(specs):
         assert sorted(r.split(";")[0].removeprefix("MODEL=") for r in rows) == sorted(b.CPU_MINORITY[old]), kind
         assert all(r in old_text for r in rows), kind
         assert f"--branch {b.CPU_REFIT_TAG[old]}" in old_text and f"--branch {b.CPU_REFIT_TAG[old]}" in s[kind], kind
-        assert "aside " in s[kind] and s[kind].count("\n          aside ") == 1, kind
+        assert "aside () {" in s[kind] and s[kind].count("\n          aside /data/") == 1, kind    # defined, called once
     assert 'memory: "24Gi"' in s["mlp-init-cpu"] and 'memory: "12Gi"' in s["mlp-cpu"]
     assert "--out /data/results/eval/mass_sd_boot/mass_sd_boot_v3.json" in s["cpu-after"]
     assert s["cpu-after"].index("refit_v5_checks/PASS") < s["cpu-after"].index("atlas_rebin.py") < s["cpu-after"].index("mass_sd_boot.py")
