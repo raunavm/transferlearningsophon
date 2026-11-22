@@ -1822,20 +1822,46 @@ def _sculpt_floor_distance(sculpt: dict, eff: str) -> float:
     return vals.pop()
 
 
+def _floor_cell(sculpt: dict, eff: str, fmt_pm) -> str:
+    """The random-selection distance at a QCD-efficiency working point with its SD over random selections."""
+    d = next(iter(sculpt.values()))
+    k, n = int(np.count_nonzero(d["hist_before"])), d["working_points"][eff]["n_pass"]
+    f, sd = _sculpt_floor_distance(sculpt, eff), _floor_sd(k, n, d.get("n_qcd"))
+    return V4.tok("p", f, sd) if V4.tokens(fmt_pm) else fmt_pm(f, sd)
+
+
+def _floor50_cell(sculpt: dict, ms: list, fmt_pm) -> str:
+    """At 50% signal efficiency: the random-selection distance for the QCD jets each run's cut passes, the mean over
+    the row's runs, with the SD over random selections at their mean count."""
+    ds = [sculpt[m] for m in ms if m in sculpt and "sig_eff_50" in sculpt[m]]
+    if not ds:
+        return r"\pending{no run yet}"
+    k = {int(np.count_nonzero(d["hist_before"])) for d in ds}
+    if len(k) != 1:
+        raise SystemExit(f"FATAL: the soft-drop histograms of {ms} have different filled bins")
+    k = k.pop()
+    fl = [_floor_distance(k, d["sig_eff_50"]["n_pass"], d.get("n_qcd")) for d in ds]
+    n = float(np.mean([d["sig_eff_50"]["n_pass"] for d in ds]))
+    sd = _floor_sd(k, int(round(n)), ds[0].get("n_qcd"))
+    return V4.tok("p", float(np.mean(fl)), sd) if V4.tokens(fmt_pm) else fmt_pm(float(np.mean(fl)), sd)
+
+
 def table_sculpt(sculpt, runs, fmt_pm, rows, label: dict | None = None) -> str:
     """A14 with M2 (PI 2026-11-07): at each QCD efficiency, the Jensen-Shannon distance (x 10^2) between the
     soft-drop mass distributions of all QCD test jets and of those passing the cut on 1 - p_QCD, and the share of
     resonant test jets passing the same cut; at the cut keeping half of the resonant jets (DisCo's working point),
     the QCD rejection R50 and the distance there. Below the runs the distance a random selection of as many QCD
-    jets shows. The 50% columns need the files of mass_sculpting.py with sig_eff_50."""
+    jets shows. The 50% columns need the files of mass_sculpting.py with sig_eff_50. PI 2026-11-21 (audit): the
+    random-selection distance carries its SD over random selections (_floor_sd), and at 50% signal efficiency, where
+    each network's cut passes its own number of QCD jets, each row has its own (the mean over its runs)."""
     v3 = all("sig_eff_50" in d for d in sculpt.values())
-    lines = [r"\begin{tabular}{l" + "cc" * len(SCULPT_EFFS) + ("ccc" if v3 else "") + "}", r"\toprule",
+    lines = [r"\begin{tabular}{l" + "cc" * len(SCULPT_EFFS) + ("cccc" if v3 else "") + "}", r"\toprule",
              " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{$\epsB = {100 * float(e):g}\%$}}" for e in SCULPT_EFFS)
-             + (r" & \multicolumn{3}{c}{$\varepsilon_S = 50\%$}" if v3 else "") + r" \\",
+             + (r" & \multicolumn{4}{c}{$\varepsilon_S = 50\%$}" if v3 else "") + r" \\",
              "".join(r"\cmidrule(lr){%d-%d}" % (2 + 2 * q, 3 + 2 * q + (q == len(SCULPT_EFFS)))
                      for q in range(len(SCULPT_EFFS) + v3)),
              " & " + " & ".join([r"distance & $\varepsilon_S$ (\%)"] * len(SCULPT_EFFS))
-             + (r" & $R_{50}$ & distance & $1/D_{\mathrm{JS}}$" if v3 else "") + r" \\", r"\midrule"]
+             + (r" & $R_{50}$ & distance & random selection & $1/D_{\mathrm{JS}}$" if v3 else "") + r" \\", r"\midrule"]
     eff_s = lambda m, e: None if (d := sculpt.get(m)) is None else d["working_points"][e]["eff_sig"]
     at50 = lambda m, k: None if (d := sculpt.get(m)) is None else d["sig_eff_50"][k]
     for arm in rows:
@@ -1849,14 +1875,15 @@ def table_sculpt(sculpt, runs, fmt_pm, rows, label: dict | None = None) -> str:
         if v3:
             cells += [_cell([at50(m, "rejection") for m in ms], n, fmt_pm),
                       _cell([None if (x := at50(m, "jsd")) is None else math.sqrt(x) for m in ms], n, fmt_pm),
+                      _floor50_cell(sculpt, ms, fmt_pm),
                       # F10c's vertical axis: the mean over runs of the inverse divergence
                       _cell([None if (x := at50(m, "jsd")) is None else 1 / x for m in ms], n, fmt_pm)]
         lines.append((label or LABEL).get(arm, SCRATCH_LABEL) + " & " + " & ".join(cells) + r" \\")
     if sculpt:
         lines += [r"\midrule", "random selection & "
-                  # one precision in both parts (audit 3: 0.94 and 0.9 for one quantity before)
-                  + " & ".join(f"{_sculpt_floor_distance(sculpt, e):.4f} & --" for e in SCULPT_EFFS)
-                  + (" & -- & -- & --" if v3 else "") + r" \\"]
+                  # the distance with its SD over random selections (audit 2026-11-21); at 50% each row's own column
+                  + " & ".join(f"{_floor_cell(sculpt, e, fmt_pm)} & --" for e in SCULPT_EFFS)
+                  + (" & -- & -- & -- & --" if v3 else "") + r" \\"]
     return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -5062,8 +5089,9 @@ CAPTIONS = {
     "sculpt": ("tab:sculpt", "Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with 162 and 17 classes plus a mass regression__SCULPT_FLAV__, on the JetClass-II test jets: Jensen--Shannon distance (base 2) $\\times10^{2}$ between the "
                "$m_{\\mathrm{SD}}$ distributions (__SCULPT_BINS__) of all QCD test jets and of those passing a cut on "
                "$1-g_{\\mathrm{QCD}}$ at the QCD efficiency $\\epsB$ given; lower is less sculpting.__SCULPT_SIG__ The last row is the "
-               "distance expected for a random selection of as many of the QCD test jets (drawn without replacement). "
-               + SPREAD_MASS),
+               "distance expected for a random selection of as many of the QCD test jets (drawn without replacement), with its SD "
+               "over random selections; at 50\\% signal efficiency, where each network's cut passes its own number of QCD jets, "
+               "that distance is given for each row. " + SPREAD_MASS),
     "sculpt_boot": ("tab:sculptboot", "Mass sculpting by the pretraining heads, differences between label sets: "
                     "$\\Delta$, the Jensen--Shannon distance of table~\\ref{tab:sculpt} ($\\times10^{2}$) of the "
                     "configuration minus that of the reference, paired by pretraining seed and averaged over the seeds "
