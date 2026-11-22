@@ -242,7 +242,8 @@ FIXED_SCRATCH_ROWS = (("top", 1_000), ("top", 100_000), ("qg", 100_000), ("jc1",
 FIXED_RATE_ROOT = "/data/results/ft_v2/fixed_rate"
 FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1e-3 (3e-3 0.3654, 1e-2 0.3594)
                   ("qg", 1_000): "3e-4",          # 2026-11-21: mean 0.7903 at 3e-4 (1e-4 0.7895, 1e-3 0.7874)
-                  ("top", 100_000): "1e-2"}       # 2026-11-21: 0.9332 at 1e-2 (3e-3 0.9327, 3e-2 diverged); no rerun
+                  ("top", 100_000): "1e-2",       # 2026-11-21: 0.9332 at 1e-2 (3e-3 0.9327, 3e-2 diverged); no rerun
+                  ("top", 10_000): "1e-2"}        # 2026-11-22, 1e4 schedule: 0.9241 (3e-3 0.9210, 3e-2 diverged); no rerun
 # from scratch, seeds SCRATCH_SEEDS, where its search moved it: qg 1e3 best 1e-4 0.7826 (3e-5 0.7817, 3e-4 0.7705)
 FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4"}
 # PI 2026-11-21: the search goes no lower than 1e-5 (below it fine-tuning approaches training only the new output layer
