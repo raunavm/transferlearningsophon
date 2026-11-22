@@ -97,8 +97,8 @@ CAPTIONS = {
     "F9b": (
         'Each network with an added mass regression (+ mass) resolves the jet mass better than the soft-drop mass in '
         'every bin of jet pT and generator mass, and is less biased in 13 of the 15 bins but more biased in the lowest '
-        'generator-mass bin, 20 to 50 GeV. Panels (a) and (b) show the median of r = m/m_gen, m_gen the '
-        'generator-level soft-drop mass, with its distance from one below, and (c) and (d) the resolution, half the '
+        'generator-mass bin, 20 to 50 GeV. Panels (a) and (b) show the median of r = m/m_gen, the mass over '
+        'the generator-level soft-drop mass, with its distance from one below, and (c) and (d) the resolution, half the '
         'central 68% range of r over its median, on a logarithmic axis, with the ratio to the soft-drop value below on a linear one. '
         'Lines are means over two pretraining runs, and bands of ±1 standard deviation combine '
         'the spread over runs with the bootstrap over test jets. Values are in table {tab:mass}.'
