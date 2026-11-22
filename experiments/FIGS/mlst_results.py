@@ -2091,6 +2091,18 @@ def sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm) -> None:
 
 
 # ------------------------------------------------------------------ fine-tuning read-outs
+def ft_source(data: pathlib.Path) -> str:
+    """Which fine-tuning read-out load_ft takes below the full sets (2026-11-21: the preview's Fig. 8 read the one-rule
+    cells and its Table A6 the older trees, from two builds; the tables and the figures each record this, and the book
+    refuses two different ones)."""
+    fixed = data / "budget" / FIXED
+    if fixed.exists():
+        return FIXED
+    if ft_preview() and (data / "budget" / FIXED_PARTIAL).exists():
+        return FIXED_PARTIAL + " (preview)"
+    return "budget, budget_long, fulldecay, prefull (the trees before the one rule)"
+
+
 def load_ft(data: pathlib.Path) -> tuple:
     """(tag, {task: {init: {N: [record per fine-tuning seed]}}}, tasks not yet read out) of the
     first read-out tag with any of its files present, or (None, {}, all tasks). A task whose file
@@ -6753,6 +6765,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     method_macros(em, root, words)
     ft_recipe(em, data, {m[len("mtx-"):] for m in pre_runs}, fmt_int, missing, words)
     tag, per, absent = load_ft(data)
+    out["tables/ft_source.txt"] = ft_source(data) + "\n"
     if absent:
         missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/: " + ", ".join(absent))
     if not (data / "budget" / "budget_metrics.json").exists():

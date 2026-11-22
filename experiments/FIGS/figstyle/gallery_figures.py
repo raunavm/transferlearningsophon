@@ -113,6 +113,8 @@ def main() -> int:
             print(f"{page.id}: FAILED {type(e).__name__}: {e}")
         pages.append(rec)
     (a.outdir / "pages.json").write_text(json.dumps(pages, indent=1))
+    # the fine-tuning read-out the figures drew (mlst_results.ft_source); the book refuses tables from another
+    (a.outdir / "ft_source.txt").write_text(C.M.ft_source(C.P.DATA) + "\n")
     print(f"\ndrawn {sum(r['drawn'] for r in pages)} of {len(pages)}; failed: {failed}")
     return 0
 

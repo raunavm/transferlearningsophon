@@ -3697,3 +3697,29 @@ def test_every_mass_item_reads_the_truth_free_refit_only(tmp_path):
     (tmp_path / "head" / "atlas_res").mkdir(parents=True)
     (tmp_path / "head" / "atlas_res" / "mtx-l188-s1.json").write_text("{}")
     assert M._load(tmp_path / M.MASS_RES) == {}
+
+
+def test_the_book_refuses_figures_and_tables_built_from_different_fine_tuning_read_outs(tmp_path, monkeypatch):
+    """2026-11-21 (audit): the preview's Fig. 8 drew the one-rule cells and its Table A6 the older trees, from two
+    builds; both outputs record mlst_results.ft_source and make_results_book stops when they differ."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("mrb_src", ROOT / "experiments/FIGS/make_results_book.py")
+    mrb = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mrb)
+    figs, tabs = tmp_path / "figs", tmp_path / "tables"
+    figs.mkdir(), tabs.mkdir()
+    with pytest.raises(SystemExit, match="no fine-tuning source stamp"):
+        mrb.check_ft_source(figs, tabs)
+    (figs / "ft_source.txt").write_text(M.FIXED_PARTIAL + " (preview)\n")
+    (tabs / "ft_source.txt").write_text("budget, budget_long, fulldecay, prefull (the trees before the one rule)\n")
+    with pytest.raises(SystemExit, match="build both with the same data"):
+        mrb.check_ft_source(figs, tabs)
+    (tabs / "ft_source.txt").write_text(M.FIXED_PARTIAL + " (preview)\n")
+    assert mrb.check_ft_source(figs, tabs).startswith(M.FIXED_PARTIAL)
+    (tmp_path / "budget").mkdir()
+    assert M.ft_source(tmp_path).startswith("budget")
+    (tmp_path / "budget" / M.FIXED_PARTIAL).write_text("{}")
+    monkeypatch.setenv(M.PREVIEW_ENV, "1")
+    assert M.ft_source(tmp_path) == M.FIXED_PARTIAL + " (preview)"
+    (tmp_path / "budget" / M.FIXED).write_text("{}")
+    assert M.ft_source(tmp_path) == M.FIXED

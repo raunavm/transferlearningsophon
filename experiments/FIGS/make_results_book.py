@@ -230,9 +230,21 @@ def labels_of(tiers) -> set:
     return {lab for t in tiers for k in TIERS[t] for lab in (k.split(" + ") if k.startswith("tab:") else [f"fig:{k}"])}
 
 
+def check_ft_source(src: pathlib.Path, tables: pathlib.Path = PAPER / "tables") -> str:
+    """The figures and the tables read the same fine-tuning read-out (mlst_results.ft_source), or the book stops."""
+    f, t = src / "ft_source.txt", tables / "ft_source.txt"
+    if not (f.exists() and t.exists()):
+        raise SystemExit(f"FATAL: no fine-tuning source stamp ({f} or {t}): rebuild the figures and the tables")
+    if f.read_text() != t.read_text():
+        raise SystemExit(f"FATAL: the figures read {f.read_text().strip()!r} and the tables {t.read_text().strip()!r}: "
+                         "build both with the same data and preview switch")
+    return f.read_text().strip()
+
+
 def build(src: pathlib.Path, which: str) -> str:
     """Writes the document of one output (OUTPUTS) from the gallery render in src; returns its name."""
     check_spec()
+    check_ft_source(src)
     recs = {r["id"]: r for r in json.loads((src / "pages.json").read_text())}
     name, tiers = OUTPUTS[which]
     external = None
