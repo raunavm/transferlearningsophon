@@ -122,14 +122,14 @@
 % The gallery figures (experiments/FIGS/figstyle/gallery_{labelset,roc,physics}.py, their Page records)
 % are saved by the render job as figures/mlst/gallery/<id>.pdf (gallery_figures.PAPER). F11 has a file
 % name, but the render job does not draw it until the X->bb and X->bs samples are in.
-\setfigfile{F2a}{gallery/F2a}               % linear probes against the number of pretraining classes
-\setfigfile{F2b}{gallery/F2b}               % the same after fine-tuning
+\setfigfile{F2a}{gallery/F2}                % linear probes, each task's headline metric (gallery F2; F2a is its AUC version)
+\setfigfile{F2b}{gallery/F2-ft}             % the same after fine-tuning (gallery F2-ft)
 \setfigfile{F3}{gallery/F3}                 % JetClass-II per-class heatmap (AUC difference)
 \setfigfile{F1}{gallery/F1}                 % design of the study
 \setfigfile{F4}{gallery/F4}                 % class pairs that differ only in flavor, ROC
 \setfigfile{FJ}{gallery/FJ}                 % JetClass, fine-tuned, each class against the rest, per label set
 \setfigfile{FJ-ctrl}{gallery/FJ-ctrl}       % the same for the random partitions
-\setfigfile{F6}{gallery/F6}                 % top and quark/gluon (Pythia, Herwig) ROC, ratio to 188 classes
+\setfigfile{F6}{gallery/F6-ft}              % top and quark/gluon (Pythia, Herwig) ROC after fine-tuning, ratio to 188 classes (gallery F6 is the linear probes)
 \setfigfile{F8}{gallery/F8}                 % 188-class model fine-tuned, probed and from scratch against training jets
 \setfigfile{F9a}{gallery/F9a}               % mass regression: response histograms
 \setfigfile{F9b}{gallery/F9b}               % mass regression: median and resolution against jet pT

@@ -19,7 +19,7 @@ adapted to many downstream tasks~\cite{bommasani,bert,mahajan,mae}, several grou
 foundation models. These are networks pretrained on tens to hundreds of millions of simulated jets and
 reused in many analyses through their output scores or by
 fine-tuning~\cite{sophon,omnilearn,omnilearned,mpm,omnijet,hepjepa}. A common pretraining objective is
-supervised classification into a large number of fine classes~\cite{part,sophon,omnilearn}. The
+supervised classification into a large number of fine classes~\cite{sophon,glopartdp}. The
 Signature-Oriented Pre-training for Heavy-resonance ObservatioN (Sophon) model is pretrained on the
 \Kfull{} classes of the JetClass-II dataset~\cite{sophon,jetclasstwo}, and the Global Particle Transformer
 (GloParT) of the CMS experiment has grown from \LitGlopartVoneNClasses{} classes in its first version to
@@ -64,28 +64,29 @@ and soft-drop mass in groups of classes, so that a selection on the tagger does 
 distribution. Classes that differ only in quark flavor share a group, and all QCD classes form one. Second,
 the four-momenta of the jet and its particles are scaled to one fixed jet $p_{\mathrm T}$, so that the tagging
 performance carries over to a wide range of masses~\cite[Sec.~II and App.~B]{sophon}.
-In this paper we pretrain this network on the jets of JetClass-II and change only the label set. The sampling
+In this paper we pretrain this network on the jets of JetClass-II and change only the label set
+(figure~\ref{fig:design}). The sampling
 groups do not depend on the label set, so models pretrained with the same seed see the same jets in the same
-order and start from the same initial weights, as figure~\ref{fig:design} shows. The
+order and start from the same initial weights in every layer but the output layer (section~\ref{sec:data}). The
 label sets are four levels of a class hierarchy, with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, whose
 merges remove in turn the quark content of QCD jets, the number of $b$ or $c$ quarks together with the
 distinctions between gluons and light quarks and between electrons and muons, and quark flavor. Our first
-control is a set of random partitions, in which the 161 resonant classes are split at random into 16 groups,
-with QCD kept as the 17th, as many classes as the \Kcoarse-class level. Our second control is three random partitions that differ only
+control is a set of random partitions, in which the resonant classes are assigned at random to groups,
+selected to cut across the \Kcoarse-class groups, with QCD kept as one more class, as many classes as the
+\Kcoarse-class level. Our second control is three random partitions that differ
 in their flavor boundaries, the class boundaries between decays that differ only in quark flavor. Following
 GloParT, which regresses the jet mass together with the classification~\cite{glopart,glopartdp}, we also
 pretrain the \Kres- and \Kcoarse-class models with an auxiliary regression of the jet mass. We evaluate every model with linear
 probes on the frozen features and by fine-tuning on JetClass-II, on JetClass~\cite{part}, on top
-tagging~\cite{toptag}, on quark/gluon discrimination~\cite{efn,qgpythia,qgherwig} and on Sophon's
-$X\to b\bar b$ and $X\to bs$ benchmark~\cite{sophon}. % CHECK: pending Xbx* (section 4.7 waits for the samples)
+tagging~\cite{toptag} and on quark/gluon discrimination~\cite{efn,qgpythia,qgherwig}, and with a transfer head
+on its frozen features on Sophon's $X\to b\bar b$ and $X\to bs$ benchmark~\cite{sophon}. % CHECK: pending Xbx* (section 4.7 waits for the samples)
 
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{F1}
 \caption{Design of the study. (a)~One network is pretrained on the same jets four times, once for each of
 four nested label sets with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, through a hidden layer of
-\DesignHeadHidden{} units; each merged class spans the rows it merges, rows are schematic, and below each
-merge is the distinction it removes. (b)~The pretrained network is then used in two ways: its frozen
+\DesignHeadHidden{} units; each merged class spans the rows it merges, and rows are schematic. (b)~The pretrained network is then used in two ways: its frozen
 features, the output of the backbone with its weights held fixed, feed a linear probe, or a new head with
 its own hidden layer of \DesignHeadHidden{} units is added and all weights are fine-tuned. The colors of
 the label sets are those of every later figure.}
@@ -98,15 +99,16 @@ the label sets are those of every later figure.}
 % CHECK: MlstFtJcOneErrCoarseOverFullBoot passes 3 sigma and MlstFtJcOneErr{Res,Mid}OverFullBoot read "consistent"
 % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull agree with 1 within their SD
 % CHECK: MlstCmpMlpResMassOverRes < 1; MlstCmpJcTwoResMassOverRes within a few per cent of 1 (sculpting is out of the findings: one mass-regression difference passes 3 sigma, PI 2026-11-09)
-We find that coarser pretraining labels make the frozen features substantially worse: a linear probe
-makes more errors on the pretraining classes at every coarser level of the hierarchy, and merging quark
+We find that coarser pretraining labels make the frozen features substantially worse on the pretraining
+classes, a task that favors finer labels by construction: a linear probe makes more errors there at every
+coarser level of the hierarchy, and, counted in wrongly ordered pairs of jets, merging quark
 flavor is the costliest single merge. At the same number of classes, the random partitions lose less than
 the \Kcoarse-class level, and a single flavor boundary lowers the error of the probe, so which classes are
 merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \MlstFtJcOneErrCoarseOverFullBoot{}
-on JetClass, a separate simulation with every input of the network present, and on top tagging and
+on JetClass, simulated without pileup and with every input of the network present, and on top tagging and
 quark/gluon discrimination, whose public datasets lack some of the network's inputs, the label sets show no
-resolved difference. The auxiliary mass regression makes the jet mass predictable from the
+resolved difference. The auxiliary mass regression makes the jet mass more precisely predictable from the
 frozen features at a small cost to the classification. A pretraining label set for jets should therefore contain every distinction that
-downstream discriminants sum over, and the flavor boundaries. Section~\ref{sec:related} reviews related
+downstream discriminants sum over and, for use with frozen features, the flavor boundaries. Section~\ref{sec:related} reviews related
 work, section~\ref{sec:methods} describes the data, the label sets and the evaluation,
 section~\ref{sec:results} presents the results, and section~\ref{sec:discussion} discusses them.

@@ -9,11 +9,12 @@ changes what the network learns has not been tested with the training jets held 
 network of Signature-Oriented Pre-training for Heavy-resonance ObservatioN (Sophon) repeatedly on the same
 jets, in the same order and from the same initial weights, and change only the label set, along a
 hierarchy from Sophon's full set of classes to one that describes only the number and type of the prongs.
-Random partitions of the classes, some differing only in a flavor boundary, compare label sets at a fixed
-number of classes. Coarser labels make linear probes on the frozen features substantially worse on the
-pretraining classes. Merging quark flavor is the costliest single merge, and at a fixed number of classes, which classes
+Random partitions of the classes, selected to cut across the classes of the coarsest label set, and
+partitions that differ in a flavor boundary compare label sets at a fixed number of classes. Coarser labels make linear probes on the
+frozen features substantially worse on the pretraining classes, a task that favors finer labels by
+construction. Counted in wrongly ordered pairs of jets, merging quark flavor is the costliest single merge, and at a fixed number of classes, which classes
 are merged changes the cost. After fine-tuning, the coarsest labels cost a few per cent more errors on
 JetClass and no resolved difference on the public top-tagging and quark/gluon benchmarks. An auxiliary
-jet-mass regression makes the mass predictable from the frozen features. A pretraining
-label set should contain every distinction that downstream discriminants sum over, and the flavor
-boundaries.
+jet-mass regression makes the mass more precisely predictable from the frozen features. A pretraining
+label set should contain every distinction that downstream discriminants sum over and, for use with frozen
+features, the flavor boundaries.
