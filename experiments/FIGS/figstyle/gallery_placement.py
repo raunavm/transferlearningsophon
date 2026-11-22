@@ -64,10 +64,10 @@ _FIGURES = (
     # PI 2026-11-13 (L1): the headline family's main-text slice, the headline metric of both modes; L20 (points-only
     # panels at least 4.5 cm) splits it one mode a figure, linear probes (F2) and fine-tuned (F2-ft), one sentence; the
     # same in the AUC (F2a, F2b) opens the appendix
+    # PI 2026-11-21: no "no difference on top" while any printed metric passes 3 sigma; the top and quark/gluon clause
+    # comes from the bootstrap of every printed metric (gallery_labelset.top_qg_probe_clause), not from this sentence
     *((k, MAIN, "With linear probes, 43 and 17 classes and every 17-class partition are less accurate on JetClass-II "
-                "than 188 classes, and after fine-tuning 17 classes stay below 188 on JetClass-II and JetClass, while on "
-                "top and quark/gluon tagging, Pythia and Herwig, the label sets are consistent with 188 in R30 in both "
-                "modes.")
+                "than 188 classes, and after fine-tuning 17 classes stay below 188 on JetClass-II and JetClass.")
       for k in ("F2", "F2-ft")),
     # PI 2026-11-13 (L10): the 17-class loss is broad, not uneven; PI 2026-11-14: the counts follow L3 (run SDs and the
     # per-class test-jet bootstrap where stored) and are computed with the figure (gallery_perclass.l3_counts, in its
@@ -86,8 +86,7 @@ _FIGURES = (
     # top and quark/gluon, Pythia and Herwig, |z| < 2.2 everywhere
     # PI 2026-11-18: Fig. 7 carries the AUC as its second row (A8-auc folded in)
     ("A8", MAIN, "Fine-tuned, 17 classes stay below 188 classes on JetClass-II at every size and on JetClass at a "
-                 "million jets; on top and quark/gluon tagging, Pythia and Herwig, the label sets and mass networks "
-                 "are consistent with 188 classes in R30."),
+                 "million jets."),
     ("F11", MAIN, XBX),
     # the appendix by family (PI 2026-11-14, step 6; APPENDIX_FAMILIES), within a family linear probes first; PI
     # 2026-11-18: F2a and F2b (AUC only) to the supplement, Table A1 keeps the AUC beside every headline value

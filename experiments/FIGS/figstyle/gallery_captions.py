@@ -17,7 +17,7 @@ NO_RAND = "Random partitions, which merge the pair's classes differently, are in
 COUNTS = {}       # PC-jc2, PC-jc1: the computed count sentence (gallery_perclass), "" without per-class values
 # a sentence that depends on the data read, {name} in a caption (gallery_physics sets "probe_note": the mass probe is
 # centred on one training median, the truth-free refit atlas_res_v3, the only mass files read)
-FILLS = {"probe_note": "", "xbs_widen": ""}
+FILLS = {"probe_note": "", "xbs_widen": "", "top_qg_probe": ""}
 
 CAPTIONS = {
     "F1": (
@@ -32,8 +32,7 @@ CAPTIONS = {
     ),
     "F2": (
         'With linear probes, 43 and 17 classes and every 17-class partition are less accurate on JetClass-II than 188 '
-        'classes, while on top and quark/gluon tagging, Pythia and Herwig, no pretrained network differs from 188 '
-        'classes in R30 by more than three standard deviations. Points are means ±1 standard deviation over the runs '
+        'classes{top_qg_probe}. Points are means ±1 standard deviation over the runs '
         'of figure {fig:F1}, over the five random partitions, or over three initializations of the untrained random '
         'network, the linear-probe reference, beyond the // breaks in (a) and (b). The released Sophon checkpoint, one '
         'network, appears on JetClass-II and JetClass only. R30 is the inverse background efficiency at 30% signal '
@@ -43,8 +42,7 @@ CAPTIONS = {
     ),
     "F2-ft": (
         'After fine-tuning, 17 classes stay below 188 classes on JetClass-II and make about 3% more errors on '
-        'JetClass, while on top and quark/gluon tagging, Pythia and Herwig, no pretrained network differs from 188 '
-        'classes in R30 by more than three standard deviations. Points are means ±1 standard deviation over the runs '
+        'JetClass. Points are means ±1 standard deviation over the runs '
         'of figure {fig:F1}, over the five random partitions, or over three trainings from scratch, the fine-tuned '
         'reference. R30 is the inverse background efficiency at 30% signal efficiency, and quark/gluon tagging trains '
         'on Pythia jets. Values are in table {tab:summary}, figure {fig:F2} shows the linear probes and table '
