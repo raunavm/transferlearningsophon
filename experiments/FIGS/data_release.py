@@ -289,7 +289,7 @@ def cells(text: str) -> list:
                 inbody |= mid
                 rows.append((r, inbody))
         header = collections.defaultdict(list)
-        block = ""
+        top = sub = ""          # an italic heading, and a plain one under it ("17-class partitions")
         for raw, isbody in rows:
             r, _ = _lead(raw)
             if not r.strip() or r"\caption" in r:
@@ -307,13 +307,21 @@ def cells(text: str) -> list:
                 continue
             if len(cs) == 1:
                 if r.strip().startswith(r"\multicolumn"):
-                    block = detex(_span(r)[1])
+                    h = _span(r)[1]
+                    if re.search(r"\\(?:textit|itshape)", h):
+                        top, sub = detex(h), ""
+                    else:
+                        sub = detex(h)
                 continue
+            block = f"{top} / {sub}" if top and sub else top or sub
             row, col = detex(cs[0]), _span(cs[0])[0]
+            # the label column's heading names the quantity of a part (tab:massdetail: resolution, median response)
+            q = " / ".join(header.get(0, []))
             for c in cs[1:]:
                 n, t = _span(c)
                 t = t.strip()
-                out.append(Cell(part, block, row, " / ".join(header.get(col, [])) or f"#{col}", t, numbers(t)))
+                head = " / ".join(header.get(col, [])) or f"#{col}"
+                out.append(Cell(part, block, row, f"{q}: {head}" if q else head, t, numbers(t)))
                 col += n
     return out
 
