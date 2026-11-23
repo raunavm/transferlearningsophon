@@ -1228,7 +1228,8 @@ def items(built: dict, rec: Recorder, figs: dict, fig_notes: dict) -> list:
         out.append((key, "table", tier, GP.number(key), sentence, files, note))
     for rel, t in rec.result["tables"].items():
         if rel not in placed:
-            out.append((t["label"] or pathlib.Path(rel).stem, "table", "not placed", "", "", [names[rel]],
+            key = t["label"] if t["label"] and t["label"] not in GP.TIER else pathlib.Path(rel).stem
+            out.append((key, "table", "not placed", "", "", [names[rel]],
                         f"generated ({rel}), placed nowhere in the paper"))
     return out
 
