@@ -20,7 +20,7 @@ NO_RAND = "The random partitions, one run each, are two curves, those merging th
 COUNTS = {}       # PC-jc2, PC-jc1: the computed count sentence (gallery_perclass), "" without per-class values
 # a sentence that depends on the data read, {name} in a caption (gallery_physics sets "probe_note": the mass probe is
 # centred on one training median, the truth-free refit atlas_res_v3, the only mass files read)
-FILLS = {"probe_note": "", "xbs_widen": "", "init_range": ""}
+FILLS = {"probe_note": "", "xbs_widen": "", "init_range": "", "init_bbqq": "", "init_qcd": ""}
 # the paper's numbers: make_tables.py writes them before the gallery draws, in the paper and the book render jobs
 GENERATED = pathlib.Path(__file__).resolve().parents[3] / "paper" / "journal" / "results_generated.tex"
 
@@ -133,15 +133,17 @@ CAPTIONS = {
         '188 classes, the random network and the soft-drop mass only, are ±1 standard deviation combining the spread '
         'over runs with the bootstrap over test jets. Values, and the other standard deviations, are in table {tab:mass}.'
     ),
+    # the paper's caption (results_mass.tex, review of render dfe5942: the page caption follows it word for word)
     "F11": (
-        'At 1% QCD efficiency, 17 classes keep fewer X→bb̄ and X→bs jets than 188 classes, a gap of 0.6 and 1.0 in the '
-        'figure of merit{xbs_widen}. The figure of merit, signal efficiency over the square '
-        'root of QCD efficiency, is shown for (a) X→bb̄ and (b) X→bs against QCD, all jets with soft-drop mass 150 to '
-        '230 GeV and efficiencies relative to them. Solid curves are a multilayer-perceptron classifier on frozen '
-        'features starting from the pretrained output head, grey curves training from scratch, and dash-dotted curves '
-        'the X→bb̄ output against the QCD outputs (188, 162 and 162 classes + mass, in (a)). Bands, for 188 classes '
-        'and from scratch only, are ±1 standard deviation over the pretraining runs (counted in figure {fig:F1}) or three trainings. Table '
-        '{tab:summary} holds the classifier\'s values at 1% QCD efficiency.'
+        'At a QCD efficiency of 1%, 17 classes keep fewer X→bb̄ and X→bs jets than 188 classes{xbs_widen}. Panels show '
+        'the signal efficiency over the square root of the QCD efficiency against '
+        'the QCD efficiency, for a transfer head on the frozen features of each label set and mass network, the same '
+        'network trained from scratch on {m:MlstXbxScratchTrainBb} (X→bb̄) or {m:MlstXbxScratchTrainBs} (X→bs) jets a '
+        'class and, for X→bb̄, Sophon\'s direct discriminant of the 188- and 162-class networks and the 162-class mass '
+        'network. Curves are means over {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network '
+        'and {m:MlstXbxScratchSeedsWord} from scratch, ending below {m:MlstMinBkgPass} passing QCD jets, on the same '
+        'jets in the soft-drop mass window {m:XbxWindowLo}-{m:XbxWindowHi} GeV. The signal efficiencies at a QCD '
+        'efficiency of 1% are in table {tab:summary}.'
     ),
     "F11-part": (
         "At 1% QCD efficiency, the partitions with no, a b-quark and a random flavor boundary each keep fewer X→bb̄ and"
@@ -152,18 +154,24 @@ CAPTIONS = {
         "flavor-boundary partition, and over the five random partitions with one run each; the band, for 188 classes "
         "only, is ±1 standard deviation. Values and the other standard deviations are in table {tab:xbx}."
     ),
-    # PI 2026-11-23 (LEDGER SP-9, merge 8): F4-light's two pairs are this figure's second row; the QCD pairs have no
-    # partitions panel, as every partition merges the QCD classes
+    # review of render dfe5942: the four other pairs are two figures, the resonance pair with its partitions (F4-other)
+    # and the three QCD pairs, which every partition merges (F4-qcd)
     "F4-other": (
-        "With linear probes, 43 and 17 classes separate four pairs that 17 classes merge, X→YY→bbqq from ccqq, QCD bb̄ "
-        "from cc̄, and QCD jets with a b quark, or a c and no b, from light QCD jets, the second-named the background, "
-        "less well than 188 classes, and 162 classes, which merge the QCD classes, the QCD pairs. Panels, drawn as in "
-        "figure {fig:F4-mech}, show the label sets and, in (e), the 17-class partitions, which all merge the QCD "
-        "classes. Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and "
-        "flavor-boundary partition, and {m:RandVtwoRuns} per random partition, split into those merging the pair "
-        "({m:MlstPairRandMergedBbqqN}) and keeping it apart ({m:MlstPairRandApartBbqqN}). The random network, not "
-        "drawn, reaches {m:MlstPairInitRhalfOtherMin} to "
-        "{m:MlstPairInitRhalfOtherMax} at 50% of signal jets. Table {tab:tests} has the tested differences."
+        "With linear probes, 43 and 17 classes separate X→YY→bbqq from ccqq, the second-named the background, which "
+        "17 classes merge, less well than 188 classes. Panels, drawn as in figure {fig:F4-mech}, show (a) the label "
+        "sets and (b) the 17-class partitions. Curves average {m:MlstNRunsWord} runs per label set, "
+        "{m:MlstMassNRunsWord} per mass network and flavor-boundary partition, and {m:RandVtwoRuns} per random "
+        "partition, {m:MlstPairRandMergedBbqqN} of them merging the pair and {m:MlstPairRandApartBbqqN} keeping it "
+        "apart. The random network, not drawn, reaches {init_bbqq} at 50% of signal jets. The three QCD pairs are in "
+        "the next figure, and table {tab:tests} has the tested differences."
+    ),
+    "F4-qcd": (
+        "With linear probes, 43 and 17 classes, and 162 classes, which merge the QCD classes, separate QCD bb̄ from cc̄ "
+        "and QCD jets with a b quark, or a c and no b, from light QCD jets, the second-named the background, less well "
+        "than 188 classes. Panels are drawn as in figure {fig:F4-mech}, the label sets only, as every 17-class "
+        "partition merges the QCD classes. Curves are means over {m:MlstNRunsWord} runs per label set and "
+        "{m:MlstMassNRunsWord} per mass network. The random network, not drawn, reaches {init_qcd} at 50% of signal "
+        "jets. Table {tab:tests} has the tested differences."
     ),
     "F4-mech-ft": (
         "After fine-tuning, 17 classes still separate X→bb̄ from cc̄ and X→bc from bq, cs worse than 188 classes. The "

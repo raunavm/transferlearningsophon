@@ -26,7 +26,7 @@ MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_perclass,
            gallery_compare)
 ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement, PI 2026-11-23,
          # LEDGER SP-9): main text, appendix by family, the data release (supplement tier)
-         "F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11", "VAL", "A10", "F4-other", "F9b", "F4-mech-ft",
+         "F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11", "VAL", "A10", "F4-other", "F4-qcd", "F9b", "F4-mech-ft",
          "F4-other-ft", "F4-light-ft", "ROC-main", "ROC-main-ft", "PT", "A17-probe", "F10b", "F11-part", "UMAP-frozen",
          "UMAP-ft", "F2a", "F2b", "PC-jc1", "F6", "F6-ft", "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand",
          "PC-jc2-mass", "PC-jc1-mass", "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-ee", "F4-rand", "F4-rand-qcd",
@@ -50,7 +50,7 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
 # hold both modes or compare them (PT, PC-*, F8) name the mode in their panels or legends
 _LP, _FT = "Linear probe", "Fine-tuned"
 MODE_HEADINGS = {
-    **dict.fromkeys(("F2", "ROC-main", "F2a", "F4-mech", "F4-other", "F4-ee", "F4-rand", "F4-rand-qcd", "A10",
+    **dict.fromkeys(("F2", "ROC-main", "F2a", "F4-mech", "F4-other", "F4-qcd", "F4-ee", "F4-rand", "F4-rand-qcd", "A10",
                      "A10-part", "F6", "F6-part", "FJ-app", "FJ-ctrl-app", "FJ-mass-app", "A3R", "F11-probe"), _LP),
     **dict.fromkeys(("F2-ft", "ROC-main-ft", "F2b", "F4-mech-ft", "F4-other-ft", "F4-light-ft", "F4-rand-ft", "F4-rand-qcd-ft", "A8",
                      "A8-part", "F6-ft", "F6-part-ft", "FJ", "FJ-ctrl", "FJ-mass", "A3R-ft", "A3R-ctrl-ft",
@@ -60,8 +60,8 @@ MODE_HEADINGS = {
     # CA-12 (review of render 5c40d69, B15): F11's mode is the transfer head on frozen features, as Table 1's heading
     # over its columns; the network trained from scratch beside it is grey and named in the legend (L6), the direct
     # discriminant dash-dot and named "(direct discriminant)"
-    "F11": "Transfer head, beside training from scratch",
-    **dict.fromkeys(("F11-part", "A17-probe", "A17-ridge", "A17-probe-part", "A17-ridge-part", "UMAP-frozen",
+    "F11": "Transfer head, beside training from scratch", "F11-part": "Transfer head",
+    **dict.fromkeys(("A17-probe", "A17-ridge", "A17-probe-part", "A17-ridge-part", "UMAP-frozen",
                      "UMAP-xbx", "UMAP-mass-xbx"),
                     "Not fine-tuned"),
     **dict.fromkeys(("UMAP-ft",), _FT),
@@ -73,7 +73,7 @@ S3.HEADINGS.update(MODE_HEADINGS)
 
 
 PAPER = ("F1", "F2", "F2-ft", "ROC-main", "ROC-main-ft", "F2a", "F2b", "PC-jc2", "PC-jc1", "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand", "PC-jc2-mass", "PC-jc1-mass",
-         "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-mech", "F4-mech-ft", "F4-other", "F4-other-ft", "F4-light-ft", "F4-ee", "F4-rand", "F4-rand-qcd",
+         "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-mech", "F4-mech-ft", "F4-other", "F4-qcd", "F4-other-ft", "F4-light-ft", "F4-ee", "F4-rand", "F4-rand-qcd",
          "F4-rand-ft", "F4-rand-qcd-ft", "FJ", "FJ-ctrl", "FJ-s", "FJ-app", "FJ-ctrl-app", "FJ-mass", "FJ-mass-app", "F6", "F6-ft", "F6-part", "F6-part-ft", "F8",
          "F8-auc", "A8", "A8-part", "A10", "A10-part", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge", "A17-probe-part", "A17-ridge-part",
          "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",

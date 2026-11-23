@@ -982,15 +982,20 @@ VAL_ROWS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")     
 VAL_PARTITIONS = ("R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")      # 17 classes, the one comparable height
 
 
+VAL_LEGEND_W = 4.2          # cm: the legend's column beside the panel ("162 classes + mass" and its key)
+
+
 def _draw_val(path, rows: tuple) -> None:
-    """Exact size, one panel SINGLE_W wide (PI 2026-11-12), the legend above it in two columns read downwards (L5
-    order); each network's mean over runs with a +-1 SD band (the five random partitions pooled)."""
+    """Exact size at the paper's width (FG-14, review of render dfe5942: the paper sets every figure at the text width,
+    so a narrower canvas printed its text at 14-16 pt), its one panel the size of a single-panel figure's (PI
+    2026-11-12, SINGLE_W), the legend in one column beside it (L5 order), the block centred; each network's mean over
+    runs with a +-1 SD band (the five random partitions pooled)."""
     docs = M._load(P.DATA / "compute")
     runs = M._pooled(RUNS)
-    legend_rows = math.ceil(len(rows) / 2)
-    top, w = 0.5 + 0.45 * legend_rows, S.SINGLE_W - 1.5 - 0.25
-    fig = S.figure_cm(S.SINGLE_W, top + 0.85 * w + 1.0)
-    ax = S.axes_cm(fig, 1.5, top, w, 0.85 * w)
+    top, w = 0.5, S.SINGLE_W - 1.5 - 0.25
+    x0 = (S.PRINT_W - (1.5 + w + 0.4 + VAL_LEGEND_W)) / 2 + 1.5
+    fig = S.figure_cm(S.PRINT_W, top + 0.85 * w + 1.0)
+    ax = S.axes_cm(fig, x0, top, w, 0.85 * w)
     S.fine_grid(ax)
     for row in rows:
         have = np.array([[e["val_acc"] for e in docs[m]["epochs"]] for m in runs[row]
@@ -1003,7 +1008,7 @@ def _draw_val(path, rows: tuple) -> None:
             ax.fill_between(x, mean - sd, mean + sd, color=S.SERIES[row], alpha=L.BAND, linewidth=0, zorder=1.0)
         ax.plot(x, mean, **S.look(row), linewidth=S.LW_CURVE, label=S.LEGEND[row])
     S.labels(ax, "Pretraining epoch", "Validation accuracy")
-    S.fig_legend(fig, ax.get_legend_handles_labels()[0], top_cm=S.LEGEND_TOP, ncol=2)
+    S.slot_legend(fig, ax.get_legend_handles_labels()[0], x0 + w + 0.4, top, VAL_LEGEND_W, 0.85 * w)
     S.save(fig, path)
 
 

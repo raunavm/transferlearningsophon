@@ -21,6 +21,7 @@ import dataclasses
 import functools
 import json
 import math
+import textwrap
 
 import numpy as np
 from matplotlib import ticker
@@ -47,15 +48,16 @@ FIG4 = LABEL_SETS
 MODES = ("Linear probe", "Fine-tuned")
 # panel width (cm) by rows of networks (L20, points only: at least 4.5 cm): two rows at a two-column figure's width,
 # three as wide as the page's height allows (make_results_book.MAX_H_CM); five (FIG4) fit 18.5 cm only at 2.65 cm
-PANEL = {2: 6.3, 3: 4.6, 5: 2.65}
+PANEL = {2: 6.15, 3: 4.5, 5: 2.65}
 DOT = {2: 3.0, 3: 2.6, 5: 1.8}          # pt: 188 points in a panel stay apart
 JC1_DOT = 4.0
 JC1_SHAPES = ("o", "s", "^", "v", "D", "P", "X", "p", "h", "*")    # with the colour, so the ten classes part in greyscale
-LEFT = 1.3                               # cm: the y label and the tick labels
-WGAP = {5: 3.4}                          # cm between panels of a row: the titles clear; default 0.35
+LEFT = 1.2                               # cm: the y label and the tick labels
+WGAP = {5: 3.4}                          # cm between panels of a row: the titles clear; default LEFT (FG-8)
 TITLE_LINE = 0.4                         # cm: a second title line (four columns: a partition's name in two lines)
-HGAP = {5: 0.6}                          # cm between rows: the next titles only (shared x tick labels); default 0.95
-XLABEL = 0.9                             # cm: x tick labels and label under each row (rows with their own reference)
+HGAP = {5: 0.6}                          # cm between rows besides the x tick labels and label; default 0.4
+XLABEL = 0.9                             # cm: x tick labels and label under each row (FG-8: every row)
+LEGEND_BESIDE = 3.0                      # cm: a legend column beside the panels when this much is free, labels wrapped
 ABSENT = "no per-class recalls of the 188-class network (perclass_recall/, experiments/EVAL/perclass_recall.py)"
 
 # what the 17-class labels merged a JetClass-II class with (mlst_results._orbits, the per_class_macros merge rule)
@@ -169,16 +171,34 @@ def _look(test: str):
                          label=MERGE_LABEL[k]) for k in MERGE_KINDS]
 
 
+def _significant(test: str, mode: int, pair: tuple) -> set | None:
+    """The classes whose recall for pair[0] differs from pair[1]'s by more than three standard deviations (the run SDs
+    and the paired bootstrap over test jets, perclass_recall.py's "diffs", the test whose count the text prints:
+    mlst_results.jc2_recall_macros); None when the mode's file lacks the difference."""
+    doc = _doc(test, mode)
+    d = doc.get("diffs", {}).get(f"{pair[0]}-{pair[1]}")
+    return None if d is None else {_key(test, doc)(k) for k in list(d["lower"]) + list(d["higher"])}
+
+
+WITHIN = "within three standard deviations"     # the open points' legend entry
+
+
 def _draw_grid(path, test: str, rows: tuple) -> None:
     """One row per (compared, reference) pair, linear probe and fine-tuned beside each other (L20: the networks are rows
     and the two modes the columns), on one linear axis range: the lowest and highest recall of any point and its bars,
-    clear of the frame. Each point has bars of its side's run SD and the bootstrap SD over test jets of the mean (L3).
-    A panel without values (its mode's file not pulled, or the network not run) is drawn empty with "pending" in its
-    title. Rows with one reference share the x labels under the lowest row."""
+    clear of the frame. Each point has bars of its side's run SD and the bootstrap SD over test jets of the mean (L3);
+    a class whose recall lies within three standard deviations of the reference's is open, one beyond them filled
+    (review of render dfe5942, B2: the classes the text counts, marked). A panel without values (its mode's file not
+    pulled, or the network not run) is drawn empty with "pending" in its title. FG-8 (review of render dfe5942, B9):
+    every panel has its own x and y labels and tick numbers."""
     gets = SOURCES[test]
     if not any(_mean(get, "L188") for get in gets):
         raise C.Absent(ABSENT)
     look, handles = _look(test)
+    sig = [[_significant(test, k, pair) for k in (0, 1)] for pair in rows]
+    if any(s is not None for row in sig for s in row):
+        handles = handles + [Line2D([], [], color="#777777", marker="o", markersize=3, markerfacecolor="white",
+                                    markeredgewidth=0.5, linestyle="none", label=WITHIN)]
     handles = handles + [Line2D([], [], **S.REFERENCE, label="equal recall")]
     n = len(rows)
     w = PANEL[n]
@@ -193,20 +213,24 @@ def _draw_grid(path, test: str, rows: tuple) -> None:
         raise C.Absent(f"no per-class recalls of {', '.join(a for a, _ in rows)}")
     pad = 0.04 * (max(vals) - min(vals))
     lim = (min(vals) - pad, max(vals) + pad)                 # the points and bars clear of the frames (L7)
-    ncol = math.ceil(len(handles) / 2)                       # two legend rows
-    one_ref = len({b for _, b in rows}) == 1
     two = any(len(S.LEGEND[a]) > 16 for a, _ in rows) and n < 5      # a long name and the mode on two title lines
     row_cm = 0.5 if test == "jc1" else 0.45          # a legend row of class names in mathtext is taller
-    top = S.LEGEND_TOP + row_cm * 2 + 0.6 + (TITLE_LINE if two else 0)
-    hgap = HGAP.get(n, 0.95) + (TITLE_LINE if two else 0) + (0 if one_ref else XLABEL)
-    fig = S.figure_cm(S.PRINT_W, top + n * w + (n - 1) * hgap + 1.0)
-    wgap = WGAP.get(n, 0.35)
-    x0 = (S.PRINT_W - LEFT - 2 * w - wgap) / 2 + LEFT       # the block of labels and panels centred
+    wgap = WGAP.get(n, LEFT)
+    # the legend beside the panels where a column fits (the three-row figures: the page's height, MAX_H_CM), else
+    # above them in three rows
+    tall = len(handles) * row_cm + 0.3                       # the legend column's height, from the first row's top
+    beside = S.PRINT_W - (LEFT + 2 * w + wgap) - 0.25 >= LEGEND_BESIDE and tall <= n * w
+    ncol = math.ceil(len(handles) / 3)
+    top = (0.0 if beside else S.LEGEND_TOP + row_cm * math.ceil(len(handles) / ncol)) + 0.6 + (TITLE_LINE if two else 0)
+    hgap = HGAP.get(n, 0.4) + (TITLE_LINE if two else 0) + XLABEL
+    fig = S.figure_cm(S.PRINT_W, top + n * w + (n - 1) * hgap + 0.95)
+    # the block of labels and panels centred, or at the left with the legend beside it
+    x0 = LEFT if beside else (S.PRINT_W - LEFT - 2 * w - wgap) / 2 + LEFT
     dot = DOT[n]
     for i, (row, (a, b)) in enumerate(zip(pts, rows)):
         y0 = top + i * (w + hgap)
-        last = i == n - 1 or not one_ref
         for j, (panel, mode) in enumerate(zip(row, MODES)):
+            marked = sig[i][j]
             ax = S.axes_cm(fig, x0 + j * (w + wgap), y0, w, w)
             S.fine_grid(ax)
             ax.plot(lim, lim, **S.REFERENCE)
@@ -214,20 +238,25 @@ def _draw_grid(path, test: str, rows: tuple) -> None:
                 colour, marker, size, z = look(c)
                 ax.errorbar(x, y, xerr=ex or None, yerr=ey or None, fmt="none", ecolor=colour, elinewidth=0.4,
                             capsize=0, alpha=0.6, zorder=z - 0.1)
+                within = marked is not None and c not in marked
                 ax.plot(x, y, color=colour, marker=marker, markersize=size or dot, linestyle="none", clip_on=False,
-                        zorder=z, markeredgewidth=0.5 if marker in "+x*" else 0)
+                        zorder=z, markerfacecolor="white" if within else colour,
+                        markeredgewidth=0.5 if within or marker in "+x*" else 0)
             ax.set_xlim(lim)
             ax.set_ylim(lim)
             for axis in (ax.xaxis, ax.yaxis):
                 axis.set_major_locator(ticker.MaxNLocator(3 if w < 4 else 5, steps=[1, 2, 2.5, 5, 10]))
-            ax.tick_params(labelleft=j == 0, labelbottom=last)
+            ax.tick_params(labelleft=True, labelbottom=True)
             S.title(ax, f"({'abcdefghij'[2 * i + j]}) {S.LEGEND[a]},{chr(10) if two else ' '}{mode.lower()}"
                     + ("" if panel else " (pending)"))
-            if j == 0:
-                S.labels(ax, ylabel="Recall" if n == 5 else "Recall, the panel's network")
-            if last:
-                S.labels(ax, xlabel=f"Recall, {S.LEGEND[b]}")
-    S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=ncol, columnspacing=0.8, handletextpad=0.4)
+            S.labels(ax, xlabel=f"Recall, {S.LEGEND[b]}", ylabel="Recall" if n == 5 else "Recall, the panel's network")
+    if beside:
+        x = x0 + 2 * w + wgap + 0.25
+        wrap = lambda s: s if "$" in s else textwrap.fill(s, 17)       # noqa: E731
+        S.slot_legend(fig, handles, x, top, S.PRINT_W - x, max(w, tall), labels=[wrap(h.get_label()) for h in handles],
+                      handletextpad=0.4)
+    else:
+        S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=ncol, columnspacing=0.8, handletextpad=0.4)
     S.save(fig, path)
 
 

@@ -275,7 +275,7 @@ MECHANISM, OTHER = PAIR_ORDER[:2], PAIR_ORDER[2:6]
 RATIO_HEIGHT = 0.35     # a ratio panel's height over its panel's (OmniLearned Fig. 3's form)
 RATIO_RANGE_FROM = 0.1  # a ratio is drawn at efficiencies from 0.1: below, a few background jets swing it
 RATIO_LOG = 5.0         # a ratio range spanning more than this factor is logarithmic (the 17-class probes on the pairs)
-NAME_X = 0.2            # cm: the turned row names
+NAME_X = 0.18           # cm: the turned row names
 RATIO_WORDS = 2.75      # cm: "Ratio to 188 classes" at 9 pt; a shorter ratio panel says "Ratio" (the caption says to what)
 Y_REJ_WORDS = 4.3       # cm: "Background rejection (1/eps_B)" at 9 pt; a shorter panel says "Rejection (1/eps_B)
 TITLE_LINE = 0.4        # cm: a second title line
@@ -419,24 +419,27 @@ def _x_ticks(axes: list, lo: float, w: float, last: bool = True) -> None:
 
 def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_names: tuple = (), wgap: float = Y_LABEL_GAP,
               share=lambda i, j: 0, own_y: bool = False, fit_x: bool = True, legend_slot: tuple | None = None,
-              ratio_scale: str | None = None) -> None:
+              ratio_scale: str | None = None, ratio: float = RATIO_HEIGHT, hgap: float = 1.35 + X_LABEL,
+              left: float | None = None) -> None:
     """grid: rows of panels (docs, curve key, networks, title); a panel None is left out (its slot stays empty). Each
     panel w cm wide and aspect * w high, its ratio panel RATIO_HEIGHT of that under it. share(i, j): panels of one key
     share their y range and their ratio range (in a row only the first shows its tick labels unless own_y). fit_x: each
     column's x range fitted to its curves (pairs), else 0 to 1. One legend above the panels for every network drawn,
     a column per group (_group_legend), or (legend_slot (i, j), L20: two panels a row) one column in that free slot
     while it fits. Titles with a line break take a second line's room. FG-8 (PI 2026-11-20): every panel has its own x
-    and y labels, so the gap between panels holds a y label and the gap between rows an x label."""
+    and y labels, so the gap between panels holds a y label and the gap between rows an x label; own_y: every panel its
+    tick numbers too. ratio: a ratio panel's height over its panel's; hgap: cm between rows; left: cm left of the first
+    column (the turned row names, the tick numbers and the y label)."""
     rows, cols = len(grid), max(len(r) for r in grid)
-    left = (0.65 if row_names else 0.1) + 1.25
+    left = ((0.65 if row_names else 0.1) + 1.25) if left is None else left
     h = aspect * w
-    rh = RATIO_HEIGHT * h
+    rh = ratio * h
     handles = {}
     nets = {n for r in grid for p in r if p for n in p[2]}
     legend_rows = max(len(c) for c in _legend_cols(nets))
     two = any("\n" in p[3] for r in grid for p in r if p)
     top = (0.0 if legend_slot else S.LEGEND_TOP + 0.45 * legend_rows) + 0.65 + (TITLE_LINE if two else 0)
-    hgap = 1.35 + X_LABEL + (TITLE_LINE if two else 0)
+    hgap = hgap + (TITLE_LINE if two else 0)
     fig = S.figure_cm(S.PRINT_W, top + rows * (h + 0.1 + rh) + (rows - 1) * hgap + 1.0)
     mains, ratios, values = {}, {}, collections.defaultdict(list)
     for i, row in enumerate(grid):
@@ -521,10 +524,13 @@ def _pair_grid(path: pathlib.Path, family: str, pairs: tuple, w: float, aspect: 
     _roc_grid(path, [[(docs, k, LABEL_SETS + ref, name(PAIR_TITLE[k])) for k in pairs],
                      [(docs, k, PAIR_PARTITIONS, name(PAIR_TITLE[k])) for k in pairs]],
               w=w, aspect=aspect, row_names=("Label sets", "17-class partitions"), share=lambda i, j: i,
-              ratio_scale="log")      # the class-pair family: logarithmic ratio panels in every figure
+              ratio_scale="log", own_y=True, wgap=PAIR_WGAP, left=PAIR_LEFT)    # logarithmic ratio panels everywhere
 
 
-PAIR_W = {2: 6.15, 3: 4.15, 4: 3.0}     # cm: a panel of two, three or four in a row beside the turned row names
+PAIR_W = {2: 6.1, 3: 4.15, 4: 3.0}      # cm: a panel of two, three or four in a row beside the turned row names
+# FG-8 (review of render dfe5942, B9): every pair panel shows its own y tick numbers and y label, so the right column's
+# sit in the gap, clear of the panel to the left, and the turned row names take less room: 1.45 + 6.1 + 1.25 + 6.1 cm
+PAIR_LEFT, PAIR_WGAP = 1.45, 1.25
 
 
 def draw_f4_mech(path: pathlib.Path) -> None:
@@ -536,15 +542,52 @@ def draw_f4_mech_ft(path: pathlib.Path) -> None:
 
 
 # L20 (PI 2026-11-13): two panels a row. PI 2026-11-23 (LEDGER SP-9, merge 8): the four other flavor pairs in one
-# figure, the label sets on the resonance pair and QCD bb vs cc, then on QCD with heavy quarks vs light, and the
-# partitions row on the resonance pair only: every partition merges the QCD classes; the legend in the free slot
+# figure, the partitions on the resonance pair only (every partition merges the QCD classes). Review of render dfe5942
+# (C): that figure, 24 cm high, could not share a page with its caption, so it is two (main session 2026-11-23, an
+# exception to merge 8 for the PI): the resonance pair with the label sets and the partitions (F4-other), the three
+# QCD pairs with the label sets (F4-qcd), each in F4-mech's form, one y range and one ratio range a figure
+QCD_PAIRS = OTHER[1:]
+INIT_EPS = 0.5          # the random network's rejection at half the signal jets, in the captions (as mlst_results)
+
+
+def _init_rhalf(keys: tuple) -> str:
+    """The random network's rejection at INIT_EPS of signal jets, the mean over its initializations, its lowest and
+    highest over the pairs keys, in mlst_results.pair_figure_macros' form (two significant figures below ten): the
+    page captions of F4-other and F4-qcd, whose pairs no build macro covers yet."""
+    docs = ROC.get("pairs", {})
+
+    def rej(m, k):
+        s = M.V4.roc_series(docs[m], k) if m in docs else None
+        if s is None:
+            return None
+        i = int(np.argmin(np.abs(s[0] - INIT_EPS)))
+        return float(s[1][i]) if abs(s[0][i] - INIT_EPS) < 1e-9 and np.isfinite(s[1][i]) else None
+    v = [[rej(m, k) for m in RUNS[M.INIT]] for k in keys]
+    if not v or any(x is None for xs in v for x in xs):
+        return "a value still to be read"
+    means = [float(np.mean(xs)) for xs in v]
+    fmt = lambda x: f"{x:.2g}" if x < 10 else f"{x:.0f}"      # noqa: E731
+    lo, hi = fmt(min(means)), fmt(max(means))
+    return lo if lo == hi else f"{lo} to {hi}"
+
+
+import gallery_captions as _K  # noqa: E402
+_K.FILLS.update({"init_bbqq": _init_rhalf(OTHER[:1]), "init_qcd": _init_rhalf(QCD_PAIRS)})
+
+
 def draw_f4_other(path: pathlib.Path) -> None:
+    docs, k = _family("pairs"), OTHER[0]
+    _roc_grid(path, [[(docs, k, LABEL_SETS, f"{PAIR_TITLE[k]},\nlabel sets"),
+                      (docs, k, PAIR_PARTITIONS, f"{PAIR_TITLE[k]},\n17-class partitions")]],
+              w=PAIR_W[2], aspect=0.72, ratio_scale="log", own_y=True, wgap=PAIR_WGAP, left=PAIR_LEFT - 0.35)
+
+
+def draw_f4_qcd(path: pathlib.Path) -> None:
     docs = _family("pairs")
-    _roc_grid(path, [[(docs, k, LABEL_SETS, PAIR_TITLE[k]) for k in OTHER[:2]],
-                     [(docs, k, LABEL_SETS, PAIR_TITLE[k]) for k in OTHER[2:]],
-                     [(docs, OTHER[0], PAIR_PARTITIONS, PAIR_TITLE[OTHER[0]]), None]],
-              w=PAIR_W[2], aspect=0.72, row_names=("Label sets", "Label sets", "17-class partitions"),
-              share=lambda i, j: i, legend_slot=(2, 1), ratio_scale="log")
+    _roc_grid(path, [[(docs, k, LABEL_SETS, PAIR_TITLE[k]) for k in QCD_PAIRS[:2]],
+                     [(docs, QCD_PAIRS[2], LABEL_SETS, PAIR_TITLE[QCD_PAIRS[2]]), None]],
+              w=PAIR_W[2], aspect=0.72, legend_slot=(1, 1), ratio_scale="log", own_y=True, wgap=PAIR_WGAP,
+              left=PAIR_LEFT - 0.35)
 
 
 def draw_f4_other_ft(path: pathlib.Path) -> None:
@@ -561,7 +604,8 @@ def draw_f4_rand(path: pathlib.Path, family: str = "pairs", keys: tuple = PAIR_O
     the three resonance pairs (F4-rand) and the three QCD pairs (F4-rand-qcd), the legend in the fourth slot."""
     docs = _family(family)
     _roc_grid(path, [[(docs, k, RANDOM, PAIR_TITLE[k]) for k in keys[:2]], [(docs, keys[2], RANDOM, PAIR_TITLE[keys[2]])]],
-              w=PAIR_W[2], aspect=0.72, share=lambda i, j: 0, legend_slot=(1, 1))
+              w=PAIR_W[2], aspect=0.72, share=lambda i, j: 0, legend_slot=(1, 1), own_y=True, wgap=PAIR_WGAP,
+              left=PAIR_LEFT - 0.35)
 
 
 def draw_f4_ee(path: pathlib.Path) -> None:
@@ -882,15 +926,24 @@ PAGES = [
          differs="F4-mech's form after fine-tuning; from scratch (grey) in the upper row.",
          data_note=PAIR_FT_NOTE + PAIR_NOTE,
          draw=draw_f4_mech_ft),
-    Page(id="F4-other", title="Class pairs, linear probes, the four other flavor pairs",
+    Page(id="F4-other", title="Class pairs, linear probes, X→YY→bb̄qq vs cc̄qq",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
          caption="",
-         differs="F4-mech's form on the four other flavor pairs (PI 2026-11-13: X→ee vs μμ to the supplement); L20: "
-                 "two 6.15 cm panels a row; PI 2026-11-23 (merge 8): F4-light's QCD pairs with b and with c against "
-                 "light are its second row, and only X→YY→bb̄qq vs cc̄qq has a partitions panel.",
+         differs="F4-mech's form on the resonance pair of the four other flavor pairs, the label sets beside the "
+                 "17-class partitions (review of render dfe5942: the merged figure of 2026-11-23 could not share a "
+                 "page with its caption; the QCD pairs are F4-qcd).",
          data_note=PAIR_LP_NOTE + PAIR_NOTE,
          draw=draw_f4_other),
+    Page(id="F4-qcd", title="Class pairs, linear probes, the three QCD pairs",
+         precedent=["1902.09914/fig5.png"],
+         precedent_label="Landscape Fig. 5",
+         caption="",
+         differs="F4-mech's form on QCD bb̄ vs cc̄ and on QCD jets with b, or with c and no b, against light QCD jets, "
+                 "the label sets only, as every 17-class partition merges the QCD classes; the legend in the free "
+                 "slot (split from F4-other after the review of render dfe5942).",
+         data_note=PAIR_LP_NOTE + PAIR_NOTE,
+         draw=draw_f4_qcd),
     Page(id="F4-other-ft", title="Class pairs, fine-tuned, the four other flavor pairs",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",

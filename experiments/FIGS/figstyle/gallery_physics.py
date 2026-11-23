@@ -222,24 +222,23 @@ def _pad_x(e) -> tuple:
 
 
 def _share_row(row) -> None:
-    """One y range for the two panels of a row, the union of theirs, with the tick labels once, on the left: matching
-    axes carry the same labels (PI 2026-11-11)."""
+    """One y range for the two panels of a row, the union of theirs (PI 2026-11-11: matching axes carry the same
+    labels); FG-8 (review of render dfe5942, B9): each panel shows its own tick numbers."""
     (a0, a1), (b0, b1) = row[0].get_ylim(), row[1].get_ylim()
     for ax in row:
         ax.set_ylim(min(a0, b0), max(a1, b1))
-    row[1].tick_params(labelleft=False)
 
 
 def _binned_2x2(path: pathlib.Path, group: str, series: list, ncol: int, cols: list | None = None) -> None:
     """Median response (upper row) and resolution (lower row, log axis) against jet pT (left) and generator mass
-    (right), 6.1 cm panels, each with the ratio to the soft-drop mass below; one y range per row; the legend above
+    (right), 6.05 cm panels, each with the ratio to the soft-drop mass below; one y range per row; the legend above
     the panels, in ncol columns or, given cols (lists of legend labels, one a column), in those columns. FG-8 (PI
-    2026-11-20): every panel has its own x and y labels (the right column's beside it, its tick labels off)."""
+    2026-11-20): every panel has its own x and y labels and its tick numbers."""
     atlas = _atlas()
     rows = max(len(c) for c in cols) if cols else math.ceil((len(series) + 1) / ncol)
     refs = np.empty((2, 2), object)
-    fig, axes, raxes = S.grid_cm(2, 2, w=6.1, aspect=0.72, ratio=RATIO_ATLAS, top=1.0 + 0.45 * rows, left=1.85,
-                                 wgap=0.75, hgap=1.45, bottom=1.25)     # Latin Modern: room for the y labels and the x labels
+    fig, axes, raxes = S.grid_cm(2, 2, w=6.05, aspect=0.72, ratio=RATIO_ATLAS, top=1.0 + 0.45 * rows, left=1.5,
+                                 wgap=1.3, hgap=1.45, bottom=1.25)     # each panel's tick numbers, y label and x label
     for i, which in enumerate(("median", "resolution")):
         for j, (axis, xlabel) in enumerate((("vs_pt", X_PT), ("vs_mgen", X_MGEN))):
             refs[i, j] = _quantity(axes[i, j], raxes[i, j], atlas, group, axis, series, which)
@@ -716,7 +715,8 @@ def _xbx_figure(path: pathlib.Path, nets: tuple, readout: str, direct: bool = Fa
     cols.append([k for k in handles if k.endswith(" direct")])
     cols = [c for c in cols if c]
     rows = max(len(c) for c in cols)
-    fig, grid, _ = S.grid_cm(1, 2, w=6.35, aspect=0.85, top=S.LEGEND_TOP + 0.45 * rows + 0.45, left=1.2, wgap=0.7,
+    # FG-8 (review of render dfe5942, B9): the right panel's tick numbers and y label in the gap
+    fig, grid, _ = S.grid_cm(1, 2, w=6.15, aspect=0.85, top=S.LEGEND_TOP + 0.45 * rows + 0.45, left=1.2, wgap=1.2,
                              bottom=1.15)
     axes = list(grid[0])
     top, xs = 0.0, []
@@ -739,8 +739,8 @@ def _xbx_figure(path: pathlib.Path, nets: tuple, readout: str, direct: bool = Fa
         S.log_axis(ax, "x")
         S.title(ax, what)
         S.labels(ax, xlabel=r"QCD efficiency ($\varepsilon_B$)")
-    axes[1].tick_params(labelleft=False)
-    S.clear_edge_labels(axes[0], low=True)          # its 0 clear of the first x label in the corner
+    for ax in axes:
+        S.clear_edge_labels(ax, low=True)           # its 0 clear of the first x label in the corner
     for ax in axes:         # FG-8 (PI 2026-11-20): every panel its own y label, the right one's in the gap
         S.labels(ax, ylabel=r"Figure of merit ($\varepsilon_S/\varepsilon_B^{1/2}$)")
     S.letter_panels(axes)

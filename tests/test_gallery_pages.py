@@ -175,22 +175,26 @@ def test_the_class_pair_family_has_one_form_for_both_modes_and_every_pair(monkey
     assert [k for k, *_ in calls[0][0][0]] == [k for k, *_ in calls[1][0][0]]   # one pair order in both modes
 
 
-def test_the_other_flavor_pairs_are_one_figure_with_the_partitions_on_the_resonance_pair_only(monkeypatch):
-    """PI 2026-11-23, LEDGER SP-9 (merge 8): F4-light merged into F4-other, its pairs as more panels: the label sets on
-    X->YY->bbqq vs ccqq and QCD bb vs cc, then on QCD with b and with c against light, and the partitions row on the
-    resonance pair only, as every partition merges the QCD classes; the legend in the free slot."""
+def test_the_other_flavor_pairs_are_the_resonance_pair_with_its_partitions_and_the_qcd_pairs(monkeypatch):
+    """PI 2026-11-23, LEDGER SP-9 (merge 8): F4-light merged into F4-other, the partitions on the resonance pair only,
+    as every partition merges the QCD classes. Review of render dfe5942 (C; main session 2026-11-23, an exception to
+    merge 8 for the PI): that figure, 24 cm high, could not share a page with its caption, so it is two, X->YY->bbqq vs
+    ccqq with the label sets beside the partitions (F4-other) and the three QCD pairs with the label sets, the legend
+    in the free slot (F4-qcd); every panel its own y numbers (FG-8)."""
     calls = []
     monkeypatch.setattr(R, "ROC", {"pairs": {"x": {}}})
     monkeypatch.setattr(R, "_roc_grid", lambda path, grid, **kw: calls.append((grid, kw)))
     R.draw_f4_other(None)
-    (grid, kw), = calls
-    assert [[None if p is None else (p[1], p[2]) for p in row] for row in grid] == [
-        [(k, R.LABEL_SETS) for k in R.OTHER[:2]], [(k, R.LABEL_SETS) for k in R.OTHER[2:]],
-        [(R.OTHER[0], R.PAIR_PARTITIONS), None]]
-    assert R.OTHER[0] == "bbqq_vs_ccqq" and all(k.startswith("qcd_") for k in R.OTHER[1:])
-    assert kw["row_names"] == ("Label sets", "Label sets", "17-class partitions") and kw["legend_slot"] == (2, 1)
-    assert kw["w"] == R.PAIR_W[2] and kw["ratio_scale"] == "log"
+    R.draw_f4_qcd(None)
+    (other, kw_o), (qcd, kw_q) = calls
+    assert [[(p[1], p[2]) for p in row] for row in other] == [[(R.OTHER[0], R.LABEL_SETS), (R.OTHER[0], R.PAIR_PARTITIONS)]]
+    assert [[None if p is None else (p[1], p[2]) for p in row] for row in qcd] == [
+        [(k, R.LABEL_SETS) for k in R.QCD_PAIRS[:2]], [(R.QCD_PAIRS[2], R.LABEL_SETS), None]]
+    assert R.OTHER[0] == "bbqq_vs_ccqq" and R.QCD_PAIRS == R.OTHER[1:] and all(k.startswith("qcd_") for k in R.QCD_PAIRS)
+    assert kw_q["legend_slot"] == (1, 1) and "legend_slot" not in kw_o
+    assert all(kw["w"] == R.PAIR_W[2] >= 6.1 and kw["ratio_scale"] == "log" and kw["own_y"] for kw in (kw_o, kw_q))
     assert not hasattr(R, "draw_f4_light") and "F4-light" not in {p.id for p in R.PAGES}
+    assert {"F4-other", "F4-qcd"} <= {p.id for p in R.PAGES}
 
 
 def test_the_pair_legend_holds_only_the_curves_drawn(monkeypatch):
@@ -241,11 +245,12 @@ def test_the_pair_figures_draw_the_random_partitions_that_merge_the_pair_apart_f
     assert to_hex(R.S.SERIES[R._style("RAND_APART")]) == to_hex(R.S.SERIES["RAND"]) != to_hex(R.S.SERIES["RAND_MERGED"])
 
 
-@pytest.mark.parametrize("pid", ["F4-mech", "F4-other", "F9b", "A8", "A10", "F11"])
+@pytest.mark.parametrize("pid", ["F4-mech", "F4-other", "F4-qcd", "F9b", "A8", "A10", "F11", "PC-jc2"])
 def test_every_panel_has_its_own_x_and_y_labels(pid, monkeypatch, tmp_path):
     """FG-8 (PI 2026-11-20): "every panel has its own x and y labels naming exactly what it shows", in the figures the
-    review of render 5c40d69 named (Figs. 5, 6, 7, 9, 10, 11): every axes has a y label, and every panel an x label,
-    its own or that of the ratio panel under it, which shares its x axis."""
+    reviews of renders 5c40d69 and dfe5942 named (Figs. 4, 5, 6, 7, 9, 10, 11): every axes has a y label, and every
+    panel an x label, its own or that of the ratio panel under it, which shares its x axis; and (review of dfe5942, B9)
+    every panel with data shows its own y tick numbers, shared ranges included."""
     import gallery_figures as GF
     pages = {p.id: p for mod in GF.MODULES for p in mod.PAGES}
     figs = []
@@ -256,9 +261,49 @@ def test_every_panel_has_its_own_x_and_y_labels(pid, monkeypatch, tmp_path):
         pytest.skip(f"{pid}: {e}")
     (fig,) = figs
     assert fig.axes and all(ax.get_ylabel() for ax in fig.axes), pid
+    fig.canvas.draw()
     for ax in fig.axes:
         if ax.get_title():
             assert any(a.get_xlabel() for a in ax.get_shared_x_axes().get_siblings(ax)), (pid, ax.get_title())
+        if pid not in ("A8", "A10") and (ax.lines or ax.collections):
+            assert [t for t in ax.get_yticklabels() if t.get_visible() and t.get_text()], (pid, ax.get_title())
+    matplotlib.pyplot.close(fig)
+
+
+def test_the_per_class_figure_marks_the_classes_its_sentence_counts(monkeypatch, tmp_path):
+    """Review of render dfe5942 (B2): Fig. 4 backs "164 of the 188 classes ... beyond three standard deviations" in the
+    PDF: a class beyond three standard deviations from the 188-class recall (perclass_recall.py's diffs, the test whose
+    count mlst_results.jc2_recall_macros prints) is a filled point, one within them open, with a legend entry."""
+    figs = []
+    monkeypatch.setattr(L.S, "save", lambda fig, path: figs.append(fig))
+    try:
+        PC.draw_jc2(tmp_path / "PC-jc2.pdf")
+    except L.C.Absent as e:
+        pytest.skip(str(e))
+    (fig,) = figs
+    for a, _ in PC.FIG4:
+        d = PC._doc("jc2", 0)["diffs"][f"{a}-L188"]
+        ax = next(x for x in fig.axes if x.get_title().endswith(f"{L.S.LEGEND[a]}, linear probe"))
+        pts = [ln for ln in ax.lines if ln.get_linestyle() in ("None", "none", "")]
+        filled = [ln for ln in pts if to_hex(ln.get_markerfacecolor()) != "#ffffff"]
+        assert len(pts) == len(d["delta"]) and len(filled) == len(d["lower"]) + len(d["higher"]), a
+    assert PC.WITHIN in [t.get_text().replace("\n", " ") for leg in fig.legends for t in leg.get_texts()]
+    matplotlib.pyplot.close(fig)
+
+
+def test_the_validation_figure_is_set_at_the_text_width_with_a_single_panel(monkeypatch, tmp_path):
+    """FG-14, FG-19 (review of render dfe5942, B15): the paper sets every figure at the text width, so VAL is drawn 15 cm
+    wide (its text printed at 8-9 pt), its one panel the size of a single-panel figure's, the legend beside it."""
+    figs = []
+    monkeypatch.setattr(L.S, "save", lambda fig, path: figs.append(fig))
+    try:
+        L.draw_val(tmp_path / "VAL.pdf")
+    except L.C.Absent as e:
+        pytest.skip(str(e))
+    (fig,) = figs
+    assert fig.get_figwidth() * 2.54 == pytest.approx(L.S.PRINT_W)
+    (ax,) = fig.axes
+    assert ax.get_position().width * L.S.PRINT_W == pytest.approx(L.S.SINGLE_W - 1.75) and fig.legends
     matplotlib.pyplot.close(fig)
 
 
