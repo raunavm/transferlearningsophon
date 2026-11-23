@@ -136,11 +136,9 @@ generator-level match has a stored generator mass of exactly zero and is left ou
 though not out of the classification. The total loss is $L = \Lcls + \lambda\,\Lreg$ of
 equation~(\ref{eq:masstarget}) with $\lambda = \MlstMassLambda$ at both label sets. Every other setting is that of appendix~\ref{sec:app-pretrain}, and each of these
 models shares its initial weights, except the output layer, and its training examples with the model of
-the same label set and seed trained without the regression. At a fixed weight, the share of the training loss
-taken by the regression term differs between the label sets, because the classification loss is smaller with
-fewer classes: averaged over training, it is \MlstMassLossShareResMass\% in the \Kres-class runs and
-\MlstMassLossShareCoarseMass\% in the \Kcoarse-class runs. The two label sets are therefore compared at a fixed
-weight, not at a matched share.
+the same label set and seed trained without the regression. At a fixed weight the regression term takes, averaged over training, \MlstMassLossShareResMass\% of the training
+loss in the \Kres-class runs and \MlstMassLossShareCoarseMass\% in the \Kcoarse-class runs, so the two label sets
+are compared at a fixed weight, not at a matched share. % LEDGER SH-11: the numbers without the cause
 
 The \Kfull-class model with kinematic inputs only keeps the \FillTopNPresent{} kinematic features of
 each particle and the pairwise features, and drops the charge, the type flags and the impact-parameter
@@ -215,9 +213,8 @@ class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix. On e
 controls included, is fine-tuned on the largest training set, on JetClass-II all \FtJcTwoNetsESix{}; at the smaller
 sizes this paper reports the networks of the four label sets and the two mass networks, on JetClass-II
 the \FtJcTwoNetsSmall{} fine-tuned there.
-\pending{The fine-tuned values below the full top and quark/gluon training sets printed in this version come
-from earlier runs, which could stop early once the validation accuracy no longer improved; this paragraph
-gives the rule of the runs that replace them.}
+% LEDGER RR-7 (PI 2026-11-23): the note on earlier runs removed; every training-size point reads the fixed-schedule
+% cell at its row's recorded rate or the build stops (mlst_results.load_ft, merge_fixed; gallery_labelset._settled)
 % CHECK: FIXED_STEPS, FIXED_CHECK, FIXED_VAL, HEAD_CAP in scripts/build_ft_budget_jobs.py; head_mult gives HEAD_CAP at every rate
 % CHECK: drop the \pending sentence once budget/fixed_metrics.json is pulled and the build reads it (merge_fixed); until then the tables read budget_metrics.json and budget_long_metrics.json, whose cells stop after ten checks without improvement
 
@@ -361,7 +358,8 @@ Figure~\ref{fig:F9b} draws the median response and the resolution of the regress
 with a generator-level match, divided into training, validation and evaluation parts for the regressions on
 frozen features, against the reconstructed jet $p_{\mathrm T}$, where ATLAS bins in the true
 $p_{\mathrm T}$~\cite[Sec.~6]{atlasregression}, and against the generator-level mass $\mgen$, the same target for
-resonant and QCD jets.
+resonant and QCD jets. Table~\ref{tab:sculptmain} gives the mass sculpting of every pretraining head used directly at
+the working points of table~\ref{tab:tests}, beside the statistical floor of a random selection of as many QCD jets.
 
 \input{tables/mlst_summary_auc}
 
@@ -428,3 +426,5 @@ and \Kcoarse-class networks, on JetClass-II test jets with a generator-level mat
 combine the spread over runs with the bootstrap over test jets. Values over all jets are in table~\ref{tab:mass}.}
 \label{fig:F9b}
 \end{figure}
+
+\input{tables/mlst_sculpt_main}

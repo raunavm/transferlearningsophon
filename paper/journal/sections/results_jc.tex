@@ -41,17 +41,16 @@ not differ from the \Kfull-class model by more than three standard deviations (t
 \begin{figure}[t]
 \centering
 \paperfig{\linewidth}{F2}
-\caption{With linear probes at the largest training sets, \Kmid{} and \Kcoarse{} classes are less accurate on
-class-balanced JetClass-II than \Kfull{} classes, and no label set, mass network or partition differs from
-\Kfull{} classes in $R_{30}$ by more than three standard deviations in top-quark against QCD and quark against
-gluon jets. $R_{30}$ is one over the fraction of background jets kept when the cut keeps 30\% of signal jets, the
-top-tagging working point. Circles are means and
-bars standard deviations over \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per mass network
-and flavor-boundary partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions, whose bar
-is their spread. The band is the \Kfull-class mean $\pm$ standard deviation. The random network, not drawn, has
-accuracies of \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$ of
-\MlstFTwoInitRthirtyMin{}--\MlstFTwoInitRthirtyMax{} (table~\ref{tab:summary}, which names the missing-input
-substitutions).}
+\caption{With linear probes, \Kmid{} and \Kcoarse{} classes are less accurate on class-balanced JetClass-II than
+\Kfull{} classes, and no label set, mass network or partition differs from \Kfull{} classes in $R_{30}$ by more than
+three standard deviations (\MlstPwRthirtyLp{} of its value) in top-quark against QCD and quark against gluon jets.
+$R_{30}$ is one over the fraction of background jets kept with 30\% of signal jets kept, the top-tagging working
+point. Circles are means, bars standard deviations over \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per
+mass network and flavor-boundary partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions,
+whose bar is their spread, and the band the \Kfull-class mean $\pm$ standard deviation. The random network, not drawn,
+has accuracies of \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$ of
+\MlstFTwoInitRthirtyMin{}--\MlstFTwoInitRthirtyMax{}, \MlstFTwoInitBnAccJcTwo{}, \MlstFTwoInitBnAccJcOne{} and
+\MlstFTwoInitBnRthirtyMin{}--\MlstFTwoInitBnRthirtyMax{} with BatchNorm recomputed (table~\ref{tab:summary}).}
 \label{fig:F2}
 \end{figure}
 % CHECK: F2(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
@@ -60,15 +59,15 @@ substitutions).}
 \centering
 \paperfig{\linewidth}{F2-ft}
 \caption{After fine-tuning, \pending{\Kcoarse{} classes are less accurate than \Kfull{} classes on JetClass-II and
-JetClass}, and no label set, mass network or partition differs from \Kfull{} classes in $R_{30}$ by more than
-three standard deviations in top-quark against QCD and quark against gluon jets. Accuracy and $R_{30}$ are
-defined as in figure~\ref{fig:F2}, after fine-tuning, missing inputs set to zero, on \FtSizeESix{} jets or the full
-top and quark/gluon training sets.
+JetClass}, and no label set, mass network or partition differs from \Kfull{} classes in $R_{30}$ by more than three
+standard deviations (\MlstPwRthirtyFt{} of its value) in top-quark against QCD and quark against gluon jets. Accuracy
+and $R_{30}$ are defined as in figure~\ref{fig:F2}, after fine-tuning, missing inputs set to zero, on \FtSizeESix{}
+jets or the full top and quark/gluon training sets (table~\ref{tab:summary}).
 % CHECK: panel (a) draws every network once the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks reads out (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40)
-The same network trained from scratch replaces the random network and the released Sophon checkpoint. Circles and bars are means and standard deviations over \MlstNRunsWord{} runs per label set
-and from scratch, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and \RandVtwoRuns{} each
-for \RandVtwoNPartitions{} random partitions, whose bar is their spread. The band is as in figure~\ref{fig:F2}.
-Values are in table~\ref{tab:summary}.}
+The same network trained from scratch replaces the random network, and the released Sophon checkpoint enters as a
+frozen-feature reference (figure~\ref{fig:F2}). Circles, bars and band are as in figure~\ref{fig:F2}, over
+\MlstNRunsWord{} runs per label set and from scratch, \MlstMassNRunsWord{} per mass network and flavor-boundary
+partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions, whose bar is their spread.}
 \label{fig:F2-ft}
 \end{figure}
 

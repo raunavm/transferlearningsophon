@@ -1949,6 +1949,33 @@ def sculpt_above_floor(sculpt: dict, ms: list) -> dict:
     return out
 
 
+def table_sculpt_main(sculpt, runs, fmt_pm, rows) -> str:
+    """tab:sculptmain (PI 2026-11-23, LEDGER CS-2b): the sculpting the main text states, compactly, each network used
+    directly and its Jensen-Shannon distance at each working point of tab:tests' sculpting rows, beside the statistical
+    floor, the distance a random selection of as many QCD jets shows (at 50% signal efficiency each row's own, as
+    tab:sculpt; table_sculpt's cells, so the two print alike)."""
+    v3 = all("sig_eff_50" in d for d in sculpt.values())
+    lines = [r"\begin{tabular}{l" + "c" * len(SCULPT_EFFS) + ("cc" if v3 else "") + "}", r"\toprule",
+             " & " + " & ".join(rf"$\epsB = {100 * float(e):g}\%$" for e in SCULPT_EFFS)
+             + (r" & \multicolumn{2}{c}{$\varepsilon_S = 50\%$}" if v3 else "") + r" \\",
+             (rf"\cmidrule(lr){{{2 + len(SCULPT_EFFS)}-{3 + len(SCULPT_EFFS)}}}" if v3 else ""),
+             " & " + " & ".join(["distance"] * len(SCULPT_EFFS)) + (" & distance & random selection" if v3 else "")
+             + r" \\", r"\midrule"]
+    lines = [ln for ln in lines if ln]
+    at50 = lambda m, k: None if (d := sculpt.get(m)) is None else d["sig_eff_50"][k]       # noqa: E731
+    for arm in rows:
+        ms, n = runs[arm], len(runs[arm])
+        cells = [_cell([_sculpt(sculpt, m, e) for m in ms], n, fmt_pm) for e in SCULPT_EFFS]
+        if v3:
+            cells += [_cell([None if (x := at50(m, "jsd")) is None else math.sqrt(x) for m in ms], n, fmt_pm),
+                      _floor50_cell(sculpt, ms, fmt_pm)]
+        lines.append(LABEL.get(arm, SCRATCH_LABEL) + " & " + " & ".join(cells) + r" \\")
+    if sculpt:
+        lines += [r"\midrule", "random selection & " + " & ".join(_floor_cell(sculpt, e, fmt_pm) for e in SCULPT_EFFS)
+                  + (" & -- & --" if v3 else "") + r" \\"]
+    return "\n".join(lines + [r"\bottomrule", r"\end{tabular}", ""])
+
+
 def table_sculpt(sculpt, runs, fmt_pm, rows, label: dict | None = None) -> str:
     """A14 with M2 (PI 2026-11-07): at each QCD efficiency, the Jensen-Shannon distance (x 10^2) between the
     soft-drop mass distributions of all QCD test jets and of those passing the cut on 1 - p_QCD, and the share of
@@ -2274,6 +2301,11 @@ def load_ft(data: pathlib.Path) -> tuple:
             raise SystemExit(f"FATAL: {PREVIEW_ENV}=1 but neither {FIXED} nor {FIXED_PARTIAL} in {data / 'budget'}")
     if fixed.exists():      # the one rule (PI 2026-11-15) replaces every older tree below the full sets
         return tag, merge_kin(merge_fixed(per, fixed, preview=fixed.name == FIXED_PARTIAL), data / "budget" / KIN_FULL), absent
+    # PI 2026-11-23 (LEDGER RR-7): every training-size point, in the tables, the figures and the release, reads the
+    # fixed-schedule cell at its row's recorded rate, or the build stops; the trees before the one rule are never read
+    if any(n < FULL_N.get(key, math.inf) for key, cells in per.items() for by_n in cells.values() for n in by_n):
+        raise SystemExit(f"FATAL (RR-7): no one-rule read-out ({FIXED}) in {data / 'budget'}; the training-size points "
+                         "read only its fixed-schedule cells")
     return tag, merge_kin(merge_budget(per, data / "budget" / "budget_metrics.json",
                                        data / "budget" / "budget_long_metrics.json",
                                        [data / "budget" / f for f in SCRATCH_FULL], data / "budget" / PRE_FULL),
@@ -2354,7 +2386,9 @@ def merge_fixed(per: dict, path: pathlib.Path, preview: bool = False) -> dict:
         raise SystemExit(f"FATAL: {path}: {len(wrong)} cells not at their row's recorded rate: {wrong[:10]}")
     if not preview and any(row_unsettled(key, n) for key, _, n in _budget_cells(path)):
         raise SystemExit(f"FATAL: {path}: a row whose rate search has not settled (build_ft_budget_jobs.FIXED_ROW_RATE)")
-    for key, n in {(key, n) for key, _, n, _ in wrong}:
+    # RR-7 (PI 2026-11-23): a row whose rate search has not settled has no recorded rate, so a preview prints none of it
+    unsettled = {(key, n) for key, _, n in _budget_cells(path) if row_unsettled(key, n)}
+    for key, n in {(key, n) for key, _, n, _ in wrong} | unsettled:
         for by_n in out.get(key, {}).values():
             by_n.pop(n, None)
     edge = edge_failures(_budget_cells(path))
@@ -4582,20 +4616,21 @@ def f2_init_macros(em, fits, fill, chosen, runs: dict, src) -> None:
     mean R30 on top and quark/gluon tagging, as Table 1's random-network row reads them (summary_probe), at two
     significant figures (as the class-pair figures' clauses, pair_figure_macros)."""
     fmt = lambda x: f"{x:.2g}" if x < 10 else f"{x:.0f}"      # noqa: E731
-    mean = {}
-    for key, _, ds, met in SUMMARY_PANELS:
-        g = summary_probe(fits, fill, chosen, ds, met)
-        v = [g(m) for m in runs[INIT]] if g else []
-        mean[key] = float(np.mean([float(x) for x in v])) if v and None not in v else None
-    out = {"MlstFTwoInitAccJcTwo": mean["jc2"], "MlstFTwoInitAccJcOne": mean["jc1"],
-           "MlstFTwoInitRthirtyMin": min((mean[k] for k in ("top", "qg", "qg_herwig")), default=None)
-           if None not in (mean["top"], mean["qg"], mean["qg_herwig"]) else None,
-           "MlstFTwoInitRthirtyMax": max(mean[k] for k in ("top", "qg", "qg_herwig"))
-           if None not in (mean["top"], mean["qg"], mean["qg_herwig"]) else None}
-    for name, x in out.items():
-        em.macro(name, fmt(x) if x is not None else r"\pending{random network}", src,
-                 "linear probes of the random network (INIT), Table 1's cells, mean over its initializations",
-                 "figure F2's caption: the random network, not drawn")
+    # PI 2026-11-23 (LEDGER SH-13): the random network with BatchNorm recomputed, not drawn either, gets the same clause
+    for arm, word in ((INIT, "Init"), (INIT_BN, "InitBn")):
+        mean = {}
+        for key, _, ds, met in SUMMARY_PANELS:
+            g = summary_probe(fits, fill, chosen, ds, met)
+            v = [g(m) for m in runs.get(arm, [])] if g else []
+            mean[key] = float(np.mean([float(x) for x in v])) if v and None not in v else None
+        r30 = [mean[k] for k in ("top", "qg", "qg_herwig")]
+        out = {f"MlstFTwo{word}AccJcTwo": mean["jc2"], f"MlstFTwo{word}AccJcOne": mean["jc1"],
+               f"MlstFTwo{word}RthirtyMin": min(r30) if None not in r30 else None,
+               f"MlstFTwo{word}RthirtyMax": max(r30) if None not in r30 else None}
+        for name, x in out.items():
+            em.macro(name, fmt(x) if x is not None else r"\pending{random network}", src,
+                     f"linear probes of the random network ({arm}), Table 1's cells, mean over its initializations",
+                     "figure F2's caption: the random network, not drawn")
 
 
 def _summary_head(grid, xb: dict) -> list:
@@ -4865,7 +4900,10 @@ TESTS = (
     # review of 5c40d69 (A7, B3): the accuracy falls most between 162 and 43 classes (17 - 43 and the step), the random
     # partitions lie above 43 classes and the flavor-boundary partitions between 17 classes and the random partitions,
     # in accuracy as the text states them (bootstraps of 141f13ad, 769c8ed7)
+    # PI 2026-11-23 (LEDGER DL-3b): "no resolved loss in the classification of the pretraining classes" needs every
+    # metric the PDF prints for the mass networks against their label sets, accuracy too (_MASSES, the stored file's rows)
     (r"JetClass-II, accuracy, " + HEADING["lp"], tuple((a, b, ("l3", "lp", "jc2", "accuracy", d, False)) for a, b, d in _LEVELS)
+     + tuple((a, b, ("l3", "lp", "jc2", "accuracy", d, False)) for a, b, d in _MASSES)
      + _jc2_lp("accuracy", (("R42_Q1", "L162", "r42q1-l162"), ("R16_Q1", "R42_Q1", "r16q1-r42q1")))
      + (("STEP_17_43", "STEP_43_162", ("file", _JC2_ALL, "step-r16q1-r42q1-l162", "accuracy")),)
      + _review2_rows("accuracy")
@@ -5346,6 +5384,44 @@ def _printed_mean(v: list, extra: int = 0) -> float:
     m = float(np.mean(v))
     sd = float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
     return m if _zero_sd(m, sd) else round(m, min(_pdg_place(sd) + extra, MAX_DECIMALS))
+
+
+# PI 2026-11-23 (LEDGER PW-1): wherever the results state a null, the smallest difference its test resolves, 3 sigma of
+# its tab:tests row as a share of the reference's value (of its 1 - AUC for an AUC row, the errors the text counts);
+# a statement over several rows gives the range. {macro: (headings, (first networks or None for every one), second)}
+_PW_NETS = SETS[1:] + FLAV + (RAND_POOLED,)
+_PW_R30 = {k: tuple(rf"{t}, $R_{{30}}$, " + HEADING[k] for t in ("top tagging", "quark/gluon tagging (Pythia)",
+                                                                  "quark/gluon tagging (Herwig)")) for k in ("lp", "ft")}
+PW_ROWS = {
+    "MlstPwRthirtyLp": (_PW_R30["lp"], _PW_NETS, "L188"),
+    "MlstPwRthirtyFt": (_PW_R30["ft"], _PW_NETS, "L188"),
+    "MlstPwRthirtyFtTop": ((r"top tagging, $R_{30}$, " + HEADING["ft"],), _PW_NETS, "L188"),
+    "MlstPwRthirtyFtQg": ((r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"],), _PW_NETS, "L188"),
+    "MlstPwMassClsRes": (("JetClass-II, AUC, " + HEADING["lp"],), ("L162_MASS",), "L162"),
+    "MlstPwMassClsCoarse": (("JetClass-II, AUC, " + HEADING["lp"],), ("R16_Q1_MASS",), "R16_Q1"),
+}
+
+
+def pw_macros(em, rows: dict, sides: dict, src) -> None:
+    """PW_ROWS' macros, from table_tests' rows_out and sides_out: 3 sigma over the reference side's mean (over 1 - mean
+    for an AUC row), in per cent at two significant figures, a range over several rows; pending while a row waits."""
+    for name, (heads, firsts, second) in PW_ROWS.items():
+        shares, wait = [], False
+        for (h, a, b), v in rows.items():
+            if h not in heads or b != second or a not in firsts:
+                continue
+            if not isinstance(v, tuple) or (h, a, b) not in sides:
+                wait = True
+                continue
+            ref = float(np.mean(sides[(h, a, b)][1]))
+            ref = 1 - ref if "AUC" in h else ref
+            shares.append(100 * 3 * v[4] / ref)
+        if wait or not shares:
+            em.macro(name, r"\pending{bootstrap}", src, "PW-1: a row waits for its bootstrap")
+            continue
+        lo, hi = min(shares), max(shares)
+        body = f"{_sig2(lo)}\\%" if _sig2(lo) == _sig2(hi) else f"{_sig2(lo)}--{_sig2(hi)}\\%"
+        em.macro(name, body, src, f"PW-1: 3 sigma over the reference value, {len(shares)} tab:tests rows, per cent")
 
 
 RATIO_CHECK_COLS = ("macro", "heading", "first", "second", "noun", "ratio_full_precision", "ratio_printed_means",
@@ -6374,6 +6450,7 @@ CAPTIONS = {
                     "generator-level soft-drop mass; __BLANK__ The $p_{\\mathrm{T}}$ bins hold every jet, also those with a "
                     "generator-level mass below 20~GeV, whose response is very broad: hence a soft-drop resolution of QCD "
                     "jets above 1 at high $p_{\\mathrm{T}}$; the generator-mass bins span 20--500~GeV. " + SPREAD_MASS),
+    "sculpt_main": ("tab:sculptmain", "Mass sculpting by the pretraining heads used directly, beside the random-selection floor."),
     "sculpt": ("tab:sculpt", "Mass sculpting by the output scores of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes, with 162 and 17 classes plus a mass regression__SCULPT_FLAV__, on the JetClass-II test jets: Jensen--Shannon distance (base 2) $\\times10^{2}$ between the "
                "$m_{\\mathrm{SD}}$ distributions (__SCULPT_BINS__) of all QCD test jets and of those passing a cut on "
                "$1-g_{\\mathrm{QCD}}$ at the QCD efficiency $\\epsB$ given; lower is less sculpting.__SCULPT_SIG__ The last row is the "
@@ -6573,7 +6650,7 @@ CAPTIONS = {
 # (caption key, table file, wide, caption fill) of the tables written as placeholders until their data exist
 PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes_n", True, None),
                 ("probes_n_full", "mlst_probes_n_full", True, None), ("ft_full", "mlst_ft_full", True, None),
-                ("pairs", "mlst_pairs", True, None), ("pair_auc", "mlst_pair_auc", False, None), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
+                ("pairs", "mlst_pairs", True, None), ("pair_auc", "mlst_pair_auc", False, None), ("sculpt_main", "mlst_sculpt_main", False, None), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
                 ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None), ("fill_main", "mlst_fill_main", True, None),
                 ("jc1_class_auc", "mlst_jc1_class_auc", True, None),
                 ("mass", "mlst_mass", False, {"__PROBE_CENTRE__": ""}), ("mass_detail", "mlst_mass_detail", True, {"__BLANK__": "", "__MASS_RUNS__": ""}),
@@ -6794,6 +6871,12 @@ R_SUB = (" $R$ with a subscript is the inverse QCD efficiency at that signal eff
          "99\\% for $H\\to\\ell\\nu qq'$ and 99.5\\% for $t\\to b\\ell\\nu$.")
 RHO_SHORT = "the ratio $\\rho$ of $1-\\mathrm{AUC}$ to the \\Kfull-class run of the same seed"
 CAPTION_SHORT = {
+    # PI 2026-11-23 (LEDGER CS-2b): the sculpting the main text states, each network beside its statistical floor
+    "sculpt_main": ("Jensen--Shannon distance (base 2) between the soft-drop mass distributions of all QCD test jets and of "
+                    "those passing a cut on one minus the summed QCD output of the pretraining head used directly. The cut "
+                    "keeps a fraction $\\epsB$ of the QCD jets or half the resonant jets ($\\varepsilon_S = 50\\%$). "
+                    "The random selection of as many QCD jets gives the statistical floor, at $\\varepsilon_S = 50\\%$ "
+                    "for each network's own number of passing jets." + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER DL-R #4, CS-6): the AUCs the main text's error ratios on these pairs are formed from
     "pair_auc": ("The area under the receiver operating characteristic curve (AUC) of binary linear probes on the frozen "
                  "features separating pairs of JetClass-II classes, the second-named the background, scored on up to "
@@ -7277,7 +7360,7 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
 MODES = {"bn": "lp", "balance": "lp", "fill": "lp", "fill_main": "lp",
          "jetclass_probe": "lp", "ft_rej": "ft", "jetclass_all": "ft", "jetclass_nbkg": "ft", "rand_prong": "ft",
          "lrsweep": "ft", "probes_n_full": "lp", "ft_full": "ft", "mlp": "mlp", "mlp_full": "mlp",
-         "jc1_class_auc": "lp", "pair_auc": "lp", "sculpt": ["direct", "ft"], "jc1_class_auc_full": ["lp", "ft"],
+         "jc1_class_auc": "lp", "pair_auc": "lp", "sculpt_main": "direct", "sculpt": ["direct", "ft"], "jc1_class_auc_full": ["lp", "ft"],
          "sculpt_full": ["direct", "ft"],
          "qcdhf": "lp", "coarse": "lp", "probes_full": "lp", "fill_full": "lp", "qcdhf_full": "lp", "coarse_full": "lp",
          "jetclass": "ft", "jetclass_rej": "ft", "bench_top": "ft", "bench_qg": "ft", "bench_qg_herwig": "ft",
@@ -7480,7 +7563,7 @@ def uniform_columns(tab: str, floor: int | None = None) -> str:
 BOLD = {"summary": {"blocks": True}, "summary_auc": {"blocks": True}, "summary_auc_full": {"blocks": True}, "published": {"of": "their column and task", "published": True, "skip": (1, 2)},
         "labelsets": {}, "probes": {}, "pairs": {"blocks": True}, "probes_n": {"blocks": True}, "ft": {"blocks": True},
         "jc1_class_auc": {"blocks": True}, "jc1_class_auc_full": {"blocks": True}, "labelsets_full": {},
-        "pair_auc": {"blocks": True},
+        "pair_auc": {"blocks": True}, "sculpt_main": {"lower": (1, 2, 3), "skip": (4,), "best": " Lower distances are better."},
         "mass": {"blocks": True, "lower": (1,), "unity": (2,)},
         "sculpt": {"lower": (1, 3, 6), "best": " Lower distances and higher $\\epsS$, $R_{50}$ and $1/D_{\\mathrm{JS}}$ "
                                                "are better."},
@@ -7926,6 +8009,24 @@ def _native_tex(root: pathlib.Path):
     return m.native_tex
 
 
+def confusion_share_macros(em, data: pathlib.Path, words, missing: list) -> None:
+    """PI 2026-11-21/23 (LEDGER CS-10, DL-8b): the pre-registered confusion-share test (experiments/EVAL/confusion_share.py,
+    pulled to stats/confusion_share.json): its Spearman correlation, the bar set before it ran, the groupings and
+    whether it passed; the build stops if the file's verdict is not its correlation against its bar."""
+    f = data / "stats" / "confusion_share.json"
+    if not f.exists():
+        missing.append("the confusion-share test -- experiments/FIGS/data/v2/stats/confusion_share.json")
+        for n in ("MlstConfShareRho", "MlstConfShareBar", "MlstConfShareNWord"):
+            em.macro(n, r"\pending{confusion test}", f, "not pulled")
+        return
+    d = json.loads(f.read_text())
+    if bool(d["pass"]) != (d["spearman"] >= d["pass_rho"]):
+        raise SystemExit(f"FATAL: {f.name}: pass is {d['pass']} with Spearman {d['spearman']} against {d['pass_rho']}")
+    em.macro("MlstConfShareRho", f"{d['spearman']:.2f}", f, "spearman", "confusion-share test: Spearman rank correlation")
+    em.macro("MlstConfShareBar", f"{d['pass_rho']:.1f}", f, "pass_rho", "its bar, set before the test ran")
+    em.macro("MlstConfShareNWord", words(len(d["groupings"])), f, "groupings (count)", "17-group label sets tested")
+
+
 def ft_val_macros(em, data: pathlib.Path, missing: list) -> None:
     """The JetClass-II classes absent from the fine-tuning validation jets (PI 2026-11-15, LEDGER FT-2: "Keep,
     disclose"; review of render dfe5942, B11): those whose held-out jets the largest training set uses up. The
@@ -7972,6 +8073,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         return {}
     V4.design_macros(em, root, data, missing, fmt_int)
     ft_val_macros(em, data, missing)
+    confusion_share_macros(em, data, words, missing)
     for name, k, n_in, what in (("MlstNParamsFt", 2, 17, "two outputs (top, quark/gluon)"),
                                 ("MlstNParamsFtKin", 2, 7, "two outputs, the 7 kinematic inputs"),
                                 ("MlstNParamsJc", len(V4.JC1_COLS) + 1, 17, "the ten JetClass classes")):
@@ -8204,6 +8306,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         runs_ft = {**_pooled(runs), SCRATCH: sorted(m for m in sft if m.startswith("scratch-s"))}
         ft_part = ("%SPLIT%" + table_sculpt(sft, runs_ft, TAB, SETS + FLAV + (RAND_POOLED, SCRATCH))) if sft else ""
         rand = (RAND_POOLED,) if any(m in sculpt for m in _pooled(runs)[RAND_POOLED]) else ()
+        # PI 2026-11-23 (LEDGER CS-2b): the main text states the sculpting null, so the appendix prints each network's
+        # distance beside its statistical floor, compactly (the full table stays in the release)
+        out["tables/mlst_sculpt_main.tex"] = _float("sculpt_main", table_sculpt_main(sculpt, _pooled(runs), TAB,
+                                                                                    SETS + FLAV + rand), whole="upright")
         out["tables/mlst_sculpt.tex"] = _float("sculpt", table_sculpt(sculpt, _pooled(runs), TAB, SETS + FLAV + rand) + ft_part,
                                                True, fill={"__SCULPT_BINS__": bins, **sculpt_fill(sculpt, runs)},
                                                whole="turned", colsep_pt=3)
@@ -8390,6 +8496,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
             missing.append(f"compute records: {len(set(pre_runs) & set(comp))} of {len(pre_runs)} paper runs")
     ratio_words(em, tested, text_ratio_words(root / "paper/journal"), index, sided)
     out["data_release/ratio_check.csv"] = ratio_check_csv(em)
+    pw_macros(em, tested, sided, index)
     for r in vars(em).get("ratio_check", []):       # LEDGER TX-3: printed in the build log, one line a quoted ratio
         print(f"TX-3 {'ok  ' if r[7] == r[8] else 'DIFF'} {r[0]}: full {r[5]:.6g} ({r[7]}), printed means {r[6]:.6g} "
               f"({r[8]}); means {r[11]!r}, {r[12]!r} printed {r[9]!r}, {r[10]!r}")

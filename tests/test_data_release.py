@@ -65,7 +65,8 @@ def release():
         except SystemExit as e:
             # while fine-tuning reruns are running the paper builds only as the preview (MLST_FT_PREVIEW=1, the
             # render job's --preview); its numbers are checked the same way
-            if "rate search is not settled" not in str(e):
+            # (RR-7, PI 2026-11-23: without the one rule's read-out the training-size points stop the build)
+            if "rate search is not settled" not in str(e) and "(RR-7)" not in str(e):
                 raise
             mp.setenv("MLST_FT_PREVIEW", "1")
             built, _, _ = MT.build(ROOT)
@@ -232,3 +233,31 @@ def test_the_per_run_values_are_the_files_read_and_long_curves_thin_to_a_coarser
     thin, _ = R.per_run_files([d / "m-s1.json"], stride=4)
     eps = next(r for r in _rows(thin["per_run/v2__curves_v2__fam__arrays.csv"]) if r["key"] == "eps")
     assert eps["stride"] == "4" and len(eps["values"].split(";")) == 101        # every 4th and the last
+
+
+def test_the_release_holds_what_the_paper_points_to(release):
+    """PI 2026-11-23 (LEDGER DA-2): the two pointers the paper keeps hold in the final release. Table 8's caption points
+    to the data release for each run's hours, GPU types and last validation accuracy: tab:computefull's CSV has one row
+    per pretraining run of the paper with those columns filled. Appendix A points to the code release for the label maps:
+    the repository's maps give a group to every JetClass-II class in every label set and partition."""
+    built, files = release
+    M = _load("mlst_results_da2_t", "experiments/FIGS/mlst_results.py")
+    runs = M._paper(ROOT)
+    name = "tables/tab_computefull.csv"
+    assert name in files, sorted(f for f in files if f.startswith("tables/"))[:20]
+    rows = _rows(files[name])
+    cols = {r["column"] for r in rows}
+    for want in ("validation", "GPU types (hours)", "GPU-hours"):
+        assert any(want in c for c in cols), (want, cols)
+    labelled = {r["row"] for r in rows}
+    pretrained = [m for a, ms in runs.items() if a in M.ALL_ROWS for m in ms]
+    assert len(labelled) >= len(pretrained), (len(labelled), len(pretrained))
+    maps = ROOT / "configs/labelmaps"
+    rung = list(csv.DictReader((maps / "rung_label_maps.v1.csv").open()))
+    rand = list(csv.DictReader((maps / "rand_label_map.v2.csv").open()))
+    flav = list(csv.DictReader((maps / "flavour_pair_map.v2.csv").open()))
+    for rows_, columns in ((rung, ("L188", "L162", "R42_Q1", "R16_Q1")), (rand, [a for a in M.RAND]),
+                           (flav, M.FLAV)):
+        assert len(rows_) == 188, len(rows_)
+        for c in columns:
+            assert all(r[c] != "" for r in rows_), c

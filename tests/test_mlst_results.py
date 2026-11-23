@@ -2902,7 +2902,7 @@ def test_the_paper_has_twenty_tables_and_the_task_tables_are_placed_nowhere():
     # PI 2026-11-23, LEDGER SP-9: the approved structure's main-text and appendix tables (the class map apart, above)
     assert list(tables) == ["tab:sets", "tab:summary", "tab:published", "tab:mass", "tab:inputs", "tab:lrsweep",
                             "tab:compute", "tab:fill", "tab:mlp", "tab:partrepro", "tab:summaryauc", "tab:tests",
-                            "tab:coarse", "tab:pairauc", "tab:jc1_class_auc"]     # tab:pairauc: LEDGER DL-R #4
+                            "tab:coarse", "tab:pairauc", "tab:jc1_class_auc", "tab:sculptmain"]     # LEDGER DL-R #4, CS-2b
     assert tables["tab:summaryauc"][1].name == "mlst_summary_auc.tex" and tables["tab:tests"][1].name == "mlst_tests.tex"
     assert tables["tab:published"][1].name == "mlst_published.tex" and tables["tab:compute"][1].name == "compute.tex"
     assert all(k in M.CAPTION_SHORT for k, _ in tables.values())                   # each prints its short caption

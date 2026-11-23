@@ -22,7 +22,8 @@ published taggers.
 % (its tab:tests rows), so no null on R30 alone; our from scratch against ParT's published one has no paired term and
 % an AUC gap of 7 run SDs: that sentence is removed
 Fine-tuned on the full training set, no label set differs from the \Kfull-class model in $R_{30}$ by more than
-three standard deviations (tables~\ref{tab:summary} and~\ref{tab:tests}). Its $R_{30}$ difference from the same
+three standard deviations (tables~\ref{tab:summary} and~\ref{tab:tests}), the smallest difference these tests resolve
+being \MlstPwRthirtyFtTop{} of its value. Its $R_{30}$ difference from the same
 network trained from scratch is not resolved either, but from scratch has a lower accuracy, AUC and $R_{50}$
 (tables~\ref{tab:published} and~\ref{tab:tests}). The $R_{30}$ difference between the \Kfull-class model with kinematic
 inputs only, which has no missing inputs here, and the \Kfull-class model fine-tuned with zeros is not resolved
@@ -55,7 +56,8 @@ particle type are from the same input scenario (table~\ref{tab:published}).
 After fine-tuning on the Pythia sample, the $R_{30}$ difference between the \Kfull-class model and ParT fine-tuned
 after pretraining on JetClass~\cite{part} is not resolved (\MlstFtQgRthirtyFullOverPartPr{};
 table~\ref{tab:published}), and no label set differs from the \Kfull-class model by more than three standard
-deviations (table~\ref{tab:tests}). For the \Kcoarse-class model, too, the difference is not resolved % CHECK: MlstFtQgRthirtyFullOverPartPr must read the null of its tab:tests row (today 0.99 +- 0.02)
+deviations, the smallest difference these tests resolve being \MlstPwRthirtyFtQg{} of its $R_{30}$
+(table~\ref{tab:tests}). For the \Kcoarse-class model, too, the difference is not resolved % CHECK: MlstFtQgRthirtyFullOverPartPr must read the null of its tab:tests row (today 0.99 +- 0.02)
 (\MlstFtQgRthirtyCoarseOverFullPr{}; tables~\ref{tab:summary} and~\ref{tab:tests}), although only the % CHECK: MlstFtQgRthirtyCoarseOverFullPr must read the null of its tab:tests row (today 0.99 +- 0.03); also Res, Mid
 \Kfull- and \Kres-class labels separate resonance decays to gluons from decays to light quarks, the
 distinction quark/gluon discrimination asks for. Tested on the Herwig sample, the fine-tuned \Kfull-class model
@@ -79,10 +81,11 @@ the label sets compare after fine-tuning at each size is \pending{figure~\ref{fi
 \caption{\pending{The finding, after the reruns.} Fine-tuned
 networks of the four label sets and the two mass networks, and the network trained from scratch in grey, against
 the number of training jets. Panels show accuracy on (a) the \Kfull{} classes of class-balanced JetClass-II and
-(b) JetClass, and $R_{30}$, one over the fraction of background jets kept when the cut keeps 30\% of signal jets,
-the top-tagging working point, for (c) top-quark against QCD jets and quark against gluon jets scored on (d)
+(b) JetClass, and $R_{30}$ (figure~\ref{fig:F2}) for (c) top-quark against QCD jets and quark against gluon jets scored on (d)
 Pythia and (e) Herwig jets. Lines are means over \MlstNRunsWord{} runs per label set and from scratch and
 \MlstMassNRunsWord{} per mass network, bands one standard deviation. Stars are ParT trained from scratch, as
-published, each with the inputs its dataset provides, and our missing inputs are set to zero.}
+published, each with the inputs its dataset provides, and our missing inputs are set to zero. The 17-class partitions
+are drawn at the full training sets (figures~\ref{fig:F2} and~\ref{fig:F2-ft}) and the released Sophon checkpoint in
+figure~\ref{fig:F2}.}
 \label{fig:A8}
 \end{figure}

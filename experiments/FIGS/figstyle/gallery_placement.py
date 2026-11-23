@@ -257,6 +257,10 @@ _TABLES = (
     ("tab:jc1_class_auc", APPENDIX, "With linear probes, every 17-class network recalls several JetClass classes less "
                                     "often than 188 classes, by more than three standard deviations, and 162 and 43 "
                                     "classes none."),
+    # PI 2026-11-23 (LEDGER CS-2b): the main text states the sculpting null, so each network's distance with its floor
+    ("tab:sculptmain", APPENDIX, "No pretraining head sculpts the QCD mass differently from its comparison network by "
+                                 "more than three standard deviations; [[tab:sculptmain]] gives each distance beside the "
+                                 "random-selection floor."),
     # the data release (PI 2026-11-23, LEDGER SP-9): the tables the main text and the appendix held before; tab:randparts
     # comes back to the appendix only if a sentence states something about one partition (SP-9)
     ("tab:xbx", SUPPLEMENT, XBX),
@@ -376,6 +380,7 @@ APPENDIX_FAMILIES = (
     ("Class pairs", ("tab:pairauc", "F4-other", "F4-qcd")),
     ("Per class", ("tab:jc1_class_auc",)),
     ("Mass", ("F9b",)),
+    ("Sculpting", ("tab:sculptmain",)),
 )
 # the families of the coverage map (PI 2026-11-14, step 6), one row each whether or not the appendix holds one of their
 # items
@@ -413,7 +418,7 @@ SHOWS = {
     "tab:mass": ("Mass", (LP,), ("sets", "mass")), "F9b": ("Mass", (LP,), ("mass",)),
     "F11": ("Resonance tagging", (LP,), ("sets", "mass")),
     "VAL": ("Training details", (LP, FT), ("sets", "mass")),       # pretraining, before either mode
-    "tab:fill": ("Training details", (LP,), ("sets", "mass")), "tab:lrsweep": ("Training details", (FT,), ("sets",)),
+    "tab:fill": ("Training details", (LP,), ("sets", "mass")), "tab:sculptmain": ("Sculpting", (LP,), GROUPS), "tab:lrsweep": ("Training details", (FT,), ("sets",)),
 }
 # the cells no network of the group can fill, with the reason (PI: "does not apply" with the reason, no cell blank)
 DOES_NOT_APPLY = {
