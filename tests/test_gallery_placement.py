@@ -75,7 +75,7 @@ def test_the_main_text_is_the_pis_list_in_order():
     # PI 2026-11-23, LEDGER SP-9: the appendix keeps the class map (tab:app-levels folded in), the reproduction tables
     # and the evidence for the claims the main text does not show, the tested-differences table among them
     assert [k for k, t, _ in G.TABLES if t == G.APPENDIX] == [
-        "tab:app-vocabulary", "tab:inputs", "tab:lrsweep", "tab:compute", "tab:fill", "tab:mlp", "tab:partrepro",
+        "tab:app-vocabulary", "tab:inputs", "tab:compute", "tab:lrsweep", "tab:fill", "tab:mlp", "tab:partrepro",
         "tab:summaryauc", "tab:tests", "tab:coarse", "tab:pairauc", "tab:jc1_class_auc",
         "tab:sculptmain"]       # tab:pairauc: LEDGER DL-R #4; tab:sculptmain: LEDGER CS-2b
     assert not {"tab:jetclass", "tab:benchtop", "tab:benchqg", "tab:benchqgherwig"} & set(G.TIER)

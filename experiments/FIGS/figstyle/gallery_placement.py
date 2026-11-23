@@ -222,9 +222,9 @@ _TABLES = (
     # validation, random draws on top and the training mean on quark/gluon
     ("tab:inputs", APPENDIX, "Top and quark/gluon data lack some inputs, which fine-tuning sets to zero and the linear "
                              "probes to random draws (top) or the training mean (quark/gluon)."),
-    ("tab:lrsweep", APPENDIX, "The fine-tuning learning rate was chosen on validation."),
     # PI 2026-11-23 (LEDGER SP-9): one row per stage; each run's row is in the data release (tab:computefull)
     ("tab:compute", APPENDIX, "The GPU types and GPU-hours of pretraining and fine-tuning are in [[tab:compute]]."),
+    ("tab:lrsweep", APPENDIX, "The fine-tuning learning rate was chosen on validation."),
     # L3 (round 2, package 3), run SDs and a test-jet term scaled from bootstrap/l3: top draws - zero at least 4.0 sigma
     # for every pretrained network (162 classes), the random network -0.7; top mean - zero within 1.2; quark/gluon
     # within 2.9 except the b-quark boundary (mean 4.6, draws 4.0 on two runs each, about 3.6 and 3.2 with the term)
@@ -373,7 +373,8 @@ if PREVIEW:
 # PI 2026-11-23 (LEDGER SP-9): the appendix of the approved structure, in the order of its lists: what someone needs to
 # reproduce the work (R3a), then the evidence for the claims the main text states but does not show (R3b)
 APPENDIX_FAMILIES = (
-    ("Training details", ("tab:app-vocabulary", "VAL", "tab:inputs", "tab:lrsweep", "tab:compute", "tab:fill")),
+    # LEDGER DL-14 (PI 2026-11-23): the rate-search table set at the end of section B, after the compute table
+    ("Training details", ("tab:app-vocabulary", "VAL", "tab:inputs", "tab:compute", "tab:lrsweep", "tab:fill")),
     ("Checks of the method", ("tab:mlp", "tab:partrepro")),
     ("Headline metrics", ("tab:summaryauc", "tab:tests", "tab:coarse")),
     ("Training size", ("A10",)),
