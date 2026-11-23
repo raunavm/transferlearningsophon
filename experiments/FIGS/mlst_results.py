@@ -6881,8 +6881,8 @@ CAPTION_SHORT = {
     "pair_auc": ("The area under the receiver operating characteristic curve (AUC) of binary linear probes on the frozen "
                  "features separating pairs of JetClass-II classes, the second-named the background, scored on up to "
                  "\\JcBalPairTestPerSide{} test jets of each side. The $X\\to bc$ column carries one digit more than "
-                 "the standard deviation's rounding gives, up to five decimals, so that the ratios of $1-\\mathrm{AUC}$ "
-                 "the text quotes follow from it."
+                 "the standard deviation's rounding gives, up to five decimals, so that the ratios $\\rho$ of "
+                 "equation~(\\ref{eq:ratio}) the text quotes follow from it."
                  + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER SP-9, merge 6; SC-1 (1), (4)): what the table holds, no finding; at most 135 words.
     # PI 2026-11-23 (LEDGER SP-13, step 2): Delta, sigma and Delta / sigma, independent-sample rows marked (KEY_MARKS)
