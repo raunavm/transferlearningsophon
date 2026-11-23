@@ -420,16 +420,17 @@ def _x_ticks(axes: list, lo: float, w: float, last: bool = True) -> None:
 def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_names: tuple = (), wgap: float = Y_LABEL_GAP,
               share=lambda i, j: 0, own_y: bool = False, fit_x: bool = True, legend_slot: tuple | None = None,
               ratio_scale: str | None = None, ratio: float = RATIO_HEIGHT, hgap: float = 1.35 + X_LABEL,
-              left: float | None = None) -> None:
+              left: float | None = None, one_x: bool = False) -> None:
     """grid: rows of panels (docs, curve key, networks, title); a panel None is left out (its slot stays empty). Each
     panel w cm wide and aspect * w high, its ratio panel RATIO_HEIGHT of that under it. share(i, j): panels of one key
     share their y range and their ratio range (in a row only the first shows its tick labels unless own_y). fit_x: each
-    column's x range fitted to its curves (pairs), else 0 to 1. One legend above the panels for every network drawn,
-    a column per group (_group_legend), or (legend_slot (i, j), L20: two panels a row) one column in that free slot
-    while it fits. Titles with a line break take a second line's room. FG-8 (PI 2026-11-20): every panel has its own x
-    and y labels, so the gap between panels holds a y label and the gap between rows an x label; own_y: every panel its
-    tick numbers too. ratio: a ratio panel's height over its panel's; hgap: cm between rows; left: cm left of the first
-    column (the turned row names, the tick numbers and the y label)."""
+    column's x range fitted to its curves (pairs), else 0 to 1; one_x: one fitted x range for every panel (FG-2, review
+    of render 5f4e1b8, C8: a grid whose columns are not one pair each). One legend above the panels for every network
+    drawn, a column per group (_group_legend), or (legend_slot (i, j), L20: two panels a row) one column in that free
+    slot while it fits. Titles with a line break take a second line's room. FG-8 (PI 2026-11-20): every panel has its
+    own x and y labels, so the gap between panels holds a y label and the gap between rows an x label; own_y: every
+    panel its tick numbers too. ratio: a ratio panel's height over its panel's; hgap: cm between rows; left: cm left of
+    the first column (the turned row names, the tick numbers and the y label)."""
     rows, cols = len(grid), max(len(r) for r in grid)
     left = ((0.65 if row_names else 0.1) + 1.25) if left is None else left
     h = aspect * w
@@ -486,7 +487,7 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
         _ratio_axis([ratios[ij] for ij in ijs], values[g], ratio_scale)
     for j in range(cols):
         col = [(i, j) for i in range(rows) if (i, j) in mains]
-        lines = [ln for ij in col for ln in mains[ij].lines]
+        lines = [ln for ij in (mains if one_x else col) for ln in mains[ij].lines]
         lowest = min((float(np.nanmin(ln.get_xdata())) for ln in lines), default=0.0) if fit_x else 0.0
         lo = np.floor(lowest * 10 - 1e-9) / 10 if lowest >= 0.1 else 0.0
         _x_ticks([mains[ij] for ij in col], lo, w, last=own_y or j == cols - 1)
@@ -579,7 +580,8 @@ def draw_f4_other(path: pathlib.Path) -> None:
     docs, k = _family("pairs"), OTHER[0]
     _roc_grid(path, [[(docs, k, LABEL_SETS, f"{PAIR_TITLE[k]},\nlabel sets"),
                       (docs, k, PAIR_PARTITIONS, f"{PAIR_TITLE[k]},\n17-class partitions")]],
-              w=PAIR_W[2], aspect=0.72, ratio_scale="log", own_y=True, wgap=PAIR_WGAP, left=PAIR_LEFT - 0.35)
+              w=PAIR_W[2], aspect=0.72, ratio_scale="log", own_y=True, wgap=PAIR_WGAP, left=PAIR_LEFT - 0.35,
+              one_x=True)
 
 
 def draw_f4_qcd(path: pathlib.Path) -> None:
@@ -587,7 +589,7 @@ def draw_f4_qcd(path: pathlib.Path) -> None:
     _roc_grid(path, [[(docs, k, LABEL_SETS, PAIR_TITLE[k]) for k in QCD_PAIRS[:2]],
                      [(docs, QCD_PAIRS[2], LABEL_SETS, PAIR_TITLE[QCD_PAIRS[2]]), None]],
               w=PAIR_W[2], aspect=0.72, legend_slot=(1, 1), ratio_scale="log", own_y=True, wgap=PAIR_WGAP,
-              left=PAIR_LEFT - 0.35)
+              left=PAIR_LEFT - 0.35, one_x=True)
 
 
 def draw_f4_other_ft(path: pathlib.Path) -> None:
@@ -605,7 +607,7 @@ def draw_f4_rand(path: pathlib.Path, family: str = "pairs", keys: tuple = PAIR_O
     docs = _family(family)
     _roc_grid(path, [[(docs, k, RANDOM, PAIR_TITLE[k]) for k in keys[:2]], [(docs, keys[2], RANDOM, PAIR_TITLE[keys[2]])]],
               w=PAIR_W[2], aspect=0.72, share=lambda i, j: 0, legend_slot=(1, 1), own_y=True, wgap=PAIR_WGAP,
-              left=PAIR_LEFT - 0.35)
+              left=PAIR_LEFT - 0.35, one_x=True)
 
 
 def draw_f4_ee(path: pathlib.Path) -> None:
