@@ -249,16 +249,26 @@ def group_diff(res: dict, a: list, b: list, unpaired: bool = False) -> dict:
     return out
 
 
-def step_diff(res: dict, a: list, b: list, c: list) -> dict:
+def step_diff(res: dict, a: list, b: list, c: list, d: list | None = None) -> dict:
     """(mean A - mean B) - (mean B - mean C) per metric (--step): the run term SD_A^2 + 4 SD_B^2 + SD_C^2, recorded
-    as sd_a^2 = SD_A^2 + 2 SD_B^2 and sd_b^2 = 2 SD_B^2 + SD_C^2; None where a side has one model."""
+    as sd_a^2 = SD_A^2 + 2 SD_B^2 and sd_b^2 = 2 SD_B^2 + SD_C^2; None where a side has one model. With d, two steps
+    with no side in common, (mean A - mean B) - (mean C - mean D): sd_a^2 = SD_A^2 + SD_B^2, sd_b^2 = SD_C^2 + SD_D^2."""
     out = {}
-    for k in [k for k in res[a[0]] if all(k in res[m] for m in a + b + c)]:
-        (va, ra, sa), (vb, rb, sb), (vc, rc, sc) = (_runs(res, side, k) for side in (a, b, c))
-        sd_a, sd_b = ((float(np.sqrt(sa ** 2 + 2 * sb ** 2)), float(np.sqrt(2 * sb ** 2 + sc ** 2)))
-                      if None not in (sa, sb, sc) else (None, None))
-        out[k] = _verdict(k, float(va.mean() - 2 * vb.mean() + vc.mean()), sd_a, sd_b, ra - 2 * rb + rc)
-        out[k].update({"sd_runs": {"a": sa, "b": sb, "c": sc}, "n_a": len(a), "n_b": len(b), "n_c": len(c)})
+    sides = (a, b, c) + ((d,) if d else ())
+    for k in [k for k in res[a[0]] if all(k in res[m] for s in sides for m in s)]:
+        got = [_runs(res, side, k) for side in sides]
+        sds = [g[2] for g in got]
+        if d:
+            (va, ra, sa), (vb, rb, sb), (vc, rc, sc), (vd, rd, sdd) = got
+            delta, rep = float(va.mean() - vb.mean() - vc.mean() + vd.mean()), ra - rb - rc + rd
+            sd_a, sd_b = ((float(np.hypot(sa, sb)), float(np.hypot(sc, sdd))) if None not in sds else (None, None))
+        else:
+            (va, ra, sa), (vb, rb, sb), (vc, rc, sc) = got
+            delta, rep = float(va.mean() - 2 * vb.mean() + vc.mean()), ra - 2 * rb + rc
+            sd_a, sd_b = ((float(np.sqrt(sa ** 2 + 2 * sb ** 2)), float(np.sqrt(2 * sb ** 2 + sc ** 2)))
+                          if None not in sds else (None, None))
+        out[k] = _verdict(k, delta, sd_a, sd_b, rep)
+        out[k].update({"sd_runs": dict(zip("abcd", sds)), **{f"n_{x}": len(s) for x, s in zip("abcd", sides)}})
     return out
 
 
@@ -289,11 +299,13 @@ def cache_write(f: pathlib.Path, meta: dict, m: dict) -> None:
     os.replace(tmp, f)
 
 
-def _sides(spec: str, n: int, flag: str) -> list[list[str]]:
+def _sides(spec: str, n, flag: str) -> list[list[str]]:
+    """[name, side, side, ...] of NAME=A1,A2/B1,B2...; n: the number of sides, or a tuple of the numbers allowed."""
     name, sides = spec.split("=", 1)
     out = [side.split(",") for side in sides.split("/")]
-    if len(out) != n or not all(all(x) for x in out):
-        raise SystemExit(f"FATAL: {flag} {spec}: NAME=" + "/".join(["A1,A2"] * n) + " expected")
+    n = (n,) if isinstance(n, int) else n
+    if len(out) not in n or not all(all(x) for x in out):
+        raise SystemExit(f"FATAL: {flag} {spec}: NAME=" + "/".join(["A1,A2"] * n[0]) + " expected")
     return [name] + out
 
 
@@ -309,8 +321,8 @@ def main(argv=None) -> int:
     ap.add_argument("--native-groups", action="store_true", help="JetClass-II's macro AUC over its resonant, QCD classes")
     ap.add_argument("--diff", action="append", default=[], metavar="NAME=A1,A2/B1,B2",
                     help="mean over models A minus mean over models B, per metric (decision L3)")
-    ap.add_argument("--step", action="append", default=[], metavar="NAME=A1,A2/B1,B2/C1,C2",
-                    help="(mean A - mean B) - (mean B - mean C), per metric")
+    ap.add_argument("--step", action="append", default=[], metavar="NAME=A1,A2/B1,B2/C1,C2[/D1,D2]",
+                    help="(mean A - mean B) - (mean B - mean C), or with D (mean A - mean B) - (mean C - mean D)")
     ap.add_argument("--second-task", choices=TASKS, help="each headline metric's ratio, this task's over --task's")
     ap.add_argument("--cache", type=pathlib.Path, help="per-model resampled metrics, read or written")
     ap.add_argument("--cache-only", action="store_true", help="fill --cache; no --out")
@@ -329,7 +341,7 @@ def main(argv=None) -> int:
         raise SystemExit("FATAL: a model name is given twice")
     pairs = list(dict.fromkeys(tuple(p.split("/", 1)) for p in a.pair))
     diffs = {d[0]: d[1:] for d in (_sides(x, 2, "--diff") for x in a.diff)}
-    steps = {d[0]: d[1:] for d in (_sides(x, 3, "--step") for x in a.step)}
+    steps = {d[0]: d[1:] for d in (_sides(x, (3, 4), "--step") for x in a.step)}
     if len(diffs) != len(a.diff) or len(steps) != len(a.step) or set(diffs) & set(steps):
         raise SystemExit("FATAL: a --diff or --step name is given twice")
     named = set(paths) | ({f"{n}@second" for n in paths} if a.second_task else set())
@@ -396,9 +408,10 @@ def main(argv=None) -> int:
                         for name, ab in diffs.items()}
     if steps:
         doc["rule_step"] = ("delta = (mean A - mean B) - (mean B - mean C); sigma^2 = SD_A^2 + 4 SD_B^2 + SD_C^2 + "
-                            "boot_sd^2, written as sd_a^2 = SD_A^2 + 2 SD_B^2 and sd_b^2 = 2 SD_B^2 + SD_C^2")
-        doc["diffs"].update({name: {"a": abc[0], "b": abc[1], "c": abc[2], "step": True, **step_diff(res, *abc)}
-                             for name, abc in steps.items()})
+                            "boot_sd^2, written as sd_a^2 = SD_A^2 + 2 SD_B^2 and sd_b^2 = 2 SD_B^2 + SD_C^2; with four "
+                            "sides, (mean A - mean B) - (mean C - mean D), sd_a^2 = SD_A^2 + SD_B^2, sd_b^2 = SD_C^2 + SD_D^2")
+        doc["diffs"].update({name: {**dict(zip("abcd", s)), "step": True, **step_diff(res, *s)}
+                             for name, s in steps.items()})
     with np.errstate(divide="ignore", invalid="ignore"):
         for p, q in pairs:
             doc["pairs"][f"{p}/{q}"] = {k: {"ratio": v / res[q][k][0] if res[q][k][0] > 0 else None,

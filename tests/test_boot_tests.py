@@ -182,3 +182,29 @@ def test_the_review_specs_write_new_files_from_the_listed_inputs():
     assert ft.count("-188lpzero=") == ft.count("-initbnlpzero=") == len(b.R5.BOOTALL_ARMS)
     assert "--diff kin-188=mtx-l188kin-s1/" in ft and "best70_kin/leg_top/l188kin-s1/N1200000/s1" in ft
     assert "completions: 1\n" in b.review_smoke_spec("mtx-s9.99", "8Gi")
+
+
+def test_a_four_sided_step_is_two_differences_with_their_four_run_sds(tmp_path):
+    y = np.random.default_rng(8).integers(0, 4, 2000)
+    args = []
+    for g, shift in (("a", 0.5), ("b", 0.8), ("c", 1.2), ("d", 1.6)):
+        args += [x for k in (1, 2) for x in ("--model", _npz(tmp_path / f"{g}{k}.npz", y, p=_probs(y, 4, shift, 10 * k + ord(g))))]
+    out = tmp_path / "o.json"
+    PB.main(args + ["--headline", "--step", "s=a1,a2/b1,b2/c1,c2/d1,d2", "--diff", "ab=a1,a2/b1,b2", "--diff",
+                    "cd=c1,c2/d1,d2", "--b", "30", "--out", str(out)])
+    d = json.loads(out.read_text())["diffs"]
+    for k in ("macro", "accuracy"):
+        s, ab, cd = d["s"][k], d["ab"][k], d["cd"][k]
+        assert s["delta"] == pytest.approx(ab["delta"] - cd["delta"], abs=1e-12)
+        assert s["sd_a"] ** 2 == pytest.approx(ab["sd_a"] ** 2 + ab["sd_b"] ** 2)
+        assert s["sd_b"] ** 2 == pytest.approx(cd["sd_a"] ** 2 + cd["sd_b"] ** 2)
+        assert s["sigma"] == pytest.approx(np.sqrt(s["sd_a"] ** 2 + s["sd_b"] ** 2 + s["boot_sd"] ** 2))
+    assert d["s"]["d"] == ["d1", "d2"] and d["s"]["step"] is True
+
+
+def test_the_second_review_spec_reads_the_cache_only():
+    b = _load("build_boot_tests_jobs_r2", "scripts/build_boot_tests_jobs.py")
+    text = b.review2_spec("mtx-s9.99", "4Gi")
+    assert f"--cache {b.CACHE} " in text and "--cache-only" not in text and f"[ -e {b.REVIEW2_OUT} ] ||" in text
+    assert "--step step-r42q1-l162-188=" in text and "--step step-r16q1-r42q1-l162-188=" in text
+    assert "--diff flavf1-r16q1=" in text and "--diff flavf1r-r16q1=" in text and text.count("--model ") == 16

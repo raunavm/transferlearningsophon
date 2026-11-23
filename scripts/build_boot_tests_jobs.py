@@ -372,6 +372,36 @@ def review_smoke_spec(tag: str, mem: str) -> str:
     return _spec(tag, "boot-review-smoke-raunav", [body], 1, mem, "review rows, smoke: inputs and one row")
 
 
+# ------------------------------------------------------------------ second review, render dfe5942 (docs/REVIEW_dfe5942_TRIAGE.md, BS2)
+# from the JetClass-II cache (no network recomputed): the b-quark and random flavor boundary - 17 classes (results_jc.tex
+# "lie between the 17-class level and the random partitions ... in errors and in accuracy"), and the "costliest single
+# merge" steps against the 188 -> 162 step: (43 - 162) - (162 - 188) and (17 - 43) - (162 - 188)
+REVIEW2_OUT = f"{L3_V5}/probe_jc2bal_N1000000.review2.json"
+
+
+def review2_cmd(out: str, arms, diff_pairs, steps) -> str:
+    inp = jc2_inputs()
+    ms = [m for a in arms for m in models(a)]
+    st = "".join(f" --step step-{'-'.join('188' if x == 'l188' else x for x in s)}="
+                 + "/".join(",".join(models(x)) for x in s) for s in steps)
+    return (f"python3 experiments/STATS/paired_bootstrap.py --task npz " + " ".join(f"--model {m}={inp[m]}" for m in ms)
+            + f" {JC2_FLAGS} {diffs(diff_pairs)}{st} --cache {CACHE} --b {B} --out {out}")
+
+
+REVIEW2 = (("l188", "l162", "r42q1", "r16q1", "flavf1", "flavf1r"), (("flavf1", "r16q1"), ("flavf1r", "r16q1")),
+           (("r42q1", "l162", "l188"), ("r16q1", "r42q1", "l162", "l188")))
+
+
+def review2_spec(tag: str, mem: str, smoke: bool = False) -> str:
+    """boot-review2-raunav (or its smoke: one row, with peak memory and seconds) from the JetClass-II cache."""
+    if smoke:
+        out = f"{SMOKE}/review2_smoke.json"
+        body = f"mkdir -p {SMOKE}\n  [ -e {out} ] || " + peak(review2_cmd(out, ("flavf1", "r16q1"), (("flavf1", "r16q1"),), ()))
+        return _spec(tag, "boot-review2-smoke-raunav", [body], 1, mem, "second review rows, smoke: one row from the cache")
+    body = f"[ -e {REVIEW2_OUT} ] || " + peak(review2_cmd(REVIEW2_OUT, *REVIEW2))
+    return _spec(tag, "boot-review2-raunav", [body], 1, mem, "second review rows (BS2) from the JetClass-II cache")
+
+
 def smoke_spec(tag: str, mem: str) -> str:
     inp = {m: pair_path("bb_vs_cc", m) for a in ("r42q1", "l188") for m in models(a)}
     row = pb(f"{SMOKE}/probe_jc2bal_pairs_bb_vs_cc.json", [f"--model {m}={p}" for m, p in inp.items()],
@@ -391,13 +421,16 @@ def main(argv=None) -> int:
     ap.add_argument("--helper", nargs="+", metavar="MODEL", help="boot-tests-helper-raunav: these networks into the cache")
     ap.add_argument("--node", help="one node of CPU_MODEL's (R5.CPU_NODES) instead of all of them")
     ap.add_argument("--review", choices=("smoke", "a", "b"), help="the review rows: the smoke, or job a or b")
+    ap.add_argument("--review2", choices=("smoke", "job"), help="the second review's rows from the cache")
     ap.add_argument("--mem", default="16Gi", help="memory request and limit of every pod")
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
         raise SystemExit(f"FATAL: --tag {a.tag} is not an mtx-sN.NN tag")
     review = ({"smoke": ("boot-review-smoke-raunav", review_smoke_spec(a.tag, a.mem))}
               | {k[12]: (k, v) for k, v in review_specs(a.tag, a.mem).items()}) if a.review else {}
-    name, text = (review[a.review] if a.review
+    name, text = (("boot-review2-smoke-raunav" if a.review2 == "smoke" else "boot-review2-raunav",
+                   review2_spec(a.tag, a.mem, a.review2 == "smoke")) if a.review2
+                  else review[a.review] if a.review
                   else ("boot-tests-smoke-raunav", smoke_spec(a.tag, a.mem)) if a.smoke
                   else ("boot-tests-herwig-raunav", herwig_spec(a.tag, a.mem)) if a.herwig
                   else ("boot-tests-helper-raunav", helper_spec(a.tag, a.mem, a.helper)) if a.helper
