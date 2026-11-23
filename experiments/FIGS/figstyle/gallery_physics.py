@@ -152,12 +152,12 @@ PROBE_ESTS = ("mlp", "ridge")      # regressions on frozen features, against the
 
 
 def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
-    """One column of one row: the median (which="median") or the resolution against axis, binned, so step lines flat
-    across each bin with +-1 SD bands (PI 2026-11-20, replacing the points of 2026-11-11/14: "those dots in the middle
-    look horrible"), the soft-drop mass first in black; bands by L21's rule (lines_v6.keeps_band: every band in a panel
-    of at most three series, else 188 classes, the random network and the soft-drop mass only); the random network
-    dashed beside the black soft-drop line; below, the ratio to the soft-drop mass. The y range holds every line and
-    band (PI 2026-11-11: nothing off the axes); the resolution is on a log axis. Returns (soft-drop values, bin edges)."""
+    """One column of one row: the median (which="median") or the resolution against axis, binned, so points with
+    +-1 SD bars and a bar across each bin, no connecting lines (LEDGER FG-18, PI 2026-11-15: binned figures are "points
+    with error bars and horizontal bin bars; no connecting lines"; lines_v6.binned, the series dodged within the bin),
+    the soft-drop mass first in black; a probe beside a network's own output open, the random network crosses; below,
+    the distance from one or the ratio to the soft-drop mass. The y range holds every point and bar (PI 2026-11-11:
+    nothing off the axes); the resolution is on a log axis. Returns (soft-drop values, bin edges)."""
     g = P._groomed(atlas, group)[axis]
     e = np.asarray(g["edges"], float)
     ref = P._arr(g[which])
@@ -167,33 +167,32 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     mixed = len({est in PROBE_ESTS for _, est, _, _, _ in drawn}) > 1
     boot = lambda b: P._arr(b[f"{which}_sd"]) if b.get(f"{which}_sd") is not None else np.zeros(len(e) - 1)  # noqa: E731
     ref_sd = boot(g)
-    n = len(drawn) + 1                               # the soft-drop mass and the series: L21's band rule counts them
-    refs = {S.SERIES[k] for k in L.BAND_REFS if k in S.SERIES}
+    n = len(drawn) + 1                               # the soft-drop mass and the series, dodged within each bin
     # PI 2026-11-14 (step 8, audit 3): the median row's lower panel is each estimate's distance from one, |median - 1|
     # (a ratio of two medians says nothing about which is closer to one); the resolution row's the ratio to the
     # soft-drop resolution
     lower = (lambda v: np.abs(v - 1.0)) if which == "median" else (lambda v: v / ref)     # noqa: E731
-    black = {"color": GROOMED_LOOK["color"], "linestyle": "-", "band": True}
-    L.steps(ax, e, ref, ref_sd, **black, label=GROOMED)
+    black = {"color": GROOMED_LOOK["color"], "probe": False, "k": 0, "n": n}
+    L.binned(ax, e, ref, ref_sd, ref_sd, **black, label=GROOMED)
     if which == "median":
-        L.steps(rx, e, lower(ref), ref_sd, **black, label="_nolegend_")
+        L.binned(rx, e, lower(ref), ref_sd, ref_sd, **black, label="_nolegend_")
     else:
         rx.axhline(1.0, **S.REFERENCE, zorder=1.5)       # the ratio's unity line: a reference, dotted (L6)
-    ends, lows = [ref - ref_sd, ref + ref_sd], [lower(ref)]
-    for runs, est, line, mark, label in drawn:
+    ends = [ref - ref_sd, ref + ref_sd]
+    lows = [lower(ref) - ref_sd, lower(ref) + ref_sd] if which == "median" else [lower(ref)]
+    for k, (runs, est, line, mark, label) in enumerate(drawn, start=1):
         blocks = [b[axis] for m in runs if (b := P._block(atlas, m, est, group))]
         per = np.array([P._arr(b[which]) for b in blocks], float)
         st = [P.F._spread(list(per[:, i])) for i in range(per.shape[1])]
         mean = np.array([s_[0] for s_ in st])
         # the bar is the uncertainty the claims use (L3): the SD over runs and the mean bootstrap SD over test jets
         sd = np.sqrt(np.array([s_[1] or 0.0 for s_ in st]) ** 2 + np.mean([boot(b) for b in blocks], axis=0) ** 2)
-        # a probe beside a network's own output, and the random network beside the black soft-drop line, dashed
-        dashed = (mixed and est in PROBE_ESTS) or mark == "x"
-        look = {"color": line["color"], "linestyle": "--" if dashed else "-",
-                "band": n <= L.BAND_ALL or line["color"] in refs}
-        L.steps(ax, e, mean, sd, **look, label=label)
+        # a probe beside a network's own output open; the random network crosses beside the black soft-drop points
+        look = {"color": line["color"], "probe": mixed and est in PROBE_ESTS, "shape": "x" if mark == "x" else "o",
+                "k": k, "n": n}
+        L.binned(ax, e, mean, sd, sd, **look, label=label)
         rs = sd if which == "median" else sd / ref
-        L.steps(rx, e, lower(mean), rs, **look, label="_nolegend_")
+        L.binned(rx, e, lower(mean), rs, rs, **look, label="_nolegend_")
         ends += [mean - sd, mean + sd]
         lows += [lower(mean) - rs, lower(mean) + rs]
     if which == "resolution":
@@ -203,7 +202,7 @@ def _quantity(ax, rx, atlas, group, axis, series, which: str) -> tuple:
     else:
         _fit_y(ax, ends, pad=0.12)       # a point's marker clear of the frame (2026-11-12 review)
     _fit_y(rx, lows, pad=0.18)       # the reference at 1 clear of the frame, its tick labelled
-    ax.set_xlim(e[0], e[-1])         # the steps end at the outer bin edges
+    ax.set_xlim(*_pad_x(e))          # the outer bins' bars clear of the frame
     for a_ in (ax, rx):
         S.fine_grid(a_)
     return ref, e
@@ -233,24 +232,24 @@ def _share_row(row) -> None:
 
 def _binned_2x2(path: pathlib.Path, group: str, series: list, ncol: int, cols: list | None = None) -> None:
     """Median response (upper row) and resolution (lower row, log axis) against jet pT (left) and generator mass
-    (right), 6.5 cm panels, each with the ratio to the soft-drop mass below; one y range per row; the legend above
-    the panels, in ncol columns or, given cols (lists of legend labels, one a column), in those columns."""
+    (right), 6.1 cm panels, each with the ratio to the soft-drop mass below; one y range per row; the legend above
+    the panels, in ncol columns or, given cols (lists of legend labels, one a column), in those columns. FG-8 (PI
+    2026-11-20): every panel has its own x and y labels (the right column's beside it, its tick labels off)."""
     atlas = _atlas()
     rows = max(len(c) for c in cols) if cols else math.ceil((len(series) + 1) / ncol)
     refs = np.empty((2, 2), object)
     fig, axes, raxes = S.grid_cm(2, 2, w=6.1, aspect=0.72, ratio=RATIO_ATLAS, top=1.0 + 0.45 * rows, left=1.85,
-                                 wgap=0.6, hgap=1.0, bottom=1.25)      # Latin Modern: room for the y label and the last x label
+                                 wgap=0.75, hgap=1.45, bottom=1.25)     # Latin Modern: room for the y labels and the x labels
     for i, which in enumerate(("median", "resolution")):
         for j, (axis, xlabel) in enumerate((("vs_pt", X_PT), ("vs_mgen", X_MGEN))):
             refs[i, j] = _quantity(axes[i, j], raxes[i, j], atlas, group, axis, series, which)
             S.title(axes[i, j], F9B_TITLE[which] + " against " + F9B_TITLE[axis])
             raxes[i, j].tick_params(labelbottom=True)
-            if i == 1:
-                S.labels(raxes[i, j], xlabel=xlabel)
+            S.labels(raxes[i, j], xlabel=xlabel)
+            S.labels(axes[i, j], ylabel=r"Median response ($r$)" if which == "median" else r"Resolution ($\sigma_r$)")
+            S.labels(raxes[i, j], ylabel=r"$|$median $-\,1|$" if which == "median" else "Ratio")
         for row_axes in (axes[i], raxes[i]):
             _share_row(row_axes)
-        S.labels(axes[i, 0], ylabel=r"Median response ($r$)" if which == "median" else r"Resolution ($\sigma_r$)")
-        S.labels(raxes[i, 0], ylabel=r"$|$median $-\,1|$" if which == "median" else "Ratio")
         for j in range(2):
             # at least two labelled ticks inside a ratio range that ends just past 0.8 and 1.2 (A17-ridge)
             raxes[i, j].yaxis.set_major_locator(MaxNLocator(nbins=4, steps=[1, 2, 5, 10], prune="both"))
@@ -262,7 +261,8 @@ def _binned_2x2(path: pathlib.Path, group: str, series: list, ncol: int, cols: l
                 axes[i, j].yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:.1f}" if v >= 0.1 else f"{v:g}"))
             S.clear_edge_labels(axes[i, j], low=True)       # clear of the ratio panel below
             S.clear_edge_labels(raxes[i, j], high=True)
-    fig.align_ylabels([axes[0, 0], raxes[0, 0], axes[1, 0], raxes[1, 0]])
+    for j in range(2):
+        fig.align_ylabels([axes[0, j], raxes[0, j], axes[1, j], raxes[1, j]])
     S.letter_panels(list(axes.flat))
     handles = axes[0, 0].get_legend_handles_labels()[0]
     if cols:
@@ -741,7 +741,8 @@ def _xbx_figure(path: pathlib.Path, nets: tuple, readout: str, direct: bool = Fa
         S.labels(ax, xlabel=r"QCD efficiency ($\varepsilon_B$)")
     axes[1].tick_params(labelleft=False)
     S.clear_edge_labels(axes[0], low=True)          # its 0 clear of the first x label in the corner
-    S.labels(axes[0], ylabel=r"Figure of merit ($\varepsilon_S/\varepsilon_B^{1/2}$)")
+    for ax in axes:         # FG-8 (PI 2026-11-20): every panel its own y label, the right one's in the gap
+        S.labels(ax, ylabel=r"Figure of merit ($\varepsilon_S/\varepsilon_B^{1/2}$)")
     S.letter_panels(axes)
     blank = (Line2D([], [], linestyle="none", marker="none"), "")
     items = [handles[k] if k else blank for c in cols for k in c + [None] * (rows - len(c))]
@@ -1149,12 +1150,12 @@ PAGES = [
          draw_f9a, MASS_RUNS_NOTE),
     Page("F9b", "Mass regression: across jet pT", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8", F9B_CAPTION,
          "All jets in ten pT bins to 2500 GeV in reconstructed pT (PI: at least eight, ATLAS's density), instead of "
-         "ATLAS's bins to 1500 GeV in truth pT. Connected steps instead of one disconnected segment per bin, and no bands (PI limit), though "
-         "ATLAS draws them. Three series instead of two, colours as F9a, each model's marker (v, P) at the bin centres. No "
+         "ATLAS's bins to 1500 GeV in truth pT. Points with a vertical bar and a bar across their bin, no connecting lines "
+         "(LEDGER FG-18), and no bands, though ATLAS draws them. Three series instead of two, colours as F9a, each model's marker (v, P) at the bin centres. No "
          "dotted line at 1 in the median panel. Faint dashed grid at major y ticks (round 3), where ATLAS has none. Median response (r) and Resolution "
          "(sigma_r) instead of ATLAS's longer axis words. Both lower panels are the ratio to the soft-drop mass (2026-11-11; "
          "ATLAS's lower resolution panel is an RSD), at ATLAS's height (0.44); the soft-drop mass is inside both ranges, "
-         "the resolution on a log axis; step lines carry no markers. " + ATLAS_LOOK + ".",
+         "the resolution on a log axis. " + ATLAS_LOOK + ".",
          draw_f9b, MASS_RUNS_NOTE),
     Page("A17-res", "Mass regression on resonant jets", ["ATL-PHYS-PUB-2024-015/fig8.png"], "ATLAS 2024-015 Fig. 8",
          "", A17_DIFFERS, lambda path: _a17(path, "resonant"), MASS_RUNS_NOTE),

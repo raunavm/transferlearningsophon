@@ -167,8 +167,9 @@ def test_the_class_pair_family_has_one_form_for_both_modes_and_every_pair(monkey
     for (grid, kw), pairs, ft in zip(calls, pairs_of, (False, True, True, True), strict=True):
         assert [[(key, nets) for _, key, nets, _ in row] for row in grid] == [
             [(k, R.LABEL_SETS + (("SCRATCH",) if ft else ())) for k in pairs], [(k, R.PAIR_PARTITIONS) for k in pairs]]
-        # PI 2026-11-19 (list item C5.2, LEDGER FG-24): the random partitions join the partitions row
-        assert R.PAIR_PARTITIONS == R.PARTITIONS[:3] + ("RAND",) + R.PARTITIONS[3:]
+        # PI 2026-11-19 (list item C5.2, LEDGER FG-24): the random partitions join the partitions row; PI 2026-11-21
+        # (LEDGER PS-5): those that merge the pair and those that keep it apart, separately
+        assert R.PAIR_PARTITIONS == R.PARTITIONS[:3] + ("RAND_MERGED", "RAND_APART") + R.PARTITIONS[3:]
         assert kw["row_names"] == ("Label sets", "17-class partitions")
         assert all(":" not in title for row in grid for *_, title in row)            # L7: no colon in a panel title
     assert [k for k, *_ in calls[0][0][0]] == [k for k, *_ in calls[1][0][0]]   # one pair order in both modes
@@ -205,9 +206,116 @@ def test_the_pair_legend_holds_only_the_curves_drawn(monkeypatch):
     R.draw_f4_mech(None)
     assert R.S.LEGEND["L162"] not in shown and R.S.LEGEND["R42_Q1"] not in shown
     assert {R.S.LEGEND[n] for n in ("L188", "L162_MASS", "R16_Q1", "R16_Q1_MASS", "FLAV_F0", "FLAV_F1", "FLAV_F1R")} <= set(shown)
+    # PS-5: the random partitions that merge the pair and those that keep it apart, each under its own name
+    assert {"random partitions, pair merged", "random partitions, pair apart"} <= set(shown)
     # one legend column a group of networks (L5 order), blank entries below a short column
     named = [t for t in shown if t]
-    assert named == sorted(named, key=lambda t: [R.S.LEGEND[R._style(n)] for n in R.NETWORKS].index(t))
+    assert named == sorted(named, key=lambda t: [R._name(n) for n in R.NETWORKS].index(t))
+
+
+def test_the_pair_figures_draw_the_random_partitions_that_merge_the_pair_apart_from_those_that_keep_it_apart():
+    """PI 2026-11-21 (LEDGER PS-5): "show the random partitions that merge the pair and those that keep it apart
+    separately, with the count of each": two curves in the partitions row, each over its groupings from the label maps
+    (merge_status), the captions printing the counts the build writes (MlstPairRand{Merged,Apart}<pair>N); a grouping
+    that merges only part of the pair is in neither, and the caption's "one partial merge left out" holds."""
+    import re
+    M = L.M
+    st = M.merge_status(ROOT)
+    assert R.PAIR_RAND == {"RAND_MERGED": "merged", "RAND_APART": "apart"} and R.PAIR_STATUS == st
+    gen = (ROOT / "paper/journal/results_generated.tex").read_text()
+    tex = {f: (ROOT / "paper/journal/sections" / f).read_text() for f in ("results_jc.tex", "appendix.tex")}
+    partly = {}
+    for f, keys in (("results_jc.tex", R.MECHANISM), ("appendix.tex", R.OTHER[:1])):
+        for key in keys:
+            runs = {s: R._models({}, net, key) for net, s in R.PAIR_RAND.items()}
+            assert runs == {s: [m for a in M.RAND if st[a][key] == s for m in R.RUNS[a]] for s in ("merged", "apart")}
+            assert runs["merged"] and runs["apart"] and not set(runs["merged"]) & set(runs["apart"]), key
+            for s in ("merged", "apart"):
+                n = sum(st[a][key] == s for a in M.RAND)
+                name = rf"MlstPairRand{s.title()}{M.PAIR_WORD[key]}N"
+                assert re.search(r"\\newcommand\{\\" + name + r"\}\{" + str(n) + r"\}", gen), name
+                assert "\\" + name + "{}" in tex[f], (f, name)
+            partly[key] = sum(st[a][key] == "partly" for a in M.RAND)
+    assert partly == {"bb_vs_cc": 0, "bc_vs_bq_cs": 1, "bbqq_vs_ccqq": 0}
+    assert "one partial merge left out" in tex["results_jc.tex"]
+    assert to_hex(R.S.SERIES[R._style("RAND_APART")]) == to_hex(R.S.SERIES["RAND"]) != to_hex(R.S.SERIES["RAND_MERGED"])
+
+
+@pytest.mark.parametrize("pid", ["F4-mech", "F4-other", "F9b", "A8", "A10", "F11"])
+def test_every_panel_has_its_own_x_and_y_labels(pid, monkeypatch, tmp_path):
+    """FG-8 (PI 2026-11-20): "every panel has its own x and y labels naming exactly what it shows", in the figures the
+    review of render 5c40d69 named (Figs. 5, 6, 7, 9, 10, 11): every axes has a y label, and every panel an x label,
+    its own or that of the ratio panel under it, which shares its x axis."""
+    import gallery_figures as GF
+    pages = {p.id: p for mod in GF.MODULES for p in mod.PAGES}
+    figs = []
+    monkeypatch.setattr(L.S, "save", lambda fig, path: figs.append(fig))
+    try:
+        pages[pid].draw(tmp_path / f"{pid}.pdf")
+    except L.C.Absent as e:
+        pytest.skip(f"{pid}: {e}")
+    (fig,) = figs
+    assert fig.axes and all(ax.get_ylabel() for ax in fig.axes), pid
+    for ax in fig.axes:
+        if ax.get_title():
+            assert any(a.get_xlabel() for a in ax.get_shared_x_axes().get_siblings(ax)), (pid, ax.get_title())
+    matplotlib.pyplot.close(fig)
+
+
+def test_the_binned_mass_figure_is_points_with_bars_and_no_connecting_lines(monkeypatch, tmp_path):
+    """LEDGER FG-18 (PI 2026-11-15): binned figures are "points with error bars and horizontal bin bars; no connecting
+    lines" (F9b, and the A17 family that shares its panels): every line drawn is a series of markers or the dotted unity
+    reference, every panel holds its bars, and no step line is left."""
+    figs = []
+    monkeypatch.setattr(L.S, "save", lambda fig, path: figs.append(fig))
+    try:
+        H.draw_f9b(tmp_path / "F9b.pdf")
+    except L.C.Absent as e:
+        pytest.skip(str(e))
+    (fig,) = figs
+    for ax in fig.axes:
+        for ln in ax.lines:
+            if ln.get_linestyle() in ("None", "none", " ", ""):
+                assert ln.get_marker() not in (None, "None", "none", ""), ln.get_label()
+            else:
+                assert ln.get_linestyle() == ":" and len(set(ln.get_ydata())) == 1, ln.get_label()
+        assert ax.collections and not [p for p in ax.patches if type(p).__name__ == "StepPatch"]
+    assert not hasattr(H.L, "steps")
+    matplotlib.pyplot.close(fig)
+
+
+def test_the_linear_probe_training_size_figures_draw_no_published_full_training(monkeypatch, tmp_path):
+    """CS-8 (compare like with like): ParT's published values are full trainings, drawn beside fine-tuned networks
+    (A8), never beside linear probes (A10, A10-part)."""
+    for draw in (L.draw_a10, L.draw_a10_part):
+        figs = []
+        monkeypatch.setattr(L.S, "save", lambda fig, path: figs.append(fig))
+        try:
+            draw(tmp_path / "x.pdf")
+        except L.C.Absent:
+            continue
+        (fig,) = figs
+        assert not [ln for ax in fig.axes for ln in ax.lines if ln.get_label() == L.PUBLISHED_LABEL], draw.__name__
+        matplotlib.pyplot.close(fig)
+
+
+def test_the_training_size_figures_draw_no_superseded_fine_tuning(monkeypatch):
+    """LEDGER RR-3, FT-8, SP-11 (review of render 5c40d69, B11): below ParT's full top and quark/gluon sets a fine-tuned
+    point is drawn only from the one-rule read-out and only where its row has a recorded rate; a row still in its rate
+    search (quark/gluon 1e5 pretrained on 23 Nov) waits for its rerun, and the trees before the one rule are not drawn."""
+    M = L.M
+    series = {1_000: [1.0], 10_000: [1.0], 100_000: [1.0], 1_600_000: [1.0]}
+    rates = {("qg", 10_000, "pre"): "1e-2", ("qg", 100_000, "scratch"): "1e-3"}
+    builder = type("B", (), {"row_rate": staticmethod(lambda task, n, kind: rates.get((task, n, kind)))})
+    monkeypatch.setattr(M, "_rate_builder", lambda: builder)
+    monkeypatch.setattr(M, "ft_source", lambda data: M.FIXED_PARTIAL + " (preview)")
+    assert sorted(L._settled(series, "qg", "pre")) == [10_000, 1_600_000]
+    assert sorted(L._settled(series, "qg_herwig", "scratch")) == [100_000, 1_600_000]
+    assert L._settled({10_000: [1.0], 1_000_000: [1.0]}, "jc1", "pre") == {}      # JetClass's 1e6 is a one-rule cell
+    monkeypatch.setattr(M, "ft_source", lambda data: M.FIXED)
+    assert sorted(L._settled(series, "qg", "pre")) == [10_000, 1_600_000]
+    monkeypatch.setattr(M, "ft_source", lambda data: "budget, budget_long, fulldecay, prefull (the trees before the one rule)")
+    assert sorted(L._settled(series, "qg", "pre")) == [1_600_000]
 
 
 def test_the_per_class_grid_puts_every_panel_on_one_range_and_colours_classes_not_networks(monkeypatch):
@@ -487,7 +595,8 @@ def test_every_figure_family_and_table_lists_the_networks_in_one_order():
     sets = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")
     order = sets + ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")
     # the figure families
-    assert R.NETWORKS == order + ("INIT", "SCRATCH") and sum(R.LEGEND_GROUPS, ()) == R.NETWORKS
+    # PI 2026-11-21 (LEDGER PS-5): on a class pair the random partitions split into those that merge it and keep it apart
+    assert R.NETWORKS == order + ("RAND_MERGED", "RAND_APART", "INIT", "SCRATCH") and sum(R.LEGEND_GROUPS, ()) == R.NETWORKS
     assert R.LABEL_SETS == L.HV_ROWS == L.SIZE_ROWS == L.VAL_ROWS == H.XBX_LABEL_SETS == H.SCULPT_ROWS == H.PT_ROWS == sets
     # the jet-pT family's partition figure (round 2): 188 and 17 classes for reference, then the partitions
     assert H.PT_PARTITIONS == H.SCULPT_PARTITIONS == ("L188", "R16_Q1") + order[len(sets):]

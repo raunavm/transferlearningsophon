@@ -521,17 +521,19 @@ SIZE_SLOTS = ((0, 0), (0, 1), (1, 0), (1, 1), (2, 0))        # the legend in (2,
 SIZE_LEGEND_SLOT = (2, 1)
 SIZE_ROWS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")
 SIZE_PARTITIONS = ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")     # 188 and 17 classes for reference
-SIZE_LEFT, SIZE_WGAP, SIZE_HGAP, SIZE_RIGHT = 1.35, 0.85, 1.0, 0.15      # cm
-SIZE_W = (S.PRINT_W - SIZE_LEFT - SIZE_WGAP - SIZE_RIGHT) / 2              # 6.3 cm
+# FG-8 (PI 2026-11-20): every panel its own x and y labels, so the gap holds the right panel's tick labels and y label
+# and every row an x label under it
+SIZE_LEFT, SIZE_WGAP, SIZE_HGAP, SIZE_RIGHT = 1.35, 1.25, 1.0, 0.15      # cm
+SIZE_W = (S.PRINT_W - SIZE_LEFT - SIZE_WGAP - SIZE_RIGHT) / 2              # 6.125 cm
 SIZE_ASPECT = 0.72          # three rows and the caption on one page (make_results_book.MAX_H_CM)
 SIZE_XLABEL = 0.45          # cm: an x label under a panel with another below it
 # A8 and A10 (PI 2026-11-18): a second block, the AUC on JetClass-II and JetClass (averaged over the classes, each against
 # the rest) and of top and quark/gluon, under the headline block; five rows, so flatter panels and room around the
 # legend's slot, which its one column of eight or nine entries (~3.6-3.9 cm) overfills: the page's height is
-# 0.6 + 5 x 0.39 x 6.325 + 4 x 1.0 + 2 x 0.25 + 1.0 = 18.43 cm (size_layout; make_results_book.MAX_H_CM 18.5)
+# 0.6 + 5 x 0.34 x 6.125 + 4 x 1.45 + 2 x 0.25 + 1.0 = 18.31 cm (size_layout; make_results_book.MAX_H_CM 18.5)
 SIZE_AUC4 = tuple(s for s in SIZE5_AUC if s[0] != "qg_herwig")
 SIZE_AUC_SLOTS = ((3, 0), (3, 1), (4, 0), (4, 1))
-SIZE_ASPECT_TWO, SIZE_LEGEND_ROOM = 0.39, 0.25
+SIZE_ASPECT_TWO, SIZE_LEGEND_ROOM = 0.34, 0.25
 POOLED = M._pooled(RUNS)
 
 
@@ -569,19 +571,18 @@ def size_layout(two: bool) -> tuple:
     slots = SIZE_SLOTS + (SIZE_AUC_SLOTS if two else ())
     h, top = (SIZE_ASPECT_TWO if two else SIZE_ASPECT) * SIZE_W, 0.6
     nrows = max(i for i, _ in slots + (SIZE_LEGEND_SLOT,)) + 1
-    # the lowest panel of each column carries the x label; one with a panel below it needs the room for it
-    lowest = {j: max(i for i, j_ in slots if j_ == j) for _, j in slots}
-    gaps = [SIZE_HGAP + (SIZE_XLABEL if any(lowest[j] == i for j in lowest) else 0)
-            + (SIZE_LEGEND_ROOM if two and i in (SIZE_LEGEND_SLOT[0] - 1, SIZE_LEGEND_SLOT[0]) else 0)
+    gaps = [SIZE_HGAP + SIZE_XLABEL + (SIZE_LEGEND_ROOM if two and i in (SIZE_LEGEND_SLOT[0] - 1, SIZE_LEGEND_SLOT[0]) else 0)
             for i in range(nrows - 1)]
     y_of = [top + i * h + sum(gaps[:i]) for i in range(nrows)]
     return slots, h, y_of, y_of[-1] + h + 1.0
 
 
-def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.SIZE, auc_rows=None) -> None:
+def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.SIZE, auc_rows=None,
+               stars: bool = True) -> None:
     """series_of(key, ds, met): [(series, line, mark, label)] of a panel, in the legend's order; drawn in reverse, so
     the first (188 classes) lies on top. auc: the same five tasks in AUC (SIZE5_AUC) with ParT's published AUCs.
-    auc_rows: series_of of a second block under the first, SIZE_AUC4 in AUC (A8, A10; size_layout)."""
+    auc_rows: series_of of a second block under the first, SIZE_AUC4 in AUC (A8, A10; size_layout). stars: ParT's
+    published full trainings, off where every curve is a linear probe (CS-8, compare like with like)."""
     spec, published = (SIZE5_AUC, PUBLISHED_AUC) if auc else (SIZE5, PUBLISHED)
     panels = [series_of(key, ds, met) for key, ds, met, _ in spec]
     pubs = [published] * len(spec)
@@ -590,9 +591,10 @@ def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.S
         spec, pubs = spec + SIZE_AUC4, pubs + [PUBLISHED_AUC] * len(SIZE_AUC4)
     if not any(s for p in panels for s, *_ in p):
         raise C.Absent(absent)
+    if not stars:
+        pubs = [{}] * len(pubs)
     slots, h, y_of, height = size_layout(bool(auc_rows))
     w = SIZE_W
-    lowest = {j: max(i for i, j_ in slots if j_ == j) for _, j in slots}
     fig = S.figure_cm(S.PRINT_W, height)
     axes, handles = [], {}
     for k, ((i, j), panel, (key, _, met, title), published) in enumerate(zip(slots, panels, spec, pubs)):
@@ -605,7 +607,7 @@ def _draw_size(path, series_of, absent: str, auc: bool = False, style: str = L.S
         ax.xaxis.set_major_formatter(ticker.FuncFormatter(S.pow10))
         ax.xaxis.set_minor_formatter(ticker.NullFormatter())
         S.title(ax, title)
-        S.labels(ax, X_JETS if i == lowest[j] else None, Y_OF[met] if j == 0 else None)
+        S.labels(ax, X_JETS, Y_OF[met])
         if not any(s for s, *_ in panel):
             _empty_panel(ax)
             continue
@@ -647,17 +649,30 @@ def _probe(row: str, mode: str = "ft"):
                                      + (f" {S.PROBE}" if mode == "probe" else ""))
 
 
+def _settled(series: dict, key: str, kind: str) -> dict:
+    """series without its superseded points (LEDGER RR-3, FT-8, SP-11: a superseded run is never drawn): below ParT's
+    full top and quark/gluon sets, a point is drawn only from the one-rule read-out (fixed_metrics, or its partial
+    read-out in a preview) and only where its row has a recorded rate; a row still in its rate search is rerun once it
+    settles, and the trees before the one rule are superseded."""
+    one_rule = M.ft_source(P.DATA).split()[0] in (M.FIXED, M.FIXED_PARTIAL)
+    rate = M._rate_builder().row_rate
+    return {n: v for n, v in series.items() if (key in M.FIXED_PART_FULL and n >= M.FULL_N[key])
+            or (one_rule and rate(M.BUDGET_TASK[key], n, kind) is not None)}
+
+
 def _tuned(row: str, tag: bool = False):
     if row == "SCRATCH":
-        return lambda k, ds, met: _model(P.scratch_series(M, I["per"], k, met), "SCRATCH", "ft", S.LEGEND["SCRATCH"])
-    return lambda k, ds, met: _model(P.ft_series(M, I["per"], POOLED, k, met, row), row, "ft",
+        return lambda k, ds, met: _model(_settled(P.scratch_series(M, I["per"], k, met), k, "scratch"), "SCRATCH", "ft",
+                                         S.LEGEND["SCRATCH"])
+    return lambda k, ds, met: _model(_settled(P.ft_series(M, I["per"], POOLED, k, met, row), k, "pre"), row, "ft",
                                      S.LEGEND[row] + (f" {S.FINE_TUNED}" if tag else ""))
 
 
-def _size(path, makers: list, absent: str, auc: bool, style: str = L.SIZE, auc_makers=None) -> None:
-    """auc_makers: the makers of a second block in AUC under the first (A8, A10)."""
+def _size(path, makers: list, absent: str, auc: bool, style: str = L.SIZE, auc_makers=None, stars: bool = True) -> None:
+    """auc_makers: the makers of a second block in AUC under the first (A8, A10); stars: _draw_size's."""
     _draw_size(path, lambda key, ds, met: [m(key, ds, met) for m in makers], absent, auc=auc, style=style,
-               auc_rows=(lambda key, ds, met: [m(key, ds, met) for m in auc_makers]) if auc_makers else None)
+               auc_rows=(lambda key, ds, met: [m(key, ds, met) for m in auc_makers]) if auc_makers else None,
+               stars=stars)
 
 
 def draw_f8(path, auc: bool = False) -> None:
@@ -673,10 +688,11 @@ def draw_a10(path, auc: bool = False) -> None:
     label sets into a strip, so the figure leaves it to tab:probesn). auc: the AUC alone (A10-auc, superseded)."""
     probes = [_probe(r) for r in SIZE_ROWS]
     absent = "no linear probes (linprobe/fits_v4)"
+    # CS-8 (compare like with like): no ParT published full training beside linear probes
     if auc:
-        _size(path, probes + [_probe(M.INIT)], absent, True)
+        _size(path, probes + [_probe(M.INIT)], absent, True, stars=False)
     else:
-        _size(path, probes, absent, False)      # PI 2026-11-19 (B): accuracy and R30 panels only, the AUC in the tables
+        _size(path, probes, absent, False, stars=False)     # PI 2026-11-19 (B): accuracy and R30 panels only
 
 
 def draw_a8(path, auc: bool = False, style: str = L.SIZE) -> None:
@@ -687,7 +703,7 @@ def draw_a8(path, auc: bool = False, style: str = L.SIZE) -> None:
 
 
 def draw_a10_part(path) -> None:
-    _size(path, [_probe(r) for r in SIZE_PARTITIONS], "no linear probes (linprobe/fits_v4)", False)
+    _size(path, [_probe(r) for r in SIZE_PARTITIONS], "no linear probes (linprobe/fits_v4)", False, stars=False)
 
 
 def draw_a8_part(path) -> None:

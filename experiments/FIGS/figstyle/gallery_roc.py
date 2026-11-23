@@ -253,17 +253,20 @@ def draw_fj_ctrl_app(path: pathlib.Path) -> None:
 # panel, L6), under each panel a ratio panel to the 188-class curve with each curve's band (its SD over runs and the
 # 68% binomial uncertainty of its passing background count, in quadrature); the rows of panels named turned on the left.
 NETWORKS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND",
-            "INIT", "SCRATCH")          # L5: every legend in this order
+            "RAND_MERGED", "RAND_APART", "INIT", "SCRATCH")          # L5: every legend in this order
 LABEL_SETS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")
 PARTITIONS = ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "L188", "R16_Q1")       # 188 and 17 classes for reference
 RANDOM = ("RAND", "L188", "R16_Q1")
-# PI 2026-11-20 (meeting, C5): the random partitions join the partitions row of the class-pair figures (their pooled
-# curve: the mean over the groupings that keep the pair apart, _models; PS-5). 2026-11-23: every grouping has every
-# pair's curve, so mean_over_runs averaged all five; the groupings are now chosen from the label maps (merge_status),
-# as the captions' counts are (mlst_results.pair_figure_macros)
-PAIR_PARTITIONS = PARTITIONS[:3] + ("RAND",) + PARTITIONS[3:]
+# PI 2026-11-20 (meeting, C5): the random partitions join the partitions row of the class-pair figures. PI 2026-11-21
+# (LEDGER PS-5): "show the random partitions that merge the pair and those that keep it apart separately, with the count
+# of each": two curves, each the mean over its groupings chosen from the label maps (merge_status, as the captions'
+# counts mlst_results.MlstPairRand{Merged,Apart}<pair>N); a grouping that merges only part of the pair is in neither
+PAIR_PARTITIONS = PARTITIONS[:3] + ("RAND_MERGED", "RAND_APART") + PARTITIONS[3:]
+PAIR_RAND = {"RAND_MERGED": "merged", "RAND_APART": "apart"}
 PAIR_STATUS = M.merge_status(P.REPO)
-STYLE_KEY = {"INIT": "INIT_BN"}          # the random network (as initialized, Table 1's row) in style_v5's colour and name
+# the random network (as initialized, Table 1's row) in style_v5's colour and name; the groupings that keep a pair
+# apart in the random partitions' colour, under their own name (style_v5.LEGEND)
+STYLE_KEY = {"INIT": "INIT_BN", "RAND_APART": "RAND"}
 POOLED = M._pooled(RUNS)
 # the pairs in the family's one order (plan "Class pairs"): the main-text two, the four other flavor pairs, X->ee vs mumu
 PAIR_ORDER = ("bb_vs_cc", "bc_vs_bq_cs", "bbqq_vs_ccqq", "qcd_bb_vs_cc", "qcd_b_vs_light", "qcd_c_vs_light", "ee_vs_mm")
@@ -276,10 +279,13 @@ NAME_X = 0.2            # cm: the turned row names
 RATIO_WORDS = 2.75      # cm: "Ratio to 188 classes" at 9 pt; a shorter ratio panel says "Ratio" (the caption says to what)
 Y_REJ_WORDS = 4.3       # cm: "Background rejection (1/eps_B)" at 9 pt; a shorter panel says "Rejection (1/eps_B)
 TITLE_LINE = 0.4        # cm: a second title line
+X_LABEL = 0.45          # cm: an x label under a panel with another row below it (FG-8)
+Y_LABEL_GAP = 0.6       # cm between two panels of a row: the right one's y label beside it, its tick labels off (FG-8)
+LEGEND_ROW = 0.4        # cm: one legend entry at 8.5 pt
 # the legend's columns, one group of networks a column (L5): 188 and 162 classes, 43 and 17 classes, the partitions,
 # the references (_legend_cols)
 LEGEND_GROUPS = (("L188", "L162", "L162_MASS"), ("R42_Q1", "R16_Q1", "R16_Q1_MASS"),
-                 ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND"), ("INIT", "SCRATCH"))
+                 ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND", "RAND_MERGED", "RAND_APART"), ("INIT", "SCRATCH"))
 
 
 def _legend_cols(present) -> list:
@@ -303,7 +309,7 @@ def _group_legend(fig, handles: dict) -> None:
     cols = _legend_cols(handles)
     rows = max(len(c) for c in cols)
     blank = Line2D([], [], linestyle="none", marker="none")
-    items = [(handles[n], S.LEGEND[_style(n)]) if n else (blank, "") for c in cols for n in c + [None] * (rows - len(c))]
+    items = [(handles[n], _name(n)) if n else (blank, "") for c in cols for n in c + [None] * (rows - len(c))]
     S.fig_legend(fig, [h for h, _ in items], top_cm=S.LEGEND_TOP, ncol=len(cols), labels=[t for _, t in items])
 
 
@@ -313,17 +319,22 @@ def _two_lines(title: str) -> str:
 
 
 def _models(docs: dict, net: str, key: str | None = None) -> list:
-    """The runs of a network in a curve family; from scratch: its trainings in that family; the random partitions on a
-    class pair: those that keep the pair apart (PAIR_STATUS)."""
+    """The runs of a network in a curve family; from scratch: its trainings in that family; the random partitions that
+    merge the class pair key, or keep it apart (PAIR_RAND, PAIR_STATUS); "RAND" all five."""
     if net == "SCRATCH":
         return P._scratch_models(docs) or [m for m in M.FT_SCRATCH_MODELS if m in docs]
-    if net == "RAND" and key in PAIR_TITLE:
-        return [m for a in M.RAND if PAIR_STATUS[a][key] == "apart" for m in RUNS[a]]
+    if net in PAIR_RAND:
+        return [m for a in M.RAND if PAIR_STATUS[a][key] == PAIR_RAND[net] for m in RUNS[a]]
     return POOLED[net]
 
 
 def _style(net: str) -> str:
     return STYLE_KEY.get(net, net)
+
+
+def _name(net: str) -> str:
+    """A network's legend name: its own where style_v5 gives one, else its style's."""
+    return S.LEGEND.get(net) or S.LEGEND[_style(net)]
 
 
 def _rel_error(docs: dict, models: list, key: str):
@@ -406,15 +417,16 @@ def _x_ticks(axes: list, lo: float, w: float, last: bool = True) -> None:
             lambda t, _, lo=lo: "" if abs(t - lo) < 1e-9 or (not last and abs(t - 1) < 1e-9) else f"{t:.1f}"))
 
 
-def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_names: tuple = (), wgap: float = 0.25,
+def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_names: tuple = (), wgap: float = Y_LABEL_GAP,
               share=lambda i, j: 0, own_y: bool = False, fit_x: bool = True, legend_slot: tuple | None = None,
               ratio_scale: str | None = None) -> None:
     """grid: rows of panels (docs, curve key, networks, title); a panel None is left out (its slot stays empty). Each
     panel w cm wide and aspect * w high, its ratio panel RATIO_HEIGHT of that under it. share(i, j): panels of one key
     share their y range and their ratio range (in a row only the first shows its tick labels unless own_y). fit_x: each
     column's x range fitted to its curves (pairs), else 0 to 1. One legend above the panels for every network drawn,
-    a column per group (_group_legend), or (legend_slot (i, j), L20: two panels a row) one column in that free slot.
-    Titles with a line break take a second line's room."""
+    a column per group (_group_legend), or (legend_slot (i, j), L20: two panels a row) one column in that free slot
+    while it fits. Titles with a line break take a second line's room. FG-8 (PI 2026-11-20): every panel has its own x
+    and y labels, so the gap between panels holds a y label and the gap between rows an x label."""
     rows, cols = len(grid), max(len(r) for r in grid)
     left = (0.65 if row_names else 0.1) + 1.25
     h = aspect * w
@@ -424,8 +436,7 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
     legend_rows = max(len(c) for c in _legend_cols(nets))
     two = any("\n" in p[3] for r in grid for p in r if p)
     top = (0.0 if legend_slot else S.LEGEND_TOP + 0.45 * legend_rows) + 0.65 + (TITLE_LINE if two else 0)
-    # a panel with the legend's slot under it carries the x label: room for it under that row
-    hgap = 1.35 + (TITLE_LINE if two else 0) + (0.45 if legend_slot else 0)
+    hgap = 1.35 + X_LABEL + (TITLE_LINE if two else 0)
     fig = S.figure_cm(S.PRINT_W, top + rows * (h + 0.1 + rh) + (rows - 1) * hgap + 1.0)
     mains, ratios, values = {}, {}, collections.defaultdict(list)
     for i, row in enumerate(grid):
@@ -443,9 +454,9 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
             mains[i, j], ratios[i, j] = ax, rx
             ref = mean_over_runs(docs, POOLED["L188"], key)
             for net in sorted(nets, key=lambda n: -NETWORKS.index(n)):        # 188 classes last, on top
-                # the paper's pair figures (PAIR_PARTITIONS rows): the groupings that keep the pair apart; F4-rand's
-                # pooled curve keeps all five, as its caption says
-                models = _models(docs, net, key if nets == PAIR_PARTITIONS else None)
+                # the paper's pair figures (PAIR_PARTITIONS rows): the groupings that merge the pair and those that
+                # keep it apart; F4-rand's pooled curve keeps all five, as its caption says
+                models = _models(docs, net, key)
                 s = mean_over_runs(docs, models, key)
                 if s is None or len(s[0]) < 2:
                     continue       # a network whose runs keep fewer than 20 background jets everywhere: no curve
@@ -458,8 +469,7 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
                 # L21: in a panel of more than three networks only 188 classes and the mode's reference keep a band
                 rel = _rel_error(docs, models, key) if L.keeps_band(net, len(nets)) else None
                 values[share(i, j)] += _ratio(rx, s, ref, rel, **look)
-                handles.setdefault(net, Line2D([], [], **S.look(_style(net)), linewidth=lw,
-                                               label=S.LEGEND[_style(net)]))
+                handles.setdefault(net, Line2D([], [], **S.look(_style(net)), linewidth=lw, label=_name(net)))
             S.title(ax, name)
     groups = collections.defaultdict(list)
     for ij in mains:
@@ -483,12 +493,9 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
         ratios[i, j].tick_params(labelleft=first)
         if first:
             ax.yaxis.set_major_formatter(FuncFormatter(lambda t, _: "" if abs(t - 1) < 1e-9 else S.pow10(t)))
-        if j == 0:
-            # the full label is about 4.6 cm at 9 pt: a shorter panel says "Rejection", so it stays beside its panel
-            S.labels(ax, ylabel=S.Y_REJ if h >= Y_REJ_WORDS else r"Rejection ($1/\varepsilon_B$)")
-            S.labels(ratios[i, j], ylabel="Ratio to 188 classes" if rh + 0.3 >= RATIO_WORDS else "Ratio")
-        if i == rows - 1 or (i + 1, j) not in mains:
-            S.labels(ratios[i, j], xlabel=S.X_EPS)
+        # the full label is about 4.6 cm at 9 pt: a shorter panel says "Rejection", so it stays beside its panel
+        S.labels(ax, ylabel=S.Y_REJ if h >= Y_REJ_WORDS else r"Rejection ($1/\varepsilon_B$)")
+        S.labels(ratios[i, j], xlabel=S.X_EPS, ylabel="Ratio to 188 classes" if rh + 0.3 >= RATIO_WORDS else "Ratio")
     for i, name in enumerate(row_names):
         y0 = top + i * (h + 0.1 + rh + hgap)
         fig.text(NAME_X / S.PRINT_W, 1 - (y0 + (h + rh) / 2) / (fig.get_figheight() / S.CM), name, rotation=90,
@@ -496,8 +503,9 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
     if legend_slot:
         i, j = legend_slot
         order = sorted(handles, key=NETWORKS.index)
+        one = len(order) * LEGEND_ROW + 0.3 <= h + 0.1 + rh       # one column while it fits the slot's height
         S.slot_legend(fig, [handles[n] for n in order], left + j * (w + wgap), top + i * (h + 0.1 + rh + hgap), w,
-                      h + 0.1 + rh, ncol=1 if len(order) <= 8 else 2, labels=[S.LEGEND[_style(n)] for n in order])
+                      h + 0.1 + rh, ncol=1 if one else 2, labels=[_name(n) for n in order])
     else:
         _group_legend(fig, handles)
     S.letter_panels([mains[ij] for ij in sorted(mains)])
@@ -516,7 +524,7 @@ def _pair_grid(path: pathlib.Path, family: str, pairs: tuple, w: float, aspect: 
               ratio_scale="log")      # the class-pair family: logarithmic ratio panels in every figure
 
 
-PAIR_W = {2: 6.3, 3: 4.15, 4: 3.0}      # cm: a panel of two, three or four in a row beside the turned row names
+PAIR_W = {2: 6.15, 3: 4.15, 4: 3.0}     # cm: a panel of two, three or four in a row beside the turned row names
 
 
 def draw_f4_mech(path: pathlib.Path) -> None:
@@ -591,7 +599,8 @@ def _bench_grid(path: pathlib.Path, mode: str, nets: tuple) -> None:
     on one (PI: matching axes); every panel its tick labels."""
     fams = {"probe": (_family("top_probe"), _family("qg_probe")), "ft": (_family("top_ft"), _family("qg_ft"))}
     panels = [(fams[mode][0 if key == "top" else 1], key, nets, name) for key, name in BENCH]
-    _roc_grid(path, [panels[:2], panels[2:]], w=6.3, aspect=0.72, wgap=0.85, share=lambda i, j: int((i, j) != (0, 0)),
+    # FG-8: the right panels' tick labels and their y label in the gap (1.35 + 2 x 6.12 + 1.3 cm in 15 cm)
+    _roc_grid(path, [panels[:2], panels[2:]], w=6.12, aspect=0.72, wgap=1.3, share=lambda i, j: int((i, j) != (0, 0)),
               own_y=True, fit_x=False, legend_slot=(1, 1), ratio_scale="linear")    # the ROC family: linear
 
 
@@ -878,7 +887,7 @@ PAGES = [
          precedent_label="Landscape Fig. 5",
          caption="",
          differs="F4-mech's form on the four other flavor pairs (PI 2026-11-13: X→ee vs μμ to the supplement); L20: "
-                 "two 6.3 cm panels a row; PI 2026-11-23 (merge 8): F4-light's QCD pairs with b and with c against "
+                 "two 6.15 cm panels a row; PI 2026-11-23 (merge 8): F4-light's QCD pairs with b and with c against "
                  "light are its second row, and only X→YY→bb̄qq vs cc̄qq has a partitions panel.",
          data_note=PAIR_LP_NOTE + PAIR_NOTE,
          draw=draw_f4_other),

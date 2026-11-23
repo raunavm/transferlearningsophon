@@ -215,6 +215,9 @@ GROUPS = {
                                   "INIT_BN"),
     "partitions, fine-tuned": ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND", "SCRATCH"),
     "partitions, linear probes": ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND", "INIT_BN"),
+    # the class pairs' partitions row (gallery_roc.PAIR_PARTITIONS, PS-5): the random partitions that merge the pair beside
+    # those that keep it apart (RAND's colour), in either mode
+    "class pairs, partitions": ("L188", "R16_Q1", "FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND", "RAND_MERGED"),
     # the headline dot plots (F2, F2a, F2b): every network of a mode in one panel, each row named beside it
     "headline, linear probes": ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS", "FLAV_F0", "FLAV_F1",
                                 "FLAV_F1R", "RAND", "INIT_BN", "SOPHON"),

@@ -14,9 +14,9 @@ import gallery_placement as G
 
 # the mixed test sample's decay families (PI 2026-11-14), the fine-tuned class pairs' and sculpting's test jets
 MIXED = "the mixed test sample (38.7% two-prong, 40.8% three- and four-prong, 20.5% QCD jets)"
-# a figure without the random partitions in a class-pair figure (PI 2026-11-14): one clause why
-NO_RAND = ("The random partitions' curve is the mean over the groupings, one run each, that keep the pair's classes "
-           "apart.")
+# the random partitions of a class-pair figure (PI 2026-11-21, LEDGER PS-5): those that merge the pair and those that
+# keep it apart, drawn separately (gallery_roc.PAIR_RAND)
+NO_RAND = "The random partitions, one run each, are two curves, those merging the pair and those keeping it apart."
 COUNTS = {}       # PC-jc2, PC-jc1: the computed count sentence (gallery_perclass), "" without per-class values
 # a sentence that depends on the data read, {name} in a caption (gallery_physics sets "probe_note": the mass probe is
 # centred on one training median, the truth-free refit atlas_res_v3, the only mass files read)
@@ -78,14 +78,14 @@ CAPTIONS = {
     "F4-mech": (
         'Linear probes on 17 classes, which merge each pair, separate X→bb̄ from cc̄ and X→bc from bq, cs, the '
         'second-named the background, worse than 188 classes, and the b-quark boundary recovers part of the loss on '
-        'both pairs, the random flavor boundary on the second. Panels show one over the fraction of background jets '
-        'kept against that of signal jets, with ratios to 188 classes. '
-        'Curves are means over {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and '
-        'flavor-boundary partition, {m:RandVtwoRuns} each for the {m:MlstPairRandApartMechWord} random partitions '
-        'keeping the pair apart, ending where fewer than {m:MlstMinBkgPass} background jets pass; 188 classes\' band '
-        'combines run spread and binomial uncertainty. The random network, not drawn, reaches '
-        '{m:MlstPairInitRhalfMechMin} to {m:MlstPairInitRhalfMechMax} at 50% of signal jets. Table {tab:tests} has the '
-        'tested differences.'
+        'both. Panels show one over the fraction of background jets kept against that of signal jets, with ratios to '
+        '188 classes. Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and '
+        'flavor-boundary partition, and {m:RandVtwoRuns} per random partition, split into those merging the pair '
+        '({m:MlstPairRandMergedBbN}, {m:MlstPairRandMergedBcN}) and keeping it apart ({m:MlstPairRandApartBbN}, '
+        '{m:MlstPairRandApartBcN}, one partial merge left out). They end where under {m:MlstMinBkgPass} background '
+        'jets pass, and 188 classes\' one-standard-deviation band combines run spread and binomial uncertainty. The '
+        'random network, not drawn, reaches {m:MlstPairInitRhalfMechMin} to {m:MlstPairInitRhalfMechMax} at 50% of '
+        'signal jets. Table {tab:tests} has the tested differences.'
     ),
     "ROC-main": (
         'Background rejection against signal efficiency with linear probes on frozen features, the mean over runs. '
@@ -119,9 +119,10 @@ CAPTIONS = {
         'jet pT and of generator-level mass. Panels show the median of the response r = m_est/m_gen and its distance '
         'from one, and the resolution, the width of the central 68% of r over twice its median, and its ratio to the '
         'soft-drop mass, against the reconstructed jet pT and the generator-level soft-drop mass m_gen. The estimates '
-        'are the soft-drop mass and the mass output of the 162- and 17-class networks with an added mass output, on '
-        'JetClass-II test jets with a generator-level match. Lines are means over {m:MlstMassNRunsWord} pretraining '
-        'runs, and bands of one standard deviation combine the spread over runs with the bootstrap over test jets. '
+        'are the soft-drop mass and the mass output of the 162- and 17-class networks, on JetClass-II test jets with a '
+        'generator-level match. Points are means over {m:MlstMassNRunsWord} pretraining runs, horizontal bars span each '
+        'bin, and vertical bars of one standard deviation combine the spread over runs with the bootstrap over test '
+        'jets. '
         'Values over all jets are in table {tab:mass}.'
     ),
     "A17-probe": (
@@ -159,9 +160,10 @@ CAPTIONS = {
         "from cc̄, and QCD jets with a b quark, or a c and no b, from light QCD jets, the second-named the background, "
         "less well than 188 classes, and 162 classes, which merge the QCD classes, the QCD pairs. Panels, drawn as in "
         "figure {fig:F4-mech}, show the label sets and, in (e), the 17-class partitions, which all merge the QCD "
-        "classes. Curves are means over {m:MlstNRunsWord} runs per label set and {m:MlstMassNRunsWord} per mass network "
-        "and flavor-boundary partition, and over the {m:MlstPairRandApartBbqqWord} random partitions, {m:RandVtwoRuns} "
-        "run each, that keep the pair apart. The random network, not drawn, reaches {m:MlstPairInitRhalfOtherMin} to "
+        "classes. Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and "
+        "flavor-boundary partition, and {m:RandVtwoRuns} per random partition, split into those merging the pair "
+        "({m:MlstPairRandMergedBbqqN}) and keeping it apart ({m:MlstPairRandApartBbqqN}). The random network, not "
+        "drawn, reaches {m:MlstPairInitRhalfOtherMin} to "
         "{m:MlstPairInitRhalfOtherMax} at 50% of signal jets. Table {tab:tests} has the tested differences."
     ),
     "F4-mech-ft": (
@@ -203,9 +205,8 @@ CAPTIONS = {
         'size. The panels show accuracy on class-balanced JetClass-II and JetClass and R30, one over the fraction of '
         'background jets kept when the cut keeps 30% of signal jets, the top-tagging working point, on top and '
         'quark/gluon tagging, Pythia and Herwig, against training-set size. Lines are means and light bands ±1 '
-        'standard deviation over the pretraining runs (three a label set, two a mass network). Open stars mark the published Particle Transformer, trained from scratch on 2, 1.2 and 1.6 million '
-        'jets, with its published standard deviation on R30, above every probe. The random network and the values '
-        'at the largest training sets are in table {tab:summary}, the others in the data release.'
+        'standard deviation over the pretraining runs (three a label set, two a mass network). The random network '
+        'and the values at the largest training sets are in table {tab:summary}, the others in the data release.'
     ),
     "F10b": (
         'Used directly, no label set differs from 188 classes, nor a mass network from its own label set, in how much '

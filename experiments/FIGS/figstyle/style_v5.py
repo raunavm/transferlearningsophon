@@ -90,8 +90,12 @@ SERIES = {"L188": "#332288", "L162": "#AA4499", "R42_Q1": "#999933", "R16_Q1": "
           "FLAV_F0": "#CC6677", "FLAV_F1": "#117733", "FLAV_F1R": "#88CCEE", "RAND": "#543005",
           "KIN": "#DDCC77", "SOPHON": "#CC3311", "INIT_BN": "#333333", "SCRATCH": GREY_DARK}
 SERIES.update({"L162_MASS": tint(SERIES["L162"]), "R16_Q1_MASS": tint(SERIES["R16_Q1"])})
+# PI 2026-11-21 (LEDGER PS-5): on a class pair, the random partitions that merge the pair apart from those that keep it
+# apart (RAND's colour, gallery_roc.PAIR_RAND); the merging ones in the PI's spare wine (palette_check.SPARES)
+SERIES["RAND_MERGED"] = "#882255"
 MARKERS = {"L188": "o", "L162": "s", "R42_Q1": "^", "R16_Q1": "D", "L162_MASS": "v", "R16_Q1_MASS": "P", "SCRATCH": "X",
-           "FLAV_F0": "p", "FLAV_F1": "*", "FLAV_F1R": "h", "RAND": "<", "INIT_BN": "x", "KIN": "o", "SOPHON": "d"}
+           "FLAV_F0": "p", "FLAV_F1": "*", "FLAV_F1R": "h", "RAND": "<", "INIT_BN": "x", "KIN": "o", "SOPHON": "d",
+           "RAND_MERGED": ">"}
 # the controls' shapes differ from every label set's, so no control shares a label set's shape in greyscale
 STAR_SCALE = 1.4                                 # "*" draws smaller than the other shapes at one markersize
 # the line of a use: "probe" only where linear probes share a panel with fine-tuned networks (L6), "direct" the direct
@@ -105,7 +109,8 @@ LEGEND = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", 
           "RAND": "random partitions", "FLAV_F0": "no flavor boundary", "FLAV_F1": "$b$-quark boundary",
           "FLAV_F1R": "random flavor boundary", "L162_MASS": "162 classes + mass", "R16_Q1_MASS": "17 classes + mass",
           "KIN": "188 classes, kinematic inputs only", "SCRATCH": "from scratch", "INIT_BN": "random network",
-          "SOPHON": "released Sophon checkpoint"}
+          "SOPHON": "released Sophon checkpoint", "RAND_MERGED": "random partitions, pair merged",
+          "RAND_APART": "random partitions, pair apart"}
 PROBE, MLP_PROBE, FINE_TUNED = "(linear probe)", "(MLP probe)", "(fine-tuned)"
 WORKING_POINT = {"inclusive": {"color": "#000000", "marker": "o", "fillstyle": "full"},
                  "10%": {"color": GREY_DARK, "marker": "s", "fillstyle": "none"},
