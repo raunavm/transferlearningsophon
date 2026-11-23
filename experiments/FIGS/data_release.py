@@ -172,6 +172,7 @@ _NARGS = {"tabular": 1, "tabular*": 2, "tabularx": 2, "longtable": 1}
 _LEAD = re.compile(r"\s*(?:\\(?:toprule|midrule|bottomrule|hline|newpage|pagebreak|nopagebreak|endfirsthead|endhead|"
                    r"endfoot|endlastfoot|addlinespace|cmidrule|cline|noalign|specialrule|penalty)(?![A-Za-z])\*?)")
 K_SIZES = ((r"\Kfull", "188"), (r"\Kres", "162"), (r"\Kmid", "43"), (r"\Kcoarse", "17"))
+SUBHEADINGS = ("17-class partitions",)      # mlst_results.PARTITIONS: under the heading above it, in italics or not
 
 
 def _split0(s: str, sep: str) -> list:
@@ -308,7 +309,7 @@ def cells(text: str) -> list:
             if len(cs) == 1:
                 if r.strip().startswith(r"\multicolumn"):
                     h = _span(r)[1]
-                    if re.search(r"\\(?:textit|itshape)", h):
+                    if re.search(r"\\(?:textit|itshape)", h) and detex(h) not in SUBHEADINGS:
                         top, sub = detex(h), ""
                     else:
                         sub = detex(h)
@@ -487,8 +488,8 @@ class Recorder:
                         vals = None
                     m.update(kind=e["kind"], basis="position", runs=e["runs"], token=e["values"])
                     if vals is None or not all(close(v, x) for v, x in zip(vals, c.nums)):
-                        bad.append(f"{rel}: row {c.row!r}, column {c.column!r} prints {c.text!r}, its value is "
-                                   f"{e['values']}")
+                        bad.append(f"{rel}: under {c.block!r}, row {c.row!r}, column {c.column!r} prints {c.text!r}, "
+                                   f"its value is {e['values']}")
                         m.update(values=e["values"], rules=["round"] * len(e["values"]))
                     else:
                         m.update(values=vals, rules=["round"] * len(vals))
