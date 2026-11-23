@@ -88,3 +88,6 @@ research/
 docs/
 # v2 loader and smoke records are committed whole (PRESPEC A7 correction), logs included
 !experiments/FIGS/data/v2_loader/**/*.log
+
+# local archives: copies of deleted networks, draft PDFs (PI 2026-11-23, ST-6)
+archive/
