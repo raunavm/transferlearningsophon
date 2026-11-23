@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # The approved deletion of tiers 1 and 2 (PI 2026-11-23, LEDGER ST-5), step 1: the manifest of every file of both
+  # tiers, then the archive of every trained network's only copy (intact check, config, log, checksums) to fetch to
+  # the laptop. scripts/storage_tiers.py manifest + archive. Deletes nothing. CPU, 4 hashing threads.
+  name: storage-tiers-manifest-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.48 https://github.com/raunavm/transferlearningsophon.git tls; }
+          retry clone || exit 1
+          cd /workspace/tls
+          df -h /data | tail -1
+          python3 scripts/storage_tiers.py manifest --out /data/results/storage_1123
+          python3 scripts/storage_tiers.py archive --out /data/results/storage_1123/archive
+          df -h /data | tail -1
+        resources:
+          requests: { memory: "4Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "4Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
