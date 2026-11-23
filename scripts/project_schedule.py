@@ -8,7 +8,10 @@ cells, then part A of every 1e3-1e5 rerun, then part B), built from the sources 
     still needs at an edge, and the rerun it needs when its best is not its original rate (cells from the builder:
     fixed_cells, split A/B as fixed_rate_parts);
   - cell hours: the median finished attempt of the same task, size and kind on the same GPU pool
-    (experiments/FIGS/data/v2/budget/ft_attempts.json, joined to cells by folder, and the cluster's finished pods).
+    (experiments/FIGS/data/v2/budget/ft_attempts.json, joined to cells by folder, and the cluster's finished pods);
+    a running cell (PI 2026-11-23, EX-1): its own log's rate, the time between its first and latest "Epoch #k
+    validating" lines over the epochs between them, times the epochs left of its spec's EP (the median rule only
+    while its log has fewer than two such lines or cannot be read).
 Greedy list scheduling on a fixed number of GPUs per pool. The assumptions are printed with the result. Reads only.
     python3 scripts/project_schedule.py LAUNCH_LIST SCAN.json --gen 25 --a100 3
 """
@@ -31,8 +34,11 @@ sys.path.insert(0, str(ROOT / "experiments" / "FT"))
 import build_ft_budget_jobs as B  # noqa: E402
 import rate_search as RS  # noqa: E402
 
+EP_RE = re.compile(r"^ *(\d+)\) TASK=.*?; EP=(\d+);", re.M)
+LOG_RE = re.compile(r"^\[(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),\d+\] INFO: Epoch #(\d+) validating", re.M)
 CELL_RE = re.compile(r"^ *(\d+)\) TASK=(\w+); INIT=([\w-]*);.*?N=(\d+);.*?LR=([\w.-]+);.*?CELL=(\S+?);;", re.M)
 UTC = dt.timezone.utc
+FT_ROOT = "/data/results/ft_v2/"
 T = lambda s: dt.datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)  # noqa: E731
 CUTOFF = dt.datetime(2026, 11, 25, 18, 0, tzinfo=UTC)                           # PI 2026-11-22: the B cut-off
 GROUPS = ("1e6", "search", "A", "B")
@@ -64,6 +70,23 @@ def spec_cells(spec: pathlib.Path) -> dict:
             for m in CELL_RE.finditer(spec.read_text())}
 
 
+def log_hours_left(pod: str, epochs: int) -> float | None:
+    """Hours left of a running cell from its own log: the rate between its first and latest validated epoch, times the
+    epochs left (None when the log has fewer than two validated epochs or cannot be read)."""
+    r = subprocess.run(["kubectl", "exec", "-n", "cms-ml", pod, "--", "sh", "-c",
+                        "grep -h 'INFO: Epoch #[0-9]* validating' /workspace/run/stdout.log"],
+                       capture_output=True, text=True)
+    m = LOG_RE.findall(r.stdout) if r.returncode == 0 else []
+    if len(m) < 2:
+        return None
+    (t0, k0), (t1, k1) = m[0], m[-1]
+    k0, k1 = int(k0), int(k1)
+    if k1 <= k0:
+        return None
+    t0, t1 = (dt.datetime.strptime(x, "%Y-%m-%d %H:%M:%S") for x in (t0, t1))
+    return (t1 - t0).total_seconds() / 3600 / (k1 - k0) * max(epochs - 1 - k1, 0)
+
+
 def kubectl_json(*args) -> dict:
     return json.loads(subprocess.run(["kubectl", "get", "-n", "cms-ml", *args, "-o", "json"], check=True,
                                      capture_output=True, text=True).stdout)
@@ -84,6 +107,7 @@ def main(argv=None) -> int:
     ap.add_argument("--gen", type=int, required=True, help="general GPUs assumed held")
     ap.add_argument("--a100", type=int, required=True, help="A100s assumed held (at most 8)")
     a = ap.parse_args(argv)
+    scan_cells = json.loads(pathlib.Path(a.scan).read_text())["cells"]
     now = dt.datetime.now(UTC).replace(microsecond=0)
 
     # every cell folder the specs name -> (task, size, kind), to read hours by folder
@@ -115,8 +139,13 @@ def main(argv=None) -> int:
         sp = ROOT / spec
         pool = "a100" if "nvidia.com/a100" in sp.read_text() else "gen"
         cells = spec_cells(sp)
+        eps = {int(m[1]): int(m[2]) for m in EP_RE.finditer(sp.read_text())}
         st = jobs.get(name, {}).get("status", {})
         finished = indices(st.get("completedIndexes")) | indices(st.get("failedIndexes"))
+        # a job deleted after it ran (edge7-jc1, edge7-jc2b) has no status: its cells done or diverged in the scan are
+        # not owed
+        rec = lambda c: scan_cells.get(c["path"].removeprefix(FT_ROOT), {})  # noqa: E731
+        finished |= {i for i, c in cells.items() if rec(c).get("done") or rec(c).get("diverged_record")}
         if st.get("failedIndexes"):
             # a failed index is taken as a diverged cell (exit 42); a cell refused at the storage line fails the same
             # way, so they are listed for a check rather than silently dropped
@@ -133,15 +162,17 @@ def main(argv=None) -> int:
                 continue
             run = p and p["status"].get("phase") == "Running"
             start = T(p["status"]["startTime"]) if run else None
+            log_left = log_hours_left(p["metadata"]["name"], eps[i]) if run and i in eps else None
             plan[(name, i)] = {**c, "pool": pool, "start": start, "group": group_of(c["task"], c["n"], c["init"], c["path"]),
-                               "job": name, "deps": set()}
+                               "job": name, "deps": set(), "log_left": log_left}
         order.append(name)
 
     # the rows still searching: what each still needs, assuming its current best holds
     assume = ["each unsettled row's current best holds: its pending neighbours score lower",
               "a row at the edge of the rates tried needs one more step (3x past it), which then scores lower",
               "a rerun starts when its row's search cells have all finished",
-              "a running cell past its median gets a quarter of the median more",
+              "a running cell ends at its own log's epoch rate (the test-set evaluation after its last epoch not "
+              "counted); without a readable log, past its median it gets a quarter of the median more",
               "A100s run only the A100 jobs of the launch list"]
     future = []
     for r in RS.evaluate(json.loads(pathlib.Path(a.scan).read_text())):
@@ -198,6 +229,11 @@ def main(argv=None) -> int:
         same_n = [h for k, v in hours.items() if k[1] == c["n"] and k[3] == c["pool"] for h in v]
         return statistics.median(same_n)
 
+    def run_left(c):
+        if c.get("log_left") is not None:
+            return c["log_left"]
+        return max(est(c) - (now - c["start"]).total_seconds() / 3600, 0.25 * est(c))
+
     # simulate: running cells keep going; a pool starts a cell only while it runs fewer than its GPUs
     cap = {"gen": a.gen, "a100": a.a100}
     busy = collections.Counter()
@@ -208,12 +244,11 @@ def main(argv=None) -> int:
         if c["start"]:
             # a cell past its median gets a quarter of it more (independent review 2026-11-22: 15 min hid
             # five overdue cells, one gating a rerun)
-            left = max(est(c) - (now - c["start"]).total_seconds() / 3600, 0.25 * est(c))
+            left = run_left(c)
             heapq.heappush(events, (now + dt.timedelta(hours=left), k))
             busy[c["pool"]] += 1
     waiting = [k for k in queue if not plan[k]["start"]]
-    gpu_h = sum(max(est(plan[k]) - (now - plan[k]["start"]).total_seconds() / 3600, 0.25 * est(plan[k])) if plan[k]["start"]
-                else est(plan[k]) for k in queue)
+    gpu_h = sum(run_left(plan[k]) if plan[k]["start"] else est(plan[k]) for k in queue)
     while waiting or events:
         started = True
         while started:
@@ -237,8 +272,7 @@ def main(argv=None) -> int:
     print(f"now {fmt(now)}; GPUs assumed: {a.gen} general, {a.a100} A100")
     print("assumptions: " + "; ".join(assume) + "; hours: median finished attempt, same task/size/kind/pool "
           "(other pool x1.6 or /1.6, else same size)")
-    left = lambda k: (max(est(plan[k]) - (now - plan[k]["start"]).total_seconds() / 3600, 0.25 * est(plan[k]))  # noqa: E731
-                      if plan[k]["start"] else est(plan[k]))
+    left = lambda k: run_left(plan[k]) if plan[k]["start"] else est(plan[k])  # noqa: E731
     jc2b6 = sum(left(k) for k in queue if (plan[k]["task"], plan[k]["n"]) == ("jc2b", 1_000_000))
     print(f"remaining GPU-hours {gpu_h:.0f}: JetClass-II 1e6 {jc2b6:.0f} (counted apart from the 2,000 ceiling), "
           f"the rest {gpu_h - jc2b6:.0f}")
