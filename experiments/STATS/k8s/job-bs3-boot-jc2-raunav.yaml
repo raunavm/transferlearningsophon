@@ -45,8 +45,8 @@ spec:
           esac
           echo "BS3 ${IDX} COMPLETE"
         resources:
-          requests: { memory: "4Gi", cpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "4Gi", cpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "10Gi", cpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "10Gi", cpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }

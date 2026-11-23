@@ -11,6 +11,9 @@ Families (each on one CPU model, PF-1; the job pins it and the pod refuses any o
            the 188 native classes, scored on the 903,922 balanced test jets; p (n, 188)
   coarse   the same fit on the 17 merged groups of the 17-class labels (probe_bal.coarse_lut, the task of tab:coarse's
            linear probes, probe_bal.py --coarse R16_Q1), 17 outputs; p (n, 17), y the group
+  bench0   as bench with the missing inputs at zero, the config's fill, on the features fits_v3_mlp2 read
+           (tab:mlp's top and quark/gluon columns as printed; PI 2026-11-23, LEDGER CS-5b: the full sigma of the gaps
+           Table 10 prints), the random networks (checkpoints init and init_bn) among them
   bench    linear_probe_v2.mlp_cells, cell set v4 (tab:mlp's top and quark/gluon fit): top tagging and quark/gluon at
            their largest training set, the quark/gluon probe also scored on the Herwig jets; s, the logit difference.
            The missing inputs take the substitution the linear probes of Fig. 2 and Table 2 use (FILL: random draws on
@@ -37,13 +40,16 @@ import time
 import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-FAMILIES = ("jc2bal", "coarse", "bench")
+FAMILIES = ("jc2bal", "coarse", "bench", "bench0")
 COARSE = "R16_Q1"
 FILL_ROOT = pathlib.Path("/data/results/eval/v2_linprobe_fill")
 FILL = {"top": "itop4", "qg": "nqg"}     # build_refit_v5_jobs.FILL_TAG: the substitutions chosen on validation
 # the stored fits each family repeats, for the comparison recorded beside every metric
-STORED = {"jc2bal": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"), "coarse": None, "bench": None}
-COMPARED = {"jc2bal": ("accuracy", "macro_auc_ovr", "macro_auc_resonant", "macro_auc_qcd")}
+STORED = {"jc2bal": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"), "coarse": None, "bench": None,
+          "bench0": pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2")}
+STORED_BN = pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2_initbn")   # bench0's init_bn checkpoint
+COMPARED = {"jc2bal": ("accuracy", "macro_auc_ovr", "macro_auc_resonant", "macro_auc_qcd"),
+            "bench0": ("accuracy", "auc", "r30", "r50")}
 
 
 def _load(name: str, rel: str):
@@ -91,12 +97,14 @@ def jc2bal(pb, probe, model: str, ckpt: str, out: pathlib.Path, coarse: bool) ->
                   "n_val": int(yva.size), "scores": path, "seconds": round(time.time() - t0, 1)}}
 
 
-def bench(pb, probe, model: str, ckpt: str, out: pathlib.Path, fill_root: pathlib.Path = FILL_ROOT) -> dict:
+def bench(pb, probe, model: str, ckpt: str, out: pathlib.Path, fill_root: pathlib.Path = FILL_ROOT,
+          zero: bool = False) -> dict:
     """linear_probe_v2.mlp_cells (cell set v4) on top and quark/gluon under the linear probes' substitution (FILL),
-    Herwig scored by the quark/gluon probe."""
-    lp, root, cells = pb.lp, fill_root / model, {}
+    or with zero the config's zeros on fits_v3_mlp2's features (pb.OLD_ROOT); Herwig scored by the quark/gluon probe."""
+    lp, root, cells = pb.lp, (pb.OLD_ROOT if zero else fill_root) / model, {}
+    fill = {ds: "zero" for ds in FILL} if zero else FILL
     for ds in ("top", "qg"):
-        tag = f"{ckpt}.{FILL[ds]}"
+        tag = ckpt if zero else f"{ckpt}.{FILL[ds]}"
         n = max(lp.train_sizes(root, ds))
         xva, yva, _ = lp.load_split(root / ds / "val" / tag)
         xte, yte, _ = lp.load_split(root / ds / "test" / tag)
@@ -107,11 +115,11 @@ def bench(pb, probe, model: str, ckpt: str, out: pathlib.Path, fill_root: pathli
         s, meta = probe.fit_mlp(xtr, ytr, xva, yva, xs)
         nte = int(yte.size)
         cells[ds] = {**lp.binary_score_metrics(s[:nte], yte, probe, threshold=0.0), **lp.mlp_fit_record(meta),
-                     "mlp": meta, "n_train": int(ytr.size), "n_val": int(yva.size), "train_size": n, "fill": FILL[ds],
+                     "mlp": meta, "n_train": int(ytr.size), "n_val": int(yva.size), "train_size": n, "fill": fill[ds],
                      "scores": save(out, model, tag, f"{ds}_N{n}", yte, s=s[:nte]), "seconds": round(time.time() - t0, 1)}
         if her is not None:
             cells["qg_herwig"] = {**lp.binary_score_metrics(s[nte:], her[1], probe, threshold=0.0),
-                                  **lp.mlp_fit_record(meta), "n_train": int(ytr.size), "train_size": n, "fill": FILL[ds],
+                                  **lp.mlp_fit_record(meta), "n_train": int(ytr.size), "train_size": n, "fill": fill[ds],
                                   "scores": save(out, model, tag, f"qg_herwig_N{n}", her[1], s=s[nte:])}
         print(f"  {model} {ckpt} mlp {ds}: auc={cells[ds]['auc']:.5f} r30={cells[ds]['r30']:.1f} "
               f"({cells[ds]['seconds']} s)", flush=True)
@@ -120,12 +128,17 @@ def bench(pb, probe, model: str, ckpt: str, out: pathlib.Path, fill_root: pathli
 
 def stored(family: str, model: str, ckpt: str, cells: dict, root=None) -> dict:
     """Each metric of the refit beside the stored fit's ({} without one): {cell: {metric: [stored, refit]}}."""
-    root = STORED[family] if root is None else root
+    root = (STORED_BN if family == "bench0" and ckpt == "init_bn" else STORED[family]) if root is None else root
     f = root / f"{model}.json" if root else None
     if f is None or not f.exists():
         return {}
     old = json.loads(f.read_text())["cells"].get(ckpt, {})
     return {c: {k: [old[c].get(k), v.get(k)] for k in COMPARED[family]} for c, v in cells.items() if c in old}
+
+
+def out_name(model: str, ckpt: str) -> str:
+    """<model>.json for a pretrained network (best70); <model>.<ckpt>.json for the random networks' init and init_bn."""
+    return f"{model}.json" if ckpt == "best70" else f"{model}.{ckpt}.json"
 
 
 def main(argv=None) -> int:
@@ -135,7 +148,7 @@ def main(argv=None) -> int:
     ap.add_argument("--checkpoint", default="best70")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     a = ap.parse_args(argv)
-    out = a.out / f"{a.model}.json"
+    out = a.out / out_name(a.model, a.checkpoint)
     if out.exists():
         print(f"{out} exists")
         return 0
@@ -143,7 +156,7 @@ def main(argv=None) -> int:
     probe = _load("probe", "experiments/EVAL/probe.py")
     cpu = _load("latent_scale_probe", "experiments/EVAL/latent_scale_probe.py").cpu_model()
     a.out.mkdir(parents=True, exist_ok=True)
-    cells = (bench(pb, probe, a.model, a.checkpoint, a.out) if a.family == "bench"
+    cells = (bench(pb, probe, a.model, a.checkpoint, a.out, zero=a.family == "bench0") if a.family.startswith("bench")
              else jc2bal(pb, probe, a.model, a.checkpoint, a.out, coarse=a.family == "coarse"))
     doc = {"model": a.model, "family": a.family, "checkpoints": [a.checkpoint], "probe": "mlp",
            "mlp_threads": probe.MLP_THREADS, "mlp_seeds": list(probe.MLP_SEEDS), "mlp_schedule": probe.MLP_SCHEDULE,

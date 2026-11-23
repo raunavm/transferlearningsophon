@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import itertools
 import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -45,24 +46,40 @@ OUT = "/data/results/eval/bs3_mlp"       # <OUT>/<family>/<model>.json, <OUT>/<f
 BOOT = "/data/results/bootstrap/l3_bs3"
 B = BT.B
 ARMS = R5.BOOTALL_ARMS
-FAMILY_ARMS = {"jc2bal": ("l188", "l162"), "coarse": ("l188", "l162", "r42q1", "r16q1"), "bench": tuple(ARMS)}
-ROWS = [(f, f"mtx-{r}") for f, arms in FAMILY_ARMS.items() for a in arms for r in ARMS[a]]
+FAMILY_ARMS = {"jc2bal": ("l188", "l162"), "coarse": ("l188", "l162", "r42q1", "r16q1"), "bench": tuple(ARMS),
+               "bench0": tuple(ARMS) + ("init", "initbn")}
+INIT = {"init": "init", "initbn": "init_bn"}     # the random networks' checkpoints (init-sK's two)
+
+
+def row_of(arm: str, r: str) -> tuple[str, str]:
+    """(model, checkpoint) of a run of an arm."""
+    return (f"init-{r.rsplit('-', 1)[1]}", INIT[arm]) if arm in INIT else (f"mtx-{r}", "best70")
+
+
+ARMS = {**ARMS, "init": ("init-s1", "init-s2", "init-s3"), "initbn": ("initbn-s1", "initbn-s2", "initbn-s3")}
+ROWS = [(f, *row_of(a, r)) for f, arms in FAMILY_ARMS.items() for a in arms for r in ARMS[a]]
 # smokes: jc2bal, the largest output and a bit-for-bit check against fits_v5_mlp; bench, the largest training set
-SMOKES = {"jc2bal": ("jc2bal", "mtx-l188-s1"), "bench": ("bench", "mtx-l188-s1")}
+SMOKES = {"jc2bal": ("jc2bal", "mtx-l188-s1", "best70"), "bench": ("bench", "mtx-l188-s1", "best70")}
 SMOKE_NAME = {"jc2bal": "bs3-mlp-smoke-raunav", "bench": "bs3-mlp-smoke-bench-raunav"}
 FILES = {"jc2bal": ("jc2bal_N1000000",), "coarse": ("jc2bal_R16_Q1_N1000000",),
-         "bench": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000")}
+         "bench": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000"),
+         "bench0": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000")}
 # the bootstraps: output -> (family, npz name, the differences (first arm, second arm), flags)
-BENCH_DIFFS = tuple((a, "l188") for a in ARMS if a != "l188")
+BENCH_DIFFS = tuple((a, "l188") for a in FAMILY_ARMS["bench"] if a != "l188")
+# every pair of Table 10's rows, 188 classes always the second side (Delta = the other row - 188 classes)
+PAIRS0 = tuple((b, a) if a == "l188" else (a, b) for a, b in itertools.combinations(FAMILY_ARMS["bench0"], 2))
 BOOT_OUT = {f"{BOOT}/mlp_jc2bal_N1000000.json": ("jc2bal", "jc2bal_N1000000", (("l162", "l188"),), "--headline-only"),
             f"{BOOT}/mlp_jc2bal_R16_Q1_N1000000.json": ("coarse", "jc2bal_R16_Q1_N1000000",
                                                         (("l162", "l188"), ("r42q1", "l188"), ("r16q1", "l188")),
                                                         "--headline-only"),
-            **{f"{BOOT}/mlp_{n}.json": ("bench", n, BENCH_DIFFS, "--headline") for n in FILES["bench"]}}
+            **{f"{BOOT}/mlp_{n}.json": ("bench", n, BENCH_DIFFS, "--headline") for n in FILES["bench"]},
+            # CS-5b: every pair of Table 10's rows on its printed zero-fill fits
+            **{f"{BOOT}/mlp0_{n}.json": ("bench0", n, PAIRS0, "--headline") for n in FILES["bench0"]}}
 
 
 def models(arm: str) -> list[str]:
-    return [f"mtx-{r}" for r in ARMS[arm]]
+    """The names a bootstrap gives an arm's runs: mtx-<run>, init-sK, initbn-sK (paired_bootstrap's)."""
+    return [r if arm in INIT else f"mtx-{r}" for r in ARMS[arm]]
 
 
 # bench: the linear probes' substitution of the missing inputs (mlp_scores.FILL; third review of 5f4e1b8, B3(c))
@@ -70,7 +87,10 @@ CKPT = {"top_N1200000": "best70.itop4", "qg_N1600000": "best70.nqg", "qg_herwig_
 
 
 def npz(family: str, model: str, name: str) -> str:
-    return f"{OUT}/{family}/probs/{model}/{CKPT.get(name, 'best70')}/{name}.npz"
+    """A model's scores as mlp_scores writes them; model as models() names it (initbn-sK: init-sK at init_bn)."""
+    run, ck = (model.replace("initbn-", "init-"), "init_bn") if model.startswith("initbn-") else (
+        (model, "init") if model.startswith("init-") else (model, "best70"))
+    return f"{OUT}/{family}/probs/{run}/{CKPT.get(name, ck) if family == 'bench' else ck}/{name}.npz"
 
 
 def guard() -> str:
@@ -78,10 +98,11 @@ def guard() -> str:
             f'[ "${{USED}}" -le {LINE} ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}')
 
 
-def fit_row(family: str, model: str) -> str:
-    f = f"{OUT}/{family}/{model}.json"
-    return (f'[ -f {f} ] && {{ echo "{model} done"; exit 0; }}; ' + BT.peak(
-        f"python3 experiments/EVAL/mlp_scores.py --family {family} --model {model} --out {OUT}/{family}"))
+def fit_row(family: str, model: str, ckpt: str = "best70") -> str:
+    f = f"{OUT}/{family}/{model}.json" if ckpt == "best70" else f"{OUT}/{family}/{model}.{ckpt}.json"
+    return (f'[ -f {f} ] && {{ echo "{model} {ckpt} done"; exit 0; }}; ' + BT.peak(
+        f"python3 experiments/EVAL/mlp_scores.py --family {family} --model {model} --checkpoint {ckpt} "
+        f"--out {OUT}/{family}"))
 
 
 def _spec(tag: str, name: str, rows: list[str], parallelism: int, mem: str, cpu: str, what: str) -> str:
@@ -114,7 +135,7 @@ def smoke_spec(tag: str, mem: str, which: str = "jc2bal") -> str:
 
 
 # the bootstrap jobs: JetClass-II (jc2bal and coarse) and bench, each launched once its fits exist
-BOOT_PARTS = {"jc2": ("jc2bal", "coarse"), "bench": ("bench",)}
+BOOT_PARTS = {"jc2": ("jc2bal", "coarse"), "bench": ("bench",), "bench0": ("bench0",)}
 
 
 def boot_outs(part: str) -> dict:
@@ -159,10 +180,27 @@ def analytic_spec(tag: str, mem: str) -> str:
                  "SC-2 #1: the transfer-head analytic term against the paired bootstrap on per-jet scores")
 
 
+# ------------------------------------------------------------------ R5-17: X->ee vs X->mumu at 17 classes (stored scores)
+EE_OUT = f"{BOOT}/probe_jc2bal_pairs_ee_vs_mm.r16q1.json"
+EE_DIFFS = (("r16q1", "l188"), ("r16q1", "initbn"), ("r16q1", "r42q1"))
+
+
+def ee_spec(tag: str, mem: str) -> str:
+    """bs3-boot-ee-raunav: the 17-class linear probe's X->ee vs X->mumu rows beside the 43-class ones
+    (bootstrap/l3_v5/probe_jc2bal_pairs_ee_vs_mm.json), from the stored fits_v5_sib2 scores; CPU, nothing fitted."""
+    arms = list(dict.fromkeys(x for p in EE_DIFFS for x in p))
+    ins = {m: BT.pair_path("ee_vs_mm", m) for a in arms for m in models(a)}
+    cmd = (f"python3 experiments/STATS/paired_bootstrap.py --task npz " + " ".join(f"--model {m}={p}" for m, p in ins.items())
+           + f" --headline {BT.diffs(EE_DIFFS)} --b {B} --out {EE_OUT}")
+    body = "\n  ".join([BT.check_inputs(ins.values()), f"mkdir -p {BOOT}", f"[ -e {EE_OUT} ] || " + BT.peak(cmd)])
+    return _spec(tag, "bs3-boot-ee-raunav", [body], 1, mem, "1",
+                 "R5-17: the 17-class X->ee vs X->mumu linear-probe rows from stored scores (CPU)")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
-    ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic"))
+    ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic", "ee"))
     ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
     ap.add_argument("--part", choices=tuple(BOOT_PARTS), help="with --what boot")
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
@@ -175,7 +213,8 @@ def main(argv=None) -> int:
                   "smoke-bench": lambda: (SMOKE_NAME["bench"], smoke_spec(a.tag, a.mem, "bench")),
                   "fit": lambda: (f"bs3-mlp-{a.family}-raunav", fit_spec(a.tag, a.family, a.mem, a.parallel, a.skip_smoke)),
                   "boot": lambda: (f"bs3-boot-{a.part}-raunav", boot_spec(a.tag, a.mem, a.part)),
-                  "analytic": lambda: ("bs3-analytic-raunav", analytic_spec(a.tag, a.mem))}[a.what]()
+                  "analytic": lambda: ("bs3-analytic-raunav", analytic_spec(a.tag, a.mem)),
+                  "ee": lambda: ("bs3-boot-ee-raunav", ee_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)
     print(f"wrote {p.relative_to(ROOT)}")

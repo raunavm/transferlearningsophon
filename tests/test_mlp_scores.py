@@ -110,9 +110,16 @@ def test_stored_records_each_metric_beside_the_stored_fit(tmp_path):
     assert MS.stored("coarse", "mtx-l188-s1", "best70", {}) == {}
 
 
+def _boot_name(m, ck):
+    return m.replace("init-", "initbn-") if ck == "init_bn" else m
+
+
 def test_rows_are_the_runs_of_the_linear_probe_rows():
-    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 6 + 12 + 27
-    assert {m for f, m in BJ.ROWS if f == "bench"} == {f"mtx-{r}" for rs in BJ.ARMS.values() for r in rs}
+    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 6 + 12 + 27 + 33
+    paper = {f"mtx-{r}" for a, rs in BJ.ARMS.items() if a not in BJ.INIT for r in rs}
+    assert len(paper) == 27 and {m for f, m, ck in BJ.ROWS if f == "bench"} == paper
+    assert {(m, ck) for f, m, ck in BJ.ROWS if f == "bench0"} == {(m, "best70") for m in paper} | {
+        (f"init-s{k}", ck) for k in (1, 2, 3) for ck in ("init", "init_bn")}
     for fam, row in BJ.SMOKES.items():
         assert row in BJ.fit_rows(fam, skip_smoke=False) and row not in BJ.fit_rows(fam, skip_smoke=True)
     assert sum(len(BJ.fit_rows(f, True)) for f in BJ.FAMILY_ARMS) == len(BJ.ROWS) - len(BJ.SMOKES)
@@ -131,10 +138,13 @@ def test_specs_pin_one_cpu_model_and_request_the_mlp_threads(which):
 
 
 def test_bootstrap_reads_every_npz_the_fits_write():
-    want = {BJ.npz(f, m, n) for f, m in BJ.ROWS for n in BJ.FILES[f]}
+    want = {BJ.npz(f, _boot_name(m, ck), n) for f, m, ck in BJ.ROWS for n in BJ.FILES[f]}
     assert set(BJ.boot_inputs()) == want
     assert BJ.B == 200
-    assert set(BJ.boot_inputs("jc2")) | set(BJ.boot_inputs("bench")) == want
+    assert set().union(*(BJ.boot_inputs(p) for p in BJ.BOOT_PARTS)) == want
+    assert BJ.npz("bench0", "initbn-s2", "top_N1200000").endswith("/bench0/probs/init-s2/init_bn/top_N1200000.npz")
+    assert BJ.npz("bench0", "init-s2", "qg_N1600000").endswith("/bench0/probs/init-s2/init/qg_N1600000.npz")
+    assert BJ.npz("bench", "mtx-l188-s1", "qg_N1600000").endswith("/bench/probs/mtx-l188-s1/best70.nqg/qg_N1600000.npz")
     assert sorted(o for p in BJ.BOOT_PARTS for o in BJ.boot_outs(p)) == sorted(BJ.BOOT_OUT)
     for part in BJ.BOOT_PARTS:
         text = BJ.boot_spec("mtx-s9.99", "4Gi", part)
@@ -163,3 +173,36 @@ def test_one_job_a_family_and_the_smokes_rows_left_out():
         assert f"name: bs3-mlp-{fam}-raunav" in text and f"completions: {len(BJ.fit_rows(fam, True))}" in text
         assert f"--family {fam} " in text and all(f"--family {g} " not in text for g in BJ.FAMILY_ARMS if g != fam)
     assert "name: bs3-mlp-smoke-bench-raunav" in BJ.smoke_spec("mtx-s9.99", "8Gi", "bench")
+
+
+def test_bench0_is_tab_mlps_zero_fill_with_its_checkpoint(tmp_path):
+    pb, _ = _pb(tmp_path)
+    pb.lp.train_sizes = lambda root, ds: [1000, 1200000] if ds == "top" else [1000, 1600000]
+    seen = []
+    load = pb.lp.load_split
+    pb.lp.load_split = lambda d: seen.append(d) or load(d)
+    cells = MS.bench(pb, Probe(), "init-s1", "init_bn", tmp_path / "out", zero=True)
+    assert seen and all(d.name == "init_bn" and str(d).startswith(str(tmp_path / "init-s1")) for d in seen)
+    assert {c["fill"] for c in cells.values()} == {"zero"}
+    assert all("/probs/init-s1/init_bn/" in c["scores"] for c in cells.values())
+    assert MS.out_name("init-s1", "init_bn") == "init-s1.init_bn.json"
+    assert MS.out_name("mtx-l188-s1", "best70") == "mtx-l188-s1.json"
+    assert MS.STORED["bench0"].name == "fits_v3_mlp2" and MS.STORED_BN.name == "fits_v3_mlp2_initbn"
+
+
+def test_bench0_bootstraps_every_pair_of_table_10_rows():
+    outs = BJ.boot_outs("bench0")
+    assert len(outs) == 3
+    for fam, n, d, flags in outs.values():
+        assert fam == "bench0" and len(d) == len(set(d)) == 12 * 11 // 2 and flags == "--headline"
+        assert all(a != "l188" for a, b in d)
+    text = BJ.boot_spec("mtx-s9.99", "6Gi", "bench0")
+    assert "--diff init-initbn=init-s1,init-s2,init-s3/initbn-s1,initbn-s2,initbn-s3" in text
+    assert "--diff flavf0-flavf1=" in text
+
+
+def test_the_17_class_lepton_rows_read_the_stored_sibling_scores():
+    text = BJ.ee_spec("mtx-s9.99", "2Gi")
+    assert "fits_v5_sib2_probs/mtx-r16q1-s1/best70/jc2bal_pairs_ee_vs_mm.npz" in text
+    assert "fits_v5_sib2_probs/init-s3/init_bn/jc2bal_pairs_ee_vs_mm.npz" in text
+    assert "--diff r16q1-188=" in text and "--diff r16q1-initbn=" in text and "mlp_scores" not in text
