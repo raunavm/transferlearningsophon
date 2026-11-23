@@ -278,6 +278,18 @@ def herwig_spec(tag: str, mem: str) -> str:
                  "tab:tests: R30 on Herwig minus on Pythia jets per network, unpaired (coordinator 2026-11-23)")
 
 
+def helper_spec(tag: str, mem: str, ms: list[str]) -> str:
+    """boot-tests-helper-raunav: the networks ms of the slow cache parts into the same CACHE, in this order (each part
+    reads a network's cache file before computing it, so whichever pod writes it first saves the other the work)."""
+    inp = jc2_inputs()
+    if not ms or set(ms) - set(inp):
+        raise SystemExit(f"FATAL: {sorted(set(ms) - set(inp))} are not networks of the JetClass-II file")
+    row = "\n  ".join([check_inputs([inp[m] for m in ms])]
+                       + [f"[ -e {CACHE}/{m}.npz ] || " + jc2_cache([m]) for m in ms])
+    return _spec(tag, "boot-tests-helper-raunav", [row], 1, mem,
+                 "tab:tests: JetClass-II networks of the slow cache parts, into the same cache")
+
+
 def smoke_spec(tag: str, mem: str) -> str:
     inp = {m: pair_path("bb_vs_cc", m) for a in ("r42q1", "l188") for m in models(a)}
     row = pb(f"{SMOKE}/probe_jc2bal_pairs_bb_vs_cc.json", [f"--model {m}={p}" for m, p in inp.items()],
@@ -294,13 +306,22 @@ def main(argv=None) -> int:
     ap.add_argument("--tag", required=True, help="the pushed tag the pods clone")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--herwig", action="store_true", help="boot-tests-herwig-raunav, the unpaired Herwig - Pythia rows")
+    ap.add_argument("--helper", nargs="+", metavar="MODEL", help="boot-tests-helper-raunav: these networks into the cache")
+    ap.add_argument("--node", help="one node of CPU_MODEL's (R5.CPU_NODES) instead of all of them")
     ap.add_argument("--mem", default="16Gi", help="memory request and limit of every pod")
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
         raise SystemExit(f"FATAL: --tag {a.tag} is not an mtx-sN.NN tag")
     name, text = (("boot-tests-smoke-raunav", smoke_spec(a.tag, a.mem)) if a.smoke
                   else ("boot-tests-herwig-raunav", herwig_spec(a.tag, a.mem)) if a.herwig
+                  else ("boot-tests-helper-raunav", helper_spec(a.tag, a.mem, a.helper)) if a.helper
                   else ("boot-tests-raunav", main_spec(a.tag, a.mem)))
+    if a.node:
+        nodes = R5.CPU_NODES[CPU_MODEL]
+        old = "values: [" + ", ".join(f'"{n}"' for n in nodes) + "]"
+        if a.node not in nodes or text.count(old) != 1:
+            raise SystemExit(f"FATAL: {a.node} is not one of the {CPU_MODEL} nodes")
+        text = text.replace(old, f'values: ["{a.node}"]')
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)
