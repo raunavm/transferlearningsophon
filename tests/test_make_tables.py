@@ -866,6 +866,27 @@ def test_the_partition_counts_come_from_the_maps_and_the_balance_rule_is_checked
         M.emit_rand_design(M.Emitter(REPO), {**paths, "rand_v2_map": bad}, C)
 
 
+def test_the_random_partitions_are_worded_from_their_map(tmp_path):
+    """PI 2026-11-21 (LEDGER PS-5): "the 161 resonant classes split at random into 16 groups, with QCD kept as the
+    17th" (review of render dfe5942, B13): both counts read from the map, the QCD classes one group of their own in
+    every partition."""
+    import csv as _csv
+    paths = M.input_paths(REPO)
+    em = M.Emitter(REPO)
+    M.emit_rand_design(em, paths, _load("experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json"))
+    got = {n: b for n, b, _ in em.macros}
+    rows = list(_csv.DictReader(paths["rand_v2_map"].open()))
+    groups = {r["RAND2_p1"] for r in rows if not r["class_name"].startswith("label_QCD")}
+    assert got["RandVtwoNResGroups"] == str(len(groups)) and got["RandVtwoQcdGroupOrd"] == f"{len(groups) + 1}th"
+    for r in rows:                   # a QCD class grouped with resonant classes: the wording no longer holds
+        if r["class_name"].startswith("label_QCD"):
+            r["RAND2_p1"] = rows[0]["RAND2_p1"]
+            break
+    with pytest.raises(SystemExit, match="not one group of their own"):
+        M.emit_rand_design(M.Emitter(REPO), {**paths, "rand_v2_map": _write_csv(tmp_path / "rand_label_map.v2.csv", rows)},
+                           _load("experiments/FIGS/data/probe_ladder_randcontrol_mlp2/analysis/c4_random_control.json"))
+
+
 def _write_csv(path, rows):
     import csv as _csv
     with path.open("w", newline="") as f:

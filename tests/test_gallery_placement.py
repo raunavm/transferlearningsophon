@@ -85,7 +85,9 @@ def test_the_main_text_is_the_pis_list_in_order():
     # PI 2026-11-23, LEDGER SP-9: the appendix figures VAL, A10, F4-other (F4-light merged into it, merge 8) and F9b;
     # every other figure the appendix held is in the data release (the supplement tier)
     appendix = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
-    assert appendix == ["VAL", "A10", "F4-other", "F9b"]
+    # review of render dfe5942 (C; LEDGER SP-1, 2026-11-22, the placement and main.tex one list): F4-other, too tall for a
+    # page with its caption, split in two, the three QCD pairs as F4-qcd
+    assert appendix == ["VAL", "A10", "F4-other", "F4-qcd", "F9b"]
     for k in ("F4-mech-ft", "F4-other-ft", "F4-light-ft", "ROC-main", "ROC-main-ft", "PT", "A17-probe", "F10b",
               "F11-part", "UMAP-frozen", "UMAP-ft", "PC-jc1"):
         assert G.TIER[k] == G.SUPPLEMENT, k
@@ -144,7 +146,8 @@ def test_numbers_count_within_each_tier_and_kind():
     # PI 2026-11-23, LEDGER SP-9: the numbers of the approved structure (main text, appendix by family, the data release)
     assert G.number("F1") == "Fig. 1" and G.number("F2-ft") == "Fig. 3" and G.number("PC-jc2") == "Fig. 4"
     assert G.number("A8") == "Fig. 6" and G.number("F11") == "Fig. 7"
-    assert [G.number(k) for k in ("VAL", "A10", "F4-other", "F9b")] == ["Fig. A1", "Fig. A2", "Fig. A3", "Fig. A4"]
+    assert [G.number(k) for k in ("VAL", "A10", "F4-other", "F4-qcd", "F9b")] == [       # F4-qcd: review of dfe5942 (C)
+        "Fig. A1", "Fig. A2", "Fig. A3", "Fig. A4", "Fig. A5"]
     assert G.number("tab:sets") == "Table 1" and G.number("tab:summary") == "Table 2"
     assert [G.number(k) for k in ("tab:published", "tab:mass")] == ["Table 3", "Table 4"]
     assert [G.number(k) for k in ("tab:app-vocabulary", "tab:summaryauc", "tab:tests", "tab:jc1_class_auc")] == [

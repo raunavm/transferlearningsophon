@@ -105,11 +105,11 @@ pretraining classes, not that any grouping into \Kcoarse{} classes would do as w
 Fine-tuning on JetClass-II measures how much of a merged distinction fine-tuning recovers: its target is
 the \Kfull-class pretraining task itself, so every distinction the coarse labels removed is rewarded again.
 After fine-tuning on \FtSizeESix{} class-balanced jets, the \Kcoarse-class model makes
-\pending{Table 1 after the reruns} than the \Kfull-class model, where a linear probe on its frozen features makes
+\pending{table~\ref{tab:summary} after the reruns} than the \Kfull-class model, where a linear probe on its frozen features makes
 \MlstCmpJcTwoCoarseOverFullPr{} (tables~\ref{tab:summaryauc} and~\ref{tab:tests}). Per class, the \Kcoarse-class loss
 is broad: with linear probes, \MlstJcTwoRecallCoarseLowClasses{} of the \Kfull{} classes are recalled less often
 than by the \Kfull-class model and \MlstJcTwoRecallCoarseHighClassesWord{} more often, beyond three standard
-deviations over runs and test jets, and after fine-tuning \pending{Table 1 after the reruns}
+deviations over runs and test jets, and after fine-tuning \pending{table~\ref{tab:summary} after the reruns}
 (figure~\ref{fig:PC-jc2}).
 % CHECK: the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40) fills Table 1's fine-tuned JetClass-II column and PC-jc2's right half; write the fine-tuned clause from them, tested at 3 sigma
 
@@ -122,7 +122,8 @@ against the \Kfull-class model, from linear probes on frozen features (left) and
 \FtSizeESix{} class-balanced jets; points below the diagonal are recalled less often. Their mean weighted by test
 jets is the accuracy of figures~\ref{fig:F2} and~\ref{fig:F2-ft}. Points are means over the \MlstNRunsWord{}
 pretraining runs with bars of one standard deviation over runs and test jets; colors give what the
-\Kcoarse-class labels merge the class with. Every class's values are in the data release.}
+\Kcoarse-class labels merge the class with. Open points lie within three standard deviations of the \Kfull-class
+recall.}
 \label{fig:PC-jc2}
 \end{figure}
 
@@ -153,8 +154,7 @@ only \MlstCmpBcMidOverFullPr{}; at \Kcoarse{} classes, which remove flavor altog
 
 At a fixed number of classes, the three flavor-boundary partitions test whether a flavor
 boundary keeps quark flavor readable. They have \Kcoarse{} classes and the same group shares, and
-\RandFlavRuns{} pretraining runs each, so each comparison below quotes the value less favorable to a
-difference. The partition with a $b$-quark boundary, whose one flavor boundary lies between four-quark decays,
+\RandFlavRuns{} pretraining runs each. The partition with a $b$-quark boundary, whose one flavor boundary lies between four-quark decays,
 recovers part of the loss of the \Kcoarse-class level on both pairs, neither of which it cuts: it makes
 \MlstCmpBbFoneOverCoarsePr{} of the \Kcoarse-class level on $X\to b\bar b$ against $X\to c\bar c$ and
 \MlstCmpBcFoneOverCoarsePr{} on $X\to bc$ against $X\to bq$ and $X\to cs$. The partition with a random flavor
@@ -188,8 +188,9 @@ Each pretrained model is fine-tuned once on \FtSizeESix{} JetClass training jets
 networks were pretrained on, and compared with the same network trained from scratch;
 table~\ref{tab:published} sets them beside the published ParticleNet and ParT, trained on more jets. After
 fine-tuning, the \Kcoarse-class model makes
-\pending{Table 1 after the reruns} than the \Kfull-class model on JetClass; how the \Kres- and \Kmid-class models
-and the partitions compare with it is \pending{Table 1 after the reruns} (table~\ref{tab:summary};
+\pending{table~\ref{tab:summary} after the reruns} than the \Kfull-class model on JetClass; how the \Kres- and
+\Kmid-class models and the partitions compare with it is \pending{table~\ref{tab:summary} after the reruns}
+(table~\ref{tab:summary};
 figure~\ref{fig:F2-ft}(b)).
 % CHECK: the one-rule JetClass 1e6 rerun (jc1e6a100, jc1e6; docs/STATE.md) fills Table 1's fine-tuned JetClass column; the headline is recomputed from it and re-tested at 3 sigma (PI SP-11) before any number is written here, in the introduction or in the discussion
 % PI SP-9: kept, the comparison passes 3 sigma (scratchpad/part0/jc1_class_auc_check.md: 35 of 90 cells below 188, none above)

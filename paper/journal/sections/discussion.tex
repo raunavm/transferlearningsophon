@@ -9,8 +9,8 @@ Merging the QCD classes leaves the resonant classes unchanged and costs the QCD 
 with as many classes, selected to cut across the \Kcoarse-class groups, lose less than the physical
 \Kcoarse-class label set, so the class count alone does not set the cost.
 After fine-tuning, on JetClass the
-\Kcoarse-class model gives \pending{Table 1 after the reruns} than the \Kfull-class model, while the
-\Kres- and \Kmid-class models are \pending{Table 1 after the reruns} (table~\ref{tab:summary}).
+\Kcoarse-class model gives \pending{table~\ref{tab:summary} after the reruns} than the \Kfull-class model, while the
+\Kres- and \Kmid-class models are \pending{table~\ref{tab:summary} after the reruns} (table~\ref{tab:summary}).
 % CHECK: recompute from Table 1 after the JetClass 1e6 rerun and re-test at 3 sigma (PI SP-11): the 17-class cost must pass and the 162- and 43-class differences read "consistent" for this sentence to stand as written
 On top tagging and quark/gluon discrimination the fine-tuned label sets show no
 resolved difference (table~\ref{tab:summary}).
@@ -30,8 +30,8 @@ whatever the frozen features keep: Sophon's $X\to b\bar{b}$ discriminant cannot 
 boundaries: on the pretraining classes a single one lowers the error of the linear probe
 (table~\ref{tab:tests}). Keep the QCD classes apart where a downstream task separates QCD jets by
 flavor: merging them leaves the resonant classes unchanged but costs the QCD pairs
-(figure~\ref{fig:F4-other}) and the one discriminant that sums QCD classes
-(section~\ref{sec:labelsets}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of F4-other show 162 below 188
+(figure~\ref{fig:F4-qcd}) and any discriminant that weights each QCD subclass separately
+(section~\ref{sec:labelsets}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of F4-qcd show 162 below 188
 Add an auxiliary mass regression: it makes the jet mass more precisely readable from the frozen features
 (table~\ref{tab:mass}). Its effect on mass sculpting is not resolved: no mass network differs from its own label set by more
 than three times the uncertainty (table~\ref{tab:tests}). It shows no resolved cost to the classification of the

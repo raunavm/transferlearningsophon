@@ -5,7 +5,7 @@
 % defined; terms this paper introduces get one clause here and their definition in Methods. Six
 % paragraphs, about 1.5 pages.
 % P1. Jet tagging at the LHC and what deep networks did to it.
-Deep learning has changed jet tagging at the Large Hadron Collider (LHC)~\cite{lhc}. Networks that take the
+At the Large Hadron Collider (LHC)~\cite{lhc}, deep learning has changed jet tagging. Networks that take the
 reconstructed particles of a jet as input identify boosted top quarks, $W$, $Z$ and Higgs bosons, and
 hypothetical new resonances with much higher background rejection than substructure
 observables~\cite{larkoski,kogler,toptag,particlenet,part}. They are now central to measurements of the
@@ -65,9 +65,9 @@ order and start from the same initial weights in every layer but the output laye
 label sets are four levels of a class hierarchy, with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, whose
 merges remove in turn the quark content of QCD jets, the number of $b$ or $c$ quarks together with the
 distinctions between gluons and light quarks and between electrons and muons, and quark flavor. Our first
-control is a set of random partitions, in which the resonant classes are assigned at random to groups,
-selected to cut across the \Kcoarse-class groups, with QCD kept as one more class, as many classes as the
-\Kcoarse-class level. Our second control is three random partitions that differ
+control is a set of random partitions, selected to cut across the \Kcoarse-class groups, in which the
+\LitJetClassTwoNResonantClasses{} resonant classes are split at random into \RandVtwoNResGroups{} groups, with QCD
+kept as the \RandVtwoQcdGroupOrd. Our second control is three random partitions that differ
 in their flavor boundaries, the class boundaries between decays that differ only in quark flavor. Following
 GloParT, which regresses the jet mass together with the classification~\cite{glopart,glopartdp}, we also
 pretrain the \Kres- and \Kcoarse-class models with an auxiliary regression of the jet mass. We evaluate every model with linear
@@ -78,8 +78,8 @@ on its frozen features on Sophon's $X\to b\bar b$ and $X\to bs$ benchmark~\cite{
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{F1}
-\caption{Design of the study. (a)~One network is pretrained on the same jets four times, once for each of
-four nested label sets with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, through a hidden layer of
+\caption{Design of the study. (a)~From each of \MlstNRunsWord{} seeds, one network is pretrained on the same
+jets once for each of four nested label sets with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, through a hidden layer of
 \DesignHeadHidden{} units; each merged class spans the rows it merges, and rows are schematic. (b)~The pretrained network is then used in two ways. Its frozen
 features, the output of the backbone with its weights held fixed, feed a linear probe, or a new head with
 its own hidden layer of \DesignHeadHidden{} units is added and all weights are fine-tuned. The colors of
@@ -98,7 +98,7 @@ classes, a task that favors finer labels by construction: a linear probe makes m
 coarser level of the hierarchy, and, counted in wrongly ordered pairs of jets, merging quark
 flavor is the costliest single merge. At the same number of classes, the random partitions lose less than
 the \Kcoarse-class level, and a single flavor boundary lowers the error of the probe, so which classes are
-merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \pending{Table 1 after the reruns}
+merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \pending{table~\ref{tab:summary} after the reruns}
 on JetClass, and on top tagging and quark/gluon discrimination the label sets show no resolved difference. The
 auxiliary mass regression makes the jet mass more precisely predictable from the frozen features, with no
 resolved cost to the classification of the pretraining classes. A pretraining label set for jets should therefore contain every distinction that

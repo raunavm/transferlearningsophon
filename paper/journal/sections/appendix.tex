@@ -203,14 +203,17 @@ pretrained networks and networks trained from scratch follow one rule. They trai
 \FtSizeEThree{} training jets, \FtStepsEFour{} with \FtSizeEFour, \FtStepsEFive{} with \FtSizeEFive{} and
 \FtStepsESix{} with \FtSizeESix. Every \FtCheckEThree, \FtCheckEFour, \FtCheckEFive{} and \FtCheckESix{} steps,
 respectively, the accuracy is measured on the same \FtValJetsFixed{} validation jets, and the checkpoint with
-the best validation accuracy over the whole schedule is kept; training never stops early. The pretrained
-layers train at a constant learning rate and the new output layer at \FtHeadCap. The networks trained from
+the best validation accuracy over the whole schedule is kept; training never stops early. On JetClass-II the
+validation jets hold no jet of the \FtValAbsentClasses{} classes whose held-out jets the largest training set uses
+up. The pretrained layers train at a constant learning rate and the new head, hidden layer included, at
+\FtHeadCap. The networks trained from
 scratch train every weight at one rate with the training framework's default schedule, constant and then
 lowered near the end. The weight decay is \FtBudgetWeightDecay{} throughout. Top and quark/gluon are
 fine-tuned on \FtSizeEThree, \FtSizeEFour{} and \FtSizeEFive{} jets below their full sets; JetClass and
-class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix. On JetClass-II all \FtJcTwoNetsESix{}
-pretrained networks, controls included, are fine-tuned on \FtSizeESix{} jets; on \FtSizeEFour{} and \FtSizeEFive{} jets,
-the \FtJcTwoNetsSmall{} networks of the four label sets and the two with an added mass output.
+class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix. On every task every pretrained network,
+controls included, is fine-tuned on the largest training set, on JetClass-II all \FtJcTwoNetsESix{}; at the smaller
+sizes this paper reports the networks of the four label sets and the two with an added mass output, on JetClass-II
+the \FtJcTwoNetsSmall{} fine-tuned there.
 \pending{The fine-tuned values below the full top and quark/gluon training sets printed in this version come
 from earlier runs, which could stop early once the validation accuracy no longer improved; this paragraph
 gives the rule of the runs that replace them.}
@@ -222,8 +225,8 @@ other combination of task and training-set size, the learning rate is chosen sep
 factors of about three. The chosen rate has the highest validation accuracy, averaged over one run each of the
 networks pretrained with \Kfull{} and \Kcoarse{} classes (one run when training from scratch), and the rates
 tried extend until it has a lower-scoring rate on each side. A rate at which training diverges counts as
-lower-scoring. Every pretrained network at a given task and size uses the chosen rate, and the new output
-layer trains at \FtHeadCap{} at every rate. Table~\ref{tab:lrsweep} lists every rate tried.
+lower-scoring. Every pretrained network at a given task and size uses the chosen rate, and the new head
+trains at \FtHeadCap{} at every rate. Table~\ref{tab:lrsweep} lists every rate tried.
 % PENDING (PI 2026-11-21): if any row stops at the floor, add: "The search goes no lower than \FtSearchFloor, where
 % fine-tuning approaches training only the new output layer on frozen features; for [rows] the chosen rate is \FtSearchFloor."
 % CHECK: experiments/FT/rate_search.py (rules), build_ft_budget_jobs.FIXED_ROW_RATE(_SCRATCH) (the recorded rates)
@@ -344,11 +347,11 @@ difference as the difference $\Delta$ of the two means over all their runs, $\si
 section~\ref{sec:uncertainties} and $\Delta/\sigma$. Each bootstrap resample draws the test jets with replacement,
 within each class on JetClass-II and the QCD and resonant jets separately for the mass sculpting, and scores every
 network on the same resample. Table~\ref{tab:coarse} scores the linear probes with the \Kfull{} classes of the
-class-balanced training and test jets merged into the \Kmid{} or \Kcoarse{} classes of the label sets or into the
-\Kcoarse{} groups of the partition with no flavor boundary, and table~\ref{tab:jc1_class_auc} gives the recall of
+class-balanced training and test jets merged into the \Kcoarse{} groups of the \Kcoarse-class label set, and
+table~\ref{tab:jc1_class_auc} gives the recall of
 each JetClass class, the fraction of its test jets assigned to it, for linear probes trained on \FtSizeESix{}
-JetClass jets. Figure~\ref{fig:F4-other} draws the linear probes on the other four pairs of classes that differ
-only in flavor, in the form of figure~\ref{fig:F4-mech}, where a QCD $b\bar b$ jet holds two or more $b$ quarks, a
+JetClass jets. Figures~\ref{fig:F4-other} and~\ref{fig:F4-qcd} draw the linear probes on the other four pairs of
+classes that differ only in flavor, in the form of figure~\ref{fig:F4-mech}, where a QCD $b\bar b$ jet holds two or more $b$ quarks, a
 QCD $c\bar c$ jet two or more $c$ quarks and a light QCD jet no $b$, $c$ or $s$ quark. Each curve is evaluated on
 a fixed grid of signal efficiencies, with $\epsB$ interpolated linearly between neighboring thresholds.
 Figure~\ref{fig:F9b} draws the median response and the resolution of the regressed mass on JetClass-II test jets
@@ -377,10 +380,11 @@ chosen on validation.}
 
 \input{tables/mlst_jc1_class_auc}
 
-% review of 5c40d69 (B1): the figure is about 24 cm tall at full width, its tick labels at the 8 pt minimum (LEDGER
-% FG-3), so it cannot shrink and no page holds it with its caption; the caption stands on the page before and
-% the figure, at full size, fills the next float page under its number (caption package, \ContinuedFloat)
+% review of dfe5942 (C): the 24 cm figure is split (main session 2026-11-23), the resonance pair with the partitions
+% (F4-other) and the three QCD pairs (F4-qcd), so each shares its page with its caption
 \begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{F4-other}
 \caption{With linear probes, \Kmid{} and \Kcoarse{} classes separate $X\to YY\to bbqq$ from $ccqq$, the
 second-named the background, which \Kcoarse{} classes merge, less well than \Kfull{} classes. Panels, drawn as in
 figure~\ref{fig:F4-mech}, show (a) the label sets and (b) the \Kcoarse-class partitions. Curves average
@@ -391,11 +395,18 @@ figure~\ref{fig:F4-mech}, show (a) the label sets and (b) the \Kcoarse-class par
 differences.}
 \label{fig:F4-other}
 \end{figure}
-\begin{figure}[p]
-\ContinuedFloat
+
+\begin{figure}[tbp]
 \centering
-\paperfig{\linewidth}{F4-other}
-\caption*{\figurename~\ref{fig:F4-other}.}
+\paperfig{\linewidth}{F4-qcd}
+\caption{With linear probes, \Kmid{} and \Kcoarse{} classes, and \Kres{} classes, which merge the QCD classes,
+separate QCD $b\bar b$ from $c\bar c$ and QCD jets with a $b$ quark, or a $c$ and no $b$, from light QCD jets, the
+second-named the background, less well than \Kfull{} classes. Panels are drawn as in figure~\ref{fig:F4-mech}, for
+the label sets and mass networks only, as every \Kcoarse-class partition merges the QCD classes. Curves are means
+over \MlstNRunsWord{} runs per label set and \MlstMassNRunsWord{} per mass network. The random network, not drawn,
+reaches \MlstPairInitRhalfQcdMin{} to \MlstPairInitRhalfQcdMax{} at 50\% of signal jets. Table~\ref{tab:tests} has
+the tested differences.}
+\label{fig:F4-qcd}
 \end{figure}
 
 \begin{figure}[tbp]

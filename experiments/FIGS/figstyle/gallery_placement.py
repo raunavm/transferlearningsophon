@@ -93,7 +93,7 @@ _FIGURES = (
                  "million jets."),
     ("F11", MAIN, XBX),
     # PI 2026-11-23 (LEDGER SP-9, the structure approved as proposed, docs/STRUCTURE_PROPOSAL.md): the appendix
-    # holds VAL, A10, F4-other and F9b, by family (APPENDIX_FAMILIES); every other figure placed before goes to the
+    # holds VAL, A10, F4-other (split in two, F4-qcd, review of render dfe5942) and F9b, by family (APPENDIX_FAMILIES); every other figure placed before goes to the
     # data release (the supplement tier: the results book and data_release.py)
     ("VAL", APPENDIX, "Validation accuracy levels off for every label set and mass network during pretraining."),
     # the 162-class probe in accuracy is within 2.2 sigma of 188 at every size, so the old "162 at all sizes but
@@ -101,9 +101,11 @@ _FIGURES = (
     ("A10", APPENDIX, "With linear probes, 43 and 17 classes fall behind 188 classes on JetClass-II at every training "
                       "size."),
     # PI 2026-11-23 (LEDGER SP-9, merge 8): F4-light merged into F4-other, its pairs as more panels and no partitions
-    # row for the QCD pairs (every partition merges QCD)
-    ("F4-other", APPENDIX, "With linear probes, 43 and 17 classes separate the four other flavor pairs worse than 188 "
-                           "classes, and 162 classes, which merge the QCD classes, the three QCD pairs."),
+    # row for the QCD pairs (every partition merges QCD); review of render dfe5942 (C): too tall for one page with its
+    # caption, it is split, the resonance pair with the partitions (F4-other) and the three QCD pairs (F4-qcd)
+    ("F4-other", APPENDIX, "With linear probes, 43 and 17 classes separate X→YY→bb̄qq vs cc̄qq worse than 188 classes."),
+    ("F4-qcd", APPENDIX, "With linear probes, 43 and 17 classes, and 162 classes, which merge the QCD classes, separate "
+                         "the three QCD pairs worse than 188 classes."),
     # PI 2026-11-13 (L9): Fig. 8 to the appendix; Table 5 (tab:mass) stays in the main text and carries the claim;
     # audit 3: in the 20-50 GeV generator-mass bin both mass outputs are more biased than the soft-drop mass
     ("F9b", APPENDIX, "An auxiliary mass regression gives a better jet-mass resolution than the soft-drop mass in every "
@@ -331,7 +333,7 @@ EVIDENCE = {
     "A8": ("tab:summary", "tab:tests", "tab:ft", "tab:ftfull"), "A8-part": ("tab:ft", "tab:summary"),
     "F9b": ("tab:mass", "tab:tests", "tab:massdetail"),
     # "PT": its values are the data release's jet_pt_bins.csv, no table (L18)
-    "F4-other": ("tab:tests", "tab:pairs"), "F4-mech-ft": ("tab:pairs",), "F4-other-ft": ("tab:pairs",),
+    "F4-other": ("tab:tests", "tab:pairs"), "F4-qcd": ("tab:tests", "tab:pairs"), "F4-mech-ft": ("tab:pairs",), "F4-other-ft": ("tab:pairs",),
     "F4-ee": ("tab:pairs",), "F4-light-ft": ("tab:pairs",),
     **{k: ("tab:pairsfull",) for k in ("F4-rand", "F4-rand-qcd", "F4-rand-ft", "F4-rand-qcd-ft")},
     # R30 in Table 1, the AUC in tab:summaryauc
@@ -366,7 +368,7 @@ APPENDIX_FAMILIES = (
     ("Checks of the method", ("tab:mlp", "tab:partrepro")),
     ("Headline metrics", ("tab:summaryauc", "tab:tests", "tab:coarse")),
     ("Training size", ("A10",)),
-    ("Class pairs", ("F4-other",)),
+    ("Class pairs", ("F4-other", "F4-qcd")),
     ("Per class", ("tab:jc1_class_auc",)),
     ("Mass", ("F9b",)),
 )
@@ -400,7 +402,7 @@ SHOWS = {
     "tab:published": ("Headline metrics", (FT,), ("sets",)), "tab:mlp": ("Headline metrics", (LP,), GROUPS),
     "tab:coarse": ("Headline metrics", (LP,), GROUPS),
     "PC-jc2": ("Per class", (LP, FT), ("sets",)), "tab:jc1_class_auc": ("Per class", (LP,), GROUPS),
-    **{k: ("Class pairs", (LP,), GROUPS) for k in ("F4-mech", "F4-other")},
+    **{k: ("Class pairs", (LP,), GROUPS) for k in ("F4-mech", "F4-other")}, "F4-qcd": ("Class pairs", (LP,), ("sets", "mass")),
     "A8": ("Training size", (FT,), ("sets", "mass")), "A10": ("Training size", (LP,), ("sets", "mass")),
     "tab:mass": ("Mass", (LP,), ("sets", "mass")), "F9b": ("Mass", (LP,), ("mass",)),
     "F11": ("Resonance tagging", (LP,), ("sets", "mass")),

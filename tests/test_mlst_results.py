@@ -558,12 +558,15 @@ def test_a_ratio_word_reads_its_rows_verdict_and_the_build_stops_on_one_without_
     row's and on one emitted outside ratio_words."""
     name = "MlstCmpJcTwoMidOverFullPr"
     head, first, second, null = M.PR_ROWS[name]
+    # review of render dfe5942 (A2, A3; LEDGER CS-6, CS-8): the ratio is that of the two sides' printed means, here
+    # (1 - 0.9754) / (1 - 0.98) = 1.23, whatever the per-seed ratios held beside it
+    sides = {(head, first, second): ([0.9754] * 3, [0.98] * 3)}
 
-    def word(v, used=()):
+    def word(v, used=(), sides=sides):
         em = _PEm()
-        M._emit_ratio(em, "MlstCmpJcTwoMidOverFull", [1.22, 1.23, 1.24], 3, MT.fmt_pm, None, "p", "errors")
+        M._emit_ratio(em, "MlstCmpJcTwoMidOverFull", [1.32, 1.33, 1.34], 3, MT.fmt_pm, None, "p", "errors")
         M._emit_ratio(em, "MlstCmpJcTwoMidOverRes", [1.1, 1.1, 1.1], 3, MT.fmt_pm, None, "p", "errors")     # no row
-        M.ratio_words(em, {(head, first, second): v}, set(used), None)
+        M.ratio_words(em, {(head, first, second): v}, set(used), None, sides)
         assert {n for n in em.m if n.endswith(("Pr", "PrMax"))} == set(M.PR_ROWS)
         return em.m[name]
     # an AUC row: more errors is a lower AUC, so a passing delta is negative
@@ -574,10 +577,69 @@ def test_a_ratio_word_reads_its_rows_verdict_and_the_build_stops_on_one_without_
         word((0.0045, 1e-4, 1e-4, 1e-4, 1.7e-4))
     with pytest.raises(SystemExit, match="no tab:tests row"):
         word(None, used={name, "MlstCmpJcTwoMidOverResPr"})
+    with pytest.raises(SystemExit, match="no printed values"):        # a passing row needs its printed sides
+        word((-0.0045, 1e-4, 1e-4, 1e-4, 1.7e-4), sides={})
     em = _PEm()
     em.macro("MlstXPr", r"5\% more errors")
     with pytest.raises(SystemExit, match="outside ratio_words"):
         M.ratio_words(em, {}, set(), None)
+
+
+def test_a_quoted_ratio_is_the_quotient_of_the_printed_means():
+    """Review of render dfe5942 (A2, A3; LEDGER CS-6, PI 2026-11-12: "Any ratio the text quotes must be computable from a
+    table in the paper"; CS-8, PI 2026-11-22: "mean with mean"): 228 +- 25 against 60 +- 3 reads 3.8 times, not the
+    3.9 of the per-seed ratios; sides of two runs give the ratio of their means, never a bound ("at most")."""
+    assert M._printed_mean([203.0, 228.0, 253.0]) == 228 and M._printed_mean([57.0, 60.0, 63.0]) == 60
+    assert M._printed_mean([0.97231, 0.97249]) == 0.9724 and M._printed_mean([0.5]) == 0.5
+
+    def word(name, held, v, sides, noun):
+        head, first, second, _ = M.PR_ROWS[name]
+        em = _PEm()
+        M._emit_ratio(em, name.removesuffix("Pr"), held, len(held), MT.fmt_pm, None, "p", noun)
+        M.ratio_words(em, {(head, first, second): v}, set(), None, {(head, first, second): sides})
+        return em.m[name]
+    assert word("MlstLpTopRthirtyDrawOverZeroFullPr", [3.6, 3.9, 4.2], (168.0, 25.0, 3.0, 10.0, 27.0),
+                ([203.0, 228.0, 253.0], [57.0, 60.0, 63.0]), "rejection") == "3.8 times the rejection"
+    w = word("MlstCmpMlpResMassOverResPr", [0.719, 0.729], (-0.06, 0.0004, 0.0018, 0.0001, 0.0019),
+             ([0.1570, 0.1575], [0.2160, 0.2186]), "resolution")
+    assert w == "0.72 times the resolution" and "at most" not in w
+
+
+def test_a_stages_gpu_hours_are_the_sum_of_its_printed_hours():
+    """Review of render dfe5942 (A2; LEDGER CS-6): tab:compute's rows add up to their totals and the text's totals add
+    up the rows (3,906 + 630 had printed against 4,537)."""
+    hh = collections.Counter({"V100": 356.6, "L4": 104.6, "TITAN RTX": 43.6})
+    types, total = M._printed_hours(hh)
+    assert types == r"\mbox{V100 (357)}, \mbox{L4 (105)}, \mbox{TITAN RTX (44)}" and total == 506 != round(sum(hh.values()))
+    em = _PEm()
+    fth = {"pre": collections.Counter({"V100": 2074.6, "L4": 770.4}), "scratch": hh, "search": 700.6, "bound": 0.0,
+           "n_bound": 0, "n_unknown": 0, "n_attempts": 9, "n_cells": 3, "prom_from": "1 November 2026"}
+    M.ft_hours_macros(em, fth, None, MT.fmt_int)
+    rows = M.table_compute_stages({}, {"L188": []}, MT.fmt_int, ft_h=fth).splitlines()
+    printed = [int(ln.split(" & ")[-1].removesuffix(r" \\").replace("{,}", "")) for ln in rows if "fine-tuning" in ln]
+    assert printed == [2075 + 770, 506] and em.m["MlstFtGpuHours"] == MT.fmt_int(sum(printed))
+
+
+def test_tab_sets_keeps_the_one_row_order_and_defines_the_recomputed_random_network():
+    """Review of render dfe5942 (B6; LEDGER TN-3, PI 2026-11-13 "put each mass row directly under its label set" and
+    2026-11-22 "one row order everywhere"): tab:sets in Table 1's order, the references as Table 1 and tab:published
+    give them; (B5; LEDGER CA-15, PI 2026-11-23 "tab:sets defines every network") the random network with BatchNorm
+    recomputed has its row and its definition."""
+    body = M.table_sets(M._paper(ROOT))
+    labels = [ln.split(" & ")[0] for ln in body.splitlines()[4:] if " & " in ln]
+    assert labels == [M.LABEL[a] for a in M.SETS + M.FLAV + (M.RAND_POOLED,)] + [
+        M.LABEL[M.INIT], r"\quad " + M.INIT_BN_SUB, M.SCRATCH_LABEL, M.LABEL[M.SOPHON], M.LABEL["KIN"]]
+    assert "BatchNorm statistics recomputed" in M.CAPTIONS["sets"][1]
+
+
+def test_the_papers_tables_print_only_what_a_sentence_states_and_bold_their_best():
+    """Review of render dfe5942: (B14; LEDGER RR-6, PI 2026-11-22 "an item that backs no claim leaves") tab:coarse holds
+    the 17 merged groups only, the release copy every target; (B7; LEDGER BD-1, PI 2026-11-20/22) tab:mlp has its bold
+    and the bold sentence; (B5; LEDGER CA-15) tab:jc1_class_auc's caption does not define the flavor boundary."""
+    assert M.COARSE_PAPER == (("R16_Q1", "17 groups"),) and len(M.COARSE_TARGETS) == 3
+    assert "merged into the 17 groups of the 17-class label set" in M.printed_caption("coarse")
+    assert "no flavor boundary" not in M.printed_caption("coarse")
+    assert M.BOLD["mlp"] == {"blocks": True} and M.PART_DEF not in M.printed_caption("jc1_class_auc")
 
 
 def test_the_jetclass_accuracy_of_the_random_network_is_read_at_the_largest_training_set():
@@ -968,10 +1030,10 @@ def test_the_part_reproduction_table_and_macros(tmp_path):
     # the caption says once that every value is a single run, so no cell carries the single-run mark
     rows = t.splitlines()[4:-2]
     assert [ln.split(" & ")[0] for ln in rows] == [name for _, name in M.PARTREPRO] == [
-        "Particle Transformer training script, unchanged", "the same script with Sophon's output head",
+        "ParT's training script, unchanged", "the same script with Sophon's output head",
         r"the same script with Sophon's jet-$p_{\mathrm{T}}$ rescaling"]
     assert "ParT, published" not in t and M.SCRATCH_LABEL not in t and "+" not in t
-    assert rows[0] == r"Particle Transformer training script, unchanged & 0.9400 & 0.9858 & 420 & 1{,}711 & 118 \\"
+    assert rows[0] == r"ParT's training script, unchanged & 0.9400 & 0.9858 & 420 & 1{,}711 & 118 \\"
     # review of 5c40d69 (A8, LEDGER TN-4): the text's value is the table's, at the table's place (1,711 against 1,710)
     assert em.m["MlstPartreproRthirtyPart"] == rows[0].split(" & ")[4]
     assert not any(M.SINGLE in ln for ln in rows) and r"1{,}224 & " in rows[2]
@@ -4051,8 +4113,14 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
              for n in (1000, 10000, 100000) for a in ("R42_Q1", "R16_Q1")]
     kept += [(rf"{M._PAIR['bc_vs_bq_cs']}, AUC, {lp}", "FLAV_F0", "L188"),
              (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, " + M.HEADING["mlp"], "R16_Q1", "L188")]
-    kept += [(rf"{h}, signal efficiency (\%), classifier on the frozen features", a, "L188") for _, h in M.SUMMARY_XBX
-             for a in M.FLAV]
+    # review of render dfe5942 (C; LEDGER CA-6, 2026-11-22: one name everywhere): the transfer head
+    kept += [(rf"{h}, signal efficiency (\%), transfer head", a, "L188") for _, h in M.SUMMARY_XBX for a in M.FLAV]
+    # review of render dfe5942 (BS2, A1; LEDGER CS-5): 188 classes against from scratch on top tagging's other printed
+    # metrics, the merges against 188 -> 162 and the two flavor boundaries against 17 classes
+    kept += [(f"top tagging, {h}, {ft}", "L188", "SCRATCH") for h in ("accuracy", "AUC", "$R_{50}$")]
+    kept += [(f"JetClass-II, {m}, {lp}", a, b) for m in ("accuracy", "AUC")
+             for a, b in (("STEP_43_162", "STEP_162_188"), ("STEP_17_43", "STEP_162_188"), ("FLAV_F1", "R16_Q1"),
+                          ("FLAV_F1R", "R16_Q1"))]
     # review of 5c40d69 (B3, B4; LEDGER SP-13 (a)): the rows of the statements the review found untested
     kept += [(f"JetClass-II, accuracy, {lp}", a, b) for a, b in (("R16_Q1", "R42_Q1"), ("STEP_17_43", "STEP_43_162"),
                                                                 ("RAND", "R42_Q1"), ("FLAV_F0", "R16_Q1"),
@@ -4073,13 +4141,16 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
              (f"quark/gluon tagging (Pythia), $R_{{30}}$, {ft}, published models", "L188", "PART_PUB"),
              (f"top tagging, $R_{{30}}$, {lp}, missing inputs", "L188", M.INIT),
              (f"quark/gluon tagging (Pythia), $R_{{30}}$, {lp}, missing inputs", "L188", M.INIT),
-             (r"$X\to b\bar b$, signal efficiency (\%), classifier on the frozen features", "L188", "SCRATCH"),
-             (r"$X\to bs$, signal efficiency (\%), classifier on the frozen features", "RAND", "R16_Q1"),
+             (r"$X\to b\bar b$, signal efficiency (\%), transfer head", "L188", "SCRATCH"),
+             (r"$X\to bs$, signal efficiency (\%), transfer head", "RAND", "R16_Q1"),
              # review of 5c40d69 (A1, LEDGER SP-13 (a)): no sentence compares the fine-tuned networks with ParT fine-tuned
-             (f"top tagging, $R_{{30}}$, {ft}, published models", "L188", "PART_FT_PUB")]
+             (f"top tagging, $R_{{30}}$, {ft}, published models", "L188", "PART_FT_PUB"),
+             # review of render dfe5942 (A1; LEDGER RR-1, SP-13 (a)): from scratch against ParT's from scratch is no null
+             # (no per-jet scores for ParT's, an AUC gap of 7 run SDs); its sentence and its row are out
+             (f"top tagging, $R_{{30}}$, {ft}, published models", "SCRATCH", "PART_PUB")]
     assert not [r for r in gone if r in rows], [r for r in gone if r in rows]
     assert not any(h.startswith("JetClass, accuracy, " + ft + ", published") for h, *_ in rows)
-    assert rows[(f"top tagging, $R_{{30}}$, {ft}, published models", "SCRATCH", "PART_PUB")] is None
+    assert rows[(f"top tagging, $R_{{30}}$, {ft}, published models", "PART_OURS", "PART_PUB")] is None
     for task in ("top", "qg"):                 # a mass network against its own label set: fine-tuned top tagging only
         for mode in ("lp", "ft"):
             head = ("top tagging" if task == "top" else "quark/gluon tagging (Pythia)") + ", $R_{30}$, " + M.HEADING[mode]

@@ -17,11 +17,14 @@ before fine-tuning. Table~\ref{tab:published} compares the fine-tuned models wit
 % review of 5c40d69 (A5): the 188-class network against from scratch is 2.81 sigma in its tab:tests row, so the two
 % values are not set side by side as a gain; (A1) no comparison with ParT fine-tuned (the b-quark boundary fails it on
 % run SDs alone, and 188 classes has no paired term): the values stay side by side in tab:published
+% review of dfe5942 (A1, BS2; LEDGER CS-5): 188 classes against from scratch passes 3 sigma on accuracy, AUC and R50
+% (its tab:tests rows), so no null on R30 alone; our from scratch against ParT's published one has no paired term and
+% an AUC gap of 7 run SDs: that sentence is removed
 Fine-tuned on the full training set, no label set differs from the \Kfull-class model in $R_{30}$ by more than
-three standard deviations, and neither does the same network trained from scratch (tables~\ref{tab:summary} and~\ref{tab:tests}). The
-kinematic-inputs network, which has no missing inputs here, reaches the rejection of the \Kfull-class model
-fine-tuned with zeros. Trained from scratch, our network does not differ from ParT trained from scratch by more
-than three standard deviations, and ParT's own training script, run unchanged on our hardware, reproduces the
+three standard deviations (tables~\ref{tab:summary} and~\ref{tab:tests}). The same network trained from scratch
+does not differ from it in $R_{30}$ either, but has a lower accuracy, AUC and $R_{50}$ (tables~\ref{tab:published}
+and~\ref{tab:tests}). The kinematic-inputs network, which has no missing inputs here, reaches the rejection of the
+\Kfull-class model fine-tuned with zeros. ParT's own training script, run unchanged on our hardware, reproduces the
 published result (appendix~\ref{sec:app-partrepro}).
 
 % CHECK: MlstLpTopRthirtyFullOverInitBnZero agrees with 1 (two seeds of the randomly initialized network; today 1.04 and 1.08); MlstMlpTopRthirtyFullOverInitBn agrees with 1 (today 1.00 +- 0.31)
@@ -75,7 +78,7 @@ the number of training jets. Panels show accuracy on (a) the \Kfull{} classes of
 (b) JetClass, and $R_{30}$, one over the fraction of background jets kept when the cut keeps 30\% of signal jets,
 the top-tagging working point, for (c) top-quark against QCD jets and quark against gluon jets scored on (d)
 Pythia and (e) Herwig jets. Lines are means over \MlstNRunsWord{} runs per label set and from scratch and
-\MlstMassNRunsWord{} per mass network, bands one standard deviation. Stars are ParT's published results, each
-with the inputs its dataset provides, and our missing inputs are set to zero.}
+\MlstMassNRunsWord{} per mass network, bands one standard deviation. Stars are ParT trained from scratch, as
+published, each with the inputs its dataset provides, and our missing inputs are set to zero.}
 \label{fig:A8}
 \end{figure}

@@ -251,6 +251,25 @@ def test_table_a15_is_validation_only_and_marks_the_chosen_rate_and_divergences(
     assert "frozen" not in "\n".join(lines) and "test" not in M.printed_caption("lrsweep")
 
 
+def test_table_a15_separates_a_tie_at_four_decimals_and_keeps_a_sizes_rows_together():
+    """Review of render dfe5942 (B11; LEDGER FT-7, PI 2026-11-22: ties compared at full precision): quark/gluon 1e4 from
+    scratch printed 0.8056 at both 1e-3 and 3e-3 (160,863 and 160,862 of 199,680 jets); the tied cells print the digits
+    that separate them. (C) A size's pretrained row never ends a page apart from its from-scratch row."""
+    import sys
+    sys.path.insert(0, str(ROOT / "experiments/FIGS"))
+    import mlst_results as M
+    rows = [{"task": "qg", "n": 10_000, "kind": "pre", "status": "settled", "best": "1e-2",
+             "values": {"3e-3": 0.8187, "1e-2": 0.8214}},
+            {"task": "qg", "n": 10_000, "kind": "scratch", "status": "settled", "best": "1e-3",
+             "values": {"3e-4": 0.8050, "1e-3": 160_863 / 199_680, "3e-3": 160_862 / 199_680}}]
+    lines = M.table_lrsweep(rows).splitlines()
+    pre = next(ln for ln in lines if "pretrained" in ln)
+    scratch = next(ln for ln in lines if M.SCRATCH_LABEL in ln)
+    assert pre.endswith(r"\\*") and scratch.endswith(r" \\")
+    assert "0.805594$^{\\ast}$" in scratch and "0.805589 &" in scratch and "0.8050 &" in scratch
+    assert "0.8214$^{\\ast}$" in pre
+
+
 def test_rerun_parts_split_the_label_sets_and_scratch_from_the_rest():
     # PI 2026-11-22: A = the label sets and from scratch, B = every other pretrained network
     cells = B.fixed_rate_cells()

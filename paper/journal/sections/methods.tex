@@ -22,8 +22,7 @@ $(p_{\mathrm T}, \msd)$~\cite[Sec.~II]{sophon}. The reweighting categories are f
 and not by the label set, so which jets are drawn, and how often, is the same for every label set
 (appendix~\ref{sec:app-pretrain} gives the simulation and the selection).
 
-The network is Sophon's~\cite{sophon,sophoncode}, built on the Particle Transformer (ParT)
-architecture~\cite{part}: \DesignParticleBlocks{} particle-attention blocks, whose attention carries a bias
+The network is Sophon's~\cite{sophon,sophoncode}, built on the ParT architecture~\cite{part}: \DesignParticleBlocks{} particle-attention blocks, whose attention carries a bias
 computed from pairwise features of the particles, \DesignClassBlocks{} class-attention blocks, an embedding
 dimension of \DesignEmbedDim{} and a head with one hidden layer of \DesignHeadHidden{} ReLU units. As in Sophon,
 the four-momenta of the particles are rescaled so that every jet has the same transverse momentum. The frozen
@@ -88,9 +87,10 @@ does~\cite{atlasgnx}, only at \Kfull{} classes.
 
 \label{sec:controls}% the generated caption of tables/appendix_vocabulary.tex refers to this label
 Random partitions test whether, at a fixed number of classes and fixed loss weights, the cost of a coarse label
-set depends on which classes are merged. A random partition assigns the resonant classes at random to groups,
-each holding the share of the reweighted training jets of one \Kcoarse-class group to within
-\RandVtwoShareTol, and keeps one class for all QCD jets. It thus has the class count and the loss weights of the
+set depends on which classes are merged. In a random partition the \LitJetClassTwoNResonantClasses{} resonant
+classes are split at random into \RandVtwoNResGroups{} groups, with QCD kept as the \RandVtwoQcdGroupOrd, each
+group holding the share of the reweighted training jets of one \Kcoarse-class group to within
+\RandVtwoShareTol. It thus has the class count and the loss weights of the
 \Kcoarse-class level but not its physics. The partitions are selected rather than typical draws: each merges as
 few of the class pairs merged by the \Kcoarse-class level as the share rule allows, so they cut across the
 \Kcoarse-class groups and mix decays with different numbers of prongs, and every conclusion we draw from them is
@@ -224,8 +224,8 @@ fraction of signal--background pairs of jets that the classifier orders wrongly,
 \begin{equation}\label{eq:ratio}
   \rho = \frac{1-\AUC}{(1-\AUC)_{\mathrm{ref}}} ,
 \end{equation}
-with the reference scored on the same test jets, the \Kfull-class run of the same seed unless stated otherwise,
-and the AUC averaged over classes for the full task. A ratio above one means more wrongly ordered pairs than the
+with each configuration's AUC its mean over its runs, the reference scored on the same test jets, the
+\Kfull-class model unless stated otherwise, and the AUC averaged over classes for the full task. A ratio above one means more wrongly ordered pairs than the
 reference. It gives by what factor a configuration changes the errors where the AUCs lie close to one, and
 where on some pairs of classes a rejection would rest on fewer than $\nmin$ background jets.
 
@@ -284,8 +284,7 @@ runs, which Sophon does not report~\cite{sophon}. Values are rounded following t
 Group~\cite{pdg}; with \MlstNRunsWord{} runs a standard deviation is itself uncertain by about \MlstSdRelUnc. The
 network trained from scratch varies its training seed, and the random network its initial weights.
 
-Ratios are formed between models with the same seed, which share their training jets and initial weights, and
-then averaged over seeds; a control is paired with the models of the seed it was pretrained with. Two
+A ratio is formed from the two configurations' means over their runs, as the tables print them. Two
 configurations are said to differ only when $|\Delta|$ exceeds three times $\sigma$, where $\Delta$ is the
 difference of their means over all their runs and $\sigma^2$ is the sum of the variance of each configuration
 over its runs and the variance of $\Delta$ over paired bootstrap resamples of the test jets, on which every model

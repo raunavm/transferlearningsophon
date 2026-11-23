@@ -57,9 +57,9 @@ our \Kres- and \Kcoarse-class models, pretrained with and without the mass regre
 \emph{Transfer from frozen features.} Sophon used its label set downstream in two
 ways~\cite[Sec.~III]{sophon}: its output scores form an $X\to b\bar b$ discriminant directly, and a small
 network trained on its frozen features, with its first layer taken from the classification head, identifies
-$X\to bs$ decays, which no Sophon class contains, better at low background efficiency than the Particle
-Transformer and ParticleNet trained on the task~\cite[Fig.~2, App.~B.5]{sophon}. Vigl et~al.\ found fine-tuning
-better than frozen use of a pretrained Particle Transformer backbone in a search for
+$X\to bs$ decays, which no Sophon class contains, better at low background efficiency than ParT
+and ParticleNet trained on the task~\cite[Fig.~2, App.~B.5]{sophon}. Vigl et~al.\ found fine-tuning
+better than frozen use of a pretrained ParT backbone in a search for
 $G\to HH\to b\bar b b\bar b$, for every architecture they tried~\cite{vigl}. Neither study varied the label set
 with the training jets fixed, and
 Sophon reports no variation between pretraining runs. We repeat Sophon's benchmark at every level of the

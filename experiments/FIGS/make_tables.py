@@ -1405,6 +1405,24 @@ def emit_rand_design(em: Emitter, paths: dict, C: dict, missing: list | None = N
     num, den = rule["realised_tolerance"]
     em.macro("RandVtwoShareTol", f"{100 * num / den:g}\\%", paths["rand_v2_rule"], "realised_tolerance",
              "largest relative deviation of a realised group share from its target (rule 3)")
+    # PI 2026-11-21 (LEDGER PS-5): "the 161 resonant classes split at random into 16 groups, with QCD kept as the 17th",
+    # each count read from the map, every partition alike (review of render dfe5942, B13)
+    qcd = [r for r in v2 if r["class_name"].startswith("label_QCD")]
+    shape = set()
+    for c in cols:
+        res = {r[c] for r in v2 if r not in qcd}
+        q = {r[c] for r in qcd}
+        if len(q) != 1 or q & res:
+            raise SystemExit(f"FATAL: {paths['rand_v2_map']} {c}: the QCD classes are not one group of their own")
+        shape.add((len(v2) - len(qcd), len(res)))
+    if len(shape) != 1:
+        raise SystemExit(f"FATAL: {paths['rand_v2_map']}: the partitions split the resonant classes differently {shape}")
+    n_res, n_groups = shape.pop()
+    em.macro("RandVtwoNResGroups", str(n_groups), paths["rand_v2_map"], "RAND2_* groups of the resonant classes",
+             f"groups the {n_res} resonant classes are split into, in every random partition")
+    k = n_groups + 1
+    em.macro("RandVtwoQcdGroupOrd", f"{k}" + ("th" if 10 <= k % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(k % 10, "th")),
+             paths["rand_v2_map"], "RAND2_* groups + 1", "the QCD group, after the resonant ones (ordinal)")
     draw_src = paths["rand_draw_code"]
     trials = re.search(r"^TRIALS = (\d+)", draw_src.read_text(), re.M)
     if trials is None:
