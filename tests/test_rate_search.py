@@ -42,7 +42,9 @@ def test_a_row_at_a_new_rate_is_read_whole_from_the_rerun_tree():
     for c in B.paper_fixed_cells():
         task, n, kind = _row(c)
         moved = c["lr"] != B.original_rate(task, kind)
-        assert c["out"].startswith((B.FIXED_RATE_ROOT if moved else B.FIXED_ROOT) + "/"), c["out"]
+        # FT-10 (PI 2026-11-21): a row whose chosen rate diverged in its rerun is read from FIXED_RATE2_ROOT (2026-11-23)
+        rerun = B.FIXED_RATE2_ROOT if (task, n, kind) in B.FIXED_RERUN_DIVERGED else B.FIXED_RATE_ROOT
+        assert c["out"].startswith((rerun if moved else B.FIXED_ROOT) + "/"), c["out"]
 
 
 def test_every_recorded_rate_is_a_searched_rate_of_its_row():
@@ -71,6 +73,10 @@ def test_the_rerun_job_indices_keep_the_launched_order():
     for r in csv.reader((ROOT / "experiments/RUNS.csv").open()):
         if len(r) > 2:
             last[r[0]] = r[2]
+    # a cell whose index failed in its first job before a later job reran it (the two never held it at once, CL-14):
+    # top1e3b index 11, the kinematic network built as top, failed 4 of 4 attempts by 14:33 on 2026-11-23 and was rerun
+    # in top1e3kin from 14:35 (RUNS.csv rows of that time)
+    rerun_elsewhere = {("job-ft-budget-fixed-rate-top1e3b-raunav.yaml", 11)}
     seen = []
     for f in sorted(SPECS.glob("job-ft-budget-fixed-rate-*-raunav.yaml")):
         if f.name == "job-ft-budget-fixed-rate-qg1e3-raunav.yaml":
@@ -80,7 +86,7 @@ def test_the_rerun_job_indices_keep_the_launched_order():
         part = [c for _, c in sorted(_spec_cells(f.name).items())]
         k = cells.index(part[0])
         assert part == cells[k:k + len(part)], f.name
-        seen += part
+        seen += [c for i, c in sorted(_spec_cells(f.name).items()) if (f.name, i) not in rerun_elsewhere]
     assert len(seen) == len(set(seen))
 
 
