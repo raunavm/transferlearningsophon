@@ -290,6 +290,88 @@ def helper_spec(tag: str, mem: str, ms: list[str]) -> str:
                  "tab:tests: JetClass-II networks of the slow cache parts, into the same cache")
 
 
+# ------------------------------------------------------------------ review of render 5c40d69 (docs/REVIEW_5c40d69_TRIAGE.md, BS)
+# B3: the b-quark (and random) flavor boundary - 188 classes on F4-mech's two pairs ("recovers part"); the kinematic-inputs
+# network's sentences (results_bench.tex:26, :41) and "both lie below every fine-tuned model" (:36-37); every pretrained
+# model's MLP mass resolution against the random network's (results_mass.tex:29-30). A7 and the accuracy rows of B3 are
+# in probe_jc2bal_N1000000.all.json already, and F9b's per-bin rows in mass_sd_boot_v4.json.
+MASS_V5 = MASS_V3.replace("_v3.json", "_v5.json")
+KIN = "mtx-l188kin-s1"
+REVIEW_PAIRS = {p: f"{L3_V5}/probe_jc2bal_pairs_{p}.flav188.json" for p in ("bb_vs_cc", "bc_vs_bq_cs")}
+REVIEW_KIN_LP = f"{L3_V5}/probe_top_N1200000.kin.json"
+REVIEW_FT = f"{L3}/ft_top_N1200000.review.json"
+
+
+def review_ft_inputs() -> dict[str, str]:
+    """Every fine-tuned network on the full top set, the kinematic-inputs network fine-tuned, and the zero-filled linear
+    probes of 188 classes and of the BatchNorm-recomputed random network (.npz: read as probes whatever --task says)."""
+    fill = R5.V5["fits_v5_fill_probs"]
+    out = {m: f"{FT}/best70/leg_top/{m.removeprefix('mtx-')}/N1200000/s1" for a in R5.BOOTALL_ARMS for m in models(a)}
+    out[KIN] = f"{FT}/best70_kin/leg_top/{KIN.removeprefix('mtx-')}/N1200000/s1"
+    out.update({f"{m}.lpzero": f"{fill}/{m}/best70/top_N1200000.npz" for m in models("l188")})
+    out.update({f"{m}.lpzero": f"{fill}/{m.replace('initbn-', 'init-')}/init_bn/top_N1200000.npz" for m in models("initbn")})
+    return out
+
+
+def review_ft_flags() -> str:
+    z188, zbn = (",".join(f"{m}.lpzero" for m in models(a)) for a in ("l188", "initbn"))
+    d = "".join(f" --diff {a}-188lpzero={','.join(models(a))}/{z188} --diff {a}-initbnlpzero={','.join(models(a))}/{zbn}"
+                for a in R5.BOOTALL_ARMS)
+    return f"--headline --diff kin-188={KIN}/{','.join(models('l188'))}" + d
+
+
+def review_a() -> list[str]:
+    """The pairs, the kinematic-inputs linear probe, and mass_sd_boot_v5.json (v4 held unchanged)."""
+    lines = []
+    for p, out in REVIEW_PAIRS.items():
+        ms = [m for a in ("flavf1", "flavf1r", "l188") for m in models(a)]
+        lines.append(pb(out, [f"--model {m}={pair_path(p, m)}" for m in ms],
+                        "--headline " + diffs((("flavf1", "l188"), ("flavf1r", "l188")))))
+    draws = {m: f"{R5.V5['fits_v5_fill_probs']}/{m}/best70.itop4/top_N1200000.npz" for m in models("l188")}
+    lines.append(pb(REVIEW_KIN_LP, [f"--model {m}={p}" for m, p in draws.items()]
+                    + [f"--model {KIN}={R5.V5['fits_v5_probs']}/{KIN}/best70/top_N1200000.npz"],
+                    f"--headline --diff 188draws-kin={','.join(draws)}/{KIN}"))
+    new = MASS_V5.replace(".json", ".new.json")
+    check = ("import json, sys; o, n = (json.load(open(f)) for f in sys.argv[1:]); "
+             "ok = o['groups'] == n['groups'] and all(n['diffs'][k] == v for k, v in o['diffs'].items()); "
+             "print('v4 held unchanged in v5:', ok); sys.exit(0 if ok else 42)")
+    return lines + [f"if [ ! -e {MASS_V5} ]; then",
+                    f"  [ -e {new} ] || " + peak(f"python3 experiments/EVAL/mass_sd_boot.py --root {R5.ATLAS_V2} --out {new}"),
+                    f"  python3 -c \"{check}\" {MASS_V4} {new}",
+                    f"  mv -n {new} {MASS_V5}",
+                    "fi"]
+
+
+def review_inputs() -> list[str]:
+    out = [pair_path(p, m) for p in REVIEW_PAIRS for a in ("flavf1", "flavf1r", "l188") for m in models(a)]
+    out += [f"{R5.V5['fits_v5_fill_probs']}/{m}/best70.itop4/top_N1200000.npz" for m in models("l188")]
+    out += [f"{R5.V5['fits_v5_probs']}/{KIN}/best70/top_N1200000.npz", MASS_V4, f"{R5.ATLAS_V2}/DONE"]
+    return out + list(review_ft_inputs().values())
+
+
+def review_specs(tag: str, mem: str) -> dict[str, str]:
+    """boot-review-a-raunav and boot-review-b-raunav (one pod each, launched apart)."""
+    a = "\n  ".join([check_inputs(review_inputs())] + review_a())
+    b = "\n  ".join([check_inputs(review_ft_inputs().values()),
+                     pb(REVIEW_FT, [f"--model {m}={p}" for m, p in review_ft_inputs().items()], review_ft_flags(), "top")])
+    what = "tab:tests rows the review of render 5c40d69 found missing (BS)"
+    return {"boot-review-a-raunav": _spec(tag, "boot-review-a-raunav", [a], 1, mem, what + ": pairs, kinematic probe, mass"),
+            "boot-review-b-raunav": _spec(tag, "boot-review-b-raunav", [b], 1, mem, what + ": fine-tuned top")}
+
+
+def review_smoke_spec(tag: str, mem: str) -> str:
+    """One row first: 188 classes fine-tuned against its own zero-filled linear probe on the full top set (a cell and an
+    .npz on the same jets), with its peak memory and seconds."""
+    inp = review_ft_inputs()
+    ms = models("l188") + [f"{m}.lpzero" for m in models("l188")]
+    row = (f"python3 experiments/STATS/paired_bootstrap.py --task top " + " ".join(f"--model {m}={inp[m]}" for m in ms)
+           + f" --headline --diff l188-188lpzero={','.join(models('l188'))}/{','.join(ms[3:])} --b {B}"
+           + f" --out {SMOKE}/ft_top_review_smoke.json")
+    body = "\n  ".join([check_inputs(review_inputs()), f"mkdir -p {SMOKE}", f"[ -e {SMOKE}/ft_top_review_smoke.json ] || "
+                        + peak(row)])
+    return _spec(tag, "boot-review-smoke-raunav", [body], 1, mem, "review rows, smoke: inputs and one row")
+
+
 def smoke_spec(tag: str, mem: str) -> str:
     inp = {m: pair_path("bb_vs_cc", m) for a in ("r42q1", "l188") for m in models(a)}
     row = pb(f"{SMOKE}/probe_jc2bal_pairs_bb_vs_cc.json", [f"--model {m}={p}" for m, p in inp.items()],
@@ -308,11 +390,15 @@ def main(argv=None) -> int:
     ap.add_argument("--herwig", action="store_true", help="boot-tests-herwig-raunav, the unpaired Herwig - Pythia rows")
     ap.add_argument("--helper", nargs="+", metavar="MODEL", help="boot-tests-helper-raunav: these networks into the cache")
     ap.add_argument("--node", help="one node of CPU_MODEL's (R5.CPU_NODES) instead of all of them")
+    ap.add_argument("--review", choices=("smoke", "a", "b"), help="the review rows: the smoke, or job a or b")
     ap.add_argument("--mem", default="16Gi", help="memory request and limit of every pod")
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
         raise SystemExit(f"FATAL: --tag {a.tag} is not an mtx-sN.NN tag")
-    name, text = (("boot-tests-smoke-raunav", smoke_spec(a.tag, a.mem)) if a.smoke
+    review = ({"smoke": ("boot-review-smoke-raunav", review_smoke_spec(a.tag, a.mem))}
+              | {k[12]: (k, v) for k, v in review_specs(a.tag, a.mem).items()}) if a.review else {}
+    name, text = (review[a.review] if a.review
+                  else ("boot-tests-smoke-raunav", smoke_spec(a.tag, a.mem)) if a.smoke
                   else ("boot-tests-herwig-raunav", herwig_spec(a.tag, a.mem)) if a.herwig
                   else ("boot-tests-helper-raunav", helper_spec(a.tag, a.mem, a.helper)) if a.helper
                   else ("boot-tests-raunav", main_spec(a.tag, a.mem)))

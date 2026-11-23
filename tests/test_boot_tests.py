@@ -140,8 +140,10 @@ def test_headline_only_scores_no_auc(tmp_path):
 def test_mass_sd_boot_keeps_its_two_pairs_and_adds_the_mass_tables_three():
     MS = _load("mass_sd_boot_t", "experiments/EVAL/mass_sd_boot.py")
     assert MS.DIFFS[:2] == (("162 classes + mass", "162 classes"), ("17 classes + mass", "17 classes"))
-    assert set(MS.DIFFS[2:]) == {("17 classes", "188 classes"), ("188 classes", "random network"),
-                                 ("17 classes + mass", "162 classes + mass")}
+    assert set(MS.DIFFS[2:5]) == {("17 classes", "188 classes"), ("188 classes", "random network"),
+                                  ("17 classes + mass", "162 classes + mass")}
+    # review of 5c40d69: every pretrained group against the random network
+    assert {a for a, b in MS.DIFFS if b == "random network"} == set(MS.GROUPS) - {"random network"}
     assert all(a in MS.GROUPS and b in MS.GROUPS for a, b in MS.DIFFS)
     assert MS.CROSS == ((("162 classes + mass", "regressed"), ("162 classes", "mlp")),)
 
@@ -165,3 +167,18 @@ def test_the_spec_is_ours_pinned_and_writes_new_files_only():
     assert sorted(m for g in b.jc2_groups() for m in g) == sorted(b.jc2_inputs()) and len(b.jc2_inputs()) == 23
     h = b.herwig_spec("mtx-s9.99", "4Gi")
     assert "completions: 1\n" in h and f"[ -e {b.HERWIG_OUT} ] ||" in h and h.count("@second") == 6 and "-raunav\n" in h
+
+
+def test_the_review_specs_write_new_files_from_the_listed_inputs():
+    b = _load("build_boot_tests_jobs_r", "scripts/build_boot_tests_jobs.py")
+    s = b.review_specs("mtx-s9.99", "6Gi")
+    assert set(s) == {"boot-review-a-raunav", "boot-review-b-raunav"}
+    for name, text in s.items():
+        assert "completions: 1\n" in text and f"{name}\n" in text and "ConfigMap" not in text
+        assert f'[ "${{CPU}}" = "{b.CPU_MODEL}" ]' in text
+    a, ft = s["boot-review-a-raunav"], s["boot-review-b-raunav"]
+    assert all(f"[ -e {o} ] ||" in a for o in [*b.REVIEW_PAIRS.values(), b.REVIEW_KIN_LP]) and f"mv -n " in a
+    assert f"[ -e {b.REVIEW_FT} ] ||" in ft and "--task top" in ft and ft.count(".lpzero=") == 6
+    assert ft.count("-188lpzero=") == ft.count("-initbnlpzero=") == len(b.R5.BOOTALL_ARMS)
+    assert "--diff kin-188=mtx-l188kin-s1/" in ft and "best70_kin/leg_top/l188kin-s1/N1200000/s1" in ft
+    assert "completions: 1\n" in b.review_smoke_spec("mtx-s9.99", "8Gi")

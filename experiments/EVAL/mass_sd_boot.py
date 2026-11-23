@@ -61,7 +61,12 @@ ESTIMATORS = ("regressed", "ridge", "mlp")
 DIFFS = (("162 classes + mass", "162 classes"), ("17 classes + mass", "17 classes"),
          # tab:tests (PI 2026-11-23, LEDGER SP-12 step 4): the mass table's other stated differences; written to a new
          # file, every group and the two pairs above as before (the resamples depend on the bin alone)
-         ("17 classes", "188 classes"), ("188 classes", "random network"), ("17 classes + mass", "162 classes + mass"))
+         ("17 classes", "188 classes"), ("188 classes", "random network"), ("17 classes + mass", "162 classes + mass"),
+         # review of 5c40d69 (B3): "every pretrained model's features carry more" than the random network
+         ("162 classes", "random network"), ("43 classes", "random network"), ("17 classes", "random network"),
+         ("162 classes + mass", "random network"), ("17 classes + mass", "random network"),
+         ("no flavor boundary", "random network"), ("b-quark boundary", "random network"),
+         ("random flavor boundary", "random network"), ("random partitions", "random network"))
 # the same across estimators: (A, its estimator), (B, its estimator); diffs["<A>, <est> - <B>, <est>"]["cross"]
 CROSS = ((("162 classes + mass", "regressed"), ("162 classes", "mlp")),)
 BINNINGS = {"pt": AR.PT_EDGES, "mgen": AR.MGEN_EDGES, "pt_fine": RB.PT_EDGES}
