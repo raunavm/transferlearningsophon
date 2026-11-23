@@ -8138,7 +8138,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                fits, runs, TAB, ALL_ROWS + (INIT,), fill, chosen, kin=True)),
            "tables/mlst_pair_auc.tex": _float("pair_auc", table_pair_auc(fits, _pooled(runs), TAB, status,
                                                                       _paper_rows(rows_init)), whole="upright",
-                                                colsep_pt=3),
+                                                colsep_pt=1),     # upright at the body size: 12 pt over at 3 pt (c1253a9)
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, _pooled(runs), TAB, status,
                                                                 _paper_rows(rows_init), pairs_ft, pairs_lp), True,
                                            label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK),
