@@ -4494,7 +4494,7 @@ TESTS_NAMES = {"SCRATCH": SCRATCH_LABEL, "SDMASS": "soft-drop mass", "PART_PUB":
                "R42_Q1_17": r"\Kmid{} classes on the 17 groups", "R16_Q1_17": r"\Kcoarse{} classes on the 17 groups",
                "L162_MASS_HEAD": r"\Kres{} classes + mass, head", "R16_Q1_MASS_HEAD": r"\Kcoarse{} classes + mass, head",
                # PI 2026-11-23 (LEDGER SP-12, step 3): the rows of the ratio words that had none (PR_ROWS)
-               "L162_MLP": r"\Kres{} classes, " + HEADING["mlp"],
+               "L162_MLP": r"\Kres{} classes, MLP regression",
                "L188_HERWIG_JETS": r"\Kfull{} classes on Herwig jets", "L188_PYTHIA_JETS": r"\Kfull{} classes on Pythia jets",
                "SCRATCH_HERWIG_JETS": "from scratch on Herwig jets", "SCRATCH_PYTHIA_JETS": "from scratch on Pythia jets"}
 _LEVELS = (("L162", "L188", "162-188"), ("R42_Q1", "L188", "43-188"), ("R16_Q1", "L188", "17-188"))
