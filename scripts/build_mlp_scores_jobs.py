@@ -13,7 +13,7 @@ is skipped, so a retried pod does only what is missing.
   bs3-mlp-smoke-raunav, bs3-mlp-smoke-bench-raunav   one row of the same body (SMOKES), its peak memory and
                             seconds, to size the family's job, which then leaves that row out (--skip-smoke), so no
                             fit runs in two jobs
-  bs3-boot-raunav           one pod once every fit exists: BOOT_OUT's five files
+  bs3-boot-jc2-raunav, bs3-boot-bench-raunav   one pod each once its fits exist: BOOT_OUT's files (BOOT_PARTS)
   bs3-analytic-raunav       one pod: SC-2 #1, the transfer-head term against the paired bootstrap (ANALYTIC_OUT)
 
     python3 scripts/build_mlp_scores_jobs.py --tag mtx-sN.NN --what fit --family coarse --mem 6Gi [--parallel 8]
@@ -113,19 +113,29 @@ def smoke_spec(tag: str, mem: str, which: str = "jc2bal") -> str:
                  "MLP probes with per-jet scores, smoke: one fit, its peak memory and seconds")
 
 
-def boot_inputs() -> list[str]:
-    return [npz(fam, m, n) for fam, n, d, _ in BOOT_OUT.values() for a in {x for p in d for x in p} for m in models(a)]
+# the bootstrap jobs: JetClass-II (jc2bal and coarse) and bench, each launched once its fits exist
+BOOT_PARTS = {"jc2": ("jc2bal", "coarse"), "bench": ("bench",)}
 
 
-def boot_spec(tag: str, mem: str) -> str:
-    lines = [BT.check_inputs(boot_inputs()), f"mkdir -p {BOOT}"]
-    for out, (fam, n, d, flags) in BOOT_OUT.items():
+def boot_outs(part: str) -> dict:
+    return {o: v for o, v in BOOT_OUT.items() if v[0] in BOOT_PARTS[part]}
+
+
+def boot_inputs(part: str | None = None) -> list[str]:
+    outs = BOOT_OUT if part is None else boot_outs(part)
+    return [npz(fam, m, n) for fam, n, d, _ in outs.values() for a in {x for p in d for x in p} for m in models(a)]
+
+
+def boot_spec(tag: str, mem: str, part: str) -> str:
+    """bs3-boot-<part>-raunav: one pod, the part's BOOT_OUT files once every input exists."""
+    lines = [BT.check_inputs(boot_inputs(part)), f"mkdir -p {BOOT}"]
+    for out, (fam, n, d, flags) in boot_outs(part).items():
         arms = list(dict.fromkeys(x for p in d for x in p))
         ms = " ".join(f"--model {m}={npz(fam, m, n)}" for a in arms for m in models(a))
         lines.append(f"[ -e {out} ] || " + BT.peak(f"python3 experiments/STATS/paired_bootstrap.py --task npz {ms} "
                                                    f"{flags} {BT.diffs(d)} --b {B} --out {out}"))
-    return _spec(tag, "bs3-boot-raunav", ["\n  ".join(lines)], 1, mem, "1",
-                 "paired test-jet bootstraps of the MLP probes' differences (SC-1, B = 200)")
+    return _spec(tag, f"bs3-boot-{part}-raunav", ["\n  ".join(lines)], 1, mem, "1",
+                 f"paired test-jet bootstraps of the MLP probes' differences ({part}; SC-1, B = 200)")
 
 
 # ------------------------------------------------------------------ SC-2 #1: the transfer-head term on per-jet scores
@@ -154,16 +164,17 @@ def main(argv=None) -> int:
     ap.add_argument("--tag", required=True)
     ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic"))
     ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
+    ap.add_argument("--part", choices=tuple(BOOT_PARTS), help="with --what boot")
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
     ap.add_argument("--parallel", type=int, default=8)
     ap.add_argument("--skip-smoke", action="store_true", help="leave the smoke's row to the smoke job")
     a = ap.parse_args(argv)
-    if (a.what == "fit") != (a.family is not None):
-        raise SystemExit("FATAL: --family with --what fit, and only then")
+    if (a.what == "fit") != (a.family is not None) or (a.what == "boot") != (a.part is not None):
+        raise SystemExit("FATAL: --family with --what fit and --part with --what boot, and only then")
     name, text = {"smoke": lambda: (SMOKE_NAME["jc2bal"], smoke_spec(a.tag, a.mem)),
                   "smoke-bench": lambda: (SMOKE_NAME["bench"], smoke_spec(a.tag, a.mem, "bench")),
                   "fit": lambda: (f"bs3-mlp-{a.family}-raunav", fit_spec(a.tag, a.family, a.mem, a.parallel, a.skip_smoke)),
-                  "boot": lambda: ("bs3-boot-raunav", boot_spec(a.tag, a.mem)),
+                  "boot": lambda: (f"bs3-boot-{a.part}-raunav", boot_spec(a.tag, a.mem, a.part)),
                   "analytic": lambda: ("bs3-analytic-raunav", analytic_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)

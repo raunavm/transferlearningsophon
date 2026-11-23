@@ -121,7 +121,7 @@ def test_rows_are_the_runs_of_the_linear_probe_rows():
 @pytest.mark.parametrize("which", ["fit", "smoke", "boot"])
 def test_specs_pin_one_cpu_model_and_request_the_mlp_threads(which):
     text = {"fit": lambda: BJ.fit_spec("mtx-s9.99", "bench", "12Gi", 8, True), "smoke": lambda: BJ.smoke_spec("mtx-s9.99", "12Gi"),
-            "boot": lambda: BJ.boot_spec("mtx-s9.99", "4Gi")}[which]()
+            "boot": lambda: BJ.boot_spec("mtx-s9.99", "4Gi", "jc2")}[which]()
     assert BJ.CPU_MODEL == "AMD EPYC 7402P 24-Core Processor"
     assert f'[ "${{CPU}}" = "{BJ.CPU_MODEL}" ]' in text and "igrok-la.cenic.net" in text
     assert "--branch mtx-s9.99 " in text and f'-le {BJ.LINE} ]' in text and "raunav" in text
@@ -134,10 +134,15 @@ def test_bootstrap_reads_every_npz_the_fits_write():
     want = {BJ.npz(f, m, n) for f, m in BJ.ROWS for n in BJ.FILES[f]}
     assert set(BJ.boot_inputs()) == want
     assert BJ.B == 200
-    text = BJ.boot_spec("mtx-s9.99", "4Gi")
-    for out in BJ.BOOT_OUT:
-        assert f"[ -e {out} ] ||" in text
-    assert "--diff l162-188=mtx-l162-s1,mtx-l162-s2,mtx-l162-s3/mtx-l188-s1,mtx-l188-s2,mtx-l188-s3" in text
+    assert set(BJ.boot_inputs("jc2")) | set(BJ.boot_inputs("bench")) == want
+    assert sorted(o for p in BJ.BOOT_PARTS for o in BJ.boot_outs(p)) == sorted(BJ.BOOT_OUT)
+    for part in BJ.BOOT_PARTS:
+        text = BJ.boot_spec("mtx-s9.99", "4Gi", part)
+        assert f"name: bs3-boot-{part}-raunav" in text
+        for out in BJ.boot_outs(part):
+            assert f"[ -e {out} ] ||" in text
+        assert all(f"[ -e {o} ] ||" not in text for o in set(BJ.BOOT_OUT) - set(BJ.boot_outs(part)))
+        assert "--diff l162-188=mtx-l162-s1,mtx-l162-s2,mtx-l162-s3/mtx-l188-s1,mtx-l188-s2,mtx-l188-s3" in text
 
 
 def test_the_analytic_check_reads_the_linear_probes_files():
