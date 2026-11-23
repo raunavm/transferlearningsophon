@@ -32,7 +32,25 @@ R = pathlib.Path("/data/results")
 TIERS = {1: ((R / "eval/v2_linprobe_quarantine", "all"), (R / "mtx_v2_quarantine", "all")),
          2: ((R / "e8", "all"), (R / "e2", "all"), (R / "ft/lrprobe", "all"), (R / "ft/lrprobe2", "all"),
              (R / "ft/lrprobe3", "all"), (R / "g1", ".pt"), (R / "aoj", "all"), (R / "ft/smoke", "all"))}
-REGEN = {"eval/v2_linprobe_quarantine": "re-extraction (superseded by eval/v2_linprobe)",
+# tier 3 (PI 2026-11-23, LEDGER ST-6): superseded render folders, keeping the latest of each kind and every render that
+# RUNS.csv or STATE.md cites (selected 2026-11-23 07:15 UTC), and the unpacked copy of the network archive (archive.tgz
+# stays); test-output folders stay
+TIER3_RENDERS = ("a059066-gallery", "5fa878e-gallery", "c0ce260-gallery", "31c3393-gallery", "6032982-gallery", "2a8a898-gallery", 
+                 "b64ce89-gallery", "7fff1d2-gallery", "09fd1fc-gallery", "30cd14b-gallery", "cac7955-gallery", "00b8362-gallery", 
+                 "a826f1f-gallery", "64c079f-gallery", "087d030-gallery", "61bf8f7-gallery", "3700e1c-gallery", "2116899-gallery", 
+                 "f57fa9b-gallery", "6489644-gallery", "eba15a8-gallery", "e97d22f-gallery", "af2b888-gallery", "dfb4839-gallery", 
+                 "9e4baa0-gallery", "dc20f78-gallery", "1037b5d-gallery", "15c825d-gallery", "e5abffb-gallery", "fcfb35b-gallery", 
+                 "bc95b1e-gallery", "12f5b47-gallery", "6022754-gallery", "e5b8e40-gallery", "13d5492-gallery", "e2d427c-gallery", 
+                 "64b3ab4-gallery", "6d1c16f-gallery", "cc6cac7-gallery", "40520a2-gallery", "68bf1b3-gallery", "483c844-gallery", 
+                 "aec91e7", "b4292c7", "f611940", "32b02ee", "bde0c92", "45ac82c", 
+                 "f54dd65", "6b196e2", "4b96161", "1b3d09b", "7188348", "58ba8e2", 
+                 "e88fab9", "0b1f7b0", "af2b888", "6022754", "12f5b47", "3018e0e", 
+                 "3b31a99", "4a80870-preview", "b7608ef-preview", "561084a-bookpreview", "2894691-bookpreview", "6c83431-bookpreview", 
+                 "ed58de6-bookpreview", "1b23711-bookpreview", "f3faeb5-bookpreview", "6b6a652-bookpreview", "7fcc1a1-bookpreview", "e8e96cb-releasepreview", 
+                 )
+TIERS[3] = tuple((R / "render" / d, "all") for d in TIER3_RENDERS) + ((R / "storage_1123/archive", "all"),)
+REGEN = {"render/": "a render of its git commit", "storage_1123/archive": "archive.tgz (kept) and the laptop copy",
+         "eval/v2_linprobe_quarantine": "re-extraction (superseded by eval/v2_linprobe)",
          "aoj": "re-extraction", "e8": "retraining or re-extraction"}
 # a trained network: its weights file(s); the files beside it that hold its config and its log
 NET_FILES = ("net_best_epoch_state.pt", "best_model.pt")
@@ -69,9 +87,9 @@ def regen(p: pathlib.Path) -> str:
     return next((v for k, v in REGEN.items() if rel.startswith(k)), "retraining only")
 
 
-def manifest(out: pathlib.Path) -> int:
+def manifest(out: pathlib.Path, only=None) -> int:
     out.mkdir(parents=True, exist_ok=True)
-    for tier in TIERS:
+    for tier in [only] if only else TIERS:
         dest = out / f"tier{tier}.csv"
         if dest.exists():
             raise SystemExit(f"FATAL: {dest} exists; a manifest is never overwritten")
@@ -178,11 +196,11 @@ def delete(man: pathlib.Path, want: str) -> int:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    m = sub.add_parser("manifest"); m.add_argument("--out", type=pathlib.Path, required=True)
+    m = sub.add_parser("manifest"); m.add_argument("--out", type=pathlib.Path, required=True); m.add_argument("--tier", type=int)
     a = sub.add_parser("archive"); a.add_argument("--out", type=pathlib.Path, required=True)
     d = sub.add_parser("delete"); d.add_argument("--manifest", type=pathlib.Path, required=True); d.add_argument("--sha256", required=True)
     x = ap.parse_args(argv)
-    return {"manifest": lambda: manifest(x.out), "archive": lambda: archive(x.out),
+    return {"manifest": lambda: manifest(x.out, x.tier), "archive": lambda: archive(x.out),
             "delete": lambda: delete(x.manifest, x.sha256)}[x.cmd]()
 
 
