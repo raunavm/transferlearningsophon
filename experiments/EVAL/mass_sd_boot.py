@@ -58,7 +58,10 @@ GROUPS = {"188 classes": ("mtx-l188-s1", "mtx-l188-s2", "mtx-l188-s3"),
           "random partitions": ("mtx-rand2p1-s1", "mtx-rand2p2-s2", "mtx-rand2p3-s1", "mtx-rand2p4-s2", "mtx-rand2p5-s2"),
           "random network": ("init-s1", "init-s2", "init-s3")}
 ESTIMATORS = ("regressed", "ridge", "mlp")
-DIFFS = (("162 classes + mass", "162 classes"), ("17 classes + mass", "17 classes"))
+DIFFS = (("162 classes + mass", "162 classes"), ("17 classes + mass", "17 classes"),
+         # tab:tests (PI 2026-11-23, LEDGER SP-12 step 4): the mass table's other stated differences; written to a new
+         # file, every group and the two pairs above as before (the resamples depend on the bin alone)
+         ("17 classes", "188 classes"), ("188 classes", "random network"), ("17 classes + mass", "162 classes + mass"))
 BINNINGS = {"pt": AR.PT_EDGES, "mgen": AR.MGEN_EDGES, "pt_fine": RB.PT_EDGES}
 
 

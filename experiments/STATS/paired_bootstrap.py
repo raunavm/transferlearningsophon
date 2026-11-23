@@ -34,6 +34,22 @@ bootstrap SD^2 over test jets):
   --task jc1_all   a JetClass cell on every one of its 2,000,000 test jets, the jets of the read-out's macro AUC
                (budget_metrics.py, the figures' JetClass AUC per decision L2)
 
+tab:tests (PI 2026-11-23, LEDGER SP-12 step 4; SC-1 (1)), on the same resamples:
+  --native-groups   class probabilities of JetClass-II: macro_resonant and macro_qcd, the mean one-vs-rest AUC over
+               the resonant and over the QCD classes present (linear_probe_v2.native_metrics' groups, QCD_NATIVE)
+  --headline-only   the headline metrics alone (no AUC), for a table that prints accuracy only
+  --step NAME=A1,A2/B1,B2/C1,C2   the step from B to A against the step from C to B, (mean A - mean B) -
+               (mean B - mean C), per metric: boot_sd over the resamples as for --diff; the run term is
+               SD_A^2 + 4 SD_B^2 + SD_C^2 (each mean's run SD, weighted by its coefficient squared), recorded as
+               sd_a^2 = SD_A^2 + 2 SD_B^2 (the first step) and sd_b^2 = 2 SD_B^2 + SD_C^2 (the second), so sigma is
+               still sqrt(sd_a^2 + sd_b^2 + boot_sd^2)
+  --second-task TASK   every model's cell also scored on TASK's test set (other jets, their own resamples from
+               seed + 1, shared by every model): <metric>_ratio = the headline metric on TASK over that on --task,
+               per model and per resample (e.g. R30 on Herwig over R30 on Pythia)
+  --cache DIR  each model's metrics and resampled metrics in DIR/<model>.npz, read instead of recomputed when its
+               record (input, task, jets, b, seed, options) is the same, refused when it differs; with --cache-only
+               the run fills the cache and writes no --out (a large set split over pods, then one run reads them all)
+
     python3 experiments/STATS/paired_bootstrap.py --task top \\
         --model l188-s1=<tree>/l188-s1/N1200000/s1 --model r16q1-s1=<tree>/r16q1-s1/N1200000/s1 \\
         --pair r16q1-s1/l188-s1 --out /data/results/bootstrap/ft/top_N1200000.json
@@ -69,6 +85,20 @@ def _ft_curves():
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     return m
+
+
+@functools.cache
+def _qcd_native() -> frozenset:
+    """linear_probe_v2.QCD_NATIVE, the QCD classes native_metrics' macro_auc_qcd averages over."""
+    spec = importlib.util.spec_from_file_location("linear_probe_v2", REPO / "experiments/EVAL/linear_probe_v2.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return frozenset(m.QCD_NATIVE)
+
+
+def is_auc(k: str) -> bool:
+    """A metric stored as 1 - AUC (the AUC, the macro AUC and its groups, a class's AUC); every other is stored as is."""
+    return k in ("auc", "macro") or k.startswith(("macro_", "class_"))
 
 
 def load(path: pathlib.Path, task: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -162,14 +192,23 @@ def headline(y: np.ndarray, s: np.ndarray, c: np.ndarray) -> dict:
     return {"accuracy": (float(ok.mean()), (w @ ok) / w.sum(1))}
 
 
-def metrics(y: np.ndarray, s: np.ndarray, c: np.ndarray, per_class: bool, head: bool = False) -> dict:
+def metrics(y: np.ndarray, s: np.ndarray, c: np.ndarray, per_class: bool, head: bool = False,
+            groups: bool = False, head_only: bool = False) -> dict:
     """{key: (value, resampled values)}: auc for a score, macro (and class_<k>) for probabilities; with head, the
-    headline metric beside them."""
+    headline metric beside them; groups: macro_resonant and macro_qcd (native_metrics' groups); head_only: the
+    headline metrics alone."""
+    if head_only:
+        return headline(y, s, c)
     if s.ndim == 1:
         out = {"auc": one_minus_auc(s, y == 1, c)}
     else:
         per = {int(k): one_minus_auc(s[:, k], y == k, c) for k in np.unique(y)}
-        out = {"macro": (float(np.mean([v for v, _ in per.values()])), np.mean([r for _, r in per.values()], axis=0))}
+        mean = lambda ks: (float(np.mean([per[k][0] for k in ks])), np.mean([per[k][1] for k in ks], axis=0))  # noqa: E731
+        out = {"macro": mean(list(per))}
+        if groups:
+            qcd = _qcd_native()
+            out["macro_resonant"] = mean([k for k in per if k not in qcd])
+            out["macro_qcd"] = mean([k for k in per if k in qcd])
         if per_class:
             out.update({f"class_{k}": v for k, v in per.items()})
     if head:
@@ -177,25 +216,76 @@ def metrics(y: np.ndarray, s: np.ndarray, c: np.ndarray, per_class: bool, head: 
     return out
 
 
+def _verdict(k: str, delta: float, sd_a, sd_b, rep: np.ndarray) -> dict:
+    boot_sd = _sd(rep)
+    sigma = float(np.sqrt(sd_a ** 2 + sd_b ** 2 + boot_sd ** 2)) if None not in (sd_a, sd_b, boot_sd) else None
+    return {"quantity": "one_minus_auc" if is_auc(k) else k, "delta": delta, "sd_a": sd_a, "sd_b": sd_b,
+            "boot_sd": boot_sd, "sigma": sigma, "z": delta / sigma if sigma else None,
+            "pass": bool(sigma is not None and abs(delta) > 3 * sigma)}
+
+
+def _runs(res: dict, side: list, k: str) -> tuple:
+    """(run values, resampled mean over the side's models, run SD or None for one model) of metric k."""
+    v = np.array([res[m][k][0] for m in side])
+    return v, np.mean([res[m][k][1] for m in side], axis=0), (float(v.std(ddof=1)) if v.size > 1 else None)
+
+
 def group_diff(res: dict, a: list, b: list) -> dict:
     """Decision L3 for the mean over models a minus the mean over models b, per metric both sides have."""
     out = {}
     for k in [k for k in res[a[0]] if all(k in res[m] for m in a + b)]:
-        va, vb = (np.array([res[m][k][0] for m in side]) for side in (a, b))
-        rep = np.mean([res[m][k][1] for m in a], axis=0) - np.mean([res[m][k][1] for m in b], axis=0)
-        sd_a, sd_b = (float(v.std(ddof=1)) if v.size > 1 else None for v in (va, vb))
-        boot_sd = _sd(rep)
-        sigma = (float(np.sqrt(sd_a ** 2 + sd_b ** 2 + boot_sd ** 2))
-                 if None not in (sd_a, sd_b, boot_sd) else None)
-        delta = float(va.mean() - vb.mean())
-        out[k] = {"quantity": k if k in HEADLINE else "one_minus_auc", "delta": delta, "n_a": len(a), "n_b": len(b),
-                  "sd_a": sd_a, "sd_b": sd_b, "boot_sd": boot_sd, "sigma": sigma, "z": delta / sigma if sigma else None,
-                  "pass": bool(sigma is not None and abs(delta) > 3 * sigma)}
+        (va, ra, sd_a), (vb, rb, sd_b) = _runs(res, a, k), _runs(res, b, k)
+        out[k] = _verdict(k, float(va.mean() - vb.mean()), sd_a, sd_b, ra - rb)
+        out[k].update({"n_a": len(a), "n_b": len(b)})
+    return out
+
+
+def step_diff(res: dict, a: list, b: list, c: list) -> dict:
+    """(mean A - mean B) - (mean B - mean C) per metric (--step): the run term SD_A^2 + 4 SD_B^2 + SD_C^2, recorded
+    as sd_a^2 = SD_A^2 + 2 SD_B^2 and sd_b^2 = 2 SD_B^2 + SD_C^2; None where a side has one model."""
+    out = {}
+    for k in [k for k in res[a[0]] if all(k in res[m] for m in a + b + c)]:
+        (va, ra, sa), (vb, rb, sb), (vc, rc, sc) = (_runs(res, side, k) for side in (a, b, c))
+        sd_a, sd_b = ((float(np.sqrt(sa ** 2 + 2 * sb ** 2)), float(np.sqrt(2 * sb ** 2 + sc ** 2)))
+                      if None not in (sa, sb, sc) else (None, None))
+        out[k] = _verdict(k, float(va.mean() - 2 * vb.mean() + vc.mean()), sd_a, sd_b, ra - 2 * rb + rc)
+        out[k].update({"sd_runs": {"a": sa, "b": sb, "c": sc}, "n_a": len(a), "n_b": len(b), "n_c": len(c)})
     return out
 
 
 def _sd(x: np.ndarray) -> float | None:
     return float(np.std(x, ddof=1)) if np.all(np.isfinite(x)) else None
+
+
+def _jets(rows: np.ndarray, y: np.ndarray) -> str:
+    return hashlib.sha256(rows.tobytes() + y.tobytes()).hexdigest()
+
+
+def cache_read(f: pathlib.Path, meta: dict) -> dict | None:
+    """A model's cached {metric: (value, resamples)}, None if absent; refused if it was made otherwise (meta)."""
+    if not f.exists():
+        return None
+    z = np.load(f, allow_pickle=False)
+    got = json.loads(str(z["meta"]))
+    if got != meta:
+        raise SystemExit(f"FATAL: {f} was made from {got}, not {meta}")
+    return {k[2:]: (float(z[k]), z["r:" + k[2:]]) for k in z.files if k.startswith("v:")}
+
+
+def cache_write(f: pathlib.Path, meta: dict, m: dict) -> None:
+    f.parent.mkdir(parents=True, exist_ok=True)
+    tmp = f.with_name(f.stem + ".tmp.npz")
+    np.savez(tmp, meta=np.array(json.dumps(meta, sort_keys=True)), **{f"v:{k}": np.array(v) for k, (v, _) in m.items()},
+             **{f"r:{k}": r for k, (_, r) in m.items()})
+    os.replace(tmp, f)
+
+
+def _sides(spec: str, n: int, flag: str) -> list[list[str]]:
+    name, sides = spec.split("=", 1)
+    out = [side.split(",") for side in sides.split("/")]
+    if len(out) != n or not all(all(x) for x in out):
+        raise SystemExit(f"FATAL: {flag} {spec}: NAME=" + "/".join(["A1,A2"] * n) + " expected")
+    return [name] + out
 
 
 def main(argv=None) -> int:
@@ -206,61 +296,98 @@ def main(argv=None) -> int:
     ap.add_argument("--take-rows-of", metavar="NAME", help="reduce every model to this model's rows")
     ap.add_argument("--per-class", action="store_true")
     ap.add_argument("--headline", action="store_true", help="accuracy (probabilities) or R30 (a score) beside the AUC")
+    ap.add_argument("--headline-only", action="store_true", help="the headline metrics alone, no AUC")
+    ap.add_argument("--native-groups", action="store_true", help="JetClass-II's macro AUC over its resonant, QCD classes")
     ap.add_argument("--diff", action="append", default=[], metavar="NAME=A1,A2/B1,B2",
                     help="mean over models A minus mean over models B, per metric (decision L3)")
+    ap.add_argument("--step", action="append", default=[], metavar="NAME=A1,A2/B1,B2/C1,C2",
+                    help="(mean A - mean B) - (mean B - mean C), per metric")
+    ap.add_argument("--second-task", choices=TASKS, help="each headline metric's ratio, this task's over --task's")
+    ap.add_argument("--cache", type=pathlib.Path, help="per-model resampled metrics, read or written")
+    ap.add_argument("--cache-only", action="store_true", help="fill --cache; no --out")
     ap.add_argument("--b", type=int, default=B_DEFAULT)
     ap.add_argument("--seed", type=int, default=SEED_DEFAULT)
-    ap.add_argument("--out", required=True, type=pathlib.Path)
+    ap.add_argument("--out", type=pathlib.Path)
     a = ap.parse_args(argv)
-    if a.out.exists():
+    if (a.out is None) != a.cache_only or (a.cache_only and a.cache is None):
+        raise SystemExit("FATAL: --out, or --cache-only with --cache")
+    if a.out is not None and a.out.exists():
         raise SystemExit(f"FATAL: {a.out} exists; use a new output")
+    if a.second_task and not (a.headline or a.headline_only):
+        raise SystemExit("FATAL: --second-task takes the ratio of the headline metrics: add --headline")
     paths = dict(m.split("=", 1) for m in a.model)
     if len(paths) != len(a.model):
         raise SystemExit("FATAL: a model name is given twice")
     pairs = list(dict.fromkeys(tuple(p.split("/", 1)) for p in a.pair))
-    diffs = {}
-    for d in a.diff:
-        name, sides = d.split("=", 1)
-        diffs[name] = [side.split(",") for side in sides.split("/", 1)]
-        if len(diffs[name]) != 2 or not all(diffs[name]):
-            raise SystemExit(f"FATAL: --diff {d}: NAME=A1,A2/B1,B2 expected")
-    if len(diffs) != len(a.diff):
-        raise SystemExit("FATAL: a --diff name is given twice")
-    unknown = ({n for p in pairs for n in p} | {n for ab in diffs.values() for side in ab for n in side}) - set(paths) \
-        | ({a.take_rows_of} - set(paths) - {None})
+    diffs = {d[0]: d[1:] for d in (_sides(x, 2, "--diff") for x in a.diff)}
+    steps = {d[0]: d[1:] for d in (_sides(x, 3, "--step") for x in a.step)}
+    if len(diffs) != len(a.diff) or len(steps) != len(a.step) or set(diffs) & set(steps):
+        raise SystemExit("FATAL: a --diff or --step name is given twice")
+    unknown = ({n for p in pairs for n in p} | {n for ab in [*diffs.values(), *steps.values()] for side in ab
+                                                for n in side}) - set(paths) | ({a.take_rows_of} - set(paths) - {None})
     if unknown:
         raise SystemExit(f"FATAL: {sorted(unknown)} are not models")
     # one model in memory at a time: the reference model's jets fix the resamples
     ref = a.take_rows_of or next(iter(paths))
     first = load(pathlib.Path(paths[ref]), a.task)
     rows, y = first[0], first[1]
-    c = counts(y, a.b, a.seed)
+    second = load(pathlib.Path(paths[ref]), a.second_task) if a.second_task else None
+    opts = {"task": a.task, "second_task": a.second_task, "b": a.b, "seed": a.seed, "take_rows_of": a.take_rows_of,
+            "per_class": a.per_class, "headline": a.headline, "headline_only": a.headline_only,
+            "native_groups": a.native_groups, "jets_sha256": _jets(rows, y),
+            "jets2_sha256": _jets(*second[:2]) if second else None}
+    c = c2 = None
     res = {}
     for n in paths:
-        s = align(n, first if n == ref else load(pathlib.Path(paths[n]), a.task), ref, rows, y,
-                  bool(a.take_rows_of))
-        res[n] = metrics(y, s, c, a.per_class, a.headline)
-        print(f"  {n:20} " + " ".join(f"{k}: {'' if k in HEADLINE else '1-AUC='}{v:.6g}" for k, (v, _) in res[n].items()
+        meta = {**opts, "input": paths[n]}
+        got = cache_read(a.cache / f"{n}.npz", meta) if a.cache else None
+        if got is None:
+            c = counts(y, a.b, a.seed) if c is None else c
+            s = align(n, first if n == ref else load(pathlib.Path(paths[n]), a.task), ref, rows, y,
+                      bool(a.take_rows_of))
+            got = metrics(y, s, c, a.per_class, a.headline, a.native_groups, a.headline_only)
+            if second:
+                # other jets: their own resamples (seed + 1), shared by every model
+                c2 = counts(second[1], a.b, a.seed + 1) if c2 is None else c2
+                s2 = align(n, second if n == ref else load(pathlib.Path(paths[n]), a.second_task), ref, *second[:2],
+                           bool(a.take_rows_of))
+                h2 = headline(second[1], s2, c2)
+                got.update({f"{k}_ratio": (v / got[k][0], r / got[k][1]) for k, (v, r) in h2.items() if k in got})
+            if a.cache:
+                cache_write(a.cache / f"{n}.npz", meta, got)
+        res[n] = got
+        print(f"  {n:20} " + " ".join(f"{k}: {'1-AUC=' if is_auc(k) else ''}{v:.6g}" for k, (v, _) in res[n].items()
                                       if not k.startswith("class_")), flush=True)
+    if a.cache_only:
+        print(f"cached {len(res)} models in {a.cache}")
+        return 0
     doc = {"script": "experiments/STATS/paired_bootstrap.py",
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),
            "task": a.task, "b": a.b, "seed": a.seed, "resampling": "test jets, with replacement within each class",
            "n_jets": int(y.size), "class_counts": {int(k): int((y == k).sum()) for k in np.unique(y)},
-           "jets_sha256": hashlib.sha256(rows.tobytes() + y.tobytes()).hexdigest(),
-           "models": {n: {"input": paths[n], **{k: {"value" if k in HEADLINE else "one_minus_auc": v, "sd": _sd(r)}
+           "jets_sha256": opts["jets_sha256"],
+           "models": {n: {"input": paths[n], **{k: {"one_minus_auc" if is_auc(k) else "value": v, "sd": _sd(r)}
                                                 for k, (v, r) in m.items()}}
                       for n, m in res.items()},
            "pairs": {}}
-    if diffs:
+    if second:
+        doc.update({"second_task": a.second_task, "second_seed": a.seed + 1, "second_n_jets": int(second[1].size),
+                    "second_jets_sha256": opts["jets2_sha256"]})
+    if diffs or steps:
         doc["rule_l3"] = ("delta = mean over A - mean over B; pass = |delta| > 3 sigma, sigma^2 = sd_a^2 + sd_b^2 + "
                           "boot_sd^2 (decision L3, 2026-11-13)")
         doc["diffs"] = {name: {"a": ab[0], "b": ab[1], **group_diff(res, *ab)} for name, ab in diffs.items()}
+    if steps:
+        doc["rule_step"] = ("delta = (mean A - mean B) - (mean B - mean C); sigma^2 = SD_A^2 + 4 SD_B^2 + SD_C^2 + "
+                            "boot_sd^2, written as sd_a^2 = SD_A^2 + 2 SD_B^2 and sd_b^2 = 2 SD_B^2 + SD_C^2")
+        doc["diffs"].update({name: {"a": abc[0], "b": abc[1], "c": abc[2], "step": True, **step_diff(res, *abc)}
+                             for name, abc in steps.items()})
     with np.errstate(divide="ignore", invalid="ignore"):
         for p, q in pairs:
             doc["pairs"][f"{p}/{q}"] = {k: {"ratio": v / res[q][k][0] if res[q][k][0] > 0 else None,
                                             "sd": _sd(r / res[q][k][1]),
                                             "ln_ratio_sd": _sd(np.log(r / res[q][k][1]))}
-                                        for k, (v, r) in res[p].items() if k not in HEADLINE}
+                                        for k, (v, r) in res[p].items() if is_auc(k)}
     a.out.parent.mkdir(parents=True, exist_ok=True)
     tmp = a.out.with_name(a.out.name + ".tmp")
     tmp.write_text(json.dumps(doc, indent=1))
