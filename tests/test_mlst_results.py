@@ -3905,15 +3905,15 @@ def _l3_entry(delta, sd_a, sd_b, boot):
 
 def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_of_runs_and_paired_bootstrap(tmp_path):
     """tab:tests (PI 2026-11-23, LEDGER SP-9, merge 6; PI SC-1 (1)): one row per stated difference, Delta, each side's run
-    SD, the paired test-jet bootstrap SD and Delta/sigma with sigma^2 = sd_a^2 + sd_b^2 + boot^2, printed at sigma's
-    place; \\pending{bootstrap} where no bootstrap is stored, \\pending{rerun bootstrap} where the file's runs or values
+    SD, the paired test-jet bootstrap SD and Delta/sigma with sigma^2 = sd_a^2 + sd_b^2 + boot^2, Delta at sigma's
+    place and each SD at its own; \\pending{bootstrap} where no bootstrap is stored, \\pending{rerun bootstrap} where the file's runs or values
     are not the ones Table 1 prints (a fine-tuning run since rerun, SP-11); a sigma that is not the quadrature sum
     stops the build."""
     runs = M._paper(ROOT)
     acc = {m: 0.84 + 0.001 * k for k, m in enumerate(runs["L188"] + runs["R16_Q1"])}
     per = {"jc1": {m[len("mtx-"):]: {1_000_000: [{"accuracy": acc[m]}]} for m in acc}}
     doc = {"b": 200, "models": {m: {"accuracy": {"value": v, "sd": 1e-4}} for m, v in acc.items()},
-           "diffs": {"17-188": {"a": runs["R16_Q1"], "b": runs["L188"], "accuracy": _l3_entry(-0.00462, 0.00055, 0.00057, 0.00011)}}}
+           "diffs": {"17-188": {"a": runs["R16_Q1"], "b": runs["L188"], "accuracy": _l3_entry(-0.00462, 0.00054, 0.00058, 0.00011)}}}
     (tmp_path / "bootstrap" / "l3").mkdir(parents=True)
     (tmp_path / "bootstrap" / "l3" / "ft_jc1_N1000000.json").write_text(json.dumps(doc))
     body, reps = M.table_tests(tmp_path, runs, {}, {}, {}, per)
@@ -3923,8 +3923,9 @@ def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_o
     i = lines.index(head + "*")
     rows = lines[i + 1:i + 1 + 7]
     name = lambda a, b: f"{M.LABEL[a]} $-$ {M.LABEL[b]}"         # noqa: E731
-    sig = _l3_entry(-0.00462, 0.00055, 0.00057, 0.00011)["sigma"]
-    want = name("R16_Q1", "L188") + " & $-$0.0046 & 0.0006 & 0.0006 & 0.0001 & " + f"{-0.00462 / sig:.2f}".replace("-", "$-$")
+    # delta at sigma's place (0.00080: four decimals), each SD at its own (PDG: 0.00054 -> 0.0005, 0.00011 -> 0.00011)
+    sig = _l3_entry(-0.00462, 0.00054, 0.00058, 0.00011)["sigma"]
+    want = name("R16_Q1", "L188") + " & $-$0.0046 & 0.0005 & 0.0006 & 0.00011 & " + f"{-0.00462 / sig:.2f}".replace("-", "$-$")
     assert any(r.rstrip("*").rstrip().removesuffix(r"\\").rstrip() == want for r in rows), rows
     # a row with no stored bootstrap, and one whose file does not hold the paper's values
     assert any(r.startswith(name("L162", "L188") + r" & \multicolumn{5}{c}{\pending{bootstrap}}") for r in rows)

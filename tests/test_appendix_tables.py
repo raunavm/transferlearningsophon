@@ -97,12 +97,12 @@ def test_the_class_map_holds_the_pretrained_levels_in_blocks_of_the_17_class_gro
     groups = {}
     for r in ROWS:
         groups.setdefault(r["R16_Q1"], []).append(r)
-    heads = [ln for ln in table.splitlines() if ln.startswith("\\multicolumn{") and "17-class group" in ln]
+    heads = [ln for ln in table.splitlines() if ln.startswith("\\multicolumn{") and "of the 17-class label set" in ln]
     assert len(heads) == len(groups) == 17
     for gid, members in groups.items():
         n = len(members)
-        assert any(f"17-class group {gid}: {A.group_tex(members[0]['R16_Q1_name'])}, {n} {'class' if n == 1 else 'classes'}"
-                   in h for h in heads), gid
+        assert any(f"group {gid} of the 17-class label set, {A.group_tex(members[0]['R16_Q1_name'])} "
+                   f"({n} {'class' if n == 1 else 'classes'})" in h for h in heads), gid
     head = table.split("\\endfirsthead")[0]
     assert not any(f" & {k} " in head or f" & {k} \\\\" in head for k in ("64", "30")) and "level}" not in head
     assert "tab:pairs" not in table and "tab:app-levels" not in table and "\\ref{sec:" not in table

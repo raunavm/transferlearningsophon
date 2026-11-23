@@ -4671,7 +4671,8 @@ def _tests_side(e: dict, first: str) -> tuple:
 
 def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_doc=None, mass_doc=None) -> tuple:
     r"""tab:tests (TESTS): (the table, the bootstrap replica counts read). A row's numbers are its stored L3 difference,
-    printed at the decimal place of sigma (make_tables.pdg); an AUC row is minus the stored 1 - AUC difference. A row is
+    delta printed at the decimal place of sigma, each SD at its own (make_tables.pdg); an AUC row is minus the stored
+    1 - AUC difference. A row is
     \pending{bootstrap} without a stored bootstrap, and \pending{rerun bootstrap} where its file's runs are not the
     paper's or their values are not the ones Table 1 prints (a fine-tuning run since rerun: SP-11)."""
     runs = _pooled(runs)
@@ -4755,8 +4756,9 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
                              + r"}} \\")
                 continue
             d, a, b, bs, sig = v
-            place = _pdg_place(sig)
-            block.append(lab + " & " + " & ".join(num(x, place) for x in (d, a, b, bs)) + " & "
+            # delta at sigma's place, each standard deviation at its own (make_tables.pdg), so that none prints as zero
+            sd = lambda x: num(x, _pdg_place(x)) if x > 0 else "0"      # noqa: E731
+            block.append(lab + " & " + " & ".join([num(d, _pdg_place(sig))] + [sd(x) for x in (a, b, bs)]) + " & "
                          + f"{d / sig:.2f}".replace("-", "$-$") + r" \\")
         # a block's rows never break apart from its heading; between two blocks a space, where the page may break
         out += ([r"\noalign{\penalty-100}\addlinespace"] if k else []) + [ln.rstrip() + "*" for ln in block[:-1]] + block[-1:]
@@ -5364,7 +5366,7 @@ def table_compute_stages(comp, runs, fmt_int, extra=(), ft_h=None) -> str:
     have = sum(m in comp for m in models)
     pre = f"pretraining, {have} runs" + (rf" \pending{{{len(models) - have} runs without a record}}" if have < len(models) else "")
     rows = [(pre, h)] + [(f"fine-tuning {name}", ft_h[k]) for k, name in FT_HOURS_ROWS if ft_h]
-    lines = [r"\begin{tabular}{l>{\raggedright\arraybackslash}p{8.4cm}r}", r"\toprule",
+    lines = [r"\begin{tabular}{l>{\raggedright\arraybackslash}p{5.2cm}r}", r"\toprule",
              r"stage & GPU types (hours) & GPU-hours \\", r"\midrule"]
     for name, hh in rows:
         types = ", ".join(_whole(f"{g} ({hh[g]:.0f})") for g in sorted(hh, key=lambda g: -hh[g])) or "--"

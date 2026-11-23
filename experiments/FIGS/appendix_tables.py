@@ -168,8 +168,8 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
             if last is not None:
                 body.append("\\addlinespace[2pt]")
             n = size[r["R16_Q1"]]
-            body.append(f"\\multicolumn{{{ncol}}}{{@{{}}l}}{{\\textit{{{sizes['R16_Q1']}-class group {r['R16_Q1']}: "
-                        f"{group_tex(r['R16_Q1_name'])}, {n} {'class' if n == 1 else 'classes'}}}}} \\\\*")
+            body.append(f"\\multicolumn{{{ncol}}}{{@{{}}l}}{{\\textit{{group {r['R16_Q1']} of the {sizes['R16_Q1']}-class label "
+                        f"set, {group_tex(r['R16_Q1_name'])} ({n} {'class' if n == 1 else 'classes'})}}}} \\\\*")
         last = r["R16_Q1"]
         body.append(native_tex(r["class_name"]) + " & " + " & ".join(r[g] for g in MAP_LEVELS)
                     + "".join(f" & {p[r['class_name']]}" for _, _, p in parts) + " \\\\")
