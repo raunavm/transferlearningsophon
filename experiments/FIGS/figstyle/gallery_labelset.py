@@ -4,6 +4,7 @@ style_v4 only. The numbers come through the selection code of paper_figures and 
 is written here. All work happens inside the draw functions."""
 from __future__ import annotations
 
+import functools
 import json
 import math
 
@@ -654,23 +655,53 @@ def _probe(row: str, mode: str = "ft"):
                                      + (f" {S.PROBE}" if mode == "probe" else ""))
 
 
-def _settled(series: dict, key: str, kind: str) -> dict:
-    """series without its superseded points (LEDGER RR-3, FT-8, SP-11: a superseded run is never drawn): below ParT's
-    full top and quark/gluon sets, a point is drawn only from the one-rule read-out (fixed_metrics, or its partial
-    read-out in a preview) and only where its row has a recorded rate; a row still in its rate search is rerun once it
-    settles, and the trees before the one rule are superseded."""
-    one_rule = M.ft_source(P.DATA).split()[0] in (M.FIXED, M.FIXED_PARTIAL)
-    rate = M._rate_builder().row_rate
-    return {n: v for n, v in series.items() if (key in M.FIXED_PART_FULL and n >= M.FULL_N[key])
-            or (one_rule and rate(M.BUDGET_TASK[key], n, kind) is not None)}
+@functools.lru_cache(maxsize=1)
+def _fixed_cells() -> dict:
+    """The one rule's fixed-schedule cells (mlst_results._budget_cells of fixed_metrics, or of its partial read-out in a
+    preview); the build stops on any other read-out (RR-7: no silent fallback to the trees before the one rule)."""
+    src = M.ft_source(P.DATA)
+    if src.split()[0] not in (M.FIXED, M.FIXED_PARTIAL):
+        raise SystemExit(f"FATAL (RR-7): the fine-tuning read-out is {src}; a training-size point reads only the "
+                         "one rule's fixed-schedule cells")
+    return M._budget_cells(P.DATA / "budget" / src.split()[0])
+
+
+def _settled(series: dict, key: str, kind: str, row: str, inits: list, met: str) -> dict:
+    """series without its pending points, every drawn point checked (LEDGER RR-3, FT-8, SP-11: a superseded run is never
+    drawn; RR-7, PI 2026-11-23: every training-size point reads the fixed-schedule cell at its row's recorded rate, or
+    the build stops, also in a preview). The full top and quark/gluon sets keep ParT's recipe (FIXED_PART_FULL). Below
+    them a point waits while its row has no recorded rate (build_ft_budget_jobs.row_rate); otherwise its values must be
+    those of its inits' fixed-schedule cells, trained at that rate (Herwig: the rate of the quark/gluon cells it
+    re-scores), or the build stops."""
+    cells, bad, out = _fixed_cells(), [], {}
+    tree, sub = M.BUDGET_TREE[key]
+    base = key if sub is None else next(k for k, t in M.BUDGET_TREE.items() if t == (tree, None))     # the training
+    for n, vals in series.items():
+        if key in M.FIXED_PART_FULL and n >= M.FULL_N[key]:
+            out[n] = vals
+            continue
+        want = M._rate_builder().row_rate(M.BUDGET_TASK[key], n, kind)
+        if want is None:
+            continue
+        rates = {(r.get("recipe") or {}).get("lr") for i in inits for r in cells.get((base, i, n), [])}
+        read = sorted(r[met] for i in inits for r in cells.get((key, i, n), []) if r.get(met) is not None)
+        if rates != {want} or read != sorted(vals):
+            bad.append(f"{key} {row} N={n}: rates {sorted(map(str, rates))}, recorded {want}, {len(vals)} values "
+                       f"drawn, {len(read)} in the cells")
+        out[n] = vals
+    if bad:
+        raise SystemExit(f"FATAL (RR-7): training-size points not from the fixed-schedule cell at the row's recorded "
+                         f"rate: {bad}")
+    return out
 
 
 def _tuned(row: str, tag: bool = False):
     if row == "SCRATCH":
-        return lambda k, ds, met: _model(_settled(P.scratch_series(M, I["per"], k, met), k, "scratch"), "SCRATCH", "ft",
-                                         S.LEGEND["SCRATCH"])
-    return lambda k, ds, met: _model(_settled(P.ft_series(M, I["per"], POOLED, k, met, row), k, "pre"), row, "ft",
-                                     S.LEGEND[row] + (f" {S.FINE_TUNED}" if tag else ""))
+        return lambda k, ds, met: _model(_settled(P.scratch_series(M, I["per"], k, met), k, "scratch", row,
+                                                  [M.SCRATCH], met), "SCRATCH", "ft", S.LEGEND["SCRATCH"])
+    inits = [m[len("mtx-"):] for m in POOLED[row]]
+    return lambda k, ds, met: _model(_settled(P.ft_series(M, I["per"], POOLED, k, met, row), k, "pre", row, inits,
+                                              met), row, "ft", S.LEGEND[row] + (f" {S.FINE_TUNED}" if tag else ""))
 
 
 def _size(path, makers: list, absent: str, auc: bool, style: str = L.SIZE, auc_makers=None, stars: bool = True) -> None:

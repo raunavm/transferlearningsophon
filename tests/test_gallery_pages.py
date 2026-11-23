@@ -242,6 +242,32 @@ def test_the_headline_panels_of_one_metric_share_one_relative_range_below_and_ab
     matplotlib.pyplot.close(figs[0])
 
 
+def test_every_training_size_point_reads_the_fixed_cell_at_its_rows_recorded_rate(monkeypatch):
+    """RR-7 (PI 2026-11-23): every fine-tuned training-size point (Fig. 6, A8) reads the fixed-schedule cell at its
+    row's recorded rate, or the build stops, also in a preview: the full top and quark/gluon sets keep ParT's recipe, a
+    row without a recorded rate waits, a cell trained at another rate or a value not its cell's stops the figure
+    (Herwig at the rate of the quark/gluon cells it re-scores), and so does a read-out other than the one rule's."""
+    import types
+    rec = lambda lr, v: {"recipe": {"lr": lr}, "r30": v}      # noqa: E731
+    cells = {("qg", "l188-s1", 10_000): [rec("1e-2", 50.0)], ("qg", "l188-s1", 100_000): [rec("1e-2", 60.0)],
+             ("qg_herwig", "l188-s1", 100_000): [{"r30": 30.0}]}
+    original = L._fixed_cells
+    monkeypatch.setattr(L, "_fixed_cells", lambda: cells)
+    rates = {("qg", 10_000): "1e-2", ("qg", 100_000): "3e-4"}
+    monkeypatch.setattr(L.M, "_rate_builder", lambda: types.SimpleNamespace(row_rate=lambda t, n, k: rates.get((t, n))))
+    full = L.M.FULL_N["qg"]
+    assert L._settled({10_000: [50.0], 1_000: [40.0], full: [100.0]}, "qg", "pre", "L188", ["l188-s1"], "r30") == {
+        10_000: [50.0], full: [100.0]}
+    for key, v in (("qg", 60.0), ("qg_herwig", 30.0)):           # trained at 1e-2, the row's recorded rate 3e-4
+        with pytest.raises(SystemExit, match="RR-7"):
+            L._settled({100_000: [v]}, key, "pre", "L188", ["l188-s1"], "r30")
+    with pytest.raises(SystemExit, match="RR-7"):                 # a value that is not its cell's
+        L._settled({10_000: [51.0]}, "qg", "pre", "L188", ["l188-s1"], "r30")
+    monkeypatch.setattr(L.M, "ft_source", lambda data: "budget, budget_long, fulldecay, prefull (the trees before ...)")
+    with pytest.raises(SystemExit, match="RR-7"):                 # no silent fallback to the older trees
+        original.__wrapped__()
+
+
 def test_the_pair_legend_holds_only_the_curves_drawn(monkeypatch):
     """A model with no curve in any panel, or only a complete separation, has no legend entry."""
     eps = np.linspace(0.1, 1.0, 10)
