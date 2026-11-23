@@ -5034,9 +5034,11 @@ SCULPT_UNSTATED = (("L162_MASS", "L188"), ("R16_Q1_MASS", "L188"), (RAND_POOLED,
 # pass 3 sigma (ratio_words); the null takes the place of the ratio in its sentence's grammar
 _NULL = "no difference beyond three standard deviations"       # in parentheses
 _NO_MORE, _NO_FEWER = "no more errors beyond three standard deviations", "no fewer errors beyond three standard deviations"
-# LEDGER TX-1 (PI 2026-11-23): a null is worded "not resolved", never as an equality: "... reaches a resolution not
-# resolved from that of ...", "... gives a linear probe errors not resolved from those of ..."
-_same = lambda noun: "errors not resolved from those" if noun == "errors" else f"a {noun} not resolved from that"  # noqa: E731
+# LEDGER TX-1 (PI 2026-11-23): a null is never worded as an equality ("the resolution of"): "... reaches a resolution
+# within three standard deviations of that of ...", "... gives a linear probe errors within three standard deviations
+# of those of ..."
+_same = lambda noun: ("errors within three standard deviations of those" if noun == "errors"      # noqa: E731
+                      else f"a {noun} within three standard deviations of that")
 _JC2_LP, _JC2_MLP = "JetClass-II, AUC, " + HEADING["lp"], "JetClass-II, AUC, " + HEADING["mlp"]
 _BB, _BC, _BBQQ = (rf"{_PAIR[k]}, AUC, " + HEADING["lp"] for k in ("bb_vs_cc", "bc_vs_bq_cs", "bbqq_vs_ccqq"))
 _TOP_FILL, _QG_FILL = (rf"{t}, $R_{{30}}$, " + HEADING["lp"] + ", missing inputs"
@@ -5076,7 +5078,7 @@ PR_ROWS = {
                                               "L188_HERWIG_JETS", "L188_PYTHIA_JETS", _same("rejection")),
     "MlstFtQgRthirtyHerwigOverPythiaScratchPr": (r"quark/gluon tagging, $R_{30}$, " + HEADING["ft"]
                                                  + ", Herwig against Pythia jets", "SCRATCH_HERWIG_JETS",
-                                                 "SCRATCH_PYTHIA_JETS", "a rejection on Herwig jets not resolved from that on Pythia jets"),
+                                                 "SCRATCH_PYTHIA_JETS", "a rejection on Herwig jets within three standard deviations of that on Pythia jets"),
     "MlstLpQgRthirtyFullOverInitBnPr": (_QG_FILL, "L188", INIT_BN, _NULL),
     # discussion
     "MlstLpTopRthirtyFullOverInitBnZeroPr": (_TOP_FILL, "L188_ZERO", "INIT_BN_ZERO", _NULL),
@@ -7862,6 +7864,9 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list, whole: bool = F
 OPTIONAL_FILL = {"__PROBE_CENTRE__": ""}      # a sentence that depends on the data read, empty without it
 
 
+APPENDIX_FLOATS = ("inputs", "compute", "coarse", "pair_auc", "sculpt_main", "partrepro")
+
+
 def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, notes: list | None = None,
            label_cm: float = NO_WRAP, budget: float = PORTRAIT_CM, portrait_label_cm: float | None = None,
            colsep_pt: float = 4.0, pages: bool = False, whole: str | None = None, size: str = "",
@@ -7879,6 +7884,9 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     without breaking another rule of the brief (tab:probes; PI 2026-11-12: nothing else is below the
     body size); the caption stays at the body size."""
     env = "table*" if wide else "table"
+    # PI 2026-11-23 (LEDGER DL-14, typographic only): the appendix's upright tables may share a float page ([tbp]); the
+    # main text's stay at the top of a text page ([t])
+    spec = "[tbp]" if key in APPENDIX_FLOATS else "[t]"
     label, cap = CAPTIONS[key][0], printed_caption(key)
     for k, v in {**OPTIONAL_FILL, **(fill or {})}.items():
         cap = cap.replace(k, v)
@@ -7922,7 +7930,7 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
         lab = (r">{\raggedright\arraybackslash}p{" + f"{portrait_label_cm:.1f}" + "cm}") if portrait_label_cm else "l"
         boxes = [_stretch(re.sub(r"^(\s*\\begin\{tabular\}\{)l", lambda m: m.group(1) + lab, t, count=1)) for t in parts]
         # the column padding 4 pt (LaTeX's default 6 pt): the type stays at the tables' size, nothing is scaled
-        return "\n".join([rf"\begin{{{env}}}[t]", r"\centering", rf"\setlength{{\tabcolsep}}{{{colsep_pt:g}pt}}",
+        return "\n".join([rf"\begin{{{env}}}{spec}", r"\centering", rf"\setlength{{\tabcolsep}}{{{colsep_pt:g}pt}}",
                           rf"\caption{{{cap}}}", rf"\label{{{label}}}", *([size] if size else []),
                           "\n\\par\\bigskip\n".join(boxes), *tail, rf"\end{{{env}}}", ""])
     cut = {o: [t.strip() for b in parts for t in ([b] if whole else split_wide(b, w, NO_WRAP))]
@@ -7942,7 +7950,7 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     boxes = [_stretch(t) for t in cut["upright" if upright else "turned"]]
     turn = ([r"\begin{landscape}"], [r"\end{landscape}"]) if not upright else ([], [])
     if _height_cm(boxes, cap) <= (PAGE_CM if upright else LAND_PAGE_CM):
-        return "\n".join([*turn[0], rf"\begin{{{env}}}[t]", r"\centering", *sep,
+        return "\n".join([*turn[0], rf"\begin{{{env}}}{spec}", r"\centering", *sep,
                           rf"\caption{{{cap}}}", rf"\label{{{label}}}", *([size] if size else []),
                           "\n\\par\\bigskip\n".join(boxes), *tail,
                           rf"\end{{{env}}}", *turn[1], ""])

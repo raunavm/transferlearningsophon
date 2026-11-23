@@ -68,9 +68,8 @@ CAPTIONS = {
         "row's network against 188 classes, as linear probes (left) or fine-tuned (right) on one million "
         "class-balanced jets; points below the diagonal are recalled less often. Their test-jet-weighted mean is the "
         "accuracy of figures {fig:F2} and {fig:F2-ft}. Means over three pretraining runs with ±1 standard deviation "
-        "bars over runs and test jets; colors give what the 17 classes merge the class with. Filled points differ from "
-        "the 188-class recall by more than three standard deviations, both run spreads and the paired bootstrap over "
-        "the class's test jets combined. Values are in the data release."
+        "bars over runs and test jets; colors give what the 17 classes merge the class with. Filled points are the "
+        "classes the first sentence counts. Values are in the data release."
     ),
     # PI 2026-11-23 (SP-13): the page captions of F4-mech, F4-other and F9b follow the paper's section captions (1db8bc37);
     # F4-mech's, at 141 words as written there, loses six connecting words to stay within 135 (CA-1); PI 2026-11-22

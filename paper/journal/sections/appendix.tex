@@ -230,7 +230,6 @@ trains at \FtHeadCap{} at every rate. Table~\ref{tab:lrsweep} lists every rate t
 % fine-tuning approaches training only the new output layer on frozen features; for [rows] the chosen rate is \FtSearchFloor."
 % CHECK: experiments/FT/rate_search.py (rules), build_ft_budget_jobs.FIXED_ROW_RATE(_SCRATCH) (the recorded rates)
 
-\input{tables/mlst_lrsweep}
 
 \subsection{Transfer to $X\to b\bar b$ and $X\to bs$}\label{sec:app-xbx}
 
@@ -267,6 +266,9 @@ included, used \MlstFtGpuHours{} GPU-hours, \MlstFtGpuHoursSearch{} of them spen
 validation.
 
 \input{tables/compute}
+
+% LEDGER DL-14: Table 7 set at the end of section B, so the text of B.4-B.6 fills the pages before it
+\input{tables/mlst_lrsweep}
 
 % ----------------------------------------------------------------------------
 \section{Missing input features}\label{sec:app-inputs}
@@ -309,7 +311,6 @@ over all models, and it is applied to every model, the random network included:
 top and quark/gluon tagging under the chosen substitution, and table~\ref{tab:fill} under the other two, for
 every network, the random network with recomputed BatchNorm statistics included.
 
-\input{tables/mlst_fill}
 
 % ----------------------------------------------------------------------------
 \section{Method checks}\label{sec:app-checks}\label{sec:app-mlp}\label{sec:app-partrepro}
@@ -328,6 +329,9 @@ step.
 % CHECK: review of 5c40d69 (B10): the 2-sigma criterion is gone; the sentence states the 3-sigma result of its tab:tests
 % row (ParT's script on our cluster - ParT from scratch, published), which needs a term for the published side (no
 % per-jet scores) and the one run of ours: the pending marker stays until that row has its sigma
+
+% LEDGER DL-14: Table 9 set with the method checks' landscape tables, so D's text fills C's last page
+\input{tables/mlst_fill}
 
 \input{tables/mlst_mlp}
 

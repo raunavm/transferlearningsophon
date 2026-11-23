@@ -76,7 +76,8 @@ def test_the_main_text_is_the_pis_list_in_order():
     # and the evidence for the claims the main text does not show, the tested-differences table among them
     assert [k for k, t, _ in G.TABLES if t == G.APPENDIX] == [
         "tab:app-vocabulary", "tab:inputs", "tab:lrsweep", "tab:compute", "tab:fill", "tab:mlp", "tab:partrepro",
-        "tab:summaryauc", "tab:tests", "tab:coarse", "tab:jc1_class_auc"]
+        "tab:summaryauc", "tab:tests", "tab:coarse", "tab:pairauc", "tab:jc1_class_auc",
+        "tab:sculptmain"]       # tab:pairauc: LEDGER DL-R #4; tab:sculptmain: LEDGER CS-2b
     assert not {"tab:jetclass", "tab:benchtop", "tab:benchqg", "tab:benchqgherwig"} & set(G.TIER)
     # the partitions' mass probes wait (PI 2026-11-14), two supplement figures; PI 2026-11-23, LEDGER SP-9, SP-11: the
     # tested differences without a paired bootstrap and the published comparison's JetClass rows until the rerun
@@ -151,7 +152,7 @@ def test_numbers_count_within_each_tier_and_kind():
     assert G.number("tab:sets") == "Table 1" and G.number("tab:summary") == "Table 2"
     assert [G.number(k) for k in ("tab:published", "tab:mass")] == ["Table 3", "Table 4"]
     assert [G.number(k) for k in ("tab:app-vocabulary", "tab:summaryauc", "tab:tests", "tab:jc1_class_auc")] == [
-        "Table A1", "Table A8", "Table A9", "Table A11"]
+        "Table A1", "Table A8", "Table A9", "Table A12"]      # tab:pairauc is Table A11 (LEDGER DL-R #4)
     assert G.place("F9b") == "Appendix, Fig. A5" and G.place("F11") == "Main text, Fig. 7"      # F4-qcd before it
     assert G.number("F4-mech-ft") == "Fig. S1" and G.number("tab:xbx") == "Table S1"
     assert "tab:ptbins" not in G.TIER and G.number("tab:computefull") == "Table S16"
@@ -184,8 +185,9 @@ def test_the_coverage_map_has_a_row_a_family_and_no_blank_cell():
     # PI 2026-11-14: the rule holds for the tables too; outside the three families the partitions are in the supplement
     assert G.NETWORK_RULE.startswith("Every figure and table of the paper shows the label sets")
     assert "17-class partitions appear in the paper for the headline metrics, class pairs and resonance tagging" in G.NETWORK_RULE
-    assert cov["Training size"][2] == cov["ROC curves"][5] == cov["Sculpting"][2] == "supplement"
-    assert cov["Per class"][2] == "Table A11"         # tab:jc1_class_auc's pooled partitions (PI 2026-11-21)
+    assert cov["Training size"][2] == cov["ROC curves"][5] == "supplement"
+    assert cov["Sculpting"][2] == "Table A13"         # tab:sculptmain (LEDGER CS-2b)
+    assert cov["Per class"][2] == "Table A12"         # tab:jc1_class_auc's pooled partitions (PI 2026-11-21)
     assert G.TIER["tab:labelsetsfull"] == G.TIER["tab:jc1_class_aucfull"] == G.TIER["tab:sculptfull"] == G.SUPPLEMENT
 
 

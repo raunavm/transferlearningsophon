@@ -1960,7 +1960,8 @@ def test_a_table_that_fits_is_one_tabular_across_the_whole_line():
                       M.LABEL["L188"] + r" & 1 & 2 \\", r"\bottomrule", r"\end{tabular}"])
     t = M._float("coarse", body)
     assert t.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}") == 1 and "landscape" not in t
-    assert "adjustbox" not in t and r"\begin{table}[t]" in t
+    # LEDGER DL-14 (PI 2026-11-23): an appendix table (coarse) may share a float page, [tbp]; the main text's stay [t]
+    assert "adjustbox" not in t and r"\begin{table}[tbp]" in t and r"\begin{table}[t]" in M._float("mass", body)
     # at the body size (PI 2026-11-12): no size command, no changed column padding; the mode once, in italics
     assert not _sizes_in(t) and "tabcolsep" not in t and r"}p{" not in t
     lines = t.splitlines()
@@ -2494,7 +2495,9 @@ def test_the_summary_table_holds_exactly_the_values_of_figs_2_and_3():
             # under the italic heading of the mode: the label sets, each mass network under its own, then the
             # partitions indented under their subheading; the random network closes the probes, from scratch the
             # fine-tuned rows
-            assert lines[6] == M._full_row(6, M.HEADING[mode], italic=True)
+            # review of render 5f4e1b8 (B17): Table 2's headings also say what fills the missing inputs (SUMMARY_FILL_NOTE)
+            assert lines[6] == M._full_row(6, M.HEADING[mode] + (M.SUMMARY_FILL_NOTE[mode] if key == "summary" else ""),
+                                           italic=True)
             assert [ln.split(" & ")[0] for ln in lines[7:13]] == [M.LABEL[a] for a in M.SETS]
             assert lines[13] == M._full_row(6, M.PARTITIONS) and part.count(M._full_row(6, M.PARTITIONS)) == 1
             # LEDGER CS-6 (2026-11-12, a quoted ratio computable from a table in the paper; review of 5c40d69, A2): Table 1
@@ -4282,9 +4285,12 @@ def test_table_one_takes_the_transfer_head_columns_of_the_resonance_table():
         assert all(ln.count(" & ") == 7 for ln in lines if " & " in ln and not ln.startswith((" & ", r"\multicolumn")))
     # LEDGER CA-12 (2026-11-13; review of 5c40d69, B15): the linear-probe heading spans the probe columns only, the
     # transfer head's over its two
-    assert lp.splitlines()[6] == (rf"\multicolumn{{6}}{{@{{}}l}}{{\textit{{{M.HEADING['lp']}}}}} & "
+    # review of render 5f4e1b8 (B17, C5): the headings name the fills, and the fine-tuned block heads the resonance
+    # columns "from scratch", the only network that fills them there
+    assert lp.splitlines()[6] == (rf"\multicolumn{{6}}{{@{{}}l}}{{\textit{{{M.HEADING['lp'] + M.SUMMARY_FILL_NOTE['lp']}}}}} & "
                                   rf"\multicolumn{{2}}{{c}}{{\textit{{{M.XBX_HEAD}}}}} \\")
-    assert ft.splitlines()[6] == M._full_row(8, M.HEADING["ft"], italic=True)
+    assert ft.splitlines()[6] == (rf"\multicolumn{{6}}{{@{{}}l}}{{\textit{{{M.HEADING['ft'] + M.SUMMARY_FILL_NOTE['ft']}}}}} & "
+                                  rf"\multicolumn{{2}}{{c}}{{\textit{{{M.SCRATCH_LABEL}}}}} \\")
     row = lambda part, name: next(ln for ln in part.splitlines() if ln.startswith(name + " & "))   # noqa: E731
     cells = lambda ln: [c.strip() for c in ln.removesuffix(r"\\").split(" & ")]                 # noqa: E731
     want = XR.efficiencies(M, runs, fits, "xbb", "head")["L188"]
@@ -4319,11 +4325,13 @@ def test_the_per_class_count_of_the_jetclass_ii_sentence_is_the_build_s_and_chec
     em = _PEm()
     M.jc2_recall_macros(em, {"diffs": {"R16_Q1-L188": d}}, tmp_path / "probe_jc2.json", MT.words)
     assert em.m["MlstJcTwoRecallCoarseLowClasses"] == "1" and em.m["MlstJcTwoRecallCoarseHighClassesWord"] == "one"
+    # LEDGER DL-17 (PI 2026-11-23): the check covers every difference of every per-class file read (check_recall_tests)
     with pytest.raises(SystemExit, match="beyond 3 sigma"):
-        M.jc2_recall_macros(_PEm(), {"diffs": {"R16_Q1-L188": {**d, "lower": [0, 1]}}}, tmp_path / "p.json", MT.words)
+        M.check_recall_tests({"diffs": {"R16_Q1-L188": {**d, "lower": [0, 1]}}}, tmp_path / "p.json")
     with pytest.raises(SystemExit, match="quadrature"):
-        M.jc2_recall_macros(_PEm(), {"diffs": {"R16_Q1-L188": {**d, "sigma": [0.001] * 3}}}, tmp_path / "p.json",
-                            MT.words)
+        M.check_recall_tests({"diffs": {"R16_Q1-L188": {**d, "sigma": [0.001] * 3}}}, tmp_path / "p.json")
+    with pytest.raises(SystemExit, match="beyond 3 sigma"):
+        M.check_recall_tests({"diffs": {"L162-L188": {**d, "higher": []}}}, tmp_path / "p.json")
 
 
 def test_a_mean_and_sd_print_alike_in_every_table_and_bold_ties_only_at_the_printed_values():
