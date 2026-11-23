@@ -518,8 +518,11 @@ def test_every_literature_number_is_in_its_quoted_passage():
     got, prov = _repo_macros()
     facts = _load(prov["LitJetClassTwoNJetsMillion"]["source_file"])["facts"]
     assert facts, "no literature facts"
+    # PI 2026-11-13 (LEDGER TN-2): a whole number of four or more digits has thousands separators (1{,}602)
+    sep = lambda s: f"{int(s):,}".replace(",", "{,}") if re.fullmatch(r"\d{4,}", s) else s     # noqa: E731
     for f in facts:
-        assert got[f["macro"]] == M.math_safe(f.get("tex", f["value"])) and f["value"] in f["quote"]
+        assert got[f["macro"]] == M.math_safe(sep(f.get("tex", f["value"]))) and f["value"] in f["quote"]
+    assert got["LitPartTopRejScratch"] == "1{,}602" and got["LitPartTopRejFt"] == "2{,}766"
     assert got["LitJetClassTwoNResonantClasses"] == "161"      # docs/GROUND_TRUTH.md
     assert got["LitJetClassTwoNQcdClasses"] == "27"            # docs/GROUND_TRUTH.md
 
@@ -641,10 +644,13 @@ def test_the_spread_is_rounded_by_the_pdg_rule(sd, want):
 def test_the_mean_is_printed_to_the_place_of_its_rounded_spread():
     assert M.fmt_pm(1377, 351) == "1{,}380\\,$\\pm$\\,350"
     assert M.fmt_pm(0.997684, 0.0000745) == "0.9977\\,$\\pm$\\,0.0001"   # four significant figures at most
-    assert M.fmt_pm(0.997684, 0.00003) == "0.9977\\,$\\pm$\\,$<$0.0001"   # a spread below the fourth figure
+    # PI 2026-11-13 (LEDGER TN-2): never "+- <0.0001"; one more digit, and a value below one that rounds to one is
+    # written ">0.9999"
+    assert M.fmt_pm(0.997684, 0.00003) == "0.99768\\,$\\pm$\\,0.00003"   # a spread below the fourth figure
+    assert M.fmt_pm(0.99998, 0.00001) == M.fmt_pm(0.99996, 0.0002) == "$>$0.9999"
     assert M.fmt_pm(0.98524, 0.00007) == "0.9852\\,$\\pm$\\,0.0001"
     assert M.fmt_pm(0.98524, 0.00024) == "0.9852\\,$\\pm$\\,0.0002"   # a spread at the fourth figure prints
-    assert M.fmt_pm(57.705, 0.0013) == "57.70\\,$\\pm$\\,$<$0.01"
+    assert M.fmt_pm(57.705, 0.0013) == "57.705\\,$\\pm$\\,0.001"
     assert M.fmt_pm(0.5, 0.97) == "0.5\\,$\\pm$\\,1.0"
     assert M.fmt_pm_sci(2.3213e-3, 0.0712e-3) == "$(2.32 \\pm 0.07)\\times10^{-3}$"
     assert M.fmt_pm(851.3, 0.0) == "851"                 # seeds that agree exactly

@@ -80,7 +80,7 @@ on its frozen features on Sophon's $X\to b\bar b$ and $X\to bs$ benchmark~\cite{
 \paperfig{\linewidth}{F1}
 \caption{Design of the study. (a)~One network is pretrained on the same jets four times, once for each of
 four nested label sets with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, through a hidden layer of
-\DesignHeadHidden{} units; each merged class spans the rows it merges, and rows are schematic. (b)~The pretrained network is then used in two ways: its frozen
+\DesignHeadHidden{} units; each merged class spans the rows it merges, and rows are schematic. (b)~The pretrained network is then used in two ways. Its frozen
 features, the output of the backbone with its weights held fixed, feed a linear probe, or a new head with
 its own hidden layer of \DesignHeadHidden{} units is added and all weights are fine-tuned. The colors of
 the label sets are those of every later figure.}
@@ -99,8 +99,7 @@ coarser level of the hierarchy, and, counted in wrongly ordered pairs of jets, m
 flavor is the costliest single merge. At the same number of classes, the random partitions lose less than
 the \Kcoarse-class level, and a single flavor boundary lowers the error of the probe, so which classes are
 merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \pending{Table 1 after the reruns}
-on JetClass, simulated without pileup and with every input of the network present, and on top tagging and
-quark/gluon discrimination, whose public datasets lack some of the network's inputs, the label sets show no
-resolved difference. The auxiliary mass regression makes the jet mass more precisely predictable from the
-frozen features at a small cost to the classification. A pretraining label set for jets should therefore contain every distinction that
+on JetClass, and on top tagging and quark/gluon discrimination the label sets show no resolved difference. The
+auxiliary mass regression makes the jet mass more precisely predictable from the frozen features, with no
+resolved cost to the classification of the pretraining classes. A pretraining label set for jets should therefore contain every distinction that
 downstream discriminants sum over and, for use with frozen features, the flavor boundaries.

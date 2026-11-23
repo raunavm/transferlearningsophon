@@ -120,9 +120,9 @@ validation accuracy of each label set against epoch.
 \paperfig{\linewidth}{VAL}
 \caption{Validation accuracy of the pretraining against epoch for the \Kfull-, \Kres-, \Kmid- and
 \Kcoarse-class label sets and the \Kres- and \Kcoarse-class networks with an added mass output, each on
-its own classes, as the mean over its runs: \MlstNRunsWord{} for a label set, \MlstMassNRunsWord{} for a mass
-network. A coarser label set
-has fewer classes to tell apart, so its accuracy is not comparable with that of a finer set.}
+its own classes, as the mean over \MlstNRunsWord{} runs for a label set and \MlstMassNRunsWord{} for a mass
+network. A coarser label set has fewer classes to tell apart, so its accuracy is not comparable with that of a finer
+set.}
 \label{fig:VAL}
 \end{figure}
 
@@ -317,12 +317,15 @@ Table~\ref{tab:mlp} gives the MLP probe on the same frozen features at the large
 JetClass and the class pairs, and of top and quark/gluon with the missing inputs set to zero, on the test sets
 of the linear probes. Table~\ref{tab:partrepro} gives ParT's top-tagging training script~\cite{part} run on our
 cluster unchanged and then with Sophon's changes added one at a time, each variant a single run. Unchanged, it
-reaches a rejection at 30\% signal efficiency of \MlstPartreproRthirtyPart, within twice the published standard
-deviation of ParT's \LitPartTopRejScratch, so ParT reproduces here. The network trained from scratch in
+reaches a rejection at 30\% signal efficiency of \MlstPartreproRthirtyPart, against ParT's published
+\LitPartTopRejScratch{} (table~\ref{tab:published}), and \pending{does not differ from it by more than three
+standard deviations (table~\ref{tab:tests})}. The network trained from scratch in
 table~\ref{tab:published} keeps Sophon's rescaling of every jet to a common transverse momentum because the
 pretrained models use it, so the comparison of pretrained and from-scratch networks shares every preprocessing
 step.
-% CHECK: |MlstPartreproRthirtyPart - 1602| < 2 x 81 (1,711 today)
+% CHECK: review of 5c40d69 (B10): the 2-sigma criterion is gone; the sentence states the 3-sigma result of its tab:tests
+% row (ParT's script on our cluster - ParT from scratch, published), which needs a term for the published side (no
+% per-jet scores) and the one run of ours: the pending marker stays until that row has its sigma
 
 \input{tables/mlst_mlp}
 
@@ -359,12 +362,12 @@ resonant and QCD jets.
 \begin{figure}[tbp]
 \centering
 \paperfig{\linewidth}{A10}
-\caption{Linear probes on the frozen features of the four label sets and of the \Kres- and \Kcoarse-class
-networks with an added mass output against the number of training jets: (a) accuracy on the \Kfull{}
-classes of class-balanced JetClass-II and (b) on JetClass, and $R_{30}$, one over the fraction of background jets kept when the cut keeps 30\% of signal jets, the top-tagging working point, on (c) top tagging and on quark/gluon discrimination scored on the (d) Pythia and (e) Herwig
-samples. Lines are means over runs and bands one standard deviation. Stars are ParT's
-published results, as in figure~\ref{fig:A8}. On top and quark/gluon discrimination the missing inputs are
-substituted as chosen on validation.}
+\caption{With linear probes, \Kmid{} and \Kcoarse{} classes are less accurate on class-balanced JetClass-II than
+\Kfull{} classes at every training-set size. Panels show linear probes on the frozen features of the four label
+sets and the two mass networks against the number of training jets, the panels defined as in
+figure~\ref{fig:A8}. Lines are means over \MlstNRunsWord{} runs per label set and \MlstMassNRunsWord{} per mass
+network, bands one standard deviation. The missing inputs of top and quark/gluon discrimination are substituted as
+chosen on validation.}
 \label{fig:A10}
 \end{figure}
 
@@ -374,9 +377,10 @@ substituted as chosen on validation.}
 
 \input{tables/mlst_jc1_class_auc}
 
-\begin{figure}[tbp]
-\centering
-\paperfig{\linewidth}{F4-other}
+% review of 5c40d69 (B1): the figure is about 24 cm tall at full width, its tick labels at the 8 pt minimum (LEDGER
+% FG-3), so it cannot shrink and no page holds it with its caption; the caption stands at the foot of a text page and
+% the figure, at full size, fills the next float page under its number (caption package, \ContinuedFloat)
+\begin{figure}[b]
 \caption{With linear probes, \Kmid{} and \Kcoarse{} classes separate four pairs that \Kcoarse{} classes merge, $X\to
 YY\to bbqq$ from $ccqq$, QCD $b\bar b$ from $c\bar c$, and QCD jets with a $b$ quark, or a $c$ and no $b$, from
 light QCD jets, the second-named the background, less well than \Kfull{} classes, and \Kres{} classes, which
@@ -388,6 +392,12 @@ partition, split into those merging the pair (\MlstPairRandMergedBbqqN{}) and ke
 network, not drawn, reaches \MlstPairInitRhalfOtherMin{} to \MlstPairInitRhalfOtherMax{} at 50\% of signal
 jets. Table~\ref{tab:tests} has the tested differences.}
 \label{fig:F4-other}
+\end{figure}
+\begin{figure}[p]
+\ContinuedFloat
+\centering
+\paperfig{\linewidth}{F4-other}
+\caption*{\figurename~\ref{fig:F4-other}.}
 \end{figure}
 
 \begin{figure}[tbp]

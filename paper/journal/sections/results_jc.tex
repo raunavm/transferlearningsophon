@@ -26,10 +26,10 @@ classes. On frozen features of the \Kmid-class model it makes \MlstCmpJcTwoMidOv
 the \Kfull-class model, and on the \Kcoarse-class model \MlstCmpJcTwoCoarseOverFullPr{}
 (tables~\ref{tab:summaryauc} and~\ref{tab:tests}). The step from \Kmid{} to \Kcoarse{} classes costs more than
 the step from \Kres{} to \Kmid{} classes, although it merges far fewer classes and removes one kind of
-distinction where the other removes three. The accuracy falls from \Kres{} to \Kmid{} and to \Kcoarse{}
-classes, most between \Kres{} and \Kmid{}
-classes (figure~\ref{fig:F2}(a); table~\ref{tab:summary}); between \Kfull{} and \Kres{} classes it does not
-differ by more than three standard deviations. Scored instead on the \Kcoarse{} groups of the \Kcoarse-class
+distinction where the other removes three. In accuracy the order of the two steps is the other way: the accuracy
+falls from \Kres{} to \Kmid{} and to \Kcoarse{} classes, most between \Kres{} and \Kmid{} classes
+(figure~\ref{fig:F2}(a); tables~\ref{tab:summary} and~\ref{tab:tests}); between \Kfull{} and \Kres{} classes it does
+not differ by more than three standard deviations. Scored instead on the \Kcoarse{} groups of the \Kcoarse-class
 labels, the task those labels are trained on, linear probes on the \Kres-, \Kmid- and \Kcoarse-class models do
 not differ from the \Kfull-class model by more than three standard deviations (table~\ref{tab:coarse}).
 % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes (today 1.269 against 1.197).
@@ -45,12 +45,13 @@ not differ from the \Kfull-class model by more than three standard deviations (t
 \caption{With linear probes at the largest training sets, \Kmid{} and \Kcoarse{} classes are less accurate on
 class-balanced JetClass-II than \Kfull{} classes, and no label set, mass network or partition differs from
 \Kfull{} classes in $R_{30}$ by more than three standard deviations in top-quark against QCD and quark against
-gluon jets. Accuracy is the fraction of jets classified correctly, and $R_{30}$ one over the fraction of
-background jets kept when the cut keeps 30\% of signal jets, the top-tagging working point. Circles are means and
+gluon jets. $R_{30}$ is one over the fraction of background jets kept when the cut keeps 30\% of signal jets, the
+top-tagging working point. Circles are means and
 bars standard deviations over \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per mass network
 and flavor-boundary partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions, whose bar
-is their spread. The band is the \Kfull-class mean $\pm$ standard deviation. The random network, far below
-most panels, and every value are in table~\ref{tab:summary}.}
+is their spread. The band is the \Kfull-class mean $\pm$ standard deviation. The random network, not drawn, has
+accuracies of \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$ of \MlstFTwoInitRthirtyMin{} to
+\MlstFTwoInitRthirtyMax{} (table~\ref{tab:summary}, with every value).}
 \label{fig:F2}
 \end{figure}
 % CHECK: F2(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
@@ -85,16 +86,16 @@ discriminant that weights each QCD subclass separately (section~\ref{sec:labelse
 that subdivision pays for the merge.
 % CHECK: MlstCmpJcTwoQcdResOverFull > 1 beyond 3 sigma in its tab:tests row (today 1.087 +- 0.006).
 
-At a fixed number of classes, which classes are merged decides the cost. A random partition with
+At a fixed number of classes, which classes are merged changes the cost. A random partition with
 \Kcoarse{} classes makes \MlstCmpJcTwoRandOverCoarsePr{} than the \Kcoarse-class level of the
 hierarchy, and \MlstCmpJcTwoRandOverMidPr{} than the \Kmid-class level, which has more than twice as
 many classes (table~\ref{tab:tests}); in accuracy, too, the random partitions lie above the \Kmid-class
-level (figure~\ref{fig:F2}(a); table~\ref{tab:summary}).
+level (figure~\ref{fig:F2}(a); tables~\ref{tab:summary} and~\ref{tab:tests}).
 % CHECK: MlstCmpJcTwoRandOverMid < 1 beyond 3 sigma in its tab:tests row (today 0.918 +- 0.007); if it fails,
 % write "as few errors as the 43-class level".
 The flavor-boundary partitions, at the same class count, lie between the
 \Kcoarse-class level and the random partitions, with the partition that has no flavor boundary nearest
-the \Kcoarse-class level.
+the \Kcoarse-class level, in errors and in accuracy (table~\ref{tab:tests}).
 % CHECK: MlstCmpJcTwoFzeroOverCoarse > MlstCmpJcTwoF{one,oner}OverCoarse > MlstCmpJcTwoRandOverCoarse
 % (today 0.928/0.935, 0.794/0.775 and 0.786/0.772, 0.724).
 Because the partitions were selected to cut across the \Kcoarse-class groups
@@ -105,9 +106,11 @@ Fine-tuning on JetClass-II measures how much of a merged distinction fine-tuning
 the \Kfull-class pretraining task itself, so every distinction the coarse labels removed is rewarded again.
 After fine-tuning on \FtSizeESix{} class-balanced jets, the \Kcoarse-class model makes
 \pending{Table 1 after the reruns} than the \Kfull-class model, where a linear probe on its frozen features makes
-\MlstCmpJcTwoCoarseOverFullPr{} (table~\ref{tab:summary}). Per class, the \Kcoarse-class loss is broad: with
-linear probes, most of the \Kfull{} classes are recalled less often than by the \Kfull-class model, beyond three
-standard deviations, and after fine-tuning \pending{Table 1 after the reruns} (figure~\ref{fig:PC-jc2}).
+\MlstCmpJcTwoCoarseOverFullPr{} (tables~\ref{tab:summaryauc} and~\ref{tab:tests}). Per class, the \Kcoarse-class loss
+is broad: with linear probes, \MlstJcTwoRecallCoarseLowClasses{} of the \Kfull{} classes are recalled less often
+than by the \Kfull-class model and \MlstJcTwoRecallCoarseHighClassesWord{} more often, beyond three standard
+deviations over runs and test jets, and after fine-tuning \pending{Table 1 after the reruns}
+(figure~\ref{fig:PC-jc2}).
 % CHECK: the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40) fills Table 1's fine-tuned JetClass-II column and PC-jc2's right half; write the fine-tuned clause from them, tested at 3 sigma
 
 \begin{figure}[t]
@@ -137,7 +140,7 @@ decay topology, and the pair stays readable.
 The \Kmid-class labels, which merge every decay with its lepton-flavor counterpart, also remove a distinction
 that the finer labels keep: on $X\to ee$ against $X\to\mu\mu$ the AUC of a linear probe falls to
 \MlstLpEemmAucMid{}, against \MlstLpEemmAucFull{} at \Kfull{} classes and \MlstLpEemmAucInitBn{} for the
-random network (table~\ref{tab:tests}).
+random network with BatchNorm recomputed (table~\ref{tab:tests}).
 
 The output layer can lose a discriminant while the frozen features keep most of what it needs. The
 boosted $|V_{cb}|$ measurement uses the scores of $X\to bq$ and $X\to cs$ in the denominator of its
@@ -156,8 +159,9 @@ recovers part of the loss of the \Kcoarse-class level on both pairs, neither of 
 \MlstCmpBbFoneOverCoarsePr{} of the \Kcoarse-class level on $X\to b\bar b$ against $X\to c\bar c$ and
 \MlstCmpBcFoneOverCoarsePr{} on $X\to bc$ against $X\to bq$ and $X\to cs$. The partition with a random flavor
 boundary recovers part of it on the second pair (\MlstCmpBcFonerOverCoarsePr), while the partition with no
-flavor boundary does not differ there from the \Kcoarse-class level by more than three standard deviations
-(figure~\ref{fig:F4-mech}; table~\ref{tab:tests}). On $X\to YY\to bbqq$ against $X\to YY\to ccqq$, which the
+flavor boundary does not differ there from the \Kcoarse-class level by more than three standard deviations,
+under the linear probe or the MLP probe (\MlstMlpCmpBcFzeroOverCoarsePr{}; figure~\ref{fig:F4-mech};
+tables~\ref{tab:tests} and~\ref{tab:mlp}). On $X\to YY\to bbqq$ against $X\to YY\to ccqq$, which the
 $b$-quark boundary does cut, the partition with a random flavor boundary makes \MlstCmpBbqqFonerOverFonePr{}
 than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}).
 % CHECK: L3 with run SDs (gallery_placement, F4-mech): b-quark boundary - 17 on X->bb vs cc 8 sigma and on X->bc 6 sigma; random flavor boundary - 17 on X->bc 6 sigma (on X->bb vs cc 2.3, not claimed); no flavor boundary on X->bc 0.9 sigma from 17

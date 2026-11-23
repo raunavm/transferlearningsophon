@@ -8,14 +8,15 @@ wrongly ordered pairs of jets, merging quark flavor is the costliest single merg
 Merging the QCD classes leaves the resonant classes unchanged and costs the QCD classes. Random partitions
 with as many classes, selected to cut across the \Kcoarse-class groups, lose less than the physical
 \Kcoarse-class label set, so the class count alone does not set the cost.
-After fine-tuning, the cost remains where every input is present: on JetClass the
+After fine-tuning, on JetClass the
 \Kcoarse-class model gives \pending{Table 1 after the reruns} than the \Kfull-class model, while the
 \Kres- and \Kmid-class models are \pending{Table 1 after the reruns} (table~\ref{tab:summary}).
 % CHECK: recompute from Table 1 after the JetClass 1e6 rerun and re-test at 3 sigma (PI SP-11): the 17-class cost must pass and the 162- and 43-class differences read "consistent" for this sentence to stand as written
-On top tagging and quark/gluon discrimination, which lack some inputs, the fine-tuned label sets show no
+On top tagging and quark/gluon discrimination the fine-tuned label sets show no
 resolved difference (table~\ref{tab:summary}).
 With the missing inputs set to zero, a linear probe on the frozen features of the \Kfull-class model
-matches the random network on top tagging (\MlstLpTopRthirtyFullOverInitBnZeroPr{}); with the
+matches the random network with BatchNorm recomputed on top tagging (\MlstLpTopRthirtyFullOverInitBnZeroPr{}), as an
+MLP probe does (\MlstMlpTopRthirtyFullOverInitBnPr{}); with the
 substitution chosen on validation it reaches \MlstLpTopRthirtyFullOverInitBnPr{} of that network, and
 \MlstLpQgRthirtyFullOverInitBnPr{} on quark/gluon discrimination (tables~\ref{tab:fill} and~\ref{tab:summary}).
 On top tagging the zero value, more than the missing information, keeps the
@@ -33,9 +34,9 @@ flavor: merging them leaves the resonant classes unchanged but costs the QCD pai
 (section~\ref{sec:labelsets}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of F4-other show 162 below 188
 Add an auxiliary mass regression: it makes the jet mass more precisely readable from the frozen features
 (table~\ref{tab:mass}). Its effect on mass sculpting is not resolved: no mass network differs from its own label set by more
-than three times the uncertainty (table~\ref{tab:tests}). Its cost to the classification of the pretraining classes
-is small; after fine-tuning on top tagging neither label set with it shows a change beyond three standard
-deviations, and \MlstMassNRunsWord{} runs per model cannot exclude a modest one
+than three times the uncertainty (table~\ref{tab:tests}). It shows no resolved cost to the classification of the
+pretraining classes, and after fine-tuning on top tagging neither label set with it shows a change beyond three
+standard deviations; \MlstMassNRunsWord{} runs per model cannot exclude a modest one
 (section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; the sculpting clause: gallery_placement.F10B_STATED is empty under L3 (no mass-regression difference beyond 3 sigma); M305 (the 17-class mass network's JetClass cost after fine-tuning) waits on Table 1 after the reruns
 For benchmarks with missing inputs, compare label sets by fine-tuning with the missing input features
 set to zero, which gives every label set identical inputs; input dropout during pretraining, which

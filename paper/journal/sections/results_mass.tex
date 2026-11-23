@@ -13,7 +13,7 @@ The auxiliary mass regression gives a narrower mass response than the reconstruc
 Over all test jets, the regressed mass of the \Kres-class network with an added mass output % CHECK: MlstMassHeadResMassOverUncorr below 1 in both runs
 reaches \MlstMassHeadResMassOverUncorrPr{} of $\msd$, that of the \Kcoarse-class % CHECK: MlstMassHeadCoarseMassOverUncorr not above MlstMassHeadResMassOverUncorr run by run, and within 2% of it (today 0.985 and 0.998)
 model is as narrow, and both stay narrower in every bin of jet $p_{\mathrm{T}}$ and of % CHECK: every pT bin of F9b has head resolution below groomed
-$\mgen$ (table~\ref{tab:mass}; figure~\ref{fig:F9b}). The regressed mass also reaches % CHECK: MlstMassHeadResMassOverMlpRes below 1 in both runs
+$\mgen$ (tables~\ref{tab:mass} and~\ref{tab:tests}; figure~\ref{fig:F9b}). The regressed mass also reaches % CHECK: MlstMassHeadResMassOverMlpRes below 1 in both runs
 \MlstMassHeadResMassOverMlpResPr{} of an MLP regression on the frozen features of the \Kres-class
 model pretrained without it, which, like the auxiliary mass regression, never sees the jet's class.
 
@@ -26,12 +26,12 @@ and the same regression on the \Kcoarse-class network with an added mass output 
 Both differences in resolution exceed three times their uncertainty (table~\ref{tab:tests}). Without the
 auxiliary target the label sets differ far less (\Kcoarse- over \Kfull-class model, \MlstCmpMlpCoarseOverFullPr). % CHECK: MlstCmpMlpCoarseOverFull much closer to 1 than MlstCmpMlpResMassOverRes
 The row of the random network in
-table~\ref{tab:mass} shows how much of the mass a network that never trained already exposes, and % CHECK: MlstMassMlpInit above MlstMassMlpFull (pretrained features carry more mass than the random network)
-every pretrained model's features carry more.
+table~\ref{tab:mass} shows how much of the mass a network that never trained already exposes, and % CHECK: the six tab:tests rows <network> - random network (mass, MLP) pass 3 sigma; the 17-class partitions are not in tab:mass and one of them fails (review rows, 23 Nov)
+the features of every pretrained network in that table carry more (table~\ref{tab:tests}).
 
 \input{tables/mlst_mass}
 
-The auxiliary mass regression costs the classification of the pretraining classes little. A linear
+The auxiliary mass regression shows no resolved cost to the classification of the pretraining classes. A linear
 probe on the frozen features of the \Kres-class network with an added mass output classifies % CHECK: MlstCmpJcTwoResMassOverRes today 1.022 and 1.016; its PrMax reads its tab:tests row (162mass-162, |Delta|/sigma 1.6 on 23 Nov: the null), and the null or "up to ... more errors" both fit "costs little"
 JetClass-II about as well as one on the \Kres-class model (\MlstCmpJcTwoResMassOverResPrMax{};
 table~\ref{tab:tests}). At \Kcoarse{} classes, where the mass term takes a larger share of the % CHECK: MlstMassLossShareCoarseMass above MlstMassLossShareResMass (today 28.7 vs 13.8 per cent)
@@ -74,14 +74,16 @@ it keeps more $X\to bs$ jets, a decay in no label set, than the network trained 
 \centering
 \paperfig{\linewidth}{F11}
 \caption{At a QCD efficiency of 1\%, \Kcoarse{} classes keep fewer $X\to b\bar b$ and $X\to bs$ jets than
-\Kfull{} classes. Panels show $\epsS/\sqrt{\epsB}$ of equation~(\ref{eq:signif}) against the QCD efficiency
-$\epsB$ for a transfer head on the frozen features of each label set and mass network, the same network trained
-from scratch and, for $X\to b\bar b$, Sophon's direct discriminant of the \Kfull- and \Kres-class networks and the
-\Kres-class network with an added mass output. Curves are means over \MlstNRunsWord{} runs per label set,
-\MlstMassNRunsWord{} per mass network and \MlstXbxScratchSeedsWord{} from scratch, ending where fewer than $\nmin$
-QCD jets pass. Jets lie in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV, and every model is scored on
-the same \XbbNEvalSignal{} $X\to b\bar b$, \XbsNEvalSignal{} $X\to bs$ and \XbsNEvalQcd{} QCD jets. The signal
-efficiencies at a QCD efficiency of 1\% are in table~\ref{tab:summary}.}
+\Kfull{} classes. Panels show the signal efficiency over the square root of the QCD efficiency, the reach of
+equation~(\ref{eq:signif}), against the QCD efficiency, for a transfer
+head on the frozen features of each label set and mass network, the same network trained from scratch on
+\MlstXbxScratchTrainBb{} ($X\to b\bar b$) or \MlstXbxScratchTrainBs{} ($X\to bs$) jets a class and, for
+$X\to b\bar b$, Sophon's direct discriminant of the \Kfull- and \Kres-class networks and the \Kres-class mass
+network. Curves are
+means over \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per mass network and
+\MlstXbxScratchSeedsWord{} from scratch, ending below $\nmin$ passing QCD jets, all on the same jets
+in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV. The signal efficiencies at a QCD efficiency of 1\%
+are in table~\ref{tab:summary}.}
 \label{fig:F11}
 \end{figure}
 % END XBX

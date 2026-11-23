@@ -14,28 +14,22 @@ before fine-tuning. Table~\ref{tab:published} compares the fine-tuned models wit
 
 \input{tables/mlst_published}
 
-% CHECK: pretrained against from scratch has no L3 entry (bootstrap/l3/ft_top_N1200000.json holds no scratch difference); state no direction until scratch - 188 (r30) passes 3 sigma
-% CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull agree with 1 within the run-to-run SD (today 0.97 +- 0.10 for 17 classes)
-The fine-tuned \Kfull-class model reaches an $R_{30}$ of \MlstFtTopRthirtyFull{} and the same network trained
-from scratch \MlstFtTopRthirtyScratch{}, and no other label set differs from the \Kfull-class model by more than
-three standard deviations (table~\ref{tab:summary}).
-
-% CHECK: MlstFtTopRthirtyFullOverPart below 1 (today 0.65); MlstFtTopRthirtyKinOverFull within the spread of the three 188-class runs
-All our fine-tuned models have a lower rejection than ParT pretrained on JetClass and fine-tuned~\cite{part}:
-the \Kfull-class model gives \MlstFtTopRthirtyFullOverPartPr{} (table~\ref{tab:published}). The missing inputs
-do not cause this difference, since the kinematic-inputs network, which has no missing inputs here, reaches the
-rejection of the \Kfull-class model fine-tuned with zeros. Trained from scratch, our network does not differ
-from ParT trained from scratch by more than three standard deviations, and ParT's own training script,
-run unchanged on our hardware, reproduces the published result (appendix~\ref{sec:app-partrepro}). The
-difference from ParT after fine-tuning is not attributed: our networks use Sophon's rescaling of the
-four-momenta, and they are pretrained on JetClass-II rather than JetClass, which adds pileup and has other
-classes and a wider range of jet transverse momentum.
+% review of 5c40d69 (A5): the 188-class network against from scratch is 2.81 sigma in its tab:tests row, so the two
+% values are not set side by side as a gain; (A1) no comparison with ParT fine-tuned (the b-quark boundary fails it on
+% run SDs alone, and 188 classes has no paired term): the values stay side by side in tab:published
+Fine-tuned on the full training set, no label set differs from the \Kfull-class model in $R_{30}$ by more than
+three standard deviations, and neither does the same network trained from scratch (tables~\ref{tab:summary} and~\ref{tab:tests}). The
+kinematic-inputs network, which has no missing inputs here, reaches the rejection of the \Kfull-class model
+fine-tuned with zeros. Trained from scratch, our network does not differ from ParT trained from scratch by more
+than three standard deviations, and ParT's own training script, run unchanged on our hardware, reproduces the
+published result (appendix~\ref{sec:app-partrepro}).
 
 % CHECK: MlstLpTopRthirtyFullOverInitBnZero agrees with 1 (two seeds of the randomly initialized network; today 1.04 and 1.08); MlstMlpTopRthirtyFullOverInitBn agrees with 1 (today 1.00 +- 0.31)
 % CHECK: draws close to the kinematic-only model, one run (MlstLpTopRthirtyDrawOverZeroFull and MlstLpTopRthirtyKinOverFull both 3.9 at c0ce260); "about the same", not "the same": they agree on R30, less exactly on AUC and R50
 With the missing inputs set to zero, a linear probe on the frozen features of the \Kfull-class model does no
-better than a linear probe on the random network, and both lie below every
-fine-tuned model (tables~\ref{tab:fill} and~\ref{tab:summary}). With random draws of real particles in place of
+better than a linear probe on the random network with BatchNorm recomputed, and both lie below every
+fine-tuned model (tables~\ref{tab:fill} and~\ref{tab:summary}). An MLP probe with the same zeros does no better
+than one on that random network either (\MlstMlpTopRthirtyFullOverInitBnPr{}; table~\ref{tab:mlp}). With random draws of real particles in place of
 the zeros, the substitution chosen on validation, the linear probe on the \Kfull-class features gives
 \MlstLpTopRthirtyDrawOverZeroFullPr{} that it gives with zeros, about the rejection of the linear probe on the
 kinematic-inputs network, which has no missing inputs. On top tagging, the loss of the linear probe therefore comes
@@ -52,9 +46,9 @@ flags and the charge, ParT's ``exp'' inputs~\cite{part}, and only the \FillQgNZe
 to zero. Every model is fine-tuned on Pythia jets and tested on both samples. Published taggers that use the
 particle type are from the same input scenario (table~\ref{tab:published}).
 
-Fine-tuned on the Pythia sample, the pretrained models reach the rejection of ParT fine-tuned after
-pretraining on JetClass~\cite{part}, and the label sets do not differ. The \Kfull-class model
-matches ParT (\MlstFtQgRthirtyFullOverPartPr{}; table~\ref{tab:published}), and the \Kcoarse-class model matches the % CHECK: MlstFtQgRthirtyFullOverPartPr must read the null of its tab:tests row (today 0.99 +- 0.02)
+Fine-tuned on the Pythia sample, the \Kfull-class model reaches the rejection of ParT fine-tuned after
+pretraining on JetClass~\cite{part} (\MlstFtQgRthirtyFullOverPartPr{}; table~\ref{tab:published}), and the
+label sets do not differ. The \Kcoarse-class model matches the % CHECK: MlstFtQgRthirtyFullOverPartPr must read the null of its tab:tests row (today 0.99 +- 0.02)
 \Kfull-class model (\MlstFtQgRthirtyCoarseOverFullPr{}; table~\ref{tab:summary}), although only the % CHECK: MlstFtQgRthirtyCoarseOverFullPr must read the null of its tab:tests row (today 0.99 +- 0.03); also Res, Mid
 \Kfull- and \Kres-class labels separate resonance decays to gluons from decays to light quarks, the
 distinction quark/gluon discrimination asks for. Tested on the Herwig sample, the fine-tuned \Kfull-class model
@@ -62,7 +56,7 @@ keeps \MlstFtQgRthirtyHerwigOverPythiaFullPr{} it has on Pythia jets, and the ne
 \MlstFtQgRthirtyHerwigOverPythiaScratchPr{} (table~\ref{tab:summary}); earlier generator comparisons found
 Herwig's quark and gluon jets less separable than Pythia's~\cite{gras}. With the displacement inputs substituted
 as chosen on validation (\LpSubstitutionQg), a linear probe on the frozen \Kfull-class features rejects more
-background than one on the random network (\MlstLpQgRthirtyFullOverInitBnPr{};
+background than one on the random network with BatchNorm recomputed (\MlstLpQgRthirtyFullOverInitBnPr{};
 table~\ref{tab:summary}).
 
 \subsection{Fine-tuning with few training jets}\label{sec:fewjets}
@@ -75,13 +69,13 @@ the label sets compare after fine-tuning at each size is \pending{figure~\ref{fi
 \begin{figure}[t]
 \centering
 \paperfig{\linewidth}{A8}
-\caption{Fine-tuned models of the four label sets and of the \Kres- and \Kcoarse-class networks with an
-added mass output against the number of training jets: (a) accuracy on the \Kfull{} classes of
-class-balanced JetClass-II and (b) on JetClass, and $R_{30}$, one over the fraction of background jets kept when
-the cut keeps 30\% of signal jets, the top-tagging working point, on (c) top tagging and on quark/gluon
-discrimination scored on the (d) Pythia and (e) Herwig samples, with the network trained from scratch in grey.
-Lines are means over runs and bands one standard deviation. Stars are ParT's published results: with the same
-inputs on JetClass, kinematic inputs only on top tagging, and kinematic inputs with the particle type on
-quark/gluon discrimination. On top and quark/gluon discrimination the missing inputs are set to zero.}
+\caption{\pending{The finding, after the reruns.} Fine-tuned
+networks of the four label sets and the two mass networks, and the network trained from scratch in grey, against
+the number of training jets. Panels show accuracy on (a) the \Kfull{} classes of class-balanced JetClass-II and
+(b) JetClass, and $R_{30}$, one over the fraction of background jets kept when the cut keeps 30\% of signal jets,
+the top-tagging working point, for (c) top-quark against QCD jets and quark against gluon jets scored on (d)
+Pythia and (e) Herwig jets. Lines are means over \MlstNRunsWord{} runs per label set and from scratch and
+\MlstMassNRunsWord{} per mass network, bands one standard deviation. Stars are ParT's published results, each
+with the inputs its dataset provides, and our missing inputs are set to zero.}
 \label{fig:A8}
 \end{figure}

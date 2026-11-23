@@ -300,18 +300,23 @@ def _fixed(x, place: int) -> str:
 
 def fmt_pm(mean, sd) -> str:
     """mean +- sd, sd PDG-rounded and the mean printed to the same place:
-    1377 +- 351 -> 1{,}380 +- 350. Never more than four significant figures (2026-10-31):
-    a spread below the fourth significant figure of the mean prints as an upper bound at
-    that figure, 0.997684 +- 0.0000745 -> 0.9977 +- <0.0001.
+    1377 +- 351 -> 1{,}380 +- 350. Never more than four significant figures (2026-10-31), except that a
+    spread below the fourth significant figure of the mean is never printed as "+- <0.0001" or "+- 0" but
+    with one more digit, 0.997684 +- 0.00003 -> 0.99768 +- 0.00003, and a value below one that rounds to
+    one is written ">0.9999" (PI 2026-11-13, LEDGER TN-2; review of 5c40d69, B8).
     Seeds that agree exactly (a spread of zero) print the common value alone."""
     if sd == 0:
         return fmt_one(mean)
     sd, place = pdg(sd)
     cap = 3 - math.floor(math.log10(abs(float(mean)))) if mean else place
     if place > cap:
+        if 0 < float(mean) < 1 and round(float(mean), cap) >= 1:
+            return f"$>${_fixed(1 - 10.0 ** -cap, cap)}"
         if round(sd, cap) == 0:
-            return f"{_fixed(mean, cap)}\\,$\\pm$\\,$<${_fixed(10.0 ** -cap, cap)}"
-        return f"{_fixed(mean, cap)}\\,$\\pm$\\,{_fixed(sd, cap)}"
+            cap = cap + 1 if round(sd, cap + 1) else place
+        place = cap
+    if 0 < float(mean) < 1 and round(float(mean), place) >= 1:
+        return f"$>${_fixed(1 - 10.0 ** -place, place)}"
     return f"{_fixed(mean, place)}\\,$\\pm$\\,{_fixed(sd, place)}"
 
 
@@ -500,6 +505,10 @@ class Emitter:
             raise SystemExit(f"FATAL: macro \\{name} emitted twice; the second value would "
                              f"silently win in LaTeX")
         body = math_safe(body)
+        # PI 2026-11-13 (LEDGER TN-2): never "+- <0.0001" or "+- 0" (one more digit, or ">0.9999"); checked where the
+        # value is written (RR-7)
+        if re.search(r"\\pm(\$|\})?(\\,)?\s*(\$<\$|\\ensuremath\{<\}|0(\.0+)?(?![\d.]))", body):
+            raise SystemExit(f"FATAL: \\{name} prints a spread as an upper bound or as zero: {body}")
         sha = self.sha256(source)
         rel = str(pathlib.Path(source).relative_to(self.root))
         comment = f"{rel} :: {json_path} :: sha256 {sha[:16]}" + (f" :: {note}" if note else "")
@@ -1185,6 +1194,10 @@ def emit_literature(em: Emitter, path: pathlib.Path) -> None:
         if re.sub(r"\D", "", shown) != re.sub(r"\D", "", f["value"]):
             raise SystemExit(f"FATAL: {path} fact {i} ({f['macro']}): tex {shown!r} is not "
                              f"the value {f['value']!r} typeset")
+        # thousands separators, as every other number of the paper (PI 2026-11-13, LEDGER TN-2; review of 5c40d69,
+        # B8: 1602 and 2766)
+        if re.fullmatch(r"\d{4,}", shown):
+            shown = f"{int(shown):,}".replace(",", "{,}")
         em.macro(f["macro"], shown, path, f"facts[{i}].value",
                  f"{f['source']} {f['location']}")
 

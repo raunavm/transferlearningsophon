@@ -972,6 +972,8 @@ def test_the_part_reproduction_table_and_macros(tmp_path):
         r"the same script with Sophon's jet-$p_{\mathrm{T}}$ rescaling"]
     assert "ParT, published" not in t and M.SCRATCH_LABEL not in t and "+" not in t
     assert rows[0] == r"Particle Transformer training script, unchanged & 0.9400 & 0.9858 & 420 & 1{,}711 & 118 \\"
+    # review of 5c40d69 (A8, LEDGER TN-4): the text's value is the table's, at the table's place (1,711 against 1,710)
+    assert em.m["MlstPartreproRthirtyPart"] == rows[0].split(" & ")[4]
     assert not any(M.SINGLE in ln for ln in rows) and r"1{,}224 & " in rows[2]
     assert "Every value is from a single run" in M.printed_caption("partrepro")
     # with the fine-tuning read-out, each column at the place of the top-tagging column it is read against (from
@@ -2429,13 +2431,16 @@ def test_the_summary_table_holds_exactly_the_values_of_figs_2_and_3():
             assert lines[6] == M._full_row(6, M.HEADING[mode], italic=True)
             assert [ln.split(" & ")[0] for ln in lines[7:13]] == [M.LABEL[a] for a in M.SETS]
             assert lines[13] == M._full_row(6, M.PARTITIONS) and part.count(M._full_row(6, M.PARTITIONS)) == 1
-            assert [ln.split(" & ")[0] for ln in lines[14:-2]] == ctl + [M.LABEL[M.INIT] if mode == "lp" else M.SCRATCH_LABEL]
+            # LEDGER CS-6 (2026-11-12, a quoted ratio computable from a table in the paper; review of 5c40d69, A2): Table 1
+            # prints the random network with BatchNorm recomputed, the reference of the text's top and quark/gluon ratios
+            refs = [M.LABEL[M.INIT]] + ([M.LABEL[M.INIT_BN]] if key == "summary" else []) if mode == "lp" else [M.SCRATCH_LABEL]
+            assert [ln.split(" & ")[0] for ln in lines[14:-2]] == ctl + refs
             assert lines[-2:] == [r"\bottomrule", r"\end{tabular}"]
             rows = [ln.removesuffix(r" \\").split(" & ") for ln in lines[7:13] + lines[14:-2]]
             assert all(len(r) == 6 and "--" not in r for r in rows)
             # bold (PI 2026-11-12): every column of a part has its best value; the random network is a reference row,
             # never bold and never the best; from scratch takes part
-            best = rows[:-1] if mode == "lp" else rows
+            best = rows[:-len(refs)] if mode == "lp" else rows
             assert all(any(M.BOLD_ON in r[j] for r in best) for j in range(1, 6)), (key, mode)
             assert mode == "ft" or M.BOLD_ON not in lines[-3]
         # printed: one precision per column and part, no "<", no "+- 0", no bare token; a mark stays outside the bold
@@ -4041,6 +4046,19 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
              (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, " + M.HEADING["mlp"], "R16_Q1", "L188")]
     kept += [(rf"{h}, signal efficiency (\%), classifier on the frozen features", a, "L188") for _, h in M.SUMMARY_XBX
              for a in M.FLAV]
+    # review of 5c40d69 (B3, B4; LEDGER SP-13 (a)): the rows of the statements the review found untested
+    kept += [(f"JetClass-II, accuracy, {lp}", a, b) for a, b in (("R16_Q1", "R42_Q1"), ("STEP_17_43", "STEP_43_162"),
+                                                                ("RAND", "R42_Q1"), ("FLAV_F0", "R16_Q1"),
+                                                                ("FLAV_F1", "FLAV_F0"), ("FLAV_F1R", "FLAV_F0"),
+                                                                ("RAND", "FLAV_F1"), ("RAND", "FLAV_F1R"))]
+    kept += [(f"top tagging, $R_{{30}}$, {ft}", "KIN", "L188"),
+             (f"top tagging, $R_{{30}}$, {lp}, missing inputs", "L188_DRAWS", "KIN"),
+             (f"top tagging, $R_{{30}}$, {ft} against the linear probe on the frozen features with zeros", "FT_EVERY",
+              "L188_LP_ZERO"),
+             (rf"{M._PAIR['bb_vs_cc']}, AUC, {lp}", "FLAV_F1", "L188"), (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, {lp}", "FLAV_F1R", "L188"),
+             (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, " + M.HEADING["mlp"], "FLAV_F0", "R16_Q1"),
+             ("jet mass, resolution, " + M.HEADING["mlp"], "R16_Q1_MASS", M.INIT),
+             ("jet mass, resolution, " + M.HEADING["head"], "L162_MASS_BINS", "SDMASS")]
     assert not [r for r in kept if r not in rows], [r for r in kept if r not in rows]
     gone = [(f"JetClass, accuracy, {lp}", a, "L188") for a in ("L162", "R42_Q1", "R16_Q1")]
     gone += [(f"JetClass-II, accuracy, {ft}, " + M._power("1000") + " training jets", "R16_Q1", "L188")]
@@ -4049,7 +4067,9 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
              (f"top tagging, $R_{{30}}$, {lp}, missing inputs", "L188", M.INIT),
              (f"quark/gluon tagging (Pythia), $R_{{30}}$, {lp}, missing inputs", "L188", M.INIT),
              (r"$X\to b\bar b$, signal efficiency (\%), classifier on the frozen features", "L188", "SCRATCH"),
-             (r"$X\to bs$, signal efficiency (\%), classifier on the frozen features", "RAND", "R16_Q1")]
+             (r"$X\to bs$, signal efficiency (\%), classifier on the frozen features", "RAND", "R16_Q1"),
+             # review of 5c40d69 (A1, LEDGER SP-13 (a)): no sentence compares the fine-tuned networks with ParT fine-tuned
+             (f"top tagging, $R_{{30}}$, {ft}, published models", "L188", "PART_FT_PUB")]
     assert not [r for r in gone if r in rows], [r for r in gone if r in rows]
     assert not any(h.startswith("JetClass, accuracy, " + ft + ", published") for h, *_ in rows)
     assert rows[(f"top tagging, $R_{{30}}$, {ft}, published models", "SCRATCH", "PART_PUB")] is None
@@ -4179,7 +4199,12 @@ def test_table_one_takes_the_transfer_head_columns_of_the_resonance_table():
         lines = part.splitlines()
         assert lines[2].endswith(r"\multicolumn{2}{c}{$\varepsilon_S$ (\%) at $\varepsilon_B = 1\%$} \\")
         assert lines[3] == r"\cmidrule(lr){5-6}\cmidrule(lr){7-8}" and lines[4].endswith(r"& $X\to b\bar b$ & $X\to bs$ \\")
-        assert all(ln.count(" & ") == 7 for ln in lines if " & " in ln and not ln.startswith(" & "))
+        assert all(ln.count(" & ") == 7 for ln in lines if " & " in ln and not ln.startswith((" & ", r"\multicolumn")))
+    # LEDGER CA-12 (2026-11-13; review of 5c40d69, B15): the linear-probe heading spans the probe columns only, the
+    # transfer head's over its two
+    assert lp.splitlines()[6] == (rf"\multicolumn{{6}}{{@{{}}l}}{{\textit{{{M.HEADING['lp']}}}}} & "
+                                  rf"\multicolumn{{2}}{{c}}{{\textit{{{M.XBX_HEAD}}}}} \\")
+    assert ft.splitlines()[6] == M._full_row(8, M.HEADING["ft"], italic=True)
     row = lambda part, name: next(ln for ln in part.splitlines() if ln.startswith(name + " & "))   # noqa: E731
     cells = lambda ln: [c.strip() for c in ln.removesuffix(r"\\").split(" & ")]                 # noqa: E731
     want = XR.efficiencies(M, runs, fits, "xbb", "head")["L188"]
@@ -4200,3 +4225,34 @@ def test_table_one_takes_the_transfer_head_columns_of_the_resonance_table():
     assert M.SUMMARY_AUC_TABLE[3:] == (M.SUMMARY_AUC_GRID[1],)
     assert auc[2] == r" & \multicolumn{3}{c}{JetClass-II} & JetClass \\"
     assert auc[3] == r"\cmidrule(lr){2-4}" and auc[4] == r" & AUC & AUC, resonant & AUC, QCD & AUC \\"
+
+
+def test_the_per_class_count_of_the_jetclass_ii_sentence_is_the_build_s_and_checked_where_it_is_read(tmp_path):
+    """Review of 5c40d69 (A6; PI SC-1, LEDGER RR-7): the classes the 17-class linear probe recalls less (more) often than
+    188 classes by more than 3 sigma are counted from the per-class bootstrap, sigma^2 the two run SDs^2 and the
+    bootstrap SD^2; the build stops on a sigma that is not that sum or stored lists that are not |delta| > 3 sigma."""
+    d = {"delta": [-0.05, -0.001, 0.04], "sd_a": [0.003, 0.003, 0.003], "sd_b": [0.004, 0.004, 0.004],
+         "boot_sd": [0.0, 0.0, 0.0], "lower": [0], "higher": [2]}
+    d["sigma"] = [math.sqrt(a ** 2 + b ** 2 + c ** 2) for a, b, c in zip(d["sd_a"], d["sd_b"], d["boot_sd"])]
+    em = _PEm()
+    M.jc2_recall_macros(em, {"diffs": {"R16_Q1-L188": d}}, tmp_path / "probe_jc2.json", MT.words)
+    assert em.m["MlstJcTwoRecallCoarseLowClasses"] == "1" and em.m["MlstJcTwoRecallCoarseHighClassesWord"] == "one"
+    with pytest.raises(SystemExit, match="beyond 3 sigma"):
+        M.jc2_recall_macros(_PEm(), {"diffs": {"R16_Q1-L188": {**d, "lower": [0, 1]}}}, tmp_path / "p.json", MT.words)
+    with pytest.raises(SystemExit, match="quadrature"):
+        M.jc2_recall_macros(_PEm(), {"diffs": {"R16_Q1-L188": {**d, "sigma": [0.001] * 3}}}, tmp_path / "p.json",
+                            MT.words)
+
+
+def test_a_mean_and_sd_print_alike_in_every_table_and_bold_ties_only_at_the_printed_values():
+    """Review of 5c40d69: (A8, LEDGER TN-4) a mean +- SD prints at its SD's place whatever the column's floor, so
+    tab:published prints Table 1's 1,800 +- 60, not 1,799 +- 56; (C, LEDGER BD-1) bold compares the values as printed,
+    so 36.9 +- 0.9 and 37 +- 4 do not tie."""
+    tok = M.V4.tok
+    assert M._render("p", [1799.4, 56.0], 0, floor=0) == r"1{,}800\,$\pm$\,60" == M._render("p", [1799.4, 56.0], -1)
+    assert M._render("s", [1802.8], -1, floor=0) == "1{,}800" + M.SINGLE
+    tab = "\n".join([r"\begin{tabular}{lc}", r"\toprule", r" & x \\", r"\midrule",
+                     f"a & {tok('p', 36.91, 0.9)} \\\\", f"b & {tok('p', 36.62, 4.0)} \\\\", r"\bottomrule",
+                     r"\end{tabular}"])
+    out = M._bold("summary", tab)
+    assert M.V4.TOK_OPEN + "P 36.62" in out and M.V4.TOK_OPEN + "P 36.91" not in out

@@ -118,7 +118,7 @@ jet; only jets with a generator-level match enter $\Lreg$. The loss has the form
 and~(11.7)]{glopart}, and $\lambda = \MlstMassLambda$ at both label sets is the value GloParT tuned for its
 regression terms~\cite[Eq.~(11.7)]{glopart}, not tuned here (appendix~\ref{sec:app-variants}).
 
-The \Kfull-class model with kinematic inputs only, pretrained once on the \FillTopNPresent{} of the
+The \Kfull-class model with kinematic inputs only, the kinematic-inputs network below, pretrained once on the \FillTopNPresent{} of the
 \FillNFeatures{} input features that the top-tagging data provide, as ParT pretrains a model for top
 tagging~\cite{part}, is a diagnostic of the input mismatch on top tagging, not a method we propose
 (appendix~\ref{sec:app-variants}).
@@ -155,12 +155,13 @@ $W = (w_k)$ and biases $w_{k0}$ minimize
 \end{equation}
 over the training jets $x_n$ of classes $y_n$, with $z_n = z(x_n)$, where the inverse regularization strength $C$
 is chosen by the cross-entropy on validation jets. On JetClass-II the linear probes are trained and tested on
-class-balanced samples, so that rare classes weigh as much as common ones (appendix~\ref{sec:app-probes}). An MLP
-probe, a multilayer perceptron with one hidden layer of \LpMlpHidden{} units on the same frozen features and test
+class-balanced samples, so that rare classes weigh as much as common ones (appendix~\ref{sec:app-probes}). A
+multilayer-perceptron (MLP) probe, with one hidden layer of \LpMlpHidden{} units on the same frozen features and test
 set, tells whether what a linear probe does not read is absent or only not linearly readable
-(appendix~\ref{sec:app-mlp}). The random network, the saved initial weights of a \Kfull-class model
-with its BatchNorm statistics recomputed on \DesignBnJets{} training jets, since PyTorch's default statistics do
-not normalize the inputs, gives the floor: what a probe gets from the architecture alone.
+(appendix~\ref{sec:app-mlp}). The random network, the saved initial weights of a \Kfull-class model, gives the
+floor: what a probe gets from the architecture alone. PyTorch's default BatchNorm statistics do not normalize the
+inputs, so the same weights with these statistics recomputed on \DesignBnJets{} training jets, the random network
+with BatchNorm recomputed, give a second floor.
 
 Binary linear probes on pairs of JetClass-II classes ask whether a label set keeps a distinction it merges, or
 one that a downstream discriminant needs. In $X\to b\bar b$ against $X\to c\bar c$ and in $X\to YY\to bbqq$
