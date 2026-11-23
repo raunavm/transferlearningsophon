@@ -33,7 +33,6 @@ ft-budget-fixed-rate-scratchjc1e5-raunav|experiments/FT/k8s/budget/job-ft-budget
 ft-budget-fixed-rate-scratchtop1e5-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-scratchtop1e5-raunav.yaml|3
 ft-budget-fixed-rate-scratchtop1e3n-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-scratchtop1e3n-raunav.yaml|3
 ft-budget-fixed-rate-qg1e5a-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-qg1e5a-raunav.yaml|16
-ft-budget-fixed-rate-top1e3b-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-top1e3b-raunav.yaml|12
 ft-budget-fixed-rate-top1e3kin-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-top1e3kin-raunav.yaml|1
 ft-budget-fixed-rate-jc1e4b-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-jc1e4b-raunav.yaml|11
 ft-budget-fixed-rate-qg1e5b-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-qg1e5b-raunav.yaml|11
