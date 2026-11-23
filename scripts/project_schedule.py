@@ -126,7 +126,8 @@ def main(argv=None) -> int:
             if i in finished:
                 cs = (p or {}).get("status", {}).get("containerStatuses") or [{}]
                 term = cs[0].get("state", {}).get("terminated")
-                if term and i in indices(st.get("completedIndexes")):
+                # a pod lost with its node has a terminated state without times (ContainerStatusUnknown): no measurement
+                if term and term.get("startedAt") and term.get("finishedAt") and i in indices(st.get("completedIndexes")):
                     hours[(c["task"], c["n"], kind_of(c["init"]), pool)].append(
                         (T(term["finishedAt"]) - T(term["startedAt"])).total_seconds() / 3600)
                 continue
