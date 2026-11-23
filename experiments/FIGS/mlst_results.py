@@ -8309,7 +8309,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         # PI 2026-11-23 (LEDGER CS-2b): the main text states the sculpting null, so the appendix prints each network's
         # distance beside its statistical floor, compactly (the full table stays in the release)
         out["tables/mlst_sculpt_main.tex"] = _float("sculpt_main", table_sculpt_main(sculpt, _pooled(runs), TAB,
-                                                                                    SETS + FLAV + rand), whole="upright")
+                                                                                    SETS + FLAV + rand), colsep_pt=3)
         out["tables/mlst_sculpt.tex"] = _float("sculpt", table_sculpt(sculpt, _pooled(runs), TAB, SETS + FLAV + rand) + ft_part,
                                                True, fill={"__SCULPT_BINS__": bins, **sculpt_fill(sculpt, runs)},
                                                whole="turned", colsep_pt=3)
