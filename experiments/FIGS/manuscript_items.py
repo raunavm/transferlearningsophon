@@ -85,6 +85,83 @@ def mismatch(journal: pathlib.Path = JOURNAL) -> list:
     return out
 
 
+# PI 2026-11-13/22 (LEDGER CA-1): at most 135 words a caption; counted as the reader sees it (PI 2026-11-22, LEDGER
+# RR-7: the rule is checked where the captions are read, make_tables.caption_stop)
+CAPTION_LIMIT = 135
+
+
+def _braced(t: str, j: int) -> tuple:
+    """(the text inside the brace group that opens at t[j], the index after it)."""
+    depth = 0
+    for k in range(j, len(t)):
+        depth += (t[k] == "{") - (t[k] == "}")
+        if depth == 0:
+            return t[j + 1:k], k + 1
+    raise ValueError(f"unbalanced braces from {t[j:j + 60]!r}")
+
+
+def macros(*texts: str) -> dict:
+    """{name: body} of every \\newcommand without arguments in texts, the first definition kept."""
+    out = {}
+    for t in texts:
+        t = "\n".join(re.sub(r"(?<!\\)%.*", "", ln) for ln in t.splitlines())
+        for m in re.finditer(r"\\newcommand\{?\\([A-Za-z]+)\}?(\[\d\])?\{", t):
+            if not m.group(2):
+                out.setdefault(m.group(1), _braced(t, m.end() - 1)[0])
+    return out
+
+
+def rendered_words(tex: str, defs: dict) -> int:
+    """Words of a caption as printed: its macros expanded (a macro printing a number or a phrase counts as those words;
+    as in TeX, the spaces after a control word are dropped, so "\\Kcoarse-class" is one word), a reference one word,
+    inline math one word, thousands separators joined; a word is a whitespace-separated token with a letter or a
+    digit, so a dash or a "%" alone is none."""
+    t = re.sub(r"(?<!\\)%.*", "", tex)
+    t = re.sub(r"\\label\{[^{}]*\}", " ", t)
+    for _ in range(20):
+        new = re.sub(r"\\([A-Za-z]+)\s*", lambda m: defs.get(m.group(1), m.group(0)), t)
+        if new == t:
+            break
+        t = new
+    t = re.sub(r"\\(?:eq|c|C)?ref\{[^{}]*\}", "1", t)
+    while (i := t.find("\\ensuremath{")) >= 0:
+        t = t[:i] + "M" + t[_braced(t, i + len("\\ensuremath"))[1]:]
+    t = re.sub(r"\$[^$]*\$", "M", t)
+    t = t.replace("{,}", ",").replace("\\%", "%").replace("~", " ").replace("\\\\", " ")
+    t = re.sub(r"\\[A-Za-z]+\*?", "", t)
+    t = re.sub(r"\\.", " ", t).replace("{", "").replace("}", "")
+    return len([w for w in t.split() if re.search(r"[A-Za-z0-9]", w)])
+
+
+def caption_words(journal: pathlib.Path = JOURNAL, files: dict | None = None) -> list:
+    """[(label, words)] of every caption the paper prints, in manuscript order: each \\caption of a section main.tex
+    inputs, and each table it inputs, with the table's end notes below it (L16, PI 2026-11-13). files maps a path
+    relative to journal (results_generated.tex, tables/<file>.tex) to its text as the build wrote it; any other is
+    read from journal."""
+    files = files or {}
+    read = lambda rel: files[rel] if rel in files else (journal / rel).read_text()      # noqa: E731
+    main = "\n".join(_lines(journal / "main.tex"))
+    defs = macros(main, read("results_generated.tex"))
+    out = []
+    for sec in re.findall(r"\\input\{(sections/[\w-]+)\}", main):
+        t = "\n".join(_lines(journal / f"{sec}.tex"))
+        for m in re.finditer(r"\\caption\{", t):
+            cap, end = _braced(t, m.end() - 1)
+            lab = re.match(r"\s*\\label\{([^{}]*)\}", t[end:])
+            out.append((lab.group(1) if lab else f"{sec}.tex line {t.count(chr(10), 0, m.start()) + 1}",
+                        rendered_words(cap, defs)))
+        for f in re.findall(r"\\input\{(tables/[\w-]+)\}", t):
+            tab = read(f"{f}.tex")
+            m = re.search(r"\\caption(?:of\{table\})?\{", tab)
+            if not m:
+                continue
+            cap, end = _braced(tab, m.end() - 1)
+            notes = [_braced(tab, n.end())[0] for n in re.finditer(r"\\par\\smallskip(?=\{\\noindent )", tab)]
+            lab = re.search(r"\\label\{([^{}#]*)\}", tab[end:])
+            out.append((lab.group(1) if lab else f, rendered_words(" ".join([cap] + notes), defs)))
+    return out
+
+
 if __name__ == "__main__":
     lines = mismatch()
     print("\n".join(lines) or "the manuscript holds exactly the placement's main-text and appendix items")

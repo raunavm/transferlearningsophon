@@ -72,3 +72,48 @@ def test_the_paper_build_stops_on_every_mismatch_line_and_passes_the_placement(t
     assert draw.index("--paper") < stop < draw.index("paper_figures.py") and "exit 3" in draw[stop:draw.index("paper_figures.py")]
     assert MT.PLACEMENT_STOP.startswith("FATAL: the manuscript's figures and tables")
     assert "--paper" not in R.BOOK["draw"] and "--paper" not in R.RELEASE["draw"]
+
+
+def _figure(label, caption):
+    return f"\\begin{{figure}}\n\\caption{{{caption}}}\n\\label{{{label}}}\n\\end{{figure}}\n"
+
+
+def test_the_paper_build_stops_on_a_caption_over_135_words_as_printed(tmp_path):
+    """PI 2026-11-13/22, LEDGER CA-1 (at most 135 words a caption) and RR-7 (a rule is checked where the data is read):
+    make_tables --paper counts every figure caption of the sections and every caption of a table they input, end notes
+    included, as printed, the macros expanded from the build's results_generated.tex, and stops naming each one over
+    135 words. Here a figure caption of 129 words with its macros stripped prints 139."""
+    import inspect
+    import pytest
+    MT = _make_tables()
+    (tmp_path / "sections").mkdir()
+    (tmp_path / "tables").mkdir()
+    (tmp_path / "main.tex").write_text("\\newcommand{\\Kfull}{\\VocabSize}  % a label-set name\n\\input{results_generated}\n"
+                                       "\\input{sections/body}\n\\appendix\n\\input{sections/app}\n")
+    gen = lambda phrase: ("\\newcommand{\\VocabSize}{188}  % source :: path :: sha256\n"            # noqa: E731
+                          f"\\newcommand{{\\Phrase}}{{{phrase}}}  % source :: path :: sha256\n")
+    words = lambda n: " ".join(["word"] * n)                                                       # noqa: E731
+    # printed as "188-class", "b-quark", "figure 1", "11,926", "30%", "--" (no word) and "end.": 7 words
+    (tmp_path / "sections" / "body.tex").write_text(
+        _figure("fig:short", words(128) + " \\Kfull-class $b$-quark figure~\\ref{fig:short} 11{,}926 30\\% -- end.")
+        + _figure("fig:long", words(128) + " \\Phrase{} end.") + "\\input{tables/t}\n")
+    (tmp_path / "sections" / "app.tex").write_text("text\n")
+    (tmp_path / "tables" / "t.tex").write_text("\\begin{table}\n\\caption{" + words(124) + " \\Phrase{}}\n\\label{tab:t}\n"
+                                               "\\par\\smallskip{\\noindent A note.}\n\\end{table}\n")
+    files = {"results_generated.tex": gen(words(10))}          # as build() returns it, not on disk
+    assert MI.caption_words(tmp_path, files) == [("fig:short", 135), ("fig:long", 139), ("tab:t", 136)]
+    with pytest.raises(SystemExit) as e:
+        MT.caption_stop(tmp_path, files)
+    msg = str(e.value)
+    assert msg.startswith(MT.CAPTION_STOP) and str(MI.CAPTION_LIMIT) in MT.CAPTION_STOP
+    assert "fig:long: 139 words" in msg and "tab:t: 136 words" in msg and "fig:short" not in msg
+    MT.caption_stop(tmp_path, {"results_generated.tex": gen("one")})          # 130 and 127 words: no stop
+    # the paper's build runs it after the tables are built, and the render job compiles nothing after the stop
+    assert "caption_stop(a.root / \"paper\" / \"journal\", built)" in inspect.getsource(MT.main)
+    spec = importlib.util.spec_from_file_location("build_render_job_caps_t", MI.HERE.parents[1] / "scripts/build_render_job.py")
+    R = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(R)
+    draw = R.PAPER["draw"]
+    stop = draw.index('grep -q "^FATAL: captions over"')
+    assert MT.CAPTION_STOP.startswith("FATAL: captions over")
+    assert draw.index("--paper") < stop < draw.index("paper_figures.py") and "exit 3" in draw[stop:draw.index("paper_figures.py")]

@@ -5054,19 +5054,38 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
 
 
 PLACEMENT_STOP = "FATAL: the manuscript's figures and tables are not gallery_placement's main-text and appendix lists"
+CAPTION_STOP = "FATAL: captions over 135 words as printed"
 
 
-def placement_stop(journal: pathlib.Path) -> None:
-    """The placement build stop (PI 2026-11-23, LEDGER SP-12 step 1; SP-1): SystemExit with every mismatch line when
-    main.tex's \\paperfig and \\input lists are not exactly gallery_placement's MAIN and APPENDIX lists. manuscript_items
-    is loaded here, not imported at the top: it imports make_results_book, which loads mlst_results."""
+def _manuscript_items():
+    """manuscript_items, loaded here, not imported at the top: it imports make_results_book, which loads mlst_results."""
     spec = importlib.util.spec_from_file_location(
         "manuscript_items", pathlib.Path(__file__).resolve().parent / "manuscript_items.py")
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
-    lines = m.mismatch(journal)
+    return m
+
+
+def placement_stop(journal: pathlib.Path) -> None:
+    """The placement build stop (PI 2026-11-23, LEDGER SP-12 step 1; SP-1): SystemExit with every mismatch line when
+    main.tex's \\paperfig and \\input lists are not exactly gallery_placement's MAIN and APPENDIX lists."""
+    lines = _manuscript_items().mismatch(journal)
     if lines:
         raise SystemExit(PLACEMENT_STOP + " (PI 2026-11-23, LEDGER SP-12):\n" + "\n".join(lines))
+
+
+def caption_stop(journal: pathlib.Path, files: dict | None = None) -> None:
+    """The caption build stop (PI 2026-11-13/22, LEDGER CA-1: at most 135 words; RR-7: checked where the captions are
+    read): SystemExit naming every figure caption of the sections and every caption of a table they input (end notes
+    included) over the limit, counted as printed, with the macros of the build's results_generated.tex (files, as
+    build() returns them) expanded; otherwise one line with the longest."""
+    m = _manuscript_items()
+    words = m.caption_words(journal, files)
+    over = [f"{label}: {n} words" for label, n in words if n > m.CAPTION_LIMIT]
+    if over:
+        raise SystemExit(CAPTION_STOP + " (PI 2026-11-22, LEDGER CA-1, RR-7):\n" + "\n".join(over))
+    label, n = max(words, key=lambda w: w[1])
+    print(f"captions: {len(words)}, none over {m.CAPTION_LIMIT} words as printed; the longest {label}, {n} words")
 
 
 def main(argv=None) -> int:
@@ -5079,7 +5098,8 @@ def main(argv=None) -> int:
                     help="do not write; exit non-zero if regenerating would change anything")
     ap.add_argument("--paper", action="store_true",
                     help="the paper's build (scripts/build_render_job.py): stop first when the manuscript's figures and "
-                         "tables are not the placement's (PI 2026-11-23, LEDGER SP-12); the results book's build does "
+                         "tables are not the placement's (PI 2026-11-23, LEDGER SP-12), and after the build when a "
+                         "caption is over 135 words as printed (LEDGER CA-1, RR-7); the results book's build does "
                          "not pass it")
     a = ap.parse_args(argv)
     out_dir = a.out or (a.root / "paper" / "journal")
@@ -5087,6 +5107,8 @@ def main(argv=None) -> int:
         placement_stop(a.root / "paper" / "journal")
 
     built, missing, skipped = build(a.root)
+    if a.paper:
+        caption_stop(a.root / "paper" / "journal", built)
     nc = json.loads(built.get("v2_not_computed.json", "[]"))
     for r in nc:
         print(f"NOT COMPUTED  {r['file']} {r['where']} {r['contrast']} "

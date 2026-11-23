@@ -110,6 +110,9 @@ PAPER = {"what": "paper", "suffix": "", "texdir": "paper/journal", "texfile": "m
           # PI 2026-11-23 (LEDGER SP-12, step 1): the placement build stop, no paper from a manuscript whose figures and
           # tables are not gallery_placement's main-text and appendix lists (make_tables.placement_stop)
           if grep -q "^FATAL: the manuscript's figures and tables" ${OUT}/tables.txt; then cat ${OUT}/tables.txt; exit 3; fi
+          # PI 2026-11-22 (LEDGER CA-1, RR-7): the caption stop, no paper with a caption over 135 words as printed
+          # (make_tables.caption_stop)
+          if grep -q "^FATAL: captions over" ${OUT}/tables.txt; then cat ${OUT}/tables.txt; exit 3; fi
           python3 experiments/FIGS/paper_figures.py > ${OUT}/figures.txt 2>&1; echo "figures rc=$?"
           python3 experiments/FIGS/figstyle/gallery_figures.py --paper --outdir figures/mlst/gallery > ${OUT}/gallery.txt 2>&1; echo "gallery rc=$?"
           tail -n 15 ${OUT}/tables.txt ${OUT}/figures.txt ${OUT}/gallery.txt
