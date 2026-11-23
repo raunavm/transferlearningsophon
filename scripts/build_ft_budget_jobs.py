@@ -248,7 +248,8 @@ FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1
                   ("jc2b", 1_000_000): "1e-4",    # 2026-11-22: 0.43047 at 1e-4 (3e-5 0.43025, 3e-4 0.4293, 1e-5 0.4290)
                   ("jc2b", 100_000): "1e-4",      # 2026-11-22: 0.41235 at 1e-4 (3e-5 0.41226, 3e-4 0.4105, 1e-5 0.4092)
                   ("top", 1_000): "1e-3",         # 2026-11-22: 0.90862 at 1e-3 (1e-2 0.90786, 3e-4 0.9073, 3e-3 0.9068)
-                  ("jc1", 10_000): "1e-3"}        # 2026-11-22: 0.80917 at 1e-3 (3e-3 0.80876, 3e-4 0.80451, 1e-2 0.79976)
+                  ("jc1", 10_000): "1e-3",        # 2026-11-22: 0.80917 at 1e-3 (3e-3 0.80876, 3e-4 0.80451, 1e-2 0.79976)
+                  ("jc1", 1_000_000): "1e-4"}     # 2026-11-23: 0.8493 at 1e-4 (3e-5 0.8482, 3e-4 0.8477, 1e-2 0.8328)
 # from scratch, seeds SCRATCH_SEEDS, where its search moved it: qg 1e3 best 1e-4 0.7826 (3e-5 0.7817, 3e-4 0.7705)
 FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
                           # 2026-11-22: JetClass-II 1e6 best 3e-3 0.3812 (1e-3 0.3769, 3e-4 0.3736, 1e-2 diverged)
@@ -274,7 +275,9 @@ FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000,
                     # 2026-11-22 23:26 UTC
                     ("jc1", 10_000, "pre"),
                     # 2026-11-23 00:20 UTC
-                    ("jc1", 10_000, "scratch"))
+                    ("jc1", 10_000, "scratch"),
+                    # 2026-11-23 01:05 UTC
+                    ("jc1", 1_000_000, "pre"))
 # PI 2026-11-21: the search goes no lower than 1e-5 (below it fine-tuning approaches training only the new output layer
 # on frozen features); a row whose best is still its lowest rate there takes 1e-5
 FIXED_SEARCH_FLOOR = "1e-5"
