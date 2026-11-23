@@ -68,22 +68,24 @@ CAPTIONS = {
         "row's network against 188 classes, as linear probes (left) or fine-tuned (right) on one million "
         "class-balanced jets; points below the diagonal are recalled less often. Their test-jet-weighted mean is the "
         "accuracy of figures {fig:F2} and {fig:F2-ft}. Means over three pretraining runs with ±1 standard deviation "
-        "bars over runs and test jets; colors give what the 17 classes merge the class with. Values are in the data "
-        "release."
+        "bars over runs and test jets; colors give what the 17 classes merge the class with. A point is filled where it "
+        "differs from the 188-class recall by more than three standard deviations, both run spreads and the paired "
+        "bootstrap over the class's test jets combined, and open otherwise. Values are in the data release."
     ),
     # PI 2026-11-23 (SP-13): the page captions of F4-mech, F4-other and F9b follow the paper's section captions (1db8bc37);
     # F4-mech's, at 141 words as written there, loses six connecting words to stay within 135 (CA-1); PI 2026-11-22
     # (LEDGER CA-1, counted as printed): the paper's drops "label sets above and 17-class partitions below", which
-    # the figure's row names say, and so does this one
+    # the figure's row names say, and so does this one; review of render 5f4e1b8: the partition counts per pair in words
     "F4-mech": (
         'Linear probes on 17 classes, which merge each pair, separate X→bb̄ from cc̄ and X→bc from bq, cs, the '
-        'second-named the background, worse than 188 classes, and the b-quark boundary recovers part of the loss on '
-        'both. Panels show one over the fraction of background jets kept against that of signal jets, with ratios to '
-        '188 classes. Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and '
-        'flavor-boundary partition, and {m:RandVtwoRuns} per random partition, split into those merging the pair '
-        '({m:MlstPairRandMergedBbN}, {m:MlstPairRandMergedBcN}) and keeping it apart ({m:MlstPairRandApartBbN}, '
-        '{m:MlstPairRandApartBcN}, one partial merge left out). They end where under {m:MlstMinBkgPass} background '
-        'jets pass, and 188 classes\' one-standard-deviation band combines run spread and binomial uncertainty. The '
+        'second-named the background, worse than 188 classes, and the b-quark boundary recovers part of both losses. '
+        'Panels show one over the fraction of background jets kept against that of signal jets, with ratios to 188 '
+        'classes. Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and '
+        'flavor-boundary partition, and {m:RandVtwoRuns}-run random partitions apart for the '
+        '{m:MlstPairRandMergedBbWord} (X→bb̄) or {m:MlstPairRandMergedBcWord} (X→bc) merging the pair and the '
+        '{m:MlstPairRandApartMechWord} keeping it apart, {m:MlstPairRandPartlyBcWord} merging X→bc in part left out. '
+        'They end below {m:MlstMinBkgPass} passing background jets, and 188 classes\' one-standard-deviation band '
+        'combines run spread and binomial uncertainty. The '
         'random network, not drawn, reaches {m:MlstPairInitRhalfMechMin} to {m:MlstPairInitRhalfMechMax} at 50% of '
         'signal jets. Table {tab:tests} has the tested differences.'
     ),

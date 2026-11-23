@@ -13,7 +13,8 @@ hierarchy from Sophon's full set of classes to one that describes only the numbe
 Random partitions of the classes, selected to cut across the classes of the coarsest label set, and
 partitions that differ in a flavor boundary compare label sets at a fixed number of classes. Coarser labels make linear probes on the
 frozen features substantially worse on the pretraining classes, a task that favors finer labels by
-construction. Counted in wrongly ordered pairs of jets, merging quark flavor is the costliest single merge, and at a fixed number of classes, which classes
+construction. Counted in wrongly ordered pairs of jets the costliest step is the merge of quark flavor, and in
+accuracy the step that removes three distinctions at once; at a fixed number of classes, which classes
 are merged changes the cost. After fine-tuning, the coarsest labels cost \pending{Table 1 after the reruns} more
 errors on JetClass and no resolved difference on the public top-tagging and quark/gluon benchmarks. An auxiliary
 jet-mass regression makes the mass more precisely predictable from the frozen features. A pretraining

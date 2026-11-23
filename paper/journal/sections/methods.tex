@@ -176,7 +176,11 @@ once, with its whole head initialized anew, and the same network trained from ra
 downstream task alone, with \MlstFtRefSeedsWord{} seeds, is the reference for what pretraining adds. The full
 top-tagging and quark/gluon training sets use ParT's settings~\cite{part}; every other training set, including
 every JetClass and JetClass-II set, uses one rule for pretrained and from-scratch networks alike, with a learning
-rate chosen on validation for each task and size (appendix~\ref{sec:app-ft}). Because fine-tuning on JetClass-II
+rate chosen on validation for each task and size (appendix~\ref{sec:app-ft}). A rate at which the training loss of a
+network becomes non-finite, a crash or eviction being retried and never counted, scores below every rate that
+trained, and if any network of a row diverges at the chosen rate when the row is rerun, one of three seeds being
+enough, that rate fails for the whole row and the row is rerun at the next best rate. % LEDGER DL-10, FT-10: the rule of experiments/FT/rate_search.py (cell_state: DIVERGED on a non-finite loss in any attempt; evaluate: one paper cell diverged at the recorded rate sets the rate DIVERGED for the row; FIXED_RERUN_DIVERGED keeps it failed)
+Because fine-tuning on JetClass-II
 has the \Kfull-class pretraining task as its target, the transfer comparisons rest on the other tasks.
 
 Each task is scored with the discriminants and metrics its literature uses. A signal $S$ and a background $B$
@@ -290,4 +294,7 @@ difference of their means over all their runs and $\sigma^2$ is the sum of the v
 over its runs and the variance of $\Delta$ over paired bootstrap resamples of the test jets, on which every model
 is scored (appendix~\ref{sec:app-tests}).
 Where the two sides are scored on independent test samples, Herwig against Pythia jets, each sample is
-resampled separately and the two bootstrap variances add. Table~\ref{tab:tests} gives this test for every difference the text states.
+resampled separately and the two bootstrap variances add. \pending{One sentence (LEDGER SC-2): the rows whose $\sigma$
+uses the paired bootstrap, those that use an unpaired analytic term (binomial for accuracy, $\AUC(1-\AUC)/\min(n_S,
+n_B)$ per network for the AUC) and those whose $\sigma$ is a lower bound, which back only a null.}
+Table~\ref{tab:tests} gives this test for every difference the text states.

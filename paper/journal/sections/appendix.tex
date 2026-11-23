@@ -224,8 +224,8 @@ The full top-tagging and quark/gluon training sets use the fine-tuning recipe of
 other combination of task and training-set size, the learning rate is chosen separately from rates spaced by
 factors of about three. The chosen rate has the highest validation accuracy, averaged over one run each of the
 networks pretrained with \Kfull{} and \Kcoarse{} classes (one run when training from scratch), and the rates
-tried extend until it has a lower-scoring rate on each side. A rate at which training diverges counts as
-lower-scoring. Every pretrained network at a given task and size uses the chosen rate, and the new head
+tried extend until it has a lower-scoring rate on each side, a diverged rate counting as lower-scoring as
+section~\ref{sec:evaluation} states. Every pretrained network at a given task and size uses the chosen rate, and the new head
 trains at \FtHeadCap{} at every rate. Table~\ref{tab:lrsweep} lists every rate tried.
 % PENDING (PI 2026-11-21): if any row stops at the floor, add: "The search goes no lower than \FtSearchFloor, where
 % fine-tuning approaches training only the new output layer on frozen features; for [rows] the chosen rate is \FtSearchFloor."
@@ -319,7 +319,7 @@ every network, the random network with recomputed BatchNorm statistics included.
 Table~\ref{tab:mlp} gives the MLP probe on the same frozen features at the largest training set of JetClass-II,
 JetClass and the class pairs, and of top and quark/gluon with the missing inputs set to zero, on the test sets
 of the linear probes. Table~\ref{tab:partrepro} gives ParT's top-tagging training script~\cite{part} run on our
-cluster unchanged and then with Sophon's changes added one at a time, each variant a single run. Unchanged, it
+cluster unchanged and with Sophon's output head, each a single run. Unchanged, it
 reaches a rejection at 30\% signal efficiency of \MlstPartreproRthirtyPart, against ParT's published
 \LitPartTopRejScratch{} (table~\ref{tab:published}), and \pending{does not differ from it by more than three
 standard deviations (table~\ref{tab:tests})}. The network trained from scratch in
@@ -350,7 +350,8 @@ network on the same resample. Table~\ref{tab:coarse} scores the linear probes wi
 class-balanced training and test jets merged into the \Kcoarse{} groups of the \Kcoarse-class label set, and
 table~\ref{tab:jc1_class_auc} gives the recall of
 each JetClass class, the fraction of its test jets assigned to it, for linear probes trained on \FtSizeESix{}
-JetClass jets. Figures~\ref{fig:F4-other} and~\ref{fig:F4-qcd} draw the linear probes on the other four pairs of
+JetClass jets. Table~\ref{tab:pairauc} gives the AUC of the linear probes on the class pairs whose ratios of
+$1-\AUC$ the text quotes, and figures~\ref{fig:F4-other} and~\ref{fig:F4-qcd} draw the linear probes on the other four pairs of
 classes that differ only in flavor, in the form of figure~\ref{fig:F4-mech}, where a QCD $b\bar b$ jet holds two or more $b$ quarks, a
 QCD $c\bar c$ jet two or more $c$ quarks and a light QCD jet no $b$, $c$ or $s$ quark. Each curve is evaluated on
 a fixed grid of signal efficiencies, with $\epsB$ interpolated linearly between neighboring thresholds.
@@ -377,6 +378,8 @@ chosen on validation.}
 \input{tables/mlst_tests}
 
 \input{tables/mlst_coarse}
+
+\input{tables/mlst_pair_auc}
 
 \input{tables/mlst_jc1_class_auc}
 

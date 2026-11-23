@@ -1219,7 +1219,8 @@ def items(built: dict, rec: Recorder, figs: dict, fig_notes: dict) -> list:
         if key == "PT":
             files.append("build_csv/jet_pt_bins.csv")
         if key == "PC-jc2":
-            files.append("build_csv/jetclass2_per_class.csv")
+            # PI 2026-11-23 (LEDGER DL-17): the per-class delta / sigma behind the filled points
+            files += ["build_csv/jetclass2_per_class.csv", "build_csv/perclass_recall_tests.csv"]
         if key in GP.PROVISIONAL:
             note = (note + "; " if note else "") + GP.PROVISIONAL[key]
         out.append((key, "figure", tier, GP.number(key), sentence, files, note))
@@ -1228,6 +1229,10 @@ def items(built: dict, rec: Recorder, figs: dict, fig_notes: dict) -> list:
         rels = by_label.get(key, [])
         placed.update(rels)
         files = [names[r] for r in rels]
+        if key == "tab:jc1_class_auc":      # PI 2026-11-23 (LEDGER DL-17): the per-class delta / sigma behind the arrows
+            files.append("build_csv/perclass_recall_tests.csv")
+        if key == "tab:tests":              # LEDGER TX-3: every quoted ratio, from full-precision and printed means
+            files.append("build_csv/ratio_check.csv")
         note = "" if rels else "no generated file carries this label"
         for r in rels:
             body = built.get(r, "")
@@ -1265,9 +1270,15 @@ FILES
   macros.csv          every number written into the text (the generated LaTeX macros)
   figures/<id>*.csv   two files per figure: its series (<id>_series.csv) and their points
   per_run/*.csv       the result files the tables and figures read, every number of every run
-  build_csv/*.csv     two value tables the table build writes beside the paper: jet_pt_bins.csv
-                      (every point of the jet-pT figures, mean, SD and run count) and
-                      jetclass2_per_class.csv (each JetClass-II class's AUC for every network)
+  build_csv/*.csv     the value tables the table build writes beside the paper: jet_pt_bins.csv
+                      (every point of the jet-pT figures, mean, SD and run count),
+                      jetclass2_per_class.csv (each JetClass-II class's AUC for every network),
+                      perclass_recall_tests.csv (each per-class recall difference of a network
+                      from its reference: delta, each side's run SD, the paired bootstrap SD over
+                      the class's test jets, sigma, delta / sigma and the mark it gives in
+                      table tab:jc1_class_auc and the per-class figure: lower, higher or none)
+                      and ratio_check.csv (every ratio the text quotes, from the full-precision
+                      means and from the printed means, and whether they agree at the quoted digits)
 
 COLUMNS
 tables/<label>.csv

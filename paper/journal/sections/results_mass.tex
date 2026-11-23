@@ -11,8 +11,8 @@ with an added mass output has \MlstMassNRunsWord{} pretraining runs.
 
 The auxiliary mass regression gives a narrower mass response than the reconstructed soft-drop mass.
 Over all test jets, the regressed mass of the \Kres-class network with an added mass output % CHECK: MlstMassHeadResMassOverUncorr below 1 in both runs
-reaches \MlstMassHeadResMassOverUncorrPr{} of $\msd$, that of the \Kcoarse-class % CHECK: MlstMassHeadCoarseMassOverUncorr not above MlstMassHeadResMassOverUncorr run by run, and within 2% of it (today 0.985 and 0.998)
-model is as narrow, and both stay narrower in every bin of jet $p_{\mathrm{T}}$ and of % CHECK: every pT bin of F9b has head resolution below groomed
+reaches \MlstMassHeadResMassOverUncorrPr{} of $\msd$. Its difference in resolution from the \Kcoarse-class % review of 5f4e1b8 (A5) and LEDGER TX-1: the 17-class network with the mass output, its tab:tests row 17mass head - 162mass head the null (-1.23 sigma)
+network with an added mass output is not resolved, and both stay narrower in every bin of jet $p_{\mathrm{T}}$ and of % CHECK: every pT bin of F9b has head resolution below groomed
 $\mgen$ (tables~\ref{tab:mass} and~\ref{tab:tests}; figure~\ref{fig:F9b}). The regressed mass also reaches % CHECK: MlstMassHeadResMassOverMlpRes below 1 in both runs
 \MlstMassHeadResMassOverMlpResPr{} of an MLP probe on the frozen features of the \Kres-class
 model pretrained without it, which, like the auxiliary mass regression, never sees the jet's class.
@@ -32,14 +32,14 @@ the features of every pretrained network in that table carry more (table~\ref{ta
 \input{tables/mlst_mass}
 
 The auxiliary mass regression shows no resolved cost to the classification of the pretraining classes. A linear
-probe on the frozen features of the \Kres-class network with an added mass output classifies % CHECK: MlstCmpJcTwoResMassOverRes today 1.022 and 1.016; its PrMax reads its tab:tests row (162mass-162, |Delta|/sigma 1.6 on 23 Nov: the null), and the null or "up to ... more errors" both fit "costs little"
-JetClass-II about as well as one on the \Kres-class model (\MlstCmpJcTwoResMassOverResPrMax{};
+probe on the frozen features of the \Kres-class network with an added mass output and one on the \Kres-class % CHECK: MlstCmpJcTwoResMassOverRes today 1.022 and 1.016; its PrMax reads its tab:tests row (162mass-162, |Delta|/sigma 1.6 on 23 Nov: the null), and the null or "up to ... more errors" both fit "costs little"
+model differ on JetClass-II by no more than three standard deviations (\MlstCmpJcTwoResMassOverResPrMax{};
 table~\ref{tab:tests}). At \Kcoarse{} classes, where the mass term takes a larger share of the % CHECK: MlstMassLossShareCoarseMass above MlstMassLossShareResMass (today 28.7 vs 13.8 per cent)
 loss (appendix~\ref{sec:app-variants}), the network with an added mass output and the \Kcoarse-class model do not
 differ by more than three standard deviations either (table~\ref{tab:tests}); with \MlstMassNRunsWord{} runs per model a modest cost cannot be excluded. An MLP % review of dfe5942 (B2): the per-run directions had no backing and are out; the 17mass - 17 row reads the null (-0.24 sigma)
-probe on the same test set reads the same at both label sets (ratio of its $1-\AUC$:
-\MlstMlpCmpJcTwoResMassOverResPr{} at \Kres{} classes and \MlstMlpCmpJcTwoCoarseMassOverCoarsePr{} at
-\Kcoarse{} classes; table~\ref{tab:mlp}), so this is not a limit of what a linear classifier can read.
+probe on the same test set shows no resolved difference at either label set (\MlstMlpCmpJcTwoResMassOverResPr{}
+at \Kres{} classes and \MlstMlpCmpJcTwoCoarseMassOverCoarsePr{} at \Kcoarse{} classes; table~\ref{tab:mlp}), so
+this is not a limit of what a linear classifier can read.
 % CHECK: MlstMlpCmpJcTwoResMassOverResPr and MlstMlpCmpJcTwoCoarseMassOverCoarsePr read their tab:tests rows (JetClass-II, AUC, MLP probe; no bootstrap on 23 Nov), the null unless a difference passes 3 sigma (fits_v5_mlp, class-balanced: 1.021 and 1.017, 1.057 and 0.987 in the 21 Nov build).
 Fine-tuning on top tagging shows no change from the auxiliary mass regression beyond three standard deviations % CHECK: l3/ft_top_N1200000.json 162mass-162 r30 z=-0.10, 17mass-17 z=-0.51; their ratio words failed 3 sigma and were removed (PI 2026-11-23, LEDGER SP-12 step 3)
 at either label set (table~\ref{tab:tests}). Its cost after fine-tuning on JetClass, where every input is

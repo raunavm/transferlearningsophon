@@ -1025,18 +1025,18 @@ def test_the_part_reproduction_table_and_macros(tmp_path):
     assert em.m["MlstPartreproRthirtyPart"] == "1{,}711" and em.m["MlstPartreproRthirtyRescaleOverPart"] == "0.715"
     assert M._held_word(M._held(em)["MlstPartreproRthirtyRescaleOverPartPr"]) == r"28\% less rejection"     # SP-12 (step 3)
     assert not missing
-    # three runs of ParT's script, each a single run and a single change, not cumulative; ParT's published row and our
-    # from-scratch row are in the comparison table only (PI 2026-11-12: one table per number). Round-1 fix 2026-11-13:
-    # the caption says once that every value is a single run, so no cell carries the single-run mark
+    # ParT's script unchanged and with Sophon's output head, each a single run; the rescaling run out of the table, no
+    # sentence states it (PI 2026-11-23, LEDGER DL-R #16), its macros kept; ParT's published row and our from-scratch
+    # row are in the comparison table only (PI 2026-11-12: one table per number). Round-1 fix 2026-11-13: the caption
+    # says once that every value is a single run, so no cell carries the single-run mark
     rows = t.splitlines()[4:-2]
-    assert [ln.split(" & ")[0] for ln in rows] == [name for _, name in M.PARTREPRO] == [
-        "ParT's training script, unchanged", "the same script with Sophon's output head",
-        r"the same script with Sophon's jet-$p_{\mathrm{T}}$ rescaling"]
+    assert [ln.split(" & ")[0] for ln in rows] == [name for _, name in M.PARTREPRO[:2]] == [
+        "ParT's training script, unchanged", "the same script with Sophon's output head"]
     assert "ParT, published" not in t and M.SCRATCH_LABEL not in t and "+" not in t
     assert rows[0] == r"ParT's training script, unchanged & 0.9400 & 0.9858 & 420 & 1{,}711 & 118 \\"
     # review of 5c40d69 (A8, LEDGER TN-4): the text's value is the table's, at the table's place (1,711 against 1,710)
     assert em.m["MlstPartreproRthirtyPart"] == rows[0].split(" & ")[4]
-    assert not any(M.SINGLE in ln for ln in rows) and r"1{,}224 & " in rows[2]
+    assert not any(M.SINGLE in ln for ln in rows) and len(rows) == 2 and r"1{,}224" not in t
     assert "Every value is from a single run" in M.printed_caption("partrepro")
     # with the fine-tuning read-out, each column at the place of the top-tagging column it is read against (from
     # scratch 1,400 +- 200: hundreds; 420 +- 20: tens), the macros unchanged
@@ -1046,7 +1046,7 @@ def test_the_part_reproduction_table_and_macros(tmp_path):
     em2 = _PEm()
     t = M.partrepro(em2, d, per, MT.fmt_pm, [], runs={"L188": ["mtx-l188-s1"], "__bench__": ("L188",)})
     assert [ln.split(" & ")[3:5] for ln in t.splitlines()[4:-2]] == [
-        ["420", "1{,}700"], ["420", "1{,}600"], ["420", "1{,}200"]]
+        ["420", "1{,}700"], ["420", "1{,}600"]]
     # LEDGER TN-4 (repeated values print from one source; review of 5c40d69, A8): the text's values follow the table's
     # place, 1,700 here where the table prints 1,700
     assert {k: v for k, v in em2.m.items() if not k.startswith("MlstPartreproRthirty") or k.endswith("OverPart")} == \
@@ -2901,7 +2901,7 @@ def test_the_paper_has_twenty_tables_and_the_task_tables_are_placed_nowhere():
     # PI 2026-11-23, LEDGER SP-9: the approved structure's main-text and appendix tables (the class map apart, above)
     assert list(tables) == ["tab:sets", "tab:summary", "tab:published", "tab:mass", "tab:inputs", "tab:lrsweep",
                             "tab:compute", "tab:fill", "tab:mlp", "tab:partrepro", "tab:summaryauc", "tab:tests",
-                            "tab:coarse", "tab:jc1_class_auc"]
+                            "tab:coarse", "tab:pairauc", "tab:jc1_class_auc"]     # tab:pairauc: LEDGER DL-R #4
     assert tables["tab:summaryauc"][1].name == "mlst_summary_auc.tex" and tables["tab:tests"][1].name == "mlst_tests.tex"
     assert tables["tab:published"][1].name == "mlst_published.tex" and tables["tab:compute"][1].name == "compute.tex"
     assert all(k in M.CAPTION_SHORT for k, _ in tables.values())                   # each prints its short caption
@@ -2974,7 +2974,8 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
     assert not hasattr(M, "NET_DEF") and "tab:sets" in M.CAPTIONS["sets"][0]
     assert "__SCULPT_CUT__" in M.CAPTION_SHORT["sculpt"] and "resonant" in M.sculpt_fill({"m": {"sig_eff_50": {}}}, {a: [] for a in M.FLAV})["__SCULPT_CUT__"]
     assert all(h in M.printed_caption("mass") for h in ("mass output of the pretraining head", "multilayer-perceptron probe"))
-    assert "which are not combined" in M.printed_caption("partrepro") and "cumulative" not in M.printed_caption("partrepro")
+    # PI 2026-11-23 (LEDGER DL-R #16): the rescaling row is out, so the caption names the output head alone
+    assert "Sophon's output head" in M.printed_caption("partrepro") and "rescal" not in M.printed_caption("partrepro")
 
 
 def test_every_caption_is_short_and_free_of_the_banned_forms():

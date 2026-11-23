@@ -220,8 +220,9 @@ def test_the_pair_legend_holds_only_the_curves_drawn(monkeypatch):
 def test_the_pair_figures_draw_the_random_partitions_that_merge_the_pair_apart_from_those_that_keep_it_apart():
     """PI 2026-11-21 (LEDGER PS-5): "show the random partitions that merge the pair and those that keep it apart
     separately, with the count of each": two curves in the partitions row, each over its groupings from the label maps
-    (merge_status), the captions printing the counts the build writes (MlstPairRand{Merged,Apart}<pair>N); a grouping
-    that merges only part of the pair is in neither, and the caption's "one partial merge left out" holds."""
+    (merge_status), the captions printing the counts the build writes (MlstPairRand{Merged,Apart}<pair>N, in F4-mech's
+    caption as words, review of render 5f4e1b8); a grouping that merges only part of the pair is in neither, and the
+    caption leaves it out by its count in words (MlstPairRandPartly<pair>Word)."""
     import re
     M = L.M
     st = M.merge_status(ROOT)
@@ -238,10 +239,14 @@ def test_the_pair_figures_draw_the_random_partitions_that_merge_the_pair_apart_f
                 n = sum(st[a][key] == s for a in M.RAND)
                 name = rf"MlstPairRand{s.title()}{M.PAIR_WORD[key]}N"
                 assert re.search(r"\\newcommand\{\\" + name + r"\}\{" + str(n) + r"\}", gen), name
-                assert "\\" + name + "{}" in tex[f], (f, name)
+                word = rf"MlstPairRand{s.title()}{M.PAIR_WORD[key]}Word"
+                assert re.search(r"\\newcommand\{\\" + word + r"\}\{" + ("zero one two three four five".split()[n])
+                                 + r"\}", gen), word
+                used = {"merged": [name, word], "apart": [name, word, "MlstPairRandApartMechWord"]}[s]
+                assert any("\\" + u + "{}" in tex[f] for u in used), (f, used)
             partly[key] = sum(st[a][key] == "partly" for a in M.RAND)
     assert partly == {"bb_vs_cc": 0, "bc_vs_bq_cs": 1, "bbqq_vs_ccqq": 0}
-    assert "one partial merge left out" in tex["results_jc.tex"]
+    assert r"\MlstPairRandPartlyBcWord{} merging $X\to bc$ in part left out" in tex["results_jc.tex"]
     assert to_hex(R.S.SERIES[R._style("RAND_APART")]) == to_hex(R.S.SERIES["RAND"]) != to_hex(R.S.SERIES["RAND_MERGED"])
 
 

@@ -94,9 +94,9 @@ the label sets are those of every later figure.}
 % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull agree with 1 within their SD
 % CHECK: MlstCmpMlpResMassOverRes < 1; MlstCmpJcTwoResMassOverRes within a few per cent of 1 (sculpting is out of the findings: one mass-regression difference passes 3 sigma, PI 2026-11-09)
 We find that coarser pretraining labels make the frozen features substantially worse on the pretraining
-classes, a task that favors finer labels by construction: a linear probe makes more errors there at every
-coarser level of the hierarchy, and, counted in wrongly ordered pairs of jets, merging quark
-flavor is the costliest single merge. At the same number of classes, the random partitions lose less than
+classes, a task that favors finer labels by construction: counted in wrongly ordered pairs of jets, a linear probe
+makes more errors there at every coarser level of the hierarchy, and the costliest step is the merge of quark
+flavor, while in accuracy it is the step that removes three distinctions at once. At the same number of classes, the random partitions lose less than
 the \Kcoarse-class level, and a single flavor boundary lowers the error of the probe, so which classes are
 merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \pending{table~\ref{tab:summary} after the reruns}
 on JetClass, and on top tagging and quark/gluon discrimination the label sets show no resolved difference. The

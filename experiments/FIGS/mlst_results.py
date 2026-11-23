@@ -54,6 +54,7 @@ import collections
 import csv
 import importlib.util
 import functools
+import io
 import json
 import math
 import pathlib
@@ -926,6 +927,31 @@ def table_pairs(fits, runs, fmt_pm, status, rows, ft=None, lp=None) -> str:
             cells = [pair_cell([get(m, key) for m in runs[arm]], len(runs[arm]), fmt_pm)
                      + mark[status.get(arm, {}).get(key, "apart")] for key, *_ in cols]
             out.append((SCRATCH_LABEL if arm == SCRATCH else _row(arm, runs)) + " & " + " & ".join(cells) + r" \\")
+    return "\n".join(out + [r"\bottomrule", r"\end{tabular}"])
+
+
+# PI 2026-11-23 (LEDGER DL-R #4, CS-6): the main text quotes ratios of the linear probes' errors on these pairs (the
+# ratio words of PR_ROWS on _BB, _BC, _BBQQ), so their AUCs are printed, the sides the ratios are formed from
+PAIR_AUC_COLS = tuple(p for p in PAIRS_FIG if p[0] in ("bb_vs_cc", "bc_vs_bq_cs", "bbqq_vs_ccqq"))
+
+
+def table_pair_auc(fits, runs, fmt_pm, status, rows) -> str:
+    """tab:pairauc: the AUC of the binary linear probes on the pairs whose error ratios the main text quotes, mean +- SD
+    over the runs (_pair, the values the ratio words and tab:tests read), in the class-pair figures' panel order, the
+    merge marks of tab:pairs."""
+    mark = {"merged": r"$^{\dagger}$", "partly": r"$^{\ddagger}$", "apart": "", "some": POOL_MARK}
+    if RAND_POOLED in rows:
+        def pooled(key):
+            st = [status.get(a, {}).get(key, "apart") for a in RAND]
+            return "merged" if all(x == "merged" for x in st) else "apart" if all(x == "apart" for x in st) else "some"
+        status = {**status, RAND_POOLED: {key: pooled(key) for key, *_ in PAIRS}}
+    n = len(PAIR_AUC_COLS)
+    out = [r"\begin{tabular}{l" + "c" * n + "}", r"\toprule", rf" & \multicolumn{{{n}}}{{c}}{{AUC}} \\",
+           rf"\cmidrule(lr){{2-{1 + n}}}", " & " + " & ".join(h for _, h, *_ in PAIR_AUC_COLS) + r" \\", r"\midrule"]
+    for arm in rows:
+        cells = [_cell([_pair(fits, m, key) for m in runs[arm]], len(runs[arm]), fmt_pm)
+                 + mark[status.get(arm, {}).get(key, "apart")] for key, *_ in PAIR_AUC_COLS]
+        out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}"])
 
 
@@ -3477,6 +3503,11 @@ def pair_figure_macros(em, data: pathlib.Path, root: pathlib.Path, runs: dict, s
     for k, *_ in PAIRS:
         em.macro(f"MlstPairRandApart{PAIR_WORD[k]}Word", words(n[k]), maps, f"{'/'.join(RAND)} groups of {k}",
                  "random partitions that keep the pair apart (count, from the label maps)")
+        # review of render 5f4e1b8: F4-mech's counts in words, the partitions that merge the pair and the one that merges
+        # it in part (merge_status "partly", drawn in neither curve)
+        for s, what in (("merged", "merge the pair"), ("partly", "merge the pair in part")):
+            em.macro(f"MlstPairRand{s.title()}{PAIR_WORD[k]}Word", words(sum(status[a][k] == s for a in RAND)), maps,
+                     f"{'/'.join(RAND)} groups of {k}", f"random partitions that {what} (count, from the label maps)")
     mech = [n[k] for k in PAIR_FIGS["Mech"]]
     em.macro("MlstPairRandApartMechWord", words(mech[0]) if len(set(mech)) == 1 else " and ".join(map(words, mech)),
              maps, f"{'/'.join(RAND)} groups of {' and '.join(PAIR_FIGS['Mech'])}",
@@ -3593,23 +3624,65 @@ def jc1_recall_macros(em, doc: dict, arms, src: pathlib.Path) -> None:
         em.macro("MlstJcOneRecallWorstClass", names[worst[2]], src, "classes", "its JetClass class")
 
 
+def check_recall_tests(doc: dict, src: pathlib.Path) -> None:
+    """PI 2026-11-23 (LEDGER DL-17): the per-class arrows of tab:jc1_class_auc and the filled points of PC-jc2 use exactly
+    the SC-1 test, |delta| > 3 sigma with sigma^2 = each side's run SD^2 + the paired test-jet bootstrap SD^2 of the
+    class. Checked where the file is read (RR-7), for every difference it holds: the build stops if a sigma is not that
+    sum or a stored list of lower or higher classes is not the classes beyond 3 sigma. A side of one run has no run SD,
+    so no sigma and no mark (a lower-bound sigma never backs a difference, PI SC-2)."""
+    for key, d in ((doc or {}).get("diffs") or {}).items():
+        n = len(d["delta"])
+        if d.get("sigma") is None:
+            if d["lower"] or d["higher"]:
+                raise SystemExit(f"FATAL: {src.name} {key}: classes marked without a sigma (a side of one run)")
+            continue
+        for i in range(n):
+            if not math.isclose(d["sigma"][i], math.sqrt(d["sd_a"][i] ** 2 + d["sd_b"][i] ** 2 + d["boot_sd"][i] ** 2),
+                                rel_tol=1e-6):
+                raise SystemExit(f"FATAL: {src.name} {key} class {i}: sigma is not the quadrature sum of the two run "
+                                 "SDs and the paired bootstrap SD (PI SC-1)")
+        lower = {i for i in range(n) if d["delta"][i] < -3 * d["sigma"][i]}
+        higher = {i for i in range(n) if d["delta"][i] > 3 * d["sigma"][i]}
+        if lower != set(d["lower"]) or higher != set(d["higher"]):
+            raise SystemExit(f"FATAL: {src.name} {key}: the stored lower and higher classes are not those beyond 3 sigma")
+
+
+RECALL_TEST_COLS = ("file", "read_out", "task", "network", "reference", "class", "delta", "run_sd_network",
+                    "run_sd_reference", "bootstrap_sd", "sigma", "delta_over_sigma", "mark")
+
+
+def recall_tests_csv(docs: dict) -> str:
+    """The data release's per-class tests (PI 2026-11-23, LEDGER DL-17: "per-class delta / sigma goes to the release"):
+    one row per perclass_recall file, difference and class, the recall difference of the network minus its reference,
+    each side's run SD, the paired test-jet bootstrap SD, sigma, delta / sigma and the mark it gives (lower, higher or
+    none; none without a sigma), as tab:jc1_class_auc's arrows and PC-jc2's filled points read them."""
+    out = io.StringIO()
+    w = csv.writer(out, lineterminator="\n")
+    w.writerow(RECALL_TEST_COLS)
+    for name, doc in sorted(docs.items()):
+        mode, task = name.split("_", 2)[:2]
+        names = doc.get("classes")
+        for key, d in sorted((doc.get("diffs") or {}).items()):
+            net, ref = key.split("-", 1)
+            for i, delta in enumerate(d["delta"]):
+                sig = d["sigma"][i] if d.get("sigma") is not None else None
+                mark = "lower" if i in d["lower"] else "higher" if i in d["higher"] else "none"
+                w.writerow([f"{RECALL_DIR}/{name}.json", "linear probe" if mode == "probe" else "fine-tuned", task, net,
+                            ref, names[i] if names else i, repr(delta),
+                            "" if d.get("sd_a") is None else repr(d["sd_a"][i]),
+                            "" if d.get("sd_b") is None else repr(d["sd_b"][i]), repr(d["boot_sd"][i]),
+                            "" if sig is None else repr(sig), "" if not sig else repr(delta / sig), mark])
+    return out.getvalue()
+
+
 def jc2_recall_macros(em, doc: dict, src: pathlib.Path, words) -> None:
     """The per-class sentence of Sec. 4.1 on PC-jc2 (review of 5c40d69, A6: the count printed from the build): the
     JetClass-II classes the 17-class linear probe recalls less (more) often than 188 classes by more than 3 sigma,
-    sigma^2 = each side's run SD^2 + the paired test-jet bootstrap SD^2 (PI SC-1). Checked where it is read (RR-7): the
-    build stops if a sigma is not that sum or the file's lists of lower and higher classes are not |delta| > 3 sigma."""
+    sigma^2 = each side's run SD^2 + the paired test-jet bootstrap SD^2 (PI SC-1), the file checked by
+    check_recall_tests where it is read."""
     d = doc["diffs"]["R16_Q1-L188"]
+    lower, higher = set(d["lower"]), set(d["higher"])
     n = len(d["delta"])
-    for i in range(n):
-        if not math.isclose(d["sigma"][i], math.sqrt(d["sd_a"][i] ** 2 + d["sd_b"][i] ** 2 + d["boot_sd"][i] ** 2),
-                            rel_tol=1e-6):
-            raise SystemExit(f"FATAL: {src.name} R16_Q1-L188 class {i}: sigma is not the quadrature sum of the two run "
-                             "SDs and the paired bootstrap SD (PI SC-1)")
-    lower = {i for i in range(n) if d["delta"][i] < -3 * d["sigma"][i]}
-    higher = {i for i in range(n) if d["delta"][i] > 3 * d["sigma"][i]}
-    if lower != set(d["lower"]) or higher != set(d["higher"]):
-        raise SystemExit(f"FATAL: {src.name} R16_Q1-L188: the stored lower and higher classes are not those beyond "
-                         "3 sigma")
     em.macro("MlstJcTwoRecallCoarseLowClasses", str(len(lower)), src, "diffs.R16_Q1-L188 (count, |delta| > 3 sigma)",
              f"JetClass-II classes of {n} the 17-class linear probe recalls less often than 188 classes")
     em.macro("MlstJcTwoRecallCoarseHighClassesWord", words(len(higher)), src,
@@ -4051,7 +4124,10 @@ def partrepro(em, data: pathlib.Path, per, fmt_pm, missing: list, runs: dict | N
         return None
     out = [r"\begin{tabular}{lccccc}", r"\toprule",
            r" & accuracy & AUC & $R_{50}$ & $R_{30}$ & background jets passing at $R_{30}$ \\", r"\midrule"]
-    for v, name in PARTREPRO:       # one run each: the caption says so once (round-1 fix 2026-11-13), no mark per cell
+    # PI 2026-11-23 (LEDGER DL-R #16): the rescaling row is kept only if a sentence states it, and none does, so the table
+    # prints ParT's script unchanged and with Sophon's output head (the rescaling run's values stay in its macros and the
+    # data release)
+    for v, name in PARTREPRO[:2]:   # one run each: the caption says so once (round-1 fix 2026-11-13), no mark per cell
         d = docs.get(v)
         out.append(name + " & " + (" & ".join([_at(d[k], place[k]) for k in keys]
                                               + [_sep(str(d['r30_n_bkg_pass']))])
@@ -4903,7 +4979,9 @@ SCULPT_UNSTATED = (("L162_MASS", "L188"), ("R16_Q1_MASS", "L188"), (RAND_POOLED,
 # pass 3 sigma (ratio_words); the null takes the place of the ratio in its sentence's grammar
 _NULL = "no difference beyond three standard deviations"       # in parentheses
 _NO_MORE, _NO_FEWER = "no more errors beyond three standard deviations", "no fewer errors beyond three standard deviations"
-_SAME = "the {}, within three standard deviations,"            # "... reaches the resolution, within ..., of ..."
+# LEDGER TX-1 (PI 2026-11-23): a null is worded "not resolved", never as an equality: "... reaches a resolution not
+# resolved from that of ...", "... gives a linear probe errors not resolved from those of ..."
+_same = lambda noun: "errors not resolved from those" if noun == "errors" else f"a {noun} not resolved from that"  # noqa: E731
 _JC2_LP, _JC2_MLP = "JetClass-II, AUC, " + HEADING["lp"], "JetClass-II, AUC, " + HEADING["mlp"]
 _BB, _BC, _BBQQ = (rf"{_PAIR[k]}, AUC, " + HEADING["lp"] for k in ("bb_vs_cc", "bc_vs_bq_cs", "bbqq_vs_ccqq"))
 _TOP_FILL, _QG_FILL = (rf"{t}, $R_{{30}}$, " + HEADING["lp"] + ", missing inputs"
@@ -4919,13 +4997,13 @@ PR_ROWS = {
     "MlstCmpJcTwoQcdResOverFullPr": ("JetClass-II, AUC over the QCD classes, " + HEADING["lp"], "L162", "L188", _NO_MORE),
     "MlstCmpJcTwoRandOverCoarsePr": (_JC2_LP, RAND_POOLED, "R16_Q1", _NO_FEWER),
     "MlstCmpJcTwoRandOverMidPr": (_JC2_LP, RAND_POOLED, "R42_Q1", _NO_FEWER),
-    "MlstCmpBbCoarseOverFullPr": (_BB, "R16_Q1", "L188", _SAME.format("errors")),
+    "MlstCmpBbCoarseOverFullPr": (_BB, "R16_Q1", "L188", _same("errors")),
     "MlstCmpBbMidOverFullPr": (_BB, "R42_Q1", "L188", "a difference within three standard deviations"),
     "MlstCmpBcResOverFullPr": (_BC, "L162", "L188", _NULL),
     "MlstMlpCmpBcResOverFullPr": (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], "L162", "L188", _NULL),
     "MlstCmpBcMidOverFullPr": (_BC, "R42_Q1", "L188", "a difference within three standard deviations"),
     "MlstCmpBcCoarseOverFullPr": (_BC, "R16_Q1", "L188", _NO_MORE),
-    "MlstCmpBbFoneOverCoarsePr": (_BB, "FLAV_F1", "R16_Q1", _SAME.format("errors")),
+    "MlstCmpBbFoneOverCoarsePr": (_BB, "FLAV_F1", "R16_Q1", _same("errors")),
     "MlstCmpBcFoneOverCoarsePr": (_BC, "FLAV_F1", "R16_Q1", _NO_FEWER),
     "MlstCmpBcFonerOverCoarsePr": (_BC, "FLAV_F1R", "R16_Q1", _NULL),
     "MlstCmpBbqqFonerOverFonePr": (_BBQQ, "FLAV_F1R", "FLAV_F1", _NO_MORE),
@@ -4934,24 +5012,24 @@ PR_ROWS = {
     "MlstMlpTopRthirtyFullOverInitBnPr": (r"top tagging, $R_{30}$, " + HEADING["mlp"] + ", missing inputs", "L188_ZERO",
                                           "INIT_BN_ZERO", _NULL),
     # results_bench
-    "MlstLpTopRthirtyDrawOverZeroFullPr": (_TOP_FILL, "L188_DRAWS", "L188_ZERO", _SAME.format("rejection")),
+    "MlstLpTopRthirtyDrawOverZeroFullPr": (_TOP_FILL, "L188_DRAWS", "L188_ZERO", _same("rejection")),
     "MlstFtQgRthirtyFullOverPartPr": (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"] + ", published models",
                                       "L188", "PART_FT_PUB", _NULL),
     "MlstFtQgRthirtyCoarseOverFullPr": (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"], "R16_Q1", "L188", _NULL),
     "MlstFtQgRthirtyHerwigOverPythiaFullPr": (r"quark/gluon tagging, $R_{30}$, " + HEADING["ft"] + ", Herwig against Pythia jets",
-                                              "L188_HERWIG_JETS", "L188_PYTHIA_JETS", _SAME.format("rejection")),
+                                              "L188_HERWIG_JETS", "L188_PYTHIA_JETS", _same("rejection")),
     "MlstFtQgRthirtyHerwigOverPythiaScratchPr": (r"quark/gluon tagging, $R_{30}$, " + HEADING["ft"]
                                                  + ", Herwig against Pythia jets", "SCRATCH_HERWIG_JETS",
-                                                 "SCRATCH_PYTHIA_JETS", "the rejection within three standard deviations"),
+                                                 "SCRATCH_PYTHIA_JETS", "a rejection on Herwig jets not resolved from that on Pythia jets"),
     "MlstLpQgRthirtyFullOverInitBnPr": (_QG_FILL, "L188", INIT_BN, _NULL),
     # discussion
     "MlstLpTopRthirtyFullOverInitBnZeroPr": (_TOP_FILL, "L188_ZERO", "INIT_BN_ZERO", _NULL),
-    "MlstLpTopRthirtyFullOverInitBnPr": (_TOP_FILL, "L188", INIT_BN, _SAME.format("rejection")),
+    "MlstLpTopRthirtyFullOverInitBnPr": (_TOP_FILL, "L188", INIT_BN, _same("rejection")),
     # results_mass
-    "MlstMassHeadResMassOverUncorrPr": (_MASS_HEAD, "L162_MASS_HEAD", "SDMASS", _SAME.format("resolution")),
-    "MlstMassHeadResMassOverMlpResPr": (_MASS_HEAD, "L162_MASS_HEAD", "L162_MLP", _SAME.format("resolution")),
-    "MlstCmpMlpResMassOverResPr": (_MASS_MLP, "L162_MASS", "L162", _SAME.format("resolution")),
-    "MlstCmpMlpCoarseMassOverCoarsePr": (_MASS_MLP, "R16_Q1_MASS", "R16_Q1", _SAME.format("resolution")),
+    "MlstMassHeadResMassOverUncorrPr": (_MASS_HEAD, "L162_MASS_HEAD", "SDMASS", _same("resolution")),
+    "MlstMassHeadResMassOverMlpResPr": (_MASS_HEAD, "L162_MASS_HEAD", "L162_MLP", _same("resolution")),
+    "MlstCmpMlpResMassOverResPr": (_MASS_MLP, "L162_MASS", "L162", _same("resolution")),
+    "MlstCmpMlpCoarseMassOverCoarsePr": (_MASS_MLP, "R16_Q1_MASS", "R16_Q1", _same("resolution")),
     "MlstCmpMlpCoarseOverFullPr": (_MASS_MLP, "R16_Q1", "L188", _NULL),
     "MlstCmpJcTwoResMassOverResPrMax": (_JC2_LP, "L162_MASS", "L162", _NULL),
     "MlstMlpCmpJcTwoResMassOverResPr": (_JC2_MLP, "L162_MASS", "L162", _NULL),
@@ -5251,6 +5329,23 @@ def _printed_mean(v: list) -> float:
     return m if _zero_sd(m, sd) else round(m, min(_pdg_place(sd), MAX_DECIMALS))
 
 
+RATIO_CHECK_COLS = ("macro", "heading", "first", "second", "noun", "ratio_full_precision", "ratio_printed_means",
+                    "word_full_precision", "word_printed", "printed_mean_first", "printed_mean_second",
+                    "full_mean_first", "full_mean_second", "agree")
+
+
+def ratio_check_csv(em) -> str:
+    """The data release's ratio_check.csv (PI 2026-11-23, LEDGER TX-3): every quoted ratio, from the full-precision
+    means and from the printed means, and whether the two read the same at the quoted digits."""
+    out = io.StringIO()
+    w = csv.writer(out, lineterminator="\n")
+    w.writerow(RATIO_CHECK_COLS)
+    for r in vars(em).get("ratio_check", []):
+        w.writerow([*r[:5], repr(r[5]), repr(r[6]), r[7], r[8], repr(r[9]), repr(r[10]), repr(r[11]), repr(r[12]),
+                    "yes" if r[7] == r[8] else "no"])
+    return out.getvalue()
+
+
 def ratio_words(em, rows: dict, used: set, src, sides: dict | None = None) -> None:
     """Every ratio word, in one place (PI 2026-11-23, LEDGER SP-12 step 3): each of PR_ROWS reads its tab:tests row
     (rows: table_tests' rows_out). |Delta| > 3 sigma (PI SC-1 (1)): the ratio's direction and value in words (_phrase);
@@ -5269,6 +5364,7 @@ def ratio_words(em, rows: dict, used: set, src, sides: dict | None = None) -> No
         raise SystemExit(f"FATAL: the text uses ratio words with no tab:tests row (PR_ROWS): {lost}")
     have = {(h, a, b) for h, rs in TESTS for a, b, _ in rs}
     held = _held(em)
+    checks = vars(em).setdefault("ratio_check", [])
     for name, (head, first, second, null) in PR_ROWS.items():
         if (head, first, second) not in have:
             raise SystemExit(f"FATAL: \\{name}: tab:tests has no row {first} - {second} under '{head}'")
@@ -5292,6 +5388,11 @@ def ratio_words(em, rows: dict, used: set, src, sides: dict | None = None) -> No
             if (q - 1) * v[0] * up <= 0:
                 raise SystemExit(f"FATAL: \\{name} reads {q:.4g}, against the sign of its tab:tests difference {v[0]:+.4g}")
             word, why = _phrase(q, h["noun"]), f"passes 3 sigma (|delta|/sigma = {abs(v[0]) / v[4]:.1f})"
+            # PI 2026-11-23 (LEDGER TX-3): the ratio from the full-precision means beside the printed one, at the quoted
+            # digits (ratio_check.csv in the data release; the build prints the ones that differ)
+            fa, fb = (float(np.mean(s)) for s in pair)
+            qf = (1 - fa) / (1 - fb) if h["noun"] == "errors" else fa / fb
+            checks.append((name, head, first, second, h["noun"], qf, q, _phrase(qf, h["noun"]), word, a, b, fa, fb))
         else:
             word, why = null, f"does not pass 3 sigma (|delta|/sigma = {abs(v[0]) / v[4]:.1f})"
         em.macro(name, word, h["src"] if h else src, h["path"] if h else "not computed",
@@ -6114,6 +6215,9 @@ CAPTIONS = {
                  "\\LpSubstitutionQg{} for quark/gluon). " + SPREAD + " Here the \\RandVtwoNPartitions{} random "
                  "partitions are pooled into one row, mean $\\pm$ SD over their runs. " + KIN_NOTE
                  + " $^{*}$: a probe that did not converge."),
+    # PI 2026-11-23 (LEDGER DL-R #4): the AUCs behind the main text's error ratios on these pairs (CS-6)
+    "pair_auc": ("tab:pairauc", "The area under the receiver operating characteristic curve (AUC) of binary linear "
+                 "probes on the frozen features separating pairs of JetClass-II classes."),
     "pairs": ("tab:pairs", "Pairs of JetClass-II classes separated by networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and by the controls: "
               "a binary linear probe on the frozen features, trained on up to \\JcBalPairTrainPerSide{} jets of each "
               "side from held-out JetClass-II files and scored on up to \\JcBalPairTestPerSide{} of each side from the "
@@ -6448,7 +6552,7 @@ CAPTIONS = {
 # (caption key, table file, wide, caption fill) of the tables written as placeholders until their data exist
 PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes_n", True, None),
                 ("probes_n_full", "mlst_probes_n_full", True, None), ("ft_full", "mlst_ft_full", True, None),
-                ("pairs", "mlst_pairs", True, None), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
+                ("pairs", "mlst_pairs", True, None), ("pair_auc", "mlst_pair_auc", False, None), ("mlp", "mlst_mlp", True, None), ("bn", "mlst_bn", False, None),
                 ("balance", "mlst_balance", False, None), ("fill", "mlst_fill", True, None), ("fill_main", "mlst_fill_main", True, None),
                 ("jc1_class_auc", "mlst_jc1_class_auc", True, None),
                 ("mass", "mlst_mass", False, {"__PROBE_CENTRE__": ""}), ("mass_detail", "mlst_mass_detail", True, {"__BLANK__": "", "__MASS_RUNS__": ""}),
@@ -6621,8 +6725,10 @@ PAIR_GT_NOTE = (" $>$~marks a lower limit where fewer than \\MlstMinBkgPass{} ba
                 "efficiency in a run, the number of background jets over \\MlstMinBkgPass{}, the smallest over the runs.")
 # a mark that only some tables carry: its sentence is added when a cell of the printed table has it
 KEY_MARKS = {
-    "jc1_class_auc": ((r"\downarrow", " $^{\\downarrow}$ ($^{\\uparrow}$)~marks a recall more than three standard "
-                                       "deviations, of the runs and the test jets, below (above) that of 188 classes."),),
+    # PI 2026-11-23 (LEDGER DL-17): the SC-1 test with the per-class bootstrap, in one clause (check_recall_tests)
+    "jc1_class_auc": ((r"\downarrow", " $^{\\downarrow}$ ($^{\\uparrow}$)~marks a recall below (above) that of 188 "
+                                       "classes by more than three standard deviations, both run spreads and the "
+                                       "paired bootstrap over the class's test jets combined."),),
     "jc1_class_auc_full": ((r"\downarrow", " $^{\\downarrow}$ ($^{\\uparrow}$)~marks a recall more than three standard "
                                             "deviations, of the runs and the test jets, below (above) that of 188 "
                                             "classes."),),
@@ -6639,6 +6745,9 @@ KEY_MARKS = {
                                   "run."),),
     "lrsweep": ((r"^{\ast}", " $^{\\ast}$~marks the rate chosen, ``diverged'' a non-finite training loss, counted "
                              "lower than any rate that trained, and a dash a rate not tried."),),
+    "pair_auc": ((r"\dagger", " $^{\\dagger}$~marks a pair the label set merges into one class."),
+                 (r"\ddagger", " $^{\\ddagger}$~marks a pair the label set merges in part."),
+                 (r"\parallel", " $^{\\parallel}$~marks a pair some random partitions merge.")),
     "pairs": ((r"\dagger", " $^{\\dagger}$~marks a pair the label set merges into one class."),
               (r"\ddagger", " $^{\\ddagger}$~marks a pair the label set merges in part."),
               (r"\parallel", " $^{\\parallel}$~marks a pair some random partitions merge."), (PAIR_GT, PAIR_GT_NOTE)),
@@ -6664,6 +6773,12 @@ R_SUB = (" $R$ with a subscript is the inverse QCD efficiency at that signal eff
          "99\\% for $H\\to\\ell\\nu qq'$ and 99.5\\% for $t\\to b\\ell\\nu$.")
 RHO_SHORT = "the ratio $\\rho$ of $1-\\mathrm{AUC}$ to the \\Kfull-class run of the same seed"
 CAPTION_SHORT = {
+    # PI 2026-11-23 (LEDGER DL-R #4, CS-6): the AUCs the main text's error ratios on these pairs are formed from
+    "pair_auc": ("The area under the receiver operating characteristic curve (AUC) of binary linear probes on the frozen "
+                 "features separating pairs of JetClass-II classes, the second-named the background, trained on up to "
+                 "\\JcBalPairTrainPerSide{} jets of each side and scored on up to \\JcBalPairTestPerSide{} of each "
+                 "side, each side's classes at their shares in the mixed test sample." + BN_DEF
+                 + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER SP-9, merge 6; SC-1 (1), (4)): what the table holds, no finding; at most 135 words.
     # PI 2026-11-23 (LEDGER SP-13, step 2): Delta, sigma and Delta / sigma, independent-sample rows marked (KEY_MARKS)
     # review of 5c40d69 (B3): two marks and the rows over several added, the run counts left to tab:sets (135 words)
@@ -6960,9 +7075,8 @@ CAPTION_SHORT = {
               "each jet to $p_{\\mathrm{T}}=\\DesignRescalePt$~GeV."),
     # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md, no finding, no typed number
     "partrepro": ("ParT's training script for top tagging, top-quark against QCD jets, run from "
-                  "scratch unchanged and with one of two changes taken from Sophon, which are not combined. The changes "
-                  "are Sophon's output head, a \\DesignHeadHidden{}-unit hidden layer before the output, and its "
-                  "rescaling of each jet to $p_{\\mathrm{T}}=\\DesignRescalePt$~GeV. Accuracy is the fraction of test "
+                  "scratch unchanged and with Sophon's output head, a \\DesignHeadHidden{}-unit hidden layer before "
+                  "the output. Accuracy is the fraction of test "
                   "jets classified correctly, AUC the area under the receiver operating characteristic curve, and "
                   "$R_{50}$ and $R_{30}$ one over the fraction of background jets kept when the cut keeps 50\\% or 30\\% "
                   "of signal jets, 30\\% being the top-tagging working point. Every value is from a single run, and the "
@@ -7141,7 +7255,7 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
 MODES = {"bn": "lp", "balance": "lp", "fill": "lp", "fill_main": "lp",
          "jetclass_probe": "lp", "ft_rej": "ft", "jetclass_all": "ft", "jetclass_nbkg": "ft", "rand_prong": "ft",
          "lrsweep": "ft", "probes_n_full": "lp", "ft_full": "ft", "mlp": "mlp", "mlp_full": "mlp",
-         "jc1_class_auc": "lp", "sculpt": ["direct", "ft"], "jc1_class_auc_full": ["lp", "ft"],
+         "jc1_class_auc": "lp", "pair_auc": "lp", "sculpt": ["direct", "ft"], "jc1_class_auc_full": ["lp", "ft"],
          "sculpt_full": ["direct", "ft"],
          "qcdhf": "lp", "coarse": "lp", "probes_full": "lp", "fill_full": "lp", "qcdhf_full": "lp", "coarse_full": "lp",
          "jetclass": "ft", "jetclass_rej": "ft", "bench_top": "ft", "bench_qg": "ft", "bench_qg_herwig": "ft",
@@ -7331,6 +7445,7 @@ def uniform_columns(tab: str, floor: int | None = None) -> str:
 BOLD = {"summary": {"blocks": True}, "summary_auc": {"blocks": True}, "summary_auc_full": {"blocks": True}, "published": {"of": "their column and task", "published": True, "skip": (1, 2)},
         "labelsets": {}, "probes": {}, "pairs": {"blocks": True}, "probes_n": {"blocks": True}, "ft": {"blocks": True},
         "jc1_class_auc": {"blocks": True}, "jc1_class_auc_full": {"blocks": True}, "labelsets_full": {},
+        "pair_auc": {"blocks": True},
         "mass": {"blocks": True, "lower": (1,), "unity": (2,)},
         "sculpt": {"lower": (1, 3, 6), "best": " Lower distances and higher $\\epsS$, $R_{50}$ and $1/D_{\\mathrm{JS}}$ "
                                                "are better."},
@@ -7879,6 +7994,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                      for t, ds, met, _ in SIZE_TASKS}), True, whole="upright"),
            "tables/mlst_probes_n_full.tex": _longtable("probes_n_full", table_probes_n(
                fits, runs, TAB, ALL_ROWS + (INIT,), fill, chosen, kin=True)),
+           "tables/mlst_pair_auc.tex": _float("pair_auc", table_pair_auc(fits, _pooled(runs), TAB, status,
+                                                                      _paper_rows(rows_init)), whole="upright"),
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, _pooled(runs), TAB, status,
                                                                 _paper_rows(rows_init), pairs_ft, pairs_lp), True,
                                            label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK),
@@ -7923,6 +8040,13 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     # linear probes required, the fine-tuned blocks pending until their file is pulled
     rec = _load(data / RECALL_DIR)
     ft_rec = {t: rec.get(f"ft_{t}_N{FT_RATIO_N}", {}) for t in ("jc1", "jc2")}
+    # PI 2026-11-23 (LEDGER DL-17): every file the per-class marks read, checked against the SC-1 test, and its per-class
+    # delta / sigma in the data release (build_csv/perclass_recall_tests.csv)
+    read = {k: d for k, d in rec.items() if k in ("probe_jc1", "probe_jc2") or k in (f"ft_{t}_N{FT_RATIO_N}" for t in ("jc1", "jc2"))}
+    for k, d in read.items():
+        check_recall_tests(d, data / RECALL_DIR / f"{k}.json")
+    if read:
+        out["data_release/perclass_recall_tests.csv"] = recall_tests_csv(read)
     if rec.get("probe_jc1"):
         # PI 2026-11-21: every network (the random partitions pooled), with the 3-sigma marks; PI 2026-11-23 (LEDGER
         # SP-9): the paper's table is the linear-probe half, the fine-tuned half is the supplement copy's
@@ -8224,6 +8348,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         if len(set(pre_runs) & set(comp)) < len(pre_runs):
             missing.append(f"compute records: {len(set(pre_runs) & set(comp))} of {len(pre_runs)} paper runs")
     ratio_words(em, tested, text_ratio_words(root / "paper/journal"), index, sided)
+    out["data_release/ratio_check.csv"] = ratio_check_csv(em)
+    for r in vars(em).get("ratio_check", []):       # LEDGER TX-3: printed in the build log, one line a quoted ratio
+        print(f"TX-3 {'ok  ' if r[7] == r[8] else 'DIFF'} {r[0]}: full {r[5]:.6g} ({r[7]}), printed means {r[6]:.6g} "
+              f"({r[8]}); means {r[11]!r}, {r[12]!r} printed {r[9]!r}, {r[10]!r}")
     dropped_auc_check(root / "paper/journal")
     required_pass(em, index, missing)
     # a table whose data is not pulled yet is a marked placeholder, never the file an older generator left behind

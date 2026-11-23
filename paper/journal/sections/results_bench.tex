@@ -21,21 +21,23 @@ before fine-tuning. Table~\ref{tab:published} compares the fine-tuned models wit
 % (its tab:tests rows), so no null on R30 alone; our from scratch against ParT's published one has no paired term and
 % an AUC gap of 7 run SDs: that sentence is removed
 Fine-tuned on the full training set, no label set differs from the \Kfull-class model in $R_{30}$ by more than
-three standard deviations (tables~\ref{tab:summary} and~\ref{tab:tests}). The same network trained from scratch
-does not differ from it in $R_{30}$ either, but has a lower accuracy, AUC and $R_{50}$ (tables~\ref{tab:published}
-and~\ref{tab:tests}). The kinematic-inputs network, which has no missing inputs here, reaches the rejection of the
-\Kfull-class model fine-tuned with zeros. ParT's own training script, run unchanged on our hardware, reproduces the
+three standard deviations (tables~\ref{tab:summary} and~\ref{tab:tests}). Its $R_{30}$ difference from the same
+network trained from scratch is not resolved either, but from scratch has a lower accuracy, AUC and $R_{50}$
+(tables~\ref{tab:published} and~\ref{tab:tests}). The $R_{30}$ difference between the 188-class model with kinematic
+inputs only, which has no missing inputs here, and the \Kfull-class model fine-tuned with zeros is not resolved
+(table~\ref{tab:tests}). ParT's own training script, run unchanged on our hardware, reproduces the
 published result (appendix~\ref{sec:app-partrepro}).
 
 % CHECK: MlstLpTopRthirtyFullOverInitBnZero agrees with 1 (two seeds of the randomly initialized network; today 1.04 and 1.08); MlstMlpTopRthirtyFullOverInitBn agrees with 1 (today 1.00 +- 0.31)
 % CHECK: draws close to the kinematic-only model, one run (MlstLpTopRthirtyDrawOverZeroFull and MlstLpTopRthirtyKinOverFull both 3.9 at c0ce260); "about the same", not "the same": they agree on R30, less exactly on AUC and R50
-With the missing inputs set to zero, a linear probe on the frozen features of the \Kfull-class model does no
-better than a linear probe on the random network with BatchNorm recomputed, and both lie below every
-fine-tuned model (tables~\ref{tab:fill} and~\ref{tab:summary}). An MLP probe with the same zeros does no better
-than one on that random network either (\MlstMlpTopRthirtyFullOverInitBnPr{}; table~\ref{tab:mlp}). With random draws of real particles in place of
+With the missing inputs set to zero, the $R_{30}$ difference between a linear probe on the frozen features of the
+\Kfull-class model and one on the random network with BatchNorm recomputed is not resolved, and both lie below every
+fine-tuned model (tables~\ref{tab:fill}, \ref{tab:summary} and~\ref{tab:tests}). For an MLP probe with the same zeros
+the difference from one on that random network is not resolved either (\MlstMlpTopRthirtyFullOverInitBnPr{};
+table~\ref{tab:mlp}). With random draws of real particles in place of
 the zeros, the substitution chosen on validation, the linear probe on the \Kfull-class features gives
-\MlstLpTopRthirtyDrawOverZeroFullPr{} that it gives with zeros, about the rejection of the linear probe on the
-kinematic-inputs network, which has no missing inputs. On top tagging, the loss of the linear probe therefore comes
+\MlstLpTopRthirtyDrawOverZeroFullPr{} that it gives with zeros, and its difference from the linear probe on the
+188-class model with kinematic inputs only, which has no missing inputs, is not resolved (table~\ref{tab:tests}). On top tagging, the loss of the linear probe therefore comes
 from the zero values and not from the absence of the information. Fine-tuning does not show this loss; a
 constant replacement value used in both training and testing is consistent for a model trained with
 it~\cite[Theorem~3]{josse}.
@@ -49,10 +51,11 @@ flags and the charge, ParT's ``exp'' inputs~\cite{part}, and only the \FillQgNZe
 to zero. Every model is fine-tuned on Pythia jets and tested on both samples. Published taggers that use the
 particle type are from the same input scenario (table~\ref{tab:published}).
 
-Fine-tuned on the Pythia sample, the \Kfull-class model reaches the rejection of ParT fine-tuned after
-pretraining on JetClass~\cite{part} (\MlstFtQgRthirtyFullOverPartPr{}; table~\ref{tab:published}), and the
-label sets do not differ. The \Kcoarse-class model matches the % CHECK: MlstFtQgRthirtyFullOverPartPr must read the null of its tab:tests row (today 0.99 +- 0.02)
-\Kfull-class model (\MlstFtQgRthirtyCoarseOverFullPr{}; table~\ref{tab:summary}), although only the % CHECK: MlstFtQgRthirtyCoarseOverFullPr must read the null of its tab:tests row (today 0.99 +- 0.03); also Res, Mid
+After fine-tuning on the Pythia sample, the $R_{30}$ difference between the \Kfull-class model and ParT fine-tuned
+after pretraining on JetClass~\cite{part} is not resolved (\MlstFtQgRthirtyFullOverPartPr{};
+table~\ref{tab:published}), and no label set differs from the \Kfull-class model by more than three standard
+deviations (table~\ref{tab:tests}). For the \Kcoarse-class model, too, the difference is not resolved % CHECK: MlstFtQgRthirtyFullOverPartPr must read the null of its tab:tests row (today 0.99 +- 0.02)
+(\MlstFtQgRthirtyCoarseOverFullPr{}; table~\ref{tab:summary}), although only the % CHECK: MlstFtQgRthirtyCoarseOverFullPr must read the null of its tab:tests row (today 0.99 +- 0.03); also Res, Mid
 \Kfull- and \Kres-class labels separate resonance decays to gluons from decays to light quarks, the
 distinction quark/gluon discrimination asks for. Tested on the Herwig sample, the fine-tuned \Kfull-class model
 keeps \MlstFtQgRthirtyHerwigOverPythiaFullPr{} it has on Pythia jets, and the network trained from scratch % CHECK: MlstFtQgRthirtyHerwigOverPythiaFull vs ...Scratch must agree within 2 SD (today 0.33 +- 0.02 vs 0.34 +- 0.01)

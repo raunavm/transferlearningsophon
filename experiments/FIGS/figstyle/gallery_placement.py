@@ -236,8 +236,9 @@ _TABLES = (
     # L3 (round 2, package 3): single runs, so sigma is the binomial count of the background jets passing (118 and
     # 165): unchanged 1,710 against ParT's 1,602 +- 81, 0.6 sigma; rescaled 1,220 against unchanged, 2.7 sigma, not a
     # claim, so no "28% lower" (audit 3, C)
+    # PI 2026-11-23 (LEDGER DL-R #16): the jet-pT rescaling row out, no sentence states it
     ("tab:partrepro", APPENDIX, "ParT's training script on our cluster is consistent with its published top-tagging "
-                                "rejection, with or without Sophon's output head or jet-pT rescaling."),
+                                "rejection, with or without Sophon's output head."),
     # PI 2026-11-18: the AUC as the secondary metric, beside every headline value
     ("tab:summaryauc", APPENDIX, "[[tab:summaryauc]] gives the area under the ROC curve beside every value of "
                                  "[[tab:summary]], and on JetClass-II over its resonant and its QCD classes."),
@@ -247,6 +248,10 @@ _TABLES = (
     ("tab:tests", APPENDIX, "[[tab:tests]] gives every difference and null the text states, with its difference Δ, "
                             "its standard deviation σ from the runs and the test-jet bootstrap, and Δ/σ."),
     ("tab:coarse", APPENDIX, "Linear probes scored on the 43 and 17 merged classes are in [[tab:coarse]]."),
+    # PI 2026-11-23 (LEDGER DL-R #4): the main text quotes ratios of the linear probes' errors on these pairs with no
+    # other backing in the PDF (CS-6), so their AUCs are printed (at most one appendix page)
+    ("tab:pairauc", APPENDIX, "[[tab:pairauc]] gives the AUC of the linear probes on the class pairs whose error ratios "
+                              "the text quotes."),
     # PI 2026-11-23 (LEDGER SP-9): the linear-probe half only, kept as its comparison passes 3 sigma
     # (scratchpad/part0/jc1_class_auc_check.md); the fine-tuned half is in tab:jc1_class_aucfull (the data release)
     ("tab:jc1_class_auc", APPENDIX, "With linear probes, every 17-class network recalls several JetClass classes less "
@@ -368,7 +373,7 @@ APPENDIX_FAMILIES = (
     ("Checks of the method", ("tab:mlp", "tab:partrepro")),
     ("Headline metrics", ("tab:summaryauc", "tab:tests", "tab:coarse")),
     ("Training size", ("A10",)),
-    ("Class pairs", ("F4-other", "F4-qcd")),
+    ("Class pairs", ("tab:pairauc", "F4-other", "F4-qcd")),
     ("Per class", ("tab:jc1_class_auc",)),
     ("Mass", ("F9b",)),
 )
@@ -402,7 +407,8 @@ SHOWS = {
     "tab:published": ("Headline metrics", (FT,), ("sets",)), "tab:mlp": ("Headline metrics", (LP,), GROUPS),
     "tab:coarse": ("Headline metrics", (LP,), GROUPS),
     "PC-jc2": ("Per class", (LP, FT), ("sets",)), "tab:jc1_class_auc": ("Per class", (LP,), GROUPS),
-    **{k: ("Class pairs", (LP,), GROUPS) for k in ("F4-mech", "F4-other")}, "F4-qcd": ("Class pairs", (LP,), ("sets", "mass")),
+    **{k: ("Class pairs", (LP,), GROUPS) for k in ("F4-mech", "F4-other", "tab:pairauc")},
+    "F4-qcd": ("Class pairs", (LP,), ("sets", "mass")),
     "A8": ("Training size", (FT,), ("sets", "mass")), "A10": ("Training size", (LP,), ("sets", "mass")),
     "tab:mass": ("Mass", (LP,), ("sets", "mass")), "F9b": ("Mass", (LP,), ("mass",)),
     "F11": ("Resonance tagging", (LP,), ("sets", "mass")),

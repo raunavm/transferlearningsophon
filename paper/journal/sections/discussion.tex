@@ -2,10 +2,11 @@
 % PI SP-10 (a); their tables are those of the approved structure (PI SP-9, 2026-11-23).
 \section{Discussion and conclusion}\label{sec:discussion}
 
-Frozen features keep what the pretraining labels separate: on the pretraining classes a linear probe
-separates the \Kfull{} classes less well at every coarser level of the class hierarchy, and, counted in
-wrongly ordered pairs of jets, merging quark flavor is the costliest single merge (table~\ref{tab:tests}). % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull > 1
-Merging the QCD classes leaves the resonant classes unchanged and costs the QCD classes. Random partitions
+Frozen features keep what the pretraining labels separate: counted in wrongly ordered pairs of jets, a linear
+probe separates the \Kfull{} pretraining classes less well at every coarser level of the class hierarchy, and the
+costliest step is the merge of quark flavor, while in accuracy it is the step that removes three distinctions at once
+(table~\ref{tab:tests}). % LEDGER TX-2: the largest step minus the next-largest passes in each metric, (17 - 43) - (43 - 162) at -4.96 sigma in AUC and +3.94 in accuracy, naming different steps, so both are given
+Merging the QCD classes costs the QCD classes, and its effect on the resonant classes is not resolved. Random partitions
 with as many classes, selected to cut across the \Kcoarse-class groups, lose less than the physical
 \Kcoarse-class label set, so the class count alone does not set the cost.
 After fine-tuning, on JetClass the
@@ -14,10 +15,10 @@ After fine-tuning, on JetClass the
 % CHECK: recompute from Table 1 after the JetClass 1e6 rerun and re-test at 3 sigma (PI SP-11): the 17-class cost must pass and the 162- and 43-class differences read "consistent" for this sentence to stand as written
 On top tagging and quark/gluon discrimination the fine-tuned label sets show no
 resolved difference (table~\ref{tab:summary}).
-With the missing inputs set to zero, a linear probe on the frozen features of the \Kfull-class model
-matches the random network with BatchNorm recomputed on top tagging (\MlstLpTopRthirtyFullOverInitBnZeroPr{}), as an
-MLP probe does (\MlstMlpTopRthirtyFullOverInitBnPr{}); with the
-substitution chosen on validation it reaches \MlstLpTopRthirtyFullOverInitBnPr{} of that network, and
+With the missing inputs set to zero, the $R_{30}$ difference on top tagging between a linear probe on the frozen
+features of the \Kfull-class model and one on the random network with BatchNorm recomputed is not resolved
+(\MlstLpTopRthirtyFullOverInitBnZeroPr{}), nor is it for an MLP probe (\MlstMlpTopRthirtyFullOverInitBnPr{}); with the
+substitution chosen on validation the linear probe reaches \MlstLpTopRthirtyFullOverInitBnPr{} of that network, and
 \MlstLpQgRthirtyFullOverInitBnPr{} on quark/gluon discrimination (tables~\ref{tab:fill} and~\ref{tab:summary}).
 On top tagging the zero value, more than the missing information, keeps the
 frozen features from doing better than a random network. % CHECK: ...FullOverInitBnZeroPr reads the null and ...FullOverInitBnPr a direction on both tasks, each from its tab:tests row
@@ -29,7 +30,7 @@ whatever the frozen features keep: Sophon's $X\to b\bar{b}$ discriminant cannot 
 \Kfull{} and \Kres{} classes (section~\ref{sec:labelsets}). For use with frozen features, keep the flavor
 boundaries: on the pretraining classes a single one lowers the error of the linear probe
 (table~\ref{tab:tests}). Keep the QCD classes apart where a downstream task separates QCD jets by
-flavor: merging them leaves the resonant classes unchanged but costs the QCD pairs
+flavor: merging them has no resolved effect on the resonant classes but costs the QCD pairs
 (figure~\ref{fig:F4-qcd}) and any discriminant that weights each QCD subclass separately
 (section~\ref{sec:labelsets}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of F4-qcd show 162 below 188
 Add an auxiliary mass regression: it makes the jet mass more precisely readable from the frozen features
@@ -51,8 +52,8 @@ has \MlstNRunsWord{} pretraining runs and every other configuration fewer; and t
 with a different scheme from Sophon's code, so their absolute performance need not match Sophon's published
 model, while every comparison is between models trained here.
 
-Which distinctions a pretraining label set keeps, more than how many classes it has, shapes which
-discriminants an analysis can still form and how well frozen features separate decays by flavor. A
+Which distinctions a pretraining label set keeps shapes which discriminants an analysis can still form and how
+well frozen features separate decays by flavor. % LEDGER DL-3: "more than how many classes it has" dropped, no tab:tests row compares the two factors A
 per-particle reconstruction objective recovers jet flavor without flavor labels: frozen features of
 machine-learned particle flow separate $b$ jets from light and $c$ jets~\cite{mlpf_fm}. A
 label set built for transfer should therefore keep the classes that analyses sum into discriminants
