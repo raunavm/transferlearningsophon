@@ -21,7 +21,7 @@ def _journal(tmp_path, drop=()):
     """A manuscript holding exactly the placement's main-text and appendix items (less drop): main.tex maps each
     figure to its gallery file and inputs one section a tier, each \\paperfig and \\input{tables/...} in it."""
     want, files = MI.placement(), MI.B.TABLE_FILE
-    (tmp_path / "sections").mkdir()
+    (tmp_path / "sections").mkdir(parents=True)
     (tmp_path / "tables").mkdir()
     head = []
     for tier, name in ((MI.G.MAIN, "body"), (MI.G.APPENDIX, "app")):

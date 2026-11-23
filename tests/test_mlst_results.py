@@ -2719,7 +2719,10 @@ def test_the_missing_input_table_of_the_paper_leaves_out_what_the_probe_table_pr
     paper = M.table_fill(None, fill, fits, runs, M.TAB, ("L188", M.INIT), drop=False, chosen={"top": "draws", "qg": "mean"}).splitlines()
     assert paper[0] == r"\begin{tabular}{lcccc}" and paper[4] == " & zero & mean & zero & draws \\\\"
     assert paper[2] == r" & \multicolumn{2}{c}{top, $R_{30}$} & \multicolumn{2}{c}{quark/gluon (Pythia), $R_{30}$} \\"
-    assert not any(ln.startswith(M.LABEL["KIN"]) for ln in paper)
+    # PI 2026-11-23, LEDGER SP-9: tab:fill takes in tab:fill_main's rows, the kinematic-only one among them (tab:probes
+    # is in the data release); the chosen substitution's column stays Table 1's
+    assert paper[8] == M.LABEL["KIN"] + r" & \multicolumn{2}{c}{231" + M.SINGLE + r" (nothing missing)} & -- & -- \\"
+    assert paper[7].startswith(M.LABEL[M.INIT] + " & ") and paper[9] == r"\bottomrule"
     tok = M.V4.tok
     assert paper[6] == M.LABEL["L188"] + " & " + " & ".join(tok("p", x, 1.0) for x in (101.0, 111.0, 201.0, 221.0)) + r" \\"
     whole = M.table_fill(None, fill, fits, runs, M.TAB, ("L188", M.INIT), drop=False).splitlines()
@@ -3532,8 +3535,16 @@ def test_the_compute_table_gives_each_runs_last_validation_accuracy_and_a_last_b
     cell = lambda name: next(ln for ln in block if ln.startswith(name + " & ")).removesuffix(r" \\").split(" & ")[1]   # noqa: E731
     assert cell(M.LABEL["L188"]) == r"0.610\,$\pm$\,0.014" and cell(r"\quad " + M.LABEL[M.RAND_POOLED]) == r"0.460\,$\pm$\,0.014"
     assert cell(r"\quad " + M.LABEL["FLAV_F0"]).startswith("0.55") and M.SINGLE in cell(r"\quad " + M.LABEL["FLAV_F0"])
-    cap = M.CAPTIONS["compute"][1]
+    # PI 2026-11-23, LEDGER SP-9: this per-run table is the data release's copy (tab:computefull); the appendix's
+    # tab:compute holds one row per stage, its caption pointing to the release for each run
+    cap = M.CAPTIONS["compute_full"][1]
     assert "validation accuracy" in cap and "80 epochs" in cap and "last part of the table" in cap and "last block" not in cap
+    assert M.CAPTIONS["compute_full"][0] == "tab:computefull" and "each stage" in M.CAPTIONS["compute"][1]
+    stages = M.table_compute_stages({}, {"L188": ["mtx-l188-s1"]}, MT.fmt_int,
+                                    ft_h={"pre": {"V100": 2.4}, "scratch": {}}).splitlines()
+    assert [ln.split(" & ")[0] for ln in stages if " & " in ln][1:] == [
+        r"pretraining, 0 runs \pending{1 runs without a record}", "fine-tuning of the pretrained networks",
+        "fine-tuning from scratch"]
 
 
 def test_the_confusion_table_holds_the_matrices_and_paired_changes_of_the_confusion_figures(monkeypatch):

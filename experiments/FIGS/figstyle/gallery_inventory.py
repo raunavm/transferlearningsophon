@@ -81,7 +81,8 @@ def _boot_rows(path: pathlib.Path) -> list:
     z = lambda name: diffs.get(name, {}).get(G.F10B_WP, {}).get("distance", {}).get("z")     # noqa: E731
     rule = " and ".join(f"{label[n]} {'>' if sign > 0 else '<'} {'+' if sign > 0 else '−'}3σ" for n, sign in G.F10B_RULE)
     here = " and ".join("–" if z(n) is None else num(z(n), "+.2f") + "σ" for n, _ in G.F10B_RULE)
-    rows.append(("", f"F10b: {'main text' if G.f10b_main(diffs) else 'appendix'} (main text only if at {wp_label} "
+    # PI 2026-11-23 (LEDGER SP-9): F10b is in the data release unless its rule passes
+    rows.append(("", f"F10b: {'main text' if G.f10b_main(diffs) else G.TIER_NAME[G.TIER['F10b']].lower()} (main text only if at {wp_label} "
                      f"{rule}; here {here}).", ""))
     return rows
 

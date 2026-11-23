@@ -96,9 +96,10 @@ def test_the_map_shows_every_pulled_sculpting_difference():
                                                   fmt(d["z"], ".1f") + ("*" if d["pass"] else ""))
             assert d["pass"] == (abs(d["delta"]) > 3 * d["sigma"])
     z = [fmt(diffs[n][G.F10B_WP]["distance"]["z"], "+.2f") + "σ" for n, _ in G.F10B_RULE]
-    tier = "main text" if G.f10b_main(diffs) else "appendix"
+    # PI 2026-11-23, LEDGER SP-9: F10b went to the data release (the supplement tier); the main text only on the rule
+    tier = "main text" if G.f10b_main(diffs) else G.TIER_NAME[G.TIER["F10b"]].lower()
     assert rows[-1][1].startswith(f"F10b: {tier} (") and rows[-1][1].endswith(f"here {z[0]} and {z[1]}).")
-    assert tier == G.TIER_NAME[G.TIER["F10b"]].lower()          # the placement follows the test
+    assert G.f10b_main(diffs) or G.TIER["F10b"] == G.SUPPLEMENT          # the placement follows the test
 
 
 def test_the_million_jet_block_formats_mean_and_sd_in_the_last_digit():
