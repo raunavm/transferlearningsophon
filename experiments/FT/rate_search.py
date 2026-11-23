@@ -92,6 +92,11 @@ def evaluate(scan: dict, b=None) -> list:
                     rerun_diverged.append(_rel(c["out"]))
             if rerun_diverged and recorded in vals:
                 vals[recorded] = DIVERGED
+        # FT-10, recorded in the builder: a rate that diverged in the row's rerun stays failed after the row moves on
+        for lr in getattr(b, "FIXED_RERUN_DIVERGED", {}).get((task, n, kind), ()):
+            if lr in vals:
+                vals[lr] = DIVERGED
+                rerun_diverged.append(f"{lr} (rerun, FIXED_RERUN_DIVERGED)")
         num = {lr: v for lr, v in vals.items() if isinstance(v, float)}
         # ties at full precision (PI 2026-11-22): rates exactly equal at the top keep the rate the row was first run at
         # (no rerun; the methods then needs a clause, so the row says so); a tie without it is flagged for the PI

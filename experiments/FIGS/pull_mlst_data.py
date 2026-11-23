@@ -207,7 +207,7 @@ def fixed_sweep() -> dict:
 # PI 2026-11-21: the rate search of every row (build_ft_budget_jobs.fixed_search_plan) and the reruns at the chosen rates,
 # read as raw facts per cell; experiments/FT/rate_search.py applies the rules (one divergence rule, the floor, the
 # schedule check, the recorded rate). Also run alone by the watcher: python3 - rate_search < pull_mlst_data.py
-RATE_SEARCH_GLOBS = ("fixed_sweep/*/*/N*/s*", "fixed_sweep_1e4/*/*/N*/s*", "fixed_rate/*/*/N*/s*",
+RATE_SEARCH_GLOBS = ("fixed_sweep/*/*/N*/s*", "fixed_sweep_1e4/*/*/N*/s*", "fixed_rate/*/*/N*/s*", "fixed_rate2/*/*/N*/s*",
                      "fixed/*/l188-s1/N*/s1", "fixed/*/r16q1-s1/N*/s1", "fixed/*/scratch/N*/s1")
 NONFINITE = ("nan", "inf", "-inf")
 

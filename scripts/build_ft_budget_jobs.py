@@ -249,7 +249,9 @@ FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1
                   ("jc2b", 100_000): "1e-4",      # 2026-11-22: 0.41235 at 1e-4 (3e-5 0.41226, 3e-4 0.4105, 1e-5 0.4092)
                   ("top", 1_000): "1e-3",         # 2026-11-22: 0.90862 at 1e-3 (1e-2 0.90786, 3e-4 0.9073, 3e-3 0.9068)
                   ("jc1", 10_000): "1e-3",        # 2026-11-22: 0.80917 at 1e-3 (3e-3 0.80876, 3e-4 0.80451, 1e-2 0.79976)
-                  ("jc1", 1_000_000): "1e-4"}     # 2026-11-23: 0.8493 at 1e-4 (3e-5 0.8482, 3e-4 0.8477, 1e-2 0.8328)
+                  ("jc1", 1_000_000): "1e-4",     # 2026-11-23: 0.8493 at 1e-4 (3e-5 0.8482, 3e-4 0.8477, 1e-2 0.8328)
+                  # 2026-11-23 16:09 UTC: 0.8365 at 3e-4 (1e-4 0.8364, 1e-3 0.8362, 3e-3 0.8360, 1e-2 0.8355)
+                  ("qg", 100_000): "3e-4"}
 # from scratch, seeds SCRATCH_SEEDS, where its search moved it: qg 1e3 best 1e-4 0.7826 (3e-5 0.7817, 3e-4 0.7705)
 FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
                           # 2026-11-22: JetClass-II 1e6 best 3e-3 0.3812 (1e-3 0.3769, 3e-4 0.3736, 1e-2 diverged)
@@ -271,8 +273,9 @@ FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
                           # best 1e-2 0.928896 (3e-3 0.928606, its original rate, no tie; 1e-3 0.92841, 3e-2 0.91224)
                           ("jc1", 100_000): "3e-3", ("top", 100_000): "1e-2",
                           # 2026-11-23 14:48 UTC: top 1e3 best 3e-2 0.8930 (1e-2 0.8859, 3e-3 0.8831, its original;
-                          # 1e-3 0.8846; 1e-1 diverged)
-                          ("top", 1_000): "3e-2"}
+                          # 1e-3 0.8846; 1e-1 diverged). 16:08 UTC: 3e-2 diverged in the rerun, seeds 1-3 (FT-10: the
+                          # row fails that rate, next best 1e-2, into FIXED_RATE2_ROOT)
+                          ("top", 1_000): "1e-2"}
 # the rows whose recorded rate moved from the original, in the order they settled: fixed_rate_cells' job indices follow
 # it, so a row recorded later appends and never shifts the index of a launched cell
 FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000, "scratch"),
@@ -291,7 +294,14 @@ FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000,
                     # 2026-11-23 05:13 UTC
                     ("jc1", 100_000, "scratch"), ("top", 100_000, "scratch"),
                     # 2026-11-23 14:48 UTC
-                    ("top", 1_000, "scratch"))
+                    ("top", 1_000, "scratch"),
+                    # 2026-11-23 16:09 UTC
+                    ("qg", 100_000, "pre"))
+# PI rule FT-10 (2026-11-21): "a chosen rate that diverges in a rerun fails the row: next best rate". The row's
+# chosen rate stays failed here (rate_search reads it), and its rerun at the next best rate goes into FIXED_RATE2_ROOT:
+# the cell script never retries a folder with a DIVERGED record, and those folders stay as the record of the divergence.
+FIXED_RATE2_ROOT = "/data/results/ft_v2/fixed_rate2"
+FIXED_RERUN_DIVERGED = {("top", 1_000, "scratch"): ("3e-2",)}   # 2026-11-23 16:08: seeds 1-3 non-finite at checks 74, 44, 55
 # PI 2026-11-21: the search goes no lower than 1e-5 (below it fine-tuning approaches training only the new output layer
 # on frozen features); a row whose best is still its lowest rate there takes 1e-5
 FIXED_SEARCH_FLOOR = "1e-5"
@@ -318,7 +328,8 @@ def paper_fixed_cells() -> list:
     for c in fixed_cells(set(FIXED_STEPS)):
         kind = "pre" if c["init"] else "scratch"
         lr = row_rate(c["task"], c["n"], kind)
-        out.append(c if lr in (None, c["lr"]) else fixed_cell(c["task"], c["init"], c["n"], c["s"], lr, FIXED_RATE_ROOT))
+        out.append(c if lr in (None, c["lr"]) else fixed_cell(c["task"], c["init"], c["n"], c["s"], lr,
+                                                              paper_root(c["task"].removesuffix("kin"), c["n"], kind)))
     return out
 
 
@@ -367,7 +378,9 @@ def paper_cells(task: str, n: int) -> dict:
 def paper_root(task: str, n: int, kind: str = "pre") -> str:
     """The tree of a row's cells: FIXED_RATE_ROOT where its recorded rate moved from the original, else FIXED_ROOT."""
     lr = row_rate(task, n, kind)
-    return FIXED_RATE_ROOT if lr not in (None, original_rate(task, kind)) else FIXED_ROOT
+    if lr in (None, original_rate(task, kind)):
+        return FIXED_ROOT
+    return FIXED_RATE2_ROOT if (task, n, kind) in FIXED_RERUN_DIVERGED else FIXED_RATE_ROOT
 
 
 # 2026-11-21, third round: quark/gluon 1e5 pretrained best at 3e-3 (0.8360; 1e-2 0.8355, 3e-2 diverged), the lowest rate
@@ -535,10 +548,11 @@ def fixed_rate_cells() -> list:
             lr = FIXED_ROW_RATE[(task, n)]
             # each cell keeps its own task: the kinematic-only network is topkin (7 inputs), not top (2026-11-23: top1e3b
             # index 11 loaded its 7-input checkpoint into the 17-input top model and failed)
-            out += [fixed_cell(c["task"], c["init"], n, c["s"], lr, FIXED_RATE_ROOT) for c in fixed_cells({n})
+            out += [fixed_cell(c["task"], c["init"], n, c["s"], lr, paper_root(task, n, kind)) for c in fixed_cells({n})
                     if c["task"] in (task, f"{task}kin") and c["init"]]
         else:
-            out += [fixed_cell(task, "", n, s, FIXED_ROW_RATE_SCRATCH[(task, n)], FIXED_RATE_ROOT) for s in SCRATCH_SEEDS]
+            out += [fixed_cell(task, "", n, s, FIXED_ROW_RATE_SCRATCH[(task, n)], paper_root(task, n, kind))
+                    for s in SCRATCH_SEEDS]
     return out
 
 

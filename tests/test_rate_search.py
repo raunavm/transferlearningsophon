@@ -275,3 +275,21 @@ def test_every_rerun_cell_keeps_its_original_cells_task():
     bad = [(key(c), c["task"], orig.get(key(c))) for c in B.fixed_rate_cells() if c["init"] and orig.get(key(c)) != c["task"]]
     assert not bad, bad
     assert any(c["task"] == "topkin" for c in B.fixed_rate_cells())
+
+
+def test_a_rate_that_diverged_in_its_rerun_stays_failed_after_the_row_moves_on():
+    """FT-10 (PI 2026-11-21): top 1e3 from scratch chose 3e-2, which diverged in all three rerun seeds (2026-11-23):
+    the row moves to the next best rate and must not move back once 3e-2's rerun cells are no longer the recorded ones;
+    its rerun goes into its own tree, since the cell script never retries a folder with a DIVERGED record."""
+    rates = ("1e-3", "3e-3", "1e-2", "3e-2", "1e-1")
+    scan = _scan({"1e-3": _cell("1e-3", 0.8846), "3e-3": _cell("3e-3", 0.8831), "1e-2": _cell("1e-2", 0.8859),
+                  "3e-2": _cell("3e-2", 0.8930), "1e-1": _cell("1e-1", None, done=False, nonfinite=4)})
+    fake = _fake(_plan(rates), {("top", 1_000, "scratch"): "1e-2"})
+    fake.FIXED_RERUN_DIVERGED = {("top", 1_000, "scratch"): ("3e-2",)}
+    row = RS.evaluate(scan, fake)[0]
+    assert row["values"]["3e-2"] == RS.DIVERGED and row["best"] == "1e-2" and row["status"] == "settled"
+    assert not any("recorded" in e for e in row["issues"]), row["issues"]
+    assert B.paper_root("top", 1_000, "scratch") == B.FIXED_RATE2_ROOT
+    cells = [c for c in B.fixed_rate_cells() if (c["task"], c["n"], c["init"]) == ("top", 1_000, "")]
+    assert [c["lr"] for c in cells] == ["1e-2"] * 3 and all(c["out"].startswith(B.FIXED_RATE2_ROOT + "/") for c in cells)
+    assert {c["out"] for c in cells} == {c["out"] for c in B.paper_fixed_cells() if (c["task"], c["n"], c["init"]) == ("top", 1_000, "")}
