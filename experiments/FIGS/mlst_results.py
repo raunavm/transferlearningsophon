@@ -5004,7 +5004,7 @@ _BB, _BC, _BBQQ = (rf"{_PAIR[k]}, AUC, " + HEADING["lp"] for k in ("bb_vs_cc", "
 _TOP_FILL, _QG_FILL = (rf"{t}, $R_{{30}}$, " + HEADING["lp"] + ", missing inputs"
                        for t in ("top tagging", "quark/gluon tagging (Pythia)"))
 _MASS_MLP, _MASS_HEAD = "jet mass, resolution, " + HEADING["mlp"], "jet mass, resolution, " + HEADING["head"]
-RATIO_PAIR_HEADS = (_BB, _BC, _BBQQ)       # the ratio words whose sides tab:pairauc prints
+RATIO_PAIR_HEADS = {_BB: 1, _BC: 2, _BBQQ: 3}       # the ratio words whose sides tab:pairauc prints: their column
 PR_ROWS = {
     # results_jc
     "MlstCmpJcTwoMidOverFullPr": (_JC2_LP, "R42_Q1", "L188", _NO_MORE),
@@ -5400,7 +5400,7 @@ def ratio_words(em, rows: dict, used: set, src, sides: dict | None = None) -> No
                 raise SystemExit(f"FATAL: \\{name}: tab:tests row {first} - {second} passes with no printed values of "
                                  "its sides to form the ratio from (LEDGER CS-6)")
             # the pair AUCs print in tab:pairauc (LEDGER DL-R #4), at its extra digit (EXTRA_DIGIT, LEDGER TX-3)
-            extra = EXTRA_DIGIT["pair_auc"] if head in RATIO_PAIR_HEADS else 0
+            extra = EXTRA_DIGIT["pair_auc"].get(RATIO_PAIR_HEADS.get(head), 0)
             a, b = (_printed_mean(s, extra) for s in pair)
             if (1 - b if h["noun"] == "errors" else b) == 0:
                 raise SystemExit(f"FATAL: \\{name}: its reference prints no error (or a zero), so no ratio")
@@ -6797,9 +6797,9 @@ CAPTION_SHORT = {
     # PI 2026-11-23 (LEDGER DL-R #4, CS-6): the AUCs the main text's error ratios on these pairs are formed from
     "pair_auc": ("The area under the receiver operating characteristic curve (AUC) of binary linear probes on the frozen "
                  "features separating pairs of JetClass-II classes, the second-named the background, scored on up to "
-                 "\\JcBalPairTestPerSide{} test jets of each side. The values carry one digit more than the standard "
-                 "deviation's rounding gives, up to five decimals, so that the ratios of $1-\\mathrm{AUC}$ the text "
-                 "quotes follow from them."
+                 "\\JcBalPairTestPerSide{} test jets of each side. The $X\\to bc$ column carries one digit more than "
+                 "the standard deviation's rounding gives, up to five decimals, so that the ratios of $1-\\mathrm{AUC}$ "
+                 "the text quotes follow from it."
                  + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER SP-9, merge 6; SC-1 (1), (4)): what the table holds, no finding; at most 135 words.
     # PI 2026-11-23 (LEDGER SP-13, step 2): Delta, sigma and Delta / sigma, independent-sample rows marked (KEY_MARKS)
@@ -7410,8 +7410,10 @@ def _zero_sd(mean: float, sd: float) -> bool:
 # quoted digits gets one more digit: {table key: extra decimal places of its mean +- SD cells}. tab:pairauc: the 17-class
 # AUC on X->bc vs bq, cs printed as 0.885 made "94% more errors" and "21% fewer errors" where the full means give 95% and
 # 22% (render 26d1efd, build log "TX-3 DIFF")
-EXTRA_DIGIT = {"pair_auc": 1}
-_EXTRA_NOW = [0]        # the extra places of the table being set (_float), read by _printed_place
+# the digit goes to the column that needs it, X->bc vs bq, cs (column 2 of tab:pairauc), so the table stays upright
+EXTRA_DIGIT = {"pair_auc": {2: 1}}
+_EXTRA_NOW = [{}]       # {column: extra places} of the table being set (_float), read by _printed_place
+_COL_NOW = [0]          # the column of the token being set (uniform_columns, _bold)
 
 
 def _printed_place(kind: str, v: list, place: int) -> int:
@@ -7419,7 +7421,7 @@ def _printed_place(kind: str, v: list, place: int) -> int:
     other token at its column's place. A mean +- SD prints alike in every table, whatever the column's place
     (2026-11-23 review A8, LEDGER TN-4: Table 1's 1,800 +- 60 had printed as 1,799 +- 56 in tab:published)."""
     if kind.lower() == "p" and not _zero_sd(v[0], v[1]):
-        return min(_pdg_place(v[1]) + _EXTRA_NOW[0], MAX_DECIMALS)
+        return min(_pdg_place(v[1]) + _EXTRA_NOW[0].get(_COL_NOW[0], 0), MAX_DECIMALS)
     return place
 
 
@@ -7459,6 +7461,7 @@ def uniform_columns(tab: str, floor: int | None = None) -> str:
     cells = {}
     for i, j, col in where:
         parts = cells.setdefault(i, _depth0_split(lines[i], "&"))
+        _COL_NOW[0] = col
         parts[j] = TOKEN.sub(lambda m: _render(m.group(1), [float(x) for x in m.group(2).split()], place[col], floor),
                              parts[j])
         for mark in (SINGLE, AGREE):         # a per-cent sign after the token (_pct_cell) goes before its mark
@@ -7576,6 +7579,7 @@ def _bold(key: str, tab: str, spec: dict | None = None) -> str:
                 void.add((block, col))
             elif len(toks) == 1 and toks[0][0] in "ps":
                 v = [float(x) for x in toks[0][1].split()]
+                _COL_NOW[0] = col
                 rows.append((block, col, i, j, v[0], _printed_place(toks[0][0], v, None)))
             elif spec.get("published") and (m := PLAIN.fullmatch(c.strip().removesuffix(r"\\").strip())):
                 # a published value takes part as printed, with or without an uncertainty (PI 2026-11-19)
@@ -7807,12 +7811,12 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
         cap = cap.replace(" $^{*}$: a probe that did not converge.", "")
     # bold needs the headings (its blocks) and the tokens (the unrounded values); a part its builder printed
     # (tab:summary, tab:published, tab:labelsets, tab:probes) has no token left and was marked there
-    _EXTRA_NOW[0] = EXTRA_DIGIT.get(key, 0)
+    _EXTRA_NOW[0] = EXTRA_DIGIT.get(key, {})
     try:
         parts = [_labels(uniform_columns(_bold(key, _headings(b.strip(), _mode(key, k)))) if key in BOLD and V4.TOK_OPEN in b
                          else _headings(uniform_columns(b.strip()), _mode(key, k))) for k, b in enumerate(body.split("%SPLIT%"))]
     finally:
-        _EXTRA_NOW[0] = 0
+        _EXTRA_NOW[0] = {}
     parts = [re.sub(r"\\mbox\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", t) if "begin{tabular}" in t else t for t in parts]
     if key in BOLD and any(BOLD_ON in t for t in parts):
         cap += BOLD[key].get("best", "")
@@ -8031,7 +8035,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
            "tables/mlst_probes_n_full.tex": _longtable("probes_n_full", table_probes_n(
                fits, runs, TAB, ALL_ROWS + (INIT,), fill, chosen, kin=True)),
            "tables/mlst_pair_auc.tex": _float("pair_auc", table_pair_auc(fits, _pooled(runs), TAB, status,
-                                                                      _paper_rows(rows_init)), whole="upright"),
+                                                                      _paper_rows(rows_init)), whole="upright",
+                                                colsep_pt=3),
            "tables/mlst_pairs.tex": _float("pairs", table_pairs(fits, _pooled(runs), TAB, status,
                                                                 _paper_rows(rows_init), pairs_ft, pairs_lp), True,
                                            label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK),
