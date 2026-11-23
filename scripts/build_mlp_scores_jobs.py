@@ -6,16 +6,18 @@ build_refit_v5_jobs.FAMILY_CPU["mlp"]: the EPYC 7402P), the pod refusing any oth
 four threads, the plateau rule); the same runs as the linear-probe rows. New folders only; a fit or file that exists
 is skipped, so a retried pod does only what is missing.
 
-  bs3-mlp-raunav (Indexed)  ROWS: jc2bal (188 and 162 classes: accuracy, the null of results_jc), coarse (188, 162,
+  bs3-mlp-<family>-raunav   Indexed, one a family, ROWS: jc2bal (188 and 162 classes: accuracy, the null of results_jc), coarse (188, 162,
                             43 and 17 classes on the 17 merged groups: tab:coarse's nulls), bench (the 27 networks of
                             Fig. 2 on top and quark/gluon, Pythia and Herwig: the R30 nulls of its caption, under the
                             linear probes' substitution of the missing inputs)
-  bs3-mlp-smoke-raunav      one row of the same body (SMOKE_ROW), its peak memory and seconds, to size the job; the
-                            main job then leaves that row out (--skip-smoke), so no fit runs in two jobs
+  bs3-mlp-smoke-raunav, bs3-mlp-smoke-bench-raunav   one row of the same body (SMOKES), its peak memory and
+                            seconds, to size the family's job, which then leaves that row out (--skip-smoke), so no
+                            fit runs in two jobs
   bs3-boot-raunav           one pod once every fit exists: BOOT_OUT's five files
   bs3-analytic-raunav       one pod: SC-2 #1, the transfer-head term against the paired bootstrap (ANALYTIC_OUT)
 
-    python3 scripts/build_mlp_scores_jobs.py --tag mtx-sN.NN --mem 12Gi [--parallel 8] [--skip-smoke]
+    python3 scripts/build_mlp_scores_jobs.py --tag mtx-sN.NN --what fit --family coarse --mem 6Gi [--parallel 8]
+        [--skip-smoke]      (--what smoke | smoke-bench | fit | boot | analytic)
 """
 from __future__ import annotations
 
@@ -45,7 +47,9 @@ B = BT.B
 ARMS = R5.BOOTALL_ARMS
 FAMILY_ARMS = {"jc2bal": ("l188", "l162"), "coarse": ("l188", "l162", "r42q1", "r16q1"), "bench": tuple(ARMS)}
 ROWS = [(f, f"mtx-{r}") for f, arms in FAMILY_ARMS.items() for a in arms for r in ARMS[a]]
-SMOKE_ROW = ("jc2bal", "mtx-l188-s1")    # the largest output and a bit-for-bit check against fits_v5_mlp
+# smokes: jc2bal, the largest output and a bit-for-bit check against fits_v5_mlp; bench, the largest training set
+SMOKES = {"jc2bal": ("jc2bal", "mtx-l188-s1"), "bench": ("bench", "mtx-l188-s1")}
+SMOKE_NAME = {"jc2bal": "bs3-mlp-smoke-raunav", "bench": "bs3-mlp-smoke-bench-raunav"}
 FILES = {"jc2bal": ("jc2bal_N1000000",), "coarse": ("jc2bal_R16_Q1_N1000000",),
          "bench": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000")}
 # the bootstraps: output -> (family, npz name, the differences (first arm, second arm), flags)
@@ -92,18 +96,20 @@ def _spec(tag: str, name: str, rows: list[str], parallelism: int, mem: str, cpu:
     return R5.pin_cpu(text, CPU_MODEL)
 
 
-def fit_rows(skip_smoke: bool) -> list[tuple[str, str]]:
-    return [r for r in ROWS if not (skip_smoke and r == SMOKE_ROW)]
+def fit_rows(family: str, skip_smoke: bool) -> list[tuple[str, str]]:
+    """The family's rows; with skip_smoke, without the row a smoke job fits (SMOKES)."""
+    return [r for r in ROWS if r[0] == family and not (skip_smoke and r in SMOKES.values())]
 
 
-def fit_spec(tag: str, mem: str, parallelism: int, skip_smoke: bool) -> str:
-    rows = [fit_row(*r) for r in fit_rows(skip_smoke)]
-    return _spec(tag, "bs3-mlp-raunav", rows, parallelism, mem, THREADS,
-                 "MLP probes with per-jet scores for the main text's linear-probe nulls (PI 2026-11-23, DL-9)")
+def fit_spec(tag: str, family: str, mem: str, parallelism: int, skip_smoke: bool) -> str:
+    """bs3-mlp-<family>-raunav: one job a family, so each family's pods are sized to its own measured peak."""
+    rows = [fit_row(*r) for r in fit_rows(family, skip_smoke)]
+    return _spec(tag, f"bs3-mlp-{family}-raunav", rows, parallelism, mem, THREADS,
+                 f"MLP probes with per-jet scores ({family}) for the main text's linear-probe nulls (PI 2026-11-23, DL-9)")
 
 
-def smoke_spec(tag: str, mem: str) -> str:
-    return _spec(tag, "bs3-mlp-smoke-raunav", [fit_row(*SMOKE_ROW)], 1, mem, THREADS,
+def smoke_spec(tag: str, mem: str, which: str = "jc2bal") -> str:
+    return _spec(tag, SMOKE_NAME[which], [fit_row(*SMOKES[which])], 1, mem, THREADS,
                  "MLP probes with per-jet scores, smoke: one fit, its peak memory and seconds")
 
 
@@ -136,7 +142,7 @@ def analytic_spec(tag: str, mem: str) -> str:
     lines = [BT.check_inputs([f(m) for f in ANALYTIC_OUT.values() for p in ANALYTIC_DIFFS for a in p for m in models(a)]),
              f"mkdir -p {BOOT}"]
     for out, f in ANALYTIC_OUT.items():
-        d = " ".join(f"--diff {BT.dname(a, b)}={','.join(f(m) for m in models(a))}/{','.join(f(m) for m in models(b))}"
+        d = " ".join(f"--diff {BT.dname(a, b)}={','.join(f(m) for m in models(a))}:{','.join(f(m) for m in models(b))}"
                      for a, b in ANALYTIC_DIFFS)
         lines.append(f"[ -e {out} ] || " + BT.peak(f"python3 experiments/STATS/analytic_check.py {d} --b {B} --out {out}"))
     return _spec(tag, "bs3-analytic-raunav", ["\n  ".join(lines)], 1, mem, "1",
@@ -146,18 +152,22 @@ def analytic_spec(tag: str, mem: str) -> str:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
-    ap.add_argument("--mem", required=True, help="the fit pods' memory, 1.5-2x the smoke's peak")
-    ap.add_argument("--boot-mem", default="4Gi")
+    ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic"))
+    ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
+    ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
     ap.add_argument("--parallel", type=int, default=8)
     ap.add_argument("--skip-smoke", action="store_true", help="leave the smoke's row to the smoke job")
     a = ap.parse_args(argv)
-    for name, text in (("bs3-mlp-smoke-raunav", smoke_spec(a.tag, a.mem)),
-                       ("bs3-mlp-raunav", fit_spec(a.tag, a.mem, a.parallel, a.skip_smoke)),
-                       ("bs3-boot-raunav", boot_spec(a.tag, a.boot_mem)),
-                       ("bs3-analytic-raunav", analytic_spec(a.tag, "3Gi"))):
-        p = OUT_DIR / f"job-{name}.yaml"
-        p.write_text(text)
-        print(f"wrote {p.relative_to(ROOT)}")
+    if (a.what == "fit") != (a.family is not None):
+        raise SystemExit("FATAL: --family with --what fit, and only then")
+    name, text = {"smoke": lambda: (SMOKE_NAME["jc2bal"], smoke_spec(a.tag, a.mem)),
+                  "smoke-bench": lambda: (SMOKE_NAME["bench"], smoke_spec(a.tag, a.mem, "bench")),
+                  "fit": lambda: (f"bs3-mlp-{a.family}-raunav", fit_spec(a.tag, a.family, a.mem, a.parallel, a.skip_smoke)),
+                  "boot": lambda: ("bs3-boot-raunav", boot_spec(a.tag, a.mem)),
+                  "analytic": lambda: ("bs3-analytic-raunav", analytic_spec(a.tag, a.mem))}[a.what]()
+    p = OUT_DIR / f"job-{name}.yaml"
+    p.write_text(text)
+    print(f"wrote {p.relative_to(ROOT)}")
     return 0
 
 

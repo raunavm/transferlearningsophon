@@ -50,3 +50,17 @@ def test_two_correlated_sides_pair_below_the_unpaired_term(tmp_path):
     assert d["sigma_analytic"] >= d["sigma_paired"]
     for v in doc["networks"].values():         # one network: analytic and bootstrap SD of the same order
         assert 0.5 < v["analytic_sd"] / v["boot_sd"] < 2
+
+
+def test_main_parses_sides_of_paths(tmp_path):
+    r = np.random.default_rng(4)
+    y = np.r_[np.ones(3000, int), np.zeros(30000, int)]
+    paths = []
+    for k in range(4):
+        p = tmp_path / "a" / f"m{k}.npz"
+        p.parent.mkdir(exist_ok=True)
+        np.savez(p, rows=np.arange(y.size), y=y, s=np.r_[r.normal(2, 1, 3000), r.normal(0, 1, 30000)].astype(np.float32))
+        paths.append(str(p))
+    out = tmp_path / "out" / "check.json"
+    assert AC.main(["--diff", f"x-y={paths[0]},{paths[1]}:{paths[2]},{paths[3]}", "--b", "20", "--out", str(out)]) == 0
+    assert list(__import__("json").loads(out.read_text())["diffs"]) == ["x-y"]

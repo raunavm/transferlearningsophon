@@ -113,13 +113,14 @@ def test_stored_records_each_metric_beside_the_stored_fit(tmp_path):
 def test_rows_are_the_runs_of_the_linear_probe_rows():
     assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 6 + 12 + 27
     assert {m for f, m in BJ.ROWS if f == "bench"} == {f"mtx-{r}" for rs in BJ.ARMS.values() for r in rs}
-    assert BJ.SMOKE_ROW in BJ.ROWS and BJ.SMOKE_ROW not in BJ.fit_rows(skip_smoke=True)
-    assert len(BJ.fit_rows(skip_smoke=True)) == len(BJ.ROWS) - 1
+    for fam, row in BJ.SMOKES.items():
+        assert row in BJ.fit_rows(fam, skip_smoke=False) and row not in BJ.fit_rows(fam, skip_smoke=True)
+    assert sum(len(BJ.fit_rows(f, True)) for f in BJ.FAMILY_ARMS) == len(BJ.ROWS) - len(BJ.SMOKES)
 
 
 @pytest.mark.parametrize("which", ["fit", "smoke", "boot"])
 def test_specs_pin_one_cpu_model_and_request_the_mlp_threads(which):
-    text = {"fit": lambda: BJ.fit_spec("mtx-s9.99", "12Gi", 8, True), "smoke": lambda: BJ.smoke_spec("mtx-s9.99", "12Gi"),
+    text = {"fit": lambda: BJ.fit_spec("mtx-s9.99", "bench", "12Gi", 8, True), "smoke": lambda: BJ.smoke_spec("mtx-s9.99", "12Gi"),
             "boot": lambda: BJ.boot_spec("mtx-s9.99", "4Gi")}[which]()
     assert BJ.CPU_MODEL == "AMD EPYC 7402P 24-Core Processor"
     assert f'[ "${{CPU}}" = "{BJ.CPU_MODEL}" ]' in text and "igrok-la.cenic.net" in text
@@ -146,3 +147,14 @@ def test_the_analytic_check_reads_the_linear_probes_files():
     assert "fits_v5_probs/mtx-r16q1-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz" in text
     for out in BJ.ANALYTIC_OUT:
         assert f"[ -e {out} ] ||" in text
+    # the sides of a --diff split at the colon (the paths hold slashes)
+    d = text.split("--diff ", 1)[1].split(" ", 1)[0]
+    assert d.count(":") == 1 and all(x.endswith(".npz") for side in d.split("=", 1)[1].split(":") for x in side.split(","))
+
+
+def test_one_job_a_family_and_the_smokes_rows_left_out():
+    for fam in BJ.FAMILY_ARMS:
+        text = BJ.fit_spec("mtx-s9.99", fam, "6Gi", 8, True)
+        assert f"name: bs3-mlp-{fam}-raunav" in text and f"completions: {len(BJ.fit_rows(fam, True))}" in text
+        assert f"--family {fam} " in text and all(f"--family {g} " not in text for g in BJ.FAMILY_ARMS if g != fam)
+    assert "name: bs3-mlp-smoke-bench-raunav" in BJ.smoke_spec("mtx-s9.99", "8Gi", "bench")

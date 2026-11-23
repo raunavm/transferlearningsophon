@@ -10,7 +10,8 @@ networks' SDs, and the two sides' terms add in quadrature. Against it: the paire
 side means over B resamples of the test jets drawn within each class and shared by every network
 (experiments/STATS/paired_bootstrap.py counts, its seed), and each network's own bootstrap SD beside its analytic SD.
 
-    python3 experiments/STATS/analytic_check.py --diff NAME=A1.npz,A2.npz/B1.npz,B2.npz ... --out <file>.json
+    python3 experiments/STATS/analytic_check.py --diff NAME=A1.npz,A2.npz:B1.npz,B2.npz ... --out <file>.json
+(the two sides separated by a colon: the paths hold slashes)
 """
 from __future__ import annotations
 
@@ -99,7 +100,7 @@ def check(diffs: dict, b: int, seed: int) -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--diff", action="append", required=True, metavar="NAME=A1,A2/B1,B2")
+    ap.add_argument("--diff", action="append", required=True, metavar="NAME=A1,A2:B1,B2")
     ap.add_argument("--b", type=int, default=200)
     ap.add_argument("--seed", type=int, default=20261029)
     ap.add_argument("--out", required=True, type=pathlib.Path)
@@ -109,7 +110,7 @@ def main(argv=None) -> int:
     diffs = {}
     for d in a.diff:
         name, sides = d.split("=", 1)
-        x, y = sides.split("/")
+        x, y = sides.split(":")
         diffs[name] = (x.split(","), y.split(","))
     doc = {"script": "experiments/STATS/analytic_check.py",
            "script_sha256": hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(), **check(diffs, a.b, a.seed)}
