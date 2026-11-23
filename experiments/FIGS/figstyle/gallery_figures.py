@@ -57,7 +57,11 @@ MODE_HEADINGS = {
                      "F10-ft", "F10-ft-part"), _FT),
     # PI 2026-11-14 (audit 3): every one-mode figure names its mode, the mass and UMAP figures too; F10b holds both
     # modes, one a panel, so its panel titles name them
-    **dict.fromkeys(("F11", "F11-part", "A17-probe", "A17-ridge", "A17-probe-part", "A17-ridge-part", "UMAP-frozen",
+    # CA-12 (review of render 5c40d69, B15): F11's mode is the transfer head on frozen features, as Table 1's heading
+    # over its columns; the network trained from scratch beside it is grey and named in the legend (L6), the direct
+    # discriminant dash-dot and named "(direct discriminant)"
+    "F11": "Transfer head, beside training from scratch",
+    **dict.fromkeys(("F11-part", "A17-probe", "A17-ridge", "A17-probe-part", "A17-ridge-part", "UMAP-frozen",
                      "UMAP-xbx", "UMAP-mass-xbx"),
                     "Not fine-tuned"),
     **dict.fromkeys(("UMAP-ft",), _FT),
