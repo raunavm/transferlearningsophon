@@ -1968,12 +1968,14 @@ def test_the_pair_table_groups_the_rows_by_mode_with_the_mode_in_the_group_headi
     class-pair figures' panel order; the probed and the fine-tuned rows as two row groups under the
     italic headings of every table (HEADING) and no tag on the rows; from scratch has no probe, the random networks no
     fine-tuning; the fine-tuned group is one pending row until the read-out is pulled."""
-    pairs = lambda r: {M.PAIR_N: {k: _r50(r) for k, *_ in M.PAIRS}}      # noqa: E731
+    # X->ee vs mumu: every network that keeps it apart separates it completely (no background jet passes), as the
+    # build's EE_NOTE check requires (PI 2026-11-19, B13, LEDGER TN-7)
+    pairs = lambda r: {M.PAIR_N: {k: _r50(r, k=0) if k == "ee_vs_mm" else _r50(r) for k, *_ in M.PAIRS}}      # noqa: E731
     fits = {"mtx-l188-s1": {"cells": {"best70": {M.PAIR_DS: pairs(950.0)}}},
             "mtx-r16q1-s1": {"cells": {"best70": {M.PAIR_DS: pairs(400.0)}}},
             **{m: {"cells": {"init": {M.PAIR_DS: pairs(60.0 + i)}}} for i, m in enumerate(M.INIT_MODELS)}}
     runs = {"L188": ["mtx-l188-s1"], "R16_Q1": ["mtx-r16q1-s1"], M.INIT: list(M.INIT_MODELS)}
-    ft = {"mtx-l188-s1": {k: (900.0, 50, 100_000) for k, *_ in M.PAIRS},
+    ft = {"mtx-l188-s1": {k: (900.0, 0 if k == "ee_vs_mm" else 50, 100_000) for k, *_ in M.PAIRS},
           "mtx-r16q1-s1": {k: (300.0, 80, 100_000) for k, *_ in M.PAIRS},
           **{m: {k: (200.0 + 10 * i, 100, 100_000) for k, *_ in M.PAIRS} for i, m in enumerate(M.FT_SCRATCH_MODELS)}}
     t = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", "R16_Q1", M.INIT), ft)
