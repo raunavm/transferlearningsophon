@@ -158,7 +158,9 @@ def test_the_class_pair_family_has_one_form_for_both_modes_and_every_pair(monkey
     pairs_of = (R.MECHANISM, R.MECHANISM, R.OTHER[:2], R.OTHER[:2], R.OTHER[2:], R.OTHER[2:])
     for (grid, kw), pairs, ft in zip(calls, pairs_of, (False, True) * 3, strict=True):
         assert [[(key, nets) for _, key, nets, _ in row] for row in grid] == [
-            [(k, R.LABEL_SETS + (("SCRATCH",) if ft else ())) for k in pairs], [(k, R.PARTITIONS) for k in pairs]]
+            [(k, R.LABEL_SETS + (("SCRATCH",) if ft else ())) for k in pairs], [(k, R.PAIR_PARTITIONS) for k in pairs]]
+        # PI 2026-11-19 (list item C5.2, LEDGER FG-24): the random partitions join the partitions row
+        assert R.PAIR_PARTITIONS == R.PARTITIONS[:3] + ("RAND",) + R.PARTITIONS[3:]
         assert kw["row_names"] == ("Label sets", "17-class partitions")
         assert all(":" not in title for row in grid for *_, title in row)            # L7: no colon in a panel title
     assert [k for k, *_ in calls[0][0][0]] == [k for k, *_ in calls[1][0][0]]   # one pair order in both modes

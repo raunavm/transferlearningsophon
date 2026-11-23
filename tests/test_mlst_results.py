@@ -1977,10 +1977,12 @@ def test_the_pair_table_groups_the_rows_by_mode_with_the_mode_in_the_group_headi
           "mtx-r16q1-s1": {k: (300.0, 80, 100_000) for k, *_ in M.PAIRS},
           **{m: {k: (200.0 + 10 * i, 100, 100_000) for k, *_ in M.PAIRS} for i, m in enumerate(M.FT_SCRATCH_MODELS)}}
     t = M.table_pairs(fits, runs, MT.fmt_pm, M.merge_status(ROOT), ("L188", "R16_Q1", M.INIT), ft)
-    n = len(M.PAIRS)
+    # PI 2026-11-19 (list item B13, LEDGER TN-7): the X->ee vs mumu column leaves the table, one sentence in its place
+    assert [k for k, *_ in M.PAIRS_TABLE] == [k for k, *_ in M.PAIRS_FIG if k != "ee_vs_mm"]
+    n = len(M.PAIRS_TABLE)
     lines = t.splitlines()
     assert lines[2:6] == [rf" & \multicolumn{{{n}}}{{c}}{{$R_{{90}}$}} \\", rf"\cmidrule(lr){{2-{1 + n}}}",
-                          " & " + " & ".join(h for _, h, *_ in M.PAIRS_FIG) + r" \\", r"\midrule"]
+                          " & " + " & ".join(h for _, h, *_ in M.PAIRS_TABLE) + r" \\", r"\midrule"]
     assert [k for k, *_ in M.PAIRS_FIG] == list(M.PAIR_ORDER) and "AUC" not in t and r"\rho" not in t
     lp, f = (lines.index(M._full_row(1 + n, M.HEADING[m], italic=True)) for m in ("lp", "ft"))
     assert lines[lp - 1] == lines[f - 1] == r"\midrule"
@@ -2308,8 +2310,9 @@ def test_the_probe_and_pair_tables_of_the_paper_print_no_ratio_column():
     pooled = next(ln for ln in p.splitlines() if ln.startswith(M.LABEL[M.RAND_POOLED] + " & ")).split(" & ")
     # X->ee vs mumu: random partitions 1, 2 and 4 merge it, 3 and 5 keep it apart; the QCD pairs: all five merge them
     # (the columns in the class-pair figures' panel order, PAIRS_FIG)
-    keys = [k for k, *_ in M.PAIRS_FIG]
-    assert M.POOL_MARK in pooled[1 + keys.index("ee_vs_mm")] and r"$^{\dagger}$" in pooled[1 + keys.index("qcd_bb_vs_cc")]
+    # PI 2026-11-19 (B13, LEDGER TN-7): no X->ee vs mumu column, so its pooled-partition mark is gone with it
+    keys = [k for k, *_ in M.PAIRS_TABLE]
+    assert "ee_vs_mm" not in keys and r"$^{\dagger}$" in pooled[1 + keys.index("qcd_bb_vs_cc")]
     # the pooled-partition mark is the parallel sign: the section sign marks a single run in every table
     assert M.POOL_MARK == r"$^{\parallel}$" and M.POOL_MARK != M.SINGLE and not hasattr(M, "SAME_AUC")
 
