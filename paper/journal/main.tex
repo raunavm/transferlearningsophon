@@ -102,7 +102,7 @@
 \newcommand{\Kmid}{\VocabSizeRfourtwoQone}
 \newcommand{\Kcoarse}{\VocabSizeRonesixQone}
 
-% Figures by their docs/FIGURE_PLAN.md id. \paperfig{<width>}{<id>} includes
+% Figures by their gallery id (experiments/FIGS/figstyle/gallery_placement.py). \paperfig{<width>}{<id>} includes
 % ../../figures/mlst/<file>.pdf for the file name \setfigfile gives the id, and prints a \pending
 % marker when that file has not been rendered yet.
 \makeatletter
@@ -114,50 +114,21 @@
       {\includegraphics[width=#1]{../../figures/mlst/\csname paperfig@file@#2\endcsname.pdf}}%
       {\pending{figure #2: not rendered yet}}}}
 \makeatother
-% File names: the names experiments/FIGS/paper_figures.py saves under (its _save calls).
-% The id A17 is spelled through \FigIdAseventeen because tests/test_manuscript_numbers.py reads the
-% "7" of a literal "A17" as a typed number (its NUMBER lookbehind checks one character); a figure id
-% is not a result. The \newcommand line itself is stripped by that test.
-\newcommand{\FigIdAseventeen}{A17}
-% The gallery figures (experiments/FIGS/figstyle/gallery_{labelset,roc,physics}.py, their Page records)
-% are saved by the render job as figures/mlst/gallery/<id>.pdf (gallery_figures.PAPER). F11 has a file
-% name, but the render job does not draw it until the X->bb and X->bs samples are in.
-\setfigfile{F2a}{gallery/F2}                % linear probes, each task's headline metric (gallery F2; F2a is its AUC version)
-\setfigfile{F2b}{gallery/F2-ft}             % the same after fine-tuning (gallery F2-ft)
-\setfigfile{F3}{gallery/F3}                 % JetClass-II per-class heatmap (AUC difference)
+% The gallery figures (experiments/FIGS/figstyle/gallery_{labelset,roc,physics,perclass}.py, their Page records)
+% are saved by the render job as figures/mlst/gallery/<id>.pdf (gallery_figures.PAPER). The ids and their order
+% are the placement's main-text and appendix figures (PI SP-1, SP-9; experiments/FIGS/manuscript_items.py).
 \setfigfile{F1}{gallery/F1}                 % design of the study
-\setfigfile{F4}{gallery/F4}                 % class pairs that differ only in flavor, ROC
-\setfigfile{FJ}{gallery/FJ}                 % JetClass, fine-tuned, each class against the rest, per label set
-\setfigfile{FJ-ctrl}{gallery/FJ-ctrl}       % the same for the random partitions
-\setfigfile{F6}{gallery/F6-ft}              % top and quark/gluon (Pythia, Herwig) ROC after fine-tuning, ratio to 188 classes (gallery F6 is the linear probes)
-\setfigfile{F8}{gallery/F8}                 % 188-class model fine-tuned, probed and from scratch against training jets
-\setfigfile{F9a}{gallery/F9a}               % mass regression: response histograms
-\setfigfile{F9b}{gallery/F9b}               % mass regression: median and resolution against jet pT
-\setfigfile{F10a}{gallery/F10a}             % mass sculpting: QCD mass before and after selections
-\setfigfile{F10b}{gallery/F10b}             % mass sculpting: Jensen-Shannon distance against QCD efficiency
-\setfigfile{F10b-flav}{gallery/F10b-flav}   % the same for the random partitions with controlled flavor boundaries
-\setfigfile{F10a-flav}{gallery/F10a-flav}   % QCD mass before and after selections, flavor-boundary partitions
-\setfigfile{F10c}{gallery/F10c}             % 1/JSD at 50% resonant efficiency against R50 (DisCo's plane)
+\setfigfile{F2}{gallery/F2}                 % linear probes, each task's headline metric
+\setfigfile{F2-ft}{gallery/F2-ft}           % the same after fine-tuning
+\setfigfile{PC-jc2}{gallery/PC-jc2}         % JetClass-II per-class recall against 188 classes, linear probes and fine-tuned
+\setfigfile{F4-mech}{gallery/F4-mech}       % class pairs X->bb vs cc and X->bc vs bq, cs, label sets and flavor-boundary partitions
+\setfigfile{A8}{gallery/A8}                 % fine-tuned against the number of training jets
 \setfigfile{F11}{gallery/F11}               % X->bb and X->bs resonance tagging
 % appendix figures
 \setfigfile{VAL}{gallery/VAL}               % pretraining validation accuracy against epoch
 \setfigfile{A10}{gallery/A10}               % linear probes against the number of training jets
-\setfigfile{A8}{gallery/A8}                 % fine-tuned against the number of training jets
-\setfigfile{F6-app}{gallery/F6-app}         % top and quark/gluon ROC, linear probes
-\setfigfile{FJ-app}{gallery/FJ-app}         % JetClass, linear probes, as FJ
-\setfigfile{FJ-ctrl-app}{gallery/FJ-ctrl-app} % JetClass, linear probes, random partitions
-\setfigfile{FJ-s}{gallery/FJ-s}             % JetClass, trained from scratch
-\setfigfile{F4-app}{gallery/F4-app}         % class pairs, random partitions with controlled flavor boundaries
-\setfigfile{F3-scatter}{gallery/F3-scatter} % per-class AUC, 43 and 17 classes against 188
-\setfigfile{F3-app}{gallery/F3-app}         % per-class AUC, every other model against 188
-\setfigfile{F3-ft}{gallery/F3-ft}           % per-class AUC after fine-tuning against 188
-\setfigfile{UMAP-jc1}{gallery/UMAP-jc1}     % UMAP of the class token on JetClass, frozen and fine-tuned
-\setfigfile{UMAP-jc2}{gallery/UMAP-jc2}     % UMAP of the frozen class token on JetClass-II
-\setfigfile{A3R}{gallery/A3R}               % every JetClass-II class against the rest, linear probes
-\setfigfile{A3R-ft}{gallery/A3R-ft}         % the same after fine-tuning
-\setfigfile{\FigIdAseventeen-res}{gallery/\FigIdAseventeen-res}   % median and resolution, resonant jets
-\setfigfile{\FigIdAseventeen-qcd}{gallery/\FigIdAseventeen-qcd}   % median and resolution, QCD jets
-\setfigfile{\FigIdAseventeen-probe}{gallery/\FigIdAseventeen-probe} % mass from frozen features and from the mass output
+\setfigfile{F4-other}{gallery/F4-other}     % the four other flavor pairs (F4-light merged in)
+\setfigfile{F9b}{gallery/F9b}               % mass regression: median and resolution against jet pT and generator mass
 
 \title{Label granularity in supervised pretraining of jet foundation models}
 \author{\pending{author list and affiliations}\\[4pt] \pending{ORCIDs}}

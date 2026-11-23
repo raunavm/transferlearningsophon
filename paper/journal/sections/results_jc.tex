@@ -1,6 +1,6 @@
 % Results, first part: the protocol paragraph, JetClass-II (the pretraining classes) and JetClass
-% (the in-distribution downstream test). Plan: docs/PAPER_OUTLINE.md sections 4.0-4.2; figures F2, F3,
-% F4 and table T2 of docs/FIGURE_PLAN.md. Every number is a macro from results_generated.tex
+% (the in-distribution downstream test). Items (approved structure, PI SP-9, 2026-11-23): figures F2, F2-ft,
+% PC-jc2, F4-mech; table tab:summary. Every number is a macro from results_generated.tex
 % (experiments/FIGS/make_tables.py); "% CHECK:" marks a claim whose direction must be confirmed against
 % the macro values at generation.
 
@@ -8,44 +8,40 @@
 
 Each subsection compares the four levels of the class hierarchy first and the controls second, the
 controls against the \Kcoarse-class level whose class count they share. Linear probes on frozen features
-carry the comparison on the pretraining classes, and MLP probes on the same class-balanced test set check
-them (appendix~\ref{sec:app-mlp}). Fine-tuning carries the comparison on the downstream benchmarks. On JetClass-II the text compares label
-sets by ratios of $1-\AUC$ (equation~(\ref{eq:ratio})), and on the downstream tasks by each task's background
-rejection; the figures show accuracy, $R_{30}$ and ROC curves. The
-subsections move outward from the pretraining classes. JetClass-II and JetClass come first, then the two public
-benchmarks, top tagging and quark/gluon discrimination; fine-tuning with few training jets, the jet mass
-and resonance tagging follow.
-% CHECK: pending Xbx* (section 4.7 waits for the samples)
+carry the comparison on the pretraining classes, checked by MLP probes, and fine-tuning carries it on the
+downstream benchmarks. Every difference the text states is tested in table~\ref{tab:tests}.
 
 \subsection{JetClass-II: the pretraining classes}\label{sec:jetclasstwo}
 
 The first question is which distinctions the frozen features keep on the \Kfull{} classes the networks
-were pretrained on, scored by linear probes on the class-balanced samples of section~\ref{sec:evaluation}
-(sizes in appendix~\ref{sec:app-probes}). This task favors
-finer label sets by construction, and the costs of the coarser levels below carry this bias. Two kinds of
-comparison are free of it: the \Kres-class model on the resonant classes, since its labels keep every
-resonant class of the \Kfull-class model, and the controls, which have as many classes as the
-\Kcoarse-class level.
+were pretrained on, scored by linear probes on class-balanced test jets. This task favors finer label sets by
+construction, and the costs of the coarser levels below carry this bias. Three kinds of comparison are free of
+it: the \Kres-class model on the resonant classes, since its labels keep every resonant class of the
+\Kfull-class model, the controls, which have as many classes as the \Kcoarse-class level, and the coarser task
+on which the \Kfull{} classes are merged into \Kcoarse{} groups.
 
 A linear probe separates the \Kfull{} classes worse at every coarser level of the hierarchy, and, counted in
 wrongly ordered pairs of jets, the largest step is the merge of quark flavor between \Kmid{} and \Kcoarse{}
 classes. On frozen features of the \Kmid-class model it makes \MlstCmpJcTwoMidOverFullPr{} than on those of
 the \Kfull-class model, and on the \Kcoarse-class model \MlstCmpJcTwoCoarseOverFullPr{}
-(table~\ref{tab:balance}). The step from \Kmid{} to \Kcoarse{} classes costs more than the step from \Kres{}
-to \Kmid{} classes, although it merges far fewer classes and removes one kind of distinction where the other
-removes three: the number of $b$ or $c$ quarks, gluons against light quarks, and electrons against muons. The
-accuracy, which counts only whether the highest score falls on the true class, falls from \Kres{} to \Kmid{}
-and to \Kcoarse{} classes, most between \Kres{} and \Kmid{} classes (figure~\ref{fig:f2a}(a);
-table~\ref{tab:summary}); between \Kfull{} and \Kres{} classes it does not differ by more than three standard
-deviations.
+(tables~\ref{tab:summaryauc} and~\ref{tab:tests}). The step from \Kmid{} to \Kcoarse{} classes costs more than
+the step from \Kres{} to \Kmid{} classes, although it merges far fewer classes and removes one kind of
+distinction where the other removes three. The accuracy falls from \Kres{} to \Kmid{} and to \Kcoarse{}
+classes, most between \Kres{} and \Kmid{}
+classes (figure~\ref{fig:F2}(a); table~\ref{tab:summary}); between \Kfull{} and \Kres{} classes it does not
+differ by more than three standard deviations. Scored instead on the \Kcoarse{} groups of the \Kcoarse-class
+labels, the task those labels are trained on, linear probes on the \Kres-, \Kmid- and \Kcoarse-class models do
+not differ from the \Kfull-class model by more than three standard deviations (table~\ref{tab:coarse}).
 % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes (today 1.269 against 1.197).
 % CHECK: F2(a) accuracy steps (inventory 2026-11-02: 0.435, 0.433, 0.361, 0.334): the 162->43 step is the
 % larger in accuracy, the 43->17 step in 1-AUC. If the PI prefers one metric for this claim, rewrite; the
 % intro (P5) and the discussion (P1) state "the quark-flavor merge is the costliest step" on the 1-AUC metric.
+% CHECK: tab:coarse, 17 groups: 162, 43 and 17 classes within 3 sigma of 188 in accuracy and AUC (2026-11-23 table:
+% 0.7162, 0.7176, 0.7163 against 0.71658; the tab:tests row replaces this estimate from the run SDs)
 
 \begin{figure}[t]
 \centering
-\paperfig{\linewidth}{F2a}
+\paperfig{\linewidth}{F2}
 \caption{Linear probes on frozen features at the largest training set of each task: (a) accuracy,
 equation~(\ref{eq:acc}), on the \Kfull{} classes of the class-balanced JetClass-II test set; (b) accuracy on
 JetClass; $R_{30}$, one over the fraction of background jets kept when the cut keeps 30\% of signal jets, the top-tagging working point, on (c) top tagging and on quark/gluon
@@ -57,52 +53,47 @@ means over runs and bars one standard deviation; the vertical line and band are 
 deviation of the \Kfull-class model. On top and quark/gluon discrimination the missing inputs are substituted
 as chosen on validation (\LpSubstitutionTop{} and \LpSubstitutionQg) for every row. The randomly initialized
 network is not drawn. Every value with its spread is in table~\ref{tab:summary}.}
-\label{fig:f2a}
+\label{fig:F2}
 \end{figure}
-% CHECK: F2a(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
+% CHECK: F2(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
 
 \begin{figure}[t]
 \centering
-\paperfig{\linewidth}{F2b}
+\paperfig{\linewidth}{F2-ft}
 \caption{Fine-tuned models: (a) accuracy on the
 \Kfull{} classes of class-balanced JetClass-II and (b) on JetClass, after fine-tuning on \FtSizeESix{} jets;
 $R_{30}$, one over the fraction of background jets kept when the cut keeps 30\% of signal jets, the top-tagging working point, on (c) top tagging and on quark/gluon
 discrimination with (d) the Pythia and (e) the Herwig sample, after fine-tuning on the full training sets
-(Pythia jets for quark/gluon) with the missing inputs set to zero. Rows as in figure~\ref{fig:f2a}, with the
+(Pythia jets for quark/gluon) with the missing inputs set to zero. Rows as in figure~\ref{fig:F2}, with the
 same network trained from scratch, with no pretraining, in place of the released checkpoint.
 % CHECK: panel (a) draws every network once the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks reads out (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40)
 Circles are means over runs and bars one standard
 deviation; the vertical line and band are the mean and standard deviation of the \Kfull-class model. On top
-tagging the label sets differ by less than the spread between runs (table~\ref{tab:ftrej}).}
-\label{fig:f2b}
+tagging the label sets differ by less than the spread between runs (table~\ref{tab:summary}).}
+\label{fig:F2-ft}
 \end{figure}
 
 \input{tables/mlst_summary}
-% CHECK: pending MlstFtCmpJcTwoCoarseOverFullESix (the ratio column of tab:ft) and the fine-tuned JetClass-II line of F2b(a) (budget_metrics.json).
-% CHECK: F2b(c) every difference between label sets on top tagging within the run-to-run SD (gallery data_note: SD 56 to 151).
+% CHECK: F2-ft(c) every difference between label sets on top tagging within the run-to-run SD (gallery data_note: SD 56 to 151).
 
-The \Kres-class model matches the \Kfull-class model on the resonant classes, under the linear probe (the
-\Kres-class column of figure~\ref{fig:f3}) and under the MLP probe (\MlstMlpCmpJcTwoResResOverFullPr{};
-table~\ref{tab:mlp}), so the equality is not a limit of what a linear classifier can read. Its cost on
-JetClass-II lies in the QCD classes it merges (the bottom block of figure~\ref{fig:f3}). The merge from \Kfull{} to \Kres{} classes moves no boundary between resonant
-classes: it removes only the division of QCD jets by their numbers of $b$, $c$ and $s$ quarks, which
-the loss then stops rewarding. Of the discriminants in table~\ref{tab:usecase}, this merge removes only
-one, a score against QCD jets split by their heavy-flavor content, as in the QCD subclasses that GN3X
-distinguishes~\cite{atlasgnx}. Only an analysis that needs that subdivision pays for the merge. With \Kres{}
-classes, the rejection of QCD jets with one or with two $b$ quarks by Sophon's $X\to b\bar b$ discriminant
-read from the frozen features is consistent with that of the \Kfull-class probe (table~\ref{tab:qcdhf}).
-% CHECK: tab:qcdhf, 162 against 188 classes in the b and bb columns within one SD of each other (2026-11-09: 1,134 +- 117 vs 1,101 +- 151; 74 +- 5 vs 66 +- 5)
+The \Kres-class model matches the \Kfull-class model on the resonant classes, under the linear probe
+(\MlstCmpJcTwoResResOverFullPr) and under the MLP probe (\MlstMlpCmpJcTwoResResOverFullPr{}; table~\ref{tab:mlp}),
+so the equality is not a limit of what a linear classifier can read. Its cost lies in the QCD classes it
+merges, on which a linear probe makes \MlstCmpJcTwoQcdResOverFullPr{} (tables~\ref{tab:summaryauc}
+and~\ref{tab:tests}). The merge from \Kfull{} to \Kres{} classes moves no boundary between resonant classes: it
+removes only the division of QCD jets by their numbers of $b$, $c$ and $s$ quarks, and with it only a
+discriminant that weights each QCD subclass separately (section~\ref{sec:labelsets}). Only an analysis that needs
+that subdivision pays for the merge.
 % CHECK: MlstCmpJcTwoQcdResOverFull > 1 by more than 2 SD (today 1.087 +- 0.006).
 
 At a fixed number of classes, which classes are merged decides the cost. A random partition with
 \Kcoarse{} classes makes \MlstCmpJcTwoRandOverCoarsePr{} than the \Kcoarse-class level of the
 hierarchy, and \MlstCmpJcTwoRandOverMidPr{} than the \Kmid-class level, which has more than twice as
-many classes (table~\ref{tab:balance}); in accuracy, too, the random partitions lie above the \Kmid-class
-level (figure~\ref{fig:f2a}(a); table~\ref{tab:summary}).
+many classes (table~\ref{tab:tests}); in accuracy, too, the random partitions lie above the \Kmid-class
+level (figure~\ref{fig:F2}(a); table~\ref{tab:summary}).
 % CHECK: MlstCmpJcTwoRandOverMid < 1 by more than 2 SD (today 0.918 +- 0.007); if it straddles 1,
 % write "as few errors as the 43-class level".
-A random partition keeps the class count and the share of training jets of every \Kcoarse-class group
-but not the physics that defines it. The partitions with controlled flavor boundaries, at the same class count, lie between the
+The partitions with controlled flavor boundaries, at the same class count, lie between the
 \Kcoarse-class level and the random partitions, with the partition that has no flavor boundary nearest
 the \Kcoarse-class level.
 % CHECK: MlstCmpJcTwoFzeroOverCoarse > MlstCmpJcTwoF{one,oner}OverCoarse > MlstCmpJcTwoRandOverCoarse
@@ -113,220 +104,93 @@ pretraining classes, not that any grouping into \Kcoarse{} classes would do as w
 
 Fine-tuning on JetClass-II measures how much of a merged distinction fine-tuning recovers: its target is
 the \Kfull-class pretraining task itself, so every distinction the coarse labels removed is rewarded again.
-After fine-tuning on the largest class-balanced training set, the \Kcoarse-class model makes
-\MlstFtCmpJcTwoCoarseOverFullESixPr{} than the \Kfull-class model (the ratio column of
-table~\ref{tab:ft}), where a linear probe on its frozen features makes \MlstCmpJcTwoCoarseOverFullPr{}
-(table~\ref{tab:balance}): fine-tuning recovers most of the merged distinctions at this number of training
-jets, but not all. The accuracy after fine-tuning is drawn in figure~\ref{fig:f2b}(a). This comparison is
-between levels of the hierarchy only.
-% CHECK: add the partitions once the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks reads out (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40)
+After fine-tuning on \FtSizeESix{} class-balanced jets, the \Kcoarse-class model makes
+\pending{Table 1 after the reruns} than the \Kfull-class model, where a linear probe on its frozen features makes
+\MlstCmpJcTwoCoarseOverFullPr{} (table~\ref{tab:summary}). Per class, the \Kcoarse-class loss is broad: with
+linear probes, most of the \Kfull{} classes are recalled less often than by the \Kfull-class model, beyond three
+standard deviations, and after fine-tuning \pending{Table 1 after the reruns} (figure~\ref{fig:PC-jc2}).
+% CHECK: the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40) fills Table 1's fine-tuned JetClass-II column and PC-jc2's right half; write the fine-tuned clause from them, tested at 3 sigma
 
-Per class, the largest relative costs fall on decays that differ from another class only in lepton flavor
-(data release, \texttt{jetclass2\_per\_class.csv}). From the \Kmid-class level on, a decay with electrons shares its class with the
-same decay with muons, and the decays with a $\tau$ lepton that decays to an electron share theirs with
-those whose $\tau$ lepton decays to a muon. At that level the class with the largest ratio to the
-\Kfull-class model is \MlstPerClassMidTopClass{}, and the classes merged with a lepton-flavor
-counterpart are costly as a group (median \MlstPerClassMidLeptonMedianPr{}). In AUC, the largest loss at
-that level is that of \MlstPerClassAucDiffMidMinClass{}, a difference of \MlstPerClassAucDiffMidMin{}
-percentage points (figure~\ref{fig:f3}; figures~\ref{fig:f3scatter} and~\ref{fig:f3app} set every class's AUC
-against that of the \Kfull-class model). By the ratio of $1-\AUC$ the lepton-flavor classes stay the costliest
-at \Kcoarse{} classes, where the largest losses in AUC move to the QCD classes.
-% CHECK: MlstPerClassMidTopClass and MlstPerClassCoarseTopClass are lepton-flavor classes; the largest AUC losses
-% at 17 classes are QCD classes (today QCD bcss, bcc and bccs; the first lepton-flavor class ranks 26th).
-% CHECK: MlstPerClassAucDiffMidMinClass is a lepton-flavor class too; if not, F3 (AUC difference) does not
-% show the lepton cost as the largest, and the sentence must say which class loses most in AUC instead.
-Because the \Kfull-class model separates these classes from the rest with few errors
-(data release, \texttt{jetclass2\_per\_class.csv}), a modest absolute loss appears as a large ratio. The pair $X\to ee$ against
-$X\to\mu\mu$ below shows what these labels do directly, which a curve of one class against the rest cannot.
-% CHECK: the 188-class per-class AUC of the lepton-flavor classes in data_release/jetclass2_per_class.csv is high.
-
-Summed over classes, the classes merged with a quark-flavor counterpart carry most of the cost. At \Kcoarse{} classes,
-\MlstPerClassCoarseNDoubled{} of the \Kfull{} classes at least double their $1-\AUC$, and the
-classes that share their group with a decay differing only in quark flavor account for
-\MlstPerClassCoarseQuarkShare{} of the total, taken as the sum over the resonant classes of the
-logarithm of each class's ratio. The median of these classes (\MlstPerClassCoarseQuarkMedianPr{}) lies below
-that of the classes merged with a lepton-flavor counterpart (\MlstPerClassCoarseLeptonMedianPr{}), but they
-are most of the resonant classes: most decays in JetClass-II come in variants that differ only in their
-quark flavors, and the \Kcoarse-class labels merge every such set of variants. The classes merged with a
-lepton-flavor counterpart account for \MlstPerClassCoarseLeptonShare{} of the total, and
-\MlstPerClassCoarseQuarkLeptonN{} classes belong to both sets, so the two shares overlap.
-% CHECK: MlstPerClassCoarseQuarkShare > 50% and > MlstPerClassCoarseLeptonShare; MlstPerClassCoarseQuarkN
-% is more than half of the resonant classes; MlstPerClassCoarseQuarkMedian < MlstPerClassCoarseLeptonMedian.
-
-The \Kcoarse-class level alone cannot tell whether a class loses because it is merged with a flavor
-counterpart or because of the kind of decay it is, since it merges every such class. The random partitions
-separate the two, because each merges some flavor counterparts and keeps others apart. Across the
-\RandVtwoNPartitions{} partitions, the median per-class ratio of the classes merged with a counterpart in
-quark flavor over that of the classes kept apart from all of theirs is
-\MlstPerClassRandFlavMergedOverApartPr{}; for lepton flavor it is \MlstPerClassRandLeptonMergedOverApartPr{}.
-Within the random partitions, merged and kept-apart classes thus lose alike: in a curve of one class against
-the rest, sharing a label with a flavor counterpart adds no resolved cost beyond what the kind of decay brings. An MLP
-probe on the mixed test sample of JetClass-II, whose class shares follow the selection (two-prong decays
-\LpJciiTestTwoProngPercent{} and QCD \LpJciiTestQcdPercent{} of the jets, three- and four-prong decays the rest),
-reads the same (quark flavor, \MlstMlpNatPerClassRandFlavMergedOverApartPr{};
-lepton flavor, \MlstMlpNatPerClassRandLeptonMergedOverApartPr), so the equality is not a limit of what a linear
-classifier can read. For the one pair tested, the separation of a merged pair does not show the merge either,
-as long as another boundary in the label set still separates electrons from muons: the pair $X\to ee$ against
-$X\to\mu\mu$ below loses separation only at the \Kmid-class level.
-% CHECK: MlstPerClassRandFlavMergedOverApartPr and MlstPerClassRandLeptonMergedOverApartPr read "equal within"
-% (today 1% and 3%); if either states a direction, the cost follows the merge for that flavor: rewrite.
-% CHECK: MlstMlpNatPerClassRandFlavMergedOverApartPr and MlstMlpNatPerClassRandLeptonMergedOverApartPr read "equal within" (recomputed from fits_v3_mlp2: 1% and 8%).
-% CHECK: MlstMlpNatPerClassRandFlavMergedOverApartPr and MlstMlpNatPerClassRandLeptonMergedOverApartPr read "equal within" (recomputed from fits_v3_mlp2: 1% and 8%).
-
-\begin{figure}[p]
+\begin{figure}[t]
 \centering
-\paperfig{\linewidth}{F3}
-\caption{Difference in per-class AUC between each model and the \Kfull-class model, $\Delta\AUC_c$ of
-equation~(\ref{eq:ratio}), in percentage points, for the \Kfull{} classes of class-balanced JetClass-II, from
-linear probes on frozen features. Columns are the \Kres-, \Kmid- and \Kcoarse-class label sets and the three
-random partitions with controlled flavor boundaries. Rows are grouped by their \Kcoarse-class group, which
-follows the decay topology, with the QCD classes at the bottom. Values are means over runs; red marks an AUC
-below that of the \Kfull-class model. Every class's values are in the data release
-(\texttt{jetclass2\_per\_class.csv}).}
-\label{fig:f3}
+\paperfig{\linewidth}{PC-jc2}
+\caption{The \Kcoarse-class loss on JetClass-II is spread over most of its \Kfull{} classes. Each point is one
+class's recall, the fraction of its test jets assigned to it, for the \Kres-, \Kmid- or \Kcoarse-class model
+against the \Kfull-class model, from linear probes on frozen features (left) and after fine-tuning (right) on
+\FtSizeESix{} class-balanced jets; points below the diagonal are recalled less often. Their mean weighted by test
+jets is the accuracy of figures~\ref{fig:F2} and~\ref{fig:F2-ft}. Points are means over the \MlstNRunsWord{}
+pretraining runs with bars of one standard deviation over runs and test jets; colors give what the
+\Kcoarse-class labels merge the class with. Every class's values are in the data release.}
+\label{fig:PC-jc2}
 \end{figure}
 
 Decays that differ only in quark flavor show the cost of the merge most directly. On the pair
 $X\to b\bar b$ against $X\to c\bar c$, frozen features of the \Kcoarse-class model give a linear probe
-\MlstCmpBbCoarseOverFullPr{} of the \Kfull-class model. The \Kmid-class model, whose
-labels still keep the two decays apart, makes only \MlstCmpBbMidOverFullPr{}. Figure~\ref{fig:f4}(a) draws the
-rejection of these probes against signal efficiency. At \Kcoarse{} classes the two decays share a class and no
-class boundary anywhere separates $b$ from $c$ quarks, so the loss no longer rewards the differences in lifetime
-and decay multiplicity between $b$ and $c$ hadrons. The \Kmid-class labels separate decays with $b$ quarks, decays with $c$ quarks and
-decays with neither within every decay topology, and the pair stays readable.
-% CHECK: in F4(a) the 17-class curve lies below the 188-class curve wherever both are drawn (above eps_S = MlstRocCutBbFull).
-
-At a fixed number of classes, the three partitions with controlled flavor boundaries test whether a flavor
-boundary keeps quark flavor readable, also for a pair it does not cut. They have
-\Kcoarse{} classes and the same group shares, and \RandFlavRuns{} pretraining runs each, so each comparison below
-quotes the value less favorable to a difference. Figure~\ref{fig:f4app} draws their linear probes on
-four class pairs beside the \Kfull-class model. On $X\to YY\to bbqq$ against $X\to YY\to ccqq$, the
-partition with a random flavor boundary, which keeps every pair of four-quark decays related by
-exchanging $b$ and $c$ quarks in one group, does not differ from the partition with no flavor boundary by
-more than three standard deviations (figure~\ref{fig:f4app}). The partition with a
-$b$-quark boundary, the only one of the three that cuts this pair, does better: the partition with a random
-flavor boundary makes \MlstCmpBbqqFonerOverFonePr{} than it. The partition with no flavor boundary does not
-differ from the \Kcoarse-class level on this pair by more than three standard deviations.
+\MlstCmpBbCoarseOverFullPr{} of the \Kfull-class model, and those of the \Kmid-class model, whose labels still
+keep the two decays apart, only \MlstCmpBbMidOverFullPr{} (figure~\ref{fig:F4-mech}; table~\ref{tab:tests}). At
+\Kcoarse{} classes the two decays share a class and no class boundary anywhere separates $b$ from $c$ quarks, so
+the loss no longer rewards the differences in lifetime and decay multiplicity between $b$ and $c$ hadrons. The
+\Kmid-class labels separate decays with $b$ quarks, decays with $c$ quarks and decays with neither within every
+decay topology, and the pair stays readable.
+% CHECK: in F4-mech(a) the 17-class curve lies below the 188-class curve wherever both are drawn (above eps_S = MlstRocCutBbFull).
+% PI SP-10 (b): a label-granularity result kept if it passes 3 sigma; its two rows of tab:tests (43 vs 188 classes,
+% 43 classes vs the randomly initialized network) wait for the e/mu bootstrap, and the sentence goes if either fails
+The \Kmid-class labels, which merge every decay with its lepton-flavor counterpart, also remove a distinction
+that the finer labels keep: on $X\to ee$ against $X\to\mu\mu$ the AUC of a linear probe falls to
+\MlstLpEemmAucMid{}, against \MlstLpEemmAucFull{} at \Kfull{} classes and \MlstLpEemmAucInitBn{} for the
+randomly initialized network (table~\ref{tab:tests}).
 
 The output layer can lose a discriminant while the frozen features keep most of what it needs. The
 boosted $|V_{cb}|$ measurement uses the scores of $X\to bq$ and $X\to cs$ in the denominator of its
 discriminant $D_{bc}$~\cite{vcbboosted}, so these classes must be told apart from $X\to bc$. The
 \Kres-class features separate them as well as the \Kfull-class features do, under the linear probe
-(figure~\ref{fig:f4}(c)) and the MLP probe (\MlstMlpCmpBcResOverFullPr{}; table~\ref{tab:mlp}). At \Kmid{} classes, where $X\to bc$ and $X\to bq$ share a class and
-$D_{bc}$ can no longer be formed (table~\ref{tab:usecase}), a linear probe makes only
-\MlstCmpBcMidOverFullPr{}; at \Kcoarse{} classes it makes \MlstCmpBcCoarseOverFullPr{}
-(figure~\ref{fig:f4}(c)). The \Kmid-class labels still separate decays with a $b$ quark from decays with only a
-$c$ quark, and the \Kcoarse-class labels remove flavor altogether.
+(\MlstCmpBcResOverFullPr) and the MLP probe (\MlstMlpCmpBcResOverFullPr{}; table~\ref{tab:mlp}). At \Kmid{}
+classes, where $X\to bc$ and $X\to bq$ share a class and $D_{bc}$ can no longer be formed, a linear probe makes
+only \MlstCmpBcMidOverFullPr{}; at \Kcoarse{} classes, which remove flavor altogether, it makes
+\MlstCmpBcCoarseOverFullPr{} (figure~\ref{fig:F4-mech}; table~\ref{tab:tests}).
 
-The \Kmid-class labels, which merge every decay with its lepton-flavor counterpart, remove a distinction that the finer labels keep almost perfectly. On $X\to ee$
-against $X\to\mu\mu$, a linear probe on the frozen features of the configurations that keep the two apart
-(\MlstRocNoCurveEemm) separates the test jets so completely that in at least one run of each fewer than
-$\nmin$ of the \MlstRocNBkgEemm{} $X\to\mu\mu$ test jets pass at all but at most one signal efficiency, so
-figure~\ref{fig:f4}(d) names them as complete separation instead of drawing a curve. At \Kmid{} classes, which merge every electron decay with its muon
-counterpart, the AUC of a linear probe falls to \MlstLpEemmAucMid{}, against
-\MlstLpEemmAucFull{} at \Kfull{} classes; at \Kcoarse{} classes, which merge them too, its AUC of
-\MlstLpEemmAucCoarse{} does not differ from the \Kfull-class value by more than three standard deviations
-(figure~\ref{fig:f4}(d)). A randomly initialized network, which was never trained on any labels, reaches an AUC of
-\MlstLpEemmAucInitBn, so the \Kmid-class labels, which separate electrons from muons nowhere, leave less of
-this separation in the features than no training at all. Merging this pair alone does not do so: the random partitions that put the
-two decays in one group keep an AUC of \MlstLpEemmAucRandMerged. The spread at \Kcoarse{} classes is large
-because one of the three runs keeps much more of the separation than the other two (figure~\ref{fig:f4}(d)).
-% CHECK: MlstLpEemmAucInitBn above MlstLpEemmAucMid and ...Coarse by more than their SDs (today 1.0000 against 0.9613 and 0.963);
-% the 43- and 17-class labels merge 39 of the 39 electron/muon counterpart sets, partitions 1, 2 and 4 merge 7, 12 and 13 of them;
-% MlstLpEemmAucRandMerged (partitions 1, 2 and 4 today) above both and near MlstLpEemmAucFull; if a partition that merges the pair loses separation, rewrite;
-% one 17-class run far above the others (AUC 0.985 against 0.958 and 0.947).
-% CHECK: MlstRocNoCurveEemm names the 188- and 162-class levels and the three controlled-flavor partitions
-% (ROC_INTERFACE 2: cut = null expected for 188, 162, F0, F1, F1R); MlstLpEemmAucMid and ...Coarse well below
-% ...Full (stored 188-way outputs gave 0.960 and 0.957 against 1.00000 for seed 1). If a kept-apart run does
-% draw a curve, rewrite "none of their curves".
-% CHECK: after pairs_sib2 (every X->ee/X->mumu test jet, about 130k per class) re-read MlstRocNoCurveEemm and the AUCs (fits_v4_sib2): with 26x more background jets a kept-apart model may now draw a curve.
+At a fixed number of classes, the three partitions with controlled flavor boundaries test whether a flavor
+boundary keeps quark flavor readable. They have \Kcoarse{} classes and the same group shares, and
+\RandFlavRuns{} pretraining runs each, so each comparison below quotes the value less favorable to a
+difference. The partition with a $b$-quark boundary, whose one flavor boundary lies between four-quark decays,
+recovers part of the loss of the \Kcoarse-class level on both pairs, neither of which it cuts: it makes
+\MlstCmpBbFoneOverCoarsePr{} of the \Kcoarse-class level on $X\to b\bar b$ against $X\to c\bar c$ and
+\MlstCmpBcFoneOverCoarsePr{} on $X\to bc$ against $X\to bq$ and $X\to cs$. The partition with a random flavor
+boundary recovers part of it on the second pair (\MlstCmpBcFonerOverCoarsePr), while the partition with no
+flavor boundary does not differ there from the \Kcoarse-class level by more than three standard deviations
+(figure~\ref{fig:F4-mech}; table~\ref{tab:tests}). On $X\to YY\to bbqq$ against $X\to YY\to ccqq$, which the
+$b$-quark boundary does cut, the partition with a random flavor boundary makes \MlstCmpBbqqFonerOverFonePr{}
+than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}).
+% CHECK: L3 with run SDs (gallery_placement, F4-mech): b-quark boundary - 17 on X->bb vs cc 8 sigma and on X->bc 6 sigma; random flavor boundary - 17 on X->bc 6 sigma (on X->bb vs cc 2.3, not claimed); no flavor boundary on X->bc 0.9 sigma from 17
 
 \begin{figure}[t]
 \centering
-\paperfig{\linewidth}{F4}
-\caption{Linear probes on pairs of JetClass-II classes that differ only in flavor: background rejection
-$1/\epsB$ against signal efficiency $\epsS$, equations~(\ref{eq:eff}) and~(\ref{eq:rej}), with the first decay
-of each pair as the signal. (a) $X\to b\bar b$ against $X\to c\bar c$; (b) $X\to YY\to bbqq$ against $X\to
-YY\to ccqq$; (c) $X\to bc$ against $X\to bq$ and $X\to cs$ together, the classes in the denominator of the
-discriminant of the boosted $|V_{cb}|$ measurement; (d) $X\to ee$ against $X\to\mu\mu$, scored on every
-test jet of the two classes. Lines: the \Kfull-, \Kres-, \Kmid- and \Kcoarse-class models, each the mean of
-its \MlstNRunsWord{} pretraining runs at fixed $\epsS$. Each curve stops where fewer than $\nmin$ background
-jets pass, equation~(\ref{eq:cut}): at a rejection of \MlstRocRejMaxBb{} in (a)--(c), whose test sets hold
-\MlstRocNBkgBb{} background jets, and of \MlstRocRejMaxEemm{} in (d), whose test set holds
-\MlstRocNBkgEemm. The \Kfull-class curves therefore begin only at signal efficiencies of
-\MlstRocCutBbFull{} in (a), \MlstRocCutBbqqFull{} in (b) and \MlstRocCutBcFull{} in (c). In (d), a model
-that keeps fewer than $\nmin$ background jets at all but at most one signal efficiency in some run has no
-curve and is named in the panel as complete separation. The random partitions with controlled flavor
-boundaries are in figure~\ref{fig:f4app}; the plain random partitions, the models with the auxiliary mass
-regression and the multilayer perceptron probes are in tables~\ref{tab:pairs} and~\ref{tab:mlp}.}
-\label{fig:f4}
+\paperfig{\linewidth}{F4-mech}
+\caption{Linear probes on \Kcoarse{} classes separate decays that differ only in quark flavor worse than
+\Kfull{} classes; the $b$-quark boundary recovers part of the loss on both pairs, and the random flavor boundary
+on $X\to bc$ against $X\to bq$ and $X\to cs$. Each panel shows the background rejection $1/\epsB$ against the
+signal efficiency $\epsS$, with the first-named decay as the signal, for $X\to b\bar b$ against $X\to c\bar c$
+(left) and $X\to bc$ against $X\to bq$ and $X\to cs$ together, the classes in the denominator of the
+discriminant of the boosted $|V_{cb}|$ measurement (right), for the label sets and the models with the auxiliary
+mass regression (upper row) and the random partitions with controlled flavor boundaries (lower row). Curves are
+means over the pretraining runs and end where fewer than $\nmin$ background jets pass,
+equation~(\ref{eq:cut}); the lower panels give the ratio to the \Kfull-class model on a logarithmic axis, banded
+for it only by the spread between runs and the binomial uncertainty. The curve of the random partitions is the
+mean over those, one run each, that keep the pair's classes apart.}
+\label{fig:F4-mech}
 \end{figure}
-% CHECK: MlstRocNBkgBb equals MlstRocNBkgBbqq and MlstRocNBkgBc (one test-set size per side for the three
-% staged pairs, 200,000 today), else name each; MlstRocCut*Full today ~0.78/0.63/0.23 (inventory).
 
 \subsection{JetClass: the in-distribution downstream test}\label{sec:jetclass}
 
-JetClass~\cite{part} holds \MlstFtJcOneNSignal{} classes of signal decays and a background of QCD jets;
-its jets carry all \FillNFeatures{} particle inputs the networks were pretrained on and come from a
-simulation without pileup. Each
-pretrained model is fine-tuned once on a JetClass training subset and compared with the same network
-trained from scratch, in the form of ParT's Table~1~\cite{part}: accuracy and the AUC averaged over all
-pairs of classes (table~\ref{tab:jetclass}), and the rejection of the background at ParT's working point for
-each signal class (table~\ref{tab:jetclassall}). The caption of table~\ref{tab:jetclass} gives our training size,
-which differs from that of the published rows. Figure~\ref{fig:fj} draws, for each label set, the ROC curve
-of each JetClass class against the other nine, figure~\ref{fig:fjs} the same for the network trained from
-scratch, and table~\ref{tab:jc1_class_auc} gives the recall of each class. For $t\to bqq'$ fewer than $\nmin$
-QCD jets pass the \Kfull-class model below a signal efficiency of \MlstRocCutJcOneTbqqFull{}, so its value at
-ParT's working point, $R_{50}$, carries a dagger in table~\ref{tab:jetclassall}. For $t\to b\ell\nu$ the models
-separate the test jets so completely that fewer than $\nmin$ QCD jets pass in every configuration
-(table~\ref{tab:jetclassall}).
-% CHECK: MlstRocCutJcOneTbqqFull > 0.5 (0.58 today); MlstRocCutJcOneTblFull reads "not reached", and every
-% configuration of the signal-against-QCD curves of t->blnu keeps fewer than n_min QCD jets (true of the
-% 2026-11-03 render of the old F6J(g), now not drawn; tab:jetclass must dagger t->blnu in every row); if either
-% changes, rewrite this.
-
-\input{tables/mlst_jetclass}
-
-\begin{figure}[p]
-\centering
-\paperfig{\linewidth}{FJ}
-\caption{Background rejection $1/\epsB$ against signal efficiency $\epsS$ on JetClass after fine-tuning on
-\FtSizeESix{} jets, for the models pretrained with (a) \Kfull, (b) \Kres, (c) \Kmid{} and (d) \Kcoarse{}
-classes. Each curve takes one of the ten JetClass classes as signal and the other nine as background, and is
-the mean over the \MlstNRunsWord{} pretraining runs; curves begin where $\nmin$ background jets remain. Each
-panel title gives the AUC averaged over the ten classes; figure~\ref{fig:fjs} gives the network trained from
-scratch. The values at ParT's working points are in table~\ref{tab:jetclassall}.}
-\label{fig:fj}
-\end{figure}
-
-\begin{figure}[p]
-\centering
-\paperfig{\linewidth}{FJ-ctrl}
-\caption{Background rejection $1/\epsB$ against signal efficiency $\epsS$ on JetClass after fine-tuning on
-\FtSizeESix{} jets, for networks pretrained on \Kcoarse-class random partitions: with (a) no flavor boundary,
-(b) a $b$-quark boundary and (c) a random flavor boundary, each the mean over \RandFlavRuns{} runs, and (d)
-the \RandVtwoNPartitions{} random partitions without controlled flavor boundaries, \RandVtwoRuns{} run each,
-averaged. Each curve takes one of the ten JetClass classes as signal and the other nine as background, and
-begins where $\nmin$ background jets remain. Colors and titles as in figure~\ref{fig:fj}.}
-\label{fig:fjctrl}
-\end{figure}
-
-After fine-tuning on \FtSizeESix{} jets, the \Kcoarse-class model reaches an accuracy of
-\MlstFtJcOneAccCoarseBoot{} on JetClass against \MlstFtJcOneAccFullBoot{} for the \Kfull-class model:
-\MlstFtJcOneErrCoarseOverFullBoot{} (table~\ref{tab:jetclass}; figure~\ref{fig:f2b}(b)). The uncertainty
-combines the standard deviation of the paired difference over the \MlstNRunsWord{} pretraining runs with a
-bootstrap of the \MlstFtJcOneBootJets{} test jets, \MlstFtJcOneBootReplicas{} resamples shared by every run,
-and the difference is \MlstFtJcOneErrCoarseOverFullZ{} times it. By the same test the \Kres- and \Kmid-class
-models are consistent with the \Kfull-class model. Per signal class, the rejection of no label set at ParT's
-working point differs from that of the \Kfull-class model beyond the spread between runs and the counting
-uncertainty of the passing QCD jets (table~\ref{tab:jetclassall}; figure~\ref{fig:fj}).
-% CHECK: MlstFtJcOneErrResOverFullBoot and MlstFtJcOneErrMidOverFullBoot read "consistent"; MlstFtJcOne{Res,Mid,Coarse}NRejDiff are zero.
-The \Kmid-class labels give up the number of $b$ and $c$ quarks, gluons against light quarks and
-electrons against muons, and none of these losses shows here: the cost appears only at the level that merges
-quark flavor.
-
-Figure~\ref{fig:fjctrl} draws the curves of each JetClass class against the rest for the random partitions
-and the partitions with controlled flavor boundaries. With \RandVtwoRuns{} run per random partition and
-\RandFlavRuns{} per partition with controlled flavor boundaries, their fine-tuned accuracy is consistent with
-that of the \Kcoarse-class model (table~\ref{tab:jetclassall}).
-% CHECK: the partitions' accuracy minus the 17-class accuracy at 1e6 stays within 3 sigma (2026-11-09: +0.0021, z = 2.2).
+Each pretrained model is fine-tuned once on \FtSizeESix{} JetClass training jets, which carry every input the
+networks were pretrained on, and compared with the same network trained from scratch;
+table~\ref{tab:published} sets them beside the published ParticleNet and ParT, trained on more jets. After
+fine-tuning, the \Kcoarse-class model makes
+\pending{Table 1 after the reruns} than the \Kfull-class model on JetClass; how the \Kres- and \Kmid-class models
+and the partitions compare with it is \pending{Table 1 after the reruns} (table~\ref{tab:summary};
+figure~\ref{fig:F2-ft}(b)).
+% CHECK: the one-rule JetClass 1e6 rerun (jc1e6a100, jc1e6; docs/STATE.md) fills Table 1's fine-tuned JetClass column; the headline is recomputed from it and re-tested at 3 sigma (PI SP-11) before any number is written here, in the introduction or in the discussion
+% PI SP-9: kept, the comparison passes 3 sigma (scratchpad/part0/jc1_class_auc_check.md: 35 of 90 cells below 188, none above)
+With linear probes on the frozen features, the \Kcoarse-class model recalls $H\to b\bar b$ and $H\to c\bar c$
+jets, and several other JetClass classes, less often than the \Kfull-class model, and no class more often, beyond
+three standard deviations (table~\ref{tab:jc1_class_auc}).

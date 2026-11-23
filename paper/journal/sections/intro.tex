@@ -43,27 +43,21 @@ pretrains on a subset of the JetClass classes and on all of them with different 
 
 % P4. The vision precedent; why simulated jets allow a controlled test.
 In image classification, the answer depends on how the classes are grouped and on whether the pretrained
-features are used frozen or fine-tuned~\cite{huh,hong,mahajan,kornblith}. Labels that follow a taxonomy
-improve a fine-tuned network up to a point, labels assigned at random to individual images do
-not~\cite{hong}, and a larger label set improves a linear probe, a linear classifier trained on the frozen
-features, more than it improves fine-tuning~\cite{mahajan}. Simulated jets allow a more controlled test,
+features are used frozen or fine-tuned~\cite{huh,hong,mahajan,kornblith}: a larger label set improves a linear
+probe, a linear classifier trained on the frozen features, more than it improves fine-tuning~\cite{mahajan}.
+Simulated jets allow a more controlled test,
 because the generator records the decay that produced every jet, so the same jets can be labeled at any
 granularity.
 
 % P5. Sophon, then what we do; figure 1 cited once.
 Sophon was built so that one tagger could cover the many boosted final states that dedicated taggers leave
 unexplored, and so bring searches for resonances with unknown decays closer to the sensitivity of dedicated
-searches~\cite[Sec.~I]{sophon}. Its network is the Particle Transformer (ParT)~\cite{part} in its original
-configuration, except that the output layer is replaced by a head with one hidden layer of
-\DesignHeadHidden{} units, whose \DesignEmbedDim{} inputs are the features reused for transfer learning. The
-fine distinctions come from the labels: a resonant jet is labeled by the quarks, gluons and leptons from the
-decay that it contains, with their flavors and the decay mode of each $\tau$ lepton, and a QCD jet by its
-number of $b$, $c$ and $s$ quarks (none, one, or two or more of each). Sophon departs from ParT's training in
-two ways. First, jets are sampled with probabilities that give the same distribution of jet $p_{\mathrm T}$
-and soft-drop mass in groups of classes, so that a selection on the tagger does not sculpt the background mass
-distribution. Classes that differ only in quark flavor share a group, and all QCD classes form one. Second,
-the four-momenta of the jet and its particles are scaled to one fixed jet $p_{\mathrm T}$, so that the tagging
-performance carries over to a wide range of masses~\cite[Sec.~II and App.~B]{sophon}.
+searches~\cite[Sec.~I]{sophon}. Its network is the Particle Transformer (ParT)~\cite{part} with a head of one
+hidden layer, and the fine distinctions come from the labels: a resonant jet is labeled by the quarks, gluons
+and leptons from the decay that it contains, with their flavors and the decay mode of each $\tau$ lepton, and a
+QCD jet by its number of $b$, $c$ and $s$ quarks. Jets are sampled so that groups of classes share one
+distribution of jet $p_{\mathrm T}$ and soft-drop mass, and the four-momenta are scaled to one fixed jet
+$p_{\mathrm T}$~\cite[Sec.~II and App.~B]{sophon}.
 In this paper we pretrain this network on the jets of JetClass-II and change only the label set
 (figure~\ref{fig:design}). The sampling
 groups do not depend on the label set, so models pretrained with the same seed see the same jets in the same
@@ -96,7 +90,7 @@ the label sets are those of every later figure.}
 % P6. Findings, one per sentence; the recommendation; the outline.
 % CHECK: MlstCmpJcTwoCoarseOverMid > MlstCmpJcTwoMidOverRes > MlstCmpJcTwoResOverFull; MlstCmpJcTwoQcdResOverFull > 1 and MlstCmpJcTwoResResOverFull agrees with 1
 % CHECK: MlstCmpJcTwoRandOverCoarse < 1; MlstCmpJcTwoF{one,oner}OverFzero < 1 (both runs)
-% CHECK: MlstFtJcOneErrCoarseOverFullBoot passes 3 sigma and MlstFtJcOneErr{Res,Mid}OverFullBoot read "consistent"
+% CHECK: the JetClass cost after fine-tuning is recomputed from Table 1 after the 10^6 reruns and re-tested at 3 sigma (PI SP-11); the 162- and 43-class differences there must read "consistent"
 % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull agree with 1 within their SD
 % CHECK: MlstCmpMlpResMassOverRes < 1; MlstCmpJcTwoResMassOverRes within a few per cent of 1 (sculpting is out of the findings: one mass-regression difference passes 3 sigma, PI 2026-11-09)
 We find that coarser pretraining labels make the frozen features substantially worse on the pretraining
@@ -104,11 +98,9 @@ classes, a task that favors finer labels by construction: a linear probe makes m
 coarser level of the hierarchy, and, counted in wrongly ordered pairs of jets, merging quark
 flavor is the costliest single merge. At the same number of classes, the random partitions lose less than
 the \Kcoarse-class level, and a single flavor boundary lowers the error of the probe, so which classes are
-merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \MlstFtJcOneErrCoarseOverFullBoot{}
+merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \pending{Table 1 after the reruns}
 on JetClass, simulated without pileup and with every input of the network present, and on top tagging and
 quark/gluon discrimination, whose public datasets lack some of the network's inputs, the label sets show no
 resolved difference. The auxiliary mass regression makes the jet mass more precisely predictable from the
 frozen features at a small cost to the classification. A pretraining label set for jets should therefore contain every distinction that
-downstream discriminants sum over and, for use with frozen features, the flavor boundaries. Section~\ref{sec:related} reviews related
-work, section~\ref{sec:methods} describes the data, the label sets and the evaluation,
-section~\ref{sec:results} presents the results, and section~\ref{sec:discussion} discusses them.
+downstream discriminants sum over and, for use with frozen features, the flavor boundaries.

@@ -3,6 +3,7 @@
 % shape (context, gap, what we did, three findings, recommendation), no definitions, no numbers, Sophon
 % expanded at first use.
 % CHECK: the findings sentences carry the same CHECKs as the last paragraph of the Introduction
+% CHECK: the JetClass cost ("a few per cent" before the reruns) is recomputed from Table 1 after the 10^6 reruns and re-tested at 3 sigma (PI SP-11)
 Jet foundation models are often pretrained to classify simulated jets into many fine classes, and analyses
 build discriminants by summing the scores of those classes. Whether the granularity of these labels
 changes what the network learns has not been tested with the training jets held fixed. We pretrain the
@@ -13,8 +14,8 @@ Random partitions of the classes, selected to cut across the classes of the coar
 partitions that differ in a flavor boundary compare label sets at a fixed number of classes. Coarser labels make linear probes on the
 frozen features substantially worse on the pretraining classes, a task that favors finer labels by
 construction. Counted in wrongly ordered pairs of jets, merging quark flavor is the costliest single merge, and at a fixed number of classes, which classes
-are merged changes the cost. After fine-tuning, the coarsest labels cost a few per cent more errors on
-JetClass and no resolved difference on the public top-tagging and quark/gluon benchmarks. An auxiliary
+are merged changes the cost. After fine-tuning, the coarsest labels cost \pending{Table 1 after the reruns} more
+errors on JetClass and no resolved difference on the public top-tagging and quark/gluon benchmarks. An auxiliary
 jet-mass regression makes the mass more precisely predictable from the frozen features. A pretraining
 label set should contain every distinction that downstream discriminants sum over and, for use with frozen
 features, the flavor boundaries.
