@@ -264,7 +264,9 @@ FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
                           # jets) against 0.8055989583 at 3e-3 (160,862; no tie) and 0.8050 at 3e-4; no rerun
                           ("qg", 10_000): "1e-3",
                           # 2026-11-23: JetClass 1e4 best 1e-2 0.7004 (3e-3 0.6910, 1e-3 0.6836, 3e-2 diverged)
-                          ("jc1", 10_000): "1e-2"}
+                          ("jc1", 10_000): "1e-2",
+                          # 2026-11-23: top 1e4 best 1e-3 0.917443 (3e-3 0.917418, its original rate, no tie; 3e-4 0.9166)
+                          ("top", 10_000): "1e-3"}
 # the rows whose recorded rate moved from the original, in the order they settled: fixed_rate_cells' job indices follow
 # it, so a row recorded later appends and never shifts the index of a launched cell
 FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000, "scratch"),
@@ -277,7 +279,9 @@ FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000,
                     # 2026-11-23 00:20 UTC
                     ("jc1", 10_000, "scratch"),
                     # 2026-11-23 01:05 UTC
-                    ("jc1", 1_000_000, "pre"))
+                    ("jc1", 1_000_000, "pre"),
+                    # 2026-11-23 02:09 UTC
+                    ("top", 10_000, "scratch"))
 # PI 2026-11-21: the search goes no lower than 1e-5 (below it fine-tuning approaches training only the new output layer
 # on frozen features); a row whose best is still its lowest rate there takes 1e-5
 FIXED_SEARCH_FLOOR = "1e-5"
