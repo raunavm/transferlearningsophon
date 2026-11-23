@@ -151,6 +151,20 @@ def test_the_readme_and_items_map_every_figure_and_table_the_paper_places(releas
     assert {"README.txt", "items.csv", "macros.csv", "runs.csv"} <= set(files)
 
 
+def test_the_readme_holds_the_run_records_that_left_the_appendix(release):
+    """PI 2026-11-23 (LEDGER SP-13, step 5): the training-order and checkpoint hashes and the fine-tuning attempts'
+    GPU-hour accounting moved from the appendix's training settings to the README, their numbers the paper's macros;
+    the README names the partitions' label maps, which the class map no longer prints (step 1, R4)."""
+    built, files = release
+    records = files["README.txt"].split("RUN RECORDS\n", 1)[1].split("ROUNDING AND THE CHECK", 1)[0]
+    gen = built["results_generated.tex"]
+    for name in ("MlstFtPromFrom", "MlstFtGpuHoursBound", "MlstFtAttemptsBound", "MlstFtAttemptsUnknown"):
+        body = re.search(r"^\\newcommand\{\\" + name + r"\}\{(.*?)\}\s*(?:%|$)", gen, re.M).group(1)
+        assert R.detex(body) in records, name
+    assert "{" not in records and "hash" in records and "upper bound" in records
+    assert "rand_label_map.v2.csv" in records and "flavour_pair_map.v2.csv" in records
+
+
 def test_a_printed_number_that_is_not_its_value_stops_the_build():
     tok = R.TOK_OPEN + "p 0.43476 0.00035" + R.TOK_CLOSE
     tab = ("\\begin{tabular}{lc}\n\\toprule\n & accuracy \\\\\n\\midrule\n\\Kfull{} classes & " + tok

@@ -4,8 +4,10 @@ sentences. They replace the Page captions of those figures (apply, called at the
 is named by its label in braces and printed with its number of the day (gallery_placement.number). PI 2026-11-14
 (step 8): a paper caption never names a supplement item by number (text() refuses one), only "the supplementary
 material"; one plain finding sentence first; no sentence about a gap, an unclaimed result or an epoch cap.
-{counts}: the computed per-class counts (gallery_perclass.counts_sentence, COUNTS)."""
+{counts}: the computed per-class counts (gallery_perclass.counts_sentence, COUNTS). {m:Name}: the paper's macro Name
+(macro), so a page caption that follows its section caption prints the same counts and ranges."""
 import dataclasses
+import pathlib
 import re
 
 import gallery_placement as G
@@ -19,6 +21,17 @@ COUNTS = {}       # PC-jc2, PC-jc1: the computed count sentence (gallery_perclas
 # a sentence that depends on the data read, {name} in a caption (gallery_physics sets "probe_note": the mass probe is
 # centred on one training median, the truth-free refit atlas_res_v3, the only mass files read)
 FILLS = {"probe_note": "", "xbs_widen": "", "init_range": ""}
+# the paper's numbers: make_tables.py writes them before the gallery draws, in the paper and the book render jobs
+GENERATED = pathlib.Path(__file__).resolve().parents[3] / "paper" / "journal" / "results_generated.tex"
+
+
+def macro(name: str) -> str:
+    """The body of the paper's macro name, as results_generated.tex defines it."""
+    m = re.search(r"^\\newcommand\{\\" + name + r"\}\{(.*?)\}\s*(?:%|$)", GENERATED.read_text(), re.M)
+    if m is None:
+        raise SystemExit(f"FATAL: {name} is not in {GENERATED}; run experiments/FIGS/make_tables.py first")
+    return m.group(1)
+
 
 CAPTIONS = {
     "F1": (
@@ -58,13 +71,19 @@ CAPTIONS = {
         "bars over runs and test jets; colors give what the 17 classes merge the class with. Values are in the data "
         "release."
     ),
+    # PI 2026-11-23 (SP-13): the page captions of F4-mech, F4-other and F9b follow the paper's section captions (1db8bc37);
+    # F4-mech's, at 141 words as written there, loses six connecting words to stay within 135 (CA-1)
     "F4-mech": (
-        'Linear probes on 17 classes separate decays differing only in quark flavor worse than 188 classes; the b-quark '
-        'boundary recovers part of the loss on both pairs, and the random flavor boundary on X→bc vs bq, cs. Panels '
-        'show background rejection against signal efficiency for the label sets and mass networks (upper row) and the '
-        'flavor-boundary partitions (lower row), means over the pretraining runs (counted in figure {fig:F1}) down to 20 background jets. '
-        'Lower panels give ratios to 188 classes on a logarithmic axis, banded for 188 classes only by run spread and '
-        'binomial uncertainty. ' + NO_RAND + ' The tested differences are in table {tab:tests}.'
+        'Linear probes on 17 classes, which merge each pair, separate X→bb̄ from cc̄ and X→bc from bq, cs, the '
+        'second-named the background, worse than 188 classes, and the b-quark boundary recovers part of the loss on '
+        'both pairs, the random flavor boundary on the second. Panels show one over the fraction of background jets '
+        'kept against that of signal jets, label sets above, 17-class partitions below, with ratios to 188 classes. '
+        'Curves are means over {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and '
+        'flavor-boundary partition, {m:RandVtwoRuns} each for the {m:MlstPairRandApartMechWord} random partitions '
+        'keeping the pair apart, ending where fewer than {m:MlstMinBkgPass} background jets pass; 188 classes\' band '
+        'combines run spread and binomial uncertainty. The random network, not drawn, reaches '
+        '{m:MlstPairInitRhalfMechMin} to {m:MlstPairInitRhalfMechMax} at 50% of signal jets. Table {tab:tests} has the '
+        'tested differences.'
     ),
     "ROC-main": (
         'Background rejection against signal efficiency with linear probes on frozen features, the mean over runs. '
@@ -94,13 +113,14 @@ CAPTIONS = {
         'release.'
     ),
     "F9b": (
-        'Each network with an added mass regression (+ mass) resolves the jet mass better than the soft-drop mass in '
-        'every bin of jet pT and generator mass, and is less biased in most bins but more biased in the lowest '
-        'generator-mass bin, 20 to 50 GeV. Panels (a) and (b) show the median of r = m/m_gen, the mass over '
-        'the generator-level soft-drop mass, with its distance from one below, and (c) and (d) the resolution, half the '
-        'central 68% range of r over its median, on a logarithmic axis, with the ratio to the soft-drop value below on a linear one. '
-        'Lines are means over two pretraining runs, and bands of ±1 standard deviation combine '
-        'the spread over runs with the bootstrap over test jets. Values are in table {tab:mass}.'
+        'Each network with an added mass output resolves the jet mass better than the soft-drop mass in every bin of '
+        'jet pT and of generator-level mass. Panels show the median of the response r = m_est/m_gen and its distance '
+        'from one, and the resolution, the width of the central 68% of r over twice its median, and its ratio to the '
+        'soft-drop mass, against the reconstructed jet pT and the generator-level soft-drop mass m_gen. The estimates '
+        'are the soft-drop mass and the mass output of the 162- and 17-class networks with an added mass output, on '
+        'JetClass-II test jets with a generator-level match. Lines are means over {m:MlstMassNRunsWord} pretraining '
+        'runs, and bands of one standard deviation combine the spread over runs with the bootstrap over test jets. '
+        'Values over all jets are in table {tab:mass}.'
     ),
     "A17-probe": (
         'On frozen features, a multilayer-perceptron probe resolves the jet mass better on the networks with an added '
@@ -133,14 +153,14 @@ CAPTIONS = {
     # PI 2026-11-23 (LEDGER SP-9, merge 8): F4-light's two pairs are this figure's second row; the QCD pairs have no
     # partitions panel, as every partition merges the QCD classes
     "F4-other": (
-        "With linear probes, 43 and 17 classes separate the four pairs less well than 188 classes, and 162 classes, "
-        "which merge the 27 QCD classes, separate the three QCD pairs less well. Panels show background rejection "
-        "against signal efficiency, the first-named decay the signal, for the label sets and mass networks (upper two "
-        "rows) and, on X→YY→bb̄qq vs cc̄qq, the flavor-boundary partitions (lower row); every partition merges the QCD "
-        "classes, so the QCD pairs have no partitions panel. Curves are means over the pretraining runs (counted in "
-        "figure {fig:F1}) down to 20 background jets. Lower panels give the ratio to 188 classes on a logarithmic axis, "
-        "banded for 188 classes only by run spread and binomial uncertainty. " + NO_RAND +
-        " The tested differences are in table {tab:tests}."
+        "With linear probes, 43 and 17 classes separate four pairs that 17 classes merge, X→YY→bbqq from ccqq, QCD bb̄ "
+        "from cc̄, and QCD jets with a b quark, or a c and no b, from light QCD jets, the second-named the background, "
+        "less well than 188 classes, and 162 classes, which merge the QCD classes, the QCD pairs. Panels, drawn as in "
+        "figure {fig:F4-mech}, show the label sets and, in (e), the 17-class partitions, which all merge the QCD "
+        "classes. Curves are means over {m:MlstNRunsWord} runs per label set and {m:MlstMassNRunsWord} per mass network "
+        "and flavor-boundary partition, and over the {m:MlstPairRandApartBbqqWord} random partitions, {m:RandVtwoRuns} "
+        "run each, that keep the pair apart. The random network, not drawn, reaches {m:MlstPairInitRhalfOtherMin} to "
+        "{m:MlstPairInitRhalfOtherMax} at 50% of signal jets. Table {tab:tests} has the tested differences."
     ),
     "F4-mech-ft": (
         "After fine-tuning, 17 classes still separate X→bb̄ from cc̄ and X→bc from bq, cs worse than 188 classes. The "
@@ -229,9 +249,10 @@ RELEASE_CAPTIONS = {k: CAPTIONS.pop(k) for k in RELEASE}
 
 def fill(raw: str) -> str:
     """raw with each {tab:...} and {fig:<page id>} as that item's number, without the word (the sentence says
-    "table" or "figure"), and each {name} of FILLS as its sentence."""
+    "table" or "figure"), each {name} of FILLS as its sentence and each {m:Name} as the paper's macro Name."""
     for name, sentence in FILLS.items():
         raw = raw.replace("{" + name + "}", sentence)
+    raw = re.sub(r"\{m:([A-Za-z]+)\}", lambda m: macro(m.group(1)), raw)
     out = re.sub(r"\{(tab:[a-z_0-9]+)\}", lambda m: G.number(m.group(1)).removeprefix("Table "), raw)
     return re.sub(r"\{fig:([A-Za-z0-9-]+)\}", lambda m: G.number(m.group(1)).removeprefix("Fig. "), out)
 

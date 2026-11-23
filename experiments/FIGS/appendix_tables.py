@@ -6,9 +6,11 @@ tables. Three tables, all read from the files that define them, never typed:
   * appendix_levels.tex -- the vocabularies: the 17 coarsest groups in words, and
     how many classes each level of the tree has and whether it was pretrained (placed
     nowhere since PI 2026-11-23, LEDGER SP-9: the class map holds it);
-  * appendix_vocabulary.tex -- every native JetClass-II class with its group at 43
-    classes and in every partition, in blocks under the 17-class groups (configs/
-    labelmaps/rung_label_maps.v1.csv, rand_label_map.v*.csv);
+  * appendix_vocabulary.tex -- the class map: one row per class of the 43-class label
+    set with the native JetClass-II classes it merges, in blocks under the 17-class
+    groups (configs/labelmaps/rung_label_maps.v1.csv). The partitions' maps (rand_label_map.v*.csv,
+    flavour_pair_map.v2.csv) are read for the checks below but not printed (PI 2026-11-23,
+    LEDGER SP-13 step 1, R4: per-partition detail goes to the release);
   * appendix_tasks.tex -- the native classes of every probe task and anomaly
     signal, taken from the code that ran them (experiments/EVAL/probe.py TASKS,
     anomaly.py SIGNAL_SUITE) and checked against the result files that record
@@ -65,8 +67,8 @@ _LEPTONS = {"LL": r"$\ell\ell$", "L": r"$\ell$", "TAUH": r"$\tau_h$", "TAUL": r"
 
 
 def group_tex(name: str) -> str:
-    """A coarsest-level group name in words: 4P_SEMILEP_NU_2PARTON_L ->
-    four-prong: two quarks or gluons, $\\ell$, $\\nu$."""
+    """A coarsest-level group name in words, without a colon (PI CA-10): 4P_SEMILEP_NU_2PARTON_L ->
+    four-prong decays to two quarks or gluons, $\\ell$ and $\\nu$."""
     if name == "QCD_ALL":
         return "QCD"
     parts = name.split("_")
@@ -75,7 +77,17 @@ def group_tex(name: str) -> str:
     words += [r"$\nu$" for p in parts if p == "NU"]
     if parts[0] not in _PRONG or not words:
         raise SystemExit(f"FATAL: cannot describe group {name}")
-    return f"{_PRONG[parts[0]]}: " + ", ".join(words)
+    listed = ", ".join(words[:-1]) + " and " + words[-1] if len(words) > 1 else words[0]
+    return f"{_PRONG[parts[0]]} decays to {listed}"
+
+
+def class_list(names: list[str]) -> str:
+    """The native classes of one row, the decay chain they share written once:
+    $X\\to YY\\to bbbb$, $bbcc$; QCD, $bbccss$, ..., light."""
+    tex = [native_tex(n) for n in names]
+    chain = "QCD, " if names[0].startswith("label_QCD_") else tex[0][:tex[0].rindex(r"\to ") + 4]
+    rest = [("$" if chain.startswith("$") else "") + t[len(chain):] if t.startswith(chain) else t for t in tex[1:]]
+    return ", ".join(tex[:1] + rest)
 
 
 def read_map(path: pathlib.Path) -> list[dict]:
@@ -89,7 +101,7 @@ def partitions(maps_dir: pathlib.Path, rows: list[dict]) -> list[tuple[str, str,
     rand_label_map.v*.csv and the flavour pair's flavour_pair_map.v2.csv), each
     file's partitions in column order, random partitions first. The first grid's
     random partitions (v1) belong to the retired first set of runs and are not
-    printed. The rerun's (v2) are headed by their number, as in the paper's
+    read. The rerun's (v2) are headed by their number, as in the paper's
     "random partition 3"; a later version's by version and number (v3.2); the
     flavor control label sets by FLAV_HEAD."""
     out = []
@@ -115,7 +127,7 @@ def partitions(maps_dir: pathlib.Path, rows: list[dict]) -> list[tuple[str, str,
 
 def check_grid_covered(grid_path: pathlib.Path, parts: list) -> None:
     """Every classification arm of the rerun grid trains on a tree level or on a
-    partition the appendix prints; anything else would be a vocabulary the paper
+    partition of the released label maps; anything else would be a vocabulary the paper
     reports without defining. An arm's vocabulary is its config's name, less the
     mass-output suffixes (the leave-one-family-out arms reuse their parents'
     configs, the self-supervised arm has no classes)."""
@@ -126,7 +138,21 @@ def check_grid_covered(grid_path: pathlib.Path, parts: list) -> None:
         vocab = re.sub(r"(_MASS)?(_LM)?$", "", pathlib.Path(arm["config"]).stem)
         if vocab not in RUNGS and vocab not in printed:
             raise SystemExit(f"FATAL: {grid_path} trains {arm['name']} on {vocab}, which no "
-                             f"partition map in configs/labelmaps prints in the appendix")
+                             f"partition map in configs/labelmaps defines")
+
+
+def check_partitions_mix_prongs(rows: list[dict], parts: list) -> None:
+    """Methods says the partitions mix decays with different numbers of prongs; the class map no longer prints them
+    (PI 2026-11-23, LEDGER SP-13 step 1), so the statement is checked here, where the maps are read (RR-7): every
+    partition has a group that holds decays of two different prong counts of the 17-class level (2P, 3P, 4P)."""
+    prongs = {r["class_name"]: r["R16_Q1_name"].split("_")[0] for r in rows}
+    for _, col, p in parts:
+        groups = collections.defaultdict(set)
+        for c, g in p.items():
+            groups[g].add(prongs[c])
+        if not any(len(s - {"QCD"}) > 1 for s in groups.values()):
+            raise SystemExit(f"FATAL: partition {col} keeps every group within one prong count; methods.tex says "
+                             "the partitions mix decays with different numbers of prongs")
 
 
 def _longtable(colspec: str, head: str, rows: list[str], caption: str, label: str) -> str:
@@ -139,50 +165,45 @@ def _longtable(colspec: str, head: str, rows: list[str], caption: str, label: st
 
 
 # PI 2026-11-23 (LEDGER SP-9, merge 3): the class map takes in tab:app-levels; the levels never pretrained (64, 30, 4 and
-# 2 classes) leave it, and the groups of the 17-class label set head its blocks
-MAP_LEVELS = ["R42_Q1"]          # the pretrained level between 162 classes and the 17-class blocks
+# 2 classes) leave it, and the groups of the 17-class label set head its blocks. PI 2026-11-23 (LEDGER SP-13, step 1; the
+# 19 Nov item): one row per merged class, each 43-class group a row listing its JetClass-II classes
+ROW_LEVEL = "R42_Q1"          # the pretrained level between 162 classes and the 17-class blocks
 
 
-def table_vocabulary(rows: list[dict], parts: list) -> str:
-    """Every native class, its group at 43 classes and in each partition, in blocks under the groups of the 17-class
-    label set (their names in words, group_tex, and their numbers of the released label map)."""
+def table_vocabulary(rows: list[dict]) -> str:
+    """The class map: each class of the 43-class label set a row with the native classes it merges (class_list), in
+    blocks under the groups of the 17-class label set (their names in words, group_tex), both numbered as in the
+    released label map."""
     order = {r: {} for r in SHOWN}
     for r in rows:
         for rung in SHOWN:
             order[rung].setdefault(r[rung], len(order[rung]))
     key = lambda r: tuple(order[g][r[g]] for g in ("R16_Q1", "R42_Q1", "R63_Q1")) + (int(r["jet_label"]),)
     sizes = {rung: len({r[rung] for r in rows}) for rung in RUNGS}
-    rand = [h for h, c, _ in parts if c.startswith("RAND")]
-    flav = [h for h, c, _ in parts if not c.startswith("RAND")]
-    ncol = 1 + len(MAP_LEVELS) + len(parts)
-    head = (" & " + " & ".join(f"{sizes[r]} classes" for r in MAP_LEVELS)
-            + (f" & \\multicolumn{{{len(rand)}}}{{c}}{{random partition}}" if rand else "")
-            + (f" & \\multicolumn{{{len(flav)}}}{{c}}{{flavor boundary}}" if flav else "")
-            + " \\\\\n"
-            + "JetClass-II class" + " & " * len(MAP_LEVELS)
-            + "".join(f" & {h}" for h, _, _ in parts) + " \\\\")
-    size = collections.Counter(r["R16_Q1"] for r in rows)
-    body, last = [], None
+    members = collections.OrderedDict()
     for r in sorted(rows, key=key):
-        if r["R16_Q1"] != last:
+        members.setdefault((r["R16_Q1"], r["R16_Q1_name"], r[ROW_LEVEL]), []).append(r["class_name"])
+    size = collections.Counter(r["R16_Q1"] for r in rows)
+    head = f"{sizes[ROW_LEVEL]} classes & JetClass-II classes \\\\"
+    body, last = [], None
+    for (g17, name17, g43), names in members.items():
+        if g17 != last:
             if last is not None:
                 body.append("\\addlinespace[2pt]")
-            n = size[r["R16_Q1"]]
-            body.append(f"\\multicolumn{{{ncol}}}{{@{{}}l}}{{\\textit{{group {r['R16_Q1']} of the {sizes['R16_Q1']}-class label "
-                        f"set, {group_tex(r['R16_Q1_name'])} ({n} {'class' if n == 1 else 'classes'})}}}} \\\\*")
-        last = r["R16_Q1"]
-        body.append(native_tex(r["class_name"]) + " & " + " & ".join(r[g] for g in MAP_LEVELS)
-                    + "".join(f" & {p[r['class_name']]}" for _, _, p in parts) + " \\\\")
-    # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md (the headings name the partitions)
-    caption = ("Every JetClass-II class and its group in each pretrained label set coarser than "
-               f"{sizes['L162']} classes and in each partition, in blocks by group of the {sizes['R16_Q1']}-class "
-               f"label set. The {sizes['L162']}-class column is left out, as at {sizes['L162']} classes every resonant "
-               f"class keeps its own label and the QCD classes share one. The {sizes['R42_Q1']}-class column groups "
-               f"{level_rules(rows)['R42_Q1']}. A flavor boundary keeps apart decays that differ only in quark flavor. "
-               "Classes that share a number in a column share a class in that label set, numbered as in the released "
-               "label maps. Here $q$ is a $u$ or $d$ quark, $\\ell$ an electron or a muon, $\\tau_h$ a hadronic and "
-               "$\\tau_e$, $\\tau_\\mu$, $\\tau_\\ell$ leptonic $\\tau$ decays.")
-    return _longtable("l " + "r" * (ncol - 1), head, body, caption, "tab:app-vocabulary")
+            n = size[g17]
+            # a heading wraps rather than run past the text block (an overfull float stops the build, FG-25)
+            body.append(f"\\multicolumn{{2}}{{@{{}}p{{\\linewidth}}@{{}}}}{{\\textit{{{sizes['R16_Q1']}-class group {g17}, "
+                        f"{group_tex(name17)} ({n} {'class' if n == 1 else 'classes'})}}}} \\\\*")
+        last = g17
+        body.append(f"{g43} & {class_list(names)} \\\\")
+    caption = (f"This class map gives each group of the {sizes[ROW_LEVEL]}-class label set, with the JetClass-II "
+               f"classes it merges, in blocks by group of the {sizes['R16_Q1']}-class label set, both numbered as in "
+               f"the released label maps. The {sizes[ROW_LEVEL]}-class label set groups {level_rules(rows)[ROW_LEVEL]}. "
+               f"At {sizes['L162']} classes every resonant class keeps its own label and the QCD classes share one. A "
+               "decay chain written once in a row holds for every class of that row. Here $q$ is a $u$ or $d$ quark, "
+               "$\\ell$ an electron or a muon, $\\nu$ a neutrino, $\\tau_h$ a hadronic and $\\tau_e$, $\\tau_\\mu$, "
+               "$\\tau_\\ell$ leptonic $\\tau$ decays.")
+    return _longtable("@{}r p{0.84\\linewidth}@{}", head, body, caption, "tab:app-vocabulary")
 
 
 _WORD = {2: "two", 3: "three", 4: "four"}
@@ -351,8 +372,9 @@ def build(root: pathlib.Path, ladder_path: pathlib.Path, vcb_path: pathlib.Path 
     grid = root / "configs" / "arms" / "v2_grid.json"
     if grid.exists():
         check_grid_covered(grid, parts)
+    check_partitions_mix_prongs(rows, parts)
     out = {"tables/appendix_levels.tex": table_levels(rows, v2_levels),
-           "tables/appendix_vocabulary.tex": table_vocabulary(rows, parts)}
+           "tables/appendix_vocabulary.tex": table_vocabulary(rows)}
     if (root / "experiments" / "EVAL" / "probe.py").exists():
         load = lambda p: json.loads(pathlib.Path(p).read_text()) if p and pathlib.Path(p).exists() else None
         out["tables/appendix_tasks.tex"] = table_tasks(root, rows, load(ladder_path), load(vcb_path),

@@ -1342,6 +1342,7 @@ in their tables' and macros' rows, and the bootstrap result files in per_run/ (f
 l3_rerun). Mass sculpting is the Jensen-Shannon distance with logarithms to base 2; the mass
 resolution is half the 15.9-84.1% inter-quantile range of the response over its median.
 
+{records}
 ROUNDING AND THE CHECK
 A printed number matches its value when |value - printed| is at most half a unit of its last
 printed digit (for an integer, of its last nonzero digit: 1,800 stands for 1,750 to 1,850). The
@@ -1359,11 +1360,50 @@ ITEMS (paper order: main text, appendix, supplement; then the generated tables p
 """
 
 
-def readme(commit: str, its: list, cover: str, size: str, pindex: list, fig_rows: dict) -> str:
+# PI 2026-11-23 (LEDGER SP-13, step 5): the run bookkeeping that left the appendix's training settings (the hashes of
+# the training order and of each fine-tuning's checkpoint, how a fine-tuning attempt's GPU-hours are counted), and
+# (step 1, R4) where the partitions' per-class maps are now that the class map prints the label sets only
+RUN_RECORDS = """RUN RECORDS
+Pretraining. The order of a run's training examples and the seeds of its dropout masks are functions
+of its seed and the epoch number alone. For every pretraining run the code release records a hash of
+the identifiers of the jets read in each epoch, against which the training order of any two runs can
+be checked.
+Fine-tuning. Every fine-tuning run records the hash of the pretrained checkpoint it starts from.
+GPU-hours (tab:compute). A pretraining run's hours sum the training and validation passes of its
+epochs as each epoch recorded its device; a run could resume on another GPU type after an
+interruption, so several runs list more than one. The fine-tuning hours count every attempt of every
+training, the learning-rate search included. An attempt's hours are its running time as the
+cluster's monitoring recorded it, where that record covers the whole attempt (from {prom} on), and
+otherwise the time between its own start and end. An attempt interrupted before then recorded no
+end, so the {bound_h} GPU-hours of those {bound_n} attempts run to the next attempt's start and are an
+upper bound; {unknown} attempts whose start was not recorded are not counted.
+
+LABEL MAPS
+The group of every JetClass-II class in every label set and partition, the random and the
+flavor-boundary partitions included, is in the code release (configs/labelmaps/
+rung_label_maps.v1.csv, rand_label_map.v2.csv and flavour_pair_map.v2.csv). The paper's class map
+(tab:app-vocabulary) prints the label sets only.
+"""
+
+
+def run_records(built: dict) -> str:
+    """RUN_RECORDS with its numbers, the paper's macros as results_generated.tex defines them."""
+    gen = built.get("results_generated.tex", "")
+
+    def m(name: str) -> str:
+        hit = re.search(r"^\\newcommand\{\\" + name + r"\}\{(.*?)\}\s*(?:%|$)", gen, re.M)
+        if hit is None:
+            raise SystemExit(f"FATAL: the README's run records need {name}, which results_generated.tex lacks")
+        return detex(hit.group(1))
+    return RUN_RECORDS.format(prom=m("MlstFtPromFrom"), bound_h=m("MlstFtGpuHoursBound"),
+                              bound_n=m("MlstFtAttemptsBound"), unknown=m("MlstFtAttemptsUnknown"))
+
+
+def readme(commit: str, its: list, cover: str, size: str, pindex: list, fig_rows: dict, records: str) -> str:
     preview = ("\nPREVIEW: built from the partial fine-tuning results (MLST_FT_PREVIEW=1) while reruns are running; "
                "not the\nfinal release." if os.environ.get("MLST_FT_PREVIEW") == "1" else "")
     out = [README_HEAD.format(commit=commit, date=datetime.date.today().isoformat(), coverage=cover, size=size,
-                              preview=preview)]
+                              preview=preview, records=records)]
     for key, kind, tier, num, sentence, files, note in its:
         out.append(f"  {num or '-':<11} {key} ({kind}, {tier})")
         if sentence:
@@ -1456,7 +1496,7 @@ def release_files(built: dict, rec: Recorder, figs: dict | None = None, fig_note
     files["items.csv"] = _csv(("id", "kind", "placement", "number", "sentence", "files", "note"),
                               [(k, kind, t, n, s, " ".join(f), note) for k, kind, t, n, s, f, note in its])
     files["README.txt"] = readme(commit, its, coverage(rec), _wrap_text(size.strip()).replace("SIZE ", "SIZE\n", 1) + "\n",
-                                 pindex, figs)
+                                 pindex, figs, run_records(built))
     return files, {"bytes": sum(len(t.encode()) for t in files.values()), "files": len(files), "stride": stride}
 
 
