@@ -8,10 +8,12 @@ is skipped, so a retried pod does only what is missing.
 
   bs3-mlp-raunav (Indexed)  ROWS: jc2bal (188 and 162 classes: accuracy, the null of results_jc), coarse (188, 162,
                             43 and 17 classes on the 17 merged groups: tab:coarse's nulls), bench (the 27 networks of
-                            Fig. 2 on top and quark/gluon, Pythia and Herwig: the R30 nulls of its caption)
+                            Fig. 2 on top and quark/gluon, Pythia and Herwig: the R30 nulls of its caption, under the
+                            linear probes' substitution of the missing inputs)
   bs3-mlp-smoke-raunav      one row of the same body (SMOKE_ROW), its peak memory and seconds, to size the job; the
                             main job then leaves that row out (--skip-smoke), so no fit runs in two jobs
   bs3-boot-raunav           one pod once every fit exists: BOOT_OUT's five files
+  bs3-analytic-raunav       one pod: SC-2 #1, the transfer-head term against the paired bootstrap (ANALYTIC_OUT)
 
     python3 scripts/build_mlp_scores_jobs.py --tag mtx-sN.NN --mem 12Gi [--parallel 8] [--skip-smoke]
 """
@@ -59,8 +61,12 @@ def models(arm: str) -> list[str]:
     return [f"mtx-{r}" for r in ARMS[arm]]
 
 
+# bench: the linear probes' substitution of the missing inputs (mlp_scores.FILL; third review of 5f4e1b8, B3(c))
+CKPT = {"top_N1200000": "best70.itop4", "qg_N1600000": "best70.nqg", "qg_herwig_N1600000": "best70.nqg"}
+
+
 def npz(family: str, model: str, name: str) -> str:
-    return f"{OUT}/{family}/probs/{model}/best70/{name}.npz"
+    return f"{OUT}/{family}/probs/{model}/{CKPT.get(name, 'best70')}/{name}.npz"
 
 
 def guard() -> str:
@@ -116,6 +122,27 @@ def boot_spec(tag: str, mem: str) -> str:
                  "paired test-jet bootstraps of the MLP probes' differences (SC-1, B = 200)")
 
 
+# ------------------------------------------------------------------ SC-2 #1: the transfer-head term on per-jet scores
+ANALYTIC_OUT = {f"{BOOT}/analytic_jc2bal_pairs_bc_vs_bq_cs.json":
+                lambda m: f"{R5.V5['fits_v5_probs']}/{m}/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
+                f"{BOOT}/analytic_top_N1200000.itop4.json":
+                lambda m: f"{R5.V5['fits_v5_fill_probs']}/{m}/best70.itop4/top_N1200000.npz"}
+ANALYTIC_DIFFS = (("r16q1", "l188"), ("l162", "l188"))
+
+
+def analytic_spec(tag: str, mem: str) -> str:
+    """bs3-analytic-raunav: experiments/STATS/analytic_check.py on two linear-probe rows of each file, eps_S at
+    eps_B = 1% with the transfer-head rows' analytic term against the paired bootstrap."""
+    lines = [BT.check_inputs([f(m) for f in ANALYTIC_OUT.values() for p in ANALYTIC_DIFFS for a in p for m in models(a)]),
+             f"mkdir -p {BOOT}"]
+    for out, f in ANALYTIC_OUT.items():
+        d = " ".join(f"--diff {BT.dname(a, b)}={','.join(f(m) for m in models(a))}/{','.join(f(m) for m in models(b))}"
+                     for a, b in ANALYTIC_DIFFS)
+        lines.append(f"[ -e {out} ] || " + BT.peak(f"python3 experiments/STATS/analytic_check.py {d} --b {B} --out {out}"))
+    return _spec(tag, "bs3-analytic-raunav", ["\n  ".join(lines)], 1, mem, "1",
+                 "SC-2 #1: the transfer-head analytic term against the paired bootstrap on per-jet scores")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
@@ -126,7 +153,8 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     for name, text in (("bs3-mlp-smoke-raunav", smoke_spec(a.tag, a.mem)),
                        ("bs3-mlp-raunav", fit_spec(a.tag, a.mem, a.parallel, a.skip_smoke)),
-                       ("bs3-boot-raunav", boot_spec(a.tag, a.boot_mem))):
+                       ("bs3-boot-raunav", boot_spec(a.tag, a.boot_mem)),
+                       ("bs3-analytic-raunav", analytic_spec(a.tag, "3Gi"))):
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(f"wrote {p.relative_to(ROOT)}")

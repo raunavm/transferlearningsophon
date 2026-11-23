@@ -93,6 +93,11 @@ def test_bench_scores_herwig_with_the_quark_gluon_probe(tmp_path):
     assert [len(c[4]) for c in probe.calls] == [30, 55]          # top test; quark/gluon test + Herwig
     assert sorted(cells) == ["qg", "qg_herwig", "top"]
     assert {pathlib.Path(c["scores"]).name for c in cells.values()} == {f + ".npz" for f in BJ.FILES["bench"]}
+    # the linear probes' substitution (CS-8; review of 5f4e1b8, B3(c)), in the folder the bootstrap reads
+    assert (cells["top"]["fill"], cells["qg"]["fill"], cells["qg_herwig"]["fill"]) == ("itop4", "nqg", "nqg")
+    for k, c in cells.items():
+        name = pathlib.Path(c["scores"]).stem
+        assert c["scores"].endswith(BJ.npz("bench", "mtx-l188-s1", name).split("/bench/", 1)[1])
     zq, zh = (np.load(cells[k]["scores"]) for k in ("qg", "qg_herwig"))
     s = probe.fit_mlp(*probe.calls[1][:5])[0]
     assert np.array_equal(zq["s"], s[:30]) and np.array_equal(zh["s"], s[30:]) and zq["s"].dtype == np.float32
@@ -132,3 +137,12 @@ def test_bootstrap_reads_every_npz_the_fits_write():
     for out in BJ.BOOT_OUT:
         assert f"[ -e {out} ] ||" in text
     assert "--diff l162-188=mtx-l162-s1,mtx-l162-s2,mtx-l162-s3/mtx-l188-s1,mtx-l188-s2,mtx-l188-s3" in text
+
+
+def test_the_analytic_check_reads_the_linear_probes_files():
+    text = BJ.analytic_spec("mtx-s9.99", "3Gi")
+    assert "experiments/STATS/analytic_check.py" in text and 'cpu: "1"' in text
+    assert "fits_v5_fill_probs/mtx-l188-s1/best70.itop4/top_N1200000.npz" in text
+    assert "fits_v5_probs/mtx-r16q1-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz" in text
+    for out in BJ.ANALYTIC_OUT:
+        assert f"[ -e {out} ] ||" in text

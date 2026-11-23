@@ -11,12 +11,15 @@ Families (each on one CPU model, PF-1; the job pins it and the pod refuses any o
            the 188 native classes, scored on the 903,922 balanced test jets; p (n, 188)
   coarse   the same fit on the 17 merged groups of the 17-class labels (probe_bal.coarse_lut, the task of tab:coarse's
            linear probes, probe_bal.py --coarse R16_Q1), 17 outputs; p (n, 17), y the group
-  bench    linear_probe_v2.mlp_cells, cell set v4 (fits_v3_mlp2, tab:mlp's top and quark/gluon columns): top tagging
-           and quark/gluon at their largest training set with the missing inputs as the config fills them (zero), the
-           quark/gluon probe also scored on the Herwig jets; s, the logit difference
+  bench    linear_probe_v2.mlp_cells, cell set v4 (tab:mlp's top and quark/gluon fit): top tagging and quark/gluon at
+           their largest training set, the quark/gluon probe also scored on the Herwig jets; s, the logit difference.
+           The missing inputs take the substitution the linear probes of Fig. 2 and Table 2 use (FILL: random draws on
+           top, the training mean on quark/gluon; probe_bal.py --fill's features), like with like with the
+           linear-probe nulls these fits stand beside (CS-8; third review of render 5f4e1b8, B3(c)), not tab:mlp's zeros
 Output: <out>/<model>.json (the metrics as the refitted family records them, the fit records, the CPU model, and
-each metric beside the stored fit it repeats) and <out>/probs/<model>/<ckpt>/<name>.npz (rows, y and p or s, the
-names of the linear probes' files); an existing <model>.json is never overwritten.
+each metric beside the stored fit it repeats, where one exists) and <out>/probs/<model>/<ckpt>/<name>.npz (rows, y and
+p or s, the names of the linear probes' files, under <ckpt>.<fill> for bench); an existing <model>.json is never
+overwritten.
 
     python3 experiments/EVAL/mlp_scores.py --family jc2bal --model mtx-l188-s1 --out /data/results/eval/bs3_mlp/jc2bal
 """
@@ -36,12 +39,11 @@ import numpy as np
 REPO = pathlib.Path(__file__).resolve().parents[2]
 FAMILIES = ("jc2bal", "coarse", "bench")
 COARSE = "R16_Q1"
+FILL_ROOT = pathlib.Path("/data/results/eval/v2_linprobe_fill")
+FILL = {"top": "itop4", "qg": "nqg"}     # build_refit_v5_jobs.FILL_TAG: the substitutions chosen on validation
 # the stored fits each family repeats, for the comparison recorded beside every metric
-STORED = {"jc2bal": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"),
-          "coarse": None,
-          "bench": pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2")}
-COMPARED = {"jc2bal": ("accuracy", "macro_auc_ovr", "macro_auc_resonant", "macro_auc_qcd"),
-            "bench": ("accuracy", "auc", "r30", "r50")}
+STORED = {"jc2bal": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"), "coarse": None, "bench": None}
+COMPARED = {"jc2bal": ("accuracy", "macro_auc_ovr", "macro_auc_resonant", "macro_auc_qcd")}
 
 
 def _load(name: str, rel: str):
@@ -89,26 +91,28 @@ def jc2bal(pb, probe, model: str, ckpt: str, out: pathlib.Path, coarse: bool) ->
                   "n_val": int(yva.size), "scores": path, "seconds": round(time.time() - t0, 1)}}
 
 
-def bench(pb, probe, model: str, ckpt: str, out: pathlib.Path) -> dict:
-    """linear_probe_v2.mlp_cells (cell set v4) on top and quark/gluon, Herwig scored by the quark/gluon probe."""
-    lp, root, cells = pb.lp, pb.OLD_ROOT / model, {}
+def bench(pb, probe, model: str, ckpt: str, out: pathlib.Path, fill_root: pathlib.Path = FILL_ROOT) -> dict:
+    """linear_probe_v2.mlp_cells (cell set v4) on top and quark/gluon under the linear probes' substitution (FILL),
+    Herwig scored by the quark/gluon probe."""
+    lp, root, cells = pb.lp, fill_root / model, {}
     for ds in ("top", "qg"):
+        tag = f"{ckpt}.{FILL[ds]}"
         n = max(lp.train_sizes(root, ds))
-        xva, yva, _ = lp.load_split(root / ds / "val" / ckpt)
-        xte, yte, _ = lp.load_split(root / ds / "test" / ckpt)
-        xtr, ytr, _ = lp.load_split(root / ds / f"train_N{n}" / ckpt)
-        her = lp.load_split(root / "qg" / "herwig" / ckpt) if ds == "qg" else None
+        xva, yva, _ = lp.load_split(root / ds / "val" / tag)
+        xte, yte, _ = lp.load_split(root / ds / "test" / tag)
+        xtr, ytr, _ = lp.load_split(root / ds / f"train_N{n}" / tag)
+        her = lp.load_split(root / "qg" / "herwig" / tag) if ds == "qg" else None
         xs = xte if her is None else np.concatenate([xte, her[0]])
         t0 = time.time()
         s, meta = probe.fit_mlp(xtr, ytr, xva, yva, xs)
         nte = int(yte.size)
         cells[ds] = {**lp.binary_score_metrics(s[:nte], yte, probe, threshold=0.0), **lp.mlp_fit_record(meta),
-                     "mlp": meta, "n_train": int(ytr.size), "n_val": int(yva.size), "train_size": n,
-                     "scores": save(out, model, ckpt, f"{ds}_N{n}", yte, s=s[:nte]), "seconds": round(time.time() - t0, 1)}
+                     "mlp": meta, "n_train": int(ytr.size), "n_val": int(yva.size), "train_size": n, "fill": FILL[ds],
+                     "scores": save(out, model, tag, f"{ds}_N{n}", yte, s=s[:nte]), "seconds": round(time.time() - t0, 1)}
         if her is not None:
             cells["qg_herwig"] = {**lp.binary_score_metrics(s[nte:], her[1], probe, threshold=0.0),
-                                  **lp.mlp_fit_record(meta), "n_train": int(ytr.size), "train_size": n,
-                                  "scores": save(out, model, ckpt, f"qg_herwig_N{n}", her[1], s=s[nte:])}
+                                  **lp.mlp_fit_record(meta), "n_train": int(ytr.size), "train_size": n, "fill": FILL[ds],
+                                  "scores": save(out, model, tag, f"qg_herwig_N{n}", her[1], s=s[nte:])}
         print(f"  {model} {ckpt} mlp {ds}: auc={cells[ds]['auc']:.5f} r30={cells[ds]['r30']:.1f} "
               f"({cells[ds]['seconds']} s)", flush=True)
     return cells
