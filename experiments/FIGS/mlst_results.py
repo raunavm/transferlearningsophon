@@ -5120,6 +5120,7 @@ def _tests_side(e: dict, first: str) -> tuple:
 
 # PI 2026-11-23 (LEDGER SP-13, step 2): the mark of a row whose two sides are scored on independent test samples, each
 # resampled apart, the two bootstrap variances adding (PI SC-1a)
+TESTS_GLUE_ROWS = 9         # a tab:tests block of at most this many lines (heading included) never breaks
 INDEPENDENT = r"$^{\diamond}$"     # no other table carries it (SINGLE is the section sign)
 # a row with a side of one run, whose sigma lacks that side's run spread (a lower bound; review of 5c40d69, B3)
 SINGLE_SIDE = r"$^{\circ}$"
@@ -5366,7 +5367,12 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
             block.append(lab + " & " + num(d, place) + " & " + num(sig, place) + " & "
                          + f"{d / sig:.2f}".replace("-", "$-$") + r" \\")
         # a block's rows never break apart from its heading; between two blocks a space, where the page may break
-        out += ([r"\noalign{\penalty-100}\addlinespace"] if k else []) + [ln.rstrip() + "*" for ln in block[:-1]] + block[-1:]
+        # LEDGER DL-14 (typographic): a block longer than a third of a turned page may break after its first three rows
+        # and before its last two, so that the caption and a long first block never leave a page empty (render e2305ce:
+        # the 22 accuracy rows and the caption, unbreakable, pushed the table off a blank page)
+        glue = [i < 3 or i >= len(block) - 3 or len(block) <= TESTS_GLUE_ROWS for i in range(len(block) - 1)]
+        out += (([r"\noalign{\penalty-100}\addlinespace"] if k else [])
+                + [ln.rstrip() + ("*" if g else "") for ln, g in zip(block[:-1], glue)] + block[-1:])
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""]), {r for r in replicas if r}
 
 
