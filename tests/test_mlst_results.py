@@ -4,6 +4,7 @@ trailing zeros, the probe convergence rule, the merge marks from the label maps,
 pulled data checked against its index."""
 import csv
 import importlib.util
+import inspect
 import collections
 import json
 import pathlib
@@ -3953,7 +3954,8 @@ def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_o
     SD, the paired test-jet bootstrap SD and Delta/sigma with sigma^2 = sd_a^2 + sd_b^2 + boot^2, Delta at sigma's
     place and each SD at its own; \\pending{bootstrap} where no bootstrap is stored, \\pending{rerun bootstrap} where the file's runs or values
     are not the ones Table 1 prints (a fine-tuning run since rerun, SP-11); a sigma that is not the quadrature sum
-    stops the build."""
+    stops the build. PI 2026-11-23 (LEDGER SP-13, step 2): Delta, sigma and Delta/sigma only, each side's mean and SD
+    being in the value tables."""
     runs = M._paper(ROOT)
     acc = {m: 0.84 + 0.001 * k for k, m in enumerate(runs["L188"] + runs["R16_Q1"])}
     per = {"jc1": {m[len("mtx-"):]: {1_000_000: [{"accuracy": acc[m]}]} for m in acc}}
@@ -3962,20 +3964,20 @@ def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_o
     (tmp_path / "bootstrap" / "l3").mkdir(parents=True)
     (tmp_path / "bootstrap" / "l3" / "ft_jc1_N1000000.json").write_text(json.dumps(doc))
     body, reps = M.table_tests(tmp_path, runs, {}, {}, {}, per)
-    assert reps == {200} and body.startswith(r"\begin{tabular}{lccccc}")
+    assert reps == {200} and body.startswith(r"\begin{tabular}{lccc}") and M.TESTS_HEAD in body
     lines = body.splitlines()
-    head = M._full_row(6, "JetClass, accuracy, " + M.HEADING["ft"], italic=True)
+    head = M._full_row(4, "JetClass, accuracy, " + M.HEADING["ft"], italic=True)
     i = lines.index(head + "*")
     rows = lines[i + 1:i + 1 + 7]
     name = lambda a, b: f"{M.LABEL[a]} $-$ {M.LABEL[b]}"         # noqa: E731
-    # delta at sigma's place (0.00080: four decimals), each SD at its own (PDG: 0.00054 -> 0.0005, 0.00011 -> 0.00011)
+    # delta and sigma at sigma's place (PDG: 0.00080 -> 0.0008, four decimals)
     sig = _l3_entry(-0.00462, 0.00054, 0.00058, 0.00011)["sigma"]
-    want = name("R16_Q1", "L188") + " & $-$0.0046 & 0.0005 & 0.0006 & 0.00011 & " + f"{-0.00462 / sig:.2f}".replace("-", "$-$")
+    want = name("R16_Q1", "L188") + " & $-$0.0046 & 0.0008 & " + f"{-0.00462 / sig:.2f}".replace("-", "$-$")
     assert any(r.rstrip("*").rstrip().removesuffix(r"\\").rstrip() == want for r in rows), rows
     # a row with no stored bootstrap, and one whose file does not hold the paper's values
-    assert any(r.startswith(name("L162", "L188") + r" & \multicolumn{5}{c}{\pending{bootstrap}}") for r in rows)
+    assert any(r.startswith(name("L162", "L188") + r" & \multicolumn{3}{c}{\pending{bootstrap}}") for r in rows)
     stale = {**per, "jc1": {**per["jc1"], runs["L188"][0][len("mtx-"):]: {1_000_000: [{"accuracy": 0.9}]}}}
-    assert name("R16_Q1", "L188") + r" & \multicolumn{5}{c}{\pending{rerun bootstrap}}" in M.table_tests(
+    assert name("R16_Q1", "L188") + r" & \multicolumn{3}{c}{\pending{rerun bootstrap}}" in M.table_tests(
         tmp_path, runs, {}, {}, {}, stale)[0]
     doc["diffs"]["17-188"]["accuracy"]["sigma"] *= 1.1
     (tmp_path / "bootstrap" / "l3" / "ft_jc1_N1000000.json").write_text(json.dumps(doc))
@@ -3985,7 +3987,7 @@ def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_o
     for heading, rows_ in M.TESTS:
         for first, second, src in rows_:
             assert all(x in M.TESTS_NAMES or x in M.LABEL for x in (first, second)), (heading, first, second)
-            assert src is None or src[0] in ("l3", "mass"), (heading, src)
+            assert src is None or src == M.RERUN or src[0] in ("l3", "file", "mass", "mass_group"), (heading, src)
     assert M.SUMMARY_L3[("ft", "jc1")] == "ft_jc1_N1000000.json"
 
 
@@ -3994,21 +3996,143 @@ def test_the_tested_differences_table_reads_the_stored_sculpting_and_mass_bootst
     over every run) and the two MLP mass-resolution differences, each sigma the quadrature sum (SC-1 (1)); the
     placement puts it in the appendix, tab:sculptboot dropped (PI 2026-11-23, LEDGER SP-9)."""
     sb = DATA / (M.SCULPT_BOOT_L3_RERUN if (DATA / M.SCULPT_BOOT_L3_RERUN).exists() else M.SCULPT_BOOT_L3)
-    mass = DATA / M.MASS_SD_BOOT
+    mass = DATA / M.MASS_SD_BOOT_TESTS
     if not sb.exists() or not mass.exists():
         pytest.skip("the sculpting or mass bootstrap is not pulled")
     sdoc, mdoc = json.loads(sb.read_text()), json.loads(mass.read_text())
     body, reps = M.table_tests(DATA, M._paper(ROOT), {}, {}, {}, {}, sdoc, mdoc)
     assert reps == {sdoc["replicas"]} | {mdoc["boot"]}
-    heads = [ln for ln in body.splitlines() if ln.startswith(r"\multicolumn{6}{@{}l}{\textit{")]
+    heads = [ln for ln in body.splitlines() if ln.startswith(r"\multicolumn{4}{@{}l}{\textit{")]
     assert sum(M.TESTS_SCULPT in h for h in heads) == len(M.SCULPT_BOOT_WPS)
+    # PI 2026-11-23 (LEDGER SP-13): no mass network and no random partition against 188 classes (no sentence states them)
+    unstated = {("l162mass", "l188"), ("r16q1mass", "l188"), ("rand2p", "l188")}
+    stated = [d for d in sdoc["differences"].values() if (d["configuration"], d["reference"]) not in unstated]
     for wp, h in M.SCULPT_BOOT_WPS:
         block = body.split(M.TESTS_SCULPT + ", " + h)[1].split(r"\addlinespace")[0]
-        assert block.count(r" $-$ ") == len(sdoc["differences"]), wp
+        assert block.count(r" $-$ ") == len(stated), wp
     for a, b in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1")):
         row = next(ln for ln in body.split("jet mass, resolution, " + M.HEADING["mlp"])[1].splitlines()
                    if ln.startswith(f"{M.LABEL[a]} $-$ {M.LABEL[b]} &"))
         assert r"\pending" not in row, row
+
+
+def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stored_bootstrap():
+    """PI 2026-11-23 (LEDGER SP-13): tab:tests keeps a row only if a main-text sentence or caption states it, it backs a
+    method check the text relies on, or it is a 3-sigma-passing label-granularity result; the rows no sentence reads
+    left (their values stay in the data release), the from-scratch comparison with ParT's from-scratch value that
+    results_bench states came in. On the repository's files every row with a stored bootstrap prints it (the probes,
+    the class pairs, the 17 groups, the step, the substitutions, the full top and quark/gluon sets, the mass rows), the
+    rows of the fine-tuning reruns print \\pending{rerun bootstrap}, and only the two rows scored on independent samples
+    (Herwig against Pythia jets, PI SC-1a) carry the mark."""
+    rows = {(h, a, b): src for h, rs in M.TESTS for a, b, src in rs}
+    lp, ft = M.HEADING["lp"], M.HEADING["ft"]
+    gone = [(f"JetClass-II, accuracy, {lp}", a, "L188") for a in M.FLAV + (M.RAND_POOLED,)]
+    gone += [(f"JetClass-II, accuracy, {ft}", a, "L188") for a in ("L162", "R42_Q1")]
+    gone += [(f"JetClass, accuracy, {lp}", a, "L188") for a in ("L162", "R42_Q1", "R16_Q1")]
+    gone += [(f"JetClass-II, accuracy, {ft}, " + M._power("1000") + " training jets", "R16_Q1", "L188")]
+    gone += [(f"top tagging, $R_{{30}}$, {ft}, published models", "L188", "PART_PUB"),
+             (f"quark/gluon tagging (Pythia), $R_{{30}}$, {ft}, published models", "L188", "PART_PUB"),
+             (f"top tagging, $R_{{30}}$, {lp}, missing inputs", "L188", M.INIT),
+             (f"quark/gluon tagging (Pythia), $R_{{30}}$, {lp}, missing inputs", "L188", M.INIT),
+             (r"$X\to b\bar b$, signal efficiency (\%), classifier on the frozen features", "L188", "SCRATCH"),
+             (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, " + M.HEADING["mlp"], "R16_Q1", "L188")]
+    assert not [r for r in gone if r in rows], [r for r in gone if r in rows]
+    assert not any(h.startswith("JetClass, accuracy, " + ft + ", published") for h, *_ in rows)
+    assert rows[(f"top tagging, $R_{{30}}$, {ft}, published models", "SCRATCH", "PART_PUB")] is None
+    for task in ("top", "qg"):                 # a mass network against its own label set: fine-tuned top tagging only
+        for mode in ("lp", "ft"):
+            head = ("top tagging" if task == "top" else "quark/gluon tagging (Pythia)") + ", $R_{30}$, " + M.HEADING[mode]
+            assert ((head, "L162_MASS", "L162") in rows) == (task == "top" and mode == "ft"), head
+            assert rows[(head, "L162_MASS", "L188")] == ("l3", mode, task, "r30", "l162mass-188", True)
+    if not (DATA / "bootstrap" / M._JC2_ALL).exists():
+        pytest.skip("the tab:tests bootstraps are not pulled")
+    runs = M._paper(ROOT)
+    fits, _ = M.V4.load_fits(DATA)
+    fill = M.with_sophon_fill(DATA, M._load(DATA / M.V4.pick(DATA, M.FITS_FILL)))
+    chosen, _ = M.chosen_substitutions(fill, runs)
+    co = M._load(DATA / M.V4.pick(DATA, "linprobe/fits_v4_coarse"))
+    sb = DATA / (M.SCULPT_BOOT_L3_RERUN if (DATA / M.SCULPT_BOOT_L3_RERUN).exists() else M.SCULPT_BOOT_L3)
+    got = {}
+    body, reps = M.table_tests(DATA, runs, fits, fill, chosen, M.load_ft(DATA)[1], json.loads(sb.read_text()),
+                               json.loads((DATA / M.MASS_SD_BOOT_TESTS).read_text()), rows_out=got, co=co)
+    assert reps == {200}
+    stored = [k for k, src in rows.items() if src not in (None, M.RERUN) and (src[0] != "l3" or src[1] == "lp")]
+    assert len(stored) > 60 and not [k for k in stored if not isinstance(got[k], tuple)], \
+        [k for k in stored if not isinstance(got[k], tuple)]
+    for k in stored:
+        d, sd_a, sd_b, boot, sig = got[k]
+        assert sig == pytest.approx(math.sqrt(sd_a ** 2 + sd_b ** 2 + boot ** 2), rel=1e-9), k
+    assert [k for k, src in rows.items() if src == M.RERUN] and all(got[k] == "stale" for k, src in rows.items()
+                                                                     if src == M.RERUN)
+    marked = [ln.split(" & ")[0] for ln in body.splitlines() if M.INDEPENDENT in ln]
+    assert marked == [M.TESTS_NAMES[a] + " $-$ " + M.TESTS_NAMES[b] + M.INDEPENDENT
+                      for a, b in (("L188_HERWIG_JETS", "L188_PYTHIA_JETS"), ("SCRATCH_HERWIG_JETS", "SCRATCH_PYTHIA_JETS"))]
+    # one line a row: the label, Delta, sigma and Delta/sigma, or the label and the marker across the three
+    for ln in body.splitlines():
+        if ln.startswith((r"\begin", r"\end", r"\toprule", r"\midrule", r"\bottomrule", r"\noalign", r"\multicolumn{4}")):
+            continue
+        assert ln.rstrip("*").endswith(r"\\") and (ln.count(" & ") == 3 or r"\multicolumn{3}{c}{\pending{" in ln), ln
+
+
+def test_a_bootstrap_file_row_stops_the_build_where_its_runs_or_values_are_not_the_papers(tmp_path):
+    """PI 2026-11-23 (LEDGER SP-13; RR-7, a rule checked where the data is read): a "file" row of tab:tests prints its
+    stored difference (an AUC minus that of 1 - AUC) only if each side holds the paper's runs and each run's value lies
+    within a quarter of its bootstrap SD of the value the paper prints (here the class-pair AUC of the figures and
+    ratio words); otherwise the build stops. Two independent samples (PI SC-1a): the bootstrap SD is the two samples'
+    in quadrature or the build stops, and the row carries the mark."""
+    runs = M._paper(ROOT)
+    head, (first, second, src) = next((h, r) for h, rs in M.TESTS for r in rs if r[2] and r[2][0] == "file"
+                                      and "_pairs_bb_vs_cc" in r[2][1] and r[:2] == ("R42_Q1", "L188"))
+    _, path, diff, met = src
+    oma = {m: 0.002 + 0.0001 * k for k, m in enumerate(runs["R42_Q1"] + runs["L188"])}
+    fits = {m: {"cells": {M._ck(m): {M.PAIR_DS: {M.PAIR_N: {"bb_vs_cc": {"auc": 1 - v}}}}}} for m, v in oma.items()}
+    entry = {"quantity": "one_minus_auc", "delta": 0.0003, "sd_a": 0.0001, "sd_b": 0.0001, "boot_sd": 0.00002}
+    entry["sigma"] = math.sqrt(0.0001 ** 2 * 2 + 0.00002 ** 2)
+    doc = {"b": 200, "models": {m: {met: {"one_minus_auc": v, "sd": 1e-5}} for m, v in oma.items()},
+           "diffs": {diff: {"a": runs["R42_Q1"], "b": runs["L188"], met: entry}}}
+    f = tmp_path / "bootstrap" / path
+    f.parent.mkdir(parents=True)
+
+    def table(fits_, doc_):
+        f.write_text(json.dumps(doc_))
+        got = {}
+        return M.table_tests(tmp_path, runs, fits_, {}, {}, {}, rows_out=got)[0], got[(head, first, second)]
+    body, v = table(fits, doc)
+    assert v[0] == pytest.approx(-0.0003) and M.INDEPENDENT not in body
+    far = {**fits, runs["L188"][0]: {"cells": {"best70": {M.PAIR_DS: {M.PAIR_N: {"bb_vs_cc": {"auc": 0.9}}}}}}}
+    with pytest.raises(SystemExit, match="quarter of its bootstrap SD"):
+        table(far, doc)
+    other = json.loads(json.dumps(doc))
+    other["diffs"][diff]["b"] = runs["L162"]
+    with pytest.raises(SystemExit, match="not the paper's"):
+        table(fits, other)
+    unpaired = json.loads(json.dumps(doc))
+    unpaired["diffs"][diff][met].update(resampling="unpaired", boot_sd_a=0.00001, boot_sd_b=0.00001)
+    with pytest.raises(SystemExit, match="SC-1a"):
+        table(fits, unpaired)
+    unpaired["diffs"][diff][met].update(boot_sd_a=0.000012, boot_sd_b=0.000016)
+    body, v = table(fits, unpaired)
+    assert M.INDEPENDENT in body and v[4] == pytest.approx(entry["sigma"])
+
+
+def test_the_auc_table_leaves_out_top_and_quark_gluon_and_no_text_quotes_them(tmp_path):
+    """PI 2026-11-23 (LEDGER SP-13, step 4): the top and quark/gluon AUC columns leave tab:summaryauc on the condition
+    that no main-text sentence quotes an AUC value of them; the build checks it where it reads the text
+    (dropped_auc_check), so a macro printing such a value in main.tex or a section stops it, a commented one does not."""
+    assert not {k for k, *_ in M.SUMMARY_AUC_TABLE} & set(M.SUMMARY_AUC_DROPPED)
+    assert set(M.SUMMARY_AUC_DROPPED) == {k for k, *_ in M.SUMMARY_AUC_GRID} - {"jc2", "jc1"}
+    M.dropped_auc_check(ROOT / "paper/journal")
+    assert "dropped_auc_check(root" in inspect.getsource(M.build)
+    (tmp_path / "sections").mkdir()
+    (tmp_path / "main.tex").write_text("\\input{sections/a}\n")
+    (tmp_path / "sections" / "a.tex").write_text("AUC % \\MlstFtTopAucFull{} in a comment\n")
+    M.dropped_auc_check(tmp_path)
+    for name in ("MlstFtTopAucFull", "MlstFtQgAucScratch", "MlstFtQgHerwigAucFull", "MlstLpQgAucFull"):
+        (tmp_path / "sections" / "a.tex").write_text(f"an AUC of \\{name}{{}}.\n")
+        with pytest.raises(SystemExit, match="tab:summaryauc"):
+            M.dropped_auc_check(tmp_path)
+    (tmp_path / "sections" / "a.tex").write_text("\\MlstFtJcOneAucFull{} and \\MlstLpEemmAucFull{}\n")
+    M.dropped_auc_check(tmp_path)
 
 
 def test_table_one_takes_the_transfer_head_columns_of_the_resonance_table():
@@ -4048,5 +4172,7 @@ def test_table_one_takes_the_transfer_head_columns_of_the_resonance_table():
     assert M.SUMMARY_AUC_TABLE[:3] == (M.SUMMARY_AUC_GRID[0], ("jc2", 1_000_000, "jc2_188", "macro_auc_resonant"),
                                        ("jc2", 1_000_000, "jc2_188", "macro_auc_qcd"))
     auc = M.table_summary({}, {}, {}, {}, runs, M.TAB, M.SUMMARY_AUC_TABLE, "summary_auc").split("%SPLIT%")[0].splitlines()
-    assert auc[2] == r" & \multicolumn{3}{c}{JetClass-II} & JetClass & top tagging & \multicolumn{2}{c}{quark/gluon tagging} \\"
-    assert auc[3] == r"\cmidrule(lr){2-4}\cmidrule(lr){7-8}" and auc[4].startswith(" & AUC & AUC, resonant & AUC, QCD & AUC")
+    # PI 2026-11-23 (LEDGER SP-13, step 4): JetClass-II and JetClass only, the top and quark/gluon AUC columns out
+    assert M.SUMMARY_AUC_TABLE[3:] == (M.SUMMARY_AUC_GRID[1],)
+    assert auc[2] == r" & \multicolumn{3}{c}{JetClass-II} & JetClass \\"
+    assert auc[3] == r"\cmidrule(lr){2-4}" and auc[4] == r" & AUC & AUC, resonant & AUC, QCD & AUC \\"
