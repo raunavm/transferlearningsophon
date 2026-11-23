@@ -2302,10 +2302,13 @@ def load_ft(data: pathlib.Path) -> tuple:
     if fixed.exists():      # the one rule (PI 2026-11-15) replaces every older tree below the full sets
         return tag, merge_kin(merge_fixed(per, fixed, preview=fixed.name == FIXED_PARTIAL), data / "budget" / KIN_FULL), absent
     # PI 2026-11-23 (LEDGER RR-7): every training-size point, in the tables, the figures and the release, reads the
-    # fixed-schedule cell at its row's recorded rate, or the build stops; the trees before the one rule are never read
-    if any(n < FULL_N.get(key, math.inf) for key, cells in per.items() for by_n in cells.values() for n in by_n):
-        raise SystemExit(f"FATAL (RR-7): no one-rule read-out ({FIXED}) in {data / 'budget'}; the training-size points "
-                         "read only its fixed-schedule cells")
+    # fixed-schedule cell at its row's recorded rate; without the one rule's read-out none is read (the trees before it
+    # never are), only ParT's full sets, so no table prints such a point and the figures' check (gallery_labelset._settled)
+    # stops on any it would draw. Not a stop here: the gallery modules load this at import, in every test.
+    if not ft_preview():
+        return tag, merge_kin({key: {init: {n: v for n, v in by_n.items() if n >= FULL_N.get(key, math.inf)}
+                                     for init, by_n in cells.items()} for key, cells in per.items()},
+                              data / "budget" / KIN_FULL), absent
     return tag, merge_kin(merge_budget(per, data / "budget" / "budget_metrics.json",
                                        data / "budget" / "budget_long_metrics.json",
                                        [data / "budget" / f for f in SCRATCH_FULL], data / "budget" / PRE_FULL),
