@@ -3822,8 +3822,10 @@ def test_the_mass_figure_claims_are_the_soft_drop_bootstrap_s():
         assert better_bias == 13 and worse_bias == ["all|mgen:20-50"], (g, better_bias, worse_bias)
         diff = fig(d["diffs"][f"{g} - {g.removesuffix(' + mass')}"]["mlp"])
         assert len(diff) == 15 and all(v["resolution"]["pass"] and v["resolution"]["better"] for v in diff.values()), g
-    # PI 2026-11-23, LEDGER SP-9 (STRUCTURE_PROPOSAL, F9b): no per-bin table stays, so the bias count is qualitative
-    assert "better than the soft-drop mass in every bin" in a9 and "less biased in most bins" in a9 and "20 to 50 GeV" in a9
+    # PI 2026-11-23, LEDGER SP-9 (STRUCTURE_PROPOSAL, F9b): no per-bin table stays, so the bias count is qualitative;
+    # PI 2026-11-23, LEDGER CA-15 (CAPTION_CUTS_1123 F9b): the bias clause left the paper caption (1db8bc37) and the page
+    # caption (ee2bab77), so the caption states the resolution finding only (the bias counts above still hold)
+    assert "better than the soft-drop mass in every bin" in a9 and "less biased" not in a9 and "20 to 50 GeV" not in a9
     assert "better on the networks with an added mass regression" in a10 and "than on the same label sets" in a10
     # PI 2026-11-21: no sentence says a probe beats the soft-drop mass in every bin; the bootstrap must show why
     for g, est in (("188 classes", "mlp"), ("188 classes", "ridge")):
