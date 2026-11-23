@@ -15,7 +15,7 @@ After fine-tuning, the cost remains where every input is present: on JetClass th
 On top tagging and quark/gluon discrimination, which lack some inputs, the fine-tuned label sets show no
 resolved difference (table~\ref{tab:summary}).
 With the missing inputs set to zero, a linear probe on the frozen features of the \Kfull-class model
-matches the randomly initialized network on top tagging (\MlstLpTopRthirtyFullOverInitBnZeroPr{}); with the
+matches the random network on top tagging (\MlstLpTopRthirtyFullOverInitBnZeroPr{}); with the
 substitution chosen on validation it reaches \MlstLpTopRthirtyFullOverInitBnPr{} of that network, and
 \MlstLpQgRthirtyFullOverInitBnPr{} on quark/gluon discrimination (tables~\ref{tab:fill} and~\ref{tab:summary}).
 On top tagging the zero value, more than the missing information, keeps the
@@ -45,7 +45,7 @@ label-set effects here are measured against it (section~\ref{sec:uncertainties})
 pretrained model cannot tell the two apart.
 
 The study has four limitations: all pretraining and every evaluation but the Herwig quark/gluon sample use a
-single simulation family; one architecture and one model size are studied; each level of the class hierarchy
+single simulation family; one architecture and one model size are studied; each label set
 has \MlstNRunsWord{} pretraining runs and every other configuration fewer; and the networks are initialized % the outline's wording "fewer for the controls" is widened: the mass models (two runs) and the kinematic-only model (one run) are not controls
 with a different scheme from Sophon's code, so their absolute performance need not match Sophon's published
 model, while every comparison is between models trained here.

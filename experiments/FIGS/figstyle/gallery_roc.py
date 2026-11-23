@@ -258,8 +258,11 @@ LABEL_SETS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS")
 PARTITIONS = ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "L188", "R16_Q1")       # 188 and 17 classes for reference
 RANDOM = ("RAND", "L188", "R16_Q1")
 # PI 2026-11-20 (meeting, C5): the random partitions join the partitions row of the class-pair figures (their pooled
-# curve: the mean over the groupings that keep the pair apart, mean_over_runs skipping the ones that merge it)
+# curve: the mean over the groupings that keep the pair apart, _models; PS-5). 2026-11-23: every grouping has every
+# pair's curve, so mean_over_runs averaged all five; the groupings are now chosen from the label maps (merge_status),
+# as the captions' counts are (mlst_results.pair_figure_macros)
 PAIR_PARTITIONS = PARTITIONS[:3] + ("RAND",) + PARTITIONS[3:]
+PAIR_STATUS = M.merge_status(P.REPO)
 STYLE_KEY = {"INIT": "INIT_BN"}          # the random network (as initialized, Table 1's row) in style_v5's colour and name
 POOLED = M._pooled(RUNS)
 # the pairs in the family's one order (plan "Class pairs"): the main-text two, the four other flavor pairs, X->ee vs mumu
@@ -309,10 +312,13 @@ def _two_lines(title: str) -> str:
     return title.replace(" vs ", "\nvs ", 1)
 
 
-def _models(docs: dict, net: str) -> list:
-    """The runs of a network in a curve family; from scratch: its trainings in that family."""
+def _models(docs: dict, net: str, key: str | None = None) -> list:
+    """The runs of a network in a curve family; from scratch: its trainings in that family; the random partitions on a
+    class pair: those that keep the pair apart (PAIR_STATUS)."""
     if net == "SCRATCH":
         return P._scratch_models(docs) or [m for m in M.FT_SCRATCH_MODELS if m in docs]
+    if net == "RAND" and key in PAIR_TITLE:
+        return [m for a in M.RAND if PAIR_STATUS[a][key] == "apart" for m in RUNS[a]]
     return POOLED[net]
 
 
@@ -437,7 +443,9 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
             mains[i, j], ratios[i, j] = ax, rx
             ref = mean_over_runs(docs, POOLED["L188"], key)
             for net in sorted(nets, key=lambda n: -NETWORKS.index(n)):        # 188 classes last, on top
-                models = _models(docs, net)
+                # the paper's pair figures (PAIR_PARTITIONS rows): the groupings that keep the pair apart; F4-rand's
+                # pooled curve keeps all five, as its caption says
+                models = _models(docs, net, key if nets == PAIR_PARTITIONS else None)
                 s = mean_over_runs(docs, models, key)
                 if s is None or len(s[0]) < 2:
                     continue       # a network whose runs keep fewer than 20 background jets everywhere: no curve

@@ -23,7 +23,7 @@ three standard deviations (table~\ref{tab:summary}).
 % CHECK: MlstFtTopRthirtyFullOverPart below 1 (today 0.65); MlstFtTopRthirtyKinOverFull within the spread of the three 188-class runs
 All our fine-tuned models have a lower rejection than ParT pretrained on JetClass and fine-tuned~\cite{part}:
 the \Kfull-class model gives \MlstFtTopRthirtyFullOverPartPr{} (table~\ref{tab:published}). The missing inputs
-do not cause this difference, since the kinematic-only model, which has no missing inputs here, reaches the
+do not cause this difference, since the kinematic-inputs network, which has no missing inputs here, reaches the
 rejection of the \Kfull-class model fine-tuned with zeros. Trained from scratch, our network does not differ
 from ParT trained from scratch by more than three standard deviations, and ParT's own training script,
 run unchanged on our hardware, reproduces the published result (appendix~\ref{sec:app-partrepro}). The
@@ -34,11 +34,11 @@ classes and a wider range of jet transverse momentum.
 % CHECK: MlstLpTopRthirtyFullOverInitBnZero agrees with 1 (two seeds of the randomly initialized network; today 1.04 and 1.08); MlstMlpTopRthirtyFullOverInitBn agrees with 1 (today 1.00 +- 0.31)
 % CHECK: draws close to the kinematic-only model, one run (MlstLpTopRthirtyDrawOverZeroFull and MlstLpTopRthirtyKinOverFull both 3.9 at c0ce260); "about the same", not "the same": they agree on R30, less exactly on AUC and R50
 With the missing inputs set to zero, a linear probe on the frozen features of the \Kfull-class model does no
-better than a linear probe on a randomly initialized network of the same architecture, and both lie below every
+better than a linear probe on the random network, and both lie below every
 fine-tuned model (tables~\ref{tab:fill} and~\ref{tab:summary}). With random draws of real particles in place of
 the zeros, the substitution chosen on validation, the linear probe on the \Kfull-class features gives
 \MlstLpTopRthirtyDrawOverZeroFullPr{} that it gives with zeros, about the rejection of the linear probe on the
-kinematic-only model, which has no missing inputs. On top tagging, the loss of the linear probe therefore comes
+kinematic-inputs network, which has no missing inputs. On top tagging, the loss of the linear probe therefore comes
 from the zero values and not from the absence of the information. Fine-tuning does not show this loss; a
 constant replacement value used in both training and testing is consistent for a model trained with
 it~\cite[Theorem~3]{josse}.
@@ -62,7 +62,7 @@ keeps \MlstFtQgRthirtyHerwigOverPythiaFullPr{} it has on Pythia jets, and the ne
 \MlstFtQgRthirtyHerwigOverPythiaScratchPr{} (table~\ref{tab:summary}); earlier generator comparisons found
 Herwig's quark and gluon jets less separable than Pythia's~\cite{gras}. With the displacement inputs substituted
 as chosen on validation (\LpSubstitutionQg), a linear probe on the frozen \Kfull-class features rejects more
-background than one on the randomly initialized network (\MlstLpQgRthirtyFullOverInitBnPr{};
+background than one on the random network (\MlstLpQgRthirtyFullOverInitBnPr{};
 table~\ref{tab:summary}).
 
 \subsection{Fine-tuning with few training jets}\label{sec:fewjets}
@@ -75,8 +75,8 @@ the label sets compare after fine-tuning at each size is \pending{figure~\ref{fi
 \begin{figure}[t]
 \centering
 \paperfig{\linewidth}{A8}
-\caption{Fine-tuned models of the four label sets and of the \Kres- and \Kcoarse-class models with the
-auxiliary mass regression against the number of training jets: (a) accuracy on the \Kfull{} classes of
+\caption{Fine-tuned models of the four label sets and of the \Kres- and \Kcoarse-class networks with an
+added mass output against the number of training jets: (a) accuracy on the \Kfull{} classes of
 class-balanced JetClass-II and (b) on JetClass, and $R_{30}$, one over the fraction of background jets kept when
 the cut keeps 30\% of signal jets, the top-tagging working point, on (c) top tagging and on quark/gluon
 discrimination scored on the (d) Pythia and (e) Herwig samples, with the network trained from scratch in grey.

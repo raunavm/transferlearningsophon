@@ -97,7 +97,7 @@ few of the class pairs merged by the \Kcoarse-class level as the share rule allo
 restricted to partitions built this way. We pretrain \RandVtwoNPartitions{} partitions, \RandVtwoRuns{} run each
 (appendix~\ref{sec:app-labels}).
 
-Random partitions with controlled flavor boundaries test whether a single flavor boundary, at a fixed number of
+The flavor-boundary partitions, random partitions with a controlled flavor boundary, test whether a single flavor boundary, at a fixed number of
 classes and fixed group shares, accounts for the cost of the flavor merge. In the partition with no flavor
 boundary, every group is a union of whole families of decays that differ only in quark flavor. The partition
 with a $b$-quark boundary moves the four-quark decays \RandFlavSplitOrbit{} that contain a $b$ quark into another
@@ -158,7 +158,7 @@ is chosen by the cross-entropy on validation jets. On JetClass-II the linear pro
 class-balanced samples, so that rare classes weigh as much as common ones (appendix~\ref{sec:app-probes}). An MLP
 probe, a multilayer perceptron with one hidden layer of \LpMlpHidden{} units on the same frozen features and test
 set, tells whether what a linear probe does not read is absent or only not linearly readable
-(appendix~\ref{sec:app-mlp}). The randomly initialized network, the saved initial weights of a \Kfull-class model
+(appendix~\ref{sec:app-mlp}). The random network, the saved initial weights of a \Kfull-class model
 with its BatchNorm statistics recomputed on \DesignBnJets{} training jets, since PyTorch's default statistics do
 not normalize the inputs, gives the floor: what a probe gets from the architecture alone.
 
@@ -275,17 +275,19 @@ so at fixed yields $\epsS/\sqrt{\epsB}$ ranks selections by their reach without 
 
 Every uncertainty is the standard deviation over the independently pretrained networks of a configuration,
 each followed by one linear probe or one fine-tuning, except where a bootstrap of the test jets is added, as
-stated with it. Each level of the class hierarchy has \MlstNRunsWord{} pretraining runs, the models with the
-auxiliary mass regression \MlstMassNRunsWord{} and the random partitions with controlled flavor boundaries
-\RandFlavRuns{} each, and each random partition and the kinematic-only model one; the random partitions are
+stated with it. Each label set has \MlstNRunsWord{} pretraining runs, the networks with an added mass output
+\MlstMassNRunsWord{} and the flavor-boundary partitions
+\RandFlavRuns{} each, and each random partition and the kinematic-inputs network one; the random partitions are
 pooled over the \RandVtwoNPartitions{} partitions. The spread therefore includes the variation between pretraining
 runs, which Sophon does not report~\cite{sophon}. Values are rounded following the Particle Data
 Group~\cite{pdg}; with \MlstNRunsWord{} runs a standard deviation is itself uncertain by about \MlstSdRelUnc. The
-network trained from scratch varies its training seed, and the randomly initialized network its initial weights.
+network trained from scratch varies its training seed, and the random network its initial weights.
 
 Ratios are formed between models with the same seed, which share their training jets and initial weights, and
 then averaged over seeds; a control is paired with the models of the seed it was pretrained with. Two
 configurations are said to differ only when $|\Delta|$ exceeds three times $\sigma$, where $\Delta$ is the
 difference of their means over all their runs and $\sigma^2$ is the sum of the variance of each configuration
 over its runs and the variance of $\Delta$ over paired bootstrap resamples of the test jets, on which every model
-is scored (appendix~\ref{sec:app-tests}). Table~\ref{tab:tests} gives this test for every difference the text states.
+is scored (appendix~\ref{sec:app-tests}).
+Where the two sides are scored on independent test samples, Herwig against Pythia jets, each sample is
+resampled separately and the two bootstrap variances add. Table~\ref{tab:tests} gives this test for every difference the text states.

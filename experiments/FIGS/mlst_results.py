@@ -1169,54 +1169,63 @@ def _mlp(mlp: dict, model: str, task: str):
     return None if v is None else 1 - v
 
 
-def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None, kin=False) -> str:
+def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None, kin=False, rho=True) -> str:
     """A5: the nonlinear probe (one hidden layer, three seeds averaged) at the largest training set:
     JetClass-II AUC (all, resonant, QCD) with the ratio of 1 - AUC to the 188-class run; JetClass AUC;
     top, quark/gluon and Herwig AUC and R30; the class pairs' AUC and ratio; for the configurations with
     no class-balanced fit (their cells above a dash), JetClass-II and the pairs' ratios on natural
     composition (nat, load_mlp_natural) beside the levels of the hierarchy on the same test set, so that no
     ratio crosses the two compositions; and the linear probe on the head's 512-unit hidden layer beside
-    the one on the class token. kin=True adds the kinematic-only model to the first block (top only)."""
+    the one on the class token. kin=True adds the kinematic-only model to the first block (top only). rho=False: the
+    paper's copy, with no rho column and no linear-probe block (PI 2026-11-23, LEDGER CA-15: both in the data release's
+    copy, tab:mlpfull)."""
     nat_only = [arm for arm in rows if nat and all(_mlp_val(mlp, m, "jc2_188") is None for m in runs[arm])
                 and any(_mlp_val(nat, m, "jc2_188") is not None for m in runs[arm])]
-    out = [r"\begin{tabular}{l" + "c" * 11 + "}", r"\toprule",
-           r" & \multicolumn{4}{c}{JetClass-II} & JetClass & \multicolumn{2}{c}{top} & \multicolumn{2}{c}{quark/gluon, Pythia}"
-           r" & \multicolumn{2}{c}{quark/gluon, Herwig} \\",
-           r"\cmidrule(lr){2-5}\cmidrule(lr){7-8}\cmidrule(lr){9-10}\cmidrule(lr){11-12}",
-           r" & AUC & $\rho$ & AUC, resonant & AUC, QCD & AUC & AUC & "
+    j = 4 if rho else 3             # the JetClass-II columns
+    out = [r"\begin{tabular}{l" + "c" * (j + 7) + "}", r"\toprule",
+           rf" & \multicolumn{{{j}}}{{c}}{{JetClass-II}} & JetClass & \multicolumn{{2}}{{c}}{{top}} & "
+           r"\multicolumn{2}{c}{quark/gluon, Pythia} & \multicolumn{2}{c}{quark/gluon, Herwig} \\",
+           rf"\cmidrule(lr){{2-{j + 1}}}" + "".join(rf"\cmidrule(lr){{{j + k}-{j + k + 1}}}" for k in (3, 5, 7)),
+           r" & AUC & " + (r"$\rho$ & " if rho else "") + r"AUC, resonant & AUC, QCD & AUC & AUC & "
            r"$R_{30}$ & AUC & $R_{30}$ & AUC & $R_{30}$ \\", r"\midrule"]
     for arm in rows:
         ms, n = runs[arm], len(runs[arm])
         if arm in nat_only:
-            cells = ["--"] * 4
+            cells = ["--"] * j
         else:
             r, k = _ratio_to_full(None, runs, arm, lambda m: _mlp(mlp, m, "jc2_188"))
             cells = [_cell([_mlp_val(mlp, m, t) for m in ms], n, fmt_pm, frac=True) for t in ("jc2_188", "jc2_188_res", "jc2_188_qcd")]
-            cells.insert(1, _cell(r, k, fmt_pm) if k else "--")       # beside the AUC it is the ratio of
+            if rho:
+                cells.insert(1, _cell(r, k, fmt_pm) if k else "--")       # beside the AUC it is the ratio of
         cells.append(_cell([_mlp_val(mlp, m, "jc1") for m in ms], n, fmt_pm, frac=True))
         for t in ("top", "qg", "qg_herwig"):
             cells += [_cell([_mlp_val(mlp, m, t) for m in ms], n, fmt_pm, frac=True),
                       _cell([_mlp_val(mlp, m, t, "r30") for m in ms], n, fmt_pm)]
         out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
     if kin and _mlp_val(mlp, KIN_MODEL, "top") is not None:     # top only, nothing missing, one run
-        out.append(LABEL["KIN"] + " & " + " & ".join(["--"] * 5 + [_cell([_mlp_val(mlp, KIN_MODEL, "top")], 1, fmt_pm, frac=True),
+        out.append(LABEL["KIN"] + " & " + " & ".join(["--"] * (j + 1) + [_cell([_mlp_val(mlp, KIN_MODEL, "top")], 1, fmt_pm, frac=True),
                                                             _cell([_mlp_val(mlp, KIN_MODEL, "top", "r30")], 1, fmt_pm)]
                                                 + ["--"] * 4) + r" \\")
-    out += _hidden_rows(raw_v4, runs, fmt_pm) + [r"\bottomrule", r"\end{tabular}"]
+    out += (_hidden_rows(raw_v4, runs, fmt_pm) if rho else []) + [r"\bottomrule", r"\end{tabular}"]
     for part in (MLP_PAIRS[:3], MLP_PAIRS[3:]):
-        out += ["%SPLIT%", r"\begin{tabular}{l" + "cc" * len(part) + "}", r"\toprule",
-                " & " + " & ".join(rf"\multicolumn{{2}}{{c}}{{{h}}}" for _, h, _, _ in part) + r" \\",
-                "".join(rf"\cmidrule(lr){{{2 + 2 * i}-{3 + 2 * i}}}" for i in range(len(part))),
-                " & " + " & ".join([r"AUC & $\rho$"] * len(part)) + r" \\",
+        w = 2 if rho else 1         # AUC, and rho beside it in the release's copy
+        out += ["%SPLIT%", r"\begin{tabular}{l" + "c" * w * len(part) + "}", r"\toprule",
+                " & " + " & ".join(rf"\multicolumn{{{w}}}{{c}}{{{h}}}" for _, h, _, _ in part) + r" \\",
+                "".join(rf"\cmidrule(lr){{{2 + w * i}-{1 + w * (i + 1)}}}" for i in range(len(part))),
+                " & " + " & ".join([r"AUC & $\rho$" if rho else "AUC"] * len(part)) + r" \\",
                 r"\midrule"]
         for arm in (a for a in rows if a not in nat_only):
             cells = []
             for key, _, _, _ in part:
                 cells.append(_cell([_mlp_val(mlp, m, key) for m in runs[arm]], len(runs[arm]), fmt_pm, frac=True))
+                if not rho:
+                    continue
                 r, k = _ratio_to_full(None, runs, arm, lambda m, key=key: _mlp(mlp, m, key))
                 cells.append(_cell(r, k, fmt_pm) if k else "--")
             out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
         out += [r"\bottomrule", r"\end{tabular}"]
+    if nat_only and not rho:        # the natural-composition block is ratios, which the paper's copy does not print
+        raise SystemExit(f"FATAL: tab:mlp: {nat_only} have no class-balanced MLP probe")
     if nat_only:
         out += ["%SPLIT%", r"\begin{tabular}{l" + "c" * (2 + len(MLP_PAIRS)) + "}", r"\toprule",
                 r" & \multicolumn{2}{c}{JetClass-II} & \multicolumn{" + str(len(MLP_PAIRS))
@@ -3443,6 +3452,51 @@ def roc_macros(em, roc: dict, runs: dict, index, missing: list, fmt_int) -> None
                      f"('not reached' when a run's cut is null or leaves fewer than {ROC_MIN_POINTS} grid points)")
 
 
+# PI 2026-11-23 (LEDGER CA-15, CA-16): the class-pair figures' captions. The random partitions that keep each pair
+# apart, counted from the label maps (PS-5), and the random network the figures do not draw, as Fig. 2 treats it (its
+# range in one clause, from the files): its rejection at half the signal jets, the mean over its initializations, the
+# lowest and the highest over each figure's pairs, at two significant figures as gallery_labelset._init_range
+PAIR_FIGS = {"Mech": ("bb_vs_cc", "bc_vs_bq_cs"),
+             "Other": ("bbqq_vs_ccqq", "qcd_bb_vs_cc", "qcd_b_vs_light", "qcd_c_vs_light")}
+INIT_EPS = 0.5
+
+
+def pair_figure_macros(em, data: pathlib.Path, root: pathlib.Path, runs: dict, status: dict, words,
+                       missing: list) -> None:
+    maps = root / "configs/labelmaps/rand_label_map.v2.csv"
+    n = {k: sum(status[a][k] == "apart" for a in RAND) for k, *_ in PAIRS}
+    for k, *_ in PAIRS:
+        em.macro(f"MlstPairRandApart{PAIR_WORD[k]}Word", words(n[k]), maps, f"{'/'.join(RAND)} groups of {k}",
+                 "random partitions that keep the pair apart (count, from the label maps)")
+    mech = [n[k] for k in PAIR_FIGS["Mech"]]
+    em.macro("MlstPairRandApartMechWord", words(mech[0]) if len(set(mech)) == 1 else " and ".join(map(words, mech)),
+             maps, f"{'/'.join(RAND)} groups of {' and '.join(PAIR_FIGS['Mech'])}",
+             "random partitions that keep each pair of figure F4-mech apart (count, in panel order if they differ)")
+    fam = V4.ROC_RERUN["pairs"] if (data / V4.ROC_DIR / V4.ROC_RERUN["pairs"]).is_dir() else "pairs"
+    docs = V4.load_family(data, "pairs")
+
+    def rej(m, k):
+        s = V4.roc_series(docs[m], k) if m in docs else None
+        if s is None:
+            return None
+        i = int(np.argmin(np.abs(s[0] - INIT_EPS)))
+        return float(s[1][i]) if abs(s[0][i] - INIT_EPS) < 1e-9 and np.isfinite(s[1][i]) else None
+    fmt = lambda x: f"{x:.2g}" if x < 10 else f"{x:.0f}"      # noqa: E731
+    for fig, keys in PAIR_FIGS.items():
+        v = [[rej(m, k) for m in runs[INIT]] for k in keys]
+        src = data / V4.ROC_DIR / fam / f"{runs[INIT][0]}.json"
+        if any(x is None for xs in v for x in xs) or not src.exists():
+            missing.append(f"the random network's pair curves ({fig}) -- experiments/FIGS/data/v2/{V4.ROC_DIR}/{fam}/")
+            for end in ("Min", "Max"):
+                em.macro(f"MlstPairInitRhalf{fig}{end}", r"\pending{random network}", maps, "no curve")
+            continue
+        means = [float(np.mean(xs)) for xs in v]
+        what = (f"curves[{'|'.join(keys)}].rejection at eps_grid {INIT_EPS}, mean over {', '.join(runs[INIT])} "
+                f"({fam}/<run>.json)")
+        em.macro(f"MlstPairInitRhalf{fig}Min", fmt(min(means)), src, what, "the random network, lowest over the pairs")
+        em.macro(f"MlstPairInitRhalf{fig}Max", fmt(max(means)), src, what, "the random network, highest over the pairs")
+
+
 def eemm_macros(em, fits: dict, runs: dict, index, fmt_pm, fmt_int, status: dict | None = None) -> None:
     """The X->ee vs X->mumu linear probe (fits_v4_sib, merged by mlst_v4.load_fits): MlstLpEemmAuc{W},
     MlstLpEemmAucRandMerged over the random partitions that merge the pair (status: merge_status),
@@ -4076,11 +4130,18 @@ SETS_CONTROLS = (("KIN", r"\Kfull", "none; kinematic inputs only", 1), (SOPHON, 
                  (INIT, "--", "no pretraining (initial weights)", None), (SCRATCH, "--", "trained on the task alone", None))
 
 
+# PI 2026-11-23 (LEDGER FG-25): tab:sets was 121.7 pt wider than the text block; what each network merges and its runs
+# wrap in columns of these widths (cm), so the row labels, which never wrap, keep their width
+SETS_WRAP_CM = (3.5, 2.5)
+
+
 def table_sets(runs: dict) -> str:
     """tab:sets: every label set and control of the paper, its classes, what it merges from the 188 classes, its runs
     (the random partitions: five groupings, one run each)."""
     rand = [a for a in runs if a.startswith("RAND2_p")]
-    out = [r"\begin{tabular}{llll}", r"\toprule", r"network & classes & merged from 188 classes & runs \\", r"\midrule"]
+    wrap = "".join(r">{\raggedright\arraybackslash}p{" + f"{w:g}cm}}" for w in SETS_WRAP_CM)
+    out = [r"\begin{tabular}{ll" + wrap + "}", r"\toprule", r"network & classes & merged from 188 classes & runs \\",
+           r"\midrule"]
     for arm, k, words in SETS_TABLE:
         n = f"{len(rand)} groupings, one run each" if arm == RAND_POOLED else str(len(runs[arm]))
         out.append(f"{LABEL[arm]} & {k} & {words} & {n}" + r" \\")
@@ -4509,6 +4570,9 @@ def _bench_block(task: str, mode: str) -> tuple:
     rows = [(a, b, ("l3", mode, task, "r30", d, False)) for a, b, d in _LEVELS]
     rows += [(a, "L188", ("l3", mode, task, "r30", d, True)) for a, d in _PARTS_ALL]
     rows += [(a, b, ("l3", mode, task, "r30", d, False)) for a, b, d in _MASSES]
+    # PI 2026-11-23 (LEDGER CA-15): Figs. 2 and 3 state the null for the mass networks against 188 classes too; no
+    # bootstrap is stored for these differences yet
+    rows += [(a, "L188", None) for a, _, _ in _MASSES]
     return tuple(rows)
 
 
@@ -5858,11 +5922,12 @@ CAPTIONS = {
                 "layers, with the new output head at 50 times that rate, at most $5\\times10^{-3}$. $^{\\ast}$: the rate chosen, on "
                 "the sum averaged over \\Kfull{} and \\Kcoarse{} classes for the pretrained weights and on each task's accuracy "
                 "for the networks trained from scratch; the test jets play no part."),
-    "sets": ("tab:sets", "The label sets pretrained on JetClass-II and the controls they are compared with. A label set "
-                         "assigns each of Sophon's \\Kfull{} classes to one of its own; each row gives the network's "
+    # the colon and semicolon replaced and "controls" named plainly (the caption rules; PI 2026-11-23, LEDGER FG-25 fix)
+    "sets": ("tab:sets", "The label sets pretrained on JetClass-II and the networks they are compared with. A label set "
+                         "assigns each of Sophon's \\Kfull{} classes to one of its own, and each row gives the network's "
                          "name, its number of classes, what it merges and its pretraining runs. The \\Kcoarse-class "
                          "partitions keep \\Kcoarse{} classes and the training-jet share of each \\Kcoarse-class group but "
-                         "regroup the decays: a flavor boundary keeps apart decays that differ only in quark flavor. A "
+                         "regroup the decays, and a flavor boundary keeps apart decays that differ only in quark flavor. A "
                          "network with a mass output also regresses the jet mass. The random network and training from "
                          "scratch are references without pretraining."),
     "randparts": ("tab:randparts", "Each of the five random partitions, one pretraining run each, as a linear probe and "
@@ -6155,8 +6220,12 @@ CAPTION_SHORT = {
               "quadrature. A pending row waits for its paired bootstrap, or for one on the fine-tuning runs the other "
               "tables print. A label set has \\MlstNRunsWord{} pretraining runs, a mass network and a flavor-boundary "
               "partition \\MlstMassNRunsWord{}, and the five random partitions, one run each, form one side."),
-    "mlp_full": ("Every row of table~\\ref{tab:mlp}, with each random partition on its own row." + BN_DEF + PART_DEF
-                 + _runs("set", "flav", "mass", "rand1")),
+    # PI 2026-11-23 (LEDGER CA-15, option a): the rho columns and the linear-probe block, which left tab:mlp, are here
+    "mlp_full": ("Every row of table~\\ref{tab:mlp}, with each random partition on its own row, $\\rho$, the ratio of "
+                 "$1-\\mathrm{AUC}$ to that of the \\Kfull-class run of the same seed, beside each JetClass-II and "
+                 "class-pair AUC, and a last block of linear probes of the \\Kfull-class networks on the class token and "
+                 "on the \\DesignHeadHidden{} outputs of the pretraining head's first layer and its activation applied "
+                 "to it." + BN_DEF + PART_DEF + _runs("set", "flav", "mass", "rand1")),
     "probes": ("Linear probes of table~\\ref{tab:summary} on top and quark/gluon tagging, Pythia and Herwig, in accuracy "
               "and $R_{50}$, one over the fraction of background jets kept when the cut keeps 50\\% of the signal jets. The missing inputs "
               "(table~\\ref{tab:inputs}) are \\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon, "
@@ -6207,19 +6276,21 @@ CAPTION_SHORT = {
              + _runs("set", "flav", "mass", "rand")),
     "pairs_full": ("Every row of table~\\ref{tab:pairs}, with each random partition." + BN_DEF + PART_DEF
                    + _runs("set", "flav", "mass", "rand1")),
-    # PI 2026-11-23 (LEDGER SP-9): the random partitions pooled, each in tab:mlpfull (the data release)
-    "mlp": ("Multilayer-perceptron probes, with one hidden layer of \\LpMlpHidden{} units, on the frozen features of "
-            "every pretrained network and of the random networks, at each task's largest training set: the AUC, "
-            "averaged over the classes each against the rest, on JetClass-II (every class, the resonant and the QCD "
-            "classes) and JetClass, the AUC and $R_{30}$ on top and quark/gluon tagging, and the AUC of the JetClass-II "
-            "class pairs that differ only in quark flavor, $\\rho$ being $1-\\mathrm{AUC}$ over that of the "
-            "\\Kfull-class run of the same seed. The linear-probe block gives the \\Kfull-class networks on the class "
-            "token and on the pretraining head's 512-unit hidden layer. The network on kinematic inputs only is probed "
-            "on top tagging only." + BN_DEF + PART_DEF + _runs("set", "flav", "mass", "rand")),
+    # PI 2026-11-23 (LEDGER SP-9): the random partitions pooled, each in tab:mlpfull (the data release); (LEDGER CA-15) the
+    # proposal of docs/CAPTION_CUTS_1123.md with option (a), no rho column and no linear-probe block
+    "mlp": ("Multilayer-perceptron probes on the frozen features of every network pretrained here and the random "
+            "networks, on JetClass-II, JetClass, top-quark against QCD and quark against gluon jets, and pairs of "
+            "JetClass-II classes differing only in quark flavor, which coarser label sets merge, the second-named the "
+            "background. AUC is the area under the receiver operating characteristic curve, averaged over all, "
+            "resonant or QCD classes, each against the rest. $R_{30}$ is one over the fraction of background jets kept "
+            "when the cut keeps 30\\% of signal jets, the top-tagging working point. The kinematic-inputs network is a "
+            "top-tagging diagnostic. BatchNorm recomputed means batch-normalization statistics re-estimated on "
+            "\\DesignBnJets{} training jets." + _runs("set", "flav", "mass", "rand")),
+    # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md, no PART_DEF (tab:sets defines it)
     "coarse": "Linear probes on the frozen features of " + PNETS + ", of the two networks with an added mass "
-              "output, of the 17-class partitions and of the random network, compared on coarser versions of the JetClass-II task. The probes are trained on one million class-balanced "
-              "JetClass-II jets whose 188 classes are merged into the 43 or the 17 classes of the pretraining label "
-              "sets or into the 17 classes of the partition with no flavor boundary." + PART_DEF + " "
+              "output, of the 17-class partitions and of the random network, trained on one million class-balanced "
+              "JetClass-II jets whose 188 classes are merged into the 43 or 17 classes of the label sets or the 17 of "
+              "the partition with no flavor boundary. Accuracy is the fraction of test jets assigned their true group. "
               + AUC_OVR.replace("the classes", "the target's groups") + _runs("set", "flav", "mass", "rand", "init"),
     "coarse_full": "Linear probes of the networks of table~\\ref{tab:probesfull} on one million class-balanced "
                    "JetClass-II jets whose classes are merged into the 43 or 17 classes of the label sets or the 17 of "
@@ -6253,13 +6324,16 @@ CAPTION_SHORT = {
                            "each JetClass class, the fraction of its test jets the network assigns to it, "
                            "for linear probes and networks fine-tuned on one million JetClass jets." + PART_DEF
                            + _runs("set", "flav", "mass", "rand")),
-    "fill": ("$R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of the signal jets, the working point of the top-tagging comparison, of the linear probes of "
-            "table~\\ref{tab:summary} on top and quark/gluon tagging with Pythia jets, with the missing inputs "
-            "(table~\\ref{tab:inputs}) at zero, the training mean (mean) or random draws of a real particle (draws). "
-            "Table~\\ref{tab:summary} uses \\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon, so "
-            "those columns are left out. The network on kinematic inputs only lacks nothing and has one run. BatchNorm "
-            "recomputed means batch-normalization statistics re-estimated on \\DesignBnJets{} training jets."
-            + _runs("set", "flav", "mass", "rand")),
+    # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md; (CA-16) the released checkpoint's absent
+    # row in the PI's words
+    "fill": ("$R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of signal jets, the "
+             "top-tagging working point, of table~\\ref{tab:summary}'s linear probes on top-quark against QCD and quark "
+             "against gluon jets, with missing inputs at zero, the training mean or draws of a real particle. "
+             "Table~\\ref{tab:summary} uses \\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon, "
+             "not repeated here, and the released Sophon checkpoint takes the fill chosen for our networks. The "
+             "kinematic-inputs network, a top-tagging diagnostic, misses nothing. BatchNorm recomputed means "
+             "batch-normalization statistics re-estimated on \\DesignBnJets{} training jets."
+             + _runs("set", "flav", "mass", "rand")),
     "fill_full": "Linear probes on the frozen features of every pretrained network and of the random network with "
                  "BatchNorm recomputed, with the missing inputs set to zero, the training mean or random draws of a "
                  "real particle. The columns give the relative drop in JetClass-II accuracy when the slots that the top "
@@ -6413,14 +6487,17 @@ CAPTION_SHORT = {
               "top-jet particle a type drawn from JetClass-II's frequencies and a charge given the type, and every "
               "particle the displacements of a JetClass-II particle of its type, averaged over four draws. Their "
               "results are in table~\\ref{tab:fill}. An input marked rescaled is taken after Sophon's rescaling of "
-              "each jet to $p_{\\mathrm{T}}=500$~GeV."),
-    "partrepro": ("The top-tagging training script of the Particle Transformer run from scratch, compared unchanged and "
-                 "with one of two changes taken from Sophon, which are not combined. The changes are Sophon's output "
-                 "head, a 512-unit hidden layer before the output in place of a single linear layer, and its rescaling "
-                 "of each jet to $p_{\\mathrm{T}}=500$~GeV. AUC is the area under the receiver operating "
-                 "characteristic curve, $R_{50}$ and $R_{30}$ one over the fraction of background jets kept when the cut keeps 50\\% or 30\\% of the signal jets (30\\% is the working point of the top-tagging comparison), and the last column counts the background jets passing the $R_{30}$ selection. "
-                 "Every value is from a single run, and $R_{30}$, resting on 118 to 165 background jets, has a Poisson "
-                 "uncertainty of 8 to 9\\%, larger than the change from Sophon's output head."),
+              "each jet to $p_{\\mathrm{T}}=\\DesignRescalePt$~GeV."),
+    # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md, no finding, no typed number
+    "partrepro": ("The Particle Transformer's training script for top tagging, top-quark against QCD jets, run from "
+                  "scratch unchanged and with one of two changes taken from Sophon, which are not combined. The changes "
+                  "are Sophon's output head, a \\DesignHeadHidden{}-unit hidden layer before the output, and its "
+                  "rescaling of each jet to $p_{\\mathrm{T}}=\\DesignRescalePt$~GeV. Accuracy is the fraction of test "
+                  "jets classified correctly, AUC the area under the receiver operating characteristic curve, and "
+                  "$R_{50}$ and $R_{30}$ one over the fraction of background jets kept when the cut keeps 50\\% or 30\\% "
+                  "of signal jets, 30\\% being the top-tagging working point. Every value is from a single run, and the "
+                  "relative Poisson uncertainty of $R_{30}$ is one over the square root of the last column, the "
+                  "background jets that pass."),
     "labelsets": ("The fine-tuned networks of table~\\ref{tab:summary} and training from scratch on the full top and "
                  "quark/gluon training sets, in accuracy and $R_{50}$, one over the fraction of background jets kept when the cut keeps 50\\% of the signal jets, with top jets and quarks as signal, scored on Pythia and Herwig jets (top tagging "
                  "Pythia only). The rows for \\Kfull{} classes and from scratch repeat those of "
@@ -7184,7 +7261,9 @@ def _height_cm(boxes: list, cap: str) -> float:
     blocks, and the caption."""
     h = 0.45 * (len(cap) / 90 + 1)
     for b in boxes:
-        wrap = re.search(r"\\arraybackslash\}p\{([\d.]+)", b)
+        # a wrapping row-label column, the first of the spec (tab:sets' wrapping columns are later ones, FG-25)
+        wrap = re.search(r"(?:\\begin\{(?:tabular|longtable)\}\{|\\extracolsep\{\\fill\}\})>\{\\raggedright"
+                         r"\\arraybackslash\}p\{([\d.]+)", b)
         lab = float(wrap.group(1)) + 0.42 if wrap else LABEL_CM
         for row in b.split(r"\\")[:-1]:
             first = _depth0_split(row.split("rule")[-1] if "rule" in row.split("&")[0] else row, "&")[0]
@@ -7310,6 +7389,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     em.macro("MlstPairsNWord", words(len(PAIRS_TABLE)), root / "experiments/FIGS/mlst_results.py",
              "PAIRS_TABLE (count)", "class pairs of tab:pairs")
     comparisons(em, fits, runs, status, index, fmt_pm)
+    pair_figure_macros(em, data, root, runs, status, words, missing)
     eemm_macros(em, fits, runs, index, fmt_pm, fmt_int, status)
     probe_abs_macros(em, fits, runs, index, fmt_pm)
     if fits3:
@@ -7395,9 +7475,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     em.macro("MlstProbeEdgeC", str(len(edge)), index, "of these, fits whose selected C is the largest of the grid (count)")
     mlp = load_mlp(data)
     if mlp:
-        # PI 2026-11-23 (LEDGER SP-9): the paper's table with the random partitions pooled, each one in its copy
+        # PI 2026-11-23 (LEDGER SP-9): the paper's table with the random partitions pooled, each one in its copy; (LEDGER
+        # CA-15, option a) the rho columns and the class-token against hidden-layer block in the copy only
         out["tables/mlst_mlp.tex"] = _float("mlp", table_mlp(mlp, _pooled(runs), TAB, _paper_rows(rows_init), raw_v4,
-                                                             mlp_nat, kin=True), True)
+                                                             mlp_nat, kin=True, rho=False), True)
         out["tables/mlst_mlp_full.tex"] = _float("mlp_full", table_mlp(mlp, runs, TAB, rows_init, raw_v4, mlp_nat,
                                                                        kin=True), True)
         mlp_macros(em, mlp, runs, index, fmt_pm)

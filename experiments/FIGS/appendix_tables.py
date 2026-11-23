@@ -173,17 +173,15 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
         last = r["R16_Q1"]
         body.append(native_tex(r["class_name"]) + " & " + " & ".join(r[g] for g in MAP_LEVELS)
                     + "".join(f" & {p[r['class_name']]}" for _, _, p in parts) + " \\\\")
+    # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md (the headings name the partitions)
     caption = ("Every JetClass-II class and its group in each pretrained label set coarser than "
-               f"{sizes['L162']} classes and in each partition, in blocks under the groups of the "
-               f"{sizes['R16_Q1']}-class label set. At {sizes['L162']} classes every resonant class keeps its own "
-               f"label and the QCD classes share one; the {sizes['R42_Q1']}-class column groups "
-               f"{level_rules(rows)['R42_Q1']}. The random partitions are numbered 1 to {len(rand)}, and the "
-               "flavor-boundary partitions have no flavor boundary, a $b$-quark boundary or a random flavor "
-               "boundary, a flavor boundary keeping apart decays that differ only in quark flavor. Group numbers are "
-               "those of the released label maps; classes "
-               "that share a number in a column share a class in that label set. $q$ is a $u$ or $d$ quark; $\\ell$ an "
-               "electron or a muon; $\\tau_h$ a hadronic and $\\tau_e$, $\\tau_\\mu$, $\\tau_\\ell$ leptonic $\\tau$ "
-               "decays.")
+               f"{sizes['L162']} classes and in each partition, in blocks by group of the {sizes['R16_Q1']}-class "
+               f"label set. The {sizes['L162']}-class column is left out, as at {sizes['L162']} classes every resonant "
+               f"class keeps its own label and the QCD classes share one. The {sizes['R42_Q1']}-class column groups "
+               f"{level_rules(rows)['R42_Q1']}. A flavor boundary keeps apart decays that differ only in quark flavor. "
+               "Classes that share a number in a column share a class in that label set, numbered as in the released "
+               "label maps. Here $q$ is a $u$ or $d$ quark, $\\ell$ an electron or a muon, $\\tau_h$ a hadronic and "
+               "$\\tau_e$, $\\tau_\\mu$, $\\tau_\\ell$ leptonic $\\tau$ decays.")
     return _longtable("l " + "r" * (ncol - 1), head, body, caption, "tab:app-vocabulary")
 
 

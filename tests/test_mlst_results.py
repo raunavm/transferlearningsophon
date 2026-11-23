@@ -2894,7 +2894,9 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
     assert not any("BatchNorm" in M.printed_caption(k) for k in ("probes", "coarse", "qcdhf"))
     assert M.PART_DEF == " A flavor boundary keeps apart decays that differ only in quark flavor."
     assert [lab for lab, (k, _) in _paper_tables().items() if M.PART_DEF in M.printed_caption(k)] == []
-    assert M.PART_DEF in M.printed_caption("per_run") and M.PART_DEF in M.printed_caption("coarse")
+    # PI 2026-11-23, LEDGER CA-15: the assertion above holds (tab:sets defines the flavor boundary and captions name it
+    # in two or three words), so tab:coarse no longer carries PART_DEF
+    assert M.PART_DEF in M.printed_caption("per_run") and M.PART_DEF not in M.printed_caption("coarse")
     # PI 2026-11-22 (Part 2): the networks are defined in tab:sets, not in Table 1's end note
     assert not hasattr(M, "NET_DEF") and "tab:sets" in M.CAPTIONS["sets"][0]
     assert "__SCULPT_CUT__" in M.CAPTION_SHORT["sculpt"] and "resonant" in M.sculpt_fill({"m": {"sig_eff_50": {}}}, {a: [] for a in M.FLAV})["__SCULPT_CUT__"]
@@ -2957,7 +2959,11 @@ def test_the_generated_paper_tables_follow_the_table_rules():
         assert "$<$" not in tex and not re.search(r"\\pm\$\\,0(\.0+)?\s*(&|\\\\)", _unbold(body)), label
         assert not re.search(r"\((LP|MLP|f\.t\.)\)", tex) and "# params" not in tex and "params" not in body, label
         assert not re.findall(r"(?<![\d.{,])\d{4,}(?![\d}])", _unbold(body)), label         # 1{,}602, never 1602
-        assert r"\begin{tabular}" not in tex and r"arraybackslash}p{" not in tex, label      # tabular* or longtable, no p column
+        # tabular* or longtable, no p column; PI 2026-11-23, LEDGER FG-25: tab:sets (121.7 pt too wide) wraps what each
+        # network merges and its runs in p columns, its row labels and class counts unwrapped
+        assert r"\begin{tabular}" not in tex and (r"arraybackslash}p{" not in tex or label == "tab:sets"), label
+        if label == "tab:sets":
+            assert r"{@{\extracolsep{\fill}}ll>{\raggedright\arraybackslash}p{" in tex, label
         assert tex.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}") + tex.count(
             r"\begin{longtable}{@{\extracolsep{\fill}}") >= 1, label
         assert not re.search(r"adjustbox|resizebox|scalebox|\\(footnotesize|scriptsize|tiny)(?![a-zA-Z])", tex), label

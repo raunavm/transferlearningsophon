@@ -1879,6 +1879,12 @@ def emit_training_design(em: Emitter, spec: pathlib.Path, arch: pathlib.Path,
         raise SystemExit(f"FATAL: {arm} has no selection line of the expected form")
     for name, v in zip(("DesignPtMin", "DesignPtMax", "DesignMsdMin", "DesignMsdMax"), m.groups()):
         em.macro(name, fmt_int(v), arm, "selection", "GeV")
+    # PI 2026-11-23 (LEDGER CA-15): Sophon's rescaling of each jet to a common pT, as the arm scales its four-vectors
+    s = re.findall(r"^\s*part_(?:px|py|pz|energy)_scale: part_(?:px|py|pz|energy) / jet_pt \* (\d+)\s*$",
+                   arm.read_text(), re.M)
+    if len(s) != 4 or len(set(s)) != 1:
+        raise SystemExit(f"FATAL: {arm} scales the four-vectors by {s}, not one jet pT for all four")
+    em.macro("DesignRescalePt", fmt_int(s[0]), arm, "new_variables part_{px,py,pz,energy}_scale", "GeV")
 
 
 def recovery_acc(R: dict, probe: str = "linear") -> dict:

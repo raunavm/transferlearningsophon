@@ -78,7 +78,7 @@ spec:
             || echo "tectonic: could not fetch or run"
           grep -i -E 'undefined|multiply defined|error|overfull' ${{OUT}}/tectonic.txt | head -20
 {collect}          pdffonts ${{OUT}}/{texfile}.pdf 2>/dev/null | grep -c "Type 3" | sed 's/^/Type 3 fonts in the PDF: /'
-          ls -la ${{OUT}} ${{OUT}}/figures | head -40
+{check}          ls -la ${{OUT}} ${{OUT}}/figures | head -40
           echo "RENDER COMPLETE"
         resources:
           requests: {{ memory: "16Gi", cpu: "4", ephemeral-storage: "20Gi" }}
@@ -120,10 +120,16 @@ PAPER = {"what": "paper", "suffix": "", "texdir": "paper/journal", "texfile": "m
           cp -f paper/journal/results_generated.tex paper/journal/provenance.json ${OUT}/paper/journal/ 2>/dev/null
           cp -rf paper/journal/tables paper/journal/data_release ${OUT}/paper/journal/ 2>/dev/null
           cp -f paper/journal/main.pdf ${OUT}/main.pdf 2>/dev/null
+""",
+         # PI 2026-11-23 (LEDGER FG-25): after the compile and the copy, an overfull box over 10 pt in a float (a
+         # generated table, or a figure or table environment of a section) stops the paper build; the rest are listed
+         "check": """          python3 scripts/overfull_floats.py ${OUT}/tectonic.txt paper/journal > ${OUT}/overfull.txt 2>&1; rc=$?
+          cat ${OUT}/overfull.txt
+          [ "${rc}" -eq 0 ] || { echo "FATAL: the paper build stops on an overfull float (overfull.txt)"; exit 4; }
 """}
 # the X->bb/X->bs dry run on JetClass-II stand-in jets (RUNS.csv), the mock-up of the resonance figure
 XBX_STANDIN = "/data/results/xbx_dryrun/report_mtx-s2.28/xbx.pdf"
-MOCKUPS = {"what": "figure mock-ups", "suffix": "-mockups", "texdir": "paper/mockups", "texfile": "mockups",
+MOCKUPS = {"check": "", "what": "figure mock-ups", "suffix": "-mockups", "texdir": "paper/mockups", "texfile": "mockups",
            "draw": f"""          python3 experiments/FIGS/mockup_figures.py --outdir figures/mockups > ${{OUT}}/figures.txt 2>&1; echo "mock-ups rc=$?"
           tail -15 ${{OUT}}/figures.txt
           cp -f {XBX_STANDIN} figures/mockups/F9_xbx_standin.pdf || echo "no X->bx stand-in at {XBX_STANDIN}"
@@ -137,7 +143,7 @@ MOCKUPS = {"what": "figure mock-ups", "suffix": "-mockups", "texdir": "paper/moc
 # the results book (make_results_book.py, main text and appendix): the tables, every gallery page, the book and a PNG of
 # each drawn page; with --preview (MLST_FT_PREVIEW=1) the partial one-rule read-out is read and every placed item is
 # PROVISIONAL, so an undrawn figure keeps its number in a box and a table shows its pending cells
-BOOK = {"what": "results book", "suffix": "-book", "texdir": "paper/journal", "texfile": "results_book",
+BOOK = {"check": "", "what": "results book", "suffix": "-book", "texdir": "paper/journal", "texfile": "results_book",
         "draw": """          pip install --no-cache-dir -q pymupdf==1.26.7 || exit 1
           python3 experiments/FIGS/make_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
           python3 experiments/FIGS/figstyle/gallery_figures.py --outdir /workspace/gal > ${OUT}/figures.txt 2>&1; echo "gallery rc=$?"
@@ -156,7 +162,7 @@ BOOK = {"what": "results book", "suffix": "-book", "texdir": "paper/journal", "t
 # the data release (experiments/FIGS/data_release.py, PI 2026-11-22): after the table build, the release, which draws the
 # gallery's figures with their plotting calls recorded, into render/<commit>-release/release/ (logs beside it); the
 # paper is compiled as in every mode
-RELEASE = {"what": "data release", "suffix": "-release", "texdir": "paper/journal", "texfile": "main",
+RELEASE = {"check": "", "what": "data release", "suffix": "-release", "texdir": "paper/journal", "texfile": "main",
            "draw": """          pip install --no-cache-dir -q pymupdf==1.26.7 || exit 1
           python3 experiments/FIGS/make_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
           python3 experiments/FIGS/data_release.py --out ${OUT}/release > ${OUT}/release.txt 2>&1; echo "release rc=$?"

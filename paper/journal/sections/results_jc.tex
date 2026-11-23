@@ -6,7 +6,7 @@
 
 \section{Results}\label{sec:results}
 
-Each subsection compares the four levels of the class hierarchy first and the controls second, the
+Each subsection compares the four label sets first and the controls second, the
 controls against the \Kcoarse-class level whose class count they share. Linear probes on frozen features
 carry the comparison on the pretraining classes, checked by MLP probes, and fine-tuning carries it on the
 downstream benchmarks. Every difference the text states is tested in table~\ref{tab:tests}.
@@ -42,17 +42,15 @@ not differ from the \Kfull-class model by more than three standard deviations (t
 \begin{figure}[t]
 \centering
 \paperfig{\linewidth}{F2}
-\caption{Linear probes on frozen features at the largest training set of each task: (a) accuracy,
-equation~(\ref{eq:acc}), on the \Kfull{} classes of the class-balanced JetClass-II test set; (b) accuracy on
-JetClass; $R_{30}$, one over the fraction of background jets kept when the cut keeps 30\% of signal jets, the top-tagging working point, on (c) top tagging and on quark/gluon
-discrimination with (d) the Pythia and (e) the Herwig sample. Each row is one configuration: the four levels
-of the class hierarchy, the \Kres- and \Kcoarse-class models with the auxiliary mass regression, the three
-random partitions with controlled flavor boundaries, the \RandVtwoNPartitions{} other random partitions taken
-together (\RandVtwoRuns{} run each), and the released Sophon checkpoint (open circle, one run). Circles are
-means over runs and bars one standard deviation; the vertical line and band are the mean and standard
-deviation of the \Kfull-class model. On top and quark/gluon discrimination the missing inputs are substituted
-as chosen on validation (\LpSubstitutionTop{} and \LpSubstitutionQg) for every row. The randomly initialized
-network is not drawn. Every value with its spread is in table~\ref{tab:summary}.}
+\caption{With linear probes at each task's largest training set, \Kmid{} and \Kcoarse{} classes are less accurate on
+class-balanced JetClass-II than \Kfull{} classes, and no label set, mass network or partition differs from
+\Kfull{} classes in $R_{30}$ by more than three standard deviations in top-quark against QCD and quark against
+gluon jets. Accuracy is the fraction of test jets classified correctly, and $R_{30}$ one over the fraction of
+background jets kept when the cut keeps 30\% of signal jets, the top-tagging working point. Circles and bars are
+means and standard deviations over \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per mass network
+and flavor-boundary partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions, whose bar
+is their spread. The band is the \Kfull-class mean $\pm$ one standard deviation. The random network, far below
+most panels, and every value are in table~\ref{tab:summary}.}
 \label{fig:F2}
 \end{figure}
 % CHECK: F2(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
@@ -60,16 +58,17 @@ network is not drawn. Every value with its spread is in table~\ref{tab:summary}.
 \begin{figure}[t]
 \centering
 \paperfig{\linewidth}{F2-ft}
-\caption{Fine-tuned models: (a) accuracy on the
-\Kfull{} classes of class-balanced JetClass-II and (b) on JetClass, after fine-tuning on \FtSizeESix{} jets;
-$R_{30}$, one over the fraction of background jets kept when the cut keeps 30\% of signal jets, the top-tagging working point, on (c) top tagging and on quark/gluon
-discrimination with (d) the Pythia and (e) the Herwig sample, after fine-tuning on the full training sets
-(Pythia jets for quark/gluon) with the missing inputs set to zero. Rows as in figure~\ref{fig:F2}, with the
-same network trained from scratch, with no pretraining, in place of the released checkpoint.
+\caption{After fine-tuning, \pending{\Kcoarse{} classes are less accurate than \Kfull{} classes on JetClass-II and
+JetClass}, and no label set, mass network or partition differs from \Kfull{} classes in $R_{30}$ by more than
+three standard deviations in top-quark against QCD and quark against gluon jets. Accuracy and $R_{30}$ are
+defined as in figure~\ref{fig:F2}, after fine-tuning on \FtSizeESix{} jets or the full top and quark/gluon
+training sets.
 % CHECK: panel (a) draws every network once the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks reads out (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40)
-Circles are means over runs and bars one standard
-deviation; the vertical line and band are the mean and standard deviation of the \Kfull-class model. On top
-tagging the label sets differ by less than the spread between runs (table~\ref{tab:summary}).}
+The same network trained from scratch, the fine-tuning reference, replaces the random network and the released
+Sophon checkpoint. Circles and bars are means and standard deviations over \MlstNRunsWord{} runs per label set
+and from scratch, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and \RandVtwoRuns{} each
+for \RandVtwoNPartitions{} random partitions, whose bar is their spread. The band is the \Kfull-class mean $\pm$
+one standard deviation. Every value is in table~\ref{tab:summary}.}
 \label{fig:F2-ft}
 \end{figure}
 
@@ -93,7 +92,7 @@ many classes (table~\ref{tab:tests}); in accuracy, too, the random partitions li
 level (figure~\ref{fig:F2}(a); table~\ref{tab:summary}).
 % CHECK: MlstCmpJcTwoRandOverMid < 1 beyond 3 sigma in its tab:tests row (today 0.918 +- 0.007); if it fails,
 % write "as few errors as the 43-class level".
-The partitions with controlled flavor boundaries, at the same class count, lie between the
+The flavor-boundary partitions, at the same class count, lie between the
 \Kcoarse-class level and the random partitions, with the partition that has no flavor boundary nearest
 the \Kcoarse-class level.
 % CHECK: MlstCmpJcTwoFzeroOverCoarse > MlstCmpJcTwoF{one,oner}OverCoarse > MlstCmpJcTwoRandOverCoarse
@@ -138,7 +137,7 @@ decay topology, and the pair stays readable.
 The \Kmid-class labels, which merge every decay with its lepton-flavor counterpart, also remove a distinction
 that the finer labels keep: on $X\to ee$ against $X\to\mu\mu$ the AUC of a linear probe falls to
 \MlstLpEemmAucMid{}, against \MlstLpEemmAucFull{} at \Kfull{} classes and \MlstLpEemmAucInitBn{} for the
-randomly initialized network (table~\ref{tab:tests}).
+random network (table~\ref{tab:tests}).
 
 The output layer can lose a discriminant while the frozen features keep most of what it needs. The
 boosted $|V_{cb}|$ measurement uses the scores of $X\to bq$ and $X\to cs$ in the denominator of its
@@ -149,7 +148,7 @@ classes, where $X\to bc$ and $X\to bq$ share a class and $D_{bc}$ can no longer 
 only \MlstCmpBcMidOverFullPr{}; at \Kcoarse{} classes, which remove flavor altogether, it makes
 \MlstCmpBcCoarseOverFullPr{} (figure~\ref{fig:F4-mech}; table~\ref{tab:tests}).
 
-At a fixed number of classes, the three partitions with controlled flavor boundaries test whether a flavor
+At a fixed number of classes, the three flavor-boundary partitions test whether a flavor
 boundary keeps quark flavor readable. They have \Kcoarse{} classes and the same group shares, and
 \RandFlavRuns{} pretraining runs each, so each comparison below quotes the value less favorable to a
 difference. The partition with a $b$-quark boundary, whose one flavor boundary lies between four-quark decays,
@@ -166,17 +165,16 @@ than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}).
 \begin{figure}[t]
 \centering
 \paperfig{\linewidth}{F4-mech}
-\caption{Linear probes on \Kcoarse{} classes separate decays that differ only in quark flavor worse than
-\Kfull{} classes; the $b$-quark boundary recovers part of the loss on both pairs, and the random flavor boundary
-on $X\to bc$ against $X\to bq$ and $X\to cs$. Each panel shows the background rejection $1/\epsB$ against the
-signal efficiency $\epsS$, with the first-named decay as the signal, for $X\to b\bar b$ against $X\to c\bar c$
-(left) and $X\to bc$ against $X\to bq$ and $X\to cs$ together, the classes in the denominator of the
-discriminant of the boosted $|V_{cb}|$ measurement (right), for the label sets and the models with the auxiliary
-mass regression (upper row) and the random partitions with controlled flavor boundaries (lower row). Curves are
-means over the pretraining runs and end where fewer than $\nmin$ background jets pass,
-equation~(\ref{eq:cut}); the lower panels give the ratio to the \Kfull-class model on a logarithmic axis, banded
-for it only by the spread between runs and the binomial uncertainty. The curve of the random partitions is the
-mean over those, one run each, that keep the pair's classes apart.}
+\caption{Linear probes on \Kcoarse{} classes, which merge each pair, separate $X\to b\bar b$ from $c\bar c$ and $X\to bc$
+from $bq$ and $cs$, the second-named the background, worse than \Kfull{} classes, and the $b$-quark boundary
+recovers part of the loss on both pairs and the random flavor boundary on the second. Panels show one over the
+fraction of background jets kept against that of signal jets, label sets above and \Kcoarse-class partitions
+below, with ratios to \Kfull{} classes. Curves are means over \MlstNRunsWord{} runs per label set,
+\MlstMassNRunsWord{} per mass network and flavor-boundary partition, and \RandVtwoRuns{} each for the
+\MlstPairRandApartMechWord{} random partitions that keep the pair apart, ending where fewer than
+\MlstMinBkgPass{} background jets pass, and \Kfull{} classes' band combines run spread and binomial uncertainty.
+The random network, not drawn, reaches \MlstPairInitRhalfMechMin{} to \MlstPairInitRhalfMechMax{} at 50\%
+of signal jets. Table~\ref{tab:tests} has the tested differences.}
 \label{fig:F4-mech}
 \end{figure}
 
