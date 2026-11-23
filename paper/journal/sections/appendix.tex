@@ -222,7 +222,11 @@ fine-tuned on \FtSizeEThree, \FtSizeEFour{} and \FtSizeEFive{} jets below their 
 class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix. On JetClass-II all \FtJcTwoNetsESix{}
 pretrained networks, controls included, are fine-tuned on \FtSizeESix{} jets; on \FtSizeEFour{} and \FtSizeEFive{} jets,
 the \FtJcTwoNetsSmall{} networks of the four label sets and the two with the auxiliary mass regression.
+\pending{The fine-tuned values below the full top and quark/gluon training sets printed in this version come
+from earlier runs, which could stop early once the validation accuracy no longer improved; this paragraph
+gives the rule of the runs that replace them.}
 % CHECK: FIXED_STEPS, FIXED_CHECK, FIXED_VAL, HEAD_CAP in scripts/build_ft_budget_jobs.py; head_mult gives HEAD_CAP at every rate
+% CHECK: drop the \pending sentence once budget/fixed_metrics.json is pulled and the build reads it (merge_fixed); until then the tables read budget_metrics.json and budget_long_metrics.json, whose cells stop after ten checks without improvement
 
 The full top-tagging and quark/gluon training sets use the fine-tuning recipe of Ref.~\cite{part}. For every
 other combination of task and training-set size, the learning rate is chosen separately from rates spaced by
@@ -248,7 +252,7 @@ token, with the hidden layer initialized from that of the pretrained head. It is
 over \LitSophonTransferSamplesMillion{} million samples in batches of \LitSophonTransferBatch{} at a
 constant learning rate of \LitSophonTransferLr. Sophon states neither an optimizer nor a
 regularization; we use RAdam with the settings of pretraining, dropout after the hidden layer and no
-weight decay, and train three seeds per pretraining run, which the tables average.
+weight decay, and train \MlstXbxHeadSeedsWord{} seeds per pretraining run, which the tables average.
 
 The signal and QCD training jets are drawn in matched bins of $(p_{\mathrm{T}}, \msd)$,
 \XbbNTrainPerClass{} per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$. They are kept
@@ -262,7 +266,7 @@ Sophon's direct discriminant can be formed only by the \Kfull- and \Kres-class m
 $X\to b\bar b$ is a class of its own. The closest-output-node control scores the pretrained $X\to bq$
 output against QCD; where a label set merges $X\to bq$ with other decays, it scores the output of that
 group. The network trained from scratch for each signal is the Sophon network on the same inputs and jets,
-trained with three seeds for Sophon's number of epochs for its reference, \LitSophonScratchEpochs, with weight
+trained with \MlstXbxScratchSeedsWord{} seeds for Sophon's number of epochs for its reference, \LitSophonScratchEpochs, with weight
 decay~\cite[App.~B.3]{sophon}, its epoch chosen on our validation jets. Each of these epochs is one pass over
 the \XbbNTrainPerClass{} ($X\to b\bar b$) or \XbsNTrainPerClass{} ($X\to bs$) training jets of each class,
 fewer samples than an epoch of Sophon's reference.
@@ -318,10 +322,12 @@ pretraining particle has is the joint one, with no flag set.
 
 The substitution for each task is chosen on validation jets and applied to every model, the randomly
 initialized network included: \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon.
-Table~\ref{tab:fill_main} gives all three substitutions for the four levels of the class hierarchy.
+Table~\ref{tab:fill_main} gives all three substitutions for the four levels of the class hierarchy and the
+random network with recomputed BatchNorm statistics.
 Table~\ref{tab:fill} gives $R_{30}$ on top and quark/gluon tagging under the two substitutions not chosen
 for the label sets, the models with the auxiliary mass regression, the \Kcoarse-class partitions and the
-random network with recomputed BatchNorm statistics; table~\ref{tab:summary} gives the chosen one.
+random network with recomputed BatchNorm statistics; table~\ref{tab:summary} gives the chosen one, and
+table~\ref{tab:fill_main} that of the random network with recomputed BatchNorm statistics.
 
 \input{tables/mlst_inputs}
 \input{tables/mlst_fill}
@@ -404,7 +410,7 @@ set of the main text.
 
 \subsection{Reproduction of ParT on top tagging}\label{sec:app-partrepro}
 
-To locate the gap between our network trained from scratch and ParT on top tagging, ParT's top-tagging
+To compare our setup with ParT's on top tagging, ParT's top-tagging
 training script~\cite{part} was run on our cluster unchanged and then with Sophon's changes added one at a
 time (table~\ref{tab:partrepro}). Unchanged, it reaches a rejection at 30\% signal efficiency of
 \MlstPartreproRthirtyPart, within twice the published standard deviation of ParT's
@@ -423,7 +429,7 @@ pretrained and from-scratch networks shares every preprocessing step.
 
 The tables and figures of this appendix complete the results of the main text, each for the item named
 with it. Their uncertainties are the standard deviation over the runs of each configuration, two runs
-included.
+included, except where a table states a bootstrap of the test jets.
 
 \subsection{Linear probes and fine-tuning for every configuration}\label{sec:app-all}
 
@@ -544,7 +550,7 @@ begin where $\nmin$ background jets remain. The legend gives the AUC of each cla
 \subsection{JetClass-II class pairs and classes}\label{sec:app-pairs}
 
 Table~\ref{tab:pairs} gives, for every configuration, the rejection at 90\% signal efficiency, $R_{90}$, of
-the linear probes and of the fine-tuned networks on six class pairs: pairs (a)--(c) of figure~\ref{fig:f4},
+the linear probes and of the fine-tuned networks on \MlstPairsNWord{} class pairs: pairs (a)--(c) of figure~\ref{fig:f4},
 QCD $b\bar b$ against QCD $c\bar c$, QCD jets with a $b$ quark against QCD jets without $b$, $c$ or $s$
 quarks, and QCD jets with a $c$ but no $b$ quark against the same light QCD jets. Figure~\ref{fig:f4app} draws four of these pairs for the random partitions with
 controlled flavor boundaries. The data release's per-class table (\texttt{jetclass2\_per\_class.csv}) gives the
@@ -737,8 +743,8 @@ are in table~\ref{tab:sculpt}.}
 the QCD jets of the JetClass-II test set before and after a cut on the pretraining head, against the QCD
 efficiency $\epsB$ of the cut, for the networks pretrained on \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes
 (\MlstNRunsWord{} runs each) and on \Kres{} and \Kcoarse{} classes with the auxiliary mass regression
-(\MlstMassNRunsWord{} runs each). Lines are means over runs, bands the standard deviation (the range for two
-runs). Black dashed: a random selection of as many QCD jets.}
+(\MlstMassNRunsWord{} runs each). Lines are means over runs, bands the standard deviation. Black dashed: a
+random selection of as many QCD jets.}
 \label{fig:f10b}
 \end{figure}
 
@@ -768,7 +774,7 @@ boundary and (c) a random flavor boundary, each the mean over its \RandFlavRuns{
 Jensen--Shannon divergence between the soft-drop mass of all QCD test jets of JetClass-II and of those passing
 the cut, against the QCD rejection $R_{50}$, both at the cut that keeps 50\% of the resonant test jets, for
 every network with a pretraining head in figures~\ref{fig:f10b} and~\ref{fig:f10bflav}. Points are means over
-runs, bars the standard deviation (the range for two runs).}
+runs, bars the standard deviation.}
 \label{fig:f10c}
 \end{figure}
 

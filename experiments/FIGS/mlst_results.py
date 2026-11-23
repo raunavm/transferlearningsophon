@@ -146,6 +146,8 @@ PAIRS = (("bc_vs_bq_cs", r"$X\to bc$ vs $bq$, $cs$", ("label_X_bc",), ("label_X_
 # the class-pair figures' panel order (gallery_roc.PAIR_ORDER, PI 2026-11-13): the pair tables' columns
 PAIR_ORDER = ("bb_vs_cc", "bc_vs_bq_cs", "bbqq_vs_ccqq", "qcd_bb_vs_cc", "qcd_b_vs_light", "qcd_c_vs_light", "ee_vs_mm")
 PAIRS_FIG = tuple(sorted(PAIRS, key=lambda p: PAIR_ORDER.index(p[0])))
+# tab:pairs' columns: the X->ee vs mumu column is out (PI 2026-11-19, table_pairs' EE_NOTE check)
+PAIRS_TABLE = tuple(p for p in PAIRS_FIG if p[0] != "ee_vs_mm")
 PAIR_DS, PAIR_N = "jc2_188_pairs", "1000000"
 MLP_TASKS = (("jc2_188", "JetClass-II", "macro_auc_ovr"), ("jc2_188_res", "resonant", "macro_auc_resonant"),
              ("jc2_188_qcd", "QCD", "macro_auc_qcd"), ("jc1", "JetClass", "macro_auc_ovr"),
@@ -926,7 +928,7 @@ def table_pairs(fits, runs, fmt_pm, status, rows, ft=None, lp=None) -> str:
             if c.strip() not in ("--", "") and not c.startswith(PAIR_GT) and r"\pending" not in c:
                 raise SystemExit(f"FATAL: tab:pairs EE_NOTE: {arm} ({mode}) keeps X->ee vs mumu apart but separates it "
                                  f"incompletely ({c}); the column must come back")
-    cols = tuple(p for p in PAIRS_FIG if p[0] != "ee_vs_mm")
+    cols = PAIRS_TABLE
     n = len(cols)
     out = [r"\begin{tabular}{l" + "c" * n + "}", r"\toprule",
            rf" & \multicolumn{{{n}}}{{c}}{{$R_{{{round(100 * PAIR_EPS)}}}$}} \\", rf"\cmidrule(lr){{2-{1 + n}}}",
@@ -1704,6 +1706,30 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
 
 CMP_MASS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"), ("L162_MASS", "L162"),
             ("R16_Q1_MASS", "R16_Q1"))
+# the frozen-feature MLP resolution of each mass network against its own label set, all jets, in the form of decision
+# L3 (sigma^2 = each side's SD^2 over its runs + the paired test-jet bootstrap SD^2; experiments/EVAL/mass_sd_boot.py)
+MASS_SD_BOOT = "head/mass_sd_boot_v3.json"
+MASS_BOOT_DIFFS = (("ResMassOverRes", "162 classes + mass - 162 classes"),
+                   ("CoarseMassOverCoarse", "17 classes + mass - 17 classes"))
+
+
+def mass_boot_macros(em, data: pathlib.Path) -> None:
+    """MlstMassMlp<diff>Z: |delta| / sigma of the frozen-feature MLP resolution over all jets, each mass network minus
+    its own label set (MASS_SD_BOOT). Section 4.6 states each as a narrower resolution, so the build stops if sigma is
+    not the L3 sum or the difference is not narrower by more than 3 sigma (PI 2026-11-22: a rule is checked where the
+    data is read). REQUIRED prints them pending until the file is pulled."""
+    f = data / MASS_SD_BOOT
+    if not f.exists():
+        return
+    diffs = json.loads(f.read_text())["diffs"]
+    for w, key in MASS_BOOT_DIFFS:
+        x = diffs[key]["mlp"]["all|inclusive"]["resolution"]
+        l3 = math.sqrt(x["sd_a"] ** 2 + x["sd_b"] ** 2 + x["boot_sd"] ** 2)
+        if not math.isclose(x["sigma"], l3, rel_tol=1e-9) or not (x["pass"] and x["better"] and x["delta"] < -3 * l3):
+            raise SystemExit(f"FATAL: {f.name} {key}: the MLP resolution is not narrower by more than 3 sigma (L3), "
+                             "which section 4.6 states")
+        em.macro(f"MlstMassMlp{w}Z", f"{abs(x['z']):.1f}", f, f"diffs[{key}].mlp[all|inclusive].resolution.z",
+                 "|delta| / sigma, sigma^2 = sd_a^2 + sd_b^2 + boot_sd^2 (decision L3)")
 
 
 def mass_macros(em, atlas, runs, index, fmt_pm) -> None:
@@ -4221,7 +4247,7 @@ XBX_MACROS = ("XbxMx", "XbxWindowLo", "XbxWindowHi") + tuple(
     f"{s}{k}" for s in ("Xbb", "Xbs") for k in ("NTrainPerClass", "Repetition", "NEvalSignal", "NEvalQcd"))
 
 
-def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> tuple:
+def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int, words=str) -> tuple:
     """X->bb and X->bs from the pulled fits through experiments/XBS/xbx_report.py, and the rejection
     ratios and table of A15; red markers until they exist. Returns (the xbx_report module, the fits)."""
     from types import SimpleNamespace
@@ -4256,6 +4282,16 @@ def xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int) -> t
                      "pending", "pending until xbx_scratch is pulled")
     if not scr:
         missing.append("X->bs from scratch -- experiments/FIGS/data/v2/xbx_scratch/")
+    # the seeds of the transfer heads (per pretraining run) and of training from scratch (per signal) in words, one
+    # count each or the build stops; REQUIRED prints them pending until the files are pulled
+    heads = {len(s[g]["head"]) for m, s in xfits.items() if m.startswith("mtx-") for g in s if s[g].get("head")}
+    for name, n, files in (("MlstXbxHeadSeedsWord", heads, sorted((data / "xbx").rglob("mtx-*.json"))),
+                           ("MlstXbxScratchSeedsWord", {len(v) for v in scr.values()},
+                            sorted((data / "xbx_scratch").rglob("s*.json")))):
+        if len(n) > 1:
+            raise SystemExit(f"FATAL: {name}: the seed counts differ, {sorted(n)}")
+        if n and files:
+            em.macro(name, words(n.pop()), files[0], "seeds (count, the same for every model or signal)")
     for name in XBX_MACROS:
         if name not in em.provenance:
             sig = {"Xbb": "xbb", "Xbs": "xbs"}.get(name[:3])
@@ -5295,7 +5331,9 @@ CAPTIONS = {
                   "largest training set. Upper part: relative "
                   "drop in JetClass-II accuracy (percent) when the slots the top or the quark/gluon data lack are "
                   "substituted, against the same model with every input. Lower part: $R_{30}$ on top and quark/gluon "
-                  "tagging. Mean and SD over three runs. The \\Kfull-class model with kinematic inputs only has nothing missing (one run). The controls "
+                  "tagging. Mean and SD over three runs. The random network with BatchNorm recomputed, three "
+                  "initializations, has its batch-normalization statistics re-estimated on \\DesignBnJets{} training "
+                  "jets. The \\Kfull-class model with kinematic inputs only has nothing missing (one run). The controls "
                   "are in table~\\ref{tab:fill}."),
     "fill": ("tab:fill", "Linear probes on the frozen features of networks pretrained on JetClass-II with 188, 162, 43 and 17 classes and of the controls, "
              "trained at the largest training set: $R_{30}$ on top and quark/gluon jets with the inputs a data set "
@@ -5453,8 +5491,10 @@ CAPTIONS = {
     "randparts": ("tab:randparts", "Each of the five random partitions, one pretraining run each, as a linear probe and "
                                    "fine-tuned, in the tasks and metrics of table~\\ref{tab:summary}; the last row of each "
                                    "block is their mean $\\pm$ standard deviation, the random-partitions row of the other "
-                                   "tables. Each partition groups the 161 resonant classes at random into 16 groups, with "
-                                   "QCD as the 17th, each group holding the training-jet share of one 17-class group. "
+                                   "tables. Each partition assigns the resonant classes to as many groups as the "
+                                   "\\Kcoarse-class level has resonant groups, each holding the training-jet share of one "
+                                   "\\Kcoarse-class group, and keeps every QCD jet in one more class; the assignments are "
+                                   "drawn at random and selected to cut across the \\Kcoarse-class groups. "
                                    "Values are as in table~\\ref{tab:summary}; a dash marks a value not yet read out."),
     "inputs": ("tab:inputs", "The per-particle inputs: which the top and the quark/gluon data provide ($\\bullet$), "
                "and where a zero lies after the network's input normalization, in SDs of the training particles. The "
@@ -5551,6 +5591,9 @@ LONGTABLES = (("per_class", "mlst_per_class"), ("per_run", "mlst_per_run"))
 # sentence written with it compiles and shows what it waits for. (name, waits on, twins)
 REQUIRED = (
     ("MlstFtJcOneErrCoarseOverFullBootEFour", "the JetClass bootstrap at 1e4 (after the equal-stopping read-out)", ""),
+    ("MlstMassMlpResMassOverResZ", "the mass bootstrap (head/mass_sd_boot_v3.json)", ""),
+    ("MlstMassMlpCoarseMassOverCoarseZ", "the mass bootstrap (head/mass_sd_boot_v3.json)", ""),
+    ("MlstXbxHeadSeedsWord", "the X->bb and X->bs fits", ""), ("MlstXbxScratchSeedsWord", "xbx_scratch", ""),
     ("DesignNTrainSelected", "a committed count of the selected pretraining jets", ""),
     ("FtBudgetEvalSmall", "build_ft_budget_jobs.py", ""),
     ("LpSubstitutionTop", "fill fits", ""), ("LpSubstitutionQg", "fill fits", ""),
@@ -5640,17 +5683,6 @@ PNETS = "the networks pretrained with 188, 162, 43 and 17 classes"
 PART_DEF = " A flavor boundary keeps apart decays that differ only in quark flavor."
 PUBLISHED_NOTE = "A dash marks a value not reported or not applicable."
 MASSEFFECT_NOTE = "Quark/gluon tagging trains on Pythia jets."
-
-
-def _figures(*ids) -> str:
-    """"figures A10, S28 and S29": the numbers of the day of the gallery figures ids (figstyle/gallery_placement, free
-    of data loading), for a table caption that names its figures (the book has no \\ref to a figure in a table)."""
-    G = _placement()
-    # PI 2026-11-19 (A): one PDF; a results-book figure is never named in a paper caption
-    n = [G.number(i).removeprefix("Fig. ") for i in ids if G.TIER.get(i) in (G.MAIN, G.APPENDIX)]
-    if not n:
-        raise SystemExit(f"FATAL: none of {ids} is a paper figure")
-    return f"figure {n[0]}" if len(n) == 1 else "figures " + ", ".join(n[:-1]) + " and " + n[-1]
 
 
 def _placement():
@@ -5849,9 +5881,9 @@ CAPTION_SHORT = {
                "$10^{-5}$. Every network of a task and size uses the rate chosen there.",
     "mass_detail": "Jet-mass resolution and median response on JetClass-II in detail, defined as in "
                    "table~\\ref{tab:mass}. In the upper part a cell over all jets is empty where "
-                   "table~\\ref{tab:mass} holds it. The lower parts give the bins of jet $p_{\\mathrm{T}}$ and "
-                   "generator-level soft-drop mass of " + _figures("F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge")
-                   + ", the mass output over all, resonant and QCD jets and the two regression probes over all jets, and "
+                   "table~\\ref{tab:mass} holds it. The lower parts give, in bins of jet $p_{\\mathrm{T}}$ and "
+                   "generator-level soft-drop mass, the mass output over all, resonant and QCD jets and the two regression "
+                   "probes over all jets, and "
                    "__BLANK__ The soft-drop mass's $\\pm$ is its standard deviation over test-jet bootstrap "
                    "resamples.__MASS_RUNS__",
     "sculpt": ("Jensen--Shannon distance (base 2) between the soft-drop mass distributions of all QCD "
@@ -5894,19 +5926,19 @@ CAPTION_SHORT = {
                 "particle type as five flags and the charge) and scored on Pythia jets, beside "
                 "published models: accuracy, AUC, $1/\\epsB$ at 50\\% and 30\\% quark efficiency and the number of "
                 "trainable parameters. Uncertainties as in table~\\ref{tab:benchtop}; Herwig jets in "
-                "table~\\ref{tab:benchqgherwig}.",
+                "table~\\ref{tab:ftrej}.",
     "jetclass": "JetClass: Sophon's network pretrained on JetClass-II with 188, 162, 43 and 17 classes and fine-tuned, or "
                 "trained from scratch, on one million JetClass jets, beside published models (2 million jets, from "
                 "scratch): the number of trainable parameters, accuracy and AUC. " + AUC_OVR + AUC_JC + " Ours: mean "
                 "$\\pm$ SD over three pretraining runs; from scratch: three seeds. Per-class rejections in "
-                "table~\\ref{tab:jetclassrej}.",
+                "table~\\ref{tab:jetclassall}.",
     "jetclass_rej": ("Rejection of QCD jets for each JetClass class, the inverse QCD efficiency at the signal "
                     "efficiency in the subscript, 50\\% except __WPHQQL__\\% for $H\\to\\ell\\nu qq'$ and "
                     "__WPTBL__\\% for $t\\to b\\ell\\nu$. Fine-tuned on one million JetClass jets, "
                     "beside from scratch and the published models of the Particle Transformer paper~\\cite{part} "
                     "(two million jets, no uncertainty). Linear probes are in table~\\ref{tab:jetclassprobe}."
                     + _runs("set", "flav", "mass", "rand")),
-    "jetclass_all": "JetClass fine-tuning, in the columns of tables~\\ref{tab:published} and~\\ref{tab:jetclassrej}, of "
+    "jetclass_all": "JetClass fine-tuning, in accuracy, AUC and the rejection of QCD jets for each signal class, of "
                     + PNETS + ", of the two networks with an added mass output and of the 17-class partitions, "
                     "beside training from scratch, each fine-tuned on one million JetClass jets and with "
                     + f"{V4.our_params(len(V4.JC1_COLS) + 1) / 1e6:.2f}" + " million parameters. " + AUC_OVR + AUC_JC + R_SUB + PART_DEF
@@ -5933,7 +5965,7 @@ CAPTION_SHORT = {
                "training from scratch or the random network's initialization." + PART_DEF,
     "jetclass_nbkg": "The number of QCD test jets that pass each signal class's working point after fine-tuning on one "
                      "million JetClass jets, the fewest over the runs of each row, behind the rejections of "
-                     "tables~\\ref{tab:jetclassrej} and~\\ref{tab:jetclassall}, for " + PNETS + ", the two networks with an "
+                     "table~\\ref{tab:jetclassall}, for " + PNETS + ", the two networks with an "
                      "added mass output and the 17-class partitions, and for training from scratch. The working point is 50\\% "
                      "signal efficiency, 99\\% for $H\\to\\ell\\nu qq'$ and 99.5\\% for $t\\to b\\ell\\nu$." + PART_DEF,
     "summary": ("Accuracy on class-balanced JetClass-II (at most 5,000 test jets a class) and JetClass and $R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of the signal jets, the working point of the top-tagging comparison, on top and quark/gluon tagging, of linear "
@@ -5976,7 +6008,6 @@ CAPTION_SHORT = {
                  "head, a 512-unit hidden layer before the output in place of a single linear layer, and its rescaling "
                  "of each jet to $p_{\\mathrm{T}}=500$~GeV. AUC is the area under the receiver operating "
                  "characteristic curve, $R_{50}$ and $R_{30}$ one over the fraction of background jets kept when the cut keeps 50\\% or 30\\% of the signal jets (30\\% is the working point of the top-tagging comparison), and the last column counts the background jets passing the $R_{30}$ selection. "
-                 "Table~\\ref{tab:published} has the published result and our network from scratch, with both changes. "
                  "Every value is from a single run, and $R_{30}$, resting on 118 to 165 background jets, has a Poisson "
                  "uncertainty of 8 to 9\\%, larger than the change from Sophon's output head."),
     "labelsets": ("The fine-tuned networks of table~\\ref{tab:summary} and training from scratch on the full top and "
@@ -6864,6 +6895,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                                                           rows_init, pairs_ft, pairs_lp),
                                                 True, label_cm=PAIRS_LABEL_CM, budget=TEXT_CM * SHRINK_OK, pad=True),
            "tables/mlst_balance.tex": _float("balance", table_balance(fits3, fits_v4, runs, TAB, ALL_ROWS + (INIT_BN,)))}
+    em.macro("MlstPairsNWord", words(len(PAIRS_TABLE)), root / "experiments/FIGS/mlst_results.py",
+             "PAIRS_TABLE (count)", "class pairs of tab:pairs")
     comparisons(em, fits, runs, status, index, fmt_pm)
     eemm_macros(em, fits, runs, index, fmt_pm, fmt_int, status)
     probe_abs_macros(em, fits, runs, index, fmt_pm)
@@ -6957,7 +6990,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     out["tables/mlst_fill.tex"] = _float("fill", table_fill(raw_v4, fill, fits, _pooled(runs), TAB,
                                                             SETS + FLAV + (RAND_POOLED, INIT_BN), drop=False, chosen=chosen), True)
     out["tables/mlst_fill_full.tex"] = _float("fill_full", table_fill(raw_v4, fill, fits, runs, TAB, ALL_ROWS + (INIT_BN,)), True)
-    out["tables/mlst_fill_main.tex"] = _float("fill_main", table_fill(raw_v4, fill, fits, runs, TAB, MAIN), True)
+    # the random network's row: the text quotes its accuracy drops and its R30 under the chosen substitutions
+    out["tables/mlst_fill_main.tex"] = _float("fill_main", table_fill(raw_v4, fill, fits, runs, TAB, MAIN + (INIT_BN,)), True)
     fill_macros(em, raw_v4, fill, fits, runs, index, fmt_pm, missing)
     loss_share_macros(em, comp, runs, index, fmt_pm, root)
     atlas = _load(data / MASS_RES)
@@ -6975,6 +7009,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         mass_macros(em, atlas, runs, index, fmt_pm)
     else:
         missing.append(f"ATLAS mass resolution, truth-free refit -- experiments/FIGS/data/v2/{MASS_RES}/")
+    mass_boot_macros(em, data)
     head = _load(data / "head")
     sculpt_v2 = {k.removesuffix("_sculpting_v2"): v for k, v in _load(data / "head" / "curves_v2").items()
                  if k.endswith("_sculpting_v2")}
@@ -7092,7 +7127,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     else:
         missing.append("performance per jet-pT bin -- experiments/FIGS/data/v2/perf_vs_pt/"
                        + ", ".join(k for k, v in perf.items() if not v))
-    XR, xfits = xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int)
+    XR, xfits = xbx_section(em, root, data, index, runs, missing, out, fmt_pm, fmt_int, words)
     if tag is not None and atlas and xfits and sculpt:
         rows = masseffect_rows(atlas, fits_s, fill, chosen, per, mlp, XR, xfits, sculpt, _load(data / SCULPT_FT), runs)
         out["tables/mlst_masseffect.tex"] = _float("masseffect", table_masseffect(rows, runs, TAB), True, pages=True,

@@ -260,7 +260,9 @@ def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_p
     # the jet-pT figure (L4): why only JetClass-II and JetClass are binned, and its values in the data release (L18)
     assert re.findall(r"\{(tab:[a-z_0-9]+)\}", K.CAPTIONS["PT"]) == [] and "tab:ptbins" not in G.TIER
     assert "JetClass-II and JetClass only, as top and quark/gluon jet pT span about 50 to 100 GeV" in K.text("PT")
-    assert K.text("PT").endswith("Values are in the supplementary file jet_pt_bins.csv.")
+    # PI 2026-11-20 (PS-1): one PDF, no supplementary material, "remove every 'in the supplementary material' from
+    # every caption"; the file is the data release's (L18)
+    assert K.text("PT").endswith("Values are in the data release file jet_pt_bins.csv.")
     # the pages of the gallery carry these captions (apply at the end of each module)
     for mod in (L, R, PC, H):
         for page in mod.PAGES:

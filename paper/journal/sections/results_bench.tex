@@ -26,21 +26,20 @@ jets pass.}
 \label{fig:f6}
 \end{figure}
 
-% CHECK: MlstFtTopRthirtyFullOverScratch above 1 by more than 2 SD (today 1.27); every label set's runs above every from-scratch seed (today min 1,590 vs max 1,432)
+% CHECK: pretrained against from scratch has no L3 entry (bootstrap/l3/ft_top_N1200000.json holds no scratch difference); state no direction until scratch - 188 (r30) passes 3 sigma
 % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull agree with 1 within the run-to-run SD (today 0.97 +- 0.10 for 17 classes)
 % CHECK: MlstFtTopRfiftyCoarseOverFull (today 0.932 +- 0.018) of the size of the counting uncertainty sqrt(1/n_17 + 1/n_188) (about 6.6%)
-Pretraining increases the rejection of QCD jets on top tagging. As listed in table~\ref{tab:benchtop}, the
-\Kfull-class model gives \MlstFtTopRthirtyFullOverScratchPr{} at 30\% signal efficiency than the same network trained from scratch. Every run of every label set has a higher rejection than every run trained
-from scratch. The \Kres-, \Kmid- and \Kcoarse-class models agree with the \Kfull-class model within the
-spread between runs.
+As listed in table~\ref{tab:benchtop}, the fine-tuned \Kfull-class model reaches an $R_{30}$ of
+\MlstFtTopRthirtyFull{} and the same network trained from scratch \MlstFtTopRthirtyScratch. The \Kres-, \Kmid-
+and \Kcoarse-class models agree with the \Kfull-class model within the spread between runs.
 
-% CHECK: MlstPartreproRthirtyRescaleOverPart below 1; MlstFtTopRthirtyFullOverPart below 1 (today 0.65); MlstFtTopRthirtyKinOverFull within the spread of the three 188-class runs
+% CHECK: MlstFtTopRthirtyFullOverPart below 1 (today 0.65); MlstFtTopRthirtyKinOverFull within the spread of the three 188-class runs
 All our fine-tuned models have a lower rejection than ParT pretrained on JetClass and fine-tuned~\cite{part},
 and the missing inputs do not cause this difference. Trained from scratch, our network does not differ from
 ParT trained from scratch by more than three standard deviations. ParT's training script,
-run unchanged on our hardware, reproduces the published ParT result, and adding Sophon's rescaling of the
-four-momenta of the particles, so that every jet has the same transverse momentum~\cite{sophoncode}, gives
-\MlstPartreproRthirtyRescaleOverPartPr{} at 30\% signal efficiency, in one run of each
+run unchanged on our hardware, reproduces the published ParT result with an $R_{30}$ of
+\MlstPartreproRthirtyPart; with Sophon's rescaling of the four-momenta of the particles, so that every jet has
+the same transverse momentum~\cite{sophoncode}, it reaches \MlstPartreproRthirtyRescale, in one run of each
 (appendix~\ref{sec:app-partrepro}). We keep the rescaling in the network
 trained from scratch, because every pretrained model uses it. After fine-tuning, the \Kfull-class model
 gives \MlstFtTopRthirtyFullOverPartPr{} than ParT pretrained on JetClass and fine-tuned~\cite{part}. The
@@ -54,7 +53,7 @@ classes and a wider range of jet transverse momentum.
 With the missing inputs set to zero, a linear probe on the frozen
 features of the \Kfull-class model does no better than a linear probe on a randomly initialized network of
 the same architecture. Both have a lower rejection than every fine-tuned model. The same zeros also lower
-the accuracy of linear probes on JetClass-II. As listed in tables~\ref{tab:fill_main} and~\ref{tab:fill}, setting the \FillTopNZero{}
+the accuracy of linear probes on JetClass-II. As listed in table~\ref{tab:fill_main}, setting the \FillTopNZero{}
 inputs to zero in the training and test jets of the probe lowers the accuracy of the \Kfull-class model on
 the \Kfull{} classes by \MlstLpJcTwoTopZeroAccDropFullPr{}, and that of the randomly initialized network by
 \MlstLpJcTwoTopZeroAccDropInitBnPr{}. Every pretrained label set loses more accuracy than the randomly
@@ -96,10 +95,7 @@ pretraining on JetClass~\cite{part}, and the label sets do not differ. The \Kful
 matches ParT (\MlstFtQgRthirtyFullOverPartPr{}), and the \Kcoarse-class model matches the % CHECK: MlstFtQgRthirtyFullOverPartPr must read "equal within" (today 0.99 +- 0.02)
 \Kfull-class model (\MlstFtQgRthirtyCoarseOverFullPr{}; table~\ref{tab:benchqg}; figure~\ref{fig:f6}(b)), although only the % CHECK: MlstFtQgRthirtyCoarseOverFullPr must read "equal within" (today 0.99 +- 0.03); also Res, Mid
 \Kfull- and \Kres-class labels separate resonance decays to gluons from decays to light quarks, the
-distinction quark/gluon discrimination asks for. Three differences between the tasks likely limit how
-much of that distinction transfers: the quark/gluon jets have a smaller radius than every pretraining jet; they
-are isolated jets from a single parton rather than prongs inside a resonance decay; and their
-displacement inputs are zero.
+distinction quark/gluon discrimination asks for.
 
 The change of generator costs the pretrained and the from-scratch networks fractions of their
 rejection that do not differ beyond the spread between runs. Tested on the Herwig sample, the fine-tuned
@@ -113,14 +109,14 @@ On quark/gluon discrimination, frozen features from pretraining give a linear pr
 randomly initialized network gives it. With the displacement inputs substituted as
 chosen on validation (\LpSubstitutionQg{}), a linear probe on the frozen \Kfull-class features
 rejects more background than one on the randomly initialized network
-(\MlstLpQgRthirtyFullOverInitBnPr{}; the quark/gluon columns in the lower part of table~\ref{tab:fill}).
+(\MlstLpQgRthirtyFullOverInitBnPr{}; the quark/gluon $R_{30}$ columns of table~\ref{tab:fill_main}).
 
 Setting only the displacement inputs to zero already costs the pretrained features most of their % CHECK: MlstLpJcTwoQgZeroAccDropFull above 50 ("most"; today 61)
 accuracy on JetClass-II, and the randomly initialized network little. With the \FillQgNZero{} inputs the
 quark/gluon data lack set to zero in the linear probe's training and test jets, the \Kfull-class
 model loses \MlstLpJcTwoQgZeroAccDropFullPr{} of its accuracy on the \Kfull{} classes and the
 randomly initialized network \MlstLpJcTwoQgZeroAccDropInitBnPr{} (the quark/gluon-slot columns of
-table~\ref{tab:fill}). The % CHECK: MlstLpJcTwoQgZeroAccDropFull well above ...InitBn (today 61 vs 9.7-11)
+table~\ref{tab:fill_main}). The % CHECK: MlstLpJcTwoQgZeroAccDropFull well above ...InitBn (today 61 vs 9.7-11)
 mismatch differs from top tagging in one respect: a zeroed impact parameter lies at the training mean,
 but no charged JetClass-II track has zero measurement uncertainty on its impact parameters, so a
 charged particle with zeroed uncertainties is a joint state the input layer never saw. As on top

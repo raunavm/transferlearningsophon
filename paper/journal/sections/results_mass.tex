@@ -14,9 +14,8 @@ frozen features of every label set. Each model with the auxiliary mass regressio
 \MlstMassNRunsWord{} pretraining runs; its tables give their mean and standard deviation, and the text quotes
 the run less favorable to the claim. The sculpting
 results use the QCD jets of the JetClass-II test set and the output scores of the four levels of the
-class hierarchy, of the two models with the auxiliary mass regression and of the three random partitions
-with controlled flavor boundaries. The full output scores were extracted only for these models, so the
-other random partitions are not part of the sculpting study.
+class hierarchy, of the two models with the auxiliary mass regression, of the three random partitions
+with controlled flavor boundaries and of the \RandVtwoNPartitions{} random partitions.
 
 The auxiliary mass regression gives a narrower mass response than the reconstructed soft-drop mass.
 Over all test jets, the regressed mass of the \Kres-class model with the auxiliary mass regression % CHECK: MlstMassHeadResMassOverUncorr below 1 in both runs
@@ -25,12 +24,7 @@ model is as narrow, and both stay narrower in every bin of jet $p_{\mathrm{T}}$ 
 $\mgen$ (figures~\ref{fig:f9a} and~\ref{fig:f9b}, and figures~\ref{fig:a17res} and~\ref{fig:a17qcd};
 table~\ref{tab:massdetail}). The regressed mass also reaches % CHECK: MlstMassHeadResMassOverMlpRes below 1 in both runs
 \MlstMassHeadResMassOverMlpResPr{} of an MLP regression on the frozen features of the \Kres-class
-model pretrained without it, which, like the auxiliary mass regression, never sees the jet's class. Because its target $\theta$ of
-equation~(\ref{eq:masstarget}) is $\ln(\mgen/\msd)$, the regression learns from the jet's constituents how detector
-response, pileup removal and grooming have moved the reconstructed mass away from the generator-level
-one, which is the spread that $\msd$ carries. That correction depends on the constituents
-rather than on which classes the labels separate, which is likely why the two label sets reach the
-same width.
+model pretrained without it, which, like the auxiliary mass regression, never sees the jet's class.
 
 \begin{figure}
 \centering
@@ -61,8 +55,11 @@ The auxiliary mass regression also makes the jet mass more precisely readable fr
 themselves. An MLP
 regression on the frozen features of the \Kres-class model with the auxiliary mass regression % CHECK: MlstCmpMlpResMassOverRes below 1 in both runs (today 0.7186 and 0.7253)
 reaches \MlstCmpMlpResMassOverResPr{} of the same regression on the \Kres-class model's features, % CHECK: MlstCmpMlpCoarseMassOverCoarse below 1 in both runs; the two regressed-feature resolutions agree (today 0.1583, 0.1588 against 0.1591, 0.1586) and the 17-class model starts narrower (0.2062, 0.2118 against 0.2214, 0.2187)
-and the \Kcoarse-class pair gains a little less, \MlstCmpMlpCoarseMassOverCoarsePr{} of the \Kcoarse-class
-model's (table~\ref{tab:mass}). Without the auxiliary target the
+and the same regression on the \Kcoarse-class model with the auxiliary mass regression reaches
+\MlstCmpMlpCoarseMassOverCoarsePr{} of that on the \Kcoarse-class model's features (table~\ref{tab:mass}).
+Both differences in resolution exceed three times their uncertainty $\sigma$ of
+section~\ref{sec:uncertainties}, with a bootstrap of the test jets: they are \MlstMassMlpResMassOverResZ{} and
+\MlstMassMlpCoarseMassOverCoarseZ{} times it. Without the auxiliary target the
 label sets differ far less (\Kcoarse- over \Kfull-class model, \MlstCmpMlpCoarseOverFullPr). % CHECK: MlstCmpMlpCoarseOverFull much closer to 1 than MlstCmpMlpResMassOverRes
 The row of the randomly initialized network in
 table~\ref{tab:mass} shows how much of the mass a network that never trained already exposes, and % CHECK: MlstMassMlpInit above MlstMassMlpFull (pretrained features carry more mass than the random network)
@@ -73,16 +70,14 @@ every pretrained model's features carry more.
 The auxiliary mass regression costs the classification of the pretraining classes little. A linear
 probe on the frozen features of the \Kres-class model with the auxiliary mass regression classifies % CHECK: MlstCmpJcTwoResMassOverRes today 1.022 and 1.016; its PrMax reads "equal within" under the Methods two-run rule or "up to ... more errors", and both fit "costs little"
 JetClass-II about as well as one on the \Kres-class model (ratio of their $1-\AUC$:
-\MlstCmpJcTwoResMassOverResPrMax{}; table~\ref{tab:probes}). At \Kcoarse{} classes, where the mass term takes a larger share of the % CHECK: MlstMassLossShareCoarseMass above MlstMassLossShareResMass (today 28.7 vs 13.8 per cent)
+\MlstCmpJcTwoResMassOverResPrMax{}; table~\ref{tab:balance}). At \Kcoarse{} classes, where the mass term takes a larger share of the % CHECK: MlstMassLossShareCoarseMass above MlstMassLossShareResMass (today 28.7 vs 13.8 per cent)
 loss (section~\ref{sec:labelsets}), the two runs move in opposite directions, so the larger share % CHECK: MlstCmpJcTwoCoarseMassOverCoarse straddles 1 (today 1.054 and 0.977)
-does not show a larger cost. A likely reason is that the frozen features have room for the mass
-beside the class information, so the regression adds what the features carry without displacing
-what the labels ask for. With \MlstMassNRunsWord{} runs per model the data can only fail to show a
-cost that grows with the loss share; they cannot exclude a modest one. An MLP probe on the mixed
-test sample reads the same at both label sets (ratio of its $1-\AUC$: \MlstMlpNatJcTwoResMassOverResPr{} at \Kres{}
-classes and \MlstMlpNatJcTwoCoarseMassOverCoarsePr{} at \Kcoarse{} classes; table~\ref{tab:mlp}), so this is not
+does not show a larger cost. With \MlstMassNRunsWord{} runs per model the data can only fail to show a
+cost that grows with the loss share; they cannot exclude a modest one. An MLP probe on the same
+class-balanced test set reads the same at both label sets (ratio of its $1-\AUC$: \MlstMlpCmpJcTwoResMassOverResPr{} at \Kres{}
+classes and \MlstMlpCmpJcTwoCoarseMassOverCoarsePr{} at \Kcoarse{} classes; table~\ref{tab:mlp}), so this is not
 a limit of what a linear classifier can read.
-% CHECK: MlstMlpNatJcTwoResMassOverResPr and MlstMlpNatJcTwoCoarseMassOverCoarsePr read "equal within" (recomputed from fits_v3_mlp2: raw 1.016, 1.009 and 1.026, 1.019; hierarchy-level SD 1.3%).
+% CHECK: MlstMlpCmpJcTwoResMassOverResPr and MlstMlpCmpJcTwoCoarseMassOverCoarsePr read "equal within" (fits_v5_mlp, class-balanced: 1.021 and 1.017, 1.057 and 0.987 in the 21 Nov build).
 
 Fine-tuning on top tagging shows no change from the auxiliary mass regression beyond the uncertainty of
 $R_{30}$ at either label set. With it, the \Kres-class runs move $R_{30}$ in opposite % CHECK: MlstFtTopRthirtyResMassOverRes straddles 1 (raw R30 today 1.12 and 0.89)
@@ -124,10 +119,6 @@ same jets (table~\ref{tab:xbxrej}), and the gain depends on the label set: the \
 features give \XbsRthirtyCoarseOverFullPr{} than the \Kfull-class ones. The $X\to bq$ output node of the % CHECK: pending XbsRthirtyNodeOverTransferFull below 1 (closest node weaker than the transfer head)
 \Kfull-class model, scored against QCD, tags $X\to bs$ worse than the transfer head, so the gain sits
 in the frozen features rather than in an output the network already had (table~\ref{tab:xbxrej}).
-An $X\to bs$ jet is told from QCD by two prongs of which exactly one carries a $b$ quark. The
-\Kfull-class labels separate two-prong decays by the flavor of each prong, while the \Kcoarse-class
-labels merge them, so the coarser features likely keep less of the single-$b$ information this signal
-needs.
 
 Sophon's direct discriminant needs no new training but exists only where $X\to b\bar b$ is a class of
 its own, at \Kfull{} and \Kres{} classes (table~\ref{tab:usecase}). On the \Kfull-class model it % CHECK: pending XbbRthirtyDirectOverTransferFull within 2 SD of 1; if not, state which is better

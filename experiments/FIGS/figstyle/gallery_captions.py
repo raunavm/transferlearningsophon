@@ -37,17 +37,16 @@ CAPTIONS = {
         'With linear probes, 43 and 17 classes and every 17-class partition are less accurate on JetClass-II than 188 '
         'classes; no label set, mass network or partition differs from it in R30 by more than three standard '
         'deviations on top tagging (top-quark against QCD jets) or quark/gluon tagging (quark against gluon jets, '
-        'trained on Pythia). Points are means ±1 standard deviation over three runs of each label set, two of each mass '
-        'network and flavor-boundary partition, and five random partitions of one run each; the released Sophon '
-        'checkpoint (one run) is open.{init_range} R30 is one over the fraction of background jets kept when the cut '
+        'trained on Pythia). Points are means ±1 standard deviation over the pretraining runs of each network, counted '
+        'in figure {fig:F1}; the released Sophon checkpoint (one run) is open.{init_range} R30 is one over the fraction of background jets kept when the cut '
         'keeps 30% of signal jets, the top-tagging working point. Values are in table {tab:summary}.'
     ),
     "F2-ft": (
         'After fine-tuning, 17 classes stay below 188 classes on JetClass-II and make about 3% more errors on JetClass; '
-        'no network differs from 188 classes in R30 by more than three standard deviations on top tagging (top-quark '
-        'against QCD jets) or quark/gluon tagging (quark against gluon jets, trained on Pythia). Points are means ±1 '
-        'standard deviation over three runs of each label set, two of each mass network and flavor-boundary partition, '
-        'and five random partitions of one run each; three trainings from scratch, the reference, are grey. R30 is one '
+        'among the pretrained networks, no network differs from 188 classes in R30 by more than three standard '
+        'deviations on top tagging (top-quark against QCD jets) or quark/gluon tagging (quark against gluon jets, '
+        'trained on Pythia). Points are means ±1 standard deviation over the pretraining runs of each network, counted '
+        'in figure {fig:F1}; three trainings from scratch, the reference, are grey. R30 is one '
         'over the fraction of background jets kept when the cut keeps 30% of signal jets, the top-tagging working '
         'point. Values are in table {tab:summary}.'
     ),
@@ -63,7 +62,7 @@ CAPTIONS = {
         'Linear probes on 17 classes separate decays differing only in quark flavor worse than 188 classes; the b-quark '
         'boundary recovers part of the loss on both pairs, and the random flavor boundary on X→bc vs bq, cs. Panels '
         'show background rejection against signal efficiency for the label sets and mass networks (upper row) and the '
-        'flavor-boundary partitions (lower row), means over the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition) down to 20 background jets. '
+        'flavor-boundary partitions (lower row), means over the pretraining runs (counted in figure {fig:F1}) down to 20 background jets. '
         'Lower panels give ratios to 188 classes on a logarithmic axis, banded for 188 classes only by run spread and '
         'binomial uncertainty. ' + NO_RAND + ' Figure {fig:F4-mech-ft} shows the fine-tuned networks, and table '
         '{tab:pairs} the values and other spreads.'
@@ -92,7 +91,7 @@ CAPTIONS = {
         'accuracy and R30, one over the fraction of background jets kept when the cut keeps 30% of signal jets, the '
         'top-tagging working point. Lines are means and light bands ±1 standard deviation over the pretraining runs '
         '(three a label set, two a mass network) or three trainings from scratch (grey); open stars mark the published '
-        'Particle Transformer. The AUC and every value are in tables {tab:ft} and {tab:summary}.'
+        'Particle Transformer. Every value is in tables {tab:ft} and {tab:summary}.'
     ),
     "F9b": (
         'Each network with an added mass regression (+ mass) resolves the jet mass better than the soft-drop mass in '
@@ -119,7 +118,7 @@ CAPTIONS = {
         '230 GeV and efficiencies relative to them. Solid curves are a multilayer-perceptron classifier on frozen '
         'features starting from the pretrained output head, grey curves training from scratch, and dash-dotted curves '
         'the X→bb̄ output against the QCD outputs (188, 162 and 162 classes + mass, in (a)). Bands, for 188 classes '
-        'and from scratch only, are ±1 standard deviation over the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition) or three trainings. Table '
+        'and from scratch only, are ±1 standard deviation over the pretraining runs (counted in figure {fig:F1}) or three trainings. Table '
         '{tab:xbx} holds the values.'
     ),
     "F11-part": (
@@ -135,8 +134,8 @@ CAPTIONS = {
         "With linear probes, 43 and 17 classes separate both pairs less well than 188 classes, and 162 classes, which "
         "merge the 27 QCD classes, separate the QCD pair (b) less well. Panels show background rejection against signal"
         " efficiency, the first-named decay the signal, for the label sets and mass networks (upper row) and the "
-        "flavor-boundary partitions (lower row), means over the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition) ending where fewer than 20 "
-        "background jets remain. Lower panels give the ratio to 188 classes on a logarithmic axis, banded for 188 "
+        "flavor-boundary partitions (lower row), means over the pretraining runs (counted in figure {fig:F1}) down to 20 "
+        "background jets. Lower panels give the ratio to 188 classes on a logarithmic axis, banded for 188 "
         "classes only by run spread and binomial uncertainty. " + NO_RAND +
         " Figure {fig:F4-light} shows the other two pairs, and table {tab:pairs} each pair's rejection at 90% signal efficiency and the other spreads."
     ),
@@ -144,7 +143,7 @@ CAPTIONS = {
         "With linear probes, 43 and 17 classes separate QCD jets with b quarks, and those with c but no b quarks, from "
         "light QCD jets less well than 188 classes, and so do 162 classes, which merge the 27 QCD classes. The panels "
         "are those of figure {fig:F4-other} with the jets with heavy quarks as the signal. Curves are means over "
-        "the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition) ending where fewer than 20 background jets remain, and the ratio panels, on a "
+        "the pretraining runs (counted in figure {fig:F1}) ending where fewer than 20 background jets remain, and the ratio panels, on a "
         "logarithmic axis, are banded for 188 classes only. "
         + NO_RAND + " Table {tab:pairs} gives each pair's rejection at 90% signal efficiency and the other spreads."
     ),
@@ -178,9 +177,9 @@ CAPTIONS = {
         '(500–700 GeV) and as a linear probe in the highest (900–1000 GeV). Panels show per-bin accuracy of linear '
         'probes (upper row) and fine-tuned networks (lower row) for label sets and mass networks on JetClass-II and '
         'JetClass only, as top and quark/gluon jet pT span about 50 to 100 GeV. Points sit in their bin, the '
-        'horizontal bar spanning it, and error bars combine the standard deviation over the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition) '
+        'horizontal bar spanning it, and error bars combine the standard deviation over the pretraining runs (counted in figure {fig:F1}) '
         'with the binomial uncertainty over test jets, the three-standard-deviation test applied. Values are in the '
-        'supplementary file jet_pt_bins.csv.'
+        'data release file jet_pt_bins.csv.'
     ),
     "A10": (
         'With linear probes, 43 and 17 classes are less accurate on JetClass-II than 188 classes at every training-set '
@@ -188,7 +187,7 @@ CAPTIONS = {
         'background jets kept when the cut keeps 30% of signal jets, the top-tagging working point, on top and '
         'quark/gluon tagging, Pythia and Herwig, against training-set size. Lines are means and light bands ±1 '
         'standard deviation over the pretraining runs (three a label set, two a mass network). Open stars mark the published Particle Transformer, trained from scratch on 2, 1.2 and 1.6 million '
-        'jets, with its published standard deviation on R30, above every probe. The random network, the AUC and every '
+        'jets, with its published standard deviation on R30, above every probe. The random network and every '
         'value are in tables {tab:probesn} and {tab:summary}.'
     ),
     "F10b": (
@@ -221,7 +220,7 @@ CAPTIONS = {
         "output on the JetClass-II validation jets of pretraining against epoch, for 188, 162, 43 and 17 classes and "
         "for 162 and 17 classes with an added mass regression (+ mass, lighter shades), the 17 classes + mass curve "
         "lying on that of 17 classes. Each network is scored on its own classes, so the heights of the curves do not "
-        "compare the label sets. Each curve is the mean over the pretraining runs (three a label set, two a mass network or flavor-boundary partition, one a random partition), and the ±1 standard "
+        "compare the label sets. Each curve is the mean over the pretraining runs (counted in figure {fig:F1}), and the ±1 standard "
         "deviation bands over runs are too narrow to see."
     ),
 }
