@@ -1,0 +1,275 @@
+{
+ "script": "experiments/STATS/paired_bootstrap.py",
+ "script_sha256": "368c582c68761767ff5dd0c8305d675491a49b50f0b0aa7c111bfeaa5954572c",
+ "task": "npz",
+ "b": 200,
+ "seed": 20261029,
+ "resampling": "test jets, with replacement within each class",
+ "n_jets": 903922,
+ "class_counts": {
+  "0": 50000,
+  "1": 5000,
+  "2": 10000,
+  "3": 10000,
+  "4": 145000,
+  "5": 25000,
+  "6": 50000,
+  "7": 50000,
+  "8": 50000,
+  "9": 135000,
+  "10": 25000,
+  "11": 50000,
+  "12": 50000,
+  "13": 60000,
+  "14": 60000,
+  "15": 30000,
+  "16": 98922
+ },
+ "jets_sha256": "394cada7c1d58fa939c4b8b9f19eca06f51ae6a46a0caf53d5ac2ed0bfaeb039",
+ "models": {
+  "mtx-l162-s1": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-l162-s1/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.02149129483280663,
+    "sd": 5.475706178436934e-05
+   },
+   "accuracy": {
+    "value": 0.7155374025634955,
+    "sd": 0.00043163542121007147
+   }
+  },
+  "mtx-l162-s2": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-l162-s2/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.021344330707489624,
+    "sd": 5.1757169174733886e-05
+   },
+   "accuracy": {
+    "value": 0.7166680310911783,
+    "sd": 0.0004566085125354704
+   }
+  },
+  "mtx-l162-s3": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-l162-s3/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.021454857387598617,
+    "sd": 5.433858374419044e-05
+   },
+   "accuracy": {
+    "value": 0.7164910246680577,
+    "sd": 0.00045679203286965624
+   }
+  },
+  "mtx-l188-s1": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-l188-s1/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.021395810602011834,
+    "sd": 5.4326247217798676e-05
+   },
+   "accuracy": {
+    "value": 0.7164334975805434,
+    "sd": 0.0004505434870732175
+   }
+  },
+  "mtx-l188-s2": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-l188-s2/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.02132882522271639,
+    "sd": 5.416069104367137e-05
+   },
+   "accuracy": {
+    "value": 0.7168306557424202,
+    "sd": 0.00044606175595478633
+   }
+  },
+  "mtx-l188-s3": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-l188-s3/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.02143225409017906,
+    "sd": 5.6329798757667677e-05
+   },
+   "accuracy": {
+    "value": 0.7164578359637226,
+    "sd": 0.0004569042619391976
+   }
+  },
+  "mtx-r42q1-s1": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-r42q1-s1/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.02102621552177173,
+    "sd": 5.215210600932497e-05
+   },
+   "accuracy": {
+    "value": 0.7186814791541748,
+    "sd": 0.00044668598841845445
+   }
+  },
+  "mtx-r42q1-s2": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-r42q1-s2/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.021307480181494642,
+    "sd": 5.103358624824212e-05
+   },
+   "accuracy": {
+    "value": 0.7164025214564973,
+    "sd": 0.00047180082224315017
+   }
+  },
+  "mtx-r42q1-s3": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-r42q1-s3/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.02115785415560998,
+    "sd": 5.172959875179863e-05
+   },
+   "accuracy": {
+    "value": 0.7176459915789194,
+    "sd": 0.00046039095272409994
+   }
+  },
+  "mtx-r16q1-s1": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-r16q1-s1/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.021211558334624892,
+    "sd": 5.248937583690045e-05
+   },
+   "accuracy": {
+    "value": 0.7171492673040373,
+    "sd": 0.0004476037951173625
+   }
+  },
+  "mtx-r16q1-s2": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-r16q1-s2/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.021311238903836075,
+    "sd": 5.323796633002926e-05
+   },
+   "accuracy": {
+    "value": 0.7169910678133733,
+    "sd": 0.0004750745984252748
+   }
+  },
+  "mtx-r16q1-s3": {
+   "input": "/data/results/eval/v2_linprobe_bal/fits_v5_coarse_probs/mtx-r16q1-s3/best70/jc2bal_R16_Q1_N1000000.npz",
+   "macro": {
+    "one_minus_auc": 0.021559626222514245,
+    "sd": 5.451001030085233e-05
+   },
+   "accuracy": {
+    "value": 0.7148846913782384,
+    "sd": 0.00044518004374299874
+   }
+  }
+ },
+ "pairs": {},
+ "rule_l3": "delta = mean over A - mean over B; pass = |delta| > 3 sigma, sigma^2 = sd_a^2 + sd_b^2 + boot_sd^2 (decision L3, 2026-11-13)",
+ "diffs": {
+  "l162-188": {
+   "a": [
+    "mtx-l162-s1",
+    "mtx-l162-s2",
+    "mtx-l162-s3"
+   ],
+   "b": [
+    "mtx-l188-s1",
+    "mtx-l188-s2",
+    "mtx-l188-s3"
+   ],
+   "macro": {
+    "quantity": "one_minus_auc",
+    "delta": 4.4531004329193685e-05,
+    "sd_a": 7.653135366131034e-05,
+    "sd_b": 5.246061934721431e-05,
+    "boot_sd": 1.2950935935786382e-05,
+    "sigma": 9.368506506983233e-05,
+    "z": 0.4753266093800599,
+    "pass": false,
+    "n_a": 3,
+    "n_b": 3
+   },
+   "accuracy": {
+    "quantity": "accuracy",
+    "delta": -0.000341843654651508,
+    "sd_a": 0.0006081457144119341,
+    "sd_b": 0.00022260636028248137,
+    "boot_sd": 0.0001665078104589562,
+    "sigma": 0.0006686700625417974,
+    "z": -0.51122919030062,
+    "pass": false,
+    "n_a": 3,
+    "n_b": 3
+   }
+  },
+  "r42q1-188": {
+   "a": [
+    "mtx-r42q1-s1",
+    "mtx-r42q1-s2",
+    "mtx-r42q1-s3"
+   ],
+   "b": [
+    "mtx-l188-s1",
+    "mtx-l188-s2",
+    "mtx-l188-s3"
+   ],
+   "macro": {
+    "quantity": "one_minus_auc",
+    "delta": -0.00022178001867697791,
+    "sd_a": 0.0001407281577782046,
+    "sd_b": 5.246061934721431e-05,
+    "boot_sd": 1.3801362007054982e-05,
+    "sigma": 0.0001508211144607755,
+    "z": -1.4704838872852706,
+    "pass": false,
+    "n_a": 3,
+    "n_b": 3
+   },
+   "accuracy": {
+    "quantity": "accuracy",
+    "delta": 0.0010026676343019014,
+    "sd_a": 0.0011410594968177786,
+    "sd_b": 0.00022260636028248137,
+    "boot_sd": 0.000193751798846406,
+    "sigma": 0.0011786051613973502,
+    "z": 0.8507239465277261,
+    "pass": false,
+    "n_a": 3,
+    "n_b": 3
+   }
+  },
+  "r16q1-188": {
+   "a": [
+    "mtx-r16q1-s1",
+    "mtx-r16q1-s2",
+    "mtx-r16q1-s3"
+   ],
+   "b": [
+    "mtx-l188-s1",
+    "mtx-l188-s2",
+    "mtx-l188-s3"
+   ],
+   "macro": {
+    "quantity": "one_minus_auc",
+    "delta": -2.4822151310690405e-05,
+    "sd_a": 0.00017925016528962684,
+    "sd_b": 5.246061934721431e-05,
+    "boot_sd": 1.8596601472232622e-05,
+    "sigma": 0.00018769275938343734,
+    "z": -0.13224884855564012,
+    "pass": false,
+    "n_a": 3,
+    "n_b": 3
+   },
+   "accuracy": {
+    "quantity": "accuracy",
+    "delta": -0.00023232093034575296,
+    "sd_a": 0.0012642621622278181,
+    "sd_b": 0.00022260636028248137,
+    "boot_sd": 0.0002239317220042329,
+    "sigma": 0.001303095477161575,
+    "z": -0.1782838897206507,
+    "pass": false,
+    "n_a": 3,
+    "n_b": 3
+   }
+  }
+ }
+}
