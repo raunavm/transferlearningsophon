@@ -253,8 +253,8 @@ def test_table_a15_is_validation_only_and_marks_the_chosen_rate_and_divergences(
 
 def test_table_a15_separates_a_tie_at_four_decimals_and_keeps_a_sizes_rows_together():
     """Review of render dfe5942 (B11; LEDGER FT-7, PI 2026-11-22: ties compared at full precision): quark/gluon 1e4 from
-    scratch printed 0.8056 at both 1e-3 and 3e-3 (160,863 and 160,862 of 199,680 jets); the tied cells print the digits
-    that separate them. (C) A size's pretrained row never ends a page apart from its from-scratch row."""
+    scratch printed 0.8056 at both 1e-3 and 3e-3 (160,863 and 160,862 of 199,680 jets, 0.805604 and 0.805599); the tied
+    cells print the digits that separate them. (C) A size's pretrained row never ends a page apart from its from-scratch row."""
     import sys
     sys.path.insert(0, str(ROOT / "experiments/FIGS"))
     import mlst_results as M
@@ -266,7 +266,7 @@ def test_table_a15_separates_a_tie_at_four_decimals_and_keeps_a_sizes_rows_toget
     pre = next(ln for ln in lines if "pretrained" in ln)
     scratch = next(ln for ln in lines if M.SCRATCH_LABEL in ln)
     assert pre.endswith(r"\\*") and scratch.endswith(r" \\")
-    assert "0.805594$^{\\ast}$" in scratch and "0.805589 &" in scratch and "0.8050 &" in scratch
+    assert "0.805604$^{\\ast}$" in scratch and "0.805599 &" in scratch and "0.8050 &" in scratch
     assert "0.8214$^{\\ast}$" in pre
 
 

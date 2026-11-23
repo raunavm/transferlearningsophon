@@ -152,7 +152,7 @@ def test_numbers_count_within_each_tier_and_kind():
     assert [G.number(k) for k in ("tab:published", "tab:mass")] == ["Table 3", "Table 4"]
     assert [G.number(k) for k in ("tab:app-vocabulary", "tab:summaryauc", "tab:tests", "tab:jc1_class_auc")] == [
         "Table A1", "Table A8", "Table A9", "Table A11"]
-    assert G.place("F9b") == "Appendix, Fig. A4" and G.place("F11") == "Main text, Fig. 7"
+    assert G.place("F9b") == "Appendix, Fig. A5" and G.place("F11") == "Main text, Fig. 7"      # F4-qcd before it
     assert G.number("F4-mech-ft") == "Fig. S1" and G.number("tab:xbx") == "Table S1"
     assert "tab:ptbins" not in G.TIER and G.number("tab:computefull") == "Table S16"
     # the supplement's UMAP grids (the per-task grid of JetClass-II's hadronic decays first), then the pretraining

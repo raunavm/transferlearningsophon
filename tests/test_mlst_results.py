@@ -4291,7 +4291,9 @@ def test_table_one_takes_the_transfer_head_columns_of_the_resonance_table():
     assert mean == pytest.approx(100 * statistics.mean(want), abs=0.051)
     assert cells(row(lp, M.LABEL[M.INIT]))[6:] == ["--", "--"]
     assert cells(row(ft, M.LABEL["L188"]))[6:] == ["--", "--"] and "--" not in cells(row(ft, M.SCRATCH_LABEL))[6:]
-    assert all(c == "--" for c in cells(row(ft, M.SCRATCH_LABEL))[1:6])          # no headline cell without per
+    # no headline cell without per; review of render dfe5942 (C; LEDGER SP-11, 2026-11-23: no superseded fine-tuning
+    # value, the rerun's pending): a fine-tuned value not in yet is the rerun's pending mark, the dash only "not computed"
+    assert all(c == M.V4.RERUN_PENDING for c in cells(row(ft, M.SCRATCH_LABEL))[1:6])
     two = {**xbx, "scr": {"xbb": [{"eps_s_at_star": 0.5, "eps_b_star": 0.001}]}}
     with pytest.raises(SystemExit, match="QCD efficiencies"):
         M.summary_xbx(two)
