@@ -2433,7 +2433,8 @@ def test_the_summary_table_holds_exactly_the_values_of_figs_2_and_3():
             assert lines[13] == M._full_row(6, M.PARTITIONS) and part.count(M._full_row(6, M.PARTITIONS)) == 1
             # LEDGER CS-6 (2026-11-12, a quoted ratio computable from a table in the paper; review of 5c40d69, A2): Table 1
             # prints the random network with BatchNorm recomputed, the reference of the text's top and quark/gluon ratios
-            refs = [M.LABEL[M.INIT]] + ([M.LABEL[M.INIT_BN]] if key == "summary" else []) if mode == "lp" else [M.SCRATCH_LABEL]
+            refs = ([M.LABEL[M.INIT]] + ([r"\quad " + M.INIT_BN_SUB] if key == "summary" else []) if mode == "lp"
+                    else [M.SCRATCH_LABEL])
             assert [ln.split(" & ")[0] for ln in lines[14:-2]] == ctl + refs
             assert lines[-2:] == [r"\bottomrule", r"\end{tabular}"]
             rows = [ln.removesuffix(r" \\").split(" & ") for ln in lines[7:13] + lines[14:-2]]
@@ -4053,12 +4054,12 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
                                                                 ("RAND", "FLAV_F1"), ("RAND", "FLAV_F1R"))]
     kept += [(f"top tagging, $R_{{30}}$, {ft}", "KIN", "L188"),
              (f"top tagging, $R_{{30}}$, {lp}, missing inputs", "L188_DRAWS", "KIN"),
-             (f"top tagging, $R_{{30}}$, {ft} against the linear probe on the frozen features with zeros", "FT_EVERY",
-              "L188_LP_ZERO"),
+             (f"top tagging, $R_{{30}}$, {ft} against the linear probe with zeros", "FT_EVERY", "L188_LP_ZERO"),
              (rf"{M._PAIR['bb_vs_cc']}, AUC, {lp}", "FLAV_F1", "L188"), (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, {lp}", "FLAV_F1R", "L188"),
              (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, " + M.HEADING["mlp"], "FLAV_F0", "R16_Q1"),
              ("jet mass, resolution, " + M.HEADING["mlp"], "R16_Q1_MASS", M.INIT),
-             ("jet mass, resolution, " + M.HEADING["head"], "L162_MASS_BINS", "SDMASS")]
+             ("jet mass, resolution, " + M.HEADING["head"] + r", every bin of figure~\ref{fig:F9b}", "L162_MASS_BINS",
+              "SDMASS")]
     assert not [r for r in kept if r not in rows], [r for r in kept if r not in rows]
     gone = [(f"JetClass, accuracy, {lp}", a, "L188") for a in ("L162", "R42_Q1", "R16_Q1")]
     gone += [(f"JetClass-II, accuracy, {ft}, " + M._power("1000") + " training jets", "R16_Q1", "L188")]

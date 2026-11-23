@@ -4440,7 +4440,9 @@ def _ft_rec(per: dict, key: str, model: str, n: int):
 
 
 # review of 5c40d69 (B15, LEDGER CA-12): the mode heading over Table 1's X->bb / X->bs columns in the linear-probe part
-XBX_HEAD = "transfer head on the frozen features"
+XBX_HEAD = "transfer head"
+# Table 1's row of the random network with BatchNorm recomputed, indented under the random network's (A2)
+INIT_BN_SUB = "BatchNorm recomputed"
 
 
 def summary_xbx(xbx: dict | None) -> dict:
@@ -4605,8 +4607,9 @@ def table_summary(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID, key=
             if key == "summary" and INIT_BN in runs:
                 # the random network with BatchNorm recomputed (methods), the reference of the text's ratios on top
                 # and quark/gluon tagging: a quoted ratio is computable from a table in the paper (LEDGER CS-6; review
-                # of 5c40d69, A2: its values at the chosen substitution were printed nowhere)
-                body.append(row(LABEL[INIT_BN], cells(INIT_BN, get)))
+                # of 5c40d69, A2: its values at the chosen substitution were printed nowhere); under the random
+                # network's row, so that its label keeps the turned page's width (TN-6: no wrapped label)
+                body.append(row(r"\quad " + INIT_BN_SUB, cells(INIT_BN, get)))
             c = cells(SOPHON, get) if SOPHON in runs else []
             if any(x != "--" for x in c):
                 body += [r"\midrule", row(LABEL[SOPHON], c)]
@@ -4641,11 +4644,9 @@ def table_summary(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID, key=
 TESTS_NAMES = {"SCRATCH": SCRATCH_LABEL, "SDMASS": "soft-drop mass", "PART_PUB": "ParT from scratch, published",
                # the review's rows (5c40d69, B3): the linear probes with zeros against every fine-tuned network, and
                # the regressed mass in every bin of F9b, each a row of the least |Delta / sigma| (_least)
-               "L188_LP_ZERO": r"\Kfull{} classes, linear probe with zeros",
-               "INIT_BN_LP_ZERO": "random network, BatchNorm recomputed, linear probe with zeros",
-               "FT_EVERY": "every fine-tuned network",
-               "L162_MASS_BINS": r"\Kres{} classes + mass, head, each bin of figure~\ref{fig:F9b}",
-               "R16_Q1_MASS_BINS": r"\Kcoarse{} classes + mass, head, each bin of figure~\ref{fig:F9b}",
+               "L188_LP_ZERO": r"\Kfull{} classes, zero", "INIT_BN_LP_ZERO": "random network, BatchNorm recomputed, zero",
+               "FT_EVERY": "fine-tuned networks", "L162_MASS_BINS": r"\Kres{} classes + mass, head",
+               "R16_Q1_MASS_BINS": r"\Kcoarse{} classes + mass, head",
                "PART_FT_PUB": "ParT fine-tuned, published", "PART_OURS": "ParT's script on our cluster",
                "L188_DRAWS": r"\Kfull{} classes, random draws", "L188_ZERO": r"\Kfull{} classes, zero",
                "INIT_BN_ZERO": "random network, BatchNorm recomputed, zero", "L188_HERWIG": r"\Kfull{} classes, Herwig over Pythia",
@@ -4655,7 +4656,7 @@ TESTS_NAMES = {"SCRATCH": SCRATCH_LABEL, "SDMASS": "soft-drop mass", "PART_PUB":
                "R42_Q1_17": r"\Kmid{} classes on the 17 groups", "R16_Q1_17": r"\Kcoarse{} classes on the 17 groups",
                "L162_MASS_HEAD": r"\Kres{} classes + mass, head", "R16_Q1_MASS_HEAD": r"\Kcoarse{} classes + mass, head",
                # PI 2026-11-23 (LEDGER SP-12, step 3): the rows of the ratio words that had none (PR_ROWS)
-               "L162_MLP": r"\Kres{} classes, multilayer-perceptron regression",     # no abbreviation (CA-10)
+               "L162_MLP": r"\Kres{} classes, MLP regression",
                "L188_HERWIG_JETS": r"\Kfull{} classes on Herwig jets", "L188_PYTHIA_JETS": r"\Kfull{} classes on Pythia jets",
                "SCRATCH_HERWIG_JETS": "from scratch on Herwig jets", "SCRATCH_PYTHIA_JETS": "from scratch on Pythia jets"}
 _LEVELS = (("L162", "L188", "162-188"), ("R42_Q1", "L188", "43-188"), ("R16_Q1", "L188", "17-188"))
@@ -4764,7 +4765,7 @@ TESTS = (
         ("KIN", "L188", ("file", _FT_REVIEW, "kin-188", "r30")))),
     # results_bench: the linear probes of 188 classes and of the random network with zeros lie below every fine-tuned
     # network, one row each, the least |Delta / sigma| of the ten networks (review of 5c40d69, B3)
-    (_FT_TOP + " against the linear probe on the frozen features with zeros",
+    (_FT_TOP + " against the linear probe with zeros",
      tuple(("FT_EVERY", z, ("least", tuple((a, z, ("file", _FT_REVIEW, f"{_REVIEW_KEY[a]}-{k}lpzero", "r30"))
                                            for a in SETS + FLAV + (RAND_POOLED,))))
            for z, k in (("L188_LP_ZERO", "188"), ("INIT_BN_LP_ZERO", "initbn")))),
@@ -4826,11 +4827,12 @@ TESTS = (
     (r"jet mass, resolution, " + HEADING["head"], (
         ("L162_MASS_HEAD", "SDMASS", ("mass_group", "162 classes + mass", "regressed")),
         ("R16_Q1_MASS_HEAD", "SDMASS", ("mass_group", "17 classes + mass", "regressed")),
-        *((f"{a}_BINS", "SDMASS", ("least", tuple((f"{a}_HEAD", "SDMASS", ("mass_group", g, "regressed", b))
-                                                   for b in F9B_BINS)))
-          for a, g in (("L162_MASS", "162 classes + mass"), ("R16_Q1_MASS", "17 classes + mass"))),
         ("R16_Q1_MASS_HEAD", "L162_MASS_HEAD", ("mass", "17 classes + mass - 162 classes + mass", "regressed")),
         ("L162_MASS_HEAD", "L162_MLP", ("mass", "162 classes + mass, regressed - 162 classes, mlp", "cross")))),
+    (r"jet mass, resolution, " + HEADING["head"] + r", every bin of figure~\ref{fig:F9b}",
+     tuple((f"{a}_BINS", "SDMASS", ("least", tuple((f"{a}_HEAD", "SDMASS", ("mass_group", g, "regressed", b))
+                                                   for b in F9B_BINS)))
+           for a, g in (("L162_MASS", "162 classes + mass"), ("R16_Q1_MASS", "17 classes + mass")))),
     # Fig. 6 and Table 1's X->bb / X->bs columns (M309-M311, the placement's XBX); the flavor-boundary partitions against
     # 188 classes wait for their bootstrap and stay if they pass (SP-13 (c)); against 17 classes they fail for certain
     *((rf"{h}, signal efficiency (\%), " + "classifier on the frozen features",
@@ -4932,6 +4934,8 @@ def _tests_side(e: dict, first: str) -> tuple:
 INDEPENDENT = r"$^{\diamond}$"     # no other table carries it (SINGLE is the section sign)
 # a row with a side of one run, whose sigma lacks that side's run spread (a lower bound; review of 5c40d69, B3)
 SINGLE_SIDE = r"$^{\circ}$"
+# a row over several networks or bins, the one of least |Delta / sigma| (review of 5c40d69, B3)
+LEAST = r"$^{\ast}$"
 TESTS_HEAD = r" & $\Delta$ & $\sigma$ & $\Delta/\sigma$ \\"
 
 
@@ -5138,8 +5142,8 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
         block = [_full_row(4, head, italic=True)]
         for first, second, v, ind in rows:
             lab = f"{name(first)} $-$ {name(second)}" + (INDEPENDENT if ind else "")
-            if isinstance(v, tuple) and len(v) > 5:       # a row over several (least): how many, and their mark
-                lab += f", least of {v[5][0]}" + (SINGLE_SIDE if v[5][1] else "")
+            if isinstance(v, tuple) and len(v) > 5:       # a row over several (least), and its mark
+                lab += LEAST + (SINGLE_SIDE if v[5][1] else "")
             elif (head, first, second) in single:
                 lab += SINGLE_SIDE
             if v is None or v == "stale":
@@ -6513,7 +6517,7 @@ KEY_MARKS = {
               # review of 5c40d69 (B3): a side of one run (the kinematic-inputs network), and a row over several
               (r"^{\circ}", " $^{\\circ}$~marks a side of one run, whose missing run spread makes $\\sigma$ a lower "
                             "bound."),
-              (", least of", " A row over several networks or bins gives the least $|\\Delta|/\\sigma$.")),
+              (r"^{\ast}", " $^{\\ast}$~marks the least $|\\Delta|/\\sigma$ of several networks or bins.")),
     "qcdhf": ((r"\dagger", " $^\\dagger$~marks a value for which fewer than \\MlstMinBkgPass{} jets pass in a run."),),
     "jetclass_rej": ((r"\dagger", " $^\\dagger$~marks a value with fewer than \\MlstMinBkgPass{} QCD jets passing in a "
                                   "run."),),
@@ -7029,7 +7033,7 @@ def _headings(tab: str, mode: str | None = None, star: bool = False) -> str:
     one. The partition rows (flavor boundaries, random partitions) indented under the subheading PARTITIONS. A
     rule between two rows does not end a run (the released checkpoint below its rule); a row of anything else does
     (the soft-drop mass, a published model). star: the heading stays on the page of the row after it (a longtable)."""
-    known = sorted(set(LABEL.values()) | {SCRATCH_LABEL}, key=len, reverse=True)
+    known = sorted(set(LABEL.values()) | {SCRATCH_LABEL, INIT_BN_SUB}, key=len, reverse=True)
     part = {LABEL[a] for a in FLAV + RAND + (RAND_POOLED,)}
     ours = tuple(rf"\textit{{{h}}}" for h in HEADING.values())
     out, prev = [], ""          # prev: "row" a network's row, "part" a partition's, "head"/"parthead" a heading
@@ -7291,7 +7295,7 @@ def _bold(key: str, tab: str, spec: dict | None = None) -> str:
             block += t.startswith(r"\multicolumn") and PARTITIONS not in t and not spec.get("whole")
             continue
         label = parts[0].strip().removeprefix(r"\quad ").strip()
-        ref = label in NEVER_BOLD or label.startswith(REFERENCE_ROWS)
+        ref = label in NEVER_BOLD or label == INIT_BN_SUB or label.startswith(REFERENCE_ROWS)
         col = 0
         for j, c in enumerate(parts):
             toks = TOKEN.findall(c)
