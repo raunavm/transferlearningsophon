@@ -985,7 +985,11 @@ def test_the_part_reproduction_table_and_macros(tmp_path):
     t = M.partrepro(em2, d, per, MT.fmt_pm, [], runs={"L188": ["mtx-l188-s1"], "__bench__": ("L188",)})
     assert [ln.split(" & ")[3:5] for ln in t.splitlines()[4:-2]] == [
         ["420", "1{,}700"], ["420", "1{,}600"], ["420", "1{,}200"]]
-    assert em2.m == em.m
+    # LEDGER TN-4 (repeated values print from one source; review of 5c40d69, A8): the text's values follow the table's
+    # place, 1,700 here where the table prints 1,700
+    assert {k: v for k, v in em2.m.items() if not k.startswith("MlstPartreproRthirty") or k.endswith("OverPart")} == \
+        {k: v for k, v in em.m.items() if not k.startswith("MlstPartreproRthirty") or k.endswith("OverPart")}
+    assert [em2.m[f"MlstPartreproRthirty{v.title()}"] for v, _ in M.PARTREPRO] == ["1{,}700", "1{,}600", "1{,}200"]
 
 
 def test_the_launched_from_scratch_rates_are_the_ones_the_paper_states():
@@ -3998,7 +4002,9 @@ def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_o
     for heading, rows_ in M.TESTS:
         for first, second, src in rows_:
             assert all(x in M.TESTS_NAMES or x in M.LABEL for x in (first, second)), (heading, first, second)
-            assert src is None or src == M.RERUN or src[0] in ("l3", "file", "mass", "mass_group"), (heading, src)
+            # review of 5c40d69 (B3): a row over several ("least") holds rows of the kinds the builder reads
+            subs = [s for *_, s in src[1]] if src not in (None, M.RERUN) and src[0] == "least" else [src]
+            assert all(s is None or s == M.RERUN or s[0] in ("l3", "file", "mass", "mass_group") for s in subs), (heading, src)
     assert M.SUMMARY_L3[("ft", "jc1")] == "ft_jc1_N1000000.json"
 
 
