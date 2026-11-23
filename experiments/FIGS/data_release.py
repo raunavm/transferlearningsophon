@@ -207,8 +207,9 @@ def detex(t: str) -> str:
                  (r"\epsB", "eps_B"), (r"\epsS", "eps_S"), ("~", " "), ("$", "")):
         t = t.replace(a, b)
     t = _drop(t)
+    t = re.sub(r"\^\{(?![^{}]*\d)[^{}]*\}|\^(?:\\[A-Za-z]+|\*)", "", t)     # marks ($^{\dagger}$), not 10^{4}
     t = re.sub(r"\\(?:mbox|textit|textbf|emph|text|mathrm|ensuremath|textsc|textrm|mathit)\s*\{", "{", t)
-    t = re.sub(r"\\[A-Za-z]+\s*", "", t).replace("{", "").replace("}", "").replace("\\", "")
+    t = re.sub(r"\\([A-Za-z]+)\s*", r"\1", t).replace("{", "").replace("}", "").replace("\\", "")    # \rho: rho
     return " ".join(t.split())
 
 
@@ -250,7 +251,7 @@ def _lead(row: str) -> tuple:
         m = _LEAD.match(row)
         if not m:
             return row, mid
-        mid |= "midrule" in m.group(0)
+        mid |= m.group(0).strip().startswith(r"\midrule")       # not \cmidrule
         j = m.end()
         while j < len(row) and row[j] in " \n":
             j += 1
