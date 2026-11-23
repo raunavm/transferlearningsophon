@@ -45,6 +45,8 @@ JOURNAL = REPO / "paper/journal"
 # the per-run arrays longer than THIN_MIN (the ROC and sculpting curves on their efficiency grids) are thinned
 BUDGET_MB = 150
 THIN_MIN = 100
+MIN_POINTS = 50                 # a thinned array keeps at least this many points
+MAX_STRIDE = 8
 SKIP_KEYS = ("search",)         # a probe fit's scan over the regularization grid: the model selection, behind no value
 # the embeddings (one run each) are the UMAP figures' series; their per-jet files are not repeated in per_run/
 SKIP_DIRS = ("umap",)
@@ -879,8 +881,9 @@ def _series(ax, name, a, k, res):
             yield "text", s, None, {"x": _arr([_arg(a, k, 0, "x")]), "y": _arr([_arg(a, k, 1, "y")])}
 
 
-FIG_COLS = ("figure", "panel", "panel_title", "x_label", "y_label", "series_index", "series", "color", "kind", "coords",
-            "i", "x", "y", "x_lo", "x_hi", "y_lo", "y_hi", "z")
+SERIES_COLS = ("panel", "series_index", "panel_title", "x_label", "y_label", "series", "color", "kind", "coords",
+               "n_points", "note")
+POINT_COLS = ("panel", "series_index", "i", "x", "y", "x_lo", "x_hi", "y_lo", "y_hi", "z")
 
 
 def _figure_rows(calls) -> list:
@@ -917,30 +920,31 @@ def _figure_rows(calls) -> list:
 
 
 def _g(x) -> str:
-    return "" if x is None or (isinstance(x, float) and math.isnan(x)) else format(float(x), ".10g")
+    return "" if x is None or (isinstance(x, float) and math.isnan(x)) else format(float(x), ".8g")
 
 
-def figure_csv(fid: str, rows: list, seen: dict) -> str:
-    """One figure's series, a row per point; a series another figure already holds point for point is one row
-    naming it (kind same_as)."""
-    buf = io.StringIO()
-    w = csv.writer(buf, lineterminator="\n")
-    w.writerow(FIG_COLS + ("text",))
+def figure_files(fid: str, rows: list, seen: dict) -> tuple:
+    """(figures/<id>_series.csv, figures/<id>.csv): one row per series (panel, its title and axis labels, the legend
+    text, colour, kind, the number of points), and one per point. A series another figure already holds point for point
+    gets no points; its note names that figure (same as)."""
+    series, points = [], []
     for panel, title, xl, yl, si, label, color, kind, coords, cols in rows:
-        head = [fid, panel, title, xl, yl, si, label, color]
         if kind == "unread":
-            w.writerow(head + [kind, coords] + [""] * 8 + [label])
+            series.append([panel, si, title, xl, yl, "", "", kind, coords, 0, label])
             continue
         n = max(len(v) for v in cols.values())
-        h = hashlib.sha256(repr((kind, sorted((c, tuple(_g(x) for x in v)) for c, v in cols.items()))).encode()).hexdigest()
+        vals = {c: [_g(x) for x in v] for c, v in cols.items()}
+        h = hashlib.sha256(repr((kind, sorted((c, tuple(v)) for c, v in vals.items()))).encode()).hexdigest()
+        note = f"text {label}" if kind == "text" else ""
         if h in seen and seen[h][0] != fid:
-            w.writerow(head + ["same_as", coords] + [""] * 8 + [f"figures/{seen[h][0]}.csv panel {seen[h][1]} series {seen[h][2]}"])
+            series.append([panel, si, title, xl, yl, "" if kind == "text" else label, color, kind, coords, n,
+                           f"same as figures/{seen[h][0]}.csv panel {seen[h][1]} series {seen[h][2]}"])
             continue
         seen.setdefault(h, (fid, panel, si))
+        series.append([panel, si, title, xl, yl, "" if kind == "text" else label, color, kind, coords, n, note])
         for i in range(n):
-            vals = [_g(cols[c][i]) if c in cols and i < len(cols[c]) else "" for c in FIG_COLS[11:]]
-            w.writerow(head + [kind, coords, i] + vals + [label if kind == "text" else ""])
-    return buf.getvalue()
+            points.append([panel, si, i] + [vals[c][i] if c in vals and i < len(vals[c]) else "" for c in POINT_COLS[3:]])
+    return _csv(SERIES_COLS, series), _csv(POINT_COLS, points)
 
 
 def record_figures(ids) -> tuple:
@@ -1030,43 +1034,48 @@ def _val(v) -> str:
     return "" if v is None else str(v)
 
 
+def _array(file: str, path: str, key: str, v: list, stride: int) -> list:
+    """One numeric list as one row: file, path, key, its length, the stride kept and its values (ten significant
+    figures, ";" between them). A list longer than THIN_MIN keeps every stride-th point and its last, never fewer than
+    MIN_POINTS."""
+    n = len(v)
+    s = 1 if n <= THIN_MIN else max(1, min(stride, n // MIN_POINTS))
+    idx = range(n) if s == 1 else sorted(set(range(0, n, s)) | {n - 1})
+    return [file, path, key, n, s, ";".join("" if v[i] is None else str(v[i]) if isinstance(v[i], int)
+                                             else format(v[i], ".10g") for i in idx)]
+
+
 def _flatten(node, file: str, path: str, out: dict, stride: int) -> None:
     """node's numbers into out: (kind, keys) -> rows. A dict's scalar children are one record (file, path, a column
-    each); its numeric lists of one length, one row per point (file, path, i, a column each); deeper dicts and lists
-    of dicts recursively; SKIP_KEYS left out."""
+    each); each numeric list one row (_array); deeper dicts and lists of dicts recursively; SKIP_KEYS left out."""
     if isinstance(node, dict):
         scal = {k: v for k, v in node.items() if k not in SKIP_KEYS and _scalar(v)}
         if len(scal) > WIDE:            # a map keyed by name (a file index): a row per key
             out[("records", ("key", "value"))] += [[file, path, k, _val(v)] for k, v in scal.items()]
         elif scal:
             out[("records", tuple(scal))].append([file, path] + [_val(v) for v in scal.values()])
-        by_len = collections.defaultdict(dict)
         for k, v in node.items():
-            if k not in SKIP_KEYS and _numlist(v):
-                by_len[len(v)][k] = v
-        for n, group in by_len.items():
-            keys = tuple(group)
-            idx = range(n) if stride == 1 or n <= THIN_MIN else sorted(set(range(0, n, stride)) | {n - 1})
-            for i in idx:
-                out[("arrays", keys)].append([file, path, i] + [_val(group[k][i]) for k in keys])
-        for k, v in node.items():
-            if k in SKIP_KEYS or _scalar(v) or _numlist(v):
+            if k in SKIP_KEYS or _scalar(v):
                 continue
-            _flatten(v, file, f"{path}.{k}" if path else str(k), out, stride)
+            if _numlist(v):
+                out[("arrays", ())].append(_array(file, path, str(k), v, stride))
+            else:
+                _flatten(v, file, f"{path}.{k}" if path else str(k), out, stride)
     elif isinstance(node, list):
         for i, v in enumerate(node):
             if _numlist(v):
-                n = len(v)
-                idx = range(n) if stride == 1 or n <= THIN_MIN else sorted(set(range(0, n, stride)) | {n - 1})
-                for j in idx:
-                    out[("arrays", ("value",))].append([file, f"{path}[{i}]", j, _val(v[j])])
+                out[("arrays", ())].append(_array(file, f"{path}[{i}]", "", v, stride))
             elif isinstance(v, (dict, list)):
                 _flatten(v, file, f"{path}[{i}]", out, stride)
 
 
+ARRAY_COLS = ("file", "path", "key", "n", "stride", "values")
+
+
 def per_run_files(paths, stride: int = 1) -> tuple:
-    """({per_run/<folder>__<k>.csv: text}, [(file, folder, kind, columns, example path, rows)]): the data files read,
-    one folder at a time, every number flattened (_flatten), one file per record or array layout."""
+    """({per_run/<folder>__<layout>.csv: text}, [(file, folder, kind, columns, example path, rows, files)]): the data
+    files read, one folder at a time, every number flattened (_flatten): the numeric lists in <folder>__arrays.csv, the
+    records one file per layout (records<k>), the rarer layouts one number a row."""
     groups = collections.defaultdict(list)
     for p in paths:
         rel = p.relative_to(DATA)
@@ -1085,21 +1094,21 @@ def per_run_files(paths, stride: int = 1) -> tuple:
                 continue
             _flatten(doc, p.name, "", out, stride)
         stem = "per_run/" + (folder.replace("/", "__") if folder != "." else "data")
+        arrays = out.pop(("arrays", ()), [])
         layouts = sorted(out.items(), key=lambda kv: -len(kv[1]))
-        # the MAX_LAYOUTS largest layouts a file each, the rest one row per number (key and value columns)
-        long = collections.defaultdict(list)
-        for (kind, keys), rows in layouts[MAX_LAYOUTS:]:
-            lead = 3 if kind == "arrays" else 2
-            long[kind] += [r[:lead] + [k, v] for r in rows for k, v in zip(keys, r[lead:]) if v != ""]
-        own = layouts[:MAX_LAYOUTS] + [((kind, ("key", "value")), rows) for kind, rows in long.items() if rows]
-        for k, ((kind, keys), rows) in enumerate(own, 1):
-            name = f"{stem}__{kind}{k}.csv"
-            buf = io.StringIO()
-            w = csv.writer(buf, lineterminator="\n")
-            w.writerow(["file", "path"] + (["i"] if kind == "arrays" else []) + list(keys))
-            w.writerows(rows)
-            files[name] = buf.getvalue()
-            index.append((name, folder, kind, keys, rows[0][1], len(rows), sorted({r[0] for r in rows})))
+        # the MAX_LAYOUTS largest record layouts a file each, the rest one row per number (key and value columns)
+        long = [r[:2] + [k, v] for (_, keys), rows in layouts[MAX_LAYOUTS:] for r in rows
+                for k, v in zip(keys, r[2:]) if v != ""]
+        own = [(f"{stem}__records{k}.csv", ("file", "path") + keys, rows)
+               for k, ((_, keys), rows) in enumerate(layouts[:MAX_LAYOUTS], 1)]
+        if long:
+            own.append((f"{stem}__records_long.csv", ("file", "path", "key", "value"), long))
+        if arrays:
+            own.append((f"{stem}__arrays.csv", ARRAY_COLS, arrays))
+        for name, cols, rows in own:
+            files[name] = _csv(cols, rows)
+            index.append((name, folder, "arrays" if name.endswith("arrays.csv") else "records", cols[2:], rows[0][1],
+                          len(rows), sorted({r[0] for r in rows})))
     return files, index
 
 
@@ -1206,7 +1215,7 @@ def items(built: dict, rec: Recorder, figs: dict, fig_notes: dict) -> list:
             by_label[t["label"]].append(rel)
     out = []
     for key, tier, sentence in GP.FIGURES:
-        files = [f"figures/{key}.csv"] if key in figs else []
+        files = [f"figures/{key}_series.csv", f"figures/{key}.csv"] if key in figs else []
         note = fig_notes.get(key, "") if not files else ""
         if key == "PT":
             files.append("build_csv/jet_pt_bins.csv")
@@ -1255,7 +1264,7 @@ FILES
   runs.csv            the pretraining runs of each configuration: configuration key, network, run
   tables/<label>.csv  one file per table (label tab:x -> tab_x.csv), one row per printed cell
   macros.csv          every number written into the text (the generated LaTeX macros)
-  figures/<id>.csv    one file per figure, one row per plotted point
+  figures/<id>*.csv   two files per figure: its series (<id>_series.csv) and their points
   per_run/*.csv       the result files the tables and figures read, every number of every run
   build_csv/*.csv     two value tables the table build writes beside the paper: jet_pt_bins.csv
                       (every point of the jet-pT figures, mean, SD and run count) and
@@ -1292,25 +1301,26 @@ macros.csv
   source_file, json_path  the result file and the path inside it the number came from
                      (paper/journal/provenance.json; the sha256 of every input is there and in
                      results_generated.tex)
-figures/<id>.csv
-  figure, panel      the gallery id and the panel's index in drawing order (the paper's panel
-                     letters follow it); panel_title, x_label, y_label as drawn
-  series_index, series, color  the call's index within the panel, its legend text where it has
-                     one, and its colour (the legend's swatch)
-  kind               line, errorbar, band (fill between y_lo and y_hi), scatter, hist (bins x_lo
-                     to x_hi), bar, image (a heatmap: row y, column x, value z), hline, vline,
-                     segments, span, text (a number printed on the figure, in column text);
-                     same_as: the series is point for point one another figure holds (named)
-  coords             data, or axes where the call drew in the panel's own coordinates
-  i, x, y, x_lo, x_hi, y_lo, y_hi, z  the point; an error bar spans y_lo to y_hi (x_lo to x_hi)
-                     at x; values to ten significant figures
-per_run/<folder>__<layout>.csv
-  One folder of result files (the folder's path, "/" as "__") in one layout: records<k> holds one
-  row per JSON object of scalars (file, path inside the file, a column per key); arrays<k> one row
-  per point of the numeric lists of one length that an object holds side by side (file, path, i,
-  a column per list). Section PER-RUN FILES lists each file with its columns and an example path.
-  A probe fit's scan over its regularization grid ("search") is left out: it chose the fit and is
-  behind no value. The embeddings of the UMAP figures are their figures' series.
+figures/<id>_series.csv and figures/<id>.csv
+  <id>_series.csv has one row per plotted series: panel (its index in drawing order; the paper's
+  panel letters follow it), panel_title, x_label, y_label as drawn, series_index (the call's index
+  within the panel), series (its legend text where it has one), color (the legend's swatch), kind,
+  coords, n_points and a note. kind is line, errorbar, band (filled between y_lo and y_hi), scatter,
+  hist (bins x_lo to x_hi), bar, image (a heatmap: row y, column x, value z), hline, vline,
+  segments, span, or text (a number printed on the figure, given in the note); coords is data, or
+  axes where the call drew in the panel's own coordinates. A series another figure holds point for
+  point has no points here; its note names that figure, panel and series.
+  <id>.csv has one row per point: panel, series_index, i, x, y, x_lo, x_hi, y_lo, y_hi, z (an
+  error bar spans y_lo to y_hi, or x_lo to x_hi, at x), to eight significant figures.
+per_run/<folder>__records<k>.csv, __records_long.csv, __arrays.csv
+  One folder of result files (its path under experiments/FIGS/data, "/" as "__"). records<k>: one
+  row per JSON object of scalars of one layout (file, path inside the file, a column per key);
+  records_long: the rarer layouts, one row per number (file, path, key, value); arrays: one row
+  per numeric list (file, path, key, n its length, stride, values: ten significant figures, ";"
+  between them; a list thinned to every stride-th point keeps its last as well). Section PER-RUN
+  FILES lists each file with its columns and an example path. A probe fit's scan over its
+  regularization grid ("search") is left out: it chose the fit and is behind no value. The
+  embeddings of the UMAP figures are their figures' series.
 
 HOW THE VALUES WERE COMPUTED
 Every value is the mean over the independently pretrained networks (runs) of a configuration,
@@ -1419,7 +1429,7 @@ def release_files(built: dict, rec: Recorder, figs: dict | None = None, fig_note
     files.update({"build_csv/" + pathlib.Path(rel).name: t for rel, t in built.items() if rel.startswith("data_release/")})
     seen = {}
     for fid in figs:
-        files[f"figures/{fid}.csv"] = figure_csv(fid, figs[fid], seen)
+        files[f"figures/{fid}_series.csv"], files[f"figures/{fid}.csv"] = figure_files(fid, figs[fid], seen)
     fixed = sum(len(t.encode()) for t in files.values())
     stride = 1
     while True:
@@ -1427,15 +1437,22 @@ def release_files(built: dict, rec: Recorder, figs: dict | None = None, fig_note
         total = fixed + sum(len(t.encode()) for t in pr.values())
         print(f"release size estimate at per-run stride {stride}: {total / 1e6:.1f} MB "
               f"(tables, macros and figures {fixed / 1e6:.1f} MB)")
-        if total <= budget_mb * 1e6 or stride >= 64 or not pr:
+        if total <= budget_mb * 1e6 or stride >= MAX_STRIDE or not pr:
             break
         stride *= 2
     files.update(pr)
     size = (f"\nSIZE\nAbout {total / 1e6:.0f} MB in {len(files) + 2} files. "
-            + ("Every point of every per-run curve is kept.\n" if stride == 1 else
+            + ("Every point of every per-run array is kept.\n" if stride == 1 else
                f"To stay well under 200 MB, every per-run array longer than {THIN_MIN} points (the ROC and sculpting "
-               f"curves on their efficiency grids) keeps every {stride}th point and its last; the figures' series "
-               f"keep every plotted point.\n"))
+               f"curves of each run on their efficiency grids) keeps every {stride}th point and its last, and never "
+               f"fewer than {MIN_POINTS} points (its stride column says which); the figures' series keep every "
+               f"plotted point.\n"))
+    big = sorted(files.items(), key=lambda kv: -len(kv[1]))[:25]
+    print("largest files: " + ", ".join(f"{k} {len(v) / 1e6:.1f} MB" for k, v in big))
+    by = collections.Counter()
+    for k, v in files.items():
+        by[k.split("/")[0] if "/" in k else "."] += len(v)
+    print("by folder: " + ", ".join(f"{k} {v / 1e6:.1f} MB" for k, v in by.most_common()))
     its = items(built, rec, figs, fig_notes)
     files["items.csv"] = _csv(("id", "kind", "placement", "number", "sentence", "files", "note"),
                               [(k, kind, t, n, s, " ".join(f), note) for k, kind, t, n, s, f, note in its])

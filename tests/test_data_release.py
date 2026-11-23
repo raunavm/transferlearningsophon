@@ -211,8 +211,10 @@ def test_the_per_run_values_are_the_files_read_and_long_curves_thin_to_a_coarser
                                              "curves": {"a": {"auc": 0.9, "eps": list(range(400)),
                                                               "rej": [1.0 / (k + 1) for k in range(400)]}}}))
     files, index = R.per_run_files([d / "m-s1.json"], stride=1)
-    rec = _rows(files["per_run/v2__curves_v2__fam__arrays1.csv"])
-    assert len(rec) == 400 and rec[3]["eps"] == "3" and rec[0]["path"] == "curves.a"
+    eps = next(r for r in _rows(files["per_run/v2__curves_v2__fam__arrays.csv"]) if r["key"] == "eps")
+    assert eps["path"] == "curves.a" and eps["n"] == "400" and eps["stride"] == "1"
+    assert eps["values"].split(";")[3] == "3" and len(eps["values"].split(";")) == 400
     assert not any("search" in t for t in files.values())
     thin, _ = R.per_run_files([d / "m-s1.json"], stride=4)
-    assert len(_rows(thin["per_run/v2__curves_v2__fam__arrays1.csv"])) == 101     # every 4th and the last
+    eps = next(r for r in _rows(thin["per_run/v2__curves_v2__fam__arrays.csv"]) if r["key"] == "eps")
+    assert eps["stride"] == "4" and len(eps["values"].split(";")) == 101        # every 4th and the last
