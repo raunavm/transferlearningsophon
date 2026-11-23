@@ -205,4 +205,4 @@ def test_the_17_class_lepton_rows_read_the_stored_sibling_scores():
     text = BJ.ee_spec("mtx-s9.99", "2Gi")
     assert "fits_v5_sib2_probs/mtx-r16q1-s1/best70/jc2bal_pairs_ee_vs_mm.npz" in text
     assert "fits_v5_sib2_probs/init-s3/init_bn/jc2bal_pairs_ee_vs_mm.npz" in text
-    assert "--diff r16q1-188=" in text and "--diff r16q1-initbn=" in text and "mlp_scores" not in text
+    assert "--diff r16q1-188=" in text and "--diff r16q1-initbn=" in text and "experiments/EVAL/mlp_scores.py" not in text
