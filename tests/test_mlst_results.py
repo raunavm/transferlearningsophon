@@ -516,8 +516,9 @@ def test_a_prose_twin_states_the_direction_in_two_significant_figures():
     assert M.prose([4.0, 4.1, 4.1], "errors") == "4.1 times the errors"
     assert M.prose([1.27], "rejection") == r"27\% more rejection" and M.prose([0.72], "rejection") == r"28\% less rejection"
     assert M.prose([0.58], "resolution") == "0.58 times the resolution"
-    # within twice the SD of 1: no direction, the bound instead
-    assert M.prose([1.0, 1.006, 0.994], "errors") == r"equal within 1\%"
+    # PI 2026-11-23, LEDGER SP-12 (step 3): no 2-sigma rule; a mean near 1 is still put in words, and whether the text
+    # states it is its tab:tests row's (ratio_words)
+    assert M.prose([1.01, 1.02, 1.03], "errors") == r"2.0\% more errors"
     assert M.prose([None, None], "errors").startswith(r"\pending")
 
 
@@ -526,25 +527,56 @@ def test_two_runs_give_the_value_nearer_one_and_its_twin_the_other():
     assert M.prose([1.041, 1.032], "errors", farther=True) == r"up to 4.1\% more errors"
     assert M.prose([0.35, 0.24], "errors") == "at most 0.35 times the errors"
     assert M.prose([0.35, 0.24], "errors", farther=True) == "down to 0.24 times the errors"
-    assert M.prose([0.98, 1.03], "errors") == r"equal within 3\%"
+    # PI 2026-11-23, LEDGER SP-12 (step 3): runs on either side of 1 are no longer a bound in words (the 2-sigma rule is
+    # gone); the 3-sigma test of the row decides, and such runs never pass it
+    assert M.prose([0.98, 1.03], "errors") == r"at least 2.0\% fewer errors"
     em = _PEm()
     M._emit_ratio(em, "MlstX", [1.041, 1.032], 2, MT.fmt_pm, None, "p", "errors", two_run=True)
-    assert set(em.m) == {"MlstX", "MlstXPr", "MlstXPrMax"} and em.m["MlstX"] == "1.041 and 1.032"
+    # the ratio words are held for ratio_words(), never emitted beside the ratio
+    assert set(em.m) == {"MlstX"} and em.m["MlstX"] == "1.041 and 1.032" and set(M._held(em)) == {"MlstXPr", "MlstXPrMax"}
+    assert M._held_word(M._held(em)["MlstXPrMax"]) == r"up to 4.1\% more errors"
     M._emit_ratio(em, "MlstY", [1.15, 1.2, 1.25], 3, MT.fmt_pm, None, "p", "errors")
-    assert "MlstYPrMax" not in em.m and em.m["MlstYPr"] == r"20\% more errors"
+    assert "MlstYPrMax" not in M._held(em) and M._held_word(M._held(em)["MlstYPr"]) == r"20\% more errors"
 
 
-def test_two_runs_state_a_direction_only_beyond_twice_the_hierarchy_sd():
-    # Methods: both runs must lie further from 1 than twice the SD of the same ratio between levels
-    assert M.prose([1.04, 1.08], "rejection", ref_sd=0.03) == r"equal within 8\%"
-    assert M.prose([1.04, 1.08], "rejection", farther=True, ref_sd=0.03) == r"equal within 8\%"
-    assert M.prose([1.04, 1.08], "rejection", ref_sd=0.01) == r"at least 4.0\% more rejection"
-    assert M.prose([0.90, 0.92], "rejection", ref_sd=0.05) == r"equal within 10\%"
-    assert M.prose([1.04, 1.08], "rejection", ref_sd=None) == r"at least 4.0\% more rejection"
-    assert M.prose([1.15, 1.2, 1.25], "errors", ref_sd=0.2) == r"20\% more errors"     # three runs: their own SD
+def test_every_ratio_word_the_text_uses_reads_a_row_of_the_tested_differences():
+    """PI 2026-11-23, LEDGER SP-12 (step 3): the ratio words the text uses are exactly PR_ROWS, each naming a row of
+    tab:tests (TESTS) and the null phrase its sentence reads; build() stops otherwise (ratio_words)."""
+    used = M.text_ratio_words(ROOT / "paper/journal")
+    assert used == set(M.PR_ROWS), (sorted(used - set(M.PR_ROWS)), sorted(set(M.PR_ROWS) - used))
+    rows = {(h, a, b) for h, rs in M.TESTS for a, b, _ in rs}
+    for name, (head, first, second, null) in M.PR_ROWS.items():
+        assert (head, first, second) in rows, name
+        assert "three standard deviations" in null and not re.search(r"\d", null), name
+
+
+def test_a_ratio_word_reads_its_rows_verdict_and_the_build_stops_on_one_without_a_row():
+    """PI 2026-11-23, LEDGER SP-12 (step 3): |Delta| > 3 sigma, the direction and value in words; not, the sentence's
+    null phrase; no stored bootstrap, \\pending{bootstrap} (\\pending{rerun bootstrap} where the file is stale). A ratio
+    with no row has no word; the build stops on a word the text uses without a row, on one whose direction is not its
+    row's and on one emitted outside ratio_words."""
+    name = "MlstCmpJcTwoMidOverFullPr"
+    head, first, second, null = M.PR_ROWS[name]
+
+    def word(v, used=()):
+        em = _PEm()
+        M._emit_ratio(em, "MlstCmpJcTwoMidOverFull", [1.22, 1.23, 1.24], 3, MT.fmt_pm, None, "p", "errors")
+        M._emit_ratio(em, "MlstCmpJcTwoMidOverRes", [1.1, 1.1, 1.1], 3, MT.fmt_pm, None, "p", "errors")     # no row
+        M.ratio_words(em, {(head, first, second): v}, set(used), None)
+        assert {n for n in em.m if n.endswith(("Pr", "PrMax"))} == set(M.PR_ROWS)
+        return em.m[name]
+    # an AUC row: more errors is a lower AUC, so a passing delta is negative
+    assert word((-0.0045, 1e-4, 1e-4, 1e-4, 1.7e-4)) == r"23\% more errors"          # |delta| / sigma 26: passes
+    assert word((-0.0004, 1e-4, 1e-4, 1e-4, 1.7e-4)) == null == M._NO_MORE            # 2.4: fails
+    assert word(None) == r"\pending{bootstrap}" and word("stale") == r"\pending{rerun bootstrap}"
+    with pytest.raises(SystemExit, match="against the sign"):
+        word((0.0045, 1e-4, 1e-4, 1e-4, 1.7e-4))
+    with pytest.raises(SystemExit, match="no tab:tests row"):
+        word(None, used={name, "MlstCmpJcTwoMidOverResPr"})
     em = _PEm()
-    M._emit_ratio(em, "MlstX", [1.04, 1.08], 2, MT.fmt_pm, None, "p", "rejection", two_run=True, ref_sd=0.03)
-    assert em.m["MlstXPr"] == em.m["MlstXPrMax"] == r"equal within 8\%" and em.m["MlstX"] == "1.040 and 1.080"
+    em.macro("MlstXPr", r"5\% more errors")
+    with pytest.raises(SystemExit, match="outside ratio_words"):
+        M.ratio_words(em, {}, set(), None)
 
 
 def test_the_jetclass_accuracy_of_the_random_network_is_read_at_the_largest_training_set():
@@ -560,25 +592,15 @@ def test_the_jetclass_accuracy_of_the_random_network_is_read_at_the_largest_trai
     assert em.m["MlstLpJcTwoAccInitBn"] == r"0.100 and 0.100 \pending{2 of 3}"
 
 
-def test_the_hierarchy_sd_pools_the_levels_over_the_188_class_model_run_by_run():
-    runs = {"L188": ["a-s1", "a-s2", "a-s3"], "L162": ["b-s1", "b-s2", "b-s3"], "R42_Q1": ["c-s1", "c-s2"],
-            "R16_Q1": ["d-s1"]}
-    val = {"a-s1": 1.0, "a-s2": 2.0, "a-s3": 1.0, "b-s1": 1.1, "b-s2": 2.0, "b-s3": 0.9,
-           "c-s1": 1.2, "c-s2": 2.4, "d-s1": 5.0}
-    # in the logarithm: 162/188 ln 1.1, 0, ln 0.9; 42/188 ln 1.2 twice (variance 0); 16/188 one run, left out
-    assert M._level_sd(runs, val.get) == pytest.approx(math.sqrt(statistics.variance([math.log(1.1), 0, math.log(0.9)]) / 2))
-    assert M._level_sd(runs, lambda m: 10 * val[m] if m.startswith("b") else val[m]) == pytest.approx(M._level_sd(runs, val.get))
-    assert M._level_sd({"L188": ["a-s1"], "L162": ["b-s1"], "R42_Q1": [], "R16_Q1": []}, val.get) is None
-
-
 def test_a_macro_the_outline_names_is_a_marker_until_its_input_exists():
     em, missing = _PEm(), []
     em.macro("MlstGpuTypeBound", "0.2\\%")
     M.required_pass(em, None, missing)
     assert em.m["MlstGpuTypeBound"] == "0.2\\%"
     assert em.m["MlstFtTopRthirtyFullOverScratch"].startswith(r"\pending")
-    assert em.m["MlstFtTopRthirtyFullOverScratchPr"].startswith(r"\pending")
-    assert em.m["MlstMassHeadResMassOverUncorrPrMax"].startswith(r"\pending")
+    # PI 2026-11-23, LEDGER SP-12 (step 3): a twin is a ratio word, emitted only with a tab:tests row (PR_ROWS)
+    assert "MlstFtTopRthirtyFullOverScratchPr" not in em.m and "MlstMassHeadResMassOverUncorrPrMax" not in em.m
+    assert em.m["MlstMassHeadResMassOverUncorrPr"].startswith(r"\pending")
     assert all("_" not in v.replace(r"\_", "") for v in em.m.values())     # LaTeX-safe markers
     assert any(x.startswith("DesignNTrainSelected") for x in missing)
 
@@ -681,8 +703,9 @@ def test_the_mass_table_and_macros_use_the_atlas_resolution_over_all_jets():
     em = _PEm()
     M.mass_macros(em, atlas, runs, None, MT.fmt_pm)
     assert em.m["MlstMassHeadResMassOverUncorr"] == "0.580 and 0.590"
-    assert em.m["MlstMassHeadResMassOverUncorrPr"] == "at most 0.59 times the resolution"
-    assert em.m["MlstMassHeadResMassOverUncorrPrMax"] == "down to 0.58 times the resolution"
+    # PI 2026-11-23, LEDGER SP-12 (step 3): the ratio words are held for ratio_words(), which reads their tab:tests rows
+    assert M._held_word(M._held(em)["MlstMassHeadResMassOverUncorrPr"]) == "at most 0.59 times the resolution"
+    assert M._held_word(M._held(em)["MlstMassHeadResMassOverUncorrPrMax"]) == "down to 0.58 times the resolution"
     assert em.m["MlstMassHeadResMassOverMlpRes"].startswith("0.580 and 0.590")
     assert em.m["MlstMassUncorrected"] == "0.200" and em.m["MlstMassUncorrectedResonant"] == "0.300"
     assert em.m["MlstMassUncorrectedQcd"] == "0.300" and em.m["MlstMassHeadResMassResponse"] == "0.995 and 0.995"
@@ -765,9 +788,10 @@ def test_the_sculpting_window_and_the_floor_count_come_from_the_curves():
     assert em.m["MlstSculptLowestEff"] == r"0.10\%" and em.m["MlstSculptLowestNPass"] == "410"
     # the two-run configurations sit 0.5 % below the floor: the largest distance from it, in floor SDs
     assert em.m["MlstSculptLowestMaxFloorSd"] == f"{0.005 * floor / M._floor_sd(24, 410):.1f}"
-    assert em.m["MlstSculptCoarseOverFullOnePr"] == "2.0 times the distance"
+    # PI 2026-11-23, LEDGER SP-12 (step 3): ratio words held for ratio_words(), not emitted here
+    assert M._held_word(M._held(em)["MlstSculptCoarseOverFullOnePr"]) == "2.0 times the distance"
     assert em.m["MlstSculptFullOne"].startswith("0.020")
-    assert "MlstSculptCoarseMassOverCoarseOnePrMax" in em.m
+    assert "MlstSculptCoarseMassOverCoarseOnePrMax" in M._held(em) and not any(n.endswith(("Pr", "PrMax")) for n in em.m)
     # a 17/188 difference at the lowest stored efficiency, next to the working point on this grid, joins the window
     for m in runs["R16_Q1"]:
         v2[m]["curve"][0]["js_distance"] *= 2
@@ -814,7 +838,9 @@ def _jc1_pre(runs, rej):
     return pre
 
 
-def test_a_jetclass_rejection_counts_as_a_drop_only_beyond_twice_its_spread_and_its_counting_error():
+def test_a_jetclass_rejection_is_a_ratio_per_class_and_no_rule_counts_the_classes_that_differ():
+    """PI 2026-11-23, LEDGER SP-12 (step 3): the 2-sigma-and-counting rule (_rej_diff) and the counts it wrote are gone;
+    a difference is stated only from its tab:tests row, and the ratio words are held for ratio_words()."""
     runs = M._paper(ROOT)
 
     def rej(m, c):
@@ -828,11 +854,10 @@ def test_a_jetclass_rejection_counts_as_a_drop_only_beyond_twice_its_spread_and_
         return 1000.0, 200
     em = _PEm()
     M.jetclass_macros(em, _jc1_pre(runs, rej), runs, None, MT.fmt_pm, MT.words)
-    assert em.m["MlstFtJcOneCoarseNRejDrop"] == "one" and em.m["MlstFtJcOneCoarseRejDropClasses"] == r"$H\to 4q$"
-    assert em.m["MlstFtJcOneRejHfourqCoarseOverFullPr"] == r"15\% less rejection"
+    assert not any(k in n for n in em.m for k in ("NRejDrop", "NRejDiff", "RejDropClasses")) and not hasattr(M, "_rej_diff")
+    assert M._held_word(M._held(em)["MlstFtJcOneRejHfourqCoarseOverFullPr"]) == r"15\% less rejection"
+    assert "MlstFtJcOneRejHfourqCoarseOverFullPr" not in em.m
     assert em.m["MlstFtJcOneNSignal"] == "nine" and em.m["MlstFtJcOneAccRandMinusCoarse"].startswith(r"\pending")
-    r, d, drop = M._rej_diff(_jc1_pre(runs, rej), runs, "R16_Q1", "L188", "label_Tbqq")
-    assert len(r) == 3 and not d and not drop
 
 
 def _bench_per(runs):
@@ -935,7 +960,7 @@ def test_the_part_reproduction_table_and_macros(tmp_path):
     em, missing = _PEm(), []
     t = M.partrepro(em, d, {}, MT.fmt_pm, missing)
     assert em.m["MlstPartreproRthirtyPart"] == "1{,}711" and em.m["MlstPartreproRthirtyRescaleOverPart"] == "0.715"
-    assert em.m["MlstPartreproRthirtyRescaleOverPartPr"] == r"28\% less rejection"
+    assert M._held_word(M._held(em)["MlstPartreproRthirtyRescaleOverPartPr"]) == r"28\% less rejection"     # SP-12 (step 3)
     assert not missing
     # three runs of ParT's script, each a single run and a single change, not cumulative; ParT's published row and our
     # from-scratch row are in the comparison table only (PI 2026-11-12: one table per number). Round-1 fix 2026-11-13:
@@ -998,7 +1023,8 @@ def test_the_models_without_a_balanced_nonlinear_probe_read_natural_composition(
     em = _PEm()
     M.mlp_natural_macros(em, nat, runs, None, MT.fmt_pm)
     assert em.m["MlstMlpNatJcTwoResMassOverRes"] == M._cell([0.84, 0.84], 2, MT.fmt_pm, sep=M.TEXT_SEP)
-    assert "MlstMlpNatJcTwoResMassOverResPr" in em.m and "MlstMlpNatJcTwoCoarseMassOverCoarsePrMax" in em.m
+    # PI 2026-11-23, LEDGER SP-12 (step 3): ratio words held for ratio_words()
+    assert "MlstMlpNatJcTwoResMassOverResPr" in M._held(em) and "MlstMlpNatJcTwoCoarseMassOverCoarsePrMax" in M._held(em)
     assert M._per_class(M._nat_as_fits(nat), "mtx-l188-s1") == {3: 0.96}
 
 
@@ -1023,7 +1049,8 @@ def test_the_top_rejection_at_half_signal_efficiency_masks_a_curve_below_its_cut
     top = {**{m: doc(400.0) for m in runs["L188"]}, **{m: doc(r) for m, r in zip(runs["R16_Q1"], (368.0, 372.0, 376.0))}}
     em = _PEm()
     M.top_r50_macro(em, {"top_ft": top}, runs, None, MT.fmt_pm)
-    assert em.m["MlstFtTopRfiftyCoarseOverFull"] == MT.fmt_pm(0.93, 0.01) and em.m["MlstFtTopRfiftyCoarseOverFullPr"] == r"7.0\% less rejection"
+    assert em.m["MlstFtTopRfiftyCoarseOverFull"] == MT.fmt_pm(0.93, 0.01)
+    assert M._held_word(M._held(em)["MlstFtTopRfiftyCoarseOverFullPr"]) == r"7.0\% less rejection"     # SP-12 (step 3)
     top["mtx-r16q1-s1"] = doc(372.0, cut=0.6)
     em = _PEm()
     M.top_r50_macro(em, {"top_ft": top}, runs, None, MT.fmt_pm)
@@ -1304,9 +1331,10 @@ def test_the_ee_mumu_probe_joins_the_v4_pairs_and_gives_its_macros(tmp_path):
     M.comparisons(em, fits, {**{a: [] for a in M.ALL_ROWS}, **runs, **{a: [m] for a, m in rand.items()}},
                   status, None, MT.fmt_pm)
     undefined = "undefined, since the reference separates the test jets completely"
-    assert em.m["MlstCmpEemmMidOverFull"] == "--" and em.m["MlstCmpEemmMidOverFullPr"] == undefined
-    assert em.m["MlstCmpEemmRandOverFull"] == "--" and em.m["MlstCmpEemmRandOverFullPr"] == undefined
-    assert em.m["MlstPairRandMergedOverApartEemm"] == "--" and em.m["MlstPairRandMergedOverApartEemmPr"] == undefined
+    word = lambda n: M._held_word(M._held(em)[n])      # noqa: E731  (ratio words held for ratio_words(), SP-12 step 3)
+    assert em.m["MlstCmpEemmMidOverFull"] == "--" and word("MlstCmpEemmMidOverFullPr") == undefined
+    assert em.m["MlstCmpEemmRandOverFull"] == "--" and word("MlstCmpEemmRandOverFullPr") == undefined
+    assert em.m["MlstPairRandMergedOverApartEemm"] == "--" and word("MlstPairRandMergedOverApartEemmPr") == undefined
     assert em.m["MlstPairRandMergedEemmN"] == "1" and em.m["MlstPairRandApartEemmN"] == "1"
     em = _PEm()
     M.eemm_macros(em, fits, {**runs, **{a: [] for a in ("L162", "R16_Q1") + M.FLAV}, M.INIT: ["init-s1"],

@@ -15,9 +15,10 @@ Rules of the rewrite (PI decisions for Phase B, 2026-11-02, docs/PAPER_OUTLINE.m
   * mass sculpting is the Jensen-Shannon distance (base 2, the square root of the divergence);
   * the linear probes on top and quark/gluon use one substitution for the missing inputs per task,
     chosen on validation and applied to every model including the randomly initialized network;
-  * every ratio the text quotes has a prose twin <name>Pr (two significant figures, the direction
+  * every ratio the text quotes has a ratio word <name>Pr (two significant figures, the direction
     in words), and a ratio involving a two-run configuration also <name>PrMax (the value farther
-    from 1; <name>Pr is the one nearer, the value less favourable to a claimed difference).
+    from 1; <name>Pr is the one nearer, the value less favourable to a claimed difference); a ratio
+    word reads its tab:tests row (PR_ROWS, ratio_words; PI 2026-11-23, LEDGER SP-12 step 3).
 
 Inputs, under experiments/FIGS/data/v2/ (experiments/FIGS/pull_mlst_data.py):
   linprobe/fits_v3/, fits_v3_initbn/      linear probes, natural-composition JetClass-II (and the
@@ -421,7 +422,7 @@ def _oma(x):
     return None if x is None else Unconverged(1 - x) if isinstance(x, Unconverged) else 1 - x
 
 
-# ------------------------------------------------------------------ ratios and their prose twins
+# ------------------------------------------------------------------ ratios and their ratio words
 # noun -> (more, less, form): "pct" gives "17\% more errors" between 0.5 and 2, "times" always
 # "0.58 times the resolution"
 PROSE_NOUN = {"errors": ("more errors", "fewer errors", "pct"),
@@ -449,14 +450,6 @@ def _phrase(r: float, noun: str) -> str:
     return f"the same {noun}"
 
 
-def _within(dev: float) -> str:
-    """'equal within X%': the deviation in per cent rounded up to one significant figure, at least 1."""
-    x = max(100 * dev, 1.0)
-    e = math.floor(math.log10(x))
-    m = math.ceil(x / 10 ** e - 1e-9)
-    return f"equal within {m * 10 ** e:g}\\%"
-
-
 def _bounded(r: float, noun: str, nearer: bool) -> str:
     """One of two runs in words: the value nearer 1 as the weakest effect ('at least ...', or for a
     reduction written as a factor 'at most ...'), the farther one as the strongest ('up to ...')."""
@@ -466,24 +459,17 @@ def _bounded(r: float, noun: str, nearer: bool) -> str:
     return ("at least " if nearer else "up to ") + ph
 
 
-def prose(vals: list, noun: str, farther: bool = False, ref_sd: float | None = None) -> str:
-    """The prose twin of a ratio: three or more runs, the mean in words unless it lies within twice
-    the SD of 1 ('equal within X%'); two runs, the value nearer 1 (farther=True: the other), unless
-    they straddle 1 or, given ref_sd (the SD of the same ratio between levels of the class hierarchy,
-    _level_sd), either lies within twice ref_sd of 1 on the scale _level_sd uses, the logarithm (the
-    Methods rule for two runs); one run, its value."""
+def prose(vals: list, noun: str, farther: bool = False) -> str:
+    """A ratio in words, its direction and value: three or more runs, the mean; two runs, the value
+    nearer 1 (farther=True: the other); one run, its value. Whether the text states it is the 3-sigma
+    test's (ratio_words; PI 2026-11-23, LEDGER SP-12 step 3: the 2-sigma spread rule is gone)."""
     v = [float(x) for x in vals if x is not None]
     if not v:
         return r"\pending{no run yet}"
-    if len(v) >= 3:
-        m, sd = float(np.mean(v)), float(np.std(v, ddof=1))
-        return _within(max(abs(m - 1), sd)) if abs(m - 1) <= 2 * sd else _phrase(m, noun)
     if len(v) == 2:
         a, b = sorted(v, key=lambda x: abs(math.log(x)) if x > 0 else math.inf)
-        if (a - 1) * (b - 1) < 0 or (ref_sd is not None and a > 0 and abs(math.log(a)) <= 2 * ref_sd):
-            return _within(max(abs(a - 1), abs(b - 1)))
         return _bounded(b if farther else a, noun, not farther)
-    return _phrase(v[0], noun)
+    return _phrase(float(np.mean(v)), noun)
 
 
 def _pct_prose(vals: list) -> str:
@@ -496,29 +482,42 @@ def _pct_prose(vals: list) -> str:
     return f"{_sig2(float(np.mean(v)))}\\%"
 
 
+def _held(em) -> dict:
+    """The ratio words an emitter has held for ratio_words(): {<name>Pr or <name>PrMax: its record}."""
+    return vars(em).setdefault("ratio_words", {})
+
+
+def _hold(em, name: str, src, path: str, vals=None, noun=None, farther=False, body=None) -> None:
+    """A ratio word is never emitted where its ratio is: held, its values or a fixed body (an undefined
+    ratio, a missing reference), until ratio_words() reads its tab:tests row."""
+    _held(em)[name] = {"vals": vals, "noun": noun, "farther": farther, "body": body, "src": src, "path": path}
+
+
+def _held_word(h: dict) -> str:
+    """A held ratio word as it reads when its row passes: the fixed body, or the ratio in words (prose)."""
+    return h["body"] if h["body"] is not None else prose(h["vals"], h["noun"], h["farther"])
+
+
 def _emit_ratio(em, name: str, vals: list, n_expected: int, fmt_pm, src, path: str, noun: str,
-                two_run: bool = False, body: str | None = None, ref_sd: float | None = None) -> None:
-    """A ratio macro, its prose twin and, for a two-run configuration, the twin of the other run;
-    ref_sd, when given, is the hierarchy-level SD the prose twins read two runs against (prose)."""
+                two_run: bool = False, body: str | None = None) -> None:
+    """A ratio macro and its ratio word, held for ratio_words(); for a two-run configuration also the
+    word of the run farther from 1 (<name>PrMax)."""
     em.macro(name, body if body is not None else _cell(vals, n_expected, fmt_pm, sep=TEXT_SEP), src, path)
-    em.macro(name + "Pr", prose(vals, noun, ref_sd=ref_sd), src, path, "prose twin: two significant figures, direction in words")
+    _hold(em, name + "Pr", src, path, vals, noun)
     if two_run:
-        em.macro(name + "PrMax", prose(vals, noun, farther=True, ref_sd=ref_sd), src, path,
-                 "prose twin of the run farther from 1")
+        _hold(em, name + "PrMax", src, path, vals, noun, farther=True)
 
 
 def _undefined(em, name: str, src, path: str, two_run: bool = False) -> None:
     """A ratio of 1 - AUC whose reference separates the test jets completely (1 - AUC = 0): a dash,
-    and prose twins that say so."""
+    and ratio words that say so."""
     em.macro(name, "--", src, path, "the reference's 1 - AUC is 0")
     for t in ("Pr", "PrMax") if two_run else ("Pr",):
-        em.macro(name + t, "undefined, since the reference separates the test jets completely", src, path,
-                 "the reference's 1 - AUC is 0")
+        _hold(em, name + t, src, path, body="undefined, since the reference separates the test jets completely")
 
 
 def _emit_pct(em, name: str, vals: list, n_expected: int, fmt_pm, src, path: str) -> None:
     em.macro(name, _pct_cell(vals, n_expected, fmt_pm), src, path)
-    em.macro(name + "Pr", _pct_prose(vals), src, path, "prose twin, two significant figures")
 
 
 def _ratio_vals(runs, arm, ref, value) -> tuple[list, int]:
@@ -558,24 +557,6 @@ def _two_run(runs, *arms) -> bool:
     return any(len(runs.get(a, ())) == 2 for a in arms)
 
 
-# the ratios between levels of the class hierarchy whose SD a two-run configuration is read against
-LEVEL_RATIOS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"))
-
-
-def _level_sd(runs, value) -> float | None:
-    """The SD of a ratio between levels of the class hierarchy (Methods, the rule for two runs): of
-    value, each coarser level over the 188-class run of the same index, the SD over the runs of the
-    ratio's logarithm (its relative SD, so that a level whose ratio is far from 1 does not widen the
-    threshold of one near 1 by its scale alone), pooled over the three levels (root mean square);
-    None while no level has two runs."""
-    var = []
-    for arm, ref in LEVEL_RATIOS:
-        r = [math.log(x) for x in _ratio_vals(runs, arm, ref, value)[0] if x is not None and x > 0]
-        if len(r) >= 2:
-            var.append(float(np.var(r, ddof=1)))
-    return math.sqrt(float(np.mean(var))) if var else None
-
-
 def _over_scratch(v: list, n_expected: int, ref: list, fmt_pm) -> str:
     """Each run's value over the mean of the from-scratch seeds. With three or more runs: the mean
     ratio, and as its uncertainty the SD over the runs and the relative standard error of the
@@ -593,12 +574,11 @@ def _over_scratch(v: list, n_expected: int, ref: list, fmt_pm) -> str:
 
 def _emit_over_ref(em, name, v, n_expected, ref, fmt_pm, src, path, noun, two_run=False) -> None:
     """A ratio to the mean of a reference (from scratch, a published value): table form with the
-    reference's spread, and the prose twins from the per-run ratios."""
+    reference's spread, and the ratio words from the per-run ratios."""
     if not ref:
         em.macro(name, r"\pending{reference}", src, path)
-        em.macro(name + "Pr", r"\pending{reference}", src, path)
-        if two_run:
-            em.macro(name + "PrMax", r"\pending{reference}", src, path)
+        for t in ("Pr", "PrMax") if two_run else ("Pr",):
+            _hold(em, name + t, src, path, body=r"\pending{reference}")
         return
     sc = float(np.mean(ref))
     _emit_ratio(em, name, [None if x is None else x / sc for x in v], n_expected, fmt_pm, src, path, noun,
@@ -966,17 +946,16 @@ def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
     """The probe ratios the results text quotes, on JetClass-II only: MlstCmp<task or pair><arm>Over<ref>,
     run by run; MlstCmp<...>RandOver{Full,Mid,Coarse}, each random partition over the run of its
     seed, mean +- SD over the partitions; MlstPairRandMergedOverApart<pair>, the mean 1 - AUC of the
-    partitions that merge the pair over that of those that keep it apart; each with its prose twin."""
+    partitions that merge the pair over that of those that keep it apart; each with its ratio word."""
     for ds, met, _ in JC2_TASKS:
         n = _largest(fits, ds)
         w = TASK_WORD[(ds, met)]
         f = lambda m, ds=ds, n=n, met=met: _oma(_probe(fits, m, ds, n, met))
-        sd = _level_sd(runs, f)
         for arm, ref in CMP_PROBES:
             r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstCmp{w}{WORD[arm]}Over{WORD[ref]}", r, k, fmt_pm, index,
                         f"linear probe {ds} N={n}: (1 - {met}) of {arm} over {ref}, run by run", "errors",
-                        _two_run(runs, arm, ref), ref_sd=sd)
+                        _two_run(runs, arm, ref))
         for ref in ("L188", "R42_Q1", "R16_Q1"):
             r = _rand_over(runs, ref, f)
             _emit_ratio(em, f"MlstCmp{w}RandOver{WORD[ref]}", r, len(r), fmt_pm, index,
@@ -987,7 +966,6 @@ def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
         # as tab:pairs: no ratio to a run whose 1 - AUC is below SEP_FLOOR (separated)
         zero = lambda ref, arms: ({_idx(m) for m in runs[ref] if f(m) is not None and f(m) < SEP_FLOOR}
                                   & {_idx(m) for a in arms for m in runs[a]})
-        sd = _level_sd(runs, f)
         for arm, ref in CMP_PAIRS:
             name, path = (f"MlstCmp{PAIR_WORD[key]}{WORD[arm]}Over{WORD[ref]}",
                           f"binary probe {key}: (1 - AUC) of {arm} over {ref}, run by run")
@@ -995,7 +973,7 @@ def comparisons(em, fits, runs, status, index, fmt_pm) -> None:
                 _undefined(em, name, index, path, _two_run(runs, arm, ref))
                 continue
             r, k = _ratio_vals(runs, arm, ref, f)
-            _emit_ratio(em, name, r, k, fmt_pm, index, path, "errors", _two_run(runs, arm, ref), ref_sd=sd)
+            _emit_ratio(em, name, r, k, fmt_pm, index, path, "errors", _two_run(runs, arm, ref))
         if key.startswith("qcd_"):
             continue            # every partition merges the QCD classes
         name, path = (f"MlstCmp{PAIR_WORD[key]}RandOverFull",
@@ -1291,36 +1269,32 @@ def mlp_macros(em, mlp, runs, index, fmt_pm) -> None:
              "their plateau within the epoch cap (count)")
     for t in MLP_JC2:
         f = lambda m, t=t: _mlp(mlp, m, t)
-        sd = _level_sd(runs, f)
         for arm, ref in CMP_MLP:
             r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstMlpCmp{PAIR_WORD[t]}{WORD[arm]}Over{WORD[ref]}", r, k, fmt_pm, index,
-                        f"nonlinear probe {t}: (1 - AUC) of {arm} over {ref}, run by run", "errors", _two_run(runs, arm, ref),
-                        ref_sd=sd)
+                        f"nonlinear probe {t}: (1 - AUC) of {arm} over {ref}, run by run", "errors", _two_run(runs, arm, ref))
         r = _rand_over(runs, "L188", f)
         _emit_ratio(em, f"MlstMlpCmp{PAIR_WORD[t]}RandOverFull", r, len(r), fmt_pm, index,
                     f"nonlinear probe {t}: (1 - AUC) of each random partition over the 188-class run of its seed", "errors")
     for t in ("top", "qg", "qg_herwig"):
         f = lambda m, t=t: _mlp_val(mlp, m, t, "r30")
-        sd = _level_sd(runs, f)
         for arm in MAIN:
             r, k = _ratio_vals(runs, arm, INIT_BN, f)
             _emit_ratio(em, f"MlstMlp{PAIR_WORD[t]}Rthirty{WORD[arm]}OverInitBn", r, k, fmt_pm, index,
                         f"nonlinear probe {t}, missing inputs zero: R30 of {arm} over the BatchNorm-recomputed random "
-                        "network of the same index", "rejection", ref_sd=sd)
+                        "network of the same index", "rejection")
 
 
 def mlp_natural_macros(em, nat, runs, index, fmt_pm) -> None:
     """MlstMlpNatJcTwo<mass>Over<same labels>: the nonlinear probe's 1 - AUC on natural-composition
-    JetClass-II with over without the auxiliary mass regression, run by run, read against the
-    hierarchy-level SD on the same test set; these models have no class-balanced nonlinear probe."""
+    JetClass-II with over without the auxiliary mass regression, run by run; these models have no
+    class-balanced nonlinear probe."""
     f = lambda m: _mlp(nat, m, "jc2_188")
-    sd = _level_sd(runs, f)
     for arm, ref in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1")):
         r, k = _ratio_vals(runs, arm, ref, f)
         _emit_ratio(em, f"MlstMlpNatJcTwo{WORD[arm]}Over{WORD[ref]}", r, k, fmt_pm, index,
                     f"nonlinear probe, natural-composition JetClass-II (fits_v3_mlp2): (1 - AUC) of {arm} over {ref}, run by run",
-                    "errors", _two_run(runs, arm, ref), ref_sd=sd)
+                    "errors", _two_run(runs, arm, ref))
 
 
 # ------------------------------------------------------------------ missing inputs (A16, F5)
@@ -1493,14 +1467,13 @@ def fill_macros(em, raw_v4, fill, fits, runs, index, fmt_pm, missing: list) -> N
         s = chosen[task]
         sel = lambda m, task=task, s=s: _fill_r30(fill, m, task, s) if s else None
         zero = lambda m, task=task: _rej(_probe_rec(fits, m, task), "r30")
-        sds = {sfx: _level_sd(runs, f) for f, sfx in ((sel, ""), (zero, "Zero"))}
         for arm in MAIN + MASS:
             for f, sfx in ((sel, ""), (zero, "Zero")):
                 r, k = _ratio_vals(runs, arm, INIT_BN, f)
                 _emit_ratio(em, f"MlstLp{tw}Rthirty{WORD[arm]}OverInitBn{sfx}", r, k, fmt_pm, index,
                             f"linear probe {task}, largest set, {'chosen substitution' if not sfx else 'zero'}: R30 of {arm} "
                             "over the BatchNorm-recomputed random network of the same index", "rejection",
-                            _two_run(runs, arm), ref_sd=sds[sfx])
+                            _two_run(runs, arm))
         for arm in ("L162", "R42_Q1", "R16_Q1"):
             for f, sfx in ((sel, ""), (zero, "Zero")):
                 r, k = _ratio_vals(runs, arm, "L188", f)
@@ -1771,12 +1744,11 @@ def mass_macros(em, atlas, runs, index, fmt_pm) -> None:
                                                          sep=TEXT_SEP), index,
                      f"frozen-feature MLP of {arm}, {g} jets, ATLAS resolution")
         f = lambda m, g=g: _ares(atlas, m, "mlp", g)
-        sd = _level_sd(runs, f)
         for arm, ref in CMP_MASS:
             r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstCmpMlp{WORD[arm]}Over{WORD[ref]}{gs}", r, k, fmt_pm, index,
                         f"frozen-feature MLP resolution of {arm} over {ref}, run by run, {g} jets", "resolution",
-                        _two_run(runs, arm, ref), ref_sd=sd)
+                        _two_run(runs, arm, ref))
     # F9a(b)'s x axis (figstyle/gallery_physics._response) covers the bins where the groomed mass or a mass
     # model's mean reaches SHOWN_FROM of its own largest bin: the share of QCD jets' groomed-mass response
     # inside that range (jets outside the histogram's edges count in the total, as in the figure).
@@ -2171,13 +2143,11 @@ def sculpt_macros(em, sculpt, sculpt_v2, runs, index, fmt_pm) -> None:
             _emit_ratio(em, f"MlstSculpt{WORD[arm]}OverFloor{ew}", r, len(ms), fmt_pm, index,
                         f"distance at {e} over the random-selection floor, {arm}", "distance", _two_run(runs, arm))
         f = lambda m, e=e: _sculpt(sculpt, m, e)
-        sd = _level_sd(runs, f)
         for arm, ref in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"), ("R16_Q1", "L188"), ("L162", "L188"),
                          ("R42_Q1", "L188"), ("R16_Q1", "R42_Q1")):
             r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstSculpt{WORD[arm]}Over{WORD[ref]}{ew}", r, k, fmt_pm, index,
-                        f"distance at QCD efficiency {e}: {arm} over {ref}, run by run", "distance", _two_run(runs, arm, ref),
-                        ref_sd=sd)
+                        f"distance at QCD efficiency {e}: {arm} over {ref}, run by run", "distance", _two_run(runs, arm, ref))
     curves = {m: _curve(sculpt_v2, m) for arm in MAIN + MASS for m in runs[arm]}
     effs = sorted(set.intersection(*(set(c) for c in curves.values()))) if all(curves.values()) else []
     if not effs:
@@ -2908,12 +2878,11 @@ def ft_macros(em, per, runs, index, fmt_pm) -> None:
         for n in _sizes(per, key):
             sw = SIZE_WORD.get(n, "Max")
             f = lambda m, key=key, n=n, met=met: _oma(_ftv(per, key, m, n, met))
-            sd = _level_sd(runs, f)
             for arm, ref in FT_R30_CMP:
                 r, k = _ratio_vals(runs, arm, ref, f)
                 _emit_ratio(em, f"MlstFtCmp{_name_over(FT_WORD[key], arm, ref)}{sw}", r, k, fmt_pm, index,
                             f"fine-tuning {key} N={n}: (1 - {met}) of {arm} over {ref}, run by run", "errors",
-                            _two_run(runs, arm, ref), ref_sd=sd)
+                            _two_run(runs, arm, ref))
     for key in ("jc2", "jc1"):
         for n in _sizes(per, key):
             sw = _sw(key, n) or SIZE_WORD.get(n, "Max")
@@ -2953,12 +2922,11 @@ def ft_macros(em, per, runs, index, fmt_pm) -> None:
                 _emit_over_ref(em, f"MlstFt{tw}Rthirty{WORD[arm]}OverScratch{sw}", v, len(v), ref, fmt_pm, index,
                                f"fine-tuning {key} N={n}: R30 of each {arm} run over the from-scratch mean, SD over runs "
                                "and standard error of that mean in quadrature", "rejection", _two_run(runs, arm))
-            sd = _level_sd(runs, f)
             for arm, rf in FT_R30_CMP:
                 r, k = _ratio_vals(runs, arm, rf, f)
                 _emit_ratio(em, f"MlstFt{_name_over(tw + 'Rthirty', arm, rf)}{sw}", r, k, fmt_pm, index,
                             f"fine-tuning {key} N={n}: R30 of {arm} over {rf}, run by run", "rejection",
-                            _two_run(runs, arm, rf), ref_sd=sd)
+                            _two_run(runs, arm, rf))
             for rf in ("L188", "R16_Q1"):
                 r = _rand_over(runs, rf, f)
                 if any(x is not None for x in r):
@@ -3120,58 +3088,26 @@ def _jc1_rej(pre: dict, m: str, c: str):
     return None if b is None else b["per_class"][c]["rejection"]
 
 
-def _rej_diff(pre, runs, arm, ref, c) -> tuple:
-    """(paired ratios, is a difference, is a drop) of one class's fine-tuned rejection, arm over ref:
-    a difference when the mean ratio departs from 1 by more than twice its SD and by more than its
-    test-sample uncertainty (Poisson on the passing background jets, sqrt(1/n_a + 1/n_b), averaged over
-    the pairs); a column where fewer than JC1_MIN_BKG background jets pass in any run is never one."""
-    a = {_idx(m): _jc1_rej(pre, m, c) for m in runs[arm]}
-    b = {_idx(m): _jc1_rej(pre, m, c) for m in runs[ref]}
-    pairs = [(a[k], b[k]) for k in sorted(set(a) & set(b)) if a[k] and b[k]]
-    r = [x["rejection"] / y["rejection"] for x, y in pairs]
-    if len(r) < 3 or min(min(x["n_bkg_pass"], y["n_bkg_pass"]) for x, y in pairs) < V4.JC1_MIN_BKG:
-        return r, False, False
-    m, sd = float(np.mean(r)), float(np.std(r, ddof=1))
-    test = m * float(np.mean([math.sqrt(1 / x["n_bkg_pass"] + 1 / y["n_bkg_pass"]) for x, y in pairs]))
-    d = abs(m - 1) > 2 * sd and abs(m - 1) > test
-    return r, d, d and m < 1
-
-
 def jetclass_macros(em, pre: dict, runs: dict, src, fmt_pm, words) -> None:
     """MlstFtJcOneRej<class><arm>Over<ref>: the fine-tuned rejection of a JetClass signal class at
     ParT's working point, run by run; ...RandOverFull over the partitions (and its range);
-    MlstFtJcOne<arm>NRejDrop / NRejDiff / RejDropClasses: the classes whose ratio to the 188-class
-    model meets the difference rule (_rej_diff); MlstFtJcOneAccRandMinusCoarse."""
-    heads = dict(V4.JC1_COLS)
+    MlstFtJcOneAccRandMinusCoarse. No count of classes that differ: the 2-sigma-and-counting rule is gone (PI
+    2026-11-23, LEDGER SP-12 step 3); a difference is stated only from its tab:tests row."""
     em.macro("MlstFtJcOneNSignal", words(len(V4.JC1_COLS)), src, "JC1_COLS (count)", "JetClass signal classes")
     for c, _ in V4.JC1_COLS:
         cw = JC1_WORD[c]
         f = lambda m, c=c: None if (x := _jc1_rej(pre, m, c)) is None else x["rejection"]
-        sd = _level_sd(runs, f)
         for arm, ref in FT_R30_CMP:
             r, k = _ratio_vals(runs, arm, ref, f)
             _emit_ratio(em, f"MlstFtJcOneRej{cw}{WORD[arm]}Over{'Full' if ref == 'L188' else WORD[ref]}", r, k, fmt_pm,
                         src, f"cells.<run>.N1000000.s1.jc1.per_class.{c}: rejection of {arm} over {ref}, run by run",
-                        "rejection", _two_run(runs, arm, ref), ref_sd=sd)
+                        "rejection", _two_run(runs, arm, ref))
         r = _rand_over(runs, "L188", f)
         _emit_ratio(em, f"MlstFtJcOneRej{cw}RandOverFull", r, len(r), fmt_pm, src,
                     f"per_class.{c}: rejection of each random partition over the 188-class run of its seed", "rejection")
         v = [x for x in r if x is not None]
         em.macro(f"MlstFtJcOneRej{cw}RandOverFullRange", f"{_sig2(min(v))}--{_sig2(max(v))}" if v else r"\pending{runs}",
                  src, f"per_class.{c}: smallest and largest of the partitions' ratios")
-    for arm in ("L162", "R42_Q1", "R16_Q1"):
-        res = {c: _rej_diff(pre, runs, arm, "L188", c) for c, _ in V4.JC1_COLS}
-        drop = [c for c, (_, _, dr) in res.items() if dr]
-        diff = [c for c, (_, d, _) in res.items() if d]
-        w = WORD[arm]
-        note = ("classes whose paired rejection ratio to the 188-class model departs from 1 by more than twice its SD "
-                "and its counting uncertainty, columns with fewer than JC1_MIN_BKG passing jets excluded")
-        em.macro(f"MlstFtJcOne{w}NRejDrop", words(len(drop)), src, "per_class rejections", note + ", ratio below 1 (count)")
-        em.macro(f"MlstFtJcOne{w}NRejDiff", words(len(diff)), src, "per_class rejections", note + " (count)")
-        names = [heads[c] for c in drop]
-        em.macro(f"MlstFtJcOne{w}RejDropClasses", ("none" if not names else names[0] if len(names) == 1 else
-                                                    ", ".join(names[:-1]) + " and " + names[-1]), src,
-                 "per_class rejections", "the classes of ...NRejDrop, in ParT's column order")
     acc = lambda ms: [b["accuracy"] for m in ms if (b := _jc1_block(pre, m)) is not None]
     a, b = acc([m for x in RAND for m in runs[x]]), acc(runs["R16_Q1"])
     em.macro("MlstFtJcOneAccRandMinusCoarse", f"{np.mean(a) - np.mean(b):+.3f}" if a and b else r"\pending{runs}", src,
@@ -4556,7 +4492,11 @@ TESTS_NAMES = {"SCRATCH": SCRATCH_LABEL, "SDMASS": "soft-drop mass", "PART_PUB":
                "L162_17": r"\Kres{} classes on the 17 groups",
                "STEP_17_43": r"step from \Kmid{} to \Kcoarse{} classes", "STEP_43_162": r"step from \Kres{} to \Kmid{} classes",
                "R42_Q1_17": r"\Kmid{} classes on the 17 groups", "R16_Q1_17": r"\Kcoarse{} classes on the 17 groups",
-               "L162_MASS_HEAD": r"\Kres{} classes + mass, head", "R16_Q1_MASS_HEAD": r"\Kcoarse{} classes + mass, head"}
+               "L162_MASS_HEAD": r"\Kres{} classes + mass, head", "R16_Q1_MASS_HEAD": r"\Kcoarse{} classes + mass, head",
+               # PI 2026-11-23 (LEDGER SP-12, step 3): the rows of the ratio words that had none (PR_ROWS)
+               "L162_MLP": r"\Kres{} classes, " + HEADING["mlp"],
+               "L188_HERWIG_JETS": r"\Kfull{} classes on Herwig jets", "L188_PYTHIA_JETS": r"\Kfull{} classes on Pythia jets",
+               "SCRATCH_HERWIG_JETS": "from scratch on Herwig jets", "SCRATCH_PYTHIA_JETS": "from scratch on Pythia jets"}
 _LEVELS = (("L162", "L188", "162-188"), ("R42_Q1", "L188", "43-188"), ("R16_Q1", "L188", "17-188"))
 _MASSES = (("L162_MASS", "L162", "162mass-162"), ("R16_Q1_MASS", "R16_Q1", "17mass-17"))
 _PARTS_ALL = (("FLAV_F0", "flavf0-188"), ("FLAV_F1", "flavf1-188"), ("FLAV_F1R", "flavf1r-188"), (RAND_POOLED, "rand-188"))
@@ -4601,31 +4541,37 @@ TESTS = (
     (r"quark/gluon tagging (Herwig), $R_{30}$, " + HEADING["lp"], _bench_block("qg_herwig", "lp")),
     (r"quark/gluon tagging (Herwig), $R_{30}$, " + HEADING["ft"], _bench_block("qg_herwig", "ft")
      + (("L188_HERWIG", "SCRATCH_HERWIG", None),)),
+    (r"quark/gluon tagging, $R_{30}$, " + HEADING["ft"] + ", Herwig against Pythia jets",
+     (("L188_HERWIG_JETS", "L188_PYTHIA_JETS", None), ("SCRATCH_HERWIG_JETS", "SCRATCH_PYTHIA_JETS", None))),
     # tab:fill (M246, M253, M328, M329)
     (r"top tagging, $R_{30}$, " + HEADING["lp"] + ", missing inputs", (("L188_DRAWS", "L188_ZERO", None),
                                                                        ("L188_ZERO", "INIT_BN_ZERO", None),
-                                                                       ("L188", INIT, None))),
-    (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["lp"] + ", missing inputs", (("L188", INIT, None),)),
+                                                                       ("L188", INIT, None), ("L188", INIT_BN, None))),
+    (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["lp"] + ", missing inputs", (("L188", INIT, None),
+                                                                                         ("L188", INIT_BN, None))),
     # tab:published, tab:partrepro (M218, M236-M238, M243, M258, M260, M240)
     (r"JetClass, accuracy, " + HEADING["ft"] + ", published models", (("L188", "PART_PUB", None),)),
     (r"top tagging, $R_{30}$, " + HEADING["ft"] + ", published models", (("L188", "PART_PUB", None),
                                                                         ("L188", "PART_FT_PUB", None),
                                                                         ("PART_OURS", "PART_PUB", None))),
-    (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"] + ", published models", (("L188", "PART_PUB", None),)),
+    (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"] + ", published models", (("L188", "PART_PUB", None),
+                                                                                          ("L188", "PART_FT_PUB", None))),
     # Figs. 5 and A3: the class pairs, AUC (M187, M190, M194, M200, M334, the placement's sentences)
     *((rf"{_PAIR[k]}, AUC, " + HEADING["lp"], rows) for k, rows in (
         ("bb_vs_cc", (("R42_Q1", "L188", None), ("R16_Q1", "L188", None), ("FLAV_F1", "R16_Q1", None),
                       ("FLAV_F1R", "R16_Q1", None), ("FLAV_F0", "R16_Q1", None))),
-        ("bc_vs_bq_cs", (("R42_Q1", "L188", None), ("R16_Q1", "L188", None), ("FLAV_F1", "R16_Q1", None),
-                         ("FLAV_F1R", "R16_Q1", None), ("FLAV_F0", "R16_Q1", None), ("FLAV_F0", "L188", None))),
+        ("bc_vs_bq_cs", (("L162", "L188", None), ("R42_Q1", "L188", None), ("R16_Q1", "L188", None),
+                         ("FLAV_F1", "R16_Q1", None), ("FLAV_F1R", "R16_Q1", None), ("FLAV_F0", "R16_Q1", None),
+                         ("FLAV_F0", "L188", None))),
         ("bbqq_vs_ccqq", (("R42_Q1", "L188", None), ("R16_Q1", "L188", None), ("FLAV_F1R", "FLAV_F1", None))),
         *((k, (("L162", "L188", None), ("R42_Q1", "L188", None), ("R16_Q1", "L188", None)))
           for k in ("qcd_bb_vs_cc", "qcd_b_vs_light", "qcd_c_vs_light")),
         # PI SP-10 (b): the 3-sigma-passing lepton-flavor result of the 43-class labels
         ("ee_vs_mm", (("R42_Q1", "L188", None), ("R42_Q1", INIT_BN, None))))),
     # tab:mlp (M157, M199, M302): the multilayer-perceptron probes beside the linear-probe nulls
+    (r"JetClass-II, AUC, " + HEADING["mlp"], tuple((a, b, None) for a, b, _ in _MASSES)),
     (r"JetClass-II, AUC over the resonant classes, " + HEADING["mlp"], (("L162", "L188", None),)),
-    (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], (("R16_Q1", "L188", None),)),
+    (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], (("L162", "L188", None), ("R16_Q1", "L188", None))),
     # tab:coarse: the label sets scored on the 17 merged groups
     (r"JetClass-II, accuracy on the 17 merged groups, " + HEADING["lp"], (("L162_17", "L188_17", None),
                                                                           ("R42_Q1_17", "L188_17", None),
@@ -4635,7 +4581,8 @@ TESTS = (
                                                                 .replace(r"\Kcoarse{}", "17"), "mlp")) for a, b, _ in _MASSES)
      + (("R16_Q1", "L188", None), ("L188", INIT, None))),
     (r"jet mass, resolution, " + HEADING["head"], (("L162_MASS_HEAD", "SDMASS", None), ("R16_Q1_MASS_HEAD", "SDMASS", None),
-                                                   ("R16_Q1_MASS_HEAD", "L162_MASS_HEAD", None))),
+                                                   ("R16_Q1_MASS_HEAD", "L162_MASS_HEAD", None),
+                                                   ("L162_MASS_HEAD", "L162_MLP", None))),
     # Fig. 6 and Table 1's X->bb / X->bs columns (M309-M311, the placement's XBX and XBX_PART)
     *((rf"{h}, signal efficiency (\%), " + "classifier on the frozen features",
        (("R16_Q1", "L188", None), *((a, "L188", None) for a in FLAV), *((a, "R16_Q1", None) for a in FLAV + (RAND_POOLED,)),
@@ -4644,6 +4591,63 @@ TESTS = (
 # the sculpting nulls (M284, M306, M336; F10b): every difference of the bootstrap file at each working point, in its order
 TESTS_SCULPT = r"mass sculpting, Jensen--Shannon distance, " + HEADING["direct"]
 SCULPT_ARM = {"rand2p": RAND_POOLED}
+# PI 2026-11-23 (LEDGER SP-12, step 3): every ratio word the text uses, <name>Pr or <name>PrMax, and the tab:tests row
+# (heading, first, second) that tests its comparison, with the null phrase its sentence reads when the row does not
+# pass 3 sigma (ratio_words); the null takes the place of the ratio in its sentence's grammar
+_NULL = "no difference beyond three standard deviations"       # in parentheses
+_NO_MORE, _NO_FEWER = "no more errors beyond three standard deviations", "no fewer errors beyond three standard deviations"
+_SAME = "the {}, within three standard deviations,"            # "... reaches the resolution, within ..., of ..."
+_JC2_LP, _JC2_MLP = "JetClass-II, AUC, " + HEADING["lp"], "JetClass-II, AUC, " + HEADING["mlp"]
+_BB, _BC, _BBQQ = (rf"{_PAIR[k]}, AUC, " + HEADING["lp"] for k in ("bb_vs_cc", "bc_vs_bq_cs", "bbqq_vs_ccqq"))
+_TOP_FILL, _QG_FILL = (rf"{t}, $R_{{30}}$, " + HEADING["lp"] + ", missing inputs"
+                       for t in ("top tagging", "quark/gluon tagging (Pythia)"))
+_MASS_MLP, _MASS_HEAD = "jet mass, resolution, " + HEADING["mlp"], "jet mass, resolution, " + HEADING["head"]
+PR_ROWS = {
+    # results_jc
+    "MlstCmpJcTwoMidOverFullPr": (_JC2_LP, "R42_Q1", "L188", _NO_MORE),
+    "MlstCmpJcTwoCoarseOverFullPr": (_JC2_LP, "R16_Q1", "L188", _NO_MORE),
+    "MlstCmpJcTwoResResOverFullPr": ("JetClass-II, AUC over the resonant classes, " + HEADING["lp"], "L162", "L188", _NULL),
+    "MlstMlpCmpJcTwoResResOverFullPr": ("JetClass-II, AUC over the resonant classes, " + HEADING["mlp"], "L162", "L188",
+                                        _NULL),
+    "MlstCmpJcTwoQcdResOverFullPr": ("JetClass-II, AUC over the QCD classes, " + HEADING["lp"], "L162", "L188", _NO_MORE),
+    "MlstCmpJcTwoRandOverCoarsePr": (_JC2_LP, RAND_POOLED, "R16_Q1", _NO_FEWER),
+    "MlstCmpJcTwoRandOverMidPr": (_JC2_LP, RAND_POOLED, "R42_Q1", _NO_FEWER),
+    "MlstCmpBbCoarseOverFullPr": (_BB, "R16_Q1", "L188", _SAME.format("errors")),
+    "MlstCmpBbMidOverFullPr": (_BB, "R42_Q1", "L188", "a difference within three standard deviations"),
+    "MlstCmpBcResOverFullPr": (_BC, "L162", "L188", _NULL),
+    "MlstMlpCmpBcResOverFullPr": (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], "L162", "L188", _NULL),
+    "MlstCmpBcMidOverFullPr": (_BC, "R42_Q1", "L188", "a difference within three standard deviations"),
+    "MlstCmpBcCoarseOverFullPr": (_BC, "R16_Q1", "L188", _NO_MORE),
+    "MlstCmpBbFoneOverCoarsePr": (_BB, "FLAV_F1", "R16_Q1", _SAME.format("errors")),
+    "MlstCmpBcFoneOverCoarsePr": (_BC, "FLAV_F1", "R16_Q1", _NO_FEWER),
+    "MlstCmpBcFonerOverCoarsePr": (_BC, "FLAV_F1R", "R16_Q1", _NULL),
+    "MlstCmpBbqqFonerOverFonePr": (_BBQQ, "FLAV_F1R", "FLAV_F1", _NO_MORE),
+    # results_bench
+    "MlstFtTopRthirtyFullOverPartPr": (r"top tagging, $R_{30}$, " + HEADING["ft"] + ", published models", "L188",
+                                       "PART_FT_PUB", "no less rejection beyond three standard deviations"),
+    "MlstLpTopRthirtyDrawOverZeroFullPr": (_TOP_FILL, "L188_DRAWS", "L188_ZERO", _SAME.format("rejection")),
+    "MlstFtQgRthirtyFullOverPartPr": (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"] + ", published models",
+                                      "L188", "PART_FT_PUB", _NULL),
+    "MlstFtQgRthirtyCoarseOverFullPr": (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"], "R16_Q1", "L188", _NULL),
+    "MlstFtQgRthirtyHerwigOverPythiaFullPr": (r"quark/gluon tagging, $R_{30}$, " + HEADING["ft"] + ", Herwig against Pythia jets",
+                                              "L188_HERWIG_JETS", "L188_PYTHIA_JETS", _SAME.format("rejection")),
+    "MlstFtQgRthirtyHerwigOverPythiaScratchPr": (r"quark/gluon tagging, $R_{30}$, " + HEADING["ft"]
+                                                 + ", Herwig against Pythia jets", "SCRATCH_HERWIG_JETS",
+                                                 "SCRATCH_PYTHIA_JETS", "the rejection within three standard deviations"),
+    "MlstLpQgRthirtyFullOverInitBnPr": (_QG_FILL, "L188", INIT_BN, _NULL),
+    # discussion
+    "MlstLpTopRthirtyFullOverInitBnZeroPr": (_TOP_FILL, "L188_ZERO", "INIT_BN_ZERO", _NULL),
+    "MlstLpTopRthirtyFullOverInitBnPr": (_TOP_FILL, "L188", INIT_BN, _SAME.format("rejection")),
+    # results_mass
+    "MlstMassHeadResMassOverUncorrPr": (_MASS_HEAD, "L162_MASS_HEAD", "SDMASS", _SAME.format("resolution")),
+    "MlstMassHeadResMassOverMlpResPr": (_MASS_HEAD, "L162_MASS_HEAD", "L162_MLP", _SAME.format("resolution")),
+    "MlstCmpMlpResMassOverResPr": (_MASS_MLP, "L162_MASS", "L162", _SAME.format("resolution")),
+    "MlstCmpMlpCoarseMassOverCoarsePr": (_MASS_MLP, "R16_Q1_MASS", "R16_Q1", _SAME.format("resolution")),
+    "MlstCmpMlpCoarseOverFullPr": (_MASS_MLP, "R16_Q1", "L188", _NULL),
+    "MlstCmpJcTwoResMassOverResPrMax": (_JC2_LP, "L162_MASS", "L162", _NULL),
+    "MlstMlpCmpJcTwoResMassOverResPr": (_JC2_MLP, "L162_MASS", "L162", _NULL),
+    "MlstMlpCmpJcTwoCoarseMassOverCoarsePr": (_JC2_MLP, "R16_Q1_MASS", "R16_Q1", _NULL),
+}
 
 
 def _tests_l3(data: pathlib.Path, mode: str, key: str, met: str, chosen: dict, every: bool) -> tuple:
@@ -4669,8 +4673,11 @@ def _tests_side(e: dict, first: str) -> tuple:
     return out
 
 
-def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_doc=None, mass_doc=None) -> tuple:
-    r"""tab:tests (TESTS): (the table, the bootstrap replica counts read). A row's numbers are its stored L3 difference,
+def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_doc=None, mass_doc=None,
+                rows_out: dict | None = None) -> tuple:
+    r"""tab:tests (TESTS): (the table, the bootstrap replica counts read); rows_out, when given, takes each TESTS row's
+    result, {(heading, first, second): None | "stale" | (delta, run SDs, bootstrap SD, sigma)}, for the ratio words
+    (ratio_words). A row's numbers are its stored L3 difference,
     delta printed at the decimal place of sigma, each SD at its own (make_tables.pdg); an AUC row is minus the stored
     1 - AUC difference. A row is
     \pending{bootstrap} without a stored bootstrap, and \pending{rerun bootstrap} where its file's runs are not the
@@ -4743,6 +4750,8 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
             v = (None if src is None else l3_row(first, second, src) if src[0] == "l3" else
                  mass_row(first, second, src) if src[0] == "mass" else None)
             got.append((first, second, v))
+            if rows_out is not None:
+                rows_out[(head, first, second)] = v
         blocks.append((head, got))
     blocks += sculpt_rows()
     out = [r"\begin{tabular}{lccccc}", r"\toprule",
@@ -4763,6 +4772,52 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
         # a block's rows never break apart from its heading; between two blocks a space, where the page may break
         out += ([r"\noalign{\penalty-100}\addlinespace"] if k else []) + [ln.rstrip() + "*" for ln in block[:-1]] + block[-1:]
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""]), {r for r in replicas if r}
+
+
+RATIO_WORD = re.compile(r"\\([A-Za-z]+Pr(?:Max)?)(?![A-Za-z])")
+
+
+def text_ratio_words(journal: pathlib.Path) -> set:
+    """The ratio words (Pr and PrMax macros) that main.tex and its sections use, comments left out."""
+    files = [journal / "main.tex", *sorted((journal / "sections").glob("*.tex"))]
+    return {n for f in files if f.exists() for n in RATIO_WORD.findall(re.sub(r"(?<!\\)%.*", "", f.read_text()))}
+
+
+def ratio_words(em, rows: dict, used: set, src) -> None:
+    """Every ratio word, in one place (PI 2026-11-23, LEDGER SP-12 step 3): each of PR_ROWS reads its tab:tests row
+    (rows: table_tests' rows_out). |Delta| > 3 sigma (PI SC-1 (1)): the ratio's direction and value in words (prose);
+    not: the null phrase of its sentence; no stored bootstrap: the row's marker. A ratio not in PR_ROWS has no word. The
+    build stops on a ratio word emitted anywhere else, on one the text uses (used) without a row, on a row TESTS does not
+    hold, and on a word whose direction is not its row's."""
+    stray = sorted(n for n in em.provenance if n.endswith(("Pr", "PrMax")))
+    if stray:
+        raise SystemExit(f"FATAL: ratio words emitted outside ratio_words: {stray[:10]}")
+    lost = sorted(used - set(PR_ROWS))
+    if lost:
+        raise SystemExit(f"FATAL: the text uses ratio words with no tab:tests row (PR_ROWS): {lost}")
+    have = {(h, a, b) for h, rs in TESTS for a, b, _ in rs}
+    held = _held(em)
+    for name, (head, first, second, null) in PR_ROWS.items():
+        if (head, first, second) not in have:
+            raise SystemExit(f"FATAL: \\{name}: tab:tests has no row {first} - {second} under '{head}'")
+        h, v = held.get(name), rows.get((head, first, second))
+        if h is None:
+            word, why = r"\pending{no run yet}", "no ratio computed"
+        elif h["body"] is not None:
+            word, why = h["body"], "no ratio to state"
+        elif v is None or v == "stale":
+            word, why = r"\pending{" + ("bootstrap" if v is None else "rerun bootstrap") + "}", "no stored bootstrap"
+        elif abs(v[0]) > 3 * v[4]:
+            x = [float(r) for r in h["vals"] if r is not None]
+            said = x if len(x) == 2 else [float(np.mean(x))] if x else []      # the values prose puts in words
+            up = -1 if h["noun"] == "errors" else 1         # more errors: the AUC or accuracy tested falls
+            if any((r - 1) * v[0] * up <= 0 for r in said):
+                raise SystemExit(f"FATAL: \\{name} reads {x}, against the sign of its tab:tests difference {v[0]:+.4g}")
+            word, why = _held_word(h), f"passes 3 sigma (|delta|/sigma = {abs(v[0]) / v[4]:.1f})"
+        else:
+            word, why = null, f"does not pass 3 sigma (|delta|/sigma = {abs(v[0]) / v[4]:.1f})"
+        em.macro(name, word, h["src"] if h else src, h["path"] if h else "not computed",
+                 f"ratio word, tab:tests row {first} - {second} ({head}): {why}")
 
 
 # ------------------------------------------------------------------ published models (main text), the other label sets (appendix)
@@ -5932,7 +5987,6 @@ REQUIRED = (
     ("DesignNTrainSelected", "a committed count of the selected pretraining jets", ""),
     ("FtBudgetEvalSmall", "build_ft_budget_jobs.py", ""),
     ("LpSubstitutionTop", "fill fits", ""), ("LpSubstitutionQg", "fill fits", ""),
-    ("MlstFtJcOneCoarseNRejDrop", "JetClass curves", ""), ("MlstFtJcOneCoarseRejDropClasses", "JetClass curves", ""),
     ("MlstFtJcOneRejHfourqCoarseOverFull", "JetClass curves", "Pr"), ("MlstFtJcOneRejHfourqMidOverFull", "JetClass curves", "Pr"),
     ("MlstFtJcOneRejTbqqRandOverFull", "JetClass curves", "Pr"), ("MlstFtJcOneAccRandMinusCoarse", "JetClass curves", ""),
     ("MlstFtCmpJcTwoCoarseOverFullESix", "class-balanced JetClass-II fine-tuning", "Pr"),
@@ -7157,8 +7211,9 @@ def _native_tex(root: pathlib.Path):
 
 
 def required_pass(em, index, missing: list) -> None:
+    # a twin is a ratio word: one without a tab:tests row is never emitted, one with a row is ratio_words' (SP-12)
     for name, waits, twins in REQUIRED:
-        for n in [name] + [name + t for t in twins.split()]:
+        for n in [name] + [name + t for t in twins.split() if name + t in PR_ROWS]:
             if n not in em.provenance:
                 em.macro(n, r"\pending{" + waits.replace("_", r"\_") + "}", index, "not computed yet",
                          f"waits on {waits}")
@@ -7490,7 +7545,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         out["tables/mlst_labelsets_full.tex"] = _float("labelsets_full", table_labelsets(per, runs, TAB, key="labelsets_full"),
                                                        True, pages=True, whole="turned", colsep_pt=6)
     # PI 2026-11-23 (LEDGER SP-9): every difference or null the text states, with its paired bootstrap where stored
-    body, reps = table_tests(data, runs, fits_s, fill, chosen, per if tag else {}, *tests_in)
+    tested = {}         # each row's result, which the ratio words read (ratio_words, PI 2026-11-23, LEDGER SP-12 step 3)
+    body, reps = table_tests(data, runs, fits_s, fill, chosen, per if tag else {}, *tests_in, rows_out=tested)
     out["tables/mlst_tests.tex"] = _float("tests", body, True, whole="turned", colsep_pt=6, fill={
         "__REPLICAS__": fmt_int(reps.pop()) if len(reps) == 1 else "the stated number of"})
     gap_macros(em, fits, per if tag else {}, runs, index, fmt_pm)
@@ -7577,6 +7633,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         ft_hours_macros(em, fth, index, fmt_int)
         if len(set(pre_runs) & set(comp)) < len(pre_runs):
             missing.append(f"compute records: {len(set(pre_runs) & set(comp))} of {len(pre_runs)} paper runs")
+    ratio_words(em, tested, text_ratio_words(root / "paper/journal"), index)
     required_pass(em, index, missing)
     # a table whose data is not pulled yet is a marked placeholder, never the file an older generator left behind
     # built only where the table is absent (setdefault evaluated the placeholder for every table, and a caption with a

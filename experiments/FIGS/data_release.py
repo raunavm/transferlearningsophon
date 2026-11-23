@@ -356,7 +356,6 @@ MT_SPECS = {"fmt_pm": _pm, "fmt_int": _ONE, "fmt": _ONE, "fmt_one": _ONE, "fmt_r
             "words": lambda out, n: ([float(n)], ["round"]) if str(out).isdigit() else None}
 M_SPECS = {"_sig2": _ONE, "_lone": _ONE, "_tab1": _ONE, "_at": _ONE,
            "_two": lambda out, a, b, *r, **k: (_floats((a, b)), ["round"] * 2),
-           "_within": lambda out, dev: ([100 * float(dev)], ["at_most"]),
            "_pctsd": lambda out, x: None if x is None else ([100 * float(x)], ["round"])}
 
 

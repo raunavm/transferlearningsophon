@@ -285,16 +285,7 @@ network trained from scratch varies its training seed, and the randomly initiali
 
 Ratios are formed between models with the same seed, which share their training jets and initial weights, and
 then averaged over seeds; a control is paired with the models of the seed it was pretrained with. Two
-configurations are said to differ only when the difference of their means over all their runs exceeds three
-times $\sigma$, where $\sigma^2$ is the sum of the variance of each configuration over its runs and the variance
-of that difference over paired bootstrap resamples of the test jets, on which every model is scored
-(appendix~\ref{sec:app-tests}). Table~\ref{tab:tests} gives this test for every difference the text states.
-
-The words in which the text gives a ratio follow the
-spread between runs alone and are not this test. With three or more runs they give the mean of the paired
-ratios, or a bound within which the two configurations are equal when that mean lies within twice the
-standard deviation of the paired ratios from one. With two runs they give the run less favorable to the
-claim, or such a bound when the two runs lie on either side of one or the run nearer one lies within twice
-the standard deviation of the same ratio between levels of the class hierarchy (the relative standard
-deviation over seeds of each coarser level against the \Kfull-class model, pooled over the three levels).
-With one run they give its value.
+configurations are said to differ only when $|\Delta|$ exceeds three times $\sigma$, where $\Delta$ is the
+difference of their means over all their runs and $\sigma^2$ is the sum of the variance of each configuration
+over its runs and the variance of $\Delta$ over paired bootstrap resamples of the test jets, on which every model
+is scored (appendix~\ref{sec:app-tests}). Table~\ref{tab:tests} gives this test for every difference the text states.

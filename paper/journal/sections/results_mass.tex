@@ -32,18 +32,17 @@ every pretrained model's features carry more.
 \input{tables/mlst_mass}
 
 The auxiliary mass regression costs the classification of the pretraining classes little. A linear
-probe on the frozen features of the \Kres-class model with the auxiliary mass regression classifies % CHECK: MlstCmpJcTwoResMassOverRes today 1.022 and 1.016; its PrMax reads "equal within" under the Methods two-run rule or "up to ... more errors", and both fit "costs little"
-JetClass-II about as well as one on the \Kres-class model (ratio of their $1-\AUC$:
-\MlstCmpJcTwoResMassOverResPrMax{}; table~\ref{tab:tests}). At \Kcoarse{} classes, where the mass term takes a larger share of the % CHECK: MlstMassLossShareCoarseMass above MlstMassLossShareResMass (today 28.7 vs 13.8 per cent)
+probe on the frozen features of the \Kres-class model with the auxiliary mass regression classifies % CHECK: MlstCmpJcTwoResMassOverRes today 1.022 and 1.016; its PrMax reads its tab:tests row (162mass-162, |Delta|/sigma 1.6 on 23 Nov: the null), and the null or "up to ... more errors" both fit "costs little"
+JetClass-II about as well as one on the \Kres-class model (\MlstCmpJcTwoResMassOverResPrMax{};
+table~\ref{tab:tests}). At \Kcoarse{} classes, where the mass term takes a larger share of the % CHECK: MlstMassLossShareCoarseMass above MlstMassLossShareResMass (today 28.7 vs 13.8 per cent)
 loss (appendix~\ref{sec:app-variants}), the two runs move in opposite directions, so the larger share % CHECK: MlstCmpJcTwoCoarseMassOverCoarse straddles 1 (today 1.054 and 0.977)
 does not show a larger cost; with \MlstMassNRunsWord{} runs per model a modest one cannot be excluded. An MLP
 probe on the same test set reads the same at both label sets (ratio of its $1-\AUC$:
 \MlstMlpCmpJcTwoResMassOverResPr{} at \Kres{} classes and \MlstMlpCmpJcTwoCoarseMassOverCoarsePr{} at
 \Kcoarse{} classes; table~\ref{tab:mlp}), so this is not a limit of what a linear classifier can read.
-% CHECK: MlstMlpCmpJcTwoResMassOverResPr and MlstMlpCmpJcTwoCoarseMassOverCoarsePr read "equal within" (fits_v5_mlp, class-balanced: 1.021 and 1.017, 1.057 and 0.987 in the 21 Nov build).
-Fine-tuning on top tagging shows no change from the auxiliary mass regression beyond three standard deviations % CHECK: MlstFtTopRthirtyResMassOverResPr straddles 1 (raw R30 today 1.12 and 0.89); l3/ft_top_N1200000.json 162mass-162 r30 z=-0.10, 17mass-17 z=-0.51
-at either label set (\MlstFtTopRthirtyResMassOverResPr{} at \Kres{} and \MlstFtTopRthirtyCoarseMassOverCoarsePr{}
-at \Kcoarse{} classes; table~\ref{tab:tests}). Its cost after fine-tuning on JetClass, where every input is
+% CHECK: MlstMlpCmpJcTwoResMassOverResPr and MlstMlpCmpJcTwoCoarseMassOverCoarsePr read their tab:tests rows (JetClass-II, AUC, MLP probe; no bootstrap on 23 Nov), the null unless a difference passes 3 sigma (fits_v5_mlp, class-balanced: 1.021 and 1.017, 1.057 and 0.987 in the 21 Nov build).
+Fine-tuning on top tagging shows no change from the auxiliary mass regression beyond three standard deviations % CHECK: l3/ft_top_N1200000.json 162mass-162 r30 z=-0.10, 17mass-17 z=-0.51; their ratio words failed 3 sigma and were removed (PI 2026-11-23, LEDGER SP-12 step 3)
+at either label set (table~\ref{tab:tests}). Its cost after fine-tuning on JetClass, where every input is
 present, is \pending{Table 1 after the reruns}.
 % CHECK: M305 (claims_main): the 17-class model with the mass regression against the 17-class model on JetClass at 1e6 passed 3 sigma on the superseded cells; recompute from Table 1 after the one-rule JetClass 1e6 rerun and write it only if it passes
 
