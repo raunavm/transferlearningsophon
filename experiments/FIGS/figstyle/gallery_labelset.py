@@ -211,8 +211,9 @@ def _break_marks(ax, side: str) -> None:
 
 def _hv_panel(fig, x, top, w, h, rows, dividers, series, ref188, met, rel=None):
     """One task's panel: series [(row, values, colour, reference?)], the dividers at their y; a reference far beyond the
-    other rows' span goes to a stub beyond an axis break. Returns (its axes from left to right, the main axes, bars,
-    bars hidden under the circle)."""
+    other rows' span goes to a stub beyond an axis break. rel: the metric's range as (lowest, highest) deviation from
+    the 188-class mean over that mean, or None for the panel's own range. Returns (its axes from left to right, the main
+    axes, bars, bars hidden under the circle)."""
     main_xs = [v for r, vals, _, ref in series if vals and not ref for v in vals + _sd_ends(vals)]
     lo, hi = min(main_xs), max(main_xs)
     far = {r for r, vals, _, ref in series if ref and vals and (min(vals) > hi + HV_BREAK * (hi - lo)
@@ -242,7 +243,7 @@ def _hv_panel(fig, x, top, w, h, rows, dividers, series, ref188, met, rel=None):
         main.set_xlim(*_hv_limits(xs[main], mw))
     else:           # every panel the same relative range about its 188-class mean, ticks in absolute units
         m = float(np.mean(ref188))
-        main.set_xlim(*_hv_limits([m * (1 - rel), m * (1 + rel)], mw))
+        main.set_xlim(*_hv_limits([m * (1 + rel[0]), m * (1 + rel[1])], mw))
     main.xaxis.set_major_locator(ticker.MaxNLocator(nbins=3 if mw > 1.6 else 2, steps=[1, 2, 5, 10]))
     if stub is not None:
         scale = np.diff(main.get_xlim())[0] / mw                    # data units per cm, as the main part
@@ -292,16 +293,19 @@ def _draw_hv(path, value, refs: tuple, cells: list, absent: str, span: str = "ow
     rel = {}
     if span == "relative":      # PI 2026-11-20 (Jason): one relative range about the 188-class mean for the panels of
         # one metric (accuracy, R30), the largest deviation from 188 classes among them: R30 moves by tens of per cent
-        # on top tagging, so one range over both metrics leaves the accuracy panels unreadable
+        # on top tagging, so one range over both metrics leaves the accuracy panels unreadable. Review of render
+        # 5f4e1b8 (C6): the range runs from the largest deviation below to the largest above, not symmetric about the
+        # mean, so the side no network reaches (accuracy above 188 classes) is not drawn: the same relative range and
+        # scale in every panel of the metric, about twice the width for a JetClass panel's spread
         devs = {}
         for cell, get in zip(cells, gets):
             ref = _hv_values("L188", get, cell)
             if ref:
                 m = float(np.mean(ref))
-                devs.setdefault(cell[3], []).extend(abs(v / m - 1) for r in HV_ROWS + HV_PARTITIONS + refs
+                devs.setdefault(cell[3], []).extend(v / m - 1 for r in HV_ROWS + HV_PARTITIONS + refs
                                                     for vals in [_hv_values(r, get, cell)] if vals
                                                     for v in vals + _sd_ends(vals))
-        rel = {met: max(d) for met, d in devs.items()}
+        rel = {met: (min(d), max(d)) for met, d in devs.items()}
     # the row names: measured at the tick size, the partitions indented, the subheading in italic
     probe = plt.figure()
     rend = probe.canvas.get_renderer()
@@ -357,7 +361,8 @@ def _draw_hv(path, value, refs: tuple, cells: list, absent: str, span: str = "ow
                       markerfacecolor="#000000", markeredgecolor="white", markeredgewidth=0.5),
                (Patch(facecolor=S.SERIES["L188"], alpha=L.BAND, linewidth=0),
                 Line2D([], [], color=S.SERIES["L188"], linewidth=S.LW_THIN))]
-    labels = ["a row's mean over its runs,\nbar \u00b11 SD over them", "188 classes, mean \u00b11 SD,\ndrawn across all rows"]
+    labels = ["a row's mean over its runs,\nbar \u00b11 standard deviation\nover them",       # CA-10: no abbreviation
+              "188 classes, mean \u00b11 standard\ndeviation, drawn across all rows"]
     if any(len(_hv_values(r, g, c)) == 1 for c, g in zip(cells, gets) for r in refs):
         handles.append(Line2D([], [], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor="white",
                               markeredgecolor="#000000", markeredgewidth=1.0))
@@ -561,7 +566,7 @@ def _model(series: dict, key: str, mode: str, label: str) -> tuple:
 
 
 STAR = 8.0                  # pt, ParT's published value: larger than a point, small enough to leave the curves' ends
-PUBLISHED_LABEL = "published Particle\nTransformer"      # L7: no abbreviation in a legend
+PUBLISHED_LABEL = "ParT, published"      # CA-6 (review of render 5f4e1b8, B15): the paper's name, defined in the text
 SIZE_PAD = 1.7              # a panel's x axis runs from its smallest training set over SIZE_PAD to its largest times it
 
 
