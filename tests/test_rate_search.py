@@ -263,3 +263,15 @@ def test_rerun_parts_split_the_label_sets_and_scratch_from_the_rest():
             assert cells[i]["init"].startswith(("rand", "flav", "l188kin")), (row, cells[i])
     # the top 1e3 parts as launched (ft-budget-fixed-rate-top1e3a/b-raunav)
     assert B.fixed_rate_parts("top", 1_000, "pre") == {"a": list(range(95, 111)), "b": list(range(111, 123))}
+
+
+def test_every_rerun_cell_keeps_its_original_cells_task():
+    """2026-11-23 (RR-8, RR-9): fixed_rate_cells passed the row's task to every pretrained cell, so the kinematic-only
+    network's top 1e3 rerun ran as top (17 inputs) and failed to load its 7-input checkpoint. Each rerun cell must have
+    the task of the original cell of the same network and size."""
+    def key(c):
+        return c["init"], c["n"], c["task"].removesuffix("kin")
+    orig = {key(c): c["task"] for c in B.fixed_cells({c["n"] for c in B.fixed_rate_cells()}) if c["init"]}
+    bad = [(key(c), c["task"], orig.get(key(c))) for c in B.fixed_rate_cells() if c["init"] and orig.get(key(c)) != c["task"]]
+    assert not bad, bad
+    assert any(c["task"] == "topkin" for c in B.fixed_rate_cells())

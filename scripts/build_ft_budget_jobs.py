@@ -520,7 +520,9 @@ def fixed_rate_cells() -> list:
     for task, n, kind in FIXED_RATE_ORDER:
         if kind == "pre":
             lr = FIXED_ROW_RATE[(task, n)]
-            out += [fixed_cell(task, c["init"], n, c["s"], lr, FIXED_RATE_ROOT) for c in fixed_cells({n})
+            # each cell keeps its own task: the kinematic-only network is topkin (7 inputs), not top (2026-11-23: top1e3b
+            # index 11 loaded its 7-input checkpoint into the 17-input top model and failed)
+            out += [fixed_cell(c["task"], c["init"], n, c["s"], lr, FIXED_RATE_ROOT) for c in fixed_cells({n})
                     if c["task"] in (task, f"{task}kin") and c["init"]]
         else:
             out += [fixed_cell(task, "", n, s, FIXED_ROW_RATE_SCRATCH[(task, n)], FIXED_RATE_ROOT) for s in SCRATCH_SEEDS]
