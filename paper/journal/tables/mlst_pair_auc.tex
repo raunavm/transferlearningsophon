@@ -1,28 +1,29 @@
 \begin{table}[t]
 \centering
-\setlength{\tabcolsep}{4pt}
-\caption{The area under the receiver operating characteristic curve (AUC) of binary linear probes on the frozen features separating pairs of JetClass-II classes, the second-named the background, scored on up to \JcBalPairTestPerSide{} test jets of each side. The values carry one digit more than the standard deviation's rounding gives, so that the ratios of $1-\mathrm{AUC}$ the text quotes follow from them. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks the best value in each column. The random network is a reference, never bold. $^{\dagger}$~marks a pair the label set merges into one class. $^{\ddagger}$~marks a pair the label set merges in part. $^{\parallel}$~marks a pair some random partitions merge.}
+\setlength{\tabcolsep}{1pt}
+\caption{The area under the receiver operating characteristic curve (AUC) of binary linear probes on the frozen features separating pairs of JetClass-II classes, the second-named the background, scored on up to \JcBalPairTestPerSide{} test jets of each side. The $X\to bc$ column carries one digit more than the standard deviation's rounding gives, up to five decimals, so that the ratios $\rho$ of equation~(\ref{eq:ratio}) the text quotes follow from it. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Bold marks the best value in each column. The random network is a reference, never bold. $^{\dagger}$~marks a pair the label set merges into one class. $^{\ddagger}$~marks a pair the label set merges in part. $^{\parallel}$~marks a pair some random partitions merge.}
 \label{tab:pairauc}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}
 \toprule
  & \multicolumn{3}{c}{AUC} \\
 \cmidrule(lr){2-4}
- & $X\to b\bar b$ vs $c\bar c$ & $X\to bc$ vs $bq$, $cs$ & $X\to YY\to b\bar{b}qq$ vs $c\bar{c}qq$ \\
+ & $X\to b\bar b$ & $X\to bc$ & $X\to YY\to b\bar{b}qq$ \\
+ & vs $c\bar c$ & vs $bq$, $cs$ & vs $c\bar{c}qq$ \\
 \midrule
 \multicolumn{4}{@{}l}{\textit{linear probe on the frozen features}} \\
-\Kfull{} classes & {\fontseries{b}\selectfont 0.997680\,$\pm$\,0.000012} & 0.940869\,$\pm$\,0.000256 & {\fontseries{b}\selectfont 0.993927\,$\pm$\,0.000039} \\
-\Kres{} classes & 0.997646\,$\pm$\,0.000051 & {\fontseries{b}\selectfont 0.940970\,$\pm$\,0.000176} & 0.993897\,$\pm$\,0.000161 \\
-\Kres{} classes + mass & 0.997361\,$\pm$\,0.000146 & 0.93878\,$\pm$\,0.00174 & 0.993213\,$\pm$\,0.000346 \\
-\Kmid{} classes & 0.997442\,$\pm$\,0.000026 & 0.93194\,$\pm$\,0.00141$^{\ddagger}$ & 0.993216\,$\pm$\,0.000010 \\
-\Kcoarse{} classes & 0.99021\,$\pm$\,0.00069$^{\dagger}$ & 0.8845\,$\pm$\,0.0039$^{\dagger}$ & 0.97159\,$\pm$\,0.00330$^{\dagger}$ \\
-\Kcoarse{} classes + mass & 0.98974\,$\pm$\,0.00089$^{\dagger}$ & 0.88205\,$\pm$\,0.00181$^{\dagger}$ & 0.96909\,$\pm$\,0.00207$^{\dagger}$ \\
+\Kfull{} classes & {\fontseries{b}\selectfont 0.99768\,$\pm$\,0.00001} & 0.94087\,$\pm$\,0.00026 & {\fontseries{b}\selectfont 0.99393\,$\pm$\,0.00004} \\
+\Kres{} classes & 0.99765\,$\pm$\,0.00005 & {\fontseries{b}\selectfont 0.94097\,$\pm$\,0.00018} & 0.99390\,$\pm$\,0.00016 \\
+\Kres{} classes + mass & 0.99736\,$\pm$\,0.00015 & 0.93878\,$\pm$\,0.00174 & 0.99321\,$\pm$\,0.00035 \\
+\Kmid{} classes & 0.99744\,$\pm$\,0.00003 & 0.93194\,$\pm$\,0.00141$^{\ddagger}$ & 0.99322\,$\pm$\,0.00001 \\
+\Kcoarse{} classes & 0.9902\,$\pm$\,0.0007$^{\dagger}$ & 0.8845\,$\pm$\,0.0039$^{\dagger}$ & 0.9716\,$\pm$\,0.0033$^{\dagger}$ \\
+\Kcoarse{} classes + mass & 0.9897\,$\pm$\,0.0009$^{\dagger}$ & 0.88205\,$\pm$\,0.00181$^{\dagger}$ & 0.9691\,$\pm$\,0.0021$^{\dagger}$ \\
 \multicolumn{4}{@{}l}{\textit{17-class partitions}} \\
-\quad no flavor boundary & 0.9776\,$\pm$\,0.0125$^{\dagger}$ & 0.8758\,$\pm$\,0.0086$^{\dagger}$ & 0.9520\,$\pm$\,0.0133$^{\dagger}$ \\
-\quad $b$-quark boundary & 0.995833\,$\pm$\,0.000127$^{\dagger}$ & 0.90972\,$\pm$\,0.00086$^{\dagger}$ & 0.991015\,$\pm$\,0.000196 \\
-\quad random flavor boundary & 0.99322\,$\pm$\,0.00113$^{\dagger}$ & 0.909823\,$\pm$\,0.000261$^{\dagger}$ & 0.986160\,$\pm$\,0.000159$^{\dagger}$ \\
-\quad random partitions & 0.996446\,$\pm$\,0.000249$^{\parallel}$ & 0.9321\,$\pm$\,0.0043$^{\parallel}$ & 0.99135\,$\pm$\,0.00037$^{\parallel}$ \\
-random network & 0.7012\,$\pm$\,0.0122 & 0.60108\,$\pm$\,0.00281 & 0.6803\,$\pm$\,0.0068 \\
-random network, BatchNorm recomputed & 0.8169\,$\pm$\,0.0204 & 0.6528\,$\pm$\,0.0090 & 0.7822\,$\pm$\,0.0189 \\
+\quad no flavor boundary & 0.978\,$\pm$\,0.012$^{\dagger}$ & 0.8758\,$\pm$\,0.0086$^{\dagger}$ & 0.952\,$\pm$\,0.013$^{\dagger}$ \\
+\quad $b$-quark boundary & 0.99583\,$\pm$\,0.00013$^{\dagger}$ & 0.90972\,$\pm$\,0.00086$^{\dagger}$ & 0.99101\,$\pm$\,0.00020 \\
+\quad random flavor boundary & 0.9932\,$\pm$\,0.0011$^{\dagger}$ & 0.90982\,$\pm$\,0.00026$^{\dagger}$ & 0.98616\,$\pm$\,0.00016$^{\dagger}$ \\
+\quad random partitions & 0.99645\,$\pm$\,0.00025$^{\parallel}$ & 0.9321\,$\pm$\,0.0043$^{\parallel}$ & 0.9913\,$\pm$\,0.0004$^{\parallel}$ \\
+random network & 0.701\,$\pm$\,0.012 & 0.60108\,$\pm$\,0.00281 & 0.680\,$\pm$\,0.007 \\
+\quad BatchNorm recomputed & 0.817\,$\pm$\,0.020 & 0.6528\,$\pm$\,0.0090 & 0.782\,$\pm$\,0.019 \\
 \bottomrule
 \end{tabular*}
 \end{table}

@@ -1,0 +1,35 @@
+\begin{landscape}
+{
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}\setlength{\LTcapwidth}{\linewidth}\makeatletter\def\LT@makecaption#1#2#3{\LT@mcol\LT@cols c{\hbox to\z@{\hss\parbox[t]\LTcapwidth{\normalsize #1{#2. }#3\par\vskip\belowcaptionskip}\hss}}}\makeatother
+\begin{center}
+\begin{minipage}{\linewidth}\centering
+\setlength{\abovecaptionskip}{0pt}
+\captionof{table}{Jensen--Shannon distance (base 2) between the soft-drop mass distributions of all QCD test jets and of those passing a cut on one minus the summed QCD output of the pretraining head used directly. The cut keeps a fraction $\epsB$ of the QCD jets or half the resonant jets ($\varepsilon_S = 50\%$). The random selection of as many QCD jets gives the statistical floor, at $\varepsilon_S = 50\%$ for each network's own number of passing jets. Values are the mean $\pm$ standard deviation over \MlstNRunsWord{} runs, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random partitions. Lower distances are better. Bold marks the best value in each column. The random selection is a reference, never bold.}
+\label{tab:sculptmain}
+\par\medskip
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
+\toprule
+ & $\epsB = 10\%$ & $\epsB = 1\%$ & \multicolumn{2}{c}{$\varepsilon_S = 50\%$} \\
+\cmidrule(lr){4-5}
+ & distance & distance & distance & random selection \\
+\midrule
+\multicolumn{5}{@{}l}{\textit{pretraining head used directly}} \\
+\Kfull{} classes & 0.0524\,$\pm$\,0.0034 & 0.0439\,$\pm$\,0.0024 & 0.055\,$\pm$\,0.005 & 0.041\,$\pm$\,0.006 \\
+\Kres{} classes & 0.0532\,$\pm$\,0.0009 & 0.0429\,$\pm$\,0.0029 & 0.0554\,$\pm$\,0.0015 & 0.041\,$\pm$\,0.006 \\
+\Kres{} classes + mass & {\fontseries{b}\selectfont 0.0443\,$\pm$\,0.0030} & 0.0433\,$\pm$\,0.0012 & 0.0548\,$\pm$\,0.0032 & 0.040\,$\pm$\,0.006 \\
+\Kmid{} classes & 0.0560\,$\pm$\,0.0027 & 0.051\,$\pm$\,0.007 & 0.0637\,$\pm$\,0.0023 & 0.041\,$\pm$\,0.006 \\
+\Kcoarse{} classes & 0.0543\,$\pm$\,0.0010 & 0.0561\,$\pm$\,0.0017 & 0.0668\,$\pm$\,0.0022 & 0.040\,$\pm$\,0.006 \\
+\Kcoarse{} classes + mass & 0.047\,$\pm$\,0.007 & {\fontseries{b}\selectfont 0.0428\,$\pm$\,0.0033} & {\fontseries{b}\selectfont 0.051\,$\pm$\,0.004} & 0.039\,$\pm$\,0.006 \\
+\multicolumn{5}{@{}l}{\textit{17-class partitions}} \\
+\quad no flavor boundary & 0.05482\,$\pm$\,0.00016 & 0.05092\,$\pm$\,0.00014 & 0.060\,$\pm$\,0.004 & 0.040\,$\pm$\,0.006 \\
+\quad $b$-quark boundary & 0.054\,$\pm$\,0.004 & 0.0521\,$\pm$\,0.0007 & 0.059\,$\pm$\,0.005 & 0.040\,$\pm$\,0.006 \\
+\quad random flavor boundary & 0.0533\,$\pm$\,0.0008 & 0.0486\,$\pm$\,0.0006 & 0.060\,$\pm$\,0.004 & 0.040\,$\pm$\,0.006 \\
+\quad random partitions & 0.0531\,$\pm$\,0.0012 & 0.0451\,$\pm$\,0.0035 & 0.058\,$\pm$\,0.004 & 0.040\,$\pm$\,0.006 \\
+\midrule
+random selection & 0.0094\,$\pm$\,0.0014 & 0.031\,$\pm$\,0.005 & -- & -- \\
+\bottomrule
+\end{tabular*}
+\end{minipage}
+\end{center}
+}
+\end{landscape}
