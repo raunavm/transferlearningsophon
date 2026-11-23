@@ -421,6 +421,8 @@ def main() -> int:
               (EVAL / "mass_sd_boot", "head", "mass_sd_boot_v3.json"),     # v3: after the one-CPU refit (PI 2026-11-21)
               # v4: v3 and tab:tests' mass differences (scripts/build_boot_tests_jobs.py, PI 2026-11-23 SP-12 step 4)
               (EVAL / "mass_sd_boot", "head", "mass_sd_boot_v4.json"),
+              # v5: v4 and every pretrained group against the random network (review of 5c40d69, BS)
+              (EVAL / "mass_sd_boot", "head", "mass_sd_boot_v5.json"),
               (EVAL / "confusion_share", "stats", "confusion_share.json"))
         # the v5 refits (PI 2026-11-14, scripts/build_refit_v5_jobs.py): every family at once, and only after the
         # refit-checks job passed (its PASS file), so a pull never takes part of them (mlst_v4.pick refuses a part)
