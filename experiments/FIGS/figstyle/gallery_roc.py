@@ -1038,7 +1038,7 @@ SUPPLEMENT_CAPTIONS = {
         '20 passing background jets. The lower panels give the ratio to 188 classes on a linear axis from a signal '
         'efficiency of 0.1, with a band of run spread and binomial uncertainty for 188 classes only. Figure {fig:F6-ft} '
         'shows the fine-tuned networks, and values and the other standard deviations are in tables {tab:summary}, '
-        '{tab:summaryauc} and {tab:probes}.'
+        '{tab:summaryaucfull} and {tab:probes}.'
     ),
     "F6-ft": (
         "After fine-tuning, no label set or mass network differs from 188 classes in R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, by more than three standard deviations on top and quark/gluon tagging, "
@@ -1047,7 +1047,7 @@ SUPPLEMENT_CAPTIONS = {
         "from scratch, down to 20 passing background jets. Lower panels give the ratio to 188 classes on a linear axis "
         "from a signal efficiency of 0.1, with bands for the run spread and binomial uncertainty of 188 classes and from "
         "scratch only, the other standard deviations being in the tables. Values are in tables {tab:summary}, "
-        "{tab:summaryauc} and {tab:labelsets}."
+        "{tab:summaryaucfull} and {tab:labelsets}."
     ),
     "F4-ee": (
         "Linear probes on the frozen features separate X→ee from X→μμ completely with the networks pretrained with 188 "
@@ -1104,7 +1104,7 @@ SUPPLEMENT_CAPTIONS = {
         "classes its standard deviation over runs and the binomial uncertainty of its passing background count in "
         "quadrature, the others' being in the tables. R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, "
         "and the area under the receiver operating characteristic curve are in tables {tab:summary} and "
-        "{tab:summaryauc}, the rejection at 50% signal efficiency in table {tab:probes}."
+        "{tab:summaryaucfull}, the rejection at 50% signal efficiency in table {tab:probes}."
     ),
     "F6-part-ft": (
         "The four 17-class partitions in the form of figure {fig:F6-ft}, fine-tuned on the full top and quark/gluon "
@@ -1113,7 +1113,7 @@ SUPPLEMENT_CAPTIONS = {
         " with one run each, and over three runs for 188 and 17 classes. The lower panels show the ratio to 188 "
         "classes, the band of 188 classes its standard deviation over runs and the binomial uncertainty of its passing "
         "background count in quadrature, the others' being in the tables. R30, one over the fraction of background jets kept when the cut keeps 30% of the signal jets, the working point of the top-tagging comparison, and the area under the receiver operating characteristic curve are in tables {tab:summary}"
-        " and {tab:summaryauc}, the rejection at 50% signal efficiency in table {tab:labelsets}."
+        " and {tab:summaryaucfull}, the rejection at 50% signal efficiency in table {tab:labelsets}."
     ),
     # the JetClass and JetClass-II class-against-rest pages (their figures lost the heading in this round): the brief's
     # form, no colons

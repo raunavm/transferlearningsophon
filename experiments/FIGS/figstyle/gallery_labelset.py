@@ -1024,7 +1024,7 @@ SUPPLEMENT_CAPTIONS = {
         'better. The panels show the AUC of the linear probes of figure {fig:F2}, on JetClass-II and JetClass averaged '
         'over the classes, each against the rest, with the random network. Tasks, '
         'networks and run counts are those of figure {fig:F2}, and the line and band repeat the 188-class values. Values are in '
-        'tables {tab:summary} and {tab:summaryauc}.'
+        'tables {tab:summary} and {tab:summaryaucfull}.'
     ),
     "F2b": (
         'After fine-tuning, every pretrained network separates the JetClass-II and JetClass classes better than '
@@ -1033,7 +1033,7 @@ SUPPLEMENT_CAPTIONS = {
         'classes, each against the rest. Tasks, networks and run counts are those of figure {fig:F2-ft}, the line and '
         'band repeat the 188-class values, and from scratch lies beyond an axis break (//) in (b) and (d). The random '
         'network has no fine-tuned version: its weights are untrained, and training from scratch, with its own '
-        'schedule, is the reference. Values are in tables {tab:summary} and {tab:summaryauc}.'
+        'schedule, is the reference. Values are in tables {tab:summary} and {tab:summaryaucfull}.'
     ),
     "VAL-part": (
         "The curves show the validation accuracy on JetClass-II against pretraining epoch for the 17-class partitions, "
