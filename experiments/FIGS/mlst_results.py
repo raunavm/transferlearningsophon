@@ -3472,12 +3472,6 @@ def pair_figure_macros(em, data: pathlib.Path, root: pathlib.Path, runs: dict, s
     for k, *_ in PAIRS:
         em.macro(f"MlstPairRandApart{PAIR_WORD[k]}Word", words(n[k]), maps, f"{'/'.join(RAND)} groups of {k}",
                  "random partitions that keep the pair apart (count, from the label maps)")
-        # the pair figures draw those that merge the pair and those that keep it apart, with counts (PI 2026-11-21,
-        # LEDGER PS-5; review of 5c40d69, B2); a partition that merges the pair in part is in neither
-        em.macro(f"MlstPairRandApart{PAIR_WORD[k]}N", str(n[k]), maps, f"{'/'.join(RAND)} groups of {k}",
-                 "random partitions that keep the pair apart (count)")
-        em.macro(f"MlstPairRandMerged{PAIR_WORD[k]}N", str(sum(status[a][k] == "merged" for a in RAND)), maps,
-                 f"{'/'.join(RAND)} groups of {k}", "random partitions that merge the pair into one class (count)")
     mech = [n[k] for k in PAIR_FIGS["Mech"]]
     em.macro("MlstPairRandApartMechWord", words(mech[0]) if len(set(mech)) == 1 else " and ".join(map(words, mech)),
              maps, f"{'/'.join(RAND)} groups of {' and '.join(PAIR_FIGS['Mech'])}",
