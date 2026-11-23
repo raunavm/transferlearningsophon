@@ -74,14 +74,14 @@ it keeps more $X\to bs$ jets, a decay in no label set, than the network trained 
 \centering
 \paperfig{\linewidth}{F11}
 \caption{At a QCD efficiency of 1\%, \Kcoarse{} classes keep fewer $X\to b\bar b$ and $X\to bs$ jets than
-\Kfull{} classes. Resonance tagging of (a) $X\to b\bar b$ and (b) $X\to bs$ against QCD jets:
-$\epsS/\sqrt{\epsB}$ of equation~(\ref{eq:signif}) against the QCD efficiency $\epsB$, for a transfer head on the
-frozen features of each label set, the same network trained from scratch, and, in (a), Sophon's direct
-discriminant of the \Kfull- and \Kres-class models and of the \Kres-class model with the auxiliary mass
-regression, each the mean over runs; a curve ends where fewer than $\nmin$ QCD jets pass. Jets lie in the
-soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV around a resonance mass of \XbxMx~GeV, and every model is
-scored on the same \XbbNEvalSignal{} $X\to b\bar b$, \XbsNEvalSignal{} $X\to bs$ and \XbsNEvalQcd{} QCD jets. The
-signal efficiencies at a QCD efficiency of 1\% are in table~\ref{tab:summary}.}
+\Kfull{} classes. Panels show $\epsS/\sqrt{\epsB}$ of equation~(\ref{eq:signif}) against the QCD efficiency
+$\epsB$ for a transfer head on the frozen features of each label set and mass network, the same network trained
+from scratch and, for $X\to b\bar b$, Sophon's direct discriminant of the \Kfull- and \Kres-class networks and the
+\Kres-class network with an added mass output. Curves are means over \MlstNRunsWord{} runs per label set,
+\MlstMassNRunsWord{} per mass network and \MlstXbxScratchSeedsWord{} from scratch, ending where fewer than $\nmin$
+QCD jets pass. Jets lie in the soft-drop mass window \XbxWindowLo--\XbxWindowHi~GeV, and every model is scored on
+the same \XbbNEvalSignal{} $X\to b\bar b$, \XbsNEvalSignal{} $X\to bs$ and \XbsNEvalQcd{} QCD jets. The signal
+efficiencies at a QCD efficiency of 1\% are in table~\ref{tab:summary}.}
 \label{fig:F11}
 \end{figure}
 % END XBX

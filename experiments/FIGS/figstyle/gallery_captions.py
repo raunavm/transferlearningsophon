@@ -72,12 +72,14 @@ CAPTIONS = {
         "release."
     ),
     # PI 2026-11-23 (SP-13): the page captions of F4-mech, F4-other and F9b follow the paper's section captions (1db8bc37);
-    # F4-mech's, at 141 words as written there, loses six connecting words to stay within 135 (CA-1)
+    # F4-mech's, at 141 words as written there, loses six connecting words to stay within 135 (CA-1); PI 2026-11-22
+    # (LEDGER CA-1, counted as printed): the paper's drops "label sets above and 17-class partitions below", which
+    # the figure's row names say, and so does this one
     "F4-mech": (
         'Linear probes on 17 classes, which merge each pair, separate X→bb̄ from cc̄ and X→bc from bq, cs, the '
         'second-named the background, worse than 188 classes, and the b-quark boundary recovers part of the loss on '
         'both pairs, the random flavor boundary on the second. Panels show one over the fraction of background jets '
-        'kept against that of signal jets, label sets above, 17-class partitions below, with ratios to 188 classes. '
+        'kept against that of signal jets, with ratios to 188 classes. '
         'Curves are means over {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and '
         'flavor-boundary partition, {m:RandVtwoRuns} each for the {m:MlstPairRandApartMechWord} random partitions '
         'keeping the pair apart, ending where fewer than {m:MlstMinBkgPass} background jets pass; 188 classes\' band '

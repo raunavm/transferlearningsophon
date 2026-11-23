@@ -6492,12 +6492,13 @@ CAPTION_SHORT = {
                            "for linear probes and networks fine-tuned on one million JetClass jets." + PART_DEF
                            + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md; (CA-16) the released checkpoint's absent
-    # row in the PI's words
+    # row in the PI's words; PI 2026-11-22 (LEDGER CA-1): 141 words as printed, cut to 135 ("not repeated here" and
+    # "draws of a real particle" out; the headings name the two fills shown)
     "fill": ("$R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of signal jets, the "
              "top-tagging working point, of table~\\ref{tab:summary}'s linear probes on top-quark against QCD and quark "
-             "against gluon jets, with missing inputs at zero, the training mean or draws of a real particle. "
+             "against gluon jets, with missing inputs at zero, the training mean or real-particle draws. "
              "Table~\\ref{tab:summary} uses \\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon, "
-             "not repeated here, and the released Sophon checkpoint takes the fill chosen for our networks. The "
+             "and the released Sophon checkpoint takes the fill chosen for our networks. The "
              "kinematic-inputs network, a top-tagging diagnostic, misses nothing. BatchNorm recomputed means "
              "batch-normalization statistics re-estimated on \\DesignBnJets{} training jets."
              + _runs("set", "flav", "mass", "rand")),
