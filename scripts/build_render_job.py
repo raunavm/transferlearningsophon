@@ -15,6 +15,8 @@ failure is read, not retried).
     python3 scripts/build_render_job.py            # the spec for HEAD, which must be pushed
     python3 scripts/build_render_job.py --mockups  # the figure mock-ups (experiments/FIGS/mockup_figures.py,
                                                    # paper/mockups/mockups.tex) into render/<commit>-mockups/
+    python3 scripts/build_render_job.py --release  # the data release (experiments/FIGS/data_release.py) into
+                                                   # render/<commit>-release/release/; may run from a pushed branch
 """
 from __future__ import annotations
 
@@ -148,16 +150,31 @@ BOOK = {"what": "results book", "suffix": "-book", "texdir": "paper/journal", "t
 """}
 
 
+# the data release (experiments/FIGS/data_release.py, PI 2026-11-22): after the table build, the release, which draws the
+# gallery's figures with their plotting calls recorded, into render/<commit>-release/release/ (logs beside it); the
+# paper is compiled as in every mode
+RELEASE = {"what": "data release", "suffix": "-release", "texdir": "paper/journal", "texfile": "main",
+           "draw": """          pip install --no-cache-dir -q pymupdf==1.26.7 || exit 1
+          python3 experiments/FIGS/make_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
+          python3 experiments/FIGS/data_release.py --out ${OUT}/release > ${OUT}/release.txt 2>&1; echo "release rc=$?"
+          tail -n 15 ${OUT}/tables.txt; grep -E "size estimate|RELEASE|FAILED|absent|Traceback|Error" ${OUT}/release.txt | tail -n 60
+""",
+           "collect": """          echo "release files: $(find ${OUT}/release -type f | wc -l)"; du -sh ${OUT}/release
+          du -s --block-size=1 ${OUT}/release | sed 's/^/release bytes: /'
+"""}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mockups", action="store_true", help="the figure mock-ups instead of the paper")
     ap.add_argument("--book", action="store_true", help="the results book (main text and appendix) instead of the paper")
+    ap.add_argument("--release", action="store_true", help="the data release (experiments/FIGS/data_release.py)")
     ap.add_argument("--preview", action="store_true", help="today's partial results (MLST_FT_PREVIEW=1), the book or the paper")
     storage_line.add_argument(ap)
     a = ap.parse_args()
-    mode = MOCKUPS if a.mockups else BOOK if a.book else PAPER
+    mode = MOCKUPS if a.mockups else BOOK if a.book else RELEASE if a.release else PAPER
     if a.preview:
-        if mode is MOCKUPS:
+        if mode in (MOCKUPS, RELEASE):
             raise SystemExit("FATAL: --preview is for the book or the paper")
         # PI 2026-11-22: the paper read end to end while the reruns run: its tables from the partial read-out
         mode = {**mode, "suffix": "-bookpreview" if mode is BOOK else "-preview",
@@ -168,7 +185,8 @@ def main() -> int:
                             text=True, check=True).stdout.strip()
     remote = subprocess.run(["git", "branch", "-r", "--contains", commit], cwd=ROOT,
                             capture_output=True, text=True).stdout
-    if "origin/main" not in remote:
+    # the pod clones every branch, so the release may run from a pushed branch before it reaches main
+    if "origin/main" not in remote and not (mode is RELEASE and "origin/" in remote):
         raise SystemExit(f"FATAL: {commit[:7]} is not pushed; the pod clones it from GitHub")
     out = OUT_DIR / f"job-render{mode['suffix']}-{commit[:7]}-raunav.yaml"
     OUT_DIR.mkdir(parents=True, exist_ok=True)

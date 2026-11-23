@@ -1,0 +1,23 @@
+% DRAFT for the PI's approval (2026-11-22). MLST's data availability statement in IOP's standard wording ("The data that
+% support the findings of this study are openly available at the following URL/DOI"): what is released, where it will
+% be deposited (the DOI a placeholder until it is), and what is not released and why. Not \input in main.tex; once
+% approved it replaces the \data{} block of sections/endmatter.tex. The release is written by
+% experiments/FIGS/data_release.py (scripts/build_render_job.py --release); nothing has been deposited.
+\data{The data that support the findings of this study are openly available at the following URL/DOI:
+\pending{DOI of the data release}. The release holds, as CSV files with a README that maps each figure and
+table of this article, its appendix and its supplementary material to its files, the values behind every one
+of them for every network, pretraining run, bin and class: each printed value at full precision with the
+values of the runs it averages, each number in the text, each plotted series, and the result files of every
+pretraining run that the tables and figures read (linear and multilayer-perceptron probes, fine-tuning, the
+mass regression and mass sculpting, resonance tagging, per-class and per-jet-$p_{\mathrm{T}}$ performance, ROC
+curves and compute records). Every number in the article is written from those result files by a script,
+and a test checks that each equals its released value rounded at its printed precision. The code that trains
+and evaluates the networks and writes the tables, the figures and the release, including the label maps of
+every label set, is available at \pending{DOI of the code archive of the released version}; the network and
+its training follow Sophon's released code~\cite{sophoncode}. The simulated samples are not redistributed,
+since each is public from its authors: the pretraining dataset JetClass-II~\cite{jetclasstwo} and the
+downstream datasets JetClass~\cite{jetclassdata}, the top-quark tagging reference dataset~\cite{topdata} of
+the landscape study~\cite{toptag} and the Pythia and Herwig quark/gluon samples~\cite{qgpythia,qgherwig}.
+The $X\to b\bar{b}$ and $X\to bs$ samples are \pending{held by whom, and how to obtain them}. The pretrained and
+fine-tuned networks and the per-jet scores of each evaluation are not in this release
+\pending{PI: archived at their own DOI, or available from the corresponding author on reasonable request}.}

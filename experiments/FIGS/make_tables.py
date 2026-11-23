@@ -4789,8 +4789,19 @@ def render_macros(em: Emitter, missing: list[str], skipped: list[str]) -> str:
     return "\n".join(head + body) + "\n"
 
 
+def data_release_module():
+    """data_release.py beside this file: the data release's recorder and its check (PI 2026-11-22)."""
+    spec = importlib.util.spec_from_file_location(
+        "data_release", pathlib.Path(__file__).resolve().parent / "data_release.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
 def build(root: pathlib.Path) -> tuple[dict, list, list]:
     """Everything the paper gets, as {relative path: text}, plus the two reports."""
+    release = data_release_module()
+    release.install(globals())      # every printed number with its value (the data release); checked at the end
     paths = input_paths(root)
     missing, skipped = [], []
     for name, pattern in PENDING_INPUTS:
@@ -5026,11 +5037,13 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     spec = importlib.util.spec_from_file_location("mlst_results", pathlib.Path(__file__).resolve().parent / "mlst_results.py")
     mlst = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mlst)
+    release.install_mlst(mlst, globals())
     out.update(mlst.build(em, root, missing, fmt_pm, fmt_int, words))
 
     emit_unprinted(em, root, missing)
     out["results_generated.tex"] = render_macros(em, missing, skipped)
     out["provenance.json"] = json.dumps(em.provenance, indent=2, sort_keys=True) + "\n"
+    release.finish(out, globals())  # stops on a printed number that is not its value rounded at its printed precision
     return out, missing, skipped
 
 
