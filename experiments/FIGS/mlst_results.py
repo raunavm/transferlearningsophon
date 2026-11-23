@@ -4653,6 +4653,11 @@ def table_randparts(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID) ->
     return "%SPLIT%".join("\n".join(head + q.split("\n") + [r"\bottomrule", r"\end{tabular}", ""]) for q in parts)
 
 
+# review of render 5f4e1b8 (B17): what each mode of Table 2 puts in the missing top and quark/gluon inputs
+SUMMARY_FILL_NOTE = {"lp": r", missing inputs as \LpSubstitutionTop{} (top) and \LpSubstitutionQg{} (quark/gluon)",
+                     "ft": ", missing inputs set to zero"}
+
+
 def table_summary(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID, key="summary", data=None,
                   xbx: dict | None = None) -> str:
     """The values of the headline family on grid, one %SPLIT% part (a turned page) per mode: linear probes (the label
@@ -4700,10 +4705,13 @@ def table_summary(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID, key=
         mode_now[0] = mode
         get = ([summary_probe(fits, fill, chosen, ds, met) for _, _, ds, met in grid] if mode == "lp"
                else [summary_ft(per, k, n, met) for k, n, _, met in grid])
-        head_row = _full_row(nc, HEADING[mode], italic=True)
+        # review of render 5f4e1b8 (B17): Table 2's block headings say what each mode puts in the missing top and
+        # quark/gluon inputs (in the headings, as the caption is at its 135 words)
+        title = HEADING[mode] + (SUMMARY_FILL_NOTE[mode] if key == "summary" else "")
+        head_row = _full_row(nc, title, italic=True)
         if xb:      # the X->bb / X->bs columns are read by a transfer head, not a linear probe (CA-12), and in the
             # fine-tuned block only the network trained from scratch fills them (review of render 5f4e1b8, C5)
-            head_row = (rf"\multicolumn{{{1 + len(grid)}}}{{@{{}}l}}{{\textit{{{HEADING[mode]}}}}} & "
+            head_row = (rf"\multicolumn{{{1 + len(grid)}}}{{@{{}}l}}{{\textit{{{title}}}}} & "
                         rf"\multicolumn{{{len(SUMMARY_XBX)}}}{{c}}{{\textit{{{XBX_HEAD if mode == 'lp' else SCRATCH_LABEL}}}}} \\")
         body = [head_row] + [row(LABEL[a], cells(a, get)) for a in SETS]
         ctl = [(r"\quad " + LABEL[a], cells(a, get)) for a in SUMMARY_CONTROLS]
@@ -6862,9 +6870,8 @@ CAPTION_SHORT = {
             "networks, on JetClass-II, JetClass, top-quark against QCD and quark against gluon jets, and pairs of "
             "JetClass-II classes differing only in quark flavor, which coarser label sets merge, the second-named the "
             "background. AUC is the area under the receiver operating characteristic curve, averaged over all, "
-            "resonant or QCD classes, each against the rest. $R_{30}$ is one over the fraction of background jets kept "
-            "when the cut keeps 30\\% of signal jets, the top-tagging working point. On top and quark/gluon tagging the "
-            "missing inputs are set to zero." + _runs("set", "flav", "mass", "rand")),
+            "resonant or QCD classes, each against the rest, and $R_{30}$ is defined as in table~\\ref{tab:summary}. "
+            "Missing top and quark/gluon inputs are set to zero." + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md, no PART_DEF (tab:sets defines it)
     "coarse": "Linear probes on the frozen features of " + PNETS + ", of the two networks with an added mass "
               "output, of the 17-class partitions and of the random network, trained on one million class-balanced "
@@ -7040,9 +7047,7 @@ CAPTION_SHORT = {
                 "signal efficiency against QCD jets in the mass window \\XbxWindowLo--\\XbxWindowHi~GeV at the "
                 "header's QCD efficiency. A transfer head gives these columns, from "
                 "scratch training on \\MlstXbxScratchTrainBb{} ($X\\to b\\bar b$) or "
-                "\\MlstXbxScratchTrainBs{} ($X\\to bs$) jets a class. The linear probes on top and quark/gluon "
-                "tagging take \\LpSubstitutionTop{} and \\LpSubstitutionQg{} for the missing inputs, which "
-                "fine-tuning sets to zero. Dashes mark values not computed."
+                "\\MlstXbxScratchTrainBs{} ($X\\to bs$) jets a class. Dashes mark values not computed."
                 + _runs("set", "flav", "mass", "rand")),
     "masseffect": ("The networks pretrained with 162 and 17 classes, without and with an added mass output, on every "
                   "task, metric and read-out (rows). Definitions, training sets and inputs are those of "
@@ -7067,7 +7072,7 @@ CAPTION_SHORT = {
                  "AUC is the area under the receiver operating characteristic curve, on JetClass "
                  "averaged over the classes, each against the rest, equal here to ParT's average over class pairs. "
                  "$R_{50}$ and $R_{30}$ are one over the fraction of background jets kept when the cut keeps 50\\% or "
-                 "30\\% of the signal jets (30\\% is the working point of the top-tagging comparison)."),
+                 "30\\% of the signal jets (30\\%, the top-tagging working point)."),
     "xbx": ("Signal efficiency in percent of $X\\to b\\bar b$ and $X\\to bs$ jets against QCD jets at the QCD "
            "efficiency $\\varepsilon_B$ in the header, relative to the jets with soft-drop mass "
            "\\XbxWindowLo--\\XbxWindowHi~GeV. The pretrained "
@@ -8379,6 +8384,10 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     for r in vars(em).get("ratio_check", []):       # LEDGER TX-3: printed in the build log, one line a quoted ratio
         print(f"TX-3 {'ok  ' if r[7] == r[8] else 'DIFF'} {r[0]}: full {r[5]:.6g} ({r[7]}), printed means {r[6]:.6g} "
               f"({r[8]}); means {r[11]!r}, {r[12]!r} printed {r[9]!r}, {r[10]!r}")
+    diff = [r[0] for r in vars(em).get("ratio_check", []) if r[7] != r[8]]
+    if diff:        # LEDGER TX-3, RR-7: checked where the ratios are formed; the fix is a digit more in their table
+        raise SystemExit(f"FATAL: quoted ratios that differ from full-precision means at the quoted digits: {diff}; "
+                         "give their table one more digit (EXTRA_DIGIT)")
     dropped_auc_check(root / "paper/journal")
     required_pass(em, index, missing)
     # a table whose data is not pulled yet is a marked placeholder, never the file an older generator left behind
