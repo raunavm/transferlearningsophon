@@ -449,19 +449,25 @@ class Recorder:
                 res["notes"].append(f"{rel}: not parsed ({type(exc).__name__}: {exc})")
                 continue
             label = table_label(text)
-            pos, occ = {}, collections.Counter()
+            # a cell's place: its heading, row and column (and which of equal ones); a row and column without the
+            # heading only where the pair is one cell on both sides (a heading the table adds after printing)
+            pos, alone, occ = {}, collections.defaultdict(list), collections.Counter()
             for e in self.pos.get(label, []) if label else []:
-                k = (e["row"], e["column"])
+                k = (e["block"], e["row"], e["column"])
                 pos[k + (occ[k],)] = e
                 occ[k] += 1
+                alone[(e["row"], e["column"])].append(e)
+            once = collections.Counter((c.row, c.column) for c in cs if c.nums)
             occ = collections.Counter()
             rows = []
             for n, c in enumerate(cs):
                 if not c.nums:
                     continue
-                k = (c.row, c.column)
+                k = (c.block, c.row, c.column)
                 e = pos.get(k + (occ[k],))
                 occ[k] += 1
+                if e is None and once[(c.row, c.column)] == 1 and len(alone[(c.row, c.column)]) == 1:
+                    e = alone[(c.row, c.column)][0]
                 m = {"cell": len(rows), "part": c.part, "block": c.block, "row": c.row, "column": c.column,
                      "printed": c.text, "nums": c.nums, "kind": "printed", "basis": "printed",
                      "values": [x.value for x in c.nums], "rules": ["exact"] * len(c.nums)}
