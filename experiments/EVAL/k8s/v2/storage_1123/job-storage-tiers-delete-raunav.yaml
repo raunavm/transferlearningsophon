@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # The approved deletion of tiers 1 and 2 (PI 2026-11-23, LEDGER ST-5), step 2, after the only copies of the 152 trained
+  # networks were archived, fetched to the laptop (archive/networks_1123, every file sha256-checked) and the manifests
+  # committed (experiments/EVAL/manifests/storage_1123_tier{1,2}.csv). scripts/storage_tiers.py delete: each manifest's
+  # sha256 is checked first, then exactly its rows whose file re-hashes to the manifest value are deleted. CPU.
+  name: storage-tiers-delete-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning@sha256:db235b515a278198ebc6dc2c607c9c38cfb10e6b46e29ed2847ec9f4af6191e7
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.48 https://github.com/raunavm/transferlearningsophon.git tls; }
+          retry clone || exit 1
+          cd /workspace/tls
+          df -h /data | tail -1
+          python3 scripts/storage_tiers.py delete --manifest /data/results/storage_1123/tier1.csv --sha256 d86854ea2a40377aff50270bac23c31cae50896e0be426593c431ac80a34ec1a
+          python3 scripts/storage_tiers.py delete --manifest /data/results/storage_1123/tier2.csv --sha256 6e7fdc52e425d95505c688a0bb3bd4687a4bf3ae200f35b8e2b41a922caf739f
+          for t in 1 2; do echo "tier $t log:"; cut -f1 /data/results/storage_1123/tier$t.deleted.log | sort | uniq -c; done
+          df -h /data | tail -1
+        resources:
+          requests: { memory: "4Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "4Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
