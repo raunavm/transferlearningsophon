@@ -38,6 +38,9 @@ spec:
               - key: topology.kubernetes.io/region
                 operator: In
                 values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["node-2-3.sdsc.optiputer.net"]
       volumes:
       - name: data
         persistentVolumeClaim:

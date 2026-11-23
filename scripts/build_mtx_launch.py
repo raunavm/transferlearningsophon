@@ -641,7 +641,9 @@ V2_BAD_NODES = ("ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net",
 # failed jc2bal-fit index 29 with "CUDA error: unspecified launch failure" mid-fit and refused two
 # jc2bal-xfill pods at admission (UnexpectedAdmissionError) the same day.
 # ry-gpu-08: five fine-tuning cells lost to GPU errors in one day, 2026-11-03 (CUDA error: unknown error)
-V2_LATER_BAD_NODES = ("k8s-haosu-10.sdsc.optiputer.net", "ry-gpu-08.sdsc.optiputer.net")
+# 2026-11-23: node-2-3.sdsc mounts transfer-learning-vol no longer (MountVolume.SetUp DeadlineExceeded, then "an operation
+# with the given target path already exists"; two of our pods stuck ContainerCreating for hours)
+V2_LATER_BAD_NODES = ("k8s-haosu-10.sdsc.optiputer.net", "ry-gpu-08.sdsc.optiputer.net", "node-2-3.sdsc.optiputer.net")
 TRAIN_GLOBS = ("Res2P:/jc2/jet_data/Res2P_{0000..0199}.parquet",
                "Res34P:/jc2/jet_data/Res34P_{0000..0859}.parquet",
                "QCD:/jc2/jet_data/QCD_{0000..0279}.parquet")
