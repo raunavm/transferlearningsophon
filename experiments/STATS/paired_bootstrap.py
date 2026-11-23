@@ -44,8 +44,9 @@ tab:tests (PI 2026-11-23, LEDGER SP-12 step 4; SC-1 (1)), on the same resamples:
                sd_a^2 = SD_A^2 + 2 SD_B^2 (the first step) and sd_b^2 = 2 SD_B^2 + SD_C^2 (the second), so sigma is
                still sqrt(sd_a^2 + sd_b^2 + boot_sd^2)
   --second-task TASK   every model's cell also scored on TASK's test set (other jets, their own resamples from
-               seed + 1, shared by every model): <metric>_ratio = the headline metric on TASK over that on --task,
-               per model and per resample (e.g. R30 on Herwig over R30 on Pythia)
+               seed + 1, shared by every model): <metric>_second, the headline metric there, and <metric>_ratio, it
+               over that on --task, per model and per resample (e.g. R30 on Herwig over R30 on Pythia); a --diff side
+               may name <model>@second, the model's headline metrics on TASK's jets (Herwig minus Pythia jets)
   --cache DIR  each model's metrics and resampled metrics in DIR/<model>.npz, read instead of recomputed when its
                record (input, task, jets, b, seed, options) is the same, refused when it differs; with --cache-only
                the run fills the cache and writes no --out (a large set split over pods, then one run reads them all)
@@ -323,8 +324,9 @@ def main(argv=None) -> int:
     steps = {d[0]: d[1:] for d in (_sides(x, 3, "--step") for x in a.step)}
     if len(diffs) != len(a.diff) or len(steps) != len(a.step) or set(diffs) & set(steps):
         raise SystemExit("FATAL: a --diff or --step name is given twice")
+    named = set(paths) | ({f"{n}@second" for n in paths} if a.second_task else set())
     unknown = ({n for p in pairs for n in p} | {n for ab in [*diffs.values(), *steps.values()] for side in ab
-                                                for n in side}) - set(paths) | ({a.take_rows_of} - set(paths) - {None})
+                                                for n in side}) - named | ({a.take_rows_of} - set(paths) - {None})
     if unknown:
         raise SystemExit(f"FATAL: {sorted(unknown)} are not models")
     # one model in memory at a time: the reference model's jets fix the resamples
@@ -352,6 +354,7 @@ def main(argv=None) -> int:
                 s2 = align(n, second if n == ref else load(pathlib.Path(paths[n]), a.second_task), ref, *second[:2],
                            bool(a.take_rows_of))
                 h2 = headline(second[1], s2, c2)
+                got.update({f"{k}_second": v for k, v in h2.items()})
                 got.update({f"{k}_ratio": (v / got[k][0], r / got[k][1]) for k, (v, r) in h2.items() if k in got})
             if a.cache:
                 cache_write(a.cache / f"{n}.npz", meta, got)
@@ -376,7 +379,10 @@ def main(argv=None) -> int:
     if diffs or steps:
         doc["rule_l3"] = ("delta = mean over A - mean over B; pass = |delta| > 3 sigma, sigma^2 = sd_a^2 + sd_b^2 + "
                           "boot_sd^2 (decision L3, 2026-11-13)")
-        doc["diffs"] = {name: {"a": ab[0], "b": ab[1], **group_diff(res, *ab)} for name, ab in diffs.items()}
+        # with --second-task, <model>@second is the model's headline metrics on the second task's jets
+        view = {**res, **{f"{n}@second": {k.removesuffix("_second"): v for k, v in m.items() if k.endswith("_second")}
+                          for n, m in res.items()}}
+        doc["diffs"] = {name: {"a": ab[0], "b": ab[1], **group_diff(view, *ab)} for name, ab in diffs.items()}
     if steps:
         doc["rule_step"] = ("delta = (mean A - mean B) - (mean B - mean C); sigma^2 = SD_A^2 + 4 SD_B^2 + SD_C^2 + "
                             "boot_sd^2, written as sd_a^2 = SD_A^2 + 2 SD_B^2 and sd_b^2 = 2 SD_B^2 + SD_C^2")

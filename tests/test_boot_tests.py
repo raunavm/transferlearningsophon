@@ -106,7 +106,8 @@ def test_the_second_task_ratio_is_taken_per_resample(tmp_path, monkeypatch):
                       yh, yh * (0.6 + 0.1 * k) + rng.normal(size=yh.size)) for k in (1, 2, 3, 4)]
     out = tmp_path / "o.json"
     PB.main([x for c in cells for x in ("--model", c)] + ["--task", "qg", "--second-task", "qg_herwig", "--headline",
-                                                           "--diff", "d=m1,m2/m3,m4", "--b", "25", "--out", str(out)])
+                                                           "--diff", "d=m1,m2/m3,m4", "--diff", "hp=m1@second,m2@second/m1,m2",
+                                                           "--b", "25", "--out", str(out)])
     d = json.loads(out.read_text())
     for k in ("r30", "r50", "accuracy"):
         m = d["models"]["m1"]
@@ -114,7 +115,14 @@ def test_the_second_task_ratio_is_taken_per_resample(tmp_path, monkeypatch):
         assert m[f"{k}_ratio"]["value"] == pytest.approx(sh / m[k]["value"], rel=1e-12)
         e = d["diffs"]["d"][f"{k}_ratio"]
         assert e["quantity"] == f"{k}_ratio" and e["boot_sd"] > 0
+        hp, va, vb = d["diffs"]["hp"][k], [d["models"][m][f"{k}_second"]["value"] for m in ("m1", "m2")], \
+            [d["models"][m][k]["value"] for m in ("m1", "m2")]
+        assert hp["delta"] == pytest.approx(np.mean(va) - np.mean(vb)) and hp["quantity"] == k
+        assert (hp["sd_a"], hp["sd_b"]) == pytest.approx((np.std(va, ddof=1), np.std(vb, ddof=1))) and hp["boot_sd"] > 0
     assert d["second_task"] == "qg_herwig" and d["second_seed"] == d["seed"] + 1 and d["second_n_jets"] == yh.size
+    with pytest.raises(SystemExit, match="not models"):
+        PB.main([x for c in cells for x in ("--model", c)] + ["--task", "qg", "--headline", "--diff", "x=m1@second/m1",
+                                                               "--out", str(tmp_path / "x.json")])
 
 
 def test_headline_only_scores_no_auc(tmp_path):
@@ -131,6 +139,7 @@ def test_mass_sd_boot_keeps_its_two_pairs_and_adds_the_mass_tables_three():
     assert set(MS.DIFFS[2:]) == {("17 classes", "188 classes"), ("188 classes", "random network"),
                                  ("17 classes + mass", "162 classes + mass")}
     assert all(a in MS.GROUPS and b in MS.GROUPS for a, b in MS.DIFFS)
+    assert MS.CROSS == ((("162 classes + mass", "regressed"), ("162 classes", "mlp")),)
 
 
 def test_the_spec_is_ours_pinned_and_writes_new_files_only():

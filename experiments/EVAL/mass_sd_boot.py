@@ -62,6 +62,8 @@ DIFFS = (("162 classes + mass", "162 classes"), ("17 classes + mass", "17 classe
          # tab:tests (PI 2026-11-23, LEDGER SP-12 step 4): the mass table's other stated differences; written to a new
          # file, every group and the two pairs above as before (the resamples depend on the bin alone)
          ("17 classes", "188 classes"), ("188 classes", "random network"), ("17 classes + mass", "162 classes + mass"))
+# the same across estimators: (A, its estimator), (B, its estimator); diffs["<A>, <est> - <B>, <est>"]["cross"]
+CROSS = ((("162 classes + mass", "regressed"), ("162 classes", "mlp")),)
 BINNINGS = {"pt": AR.PT_EDGES, "mgen": AR.MGEN_EDGES, "pt_fine": RB.PT_EDGES}
 
 
@@ -151,6 +153,11 @@ def main(argv=None) -> int:
                     pb, rb = got[(b_name, est)]
                     out["diffs"].setdefault(f"{a_name} - {b_name}", {}).setdefault(est, {})[b] = {
                         "resolution": verdict(pa, ra, pb, rb, 0), "bias": verdict(pa, ra, pb, rb, 1)}
+        for (a_name, a_est), (b_name, b_est) in CROSS:
+            if (a_name, a_est) in got and (b_name, b_est) in got:
+                (pa, ra), (pb, rb) = got[(a_name, a_est)], got[(b_name, b_est)]
+                out["diffs"].setdefault(f"{a_name}, {a_est} - {b_name}, {b_est}", {}).setdefault("cross", {})[b] = {
+                    "resolution": verdict(pa, ra, pb, rb, 0), "bias": verdict(pa, ra, pb, rb, 1)}
         print(f"bin {b} done", flush=True)
     for name, ests in out["groups"].items():
         for est, res in ests.items():

@@ -3,8 +3,9 @@
 for the untested comparisons that survive"; SC-1 (1): sigma^2 = each side's run SD^2 + the paired test-jet bootstrap SD^2)
 whose per-jet inputs exist now: experiments/STATS/paired_bootstrap.py and experiments/EVAL/mass_sd_boot.py on stored
 outputs only, nothing fitted or trained. Every output is a new file beside the L3 files, with new difference names; a
-file that exists is skipped, so a retried pod does only what is missing. CPU, every pod on one CPU model (the linear
-family's, build_refit_v5_jobs.pin_cpu), at most PARALLEL pods at once. One Indexed Job, boot-tests-raunav:
+file that exists is skipped, so a retried pod does only what is missing. CPU, every pod on one CPU model
+(build_refit_v5_jobs.pin_cpu: the EPYC 7402P nodes; the 7742 nodes beside the volume had no free CPU on 2026-11-23),
+at most PARALLEL pods at once. One Indexed Job, boot-tests-raunav:
 
   0-2  the class-balanced JetClass-II linear probes at 1e6 (fits_v5_probs) of the 23 networks the JetClass-II rows
        compare, split over three pods into CACHE (paired_bootstrap --cache-only): accuracy, the macro AUC and its
@@ -46,7 +47,7 @@ CACHE = "/data/results/bootstrap_cache/tests_jc2bal_N1000000"     # outside boot
 SMOKE = "/data/results/bootstrap_tests_smoke"
 MASS_V3 = R5.MASS_SD_BOOT
 MASS_V4 = MASS_V3.replace("_v3.json", "_v4.json")
-CPU_MODEL = R5.FAMILY_CPU["linear"]
+CPU_MODEL = "AMD EPYC 7402P 24-Core Processor"            # one of R5.CPU_NODES
 PARALLEL, CPU = 4, "1"
 B = BL.REPLICAS
 ARMS = {**R5.BOOTALL_ARMS, "init": ("init-s1", "init-s2", "init-s3"), "initbn": ("initbn-s1", "initbn-s2", "initbn-s3")}
@@ -105,8 +106,8 @@ def jc2_file() -> str:
 # ------------------------------------------------------------------ the other probe rows
 PAIR_DIFFS = {"bb_vs_cc": (("r42q1", "l188"), ("r16q1", "l188"), ("flavf1", "r16q1"), ("flavf1r", "r16q1"),
                            ("flavf0", "r16q1")),
-              "bc_vs_bq_cs": (("r42q1", "l188"), ("r16q1", "l188"), ("flavf1", "r16q1"), ("flavf1r", "r16q1"),
-                              ("flavf0", "r16q1"), ("flavf0", "l188")),
+              "bc_vs_bq_cs": (("l162", "l188"), ("r42q1", "l188"), ("r16q1", "l188"), ("flavf1", "r16q1"),
+                              ("flavf1r", "r16q1"), ("flavf0", "r16q1"), ("flavf0", "l188")),
               "bbqq_vs_ccqq": (("r42q1", "l188"), ("r16q1", "l188"), ("flavf1r", "flavf1")),
               **{p: (("l162", "l188"), ("r42q1", "l188"), ("r16q1", "l188"))
                  for p in ("qcd_bb_vs_cc", "qcd_b_vs_light", "qcd_c_vs_light")},
@@ -143,11 +144,13 @@ def probe_inputs() -> dict[str, dict[str, str]]:
     out[f"{L3_V5}/probe_top_N1200000.fill.json"] = {
         **{m: f"{fill}/{m}/best70.itop4/top_N1200000.npz" for m in models("l188")},
         **{m: f"{fill}/{m}/init.itop4/top_N1200000.npz" for m in models("init")},
+        **{m: f"{fill}/{m.replace('initbn-', 'init-')}/init_bn.itop4/top_N1200000.npz" for m in models("initbn")},
         **{f"{m}.zero": f"{fill}/{m}/best70/top_N1200000.npz" for m in models("l188")},
         **{f"{m}.zero": f"{fill}/{m.replace('initbn-', 'init-')}/init_bn/top_N1200000.npz" for m in models("initbn")}}
     out[f"{L3_V5}/probe_qg_N1600000.fill.json"] = {
         **{m: f"{fill}/{m}/best70.nqg/qg_N1600000.npz" for m in models("l188")},
-        **{m: f"{fill}/{m}/init.nqg/qg_N1600000.npz" for m in models("init")}}
+        **{m: f"{fill}/{m}/init.nqg/qg_N1600000.npz" for m in models("init")},
+        **{m: f"{fill}/{m.replace('initbn-', 'init-')}/init_bn.nqg/qg_N1600000.npz" for m in models("initbn")}}
     return out
 
 
@@ -160,7 +163,7 @@ def probe_flags(out: str) -> str:
     if name.endswith(".v4.json"):
         return "--headline-only " + diffs(SIZE_DIFFS)
     l188, zero = ",".join(models("l188")), ",".join(f"{m}.zero" for m in models("l188"))
-    fills = f"--diff 188-init={l188}/{','.join(models('init'))}"
+    fills = f"--diff 188-init={l188}/{','.join(models('init'))} --diff 188-initbn={l188}/{','.join(models('initbn'))}"
     if name.startswith("probe_top_"):
         fills += (f" --diff 188draws-188zero={l188}/{zero}"
                   f" --diff 188zero-initbnzero={zero}/{','.join(f'{m}.zero' for m in models('initbn'))}")
@@ -173,7 +176,7 @@ SCRATCH = [f"scratch-v2-s{k}" for k in (1, 2, 3)]
 
 def ft_inputs() -> dict[str, tuple[str, dict[str, str]]]:
     """{output: (task, {model: cell})}: 188 classes against from scratch on the full top set (R30), and on the full
-    quark/gluon set with R30 on Herwig over R30 on Pythia per network (--second-task)."""
+    quark/gluon set R30 on Herwig over R30 on Pythia per network (--second-task) and Herwig minus Pythia jets."""
     cells = lambda leg, n: {**{m: f"{FT}/best70/{leg}/{m.removeprefix('mtx-')}/N{n}/s1" for m in models("l188")},  # noqa: E731
                             **{m: f"{FT}/ref_v100/bench/{leg}/scratch-v2/N{n}/{m.rsplit('-', 1)[1]}" for m in SCRATCH}}
     return {f"{L3}/ft_top_N1200000.scratch.json": ("top", cells("leg_top", 1_200_000)),
@@ -182,7 +185,10 @@ def ft_inputs() -> dict[str, tuple[str, dict[str, str]]]:
 
 def ft_flags(out: str) -> str:
     d = f"--diff 188-scratch={','.join(models('l188'))}/{','.join(SCRATCH)}"
-    return "--headline " + d + (" --second-task qg_herwig" if "herwig" in out else "")
+    if "herwig" in out:
+        d += " --second-task qg_herwig" + "".join(f" --diff herwig-pythia-{w}={','.join(f'{m}@second' for m in ms)}/{','.join(ms)}"
+                                                  for w, ms in (("188", models("l188")), ("scratch", SCRATCH)))
+    return "--headline " + d
 
 
 def mass() -> list[str]:
