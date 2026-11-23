@@ -6,7 +6,7 @@ metadata:
   namespace: cms-ml
 spec:
   completionMode: Indexed
-  completions: 8
+  completions: 6
   parallelism: 0
   backoffLimitPerIndex: 3
   podFailurePolicy:
@@ -46,8 +46,6 @@ spec:
             3) TASK=jc1; INIT=l162-s1; RUN_DIR=/data/results/mtx_v2/mtx-l162-s1; N=1000000; S=1; LR=1e-4; MULT=50.0; EP=160; SPE=256000; PAT=1000000; VAL=199680; PATFROM=0; VALF=; VALMEM=1; CELL=/data/results/ft_v2/fixed_rate/leg2/l162-s1/N1000000/s1;;
             4) TASK=jc1; INIT=l162-s2; RUN_DIR=/data/results/mtx_v2/mtx-l162-s2; N=1000000; S=1; LR=1e-4; MULT=50.0; EP=160; SPE=256000; PAT=1000000; VAL=199680; PATFROM=0; VALF=; VALMEM=1; CELL=/data/results/ft_v2/fixed_rate/leg2/l162-s2/N1000000/s1;;
             5) TASK=jc1; INIT=l162-s3; RUN_DIR=/data/results/mtx_v2/mtx-l162-s3; N=1000000; S=1; LR=1e-4; MULT=50.0; EP=160; SPE=256000; PAT=1000000; VAL=199680; PATFROM=0; VALF=; VALMEM=1; CELL=/data/results/ft_v2/fixed_rate/leg2/l162-s3/N1000000/s1;;
-            6) TASK=jc1; INIT=r42q1-s1; RUN_DIR=/data/results/mtx_v2/mtx-r42q1-s1; N=1000000; S=1; LR=1e-4; MULT=50.0; EP=160; SPE=256000; PAT=1000000; VAL=199680; PATFROM=0; VALF=; VALMEM=1; CELL=/data/results/ft_v2/fixed_rate/leg2/r42q1-s1/N1000000/s1;;
-            7) TASK=jc1; INIT=r42q1-s2; RUN_DIR=/data/results/mtx_v2/mtx-r42q1-s2; N=1000000; S=1; LR=1e-4; MULT=50.0; EP=160; SPE=256000; PAT=1000000; VAL=199680; PATFROM=0; VALF=; VALMEM=1; CELL=/data/results/ft_v2/fixed_rate/leg2/r42q1-s2/N1000000/s1;;
             *) echo "FATAL: no cell for index ${IDX}"; exit ${HALT};;
           esac
           [ -f ${CELL}/DONE ] && { echo "skip ${CELL} (DONE)"; exit 0; }
