@@ -71,8 +71,9 @@ def test_the_sculpting_test_reads_the_bootstrap_or_says_it_is_pending(tmp_path):
     assert rows[1][1] == ("Difference", "Δ", "σ", "Δ/σ", "Δ", "σ", "Δ/σ", "Δ", "σ", "Δ/σ")
     assert rows[2][1] == ("17 − 188", "1.22", "0.29", "4.2*", "1.22", "0.29", "4.2*", "1.22", "0.29", "4.2*")
     assert rows[3][1] == ("43 − 188", "1.22", "0.29", "4.2*", "1.22", "0.29", "4.2*", "−0.20", "0.29", "–")
-    # F10b's verdict needs the signs: 17 + mass - 17 is +1.22 here, so the appendix; the rule and its two z follow
-    assert rows[-1][1] == ("F10b: appendix (main text only if at QCD 1% 17 − 188 > +3σ and 17 + mass − 17 < −3σ; "
+    # F10b's verdict needs the signs: 17 + mass - 17 is +1.22 here, so not the main text but the placement's tier (PI
+    # 2026-11-23, LEDGER SP-9: the data release, the supplement tier); the rule and its two z follow
+    assert rows[-1][1] == ("F10b: supplement (main text only if at QCD 1% 17 − 188 > +3σ and 17 + mass − 17 < −3σ; "
                            "here +4.15σ and +4.15σ).")
     doc["differences"]["17mass-17"]["eps_b=0.01"]["distance"] = {**q, "delta": -0.0122, "z": -4.15}
     (tmp_path / "sculpting_boot.json").write_text(json.dumps(doc))
