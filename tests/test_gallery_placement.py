@@ -101,9 +101,10 @@ def test_the_main_text_is_the_pis_list_in_order():
               "tab:massdetail", "tab:sculpt", "tab:xbxrej", "tab:computefull", "tab:mlpfull"):
         assert G.TIER[k] == G.SUPPLEMENT, k
     assert G.TIER["tab:tests"] == G.APPENDIX and "tab:sculptboot" not in G.TIER and "tab:sculptboot" in G.DROPPED_TABLES
+    # PI 2026-11-23, LEDGER SP-13 step 2: the columns are Δ, σ and Δ/σ (e696c660), no run SD column
     assert G.BACKS["tab:tests"] == (f"{G.number('tab:tests')} gives every difference and null the text states, with "
-                                    "each side's run standard deviation, the paired test-jet bootstrap standard "
-                                    "deviation and Δ/σ.")
+                                    "its difference Δ, its standard deviation σ from the runs and the test-jet "
+                                    "bootstrap, and Δ/σ.")
     for k in ("F10b", "F10b-flav", "F10c", "F10a-flav"):
         assert G.evidence(k) == (k, "tab:sculpt", "tab:tests")
     # the trimmed appendix tables whole in the data release

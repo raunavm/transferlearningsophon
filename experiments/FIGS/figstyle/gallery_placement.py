@@ -212,8 +212,9 @@ _TABLES = (
     # states but does not show (R3b)
     # merge 3: the class map takes in tab:app-levels, its 17 group names as block headers, the levels never pretrained
     # deleted
+    # PI 2026-11-23 (LEDGER SP-13 step 1): the class map has no partition columns (ee2bab77)
     ("tab:app-vocabulary", APPENDIX, "[[tab:app-vocabulary]] gives every JetClass-II class's group in each pretrained "
-                                     "label set and partition, under the groups of the 17-class label set."),
+                                     "label set, under the groups of the 17-class label set."),
     # PI 2026-11-20 (meeting, B): from the supplement into the appendix
     # audit 3 (B): only fine-tuning sets the missing inputs to zero; the linear probes use the substitution chosen on
     # validation, random draws on top and the training mean on quark/gluon
@@ -239,9 +240,10 @@ _TABLES = (
     ("tab:summaryauc", APPENDIX, "[[tab:summaryauc]] gives the area under the ROC curve beside every value of "
                                  "[[tab:summary]], and on JetClass-II over its resonant and its QCD classes."),
     # PI 2026-11-23 (LEDGER SP-9; merge 6): tab:sculptboot and tab:boot become one table of every difference or null
-    # the text states; PI SC-1 (1): sigma^2 = each side's run SD^2 + the paired test-jet bootstrap SD^2
-    ("tab:tests", APPENDIX, "[[tab:tests]] gives every difference and null the text states, with each side's run "
-                            "standard deviation, the paired test-jet bootstrap standard deviation and Δ/σ."),
+    # the text states; PI SC-1 (1): sigma^2 = each side's run SD^2 + the paired test-jet bootstrap SD^2; PI 2026-11-23
+    # (LEDGER SP-13 step 2): its columns are Δ, σ and Δ/σ (e696c660)
+    ("tab:tests", APPENDIX, "[[tab:tests]] gives every difference and null the text states, with its difference Δ, "
+                            "its standard deviation σ from the runs and the test-jet bootstrap, and Δ/σ."),
     ("tab:coarse", APPENDIX, "Linear probes scored on the 43 and 17 merged classes are in [[tab:coarse]]."),
     # PI 2026-11-23 (LEDGER SP-9): the linear-probe half only, kept as its comparison passes 3 sigma
     # (scratchpad/part0/jc1_class_auc_check.md); the fine-tuned half is in tab:jc1_class_aucfull (the data release)
