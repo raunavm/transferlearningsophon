@@ -269,7 +269,10 @@ FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
                           ("top", 10_000): "1e-3",
                           # 2026-11-23: JetClass 1e5 best 3e-3 0.78522 (1e-3 0.78401, 3e-4 0.77400, 1e-2 diverged); top 1e5
                           # best 1e-2 0.928896 (3e-3 0.928606, its original rate, no tie; 1e-3 0.92841, 3e-2 0.91224)
-                          ("jc1", 100_000): "3e-3", ("top", 100_000): "1e-2"}
+                          ("jc1", 100_000): "3e-3", ("top", 100_000): "1e-2",
+                          # 2026-11-23 14:48 UTC: top 1e3 best 3e-2 0.8930 (1e-2 0.8859, 3e-3 0.8831, its original;
+                          # 1e-3 0.8846; 1e-1 diverged)
+                          ("top", 1_000): "3e-2"}
 # the rows whose recorded rate moved from the original, in the order they settled: fixed_rate_cells' job indices follow
 # it, so a row recorded later appends and never shifts the index of a launched cell
 FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000, "scratch"),
@@ -286,7 +289,9 @@ FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000,
                     # 2026-11-23 02:09 UTC
                     ("top", 10_000, "scratch"),
                     # 2026-11-23 05:13 UTC
-                    ("jc1", 100_000, "scratch"), ("top", 100_000, "scratch"))
+                    ("jc1", 100_000, "scratch"), ("top", 100_000, "scratch"),
+                    # 2026-11-23 14:48 UTC
+                    ("top", 1_000, "scratch"))
 # PI 2026-11-21: the search goes no lower than 1e-5 (below it fine-tuning approaches training only the new output layer
 # on frozen features); a row whose best is still its lowest rate there takes 1e-5
 FIXED_SEARCH_FLOOR = "1e-5"
@@ -496,6 +501,14 @@ def fixed_sweep_edge18_cells() -> list:
     return fixed_sweep_edge3_cells(FIXED_EDGE_EXT18)
 
 
+# 2026-11-23 14:48 UTC: JetClass 1e5 pretrained best at 3e-4 (0.8355; 1e-3 0.8337, 3e-3 0.8329), its lowest rate: 1e-4
+FIXED_EDGE_EXT19 = (("jc1", 100_000, "pre", ("1e-4",)),)
+
+
+def fixed_sweep_edge19_cells() -> list:
+    return fixed_sweep_edge3_cells(FIXED_EDGE_EXT19)
+
+
 def fixed_sweep_edge6_cells() -> list:
     """2026-11-22: top 1e4 from scratch best at 1e-3, its lowest rate (0.9174429 against 0.9174179 at 3e-3, 5 of
     199,680 validation jets): 3e-4, seed 1, in the 1e4 tree beside the row's other searched cells."""
@@ -586,7 +599,7 @@ def fixed_search_plan() -> dict:
               + fixed_sweep_edge2_cells() + fixed_sweep_edge3_cells() + fixed_sweep_edge4_cells()
               + fixed_sweep_edge5_cells() + fixed_sweep_edge6_cells() + fixed_sweep_edge7_cells()
               + fixed_sweep_edge8_cells() + fixed_sweep_edge9_cells() + fixed_sweep_edge10_cells()
-              + fixed_sweep_edge11_cells() + fixed_sweep_edge12_cells() + fixed_sweep_edge13_cells() + fixed_sweep_edge14_cells() + fixed_sweep_edge15_cells() + fixed_sweep_edge16_cells() + fixed_sweep_edge17_cells() + fixed_sweep_edge18_cells()
+              + fixed_sweep_edge11_cells() + fixed_sweep_edge12_cells() + fixed_sweep_edge13_cells() + fixed_sweep_edge14_cells() + fixed_sweep_edge15_cells() + fixed_sweep_edge16_cells() + fixed_sweep_edge17_cells() + fixed_sweep_edge18_cells() + fixed_sweep_edge19_cells()
               + fixed_sweep_1e4_cells()):
         kind = "pre" if c["init"] else "scratch"
         cells = plan.setdefault((c["task"], c["n"], kind), {}).setdefault(c["lr"], [])
@@ -1071,7 +1084,7 @@ def main(argv=None) -> int:
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
                                                  "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-sweep-all", "fixed-rate", "fixed-sweep-edge", "fixed-sweep-edge2",
-                                                 "fixed-sweep-1e4", "fixed-sweep-edge3", "fixed-sweep-edge4", "fixed-sweep-edge5", "fixed-sweep-edge6", "fixed-sweep-edge7", "fixed-sweep-edge8", "fixed-sweep-edge9", "fixed-sweep-edge10", "fixed-sweep-edge11", "fixed-sweep-edge12", "fixed-sweep-edge13", "fixed-sweep-edge14", "fixed-sweep-edge15", "fixed-sweep-edge16", "fixed-sweep-edge17", "fixed-sweep-edge18", "fixed-smoke-diverge", "fixed-sweep-17", "fixed-smoke-1e3",
+                                                 "fixed-sweep-1e4", "fixed-sweep-edge3", "fixed-sweep-edge4", "fixed-sweep-edge5", "fixed-sweep-edge6", "fixed-sweep-edge7", "fixed-sweep-edge8", "fixed-sweep-edge9", "fixed-sweep-edge10", "fixed-sweep-edge11", "fixed-sweep-edge12", "fixed-sweep-edge13", "fixed-sweep-edge14", "fixed-sweep-edge15", "fixed-sweep-edge16", "fixed-sweep-edge17", "fixed-sweep-edge18", "fixed-sweep-edge19", "fixed-smoke-diverge", "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
     if a.part and not a.indices:
@@ -1125,6 +1138,7 @@ def main(argv=None) -> int:
                      "fixed-sweep-edge16": fixed_sweep_edge16_cells,
                      "fixed-sweep-edge17": fixed_sweep_edge17_cells,
                      "fixed-sweep-edge18": fixed_sweep_edge18_cells,
+                     "fixed-sweep-edge19": fixed_sweep_edge19_cells,
                      "fixed-smoke-diverge": fixed_smoke_diverge_cells,
                      "fixed-smoke-1e3": fixed_smoke_1e3_cells}[kind]()
             # sized to measured use (NRP blocks accounts whose pods use little of what they request, 2026-11-10/15):
