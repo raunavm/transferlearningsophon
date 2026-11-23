@@ -306,8 +306,9 @@ def check(fig, name: str, print_cm: float, min_panel: float) -> dict:
             if i is not None and i.width > 2 and i.height > 2:
                 found["overlap"].append(f"figure legend over the panel {o.get_title()[:30]!r}")
     top = max((ax.get_window_extent(r).y1 for ax in panels), default=0.0)
+    import style_v5
     for b, t, ax, kind in boxes:
-        if kind == "figtext" and t.get_rotation() == 0 and b.y0 >= top:
+        if kind == "figtext" and t.get_rotation() == 0 and b.y0 >= top and t.get_gid() != style_v5.MODE_HEADING:
             found["title"].append(f"figure heading {t.get_text()[:40]!r}")
         if kind == "title" and ":" in plain(t.get_text()):
             found["title"].append(f"colon in the panel title {t.get_text()[:40]!r}")

@@ -8,9 +8,9 @@ and the mass networks against 188 classes on JetClass-II (FIG4), the same on Jet
 confusion matrices (supplement).
 
 One colour rule for the whole family (L6): a point is coloured by what it is, never by network. On JetClass-II by what
-the 17-class labels merged the class with (MERGE_KINDS: a decay differing only in quark flavor, only in lepton flavor,
-both, neither; the QCD classes apart), on JetClass its class, from style_v5.CLASS10, which reuses no network colour
-(palette_check); the network is named in the panel title. Source: experiments/EVAL/perclass_recall.py, pulled to
+the panel's network's labels merge the class with (MERGE_KINDS: a decay differing only in quark flavor, only in lepton
+flavor, both, neither; the QCD classes apart), on JetClass its class, from style_v5.CLASS10, which reuses no network
+colour (palette_check); the network is named in the panel title. Source: experiments/EVAL/perclass_recall.py, pulled to
 perclass_recall/ (probe_<test>.json: the v5 linear probes at 10^6 jets; ft_<test>_N1000000.json: the one-rule
 fine-tuning cells at 10^6 jets), which holds each network's recalls, their bootstrap SDs over test jets, and decision
 L3's differences; a missing file leaves its column pending. The confusion matrices come from confusion_jc1
@@ -54,36 +54,45 @@ JC1_DOT = 4.0
 JC1_SHAPES = ("o", "s", "^", "v", "D", "P", "X", "p", "h", "*")    # with the colour, so the ten classes part in greyscale
 LEFT = 1.2                               # cm: the y label and the tick labels
 WGAP = {5: 3.4}                          # cm between panels of a row: the titles clear; default LEFT (FG-8)
-TITLE_LINE = 0.4                         # cm: a second title line (four columns: a partition's name in two lines)
 HGAP = {5: 0.6}                          # cm between rows besides the x tick labels and label; default 0.4
 XLABEL = 0.9                             # cm: x tick labels and label under each row (FG-8: every row)
+MODE_HEAD = 0.5                          # cm: the italic mode heading above each column (CA-12)
 LEGEND_BESIDE = 3.0                      # cm: a legend column beside the panels when this much is free, labels wrapped
 ABSENT = "no per-class recalls of the 188-class network (perclass_recall/, experiments/EVAL/perclass_recall.py)"
 
-# what the 17-class labels merged a JetClass-II class with (mlst_results._orbits, the per_class_macros merge rule)
-MERGE_KINDS = ("qcd", "quark", "lepton", "both", "apart")
+# what a panel's labels merge a JetClass-II class with (mlst_results._orbits, the per_class_macros merge rule): review
+# of render 5f4e1b8 (C16), each panel coloured by its own network's labels, not every panel by the 17-class ones;
+# "mixed" where the pooled random partitions merge the class differently
+MERGE_KINDS = ("qcd", "quark", "lepton", "both", "apart", "mixed")
 MERGE_LABEL = {"qcd": "QCD", "quark": "quark flavor merged", "lepton": "lepton flavor merged",
-               "both": "quark and lepton flavor merged", "apart": "none merged"}
-MERGE_COLOURS = dict(zip(MERGE_KINDS, (S.CLASS10[k] for k in (0, 1, 4, 3, 2))))
-MERGE_SHAPES = dict(zip(MERGE_KINDS, ("o", "s", "^", "D", "v")))
+               "both": "quark and lepton flavor merged", "apart": "neither flavor merged",
+               "mixed": "merged differently by the partitions"}
+MERGE_COLOURS = dict(zip(MERGE_KINDS, (S.CLASS10[k] for k in (0, 1, 4, 3, 2, 6))))
+MERGE_SHAPES = dict(zip(MERGE_KINDS, ("o", "s", "^", "D", "v", "P")))
 
 
 @functools.lru_cache(maxsize=None)
-def merge_kind() -> dict:
-    """{jet_label: kind}: qcd for the 27 QCD classes; for a resonant class, whether its 17-class group also holds a
-    decay that differs from it only in quark flavor (a shared orbit of flavour_pair_map.v2.csv), only in lepton flavor,
-    both, or neither (apart)."""
+def merge_kind(labels: str = "R16_Q1") -> dict:
+    """{jet_label: kind} under the labels of a network (a label map of mlst_results._groups; RAND: the five random
+    partitions): qcd for the 27 QCD classes, which every coarser label set merges into one; for a resonant class,
+    whether its group also holds a decay that differs from it only in quark flavor (a shared orbit of
+    flavour_pair_map.v2.csv), only in lepton flavor, both, or neither (apart), and mixed where the five random
+    partitions disagree."""
     q, lep = M._orbits(P.REPO)
-    g = M._groups(P.REPO)["R16_Q1"]
+    groups = M._groups(P.REPO)
+    maps = [groups[k] for k in (M.RAND if labels == "RAND" else (labels,))]
     out = {}
     for r in M._class_rows(P.REPO):
         n = r["class_name"]
         if n.startswith("label_QCD"):
             out[int(r["jet_label"])] = "qcd"
             continue
-        mq = any(o != n and q[o] == q[n] and g[o] == g[n] for o in q)
-        ml = any(o != n and lep[o] == lep[n] and g[o] == g[n] for o in lep)
-        out[int(r["jet_label"])] = "both" if mq and ml else "quark" if mq else "lepton" if ml else "apart"
+        kinds = set()
+        for g in maps:
+            mq = any(o != n and q[o] == q[n] and g[o] == g[n] for o in q)
+            ml = any(o != n and lep[o] == lep[n] and g[o] == g[n] for o in lep)
+            kinds.add("both" if mq and ml else "quark" if mq else "lepton" if ml else "apart")
+        out[int(r["jet_label"])] = kinds.pop() if len(kinds) == 1 else "mixed"
     return out
 
 
@@ -153,22 +162,30 @@ def l3_counts(test: str, pair: tuple, mode: int) -> dict | None:
 
 
 # ------------------------------------------------------------------ the scatter grids
-def _look(test: str):
-    """(class -> (colour, marker, size, zorder), legend handles) of the family's one colour rule."""
+def _look(test: str, labels: str):
+    """(class -> (colour, marker, size, zorder), the kinds it colours) of the family's one colour rule, for a panel
+    of the network labels (JetClass-II: what its labels merge each class with)."""
     if test == "jc1":
         def look(c):
             k = S.JC1_CLASSES.index(c)
             return S.CLASS10[k], JC1_SHAPES[k], JC1_DOT, 3
-        return look, [Line2D([], [], color=S.CLASS10[k], marker=JC1_SHAPES[k], markersize=JC1_DOT, linestyle="none",
-                             label=S.JC1_TEX[c]) for k, c in enumerate(S.JC1_CLASSES)]
-    kind = merge_kind()
+        return look, set(S.JC1_CLASSES)
+    kind = merge_kind(labels)
     size = {k: sum(v == k for v in kind.values()) for k in MERGE_KINDS}
 
     def look(c):
         k = kind[c]
         return MERGE_COLOURS[k], MERGE_SHAPES[k], None, 3.1 if size[k] < 30 else 3     # a small kind over the large ones
-    return look, [Line2D([], [], color=MERGE_COLOURS[k], marker=MERGE_SHAPES[k], markersize=3, linestyle="none",
-                         label=MERGE_LABEL[k]) for k in MERGE_KINDS]
+    return look, set(kind.values())
+
+
+def _handles(test: str, kinds: set) -> list:
+    """The legend's colour entries, the kinds drawn in the figure in the family's order."""
+    if test == "jc1":
+        return [Line2D([], [], color=S.CLASS10[k], marker=JC1_SHAPES[k], markersize=JC1_DOT, linestyle="none",
+                       label=S.JC1_TEX[c]) for k, c in enumerate(S.JC1_CLASSES)]
+    return [Line2D([], [], color=MERGE_COLOURS[k], marker=MERGE_SHAPES[k], markersize=3, linestyle="none",
+                   label=MERGE_LABEL[k]) for k in MERGE_KINDS if k in kinds]
 
 
 def _significant(test: str, mode: int, pair: tuple) -> set | None:
@@ -190,11 +207,14 @@ def _draw_grid(path, test: str, rows: tuple) -> None:
     a class whose recall lies within three standard deviations of the reference's is open, one beyond them filled
     (review of render dfe5942, B2: the classes the text counts, marked). A panel without values (its mode's file not
     pulled, or the network not run) is drawn empty with "pending" in its title. FG-8 (review of render dfe5942, B9):
-    every panel has its own x and y labels and tick numbers."""
+    every panel has its own x and y labels and tick numbers. CA-12 (review of render 5f4e1b8, B13): the mode once, an
+    italic heading above its column; the panel titles name the network only. C16: each row's points coloured by what
+    its own network's labels merge each class with."""
     gets = SOURCES[test]
     if not any(_mean(get, "L188") for get in gets):
         raise C.Absent(ABSENT)
-    look, handles = _look(test)
+    looks = [_look(test, a) for a, _ in rows]
+    handles = _handles(test, set().union(*(kinds for _, kinds in looks)))
     sig = [[_significant(test, k, pair) for k in (0, 1)] for pair in rows]
     if any(s is not None for row in sig for s in row):
         handles = handles + [Line2D([], [], color="#777777", marker="o", markersize=3, markerfacecolor="white",
@@ -213,23 +233,27 @@ def _draw_grid(path, test: str, rows: tuple) -> None:
         raise C.Absent(f"no per-class recalls of {', '.join(a for a, _ in rows)}")
     pad = 0.04 * (max(vals) - min(vals))
     lim = (min(vals) - pad, max(vals) + pad)                 # the points and bars clear of the frames (L7)
-    two = any(len(S.LEGEND[a]) > 16 for a, _ in rows) and n < 5      # a long name and the mode on two title lines
     row_cm = 0.5 if test == "jc1" else 0.45          # a legend row of class names in mathtext is taller
     wgap = WGAP.get(n, LEFT)
     # the legend beside the panels where a column fits (the three-row figures: the page's height, MAX_H_CM), else
     # above them in three rows
     tall = len(handles) * row_cm + 0.3                       # the legend column's height, from the first row's top
     beside = S.PRINT_W - (LEFT + 2 * w + wgap) - 0.25 >= LEGEND_BESIDE and tall <= n * w
-    ncol = math.ceil(len(handles) / 3)
-    top = (0.0 if beside else S.LEGEND_TOP + row_cm * math.ceil(len(handles) / ncol)) + 0.6 + (TITLE_LINE if two else 0)
-    hgap = HGAP.get(n, 0.4) + (TITLE_LINE if two else 0) + XLABEL
-    fig = S.figure_cm(S.PRINT_W, top + n * w + (n - 1) * hgap + 0.95)
+    ncol = math.ceil(len(handles) / (3 if len(handles) <= 7 else 4))     # eight in three columns overrun the page
+    head = 0.0 if beside else S.LEGEND_TOP + row_cm * math.ceil(len(handles) / ncol)     # the mode headings' top
+    top = head + MODE_HEAD + 0.6
+    hgap = HGAP.get(n, 0.4) + XLABEL
+    H = top + n * w + (n - 1) * hgap + 0.95
+    fig = S.figure_cm(S.PRINT_W, H)
     # the block of labels and panels centred, or at the left with the legend beside it
     x0 = LEFT if beside else (S.PRINT_W - LEFT - 2 * w - wgap) / 2 + LEFT
+    for j, mode in enumerate(MODES):
+        fig.text((x0 + j * (w + wgap) + w / 2) / S.PRINT_W, 1 - (head + 0.05) / H, mode, ha="center", va="top",
+                 fontsize=S.TITLE_PT5, fontstyle="italic", gid=S.MODE_HEADING)
     dot = DOT[n]
-    for i, (row, (a, b)) in enumerate(zip(pts, rows)):
+    for i, (row, (a, b), (look, _)) in enumerate(zip(pts, rows, looks)):
         y0 = top + i * (w + hgap)
-        for j, (panel, mode) in enumerate(zip(row, MODES)):
+        for j, panel in enumerate(row):
             marked = sig[i][j]
             ax = S.axes_cm(fig, x0 + j * (w + wgap), y0, w, w)
             S.fine_grid(ax)
@@ -247,8 +271,7 @@ def _draw_grid(path, test: str, rows: tuple) -> None:
             for axis in (ax.xaxis, ax.yaxis):
                 axis.set_major_locator(ticker.MaxNLocator(3 if w < 4 else 5, steps=[1, 2, 2.5, 5, 10]))
             ax.tick_params(labelleft=True, labelbottom=True)
-            S.title(ax, f"({'abcdefghij'[2 * i + j]}) {S.LEGEND[a]},{chr(10) if two else ' '}{mode.lower()}"
-                    + ("" if panel else " (pending)"))
+            S.title(ax, f"({'abcdefghij'[2 * i + j]}) {S.LEGEND[a]}" + ("" if panel else " (pending)"))
             S.labels(ax, xlabel=f"Recall, {S.LEGEND[b]}", ylabel="Recall" if n == 5 else "Recall, the panel's network")
     if beside:
         x = x0 + 2 * w + wgap + 0.25

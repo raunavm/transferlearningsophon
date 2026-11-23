@@ -65,6 +65,9 @@ JC1_COLOUR = dict(zip(JC1_CLASSES, CLASS10))
 # reference and guide lines (the diagonal, the random-selection floor, a ratio's unity line) are black dotted, the one
 # use of dotted lines (PI 2026-11-13, L6)
 REFERENCE = {**REFERENCE, "linestyle": ":"}
+# the gid of a mode heading drawn above a figure's column of panels (CA-12, CA-13: the exception to FG-12's no-heading
+# rule, which figcheck makes for a text with this gid)
+MODE_HEADING = "mode heading"
 
 
 def grid(ax) -> None:
