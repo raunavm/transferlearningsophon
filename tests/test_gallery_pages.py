@@ -3,6 +3,7 @@
 family's one axis range and colours (gallery_perclass._draw_grid), the line and colour rule (style_v5, L6), the
 figure-text rules (L7), the one row order of figure families and tables (L5) and Table 1 against the headline
 family's value functions (L2). Imports the gallery modules, which read the committed figure data (about a second)."""
+import collections
 import inspect
 import json
 import pathlib
@@ -192,9 +193,53 @@ def test_the_other_flavor_pairs_are_the_resonance_pair_with_its_partitions_and_t
         [(k, R.LABEL_SETS) for k in R.QCD_PAIRS[:2]], [(R.QCD_PAIRS[2], R.LABEL_SETS), None]]
     assert R.OTHER[0] == "bbqq_vs_ccqq" and R.QCD_PAIRS == R.OTHER[1:] and all(k.startswith("qcd_") for k in R.QCD_PAIRS)
     assert kw_q["legend_slot"] == (1, 1) and "legend_slot" not in kw_o
+    assert kw_o["one_x"] and kw_q["one_x"]          # FG-2 (review of render 5f4e1b8, C8): one x range for the panels
     assert all(kw["w"] == R.PAIR_W[2] >= 6.1 and kw["ratio_scale"] == "log" and kw["own_y"] for kw in (kw_o, kw_q))
     assert not hasattr(R, "draw_f4_light") and "F4-light" not in {p.id for p in R.PAGES}
     assert {"F4-other", "F4-qcd"} <= {p.id for p in R.PAGES}
+
+
+def test_a_grid_of_different_pairs_puts_every_panel_on_one_x_range(monkeypatch):
+    """FG-2 (review of render 5f4e1b8, C8): F4-qcd's three pairs, one a panel in a two-column grid, share one x range
+    from the lowest efficiency any curve reaches, where the columns used to be fitted one by one ((b) from 0.2, (a) and
+    (c) from 0)."""
+    def curve(docs, models, key):
+        eps = np.linspace(0.25 if key == R.QCD_PAIRS[1] else 0.03, 1.0, 10)
+        return eps, 1000 * (1 - eps) + 1, 0.9
+    monkeypatch.setattr(R, "ROC", {"pairs": {"any": {}}})
+    monkeypatch.setattr(R, "POOLED", {n: [n] for n in R.NETWORKS})
+    monkeypatch.setattr(R, "mean_over_runs", curve)
+    figs = []
+    monkeypatch.setattr(R.S, "save", lambda fig, path: figs.append(fig))
+    R.draw_f4_qcd(None)
+    panels = [ax for ax in figs[0].axes if ax.get_title()[:1] == "("]
+    assert len(panels) == 3 and len({ax.get_xlim() for ax in panels}) == 1
+    assert panels[0].get_xlim()[0] < 0.0
+    matplotlib.pyplot.close(figs[0])
+
+
+def test_the_headline_panels_of_one_metric_share_one_relative_range_below_and_above_188_classes(monkeypatch):
+    """FG-2 (PI 2026-11-20: one relative range per metric about the 188-class mean, ticks in absolute units); review of
+    render 5f4e1b8 (C6): the range runs from the largest deviation below 188 classes to the largest above, so a side no
+    network reaches is not drawn and a small loss (JetClass) takes twice the width it had; CA-10 (B12): no "SD" in the
+    legend."""
+    drop = {"jc2_188": 0.3, "jc1": 0.025, "top": 0.4, "qg": 0.05, "qg_herwig": 0.05}
+    base = {"jc2_188": 0.5, "jc1": 0.8, "top": 200.0, "qg": 80.0, "qg_herwig": 40.0}
+
+    def value(key, n, ds, met):
+        return lambda m: base[ds] * (1 if m in L.RUNS["L188"] else 1 - drop[ds])
+    figs = []
+    monkeypatch.setattr(L.S, "save", lambda fig, path: figs.append(fig))
+    L._draw_hv(None, value, (), L._head(), "none", "relative")
+    titles = {key: f"({x}) {t}" for x, (key, *_, t) in zip("abcde", L.HV_PANELS)}
+    axes = {key: next(ax for ax in figs[0].axes if ax.get_title() == t) for key, t in titles.items()}
+    rel = {key: tuple(x / base[ds] - 1 for x in axes[key].get_xlim()) for key, _, ds, *_ in L.HV_PANELS}
+    assert rel["jc2"] == pytest.approx(rel["jc1"]) and rel["top"] == pytest.approx(rel["qg"]) == rel["qg_herwig"]
+    assert rel["jc2"][0] < -0.3 and 0 < rel["jc2"][1] < 0.1 and rel["top"][0] < -0.4 and 0 < rel["top"][1] < 0.1
+    legend = [t.get_text() for leg in figs[0].legends for t in leg.get_texts()]
+    assert legend and not [t for t in legend if "SD" in t.split()] and any("standard deviation" in t for t in legend)
+    assert L.PUBLISHED_LABEL == "ParT, published"           # CA-6 (B15): the paper's name in the training-size legend
+    matplotlib.pyplot.close(figs[0])
 
 
 def test_the_pair_legend_holds_only_the_curves_drawn(monkeypatch):
@@ -246,7 +291,7 @@ def test_the_pair_figures_draw_the_random_partitions_that_merge_the_pair_apart_f
                 assert any("\\" + u + "{}" in tex[f] for u in used), (f, used)
             partly[key] = sum(st[a][key] == "partly" for a in M.RAND)
     assert partly == {"bb_vs_cc": 0, "bc_vs_bq_cs": 1, "bbqq_vs_ccqq": 0}
-    assert r"\MlstPairRandPartlyBcWord{} merging $X\to bc$ in part left out" in tex["results_jc.tex"]
+    assert r"\MlstPairRandPartlyBcWord{} partial merger of $X\to bc$ left out" in tex["results_jc.tex"]
     assert to_hex(R.S.SERIES[R._style("RAND_APART")]) == to_hex(R.S.SERIES["RAND"]) != to_hex(R.S.SERIES["RAND_MERGED"])
 
 
@@ -371,9 +416,10 @@ def test_the_training_size_figures_draw_no_superseded_fine_tuning(monkeypatch):
 def test_the_per_class_grid_puts_every_panel_on_one_range_and_colours_classes_not_networks(monkeypatch):
     """Per-class family (PI 2026-11-12/13; L20: networks as rows; PI 2026-11-18: per-class recall, Fig. 4's rows 162, 43,
     17 classes, 162 classes + mass and 17 classes + mass against 188): linear probe beside fine-tuned, one linear axis
-    range for the grid from the lowest and highest recall drawn; a point's colour is what the 17-class labels merged its
-    class with (gallery_perclass.MERGE_COLOURS, from CLASS10), never a colour that means a network (L6); the diagonal is
-    the black dotted reference."""
+    range for the grid from the lowest and highest recall drawn; a point's colour is what its own row's labels merge its
+    class with (review of render 5f4e1b8, C16; gallery_perclass.MERGE_COLOURS, from CLASS10), never a colour that means
+    a network (L6); the diagonal is the black dotted reference; the mode once, an italic heading above each column, and
+    the panel titles name the network only (CA-12, B13)."""
     classes = range(188)
     monkeypatch.setattr(PC, "SOURCES", {"jc2": (lambda m: {c: 0.30 + 0.003 * c for c in classes},
                                                 lambda m: {c: 0.25 + 0.0035 * c for c in classes})})
@@ -395,13 +441,27 @@ def test_the_per_class_grid_puts_every_panel_on_one_range_and_colours_classes_no
         assert len(points) == 188 and not {to_hex(ln.get_color()) for ln in points} & networks
         assert {to_hex(ln.get_color()) for ln in points} <= {to_hex(c) for c in PC.MERGE_COLOURS.values()}
     assert len(set(PC.MERGE_COLOURS.values())) == len(PC.MERGE_KINDS)
-    # the 17-class merges: 27 QCD classes; of the 161 resonant ones, 77 share their group with a decay differing only
-    # in quark flavor, 14 only in lepton flavor, 64 with both, 6 with neither
-    kinds = list(PC.merge_kind().values())
-    assert {k: kinds.count(k) for k in PC.MERGE_KINDS} == {"qcd": 27, "quark": 77, "lepton": 14, "both": 64, "apart": 6}
-    assert [ax.get_title()[:3] for ax in panels] == [f"({x})" for x in letters]
-    assert [ax.get_title().split(", ")[-1] for ax in panels] == ["linear probe", "fine-tuned"] * 3
-    assert [ax.get_title()[4:].split(",")[0] for ax in panels[::2]] == [PC.S.LEGEND[a] for a, _ in PC.FIG4]
+    # the merges of each label set: 27 QCD classes, merged into one by every coarser set; of the 161 resonant ones, at
+    # 17 classes 77 share their group with a decay differing only in quark flavor, 14 only in lepton flavor, 64 with
+    # both, 6 with neither; 162 classes merge only the QCD classes; the five random partitions agree on 61
+    counts = {a: collections.Counter(PC.merge_kind(a).values()) for a in ("L162", "R42_Q1", "R16_Q1", "RAND")}
+    assert {a: {k: c[k] for k in PC.MERGE_KINDS if c[k]} for a, c in counts.items()} == {
+        "L162": {"qcd": 27, "apart": 161}, "R42_Q1": {"qcd": 27, "quark": 67, "lepton": 34, "both": 44, "apart": 16},
+        "R16_Q1": {"qcd": 27, "quark": 77, "lepton": 14, "both": 64, "apart": 6},
+        "RAND": {"qcd": 27, "quark": 44, "apart": 17, "mixed": 100}}
+    assert PC.merge_kind() == PC.merge_kind("R16_Q1")
+    # each panel coloured by its own row's merges, both modes
+    for ax, (a, _) in zip(panels, [r for r in PC.FIG4 for _ in (0, 1)]):
+        assert collections.Counter(to_hex(ln.get_color()) for ln in ax.lines[1:]) == collections.Counter(
+            to_hex(PC.MERGE_COLOURS[k]) for k in PC.merge_kind(a).values()), (a, ax.get_title())
+    assert [ax.get_title() for ax in panels] == [f"({x}) {PC.S.LEGEND[a]}" for x, (a, _) in
+                                                  zip(letters, [r for r in PC.FIG4 for _ in (0, 1)])]
+    heads = [t for t in figs[0].texts if t.get_gid() == PC.S.MODE_HEADING]
+    assert [t.get_text() for t in heads] == list(PC.MODES) and all(t.get_fontstyle() == "italic" for t in heads)
+    figs[0].canvas.draw()
+    for t, ax in zip(heads, panels[:2]):           # centred over its column, above its first panel's title
+        tb, ab = t.get_window_extent(), ax.get_window_extent()
+        assert tb.x0 + tb.x1 == pytest.approx(ab.x0 + ab.x1, abs=1.0) and tb.y0 > ax.title.get_window_extent().y1
     # one gallery_roc colour per decay family (the class-pair family), all from CLASS10
     assert len(R.FAMILY_COLOURS) == len(R.FAMILIES) == len(set(R.FAMILY_COLOURS))
     assert R.FAMILY_COLOURS == tuple(PC.S.CLASS10[k] for k in (0, 1, 4, 2, 3, 5))
