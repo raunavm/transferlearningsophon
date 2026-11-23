@@ -85,3 +85,27 @@ def test_a_level_description_that_no_longer_matches_the_map_stops_the_build():
         r["R3_VIS_name"] = r["R3_VIS_name"].replace("_VIS", "_PRONG")
     with pytest.raises(SystemExit, match="visible-content groups"):
         A.level_rules(rows)
+
+
+def test_the_class_map_holds_the_pretrained_levels_in_blocks_of_the_17_class_groups():
+    """PI 2026-11-23, LEDGER SP-9 (merge 3): tab:app-levels folds into the class map: the 17 group names become block
+    headers (with their numbers and sizes), the levels never pretrained (64, 30, 4 and 2 classes) leave it, and its
+    caption names no table that left the paper (tab:pairs, tab:app-levels) and no section the book lacks."""
+    parts = A.partitions(MAPS, ROWS)
+    table = A.table_vocabulary(ROWS, parts)
+    assert A.MAP_LEVELS == ["R42_Q1"] and "43 classes" in table
+    groups = {}
+    for r in ROWS:
+        groups.setdefault(r["R16_Q1"], []).append(r)
+    heads = [ln for ln in table.splitlines() if ln.startswith("\\multicolumn{") and "17-class group" in ln]
+    assert len(heads) == len(groups) == 17
+    for gid, members in groups.items():
+        n = len(members)
+        assert any(f"17-class group {gid}: {A.group_tex(members[0]['R16_Q1_name'])}, {n} {'class' if n == 1 else 'classes'}"
+                   in h for h in heads), gid
+    head = table.split("\\endfirsthead")[0]
+    assert not any(f" & {k} " in head or f" & {k} \\\\" in head for k in ("64", "30")) and "level}" not in head
+    assert "tab:pairs" not in table and "tab:app-levels" not in table and "\\ref{sec:" not in table
+    # every class sits once under its group
+    assert sum(ln.count(" & ") > 0 and not ln.startswith(("\\multicolumn", " & ", "JetClass-II class"))
+               for ln in table.split("\\endlastfoot")[1].splitlines()) == len(ROWS)

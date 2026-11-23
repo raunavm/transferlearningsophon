@@ -987,7 +987,7 @@ SUPPLEMENT_CAPTIONS = {
         'pretraining runs per flavor-boundary partition, the five random partitions or three runs for 188 and 17 '
         'classes, the band, for 188 classes only, shows ±1 '
         'standard deviation, the others being in the tables, and the dotted line is a random selection of as many QCD '
-        'jets. Values are in tables {tab:sculptfull} and {tab:sculptboot}.'
+        'jets. Values are in tables {tab:sculptfull} and {tab:tests}.'      # PI 2026-11-23, SP-9: tab:sculptboot is in tab:tests
     ),
     "F10c": (
         "Each point shows the inverse Jensen-Shannon divergence 1/JSD50 between the soft-drop mass distributions of "

@@ -4,10 +4,11 @@ Called by make_tables.py, which writes its output beside the other generated
 tables. Three tables, all read from the files that define them, never typed:
 
   * appendix_levels.tex -- the vocabularies: the 17 coarsest groups in words, and
-    how many classes each level of the tree has and whether it was pretrained;
-  * appendix_vocabulary.tex -- every native JetClass-II class with its group at
-    each coarser level and in every random partition (configs/labelmaps/
-    rung_label_maps.v1.csv, rand_label_map.v*.csv);
+    how many classes each level of the tree has and whether it was pretrained (placed
+    nowhere since PI 2026-11-23, LEDGER SP-9: the class map holds it);
+  * appendix_vocabulary.tex -- every native JetClass-II class with its group at 43
+    classes and in every partition, in blocks under the 17-class groups (configs/
+    labelmaps/rung_label_maps.v1.csv, rand_label_map.v*.csv);
   * appendix_tasks.tex -- the native classes of every probe task and anomaly
     signal, taken from the code that ran them (experiments/EVAL/probe.py TASKS,
     anomaly.py SIGNAL_SUITE) and checked against the result files that record
@@ -137,8 +138,14 @@ def _longtable(colspec: str, head: str, rows: list[str], caption: str, label: st
         "\\bottomrule", "\\endlastfoot", *rows, "\\end{longtable}", "}", ""])
 
 
+# PI 2026-11-23 (LEDGER SP-9, merge 3): the class map takes in tab:app-levels; the levels never pretrained (64, 30, 4 and
+# 2 classes) leave it, and the groups of the 17-class label set head its blocks
+MAP_LEVELS = ["R42_Q1"]          # the pretrained level between 162 classes and the 17-class blocks
+
+
 def table_vocabulary(rows: list[dict], parts: list) -> str:
-    """Every native class, its group at 64, 43, 30 and 17 classes and in each partition."""
+    """Every native class, its group at 43 classes and in each partition, in blocks under the groups of the 17-class
+    label set (their names in words, group_tex, and their numbers of the released label map)."""
     order = {r: {} for r in SHOWN}
     for r in rows:
         for rung in SHOWN:
@@ -147,36 +154,37 @@ def table_vocabulary(rows: list[dict], parts: list) -> str:
     sizes = {rung: len({r[rung] for r in rows}) for rung in RUNGS}
     rand = [h for h, c, _ in parts if c.startswith("RAND")]
     flav = [h for h, c, _ in parts if not c.startswith("RAND")]
-    head = (f" & \\multicolumn{{{len(SHOWN)}}}{{c}}{{level}}"
+    ncol = 1 + len(MAP_LEVELS) + len(parts)
+    head = (" & " + " & ".join(f"{sizes[r]} classes" for r in MAP_LEVELS)
             + (f" & \\multicolumn{{{len(rand)}}}{{c}}{{random partition}}" if rand else "")
             + (f" & \\multicolumn{{{len(flav)}}}{{c}}{{flavor boundary}}" if flav else "")
             + " \\\\\n"
-            + "JetClass-II class & " + " & ".join(str(sizes[r]) for r in SHOWN)
+            + "JetClass-II class" + " & " * len(MAP_LEVELS)
             + "".join(f" & {h}" for h, _, _ in parts) + " \\\\")
+    size = collections.Counter(r["R16_Q1"] for r in rows)
     body, last = [], None
     for r in sorted(rows, key=key):
-        if last is not None and r["R16_Q1"] != last:
-            body.append("\\addlinespace[2pt]")
+        if r["R16_Q1"] != last:
+            if last is not None:
+                body.append("\\addlinespace[2pt]")
+            n = size[r["R16_Q1"]]
+            body.append(f"\\multicolumn{{{ncol}}}{{@{{}}l}}{{\\textit{{{sizes['R16_Q1']}-class group {r['R16_Q1']}: "
+                        f"{group_tex(r['R16_Q1_name'])}, {n} {'class' if n == 1 else 'classes'}}}}} \\\\*")
         last = r["R16_Q1"]
-        body.append(native_tex(r["class_name"]) + " & " + " & ".join(r[g] for g in SHOWN)
+        body.append(native_tex(r["class_name"]) + " & " + " & ".join(r[g] for g in MAP_LEVELS)
                     + "".join(f" & {p[r['class_name']]}" for _, _, p in parts) + " \\\\")
-    caption = ("Every JetClass-II class and its group at each coarser level of the class "
-               f"hierarchy (columns headed by the number of classes at that level: "
-               f"{', '.join(str(sizes[r]) for r in SHOWN)}), in each random partition, numbered as "
-               "in Table~\\ref{tab:pairs}, and in each random partition with controlled flavor "
-               "boundaries: no flavor boundary, a $b$-quark boundary and a random flavor boundary "
-               "(Section~\\ref{sec:controls}). "
-               "Group numbers are those of the released label maps; classes that share a number "
-               "in a column share a class in that label set. At the "
-               f"{sizes['L162']}-class level every resonant class keeps its own label and the "
-               f"QCD classes share one; at {sizes['R3_VIS']} classes the groups are decays with "
-               f"{visible_prongs(rows)} visible prongs (a neutrino is not counted) and QCD. "
-               "Rows are ordered by the "
-               f"{sizes['R16_Q1']}-class group (Table~\\ref{{tab:app-levels}}), with a gap between "
-               "groups. $q$ is a $u$ or $d$ quark; $\\tau_h$ a hadronic and $\\tau_e$, $\\tau_\\mu$ "
-               "leptonic $\\tau$ decays.")
-    ncol = len(SHOWN) + len(parts)
-    return _longtable("l " + "r" * ncol, head, body, caption, "tab:app-vocabulary")
+    caption = ("Every JetClass-II class and its group in each pretrained label set coarser than "
+               f"{sizes['L162']} classes and in each partition, in blocks under the groups of the "
+               f"{sizes['R16_Q1']}-class label set. At {sizes['L162']} classes every resonant class keeps its own "
+               f"label and the QCD classes share one; the {sizes['R42_Q1']}-class column groups "
+               f"{level_rules(rows)['R42_Q1']}. The random partitions are numbered 1 to {len(rand)}, and the "
+               "flavor-boundary partitions have no flavor boundary, a $b$-quark boundary or a random flavor "
+               "boundary, a flavor boundary keeping apart decays that differ only in quark flavor. Group numbers are "
+               "those of the released label maps; classes "
+               "that share a number in a column share a class in that label set. $q$ is a $u$ or $d$ quark; $\\ell$ an "
+               "electron or a muon; $\\tau_h$ a hadronic and $\\tau_e$, $\\tau_\\mu$, $\\tau_\\ell$ leptonic $\\tau$ "
+               "decays.")
+    return _longtable("l " + "r" * (ncol - 1), head, body, caption, "tab:app-vocabulary")
 
 
 _WORD = {2: "two", 3: "three", 4: "four"}

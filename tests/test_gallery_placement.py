@@ -66,54 +66,51 @@ def test_the_gallery_order_is_the_placement_tier_by_tier():
 
 
 def test_the_main_text_is_the_pis_list_in_order():
+    # PI 2026-11-23, LEDGER SP-9 (the structure approved as proposed, docs/STRUCTURE_PROPOSAL.md): the main text holds
+    # F1, F2, F2-ft, PC-jc2, F4-mech, A8 and F11, in that order, and tab:sets, tab:summary (with tab:xbx's two columns),
+    # tab:published and tab:mass; the expectations below changed with that structure and for no other reason
     main = [k for k, t, _ in G.FIGURES if t == G.MAIN]
-    # PI 2026-11-13 (L1, L9, L13): at most one figure a family in the main text, the slice with the approved story;
-    # L20 (panels at least 4.5 cm) split the headline figure into one figure a mode, F2 (linear probes) and F2-ft
-    # (fine-tuned), both in the main text (round 3, package 1b; whether L1's one figure may be two is the lead's)
-    # PI 2026-11-18: ROC curves in the main text, one figure a mode (ROC-main, ROC-main-ft)
-    assert main == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "ROC-main", "ROC-main-ft", "A8", "F11"]
-    # PI 2026-11-12: one table beside the published models (tab:published) in place of the JetClass, top and
-    # quark/gluon tables; the other label sets' fine-tuned rows in one appendix table (tab:labelsets), which also takes
-    # in the Herwig table
-    assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:summary", "tab:published", "tab:mass", "tab:xbx"]
-    # PI 2026-11-14 (step 6): the appendix by family, each table beside its family's figures; tab:sculptboot to the
-    # supplement (step 5)
+    assert main == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11"]
+    assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:sets", "tab:summary", "tab:published", "tab:mass"]
+    # PI 2026-11-23, LEDGER SP-9: the appendix keeps the class map (tab:app-levels folded in), the reproduction tables
+    # and the evidence for the claims the main text does not show, the tested-differences table among them
     assert [k for k, t, _ in G.TABLES if t == G.APPENDIX] == [
-        "tab:summaryauc", "tab:jc1_class_auc", "tab:jetclassrej", "tab:pairs", "tab:probesn", "tab:ft", "tab:probes",
-        "tab:labelsets", "tab:masseffect", "tab:sculpt", "tab:xbxrej", "tab:inputs", "tab:fill", "tab:partrepro",
-        "tab:lrsweep"]
+        "tab:app-vocabulary", "tab:inputs", "tab:lrsweep", "tab:compute", "tab:fill", "tab:mlp", "tab:partrepro",
+        "tab:summaryauc", "tab:tests", "tab:coarse", "tab:jc1_class_auc"]
     assert not {"tab:jetclass", "tab:benchtop", "tab:benchqg", "tab:benchqgherwig"} & set(G.TIER)
-    # only the partitions' mass probes wait (PI 2026-11-14), two supplement figures
-    assert set(G.PROVISIONAL) == {"A17-probe-part", "A17-ridge-part"}
+    # the partitions' mass probes wait (PI 2026-11-14), two supplement figures; PI 2026-11-23, LEDGER SP-9, SP-11: the
+    # tested differences without a paired bootstrap and the published comparison's JetClass rows until the rerun
+    assert set(G.PROVISIONAL) == {"A17-probe-part", "A17-ridge-part", "tab:tests", "tab:published"}
     assert set(G.PROVISIONAL) <= set(G.TIER) and all(v.isascii() for v in G.PROVISIONAL.values())    # the book's boxes
-    # PI 2026-11-13: the appendix holds the rest of a family where it supports a main-text claim, everything else is
-    # in the supplement
+    # PI 2026-11-23, LEDGER SP-9: the appendix figures VAL, A10, F4-other (F4-light merged into it, merge 8) and F9b;
+    # every other figure the appendix held is in the data release (the supplement tier)
     appendix = [k for k, t, _ in G.FIGURES if t == G.APPENDIX]
-    # L20 (two curve panels a row): the four other flavor pairs are F4-other and F4-light in each mode, and the ROC
-    # figure is one mode a figure (F6, F6-ft)
-    # PI 2026-11-14 (steps 5, 6): the appendix by family, linear probes first (F4-other and F4-light before the
-    # fine-tuned pairs); the mass probe on frozen features beside F9b; the embeddings as two task grids
-    # PI 2026-11-18: F2a and F2b (AUC only), F6/F6-ft (now in ROC-main / ROC-main-ft) and the class-against-rest
-    # JetClass curves (FJ-app, FJ; every class against QCD is in ROC-main / ROC-main-ft) to the supplement
-    assert appendix == ["PC-jc1", "F4-other", "F4-light", "F4-mech-ft", "F4-other-ft", "F4-light-ft",
-                        "A10", "PT", "F9b", "A17-probe", "F10b", "F11-part", "UMAP-frozen", "UMAP-ft", "VAL"]
-    assert [f for f, _ in G.APPENDIX_FAMILIES] == ["Headline metrics", "Per class", "Class pairs", "Training size",
-                                                   "ROC curves", "Jet pT", "Mass", "Sculpting", "Resonance tagging",
-                                                   "Embeddings", "Training details"]
-    assert G.TIER["tab:sculpt"] == G.APPENDIX and G.TIER["tab:compute"] == G.TIER["tab:massdetail"] == G.SUPPLEMENT
-    assert G.TIER["tab:sculptboot"] == G.TIER["UMAP-jc2-had"] == G.SUPPLEMENT
-    assert G.BACKS["tab:sculptboot"] == (f"{G.number('tab:sculptboot')} gives the sculpting differences behind "
-                                         f"{G.number('F10b')} with their uncertainties over runs and test jets.")
+    assert appendix == ["VAL", "A10", "F4-other", "F9b"]
+    for k in ("F4-mech-ft", "F4-other-ft", "F4-light-ft", "ROC-main", "ROC-main-ft", "PT", "A17-probe", "F10b",
+              "F11-part", "UMAP-frozen", "UMAP-ft", "PC-jc1"):
+        assert G.TIER[k] == G.SUPPLEMENT, k
+    assert [f for f, _ in G.APPENDIX_FAMILIES] == ["Training details", "Checks of the method", "Headline metrics",
+                                                   "Training size", "Class pairs", "Per class", "Mass"]
+    # the coverage map keeps its topical families (PI 2026-11-14, step 6)
+    assert G.FAMILY_NAMES == ("Headline metrics", "Per class", "Class pairs", "Training size", "ROC curves", "Jet pT",
+                              "Mass", "Sculpting", "Resonance tagging", "Embeddings", "Training details")
+    # PI 2026-11-23, LEDGER SP-9: to the data release, tab:randparts included (it comes back only if a sentence states
+    # something about one partition); tab:sculptboot and tab:boot are the tested-differences table (merge 6)
+    for k in ("tab:xbx", "tab:randparts", "tab:perclass", "tab:jetclassrej", "tab:jetclassall", "tab:jetclassnbkg",
+              "tab:jetclassprobe", "tab:pairs", "tab:probesn", "tab:ft", "tab:probes", "tab:labelsets",
+              "tab:massdetail", "tab:sculpt", "tab:xbxrej", "tab:computefull", "tab:mlpfull"):
+        assert G.TIER[k] == G.SUPPLEMENT, k
+    assert G.TIER["tab:tests"] == G.APPENDIX and "tab:sculptboot" not in G.TIER and "tab:sculptboot" in G.DROPPED_TABLES
+    assert G.BACKS["tab:tests"] == (f"{G.number('tab:tests')} gives every difference and null the text states, with "
+                                    "each side's run standard deviation, the paired test-jet bootstrap standard "
+                                    "deviation and Δ/σ.")
     for k in ("F10b", "F10b-flav", "F10c", "F10a-flav"):
-        assert G.evidence(k) == (k, "tab:sculpt", "tab:sculptboot")
-    # the trimmed appendix tables whole in the supplement; the coarse targets and the b-tagging discriminant in the
-    # supplement with their whole copies (L13); tab:boot nowhere
-    for k in ("tab:probes", "tab:pairs", "tab:fill"):
-        assert G.TIER[k] == G.APPENDIX and G.TIER[k + "full"] == G.SUPPLEMENT
-    assert G.TIER["tab:coarse"] == G.TIER["tab:coarsefull"] == G.SUPPLEMENT
+        assert G.evidence(k) == (k, "tab:sculpt", "tab:tests")
+    # the trimmed appendix tables whole in the data release
+    for k in ("tab:fill", "tab:coarse", "tab:mlp", "tab:compute"):
+        assert G.TIER[k] == G.APPENDIX and G.TIER[{"tab:compute": "tab:computefull"}.get(k, k + "full")] == G.SUPPLEMENT
     # tab:qcdhf repeated every row of tab:qcdhffull (audit 3): the whole copy stays
     assert "tab:qcdhf" in G.DROPPED_TABLES and G.TIER["tab:qcdhffull"] == G.SUPPLEMENT
-    assert [G.number(k) for k in ("tab:jc1conf", "tab:coarse")] == ["Table S12", "Table S13"]
     assert "tab:boot" not in G.TIER and "tab:boot" in G.DROPPED_TABLES
 
 
@@ -129,42 +126,38 @@ def test_the_dropped_pages_are_gone():
     # the tables the plan places nowhere; its "missing inputs (fill)" and "fine-tuning vs size" are placed
     # and the task tables whose rows are now in tab:published and tab:labelsets (PI 2026-11-12)
     # (2026-11-13: tab:perclass restored to the supplement, tab:probesn and tab:ft to the appendix)
+    # PI 2026-11-23, LEDGER SP-9: merged (tab:app-levels into the class map, tab:sculptboot into tab:tests) or dropped
+    # as superseded (tab:usecase, tab:masseffect); tab:ft to the data release
     assert G.DROPPED_TABLES == ("tab:balance", "tab:fill_main", "tab:ftrej", "tab:boot", "tab:jetclass", "tab:benchtop",
-                                "tab:benchqg", "tab:benchqgherwig", "tab:qcdhf")
-    assert not set(G.DROPPED_TABLES) & set(G.TIER) and G.TIER["tab:fill"] == G.APPENDIX and G.TIER["tab:ft"] == G.APPENDIX
+                                "tab:benchqg", "tab:benchqgherwig", "tab:qcdhf", "tab:app-levels", "tab:sculptboot",
+                                "tab:usecase", "tab:masseffect")
+    assert not set(G.DROPPED_TABLES) & set(G.TIER) and G.TIER["tab:fill"] == G.APPENDIX and G.TIER["tab:ft"] == G.SUPPLEMENT
     assert G.TIER["tab:perclass"] == G.TIER["tab:ftfull"] == G.TIER["tab:probesnfull"] == G.SUPPLEMENT
     # a page a family replaced (delete nothing, L13): dropped, and its successor placed
     assert set(G.SUPERSEDED) <= set(G.DROPPED) and set(G.SUPERSEDED.values()) <= set(G.TIER)
     assert G.SUPERSEDED["F3-main"] == "PC-jc2" and G.SUPERSEDED["CONF"] == "PC-conf" and G.SUPERSEDED["F6-app"] == "F6"
+    assert G.SUPERSEDED["F4-light"] == "F4-other"      # PI 2026-11-23, LEDGER SP-9 (merge 8)
 
 
 def test_numbers_count_within_each_tier_and_kind():
-    # PI 2026-11-18: the appendix by family, so F4-other is Fig. A2 and the mass probe Fig. A10; F6-ft and FJ in the
-    # supplement
+    # PI 2026-11-23, LEDGER SP-9: the numbers of the approved structure (main text, appendix by family, the data release)
     assert G.number("F1") == "Fig. 1" and G.number("F2-ft") == "Fig. 3" and G.number("PC-jc2") == "Fig. 4"
-    assert G.number("ROC-main") == "Fig. 6" and G.number("ROC-main-ft") == "Fig. 7" and G.number("A8") == "Fig. 8"
-    assert G.number("F4-other") == "Fig. A2" and G.number("F4-light") == "Fig. A3" and G.number("F6-ft") == "Fig. S4"
-    assert G.number("tab:summary") == "Table 1" and G.number("tab:summaryauc") == "Table A1" and G.number("tab:probes") == "Table A7"
-    assert G.number("FJ") == "Fig. S26" and G.number("tab:perrun") == "Table S1"
-    assert G.place("F10b") == "Appendix, Fig. A11" and G.place("F11") == "Main text, Fig. 9"
-    assert G.number("tab:sculptboot") == "Table S6" and G.number("tab:masseffect") == "Table A9"
-    assert G.number("tab:xbxrej") == "Table A11"
-    # four main-text tables (PI 2026-11-12)
-    assert [G.number(k) for k in ("tab:published", "tab:mass", "tab:xbx")] == ["Table 2", "Table 3", "Table 4"]
-    assert G.number("tab:labelsets") == "Table A8" and G.number("tab:jetclassrej") == "Table A3" and G.number("tab:pairs") == "Table A4"
-    assert G.number("PT") == "Fig. A8" and G.number("F9b") == "Fig. A9" and G.number("A17-probe") == "Fig. A10"
-    assert [G.number(k) for k in ("UMAP-frozen", "UMAP-ft", "VAL")] == ["Fig. A13", "Fig. A14", "Fig. A15"]
-    assert [G.number(k) for k in ("A3R-ft", "A3R-s", "PT-part", "PT-bbcc", "PT-bbcc-part", "F9a")] == [
-        "Fig. S33", "Fig. S35", "Fig. S36", "Fig. S37", "Fig. S38", "Fig. S39"]
-    assert [G.number(k) for k in ("tab:perclass", "tab:jc1conf", "tab:coarse")] == ["Table S11", "Table S12", "Table S13"]
-    assert "tab:ptbins" not in G.TIER and G.number("tab:compute") == "Table S16"
+    assert G.number("A8") == "Fig. 6" and G.number("F11") == "Fig. 7"
+    assert [G.number(k) for k in ("VAL", "A10", "F4-other", "F9b")] == ["Fig. A1", "Fig. A2", "Fig. A3", "Fig. A4"]
+    assert G.number("tab:sets") == "Table 1" and G.number("tab:summary") == "Table 2"
+    assert [G.number(k) for k in ("tab:published", "tab:mass")] == ["Table 3", "Table 4"]
+    assert [G.number(k) for k in ("tab:app-vocabulary", "tab:summaryauc", "tab:tests", "tab:jc1_class_auc")] == [
+        "Table A1", "Table A8", "Table A9", "Table A11"]
+    assert G.place("F9b") == "Appendix, Fig. A4" and G.place("F11") == "Main text, Fig. 7"
+    assert G.number("F4-mech-ft") == "Fig. S1" and G.number("tab:xbx") == "Table S1"
+    assert "tab:ptbins" not in G.TIER and G.number("tab:computefull") == "Table S16"
     # the supplement's UMAP grids (the per-task grid of JetClass-II's hadronic decays first), then the pretraining
     # curves of the partitions last
     sup = [k for k, t, _ in G.FIGURES if t == G.SUPPLEMENT]
     assert sup[-13:] == ["UMAP-jc2-had", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "UMAP-xbx",
                          "UMAP-mass-jc2-had", "UMAP-mass-jc1", "UMAP-mass-jc2-lep", "UMAP-mass-top", "UMAP-mass-qg",
                          "UMAP-mass-xbx", "VAL-part"]
-    assert G.number("UMAP-xbx") == "Fig. S58" and G.number("VAL-part") == "Fig. S65" and len(sup) == 65
+    assert G.number("UMAP-xbx") == "Fig. S70" and G.number("VAL-part") == "Fig. S77" and len(sup) == 77
 
 
 def test_the_coverage_map_has_a_row_a_family_and_no_blank_cell():
@@ -178,7 +171,8 @@ def test_the_coverage_map_has_a_row_a_family_and_no_blank_cell():
             assert c and (c == "supplement" or c.startswith("does not apply (") or re.fullmatch(
                 r"(Figs?\. [AS]?\d+(, [AS]?\d+)*)?(; )?(Tables? [AS]?\d+(, [AS]?\d+)*)?", c)), (family, c)
     cov = dict(rows)
-    assert cov["Headline metrics"][0] == "Fig. 2; Tables 1, A1"
+    # PI 2026-11-23, LEDGER SP-9: Table 1 is tab:summary's Table 2 after tab:sets; the MLP and coarse-target tables join
+    assert cov["Headline metrics"][0] == "Fig. 2; Tables 2, A6, A8, A10"
     assert all(c.startswith("does not apply") for c in cov["Resonance tagging"][3:])
     assert cov["Embeddings"][1] == "supplement" and cov["Embeddings"][2].startswith("does not apply")
     # every paper item that shows a group is in the map, and only paper items are
@@ -186,7 +180,8 @@ def test_the_coverage_map_has_a_row_a_family_and_no_blank_cell():
     # PI 2026-11-14: the rule holds for the tables too; outside the three families the partitions are in the supplement
     assert G.NETWORK_RULE.startswith("Every figure and table of the paper shows the label sets")
     assert "17-class partitions appear in the paper for the headline metrics, class pairs and resonance tagging" in G.NETWORK_RULE
-    assert cov["Training size"][2] == cov["ROC curves"][5] == cov["Per class"][2] == cov["Sculpting"][2] == "supplement"
+    assert cov["Training size"][2] == cov["ROC curves"][5] == cov["Sculpting"][2] == "supplement"
+    assert cov["Per class"][2] == "Table A11"         # tab:jc1_class_auc's pooled partitions (PI 2026-11-21)
     assert G.TIER["tab:labelsetsfull"] == G.TIER["tab:jc1_class_aucfull"] == G.TIER["tab:sculptfull"] == G.SUPPLEMENT
 
 
@@ -222,24 +217,22 @@ def test_every_number_in_a_sentence_comes_from_number():
 
 def test_every_sentence_names_its_evidence():
     assert all(set(v) <= set(G.TIER) and k in G.TIER for k, v in G.EVIDENCE.items())
-    # the headline family (L2): Table 1 holds the main figure's values, tab:summaryauc the AUC of the full versions
-    assert G.evidence("F2") == ("F2", "tab:summary") and G.evidence("F2-ft") == ("F2-ft", "tab:summary")
+    # PI 2026-11-23, LEDGER SP-9: the headline family rests on Table 1 and the tested-differences table
+    assert G.evidence("F2") == ("F2", "tab:summary", "tab:tests") and G.evidence("F2-ft") == ("F2-ft", "tab:summary", "tab:tests")
     assert G.evidence("F1") == ("F1",)
     # F2a and F2b draw the AUC only (L20): the AUC table first
     assert G.evidence("F2a") == ("F2a", "tab:summaryauc", "tab:summary")
     assert G.evidence("F2b") == ("F2b", "tab:summaryauc", "tab:summary")
     # the ROC family: R30 and AUC in Table 1 and tab:summaryauc, accuracy and R50 in tab:probes and tab:labelsets
     assert G.evidence("F6") == ("F6", "tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets")
-    assert G.evidence("F6-ft") == ("F6-ft", "tab:summary", "tab:summaryauc", "tab:probes", "tab:labelsets")
-    # the binned mass figure's quantity has a table over all jets (tab:mass's head block), the bins in the supplement
-    assert G.evidence("F9b") == ("F9b", "tab:mass", "tab:massdetail") and "[[F9b]]" in dict((k, s) for k, _, s in G._TABLES)["tab:mass"]
-    # the two tables that rest on the comparison table: the 188-class and from-scratch rows, ParT's published row
-    assert G.evidence("tab:labelsets") == ("tab:labelsets", "tab:summary", "tab:summaryauc")
+    # the binned mass figure's quantity has a table over all jets (tab:mass's head block), the bins in the data release
+    assert G.evidence("F9b") == ("F9b", "tab:mass", "tab:tests", "tab:massdetail")
+    assert "[[F9b]]" in dict((k, s) for k, _, s in G._TABLES)["tab:mass"]
     assert G.evidence("tab:partrepro") == ("tab:partrepro", "tab:published")
-    # the per-class and training-size families point at their tables
-    assert G.evidence("PC-jc2") == ("PC-jc2", "tab:summary", "tab:perclass")     # recall: its class mean is the accuracy
-    assert G.evidence("A8") == ("A8", "tab:ft", "tab:summary", "tab:ftfull")
-    assert G.evidence("A10") == ("A10", "tab:probesn", "tab:summary", "tab:probesnfull")
+    assert G.evidence("PC-jc2") == ("PC-jc2", "tab:summary", "tab:summaryauc", "tab:perclass")
+    assert G.evidence("A8") == ("A8", "tab:summary", "tab:tests", "tab:ft", "tab:ftfull")
+    assert G.evidence("A10") == ("A10", "tab:summary", "tab:tests", "tab:probesn", "tab:probesnfull")
+    assert G.evidence("F4-mech") == ("F4-mech", "tab:tests", "tab:pairs") and G.evidence("F11")[:2] == ("F11", "tab:summary")
     # the jet-pT family: its values are the data release's jet_pt_bins.csv (L18), no table, so the figure is its own
     # evidence; the three supplement slices share one sentence
     assert G.evidence("PT") == ("PT",) and "tab:ptbins" not in G.TIER
@@ -247,6 +240,8 @@ def test_every_sentence_names_its_evidence():
         f"{G.number('PT-part')} to {G.number('PT-bbcc-part')} repeat {G.number('PT')} for the partitions and X→bb̄ vs cc̄.")
     assert G.BACKS["tab:jc1conf"] == (f"The percentages of {G.number('PC-conf')} to {G.number('PC-conf-mass')} are in "
                                       f"{G.number('tab:jc1conf')}.")
+    # every paper item rests only on items of the paper or the data release, and every main or appendix item has one
+    assert all(G.TIER[k] in G.TIERS for k in G.TIER)
 
 
 def test_the_new_pages_are_marked_new():

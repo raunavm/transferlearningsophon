@@ -5047,6 +5047,22 @@ def build(root: pathlib.Path) -> tuple[dict, list, list]:
     return out, missing, skipped
 
 
+PLACEMENT_STOP = "FATAL: the manuscript's figures and tables are not gallery_placement's main-text and appendix lists"
+
+
+def placement_stop(journal: pathlib.Path) -> None:
+    """The placement build stop (PI 2026-11-23, LEDGER SP-12 step 1; SP-1): SystemExit with every mismatch line when
+    main.tex's \\paperfig and \\input lists are not exactly gallery_placement's MAIN and APPENDIX lists. manuscript_items
+    is loaded here, not imported at the top: it imports make_results_book, which loads mlst_results."""
+    spec = importlib.util.spec_from_file_location(
+        "manuscript_items", pathlib.Path(__file__).resolve().parent / "manuscript_items.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    lines = m.mismatch(journal)
+    if lines:
+        raise SystemExit(PLACEMENT_STOP + " (PI 2026-11-23, LEDGER SP-12):\n" + "\n".join(lines))
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--root", type=pathlib.Path, default=REPO,
@@ -5055,8 +5071,14 @@ def main(argv=None) -> int:
                     help="destination directory (default <root>/paper/journal)")
     ap.add_argument("--check", action="store_true",
                     help="do not write; exit non-zero if regenerating would change anything")
+    ap.add_argument("--paper", action="store_true",
+                    help="the paper's build (scripts/build_render_job.py): stop first when the manuscript's figures and "
+                         "tables are not the placement's (PI 2026-11-23, LEDGER SP-12); the results book's build does "
+                         "not pass it")
     a = ap.parse_args(argv)
     out_dir = a.out or (a.root / "paper" / "journal")
+    if a.paper:
+        placement_stop(a.root / "paper" / "journal")
 
     built, missing, skipped = build(a.root)
     nc = json.loads(built.get("v2_not_computed.json", "[]"))

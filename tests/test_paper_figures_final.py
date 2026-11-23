@@ -483,7 +483,8 @@ def test_the_final_style_is_sophons_at_the_printed_size(P, M):
 def test_the_render_job_builds_the_paper_and_keeps_the_mockup_spec(tmp_path):
     R = _mod("build_render_job", "scripts/build_render_job.py")
     draw, collect = R.PAPER["draw"], R.PAPER["collect"]
-    assert "python3 experiments/FIGS/make_tables.py > ${OUT}/tables.txt 2>&1; echo \"tables rc=$?\"" in draw
+    # PI 2026-11-23, LEDGER SP-12 (step 1): the paper's table build passes --paper, the placement build stop
+    assert "python3 experiments/FIGS/make_tables.py --paper > ${OUT}/tables.txt 2>&1; echo \"tables rc=$?\"" in draw
     assert "python3 experiments/FIGS/paper_figures.py > ${OUT}/figures.txt 2>&1; echo \"figures rc=$?\"" in draw
     assert "deck_figures" not in draw and "mlst_figures" not in draw
     assert draw.index("make_tables.py") < draw.index("paper_figures.py")

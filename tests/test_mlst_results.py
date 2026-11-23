@@ -1808,7 +1808,8 @@ def test_the_mode_is_an_italic_heading_over_the_rows_and_the_partitions_sit_unde
     assert M.MODES["coarse"] == M.MODES["qcdhf"] == M.MODES["fill"] == "lp" and M.MODES["lrsweep"] == M.MODES["jetclass_rej"] == "ft"
     # tab:jc1_class_auc: the linear probes first (L1, round-1 fix 2026-11-13); tab:sculpt: the head used directly, then
     # the fine-tuned networks
-    assert M.MODES["mlp"] == "mlp" and M._mode("jc1_class_auc", 0) == "lp" and M._mode("jc1_class_auc", 1) == "ft"
+    # PI 2026-11-23, LEDGER SP-9: the paper's tab:jc1_class_auc is the linear-probe half; its copy keeps both modes
+    assert M.MODES["mlp"] == "mlp" and M.MODES["jc1_class_auc"] == "lp" and M._mode("jc1_class_auc_full", 1) == "ft"
     assert M.MODES["sculpt"] == ["direct", "ft"]
     assert not {"probes", "mass", "pairs", "summary", "summary_auc", "published", "labelsets", "xbx", "xbx_rej", "sculpt_boot",
                 "probes_n", "ft", "masseffect"} & set(M.MODES)
@@ -2150,7 +2151,8 @@ def test_the_results_book_is_the_gallery_placement_and_boxes_only_provisional_it
     # the comparison with published models (tab:published) is a main-text table; the task tables it replaced are placed
     # nowhere (PI 2026-11-12)
     assert book.index("% figure F1\n") < book.index("% tables/mlst_published.tex") < book.index(r"{A\arabic{figure}}")
-    assert book.index(r"{A\arabic{figure}}") < book.index("% tables/mlst_labelsets.tex")
+    # PI 2026-11-23, LEDGER SP-9: tab:labelsets in the data release; tab:summaryauc an appendix table
+    assert book.index(r"{A\arabic{figure}}") < book.index("% tables/mlst_summary_auc.tex")
     assert not any(f"% tables/mlst_{name}.tex" in book for name in ("jetclass", "bench_top", "bench_qg", "bench_qg_herwig"))
     assert r"\arabic{table}b}" not in book and "externaldocument" not in book     # no 2a/2b (PI 2026-11-12)
     with pytest.raises(SystemExit, match="results_book.aux"):
@@ -2776,8 +2778,9 @@ def _paper_tables() -> dict:
     G = _load("gallery_placement_tables_t", "experiments/FIGS/figstyle/gallery_placement.py")
     key = {label: k for k, (label, _) in M.CAPTIONS.items()}
     name = {k: f for k, f, *_ in M.PLACEHOLDERS} | dict(M.LONGTABLES)      # tab:perclass is a longtable (appendix)
+    # PI 2026-11-23, LEDGER SP-9: the class map (tab:app-vocabulary, written by appendix_tables.py) joins the appendix
     return {lab: (key[lab], ROOT / "paper/journal/tables" / f"{name[key[lab]]}.tex")
-            for item, tier, _ in G.TABLES if tier in (G.MAIN, G.APPENDIX) for lab in item.split(" + ")}
+            for item, tier, _ in G.TABLES if tier in (G.MAIN, G.APPENDIX) for lab in item.split(" + ") if lab in key}
 
 
 def _caption_and_body(tex: str) -> tuple:
@@ -2791,13 +2794,12 @@ def _caption_and_body(tex: str) -> tuple:
 
 def test_the_paper_has_twenty_tables_and_the_task_tables_are_placed_nowhere():
     tables = _paper_tables()
-    # PI 2026-11-14 (steps 5, 6): the appendix by family; tab:sculptboot in the supplement
-    assert list(tables) == ["tab:summary", "tab:published", "tab:mass", "tab:xbx", "tab:summaryauc", "tab:jc1_class_auc",
-                            "tab:jetclassrej", "tab:pairs", "tab:probesn", "tab:ft", "tab:probes", "tab:labelsets",
-                            "tab:masseffect", "tab:sculpt", "tab:xbxrej", "tab:inputs", "tab:fill", "tab:partrepro",
-                            "tab:lrsweep"]
-    assert tables["tab:summaryauc"][1].name == "mlst_summary_auc.tex" and tables["tab:masseffect"][1].name == "mlst_masseffect.tex"
-    assert tables["tab:published"][1].name == "mlst_published.tex" and tables["tab:labelsets"][1].name == "mlst_labelsets.tex"
+    # PI 2026-11-23, LEDGER SP-9: the approved structure's main-text and appendix tables (the class map apart, above)
+    assert list(tables) == ["tab:sets", "tab:summary", "tab:published", "tab:mass", "tab:inputs", "tab:lrsweep",
+                            "tab:compute", "tab:fill", "tab:mlp", "tab:partrepro", "tab:summaryauc", "tab:tests",
+                            "tab:coarse", "tab:jc1_class_auc"]
+    assert tables["tab:summaryauc"][1].name == "mlst_summary_auc.tex" and tables["tab:tests"][1].name == "mlst_tests.tex"
+    assert tables["tab:published"][1].name == "mlst_published.tex" and tables["tab:compute"][1].name == "compute.tex"
     assert all(k in M.CAPTION_SHORT for k, _ in tables.values())                   # each prints its short caption
 
 
@@ -3234,7 +3236,9 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
                                 ("qg_herwig", 1_600_000, "qg_herwig", "r30")) == M.SUMMARY_GRID
     assert M.SUMMARY_AUC == {"jc2": "macro_auc_ovr", "jc1": "macro_auc_ovr", "top": "auc", "qg": "auc", "qg_herwig": "auc"}
     assert M.SUMMARY_AUC_GRID == tuple((k, n, ds, M.SUMMARY_AUC[k]) for k, n, ds, _ in M.SUMMARY_PANELS)
-    assert M.SUMMARY_HEAD == {"accuracy": "accuracy", "r30": "$R_{30}$", "macro_auc_ovr": "AUC", "auc": "AUC"}
+    # PI 2026-11-23, LEDGER SP-9 (merge 5): tab:summaryauc's resonant and QCD columns have their heads
+    assert M.SUMMARY_HEAD == {"accuracy": "accuracy", "r30": "$R_{30}$", "macro_auc_ovr": "AUC", "auc": "AUC",
+                              "macro_auc_resonant": "AUC, resonant", "macro_auc_qcd": "AUC, QCD"}
     assert M.SUMMARY_NO_SOPHON == ("top", "qg", "qg_herwig") and M.SUMMARY_CONTROLS == M.FLAV + (M.RAND_POOLED,)
     assert not hasattr(M, "SUMMARY_LABEL_CM")                  # the row labels never wrap: no label width
     # the captions: what each compares, the AUC defined once in the table that prints it, no class pairs; shortened in
@@ -3247,13 +3251,16 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
             "working point of the top-tagging comparison") in cap and "class pairs" not in cap
     assert re.findall(r"\\ref\{([^}]*)\}", cap) == [] and "zero-filled" not in cap
     assert M.PART_DEF not in cap
-    assert auc.count("averaged on JetClass-II and JetClass over the classes, each against the rest.") == 1
+    # PI 2026-11-23, LEDGER SP-9 (merge 5): and on JetClass-II over the resonant and the QCD classes
+    assert auc.count("averaged on JetClass-II and JetClass over the classes, each against the rest, and on JetClass-II "
+                     "also over its resonant and over its QCD classes alone.") == 1
     assert "table~\\ref{tab:summary}" in auc and "class pairs" not in auc
     assert M.BOLD["summary"] == M.BOLD["summary_auc"] == {"blocks": True} and not {"summary", "summary_auc"} & set(M.MODES)
     # the generated tables: two whole turned pages at the body size under one caption, the second starting a page
     # under "(continued)"; the probes' page, then the fine-tuned one
-    head = {"summary": " & accuracy & accuracy & $R_{30}$ & $R_{30}$, Pythia & $R_{30}$, Herwig \\\\",
-            "summaryauc": " & AUC & AUC & AUC & AUC, Pythia & AUC, Herwig \\\\"}
+    # PI 2026-11-23, LEDGER SP-9 (merges 4, 5): Table 1's X->bb / X->bs columns, the AUC table's class groups
+    head = {"summary": " & accuracy & accuracy & $R_{30}$ & $R_{30}$, Pythia & $R_{30}$, Herwig & $X\\to b\\bar b$ & $X\\to bs$ \\\\",
+            "summaryauc": " & AUC & AUC, resonant & AUC, QCD & AUC & AUC & AUC, Pythia & AUC, Herwig \\\\"}
     for name, label in (("mlst_summary.tex", "summary"), ("mlst_summary_auc.tex", "summaryauc")):
         tex = (ROOT / "paper/journal/tables" / name).read_text()
         tabs = re.findall(r"\\begin\{tabular\*\}.*?\\end\{tabular\*\}", tex, re.S)
@@ -3756,7 +3763,8 @@ def test_the_mass_figure_claims_are_the_soft_drop_bootstrap_s():
     fig = lambda r: {k: v for k, v in r.items() if k.startswith(("all|pt_fine:", "all|mgen:"))}    # noqa: E731
     sys.path.insert(0, str(ROOT / "experiments/FIGS/figstyle"))
     import gallery_captions as K
-    a9, a10 = K.CAPTIONS["F9b"], K.CAPTIONS["A17-probe"]
+    # PI 2026-11-23, LEDGER SP-9: A17-probe is a figure of the data release, its caption on its page
+    a9, a10 = K.CAPTIONS["F9b"], K.RELEASE_CAPTIONS["A17-probe"]
     for g in ("162 classes + mass", "17 classes + mass"):
         r = fig(d["groups"][g]["regressed"])
         assert len(r) == 15 and all(v["pass"] and v["better"] for v in r.values()), g
@@ -3765,7 +3773,8 @@ def test_the_mass_figure_claims_are_the_soft_drop_bootstrap_s():
         assert better_bias == 13 and worse_bias == ["all|mgen:20-50"], (g, better_bias, worse_bias)
         diff = fig(d["diffs"][f"{g} - {g.removesuffix(' + mass')}"]["mlp"])
         assert len(diff) == 15 and all(v["resolution"]["pass"] and v["resolution"]["better"] for v in diff.values()), g
-    assert "better than the soft-drop mass in every bin" in a9 and "13 of the 15 bins" in a9 and "20 to 50 GeV" in a9
+    # PI 2026-11-23, LEDGER SP-9 (STRUCTURE_PROPOSAL, F9b): no per-bin table stays, so the bias count is qualitative
+    assert "better than the soft-drop mass in every bin" in a9 and "less biased in most bins" in a9 and "20 to 50 GeV" in a9
     assert "better on the networks with an added mass regression" in a10 and "than on the same label sets" in a10
     # PI 2026-11-21: no sentence says a probe beats the soft-drop mass in every bin; the bootstrap must show why
     for g, est in (("188 classes", "mlp"), ("188 classes", "ridge")):
@@ -3797,14 +3806,16 @@ def test_the_top_and_quark_gluon_sentences_are_the_every_metric_bootstrap():
     assert "in accuracy, R50 and AUC some do (tables {tab:probes} and {tab:summaryauc})" in f2
     claims = ns["TOP_QG_PROBE_CLAIMS"]
     assert not [k for k in claims if k[2] == "r30"]                     # Fig. 2 and table 1 print R30: no claim
-    for key, word in (("probes", "17 classes + mass is more accurate"), ("summary", "In $R_{30}$")):
-        assert word.replace("17", "\\Kcoarse{}") in M.printed_caption(key) or word in M.printed_caption(key), key
-    assert "random partitions a lower one on top tagging" in M.printed_caption("summary_auc")
+    key, word = "probes", "17 classes + mass is more accurate"
+    assert word.replace("17", "\\Kcoarse{}") in M.printed_caption(key) or word in M.printed_caption(key), key
+    # PI 2026-11-23, LEDGER SP-9 and SC-1 (4): Table 1's and its AUC table's captions say what they hold, no finding;
+    # their top and quark/gluon nulls are rows of tab:tests
+    assert "In $R_{30}$" not in M.printed_caption("summary") and "three standard" not in M.printed_caption("summary_auc")
     assert "random partitions, taken together, a lower $R_{50}$ and AUC" in M.CAPTIONS["probes_full"][1]
     f3 = K.CAPTIONS["F2-ft"]
     assert "no network differs from 188 classes in R30 by more than three" in f3 and "in AUC one does" in f3
     assert not [k for k in ns["TOP_QG_FT_CLAIMS"] if k[2] != "auc"]       # Fig. 3's "in AUC one does"
-    assert "Fine-tuned, only \\Kcoarse{} classes + mass differs" in M.printed_caption("summary_auc")
+    assert "differs" not in M.printed_caption("summary_auc")      # PI 2026-11-23, SC-1 (4)
     assert "no pretrained network fine-tuned here differs" in M.printed_caption("labelsets")
     checked = 0
     for boot, sub, want in ((ns["TOP_QG_BOOT"], "l3_v5", claims), (ns["TOP_QG_FT_BOOT"], "l3", ns["TOP_QG_FT_CLAIMS"])):
@@ -3883,3 +3894,113 @@ def test_every_fine_tuning_attempt_counts_its_hours_by_the_one_rule(tmp_path):
     k = lines.index(M._full_row(5, M.FT_HOURS_HEAD))
     assert lines[k + 1].startswith(r"\quad of the pretrained networks & -- & \mbox{L40 (8)}, \mbox{GPU not recorded (2)} & 10 & --")
     assert lines[k + 2].startswith(r"\quad from scratch & -- & \mbox{L40 (3)} & 3 & --")
+
+
+# ------------------------------------------------------------------ PI 2026-11-23, LEDGER SP-9: the approved structure
+
+def _l3_entry(delta, sd_a, sd_b, boot):
+    return {"quantity": "accuracy", "delta": delta, "n_a": 3, "n_b": 3, "sd_a": sd_a, "sd_b": sd_b, "boot_sd": boot,
+            "sigma": math.sqrt(sd_a ** 2 + sd_b ** 2 + boot ** 2)}
+
+
+def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_of_runs_and_paired_bootstrap(tmp_path):
+    """tab:tests (PI 2026-11-23, LEDGER SP-9, merge 6; PI SC-1 (1)): one row per stated difference, Delta, each side's run
+    SD, the paired test-jet bootstrap SD and Delta/sigma with sigma^2 = sd_a^2 + sd_b^2 + boot^2, printed at sigma's
+    place; \\pending{bootstrap} where no bootstrap is stored, \\pending{rerun bootstrap} where the file's runs or values
+    are not the ones Table 1 prints (a fine-tuning run since rerun, SP-11); a sigma that is not the quadrature sum
+    stops the build."""
+    runs = M._paper(ROOT)
+    acc = {m: 0.84 + 0.001 * k for k, m in enumerate(runs["L188"] + runs["R16_Q1"])}
+    per = {"jc1": {m[len("mtx-"):]: {1_000_000: [{"accuracy": acc[m]}]} for m in acc}}
+    doc = {"b": 200, "models": {m: {"accuracy": {"value": v, "sd": 1e-4}} for m, v in acc.items()},
+           "diffs": {"17-188": {"a": runs["R16_Q1"], "b": runs["L188"], "accuracy": _l3_entry(-0.00462, 0.00055, 0.00057, 0.00011)}}}
+    (tmp_path / "bootstrap" / "l3").mkdir(parents=True)
+    (tmp_path / "bootstrap" / "l3" / "ft_jc1_N1000000.json").write_text(json.dumps(doc))
+    body, reps = M.table_tests(tmp_path, runs, {}, {}, {}, per)
+    assert reps == {200} and body.startswith(r"\begin{tabular}{lccccc}")
+    lines = body.splitlines()
+    head = M._full_row(6, "JetClass, accuracy, " + M.HEADING["ft"], italic=True)
+    i = lines.index(head + "*")
+    rows = lines[i + 1:i + 1 + 7]
+    name = lambda a, b: f"{M.LABEL[a]} $-$ {M.LABEL[b]}"         # noqa: E731
+    sig = _l3_entry(-0.00462, 0.00055, 0.00057, 0.00011)["sigma"]
+    want = name("R16_Q1", "L188") + " & $-$0.0046 & 0.0006 & 0.0006 & 0.0001 & " + f"{-0.00462 / sig:.2f}".replace("-", "$-$")
+    assert any(r.rstrip("*").rstrip().removesuffix(r"\\").rstrip() == want for r in rows), rows
+    # a row with no stored bootstrap, and one whose file does not hold the paper's values
+    assert any(r.startswith(name("L162", "L188") + r" & \multicolumn{5}{c}{\pending{bootstrap}}") for r in rows)
+    stale = {**per, "jc1": {**per["jc1"], runs["L188"][0][len("mtx-"):]: {1_000_000: [{"accuracy": 0.9}]}}}
+    assert name("R16_Q1", "L188") + r" & \multicolumn{5}{c}{\pending{rerun bootstrap}}" in M.table_tests(
+        tmp_path, runs, {}, {}, {}, stale)[0]
+    doc["diffs"]["17-188"]["accuracy"]["sigma"] *= 1.1
+    (tmp_path / "bootstrap" / "l3" / "ft_jc1_N1000000.json").write_text(json.dumps(doc))
+    with pytest.raises(SystemExit, match="quadrature"):
+        M.table_tests(tmp_path, runs, {}, {}, {}, per)
+    # every row names two networks or references the table can print, and every source is of a kind the builder reads
+    for heading, rows_ in M.TESTS:
+        for first, second, src in rows_:
+            assert all(x in M.TESTS_NAMES or x in M.LABEL for x in (first, second)), (heading, first, second)
+            assert src is None or src[0] in ("l3", "mass"), (heading, src)
+    assert M.SUMMARY_L3[("ft", "jc1")] == "ft_jc1_N1000000.json"
+
+
+def test_the_tested_differences_table_reads_the_stored_sculpting_and_mass_bootstraps():
+    """tab:tests on the files in the repository: every sculpting difference at its three cuts (the l3 block, sides
+    over every run) and the two MLP mass-resolution differences, each sigma the quadrature sum (SC-1 (1)); the
+    placement puts it in the appendix, tab:sculptboot dropped (PI 2026-11-23, LEDGER SP-9)."""
+    sb = DATA / (M.SCULPT_BOOT_L3_RERUN if (DATA / M.SCULPT_BOOT_L3_RERUN).exists() else M.SCULPT_BOOT_L3)
+    mass = DATA / M.MASS_SD_BOOT
+    if not sb.exists() or not mass.exists():
+        pytest.skip("the sculpting or mass bootstrap is not pulled")
+    sdoc, mdoc = json.loads(sb.read_text()), json.loads(mass.read_text())
+    body, reps = M.table_tests(DATA, M._paper(ROOT), {}, {}, {}, {}, sdoc, mdoc)
+    assert reps == {sdoc["replicas"]} | {mdoc["boot"]}
+    heads = [ln for ln in body.splitlines() if ln.startswith(r"\multicolumn{6}{@{}l}{\textit{")]
+    assert sum(M.TESTS_SCULPT in h for h in heads) == len(M.SCULPT_BOOT_WPS)
+    for wp, h in M.SCULPT_BOOT_WPS:
+        block = body.split(M.TESTS_SCULPT + ", " + h)[1].split(r"\addlinespace")[0]
+        assert block.count(r" $-$ ") == len(sdoc["differences"]), wp
+    for a, b in (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1")):
+        row = next(ln for ln in body.split("jet mass, resolution, " + M.HEADING["mlp"])[1].splitlines()
+                   if ln.startswith(f"{M.LABEL[a]} $-$ {M.LABEL[b]} &"))
+        assert r"\pending" not in row, row
+
+
+def test_table_one_takes_the_transfer_head_columns_of_the_resonance_table():
+    """PI 2026-11-23, LEDGER SP-9 (merge 4): Table 1 gains tab:xbx's transfer-head columns, X->bb and X->bs signal
+    efficiency in percent at the one QCD efficiency of the fits, under one heading naming it; the pretrained networks in
+    the linear-probe part (a dash for the random network, which has no head), from scratch in the fine-tuned part, a
+    dash in every other fine-tuned cell; one QCD efficiency or the build stops; the values are xbx_report's own."""
+    XR = _load("xbx_report_t1", "experiments/XBS/xbx_report.py")
+    runs = M._paper(ROOT)
+    head = lambda e: {"head": [{"seed": 1, "n_s": 10, "n_b": 10, "auc": 0.9, "eps_b_star": 0.01, "eps_s_at_star": e,  # noqa: E731
+                                "curve": {"eps_b": [0.01], "eps_s_over_sqrt_eps_b": [1.0]}}]}
+    fits = {m: {"xbb": head(0.70 + 0.001 * k), "xbs": head(0.60 + 0.001 * k)}
+            for k, m in enumerate(m for a in M.SETS + M.FLAV + M.RAND for m in runs[a])}
+    scr = {"xbb": [{"eps_s_at_star": 0.57, "eps_b_star": 0.01}, {"eps_s_at_star": 0.58, "eps_b_star": 0.01}],
+           "xbs": [{"eps_s_at_star": 0.55, "eps_b_star": 0.01}, {"eps_s_at_star": 0.56, "eps_b_star": 0.01}]}
+    xbx = {"XR": XR, "fits": fits, "scr": scr}
+    assert M.summary_xbx(xbx)["star"] == 0.01 and M.summary_xbx({}) == {}
+    lp, ft = M.table_summary({}, {}, {}, {}, runs, M.TAB, M.SUMMARY_GRID, "summary", xbx=xbx).split("%SPLIT%")
+    for part in (lp, ft):
+        lines = part.splitlines()
+        assert lines[2].endswith(r"\multicolumn{2}{c}{$\varepsilon_S$ (\%) at $\varepsilon_B = 1\%$} \\")
+        assert lines[3] == r"\cmidrule(lr){5-6}\cmidrule(lr){7-8}" and lines[4].endswith(r"& $X\to b\bar b$ & $X\to bs$ \\")
+        assert all(ln.count(" & ") == 7 for ln in lines if " & " in ln and not ln.startswith(" & "))
+    row = lambda part, name: next(ln for ln in part.splitlines() if ln.startswith(name + " & "))   # noqa: E731
+    cells = lambda ln: [c.strip() for c in ln.removesuffix(r"\\").split(" & ")]                 # noqa: E731
+    want = XR.efficiencies(M, runs, fits, "xbb", "head")["L188"]
+    got = cells(row(lp, M.LABEL["L188"]))[6]
+    mean = float(re.sub(r"\{\\fontseries\{b\}\\selectfont |\}", "", got).split(r"\,$\pm$\,")[0])
+    assert mean == pytest.approx(100 * statistics.mean(want), abs=0.051)
+    assert cells(row(lp, M.LABEL[M.INIT]))[6:] == ["--", "--"]
+    assert cells(row(ft, M.LABEL["L188"]))[6:] == ["--", "--"] and "--" not in cells(row(ft, M.SCRATCH_LABEL))[6:]
+    assert all(c == "--" for c in cells(row(ft, M.SCRATCH_LABEL))[1:6])          # no headline cell without per
+    two = {**xbx, "scr": {"xbb": [{"eps_s_at_star": 0.5, "eps_b_star": 0.001}]}}
+    with pytest.raises(SystemExit, match="QCD efficiencies"):
+        M.summary_xbx(two)
+    # the AUC table gains JetClass-II's resonant and QCD columns under its one heading (merge 5)
+    assert M.SUMMARY_AUC_TABLE[:3] == (M.SUMMARY_AUC_GRID[0], ("jc2", 1_000_000, "jc2_188", "macro_auc_resonant"),
+                                       ("jc2", 1_000_000, "jc2_188", "macro_auc_qcd"))
+    auc = M.table_summary({}, {}, {}, {}, runs, M.TAB, M.SUMMARY_AUC_TABLE, "summary_auc").split("%SPLIT%")[0].splitlines()
+    assert auc[2] == r" & \multicolumn{3}{c}{JetClass-II} & JetClass & top tagging & \multicolumn{2}{c}{quark/gluon tagging} \\"
+    assert auc[3] == r"\cmidrule(lr){2-4}\cmidrule(lr){7-8}" and auc[4].startswith(" & AUC & AUC, resonant & AUC, QCD & AUC")

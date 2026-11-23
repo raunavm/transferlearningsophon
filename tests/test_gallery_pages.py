@@ -34,7 +34,8 @@ def test_rows_merge_consecutive_items_of_one_sentence_and_carry_their_evidence()
     # with the tables it also rests on
     flav = tuple(i for i in G.FIGURES if i[0] in ("F10b-flav", "F10c", "F10a-flav"))
     rows = V._rows(flav)
-    also = f" [also {G.number('tab:sculpt')}, {G.number('tab:sculptboot')}]"
+    # PI 2026-11-23, LEDGER SP-9: tab:sculptboot is the tested-differences table's
+    also = f" [also {G.number('tab:sculpt')}, {G.number('tab:tests')}]"
     # one sentence for the supplement's sculpting figures (PI 2026-11-12 cut): consecutive, so one row
     assert [r[0] for r in rows] == [f"{G.number('F10b-flav')}–{G.number('F10a-flav').split()[-1]}"]
     assert rows[0][2].endswith(also)
@@ -44,9 +45,12 @@ def test_rows_merge_consecutive_items_of_one_sentence_and_carry_their_evidence()
 def test_the_map_places_every_table_once_and_lists_the_rest():
     placed = [k for t, *_ in G.TABLES for k in t.split(" + ")]
     labels = {label for label, *_ in V.C.M.CAPTIONS.values()}
-    assert len(placed) == len(set(placed)) and set(placed) <= labels      # every placed label is a table the book makes
+    # PI 2026-11-23, LEDGER SP-9: the class map (appendix_tables.py) is placed, the level table it takes in and the
+    # use-case table (make_tables.py) dropped; neither is an mlst_results table
+    other = {"tab:app-vocabulary", "tab:app-levels", "tab:usecase"}
+    assert len(placed) == len(set(placed)) and set(placed) <= labels | other     # every placed label is a table the book makes
     assert set(V.unplaced()) == labels - set(placed) - set(G.DROPPED_TABLES) == set()
-    assert set(G.DROPPED_TABLES) <= labels
+    assert set(G.DROPPED_TABLES) <= labels | other
     heading, rows = V.blocks()[-1]
     assert heading == "Not placed" and rows[0][1] == (f"Dropped figures: {', '.join(G.DROPPED)}. Tables dropped "
                                                       f"(nothing cites them): {', '.join(G.DROPPED_TABLES)}.")
@@ -149,14 +153,16 @@ def test_the_class_pair_family_has_one_form_for_both_modes_and_every_pair(monkey
     calls = []
     monkeypatch.setattr(R, "ROC", {"pairs": {"x": {}}, "pairs_ft": {"x": {}}})
     monkeypatch.setattr(R, "_roc_grid", lambda path, grid, **kw: calls.append((grid, kw)))
-    draws = (R.draw_f4_mech, R.draw_f4_mech_ft, R.draw_f4_other, R.draw_f4_other_ft, R.draw_f4_light, R.draw_f4_light_ft)
+    # PI 2026-11-23, LEDGER SP-9 (merge 8): F4-light merged into F4-other (its own test below); the fine-tuned pages keep
+    # the two-figure form in the data release
+    draws = (R.draw_f4_mech, R.draw_f4_mech_ft, R.draw_f4_other_ft, R.draw_f4_light_ft)
     for draw in draws:
         draw(None)
     assert R.PAIR_ORDER[:2] == R.MECHANISM == ("bb_vs_cc", "bc_vs_bq_cs") and R.OTHER == R.PAIR_ORDER[2:6]
     assert R.LABEL_SETS == L.M.SETS and R.PARTITIONS == L.M.FLAV + ("L188", "R16_Q1")
     assert all(kw["w"] == R.PAIR_W[2] >= 6.1 for _, kw in calls)          # L20: at least 6.1 cm, two a row
-    pairs_of = (R.MECHANISM, R.MECHANISM, R.OTHER[:2], R.OTHER[:2], R.OTHER[2:], R.OTHER[2:])
-    for (grid, kw), pairs, ft in zip(calls, pairs_of, (False, True) * 3, strict=True):
+    pairs_of = (R.MECHANISM, R.MECHANISM, R.OTHER[:2], R.OTHER[2:])
+    for (grid, kw), pairs, ft in zip(calls, pairs_of, (False, True, True, True), strict=True):
         assert [[(key, nets) for _, key, nets, _ in row] for row in grid] == [
             [(k, R.LABEL_SETS + (("SCRATCH",) if ft else ())) for k in pairs], [(k, R.PAIR_PARTITIONS) for k in pairs]]
         # PI 2026-11-19 (list item C5.2, LEDGER FG-24): the random partitions join the partitions row
@@ -164,6 +170,24 @@ def test_the_class_pair_family_has_one_form_for_both_modes_and_every_pair(monkey
         assert kw["row_names"] == ("Label sets", "17-class partitions")
         assert all(":" not in title for row in grid for *_, title in row)            # L7: no colon in a panel title
     assert [k for k, *_ in calls[0][0][0]] == [k for k, *_ in calls[1][0][0]]   # one pair order in both modes
+
+
+def test_the_other_flavor_pairs_are_one_figure_with_the_partitions_on_the_resonance_pair_only(monkeypatch):
+    """PI 2026-11-23, LEDGER SP-9 (merge 8): F4-light merged into F4-other, its pairs as more panels: the label sets on
+    X->YY->bbqq vs ccqq and QCD bb vs cc, then on QCD with b and with c against light, and the partitions row on the
+    resonance pair only, as every partition merges the QCD classes; the legend in the free slot."""
+    calls = []
+    monkeypatch.setattr(R, "ROC", {"pairs": {"x": {}}})
+    monkeypatch.setattr(R, "_roc_grid", lambda path, grid, **kw: calls.append((grid, kw)))
+    R.draw_f4_other(None)
+    (grid, kw), = calls
+    assert [[None if p is None else (p[1], p[2]) for p in row] for row in grid] == [
+        [(k, R.LABEL_SETS) for k in R.OTHER[:2]], [(k, R.LABEL_SETS) for k in R.OTHER[2:]],
+        [(R.OTHER[0], R.PAIR_PARTITIONS), None]]
+    assert R.OTHER[0] == "bbqq_vs_ccqq" and all(k.startswith("qcd_") for k in R.OTHER[1:])
+    assert kw["row_names"] == ("Label sets", "Label sets", "17-class partitions") and kw["legend_slot"] == (2, 1)
+    assert kw["w"] == R.PAIR_W[2] and kw["ratio_scale"] == "log"
+    assert not hasattr(R, "draw_f4_light") and "F4-light" not in {p.id for p in R.PAGES}
 
 
 def test_the_pair_legend_holds_only_the_curves_drawn(monkeypatch):
@@ -234,7 +258,9 @@ def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_p
     paper = [k for k, t, _ in G.FIGURES if t in (G.MAIN, G.APPENDIX)]
     # PI 2026-11-14 (step 5): the mass probe joins the appendix, two task grids replace the JetClass-II UMAP grid
     # PI 2026-11-18: 9 main-text and 15 appendix figures; the 19 Nov placement: 7 and 16, PC-jc1 to the supplement
-    assert sorted(K.CAPTIONS) == sorted(paper) and len(paper) == 23
+    # PI 2026-11-23, LEDGER SP-9: 7 main-text and 4 appendix figures; the others' captions stay on their release pages
+    assert sorted(K.CAPTIONS) == sorted(paper) and len(paper) == 11
+    assert set(K.RELEASE_CAPTIONS) == set(K.RELEASE) and all(G.TIER[k] == G.SUPPLEMENT for k in K.RELEASE)
     for pid, raw in K.CAPTIONS.items():
         labels = re.findall(r"\{(tab:[a-z_0-9]+)\}", raw)
         assert set(labels) <= set(G.TIER) and not set(labels) & set(G.DROPPED_TABLES), pid
@@ -260,11 +286,13 @@ def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_p
     # the PI's sentence on JetClass, in the main headline figure of the fine-tuned networks (L20 split it by mode)
     assert "17 classes stay below 188 classes on JetClass-II and make about 3% more errors on JetClass" in K.text("F2-ft")
     # the jet-pT figure (L4): why only JetClass-II and JetClass are binned, and its values in the data release (L18)
-    assert re.findall(r"\{(tab:[a-z_0-9]+)\}", K.CAPTIONS["PT"]) == [] and "tab:ptbins" not in G.TIER
-    assert "JetClass-II and JetClass only, as top and quark/gluon jet pT span about 50 to 100 GeV" in K.text("PT")
+    # PI 2026-11-23, LEDGER SP-9: PT is a figure of the data release, its caption on its page
+    pt = " ".join(K.fill(K.RELEASE_CAPTIONS["PT"]).split())
+    assert re.findall(r"\{(tab:[a-z_0-9]+)\}", K.RELEASE_CAPTIONS["PT"]) == [] and "tab:ptbins" not in G.TIER
+    assert "JetClass-II and JetClass only, as top and quark/gluon jet pT span about 50 to 100 GeV" in pt
     # PI 2026-11-20 (PS-1): one PDF, no supplementary material, "remove every 'in the supplementary material' from
     # every caption"; the file is the data release's (L18)
-    assert K.text("PT").endswith("Values are in the data release file jet_pt_bins.csv.")
+    assert pt.endswith("Values are in the data release file jet_pt_bins.csv.")
     # the pages of the gallery carry these captions (apply at the end of each module)
     for mod in (L, R, PC, H):
         for page in mod.PAGES:
@@ -603,7 +631,7 @@ def test_the_jet_pt_csv_holds_every_point_of_the_jet_pt_figures():
                     assert float(r["sd"]) == pytest.approx(float(np.std(drawn[:, i], ddof=1)), abs=5e-7), (a, sub, i)
                     n += 1
     assert n == 10 * (10 + 10) * 2 + 10 * 5 * 2           # ten networks: JetClass-II two quantities, JetClass one
-    assert K.text("PT").endswith("jet_pt_bins.csv.")
+    assert K.fill(K.RELEASE_CAPTIONS["PT"]).endswith("jet_pt_bins.csv.")      # PI 2026-11-23, LEDGER SP-9: a release page
     assert all("jet_pt_bins.csv" in H.SUPPLEMENT_CAPTIONS[k] for k in ("PT-part", "PT-bbcc", "PT-bbcc-part"))
 
 

@@ -77,6 +77,9 @@ GENERATED = {"results_generated.tex",
              # (L18): the jet-pT values are data_release/jet_pt_bins.csv and mlst_pt_bins.tex is no longer written;
              # it stays listed while the old file is on disk (deleting it is the PI's), so the scan does not read it
              "tables/mlst_pt_bins.tex", "tables/mlst_jc1_conf.tex",
+             # PI 2026-11-23 (LEDGER SP-9): the tested-differences table, and the data release's copies of the per-run
+             # compute rows and of the MLP table with each random partition
+             "tables/mlst_tests.tex", "tables/compute_full.tex", "tables/mlst_mlp_full.tex",
              # the review books (experiments/FIGS/make_results_book.py writes them): the gallery's figures with
              # its captions and the generated tables above, for review; not the manuscript, which main.tex inputs
              "results_book.tex", "results_supplement.tex", "results_book_all.tex"}

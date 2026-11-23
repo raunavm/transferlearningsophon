@@ -83,7 +83,8 @@ CHANGES = {
                "named on the left.",
     "F4-mech-ft": "CHANGED: F4-mech's new form after fine-tuning, with from scratch in the upper row.",
     "F4-other": "CHANGED: the four other flavor pairs in F4-mech's form (X→ee vs μμ to F4-ee; QCD with b and with c "
-                "against light added; the partitions' row, the mass networks and the ratio panels added).",
+                "against light added; the partitions' row, the mass networks and the ratio panels added); PI 2026-11-23 "
+                "(merge 8): F4-light's two QCD pairs are its second row, the partitions on the resonance pair only.",
     "F4-other-ft": "NEW: F4-other after fine-tuning, the missing counterpart (appendix).",
     "F4-ee": "NEW: X→ee vs μμ as its own supplement page (PI: out of Fig. A1): the probes that keep a curve.",
     "F4-rand": "NEW: the random partitions pooled on the six pairs, linear probes, with 188 and 17 classes.",

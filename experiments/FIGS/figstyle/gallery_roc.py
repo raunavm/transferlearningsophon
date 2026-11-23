@@ -519,18 +519,20 @@ def draw_f4_mech_ft(path: pathlib.Path) -> None:
     _pair_grid(path, "pairs_ft", MECHANISM, PAIR_W[2], 0.72)
 
 
-# L20 (PI 2026-11-13): two panels a row, so the four other flavor pairs are two figures of F4-mech's form, the
-# resonance pair and QCD bb vs cc (F4-other) and QCD with heavy quarks vs light (F4-light)
+# L20 (PI 2026-11-13): two panels a row. PI 2026-11-23 (LEDGER SP-9, merge 8): the four other flavor pairs in one
+# figure, the label sets on the resonance pair and QCD bb vs cc, then on QCD with heavy quarks vs light, and the
+# partitions row on the resonance pair only: every partition merges the QCD classes; the legend in the free slot
 def draw_f4_other(path: pathlib.Path) -> None:
-    _pair_grid(path, "pairs", OTHER[:2], PAIR_W[2], 0.72)
+    docs = _family("pairs")
+    _roc_grid(path, [[(docs, k, LABEL_SETS, PAIR_TITLE[k]) for k in OTHER[:2]],
+                     [(docs, k, LABEL_SETS, PAIR_TITLE[k]) for k in OTHER[2:]],
+                     [(docs, OTHER[0], PAIR_PARTITIONS, PAIR_TITLE[OTHER[0]]), None]],
+              w=PAIR_W[2], aspect=0.72, row_names=("Label sets", "Label sets", "17-class partitions"),
+              share=lambda i, j: i, legend_slot=(2, 1), ratio_scale="log")
 
 
 def draw_f4_other_ft(path: pathlib.Path) -> None:
     _pair_grid(path, "pairs_ft", OTHER[:2], PAIR_W[2], 0.72)
-
-
-def draw_f4_light(path: pathlib.Path) -> None:
-    _pair_grid(path, "pairs", OTHER[2:], PAIR_W[2], 0.72)
 
 
 def draw_f4_light_ft(path: pathlib.Path) -> None:
@@ -867,19 +869,11 @@ PAGES = [
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
          caption="",
-         differs="F4-mech's form on X→YY→bb̄qq vs cc̄qq and QCD bb̄ vs cc̄ (PI 2026-11-13: X→ee vs μμ to the "
-                 "supplement); L20: two 6.3 cm panels a row, so the QCD pairs with b and with c against light are "
-                 "F4-light.",
+         differs="F4-mech's form on the four other flavor pairs (PI 2026-11-13: X→ee vs μμ to the supplement); L20: "
+                 "two 6.3 cm panels a row; PI 2026-11-23 (merge 8): F4-light's QCD pairs with b and with c against "
+                 "light are its second row, and only X→YY→bb̄qq vs cc̄qq has a partitions panel.",
          data_note=PAIR_LP_NOTE + PAIR_NOTE,
          draw=draw_f4_other),
-    Page(id="F4-light", title="Class pairs, linear probes, QCD with heavy quarks vs light",
-         precedent=["1902.09914/fig5.png"],
-         precedent_label="Landscape Fig. 5",
-         caption="",
-         differs="F4-mech's form on QCD with b vs light and QCD with c, no b, vs light (L20: the second half of the "
-                 "old four-pair F4-other).",
-         data_note=PAIR_LP_NOTE + PAIR_NOTE,
-         draw=draw_f4_light),
     Page(id="F4-other-ft", title="Class pairs, fine-tuned, the four other flavor pairs",
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
@@ -892,7 +886,7 @@ PAGES = [
          precedent=["1902.09914/fig5.png"],
          precedent_label="Landscape Fig. 5",
          caption="",
-         differs="F4-light's form after fine-tuning; from scratch in the upper row.",
+         differs="F4-mech's form after fine-tuning on QCD with heavy quarks vs light; from scratch in the upper row.",
          data_note=PAIR_FT_NOTE + PAIR_NOTE,
          draw=draw_f4_light_ft),
     Page(id="F4-ee", title="Class pairs, X→ee vs μμ, linear probes",
@@ -1077,7 +1071,7 @@ SUPPLEMENT_CAPTIONS = {
         "are in table {tab:pairsfull}."
     ),
     "F4-rand-qcd": (
-        "The panels of figure {fig:F4-rand} on the three pairs of QCD jets of figures {fig:F4-other} and {fig:F4-light}, "
+        "The panels of figure {fig:F4-rand} on the three pairs of QCD jets of figure {fig:F4-other}, "
         "linear probes on the frozen features of the networks pretrained with the five random 17-class partitions, the "
         "mean over the five with one run each, beside 188 and 17 classes with three runs each. Some random partitions "
         "merge a pair into one class and others keep it apart, so the mean mixes the two. The lower panels show the "

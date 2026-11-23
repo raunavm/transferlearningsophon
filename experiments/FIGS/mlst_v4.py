@@ -714,6 +714,9 @@ def _jc_cell(vals, place, fmt_pm, two):
     return f"{v[0]:,.{place}f}".replace(",", "{,}") if v else "--"
 
 
+RERUN_PENDING = r"\pending{rerun}"      # a value whose fine-tuning run is being rerun (PI 2026-11-23, SP-11)
+
+
 def jetclass_rows(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, scratch: str, nmax: int,
                   fmt_pm, two, literature: bool = True, vals=None) -> tuple[list, list]:
     """The rows of the JetClass tables, each (label & training jets & parameters, the cells accuracy, AUC and
@@ -739,8 +742,12 @@ def jetclass_rows(pre: dict, ref: dict, runs: dict, rows: tuple, label: dict, sc
                 raise SystemExit("FATAL: JetClass one-vs-one and one-vs-rest macro AUCs differ; the test "
                                  "set's classes are not of equal size and the table must show both")
         acc, auc = (vals(arm, "accuracy"), vals(arm, "macro_auc_ovr")) if vals else (None, None)
-        cols = [_jc_cell(acc if acc else [b["accuracy"] for b in blocks], 3, fmt_pm, two),
-                _jc_cell(auc if auc else [b["macro_auc_ovo"] for b in blocks], 4, fmt_pm, two)]
+        # PI 2026-11-23 (LEDGER SP-11): with vals, the read-out Table 1 prints is the only source of the accuracy and
+        # AUC; a run it does not hold yet is pending, never the curves' value of a fine-tuning run since rerun
+        cols = [(_jc_cell(acc, 3, fmt_pm, two) if acc else RERUN_PENDING) if vals else
+                _jc_cell([b["accuracy"] for b in blocks], 3, fmt_pm, two),
+                (_jc_cell(auc, 4, fmt_pm, two) if auc else RERUN_PENDING) if vals else
+                _jc_cell([b["macro_auc_ovo"] for b in blocks], 4, fmt_pm, two)]
         marks = ["", ""]
         for c, _ in JC1_COLS:
             wp = [b["per_class"][c]["rejection"] for b in blocks]

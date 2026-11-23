@@ -44,6 +44,8 @@ _spec = importlib.util.spec_from_file_location("mlst_results", HERE / "mlst_resu
 M = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(M)
 TABLE_FILE = {M.CAPTIONS[k][0]: n for k, n, *_ in M.PLACEHOLDERS + M.LONGTABLES}
+# the class map, written by appendix_tables.py (PI 2026-11-23, LEDGER SP-9: placed in the appendix)
+TABLE_FILE["tab:app-vocabulary"] = "appendix_vocabulary"
 TIERS = {t: [k for k, tier, _ in G.FIGURES if tier == t] + [k for k, tier, _ in G.TABLES if tier == t] for t in G.TIERS}
 # PI 2026-11-14 (step 6): the appendix by family, figures and tables together, each family under a one-line heading
 TIERS[G.APPENDIX] = [k for _, keys in G.APPENDIX_FAMILIES for k in keys]
