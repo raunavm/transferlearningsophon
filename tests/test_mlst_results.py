@@ -3178,9 +3178,12 @@ def test_bold_is_decided_in_each_block_of_a_column_and_the_partitions_subheading
     # column 1 (training jets) is skipped
     assert _chosen_bold("jetclass_rej", _frame(whole, 2)) == {("x", 2)}
     # a table of blocks in its caption's words: these keys (tab:published names its own words, "of")
-    assert {k for k, v in M.BOLD.items() if v.get("blocks")} == {"summary", "summary_auc", "pairs", "probes_n", "ft",
-                                                                 "jc1_class_auc", "jc1_class_auc_full", "mass"}
-    assert set(M.BOLD) == {"summary", "summary_auc", "published", "labelsets", "probes", "pairs", "probes_n", "ft",
+    # PI 2026-11-23 (LEDGER SP-13, step 4): tab:summaryaucfull, the supplement's copy with every column, bolds as its table
+    assert {k for k, v in M.BOLD.items() if v.get("blocks")} == {"summary", "summary_auc", "summary_auc_full", "pairs",
+                                                                 "probes_n", "ft", "jc1_class_auc", "jc1_class_auc_full",
+                                                                 "mass"}
+    assert set(M.BOLD) == {"summary", "summary_auc", "summary_auc_full", "published", "labelsets", "probes", "pairs",
+                           "probes_n", "ft",
                            "jc1_class_auc", "mass", "sculpt", "jetclass_rej", "xbx", "xbx_rej", "coarse", "qcdhf", "fill",
                            "masseffect", "labelsets_full", "jc1_class_auc_full", "sculpt_full"}    # the supplement copies (PI 2026-11-14)
     # tab:masseffect is built transposed, so the rule applies along its rows, and its caption says so, with which value
@@ -4018,24 +4021,33 @@ def test_the_tested_differences_table_reads_the_stored_sculpting_and_mass_bootst
 
 def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stored_bootstrap():
     """PI 2026-11-23 (LEDGER SP-13): tab:tests keeps a row only if a main-text sentence or caption states it, it backs a
-    method check the text relies on, or it is a 3-sigma-passing label-granularity result; the rows no sentence reads
-    left (their values stay in the data release), the from-scratch comparison with ParT's from-scratch value that
+    method check the text relies on, or it is a 3-sigma-passing label-granularity result (one still waiting for its
+    bootstrap stays until it lands); the others left (their values stay in the data release), the from-scratch
+    comparison with ParT's from-scratch value that
     results_bench states came in. On the repository's files every row with a stored bootstrap prints it (the probes,
     the class pairs, the 17 groups, the step, the substitutions, the full top and quark/gluon sets, the mass rows), the
     rows of the fine-tuning reruns print \\pending{rerun bootstrap}, and only the two rows scored on independent samples
     (Herwig against Pythia jets, PI SC-1a) carry the mark."""
     rows = {(h, a, b): src for h, rs in M.TESTS for a, b, src in rs}
     lp, ft = M.HEADING["lp"], M.HEADING["ft"]
-    gone = [(f"JetClass-II, accuracy, {lp}", a, "L188") for a in M.FLAV + (M.RAND_POOLED,)]
-    gone += [(f"JetClass-II, accuracy, {ft}", a, "L188") for a in ("L162", "R42_Q1")]
-    gone += [(f"JetClass, accuracy, {lp}", a, "L188") for a in ("L162", "R42_Q1", "R16_Q1")]
+    # SP-13 (c): the label-granularity rows that pass 3 sigma stay, and those still waiting for their bootstrap
+    kept = [(f"JetClass-II, accuracy, {lp}", a, "L188") for a in M.FLAV + (M.RAND_POOLED,)]
+    kept += [(f"JetClass-II, accuracy, {ft}", a, "L188") for a in ("L162", "R42_Q1", "R16_Q1")]
+    kept += [(f"JetClass-II, accuracy, {lp}, " + M._power(f"{n:g}") + " training jets", a, "L188")
+             for n in (1000, 10000, 100000) for a in ("R42_Q1", "R16_Q1")]
+    kept += [(rf"{M._PAIR['bc_vs_bq_cs']}, AUC, {lp}", "FLAV_F0", "L188"),
+             (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, " + M.HEADING["mlp"], "R16_Q1", "L188")]
+    kept += [(rf"{h}, signal efficiency (\%), classifier on the frozen features", a, "L188") for _, h in M.SUMMARY_XBX
+             for a in M.FLAV]
+    assert not [r for r in kept if r not in rows], [r for r in kept if r not in rows]
+    gone = [(f"JetClass, accuracy, {lp}", a, "L188") for a in ("L162", "R42_Q1", "R16_Q1")]
     gone += [(f"JetClass-II, accuracy, {ft}, " + M._power("1000") + " training jets", "R16_Q1", "L188")]
     gone += [(f"top tagging, $R_{{30}}$, {ft}, published models", "L188", "PART_PUB"),
              (f"quark/gluon tagging (Pythia), $R_{{30}}$, {ft}, published models", "L188", "PART_PUB"),
              (f"top tagging, $R_{{30}}$, {lp}, missing inputs", "L188", M.INIT),
              (f"quark/gluon tagging (Pythia), $R_{{30}}$, {lp}, missing inputs", "L188", M.INIT),
              (r"$X\to b\bar b$, signal efficiency (\%), classifier on the frozen features", "L188", "SCRATCH"),
-             (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, " + M.HEADING["mlp"], "R16_Q1", "L188")]
+             (r"$X\to bs$, signal efficiency (\%), classifier on the frozen features", "RAND", "R16_Q1")]
     assert not [r for r in gone if r in rows], [r for r in gone if r in rows]
     assert not any(h.startswith("JetClass, accuracy, " + ft + ", published") for h, *_ in rows)
     assert rows[(f"top tagging, $R_{{30}}$, {ft}, published models", "SCRATCH", "PART_PUB")] is None
@@ -4121,6 +4133,16 @@ def test_the_auc_table_leaves_out_top_and_quark_gluon_and_no_text_quotes_them(tm
     (dropped_auc_check), so a macro printing such a value in main.tex or a section stops it, a commented one does not."""
     assert not {k for k, *_ in M.SUMMARY_AUC_TABLE} & set(M.SUMMARY_AUC_DROPPED)
     assert set(M.SUMMARY_AUC_DROPPED) == {k for k, *_ in M.SUMMARY_AUC_GRID} - {"jc2", "jc1"}
+    # their means stay in the supplement's full copy (every column), which the data release writes with every table
+    assert M.SUMMARY_AUC_TABLE == tuple(g for g in M.SUMMARY_AUC_FULL if g[0] in ("jc2", "jc1"))
+    assert set(M.SUMMARY_AUC_GRID) <= set(M.SUMMARY_AUC_FULL) and len(M.SUMMARY_AUC_FULL) == 7
+    assert M.CAPTIONS["summary_auc_full"][0] == "tab:summaryaucfull"
+    assert ("summary_auc_full", "mlst_summary_auc_full", True, None) in M.PLACEHOLDERS
+    assert "tables/mlst_summary_auc_full.tex" in inspect.getsource(M.build)
+    G = _load("gallery_placement_aucfull_t", "experiments/FIGS/figstyle/gallery_placement.py")
+    assert G.TIER["tab:summaryaucfull"] == G.SUPPLEMENT and G.TIER["tab:summaryauc"] == G.APPENDIX
+    cap = M.printed_caption("summary_auc_full")
+    assert "top tagging" in cap and "Herwig" in cap and ": " not in cap and not re.search(r"\bSD\b", cap)
     M.dropped_auc_check(ROOT / "paper/journal")
     assert "dropped_auc_check(root" in inspect.getsource(M.build)
     (tmp_path / "sections").mkdir()

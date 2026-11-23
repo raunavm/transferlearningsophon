@@ -277,6 +277,9 @@ _TABLES = (
                              "and quark/gluon linear probes of [[ROC-main]], with the released Sophon checkpoint's."),
     ("tab:labelsets", SUPPLEMENT, "[[tab:labelsets]] gives the accuracy and the rejection at 50% signal efficiency of the "
                                 "fine-tuned top and quark/gluon networks of [[ROC-main-ft]]."),
+    # PI 2026-11-23 (LEDGER SP-13, step 4): the top and quark/gluon AUC columns that left tab:summaryauc
+    ("tab:summaryaucfull", SUPPLEMENT, "[[tab:summaryaucfull]] repeats [[tab:summaryauc]] with the area under the ROC "
+                                       "curve on top and quark/gluon tagging."),
     # PI 2026-11-20 (meeting, B): from the supplement into the appendix
     ("tab:massdetail", SUPPLEMENT, "The mass values of [[tab:mass]] per jet group and per bin are in [[tab:massdetail]]."),
     ("tab:sculpt", SUPPLEMENT, "[[tab:sculpt]] gives the sculpting of [[F10b]] at 10% and 1% QCD efficiency and at 50% "

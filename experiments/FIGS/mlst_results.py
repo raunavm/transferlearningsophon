@@ -4326,12 +4326,12 @@ SUMMARY_HEAD = {"accuracy": "accuracy", "r30": "$R_{30}$", "macro_auc_ovr": "AUC
 # fine-tuned cells' macro_auc_resonant and macro_auc_qcd)
 SUMMARY_JC2_GROUPS = ("macro_auc_resonant", "macro_auc_qcd")
 # PI 2026-11-23 (LEDGER SP-13, step 4): the top and quark/gluon AUC columns leave the paper's table, as no main-text
-# sentence quotes an AUC value of them (dropped_auc_check); their values stay in the data release (the read-outs and
-# probe fits it flattens per run; tab:published prints the fine-tuned 188-class and from-scratch cells of top and
-# quark/gluon on Pythia jets)
+# sentence quotes an AUC value of them (dropped_auc_check); their means stay in the supplement's full copy,
+# tab:summaryaucfull, every column, which the data release writes as it writes every generated table
 SUMMARY_AUC_DROPPED = ("top", "qg", "qg_herwig")
-SUMMARY_AUC_TABLE = (SUMMARY_AUC_GRID[:1] + tuple(("jc2", 1_000_000, "jc2_188", met) for met in SUMMARY_JC2_GROUPS)
-                     + tuple(g for g in SUMMARY_AUC_GRID[1:] if g[0] not in SUMMARY_AUC_DROPPED))
+SUMMARY_AUC_FULL = (SUMMARY_AUC_GRID[:1] + tuple(("jc2", 1_000_000, "jc2_188", met) for met in SUMMARY_JC2_GROUPS)
+                    + SUMMARY_AUC_GRID[1:])
+SUMMARY_AUC_TABLE = tuple(g for g in SUMMARY_AUC_FULL if g[0] not in SUMMARY_AUC_DROPPED)
 # the macros that print a value of a dropped column: the AUC of a network fine-tuned or probed on top or quark/gluon
 # tagging (ft_macros' MlstFt{Top,Qg,QgHerwig}Auc{Full,Scratch}; FT_WORD names the tasks)
 DROPPED_AUC_MACRO = re.compile(r"Mlst(?:Ft|Lp)(?:" + "|".join(FT_WORD[k] for k in SUMMARY_AUC_DROPPED) + r")Auc[A-Z]")
@@ -4594,7 +4594,7 @@ _LEVELS = (("L162", "L188", "162-188"), ("R42_Q1", "L188", "43-188"), ("R16_Q1",
 _MASSES = (("L162_MASS", "L162", "162mass-162"), ("R16_Q1_MASS", "R16_Q1", "17mass-17"))
 _MASSES_ALL = (("L162_MASS", "l162mass-188"), ("R16_Q1_MASS", "r16q1mass-188"))
 _PARTS_ALL = (("FLAV_F0", "flavf0-188"), ("FLAV_F1", "flavf1-188"), ("FLAV_F1R", "flavf1r-188"), (RAND_POOLED, "rand-188"))
-_SIZES = (10_000, 100_000)      # the fine-tuned training-set sizes below a million of Fig. A8 that the text reads
+_SIZES = (1_000, 10_000, 100_000)       # the training-set sizes below a million of Figs. A8 and A10 (SIZE_TASKS)
 RERUN = ("rerun",)
 # the side of a row named in TESTS_NAMES: the configuration whose runs it holds (the step's sides hold three, STEP_RUNS)
 TESTS_ARM = {"L188_DRAWS": "L188", "L188_ZERO": "L188", "INIT_BN_ZERO": INIT_BN, "L188_HERWIG": "L188",
@@ -4632,11 +4632,12 @@ _QCD_PAIR = (("L162", "L188", "l162-188"), ("R42_Q1", "L188", "r42q1-188"), ("R1
 _FT_TOP, _FT_QG = (r"top tagging, $R_{30}$, " + HEADING["ft"], r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"])
 # PI 2026-11-23 (LEDGER SP-13): a row stays only if (a) a main-text sentence or caption states it, (b) it backs a method
 # check the main text relies on (the ParT reproduction, the fill choice, the coarse-task null) or (c) it is a 3-sigma-
-# passing result about label granularity; the rows of no sentence left (their values stay in the data release)
+# passing result about label granularity, or one waiting for its bootstrap that stays if it passes; the others left
+# (their values stay in the data release)
 TESTS = (
     # Figs. 2 and 3, Table 1 (M005-M007, M040-M043, M149-M153, M157, M158, M163, M164, M166, M299, M300)
     (r"JetClass-II, accuracy, " + HEADING["lp"], tuple((a, b, ("l3", "lp", "jc2", "accuracy", d, False)) for a, b, d in _LEVELS)
-     + _jc2_lp("accuracy", (("R42_Q1", "L162", "r42q1-l162"),))),
+     + _jc2_lp("accuracy", (("R42_Q1", "L162", "r42q1-l162"),) + tuple((a, "L188", d) for a, d in _PARTS_ALL))),
     (r"JetClass-II, AUC, " + HEADING["lp"], tuple((a, b, ("l3", "lp", "jc2", "macro_auc_ovr", d, False)) for a, b, d in _LEVELS)
      + _jc2_lp("macro_auc_ovr", (("R42_Q1", "L162", "r42q1-l162"), ("R16_Q1", "R42_Q1", "r16q1-r42q1")))
      + (("STEP_17_43", "STEP_43_162", ("file", _JC2_ALL, "step-r16q1-r42q1-l162", "macro")),)
@@ -4647,13 +4648,17 @@ TESTS = (
                                  (RAND_POOLED, "FLAV_F1R", "rand-flavf1r")))),
     (r"JetClass-II, AUC over the resonant classes, " + HEADING["lp"], _jc2_lp("macro_auc_resonant", (("L162", "L188", "l162-188"),))),
     (r"JetClass-II, AUC over the QCD classes, " + HEADING["lp"], _jc2_lp("macro_auc_qcd", (("L162", "L188", "l162-188"),))),
-    (r"JetClass-II, accuracy, " + HEADING["ft"], (("R16_Q1", "L188", ("l3", "ft", "jc2", "accuracy", "17-188", False)),)),
+    (r"JetClass-II, accuracy, " + HEADING["ft"], tuple((a, b, ("l3", "ft", "jc2", "accuracy", d, False)) for a, b, d in _LEVELS)),
     # M008, M045, M219 (the abstract's 17-class cost), M221, M226, M305
     (r"JetClass, accuracy, " + HEADING["ft"], tuple((a, b, ("l3", "ft", "jc1", "accuracy", d, False)) for a, b, d in _LEVELS + _MASSES)
      + tuple((a, "R16_Q1", RERUN) for a, _ in _PARTS_ALL)),
-    # Fig. A8 below a million jets
+    # Figs. A10 and A8 below a million jets: the probes' label-set rows pass 3 sigma (PI 2026-11-23, LEDGER SP-13 (c));
+    # no JetClass-II network is fine-tuned on 10^3 jets
+    *((rf"JetClass-II, accuracy, {HEADING['lp']}, " + _power(f"{n:g}") + " training jets",
+       tuple((a, "L188", ("file", f"l3_v5/probe_jc2bal_N{n}.v4.json", d, "accuracy"))
+             for a, d in (("R42_Q1", "r42q1-188"), ("R16_Q1", "r16q1-188")))) for n in _SIZES),
     *((rf"JetClass-II, accuracy, {HEADING['ft']}, " + _power(f"{n:g}") + " training jets", (("R16_Q1", "L188", RERUN),))
-      for n in _SIZES),
+      for n in _SIZES[1:]),
     (r"top tagging, $R_{30}$, " + HEADING["lp"], _bench_block("top", "lp")),
     (_FT_TOP, _bench_block("top", "ft", own=True)
      + (("L188", "SCRATCH", ("file", "l3/ft_top_N1200000.scratch.json", "188-scratch", "r30")),)),
@@ -4681,7 +4686,7 @@ TESTS = (
     *((rf"{_PAIR[k]}, AUC, " + HEADING["lp"], _pair_rows(k, rows)) for k, rows in (
         ("bb_vs_cc", (("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"), ("FLAV_F1", "R16_Q1", "flavf1-r16q1"))),
         ("bc_vs_bq_cs", _QCD_PAIR + (("FLAV_F1", "R16_Q1", "flavf1-r16q1"), ("FLAV_F1R", "R16_Q1", "flavf1r-r16q1"),
-                                     ("FLAV_F0", "R16_Q1", "flavf0-r16q1"))),
+                                     ("FLAV_F0", "R16_Q1", "flavf0-r16q1"), ("FLAV_F0", "L188", "flavf0-188"))),
         ("bbqq_vs_ccqq", (("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"),
                           ("FLAV_F1R", "FLAV_F1", "flavf1r-flavf1"))),
         *((k, _QCD_PAIR) for k in ("qcd_bb_vs_cc", "qcd_b_vs_light", "qcd_c_vs_light")),
@@ -4690,7 +4695,7 @@ TESTS = (
     # tab:mlp (M157, M302): the multilayer-perceptron probes beside the linear-probe nulls
     (r"JetClass-II, AUC, " + HEADING["mlp"], tuple((a, b, None) for a, b, _ in _MASSES)),
     (r"JetClass-II, AUC over the resonant classes, " + HEADING["mlp"], (("L162", "L188", None),)),
-    (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], (("L162", "L188", None),)),
+    (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], (("L162", "L188", None), ("R16_Q1", "L188", None))),
     # tab:coarse: the label sets scored on the 17 merged groups
     (r"JetClass-II, accuracy on the 17 merged groups, " + HEADING["lp"],
      tuple((a, "L188_17", ("file", "l3_v5/probe_jc2bal_R16_Q1_N1000000.json", d, "accuracy"))
@@ -4705,9 +4710,11 @@ TESTS = (
         ("R16_Q1_MASS_HEAD", "SDMASS", ("mass_group", "17 classes + mass", "regressed")),
         ("R16_Q1_MASS_HEAD", "L162_MASS_HEAD", ("mass", "17 classes + mass - 162 classes + mass", "regressed")),
         ("L162_MASS_HEAD", "L162_MLP", ("mass", "162 classes + mass, regressed - 162 classes, mlp", "cross")))),
-    # Fig. 6 and Table 1's X->bb / X->bs columns (M309-M311, the placement's XBX)
+    # Fig. 6 and Table 1's X->bb / X->bs columns (M309-M311, the placement's XBX); the flavor-boundary partitions against
+    # 188 classes wait for their bootstrap and stay if they pass (SP-13 (c)); against 17 classes they fail for certain
     *((rf"{h}, signal efficiency (\%), " + "classifier on the frozen features",
-       (("R16_Q1", "L188", None),) + ((("L188", "SCRATCH", None),) if sig == "xbs" else ())) for sig, h in SUMMARY_XBX),
+       (("R16_Q1", "L188", None),) + tuple((a, "L188", None) for a in FLAV)
+       + ((("L188", "SCRATCH", None),) if sig == "xbs" else ())) for sig, h in SUMMARY_XBX),
 )
 # the sculpting nulls (M284, M306, M336; F10b): every difference of the bootstrap file at each working point, in its order,
 # but those no sentence states (results_mass names no mass network and no random partition against 188 classes; PI
@@ -4857,6 +4864,9 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
                               .get("R16_Q1", {}).get("1000000") or {}).get("accuracy")
         if path == _JC2_ALL:
             return summary_probe(fits, fill, chosen, "jc2_188", "macro_auc_ovr")
+        size = re.search(r"probe_jc2bal_N(\d+)\.v4\.json$", path)
+        if size:                # the probes of Fig. A10 and tab:probesn below a million jets
+            return lambda m: (_probe_rec(fits, m, "jc2_188", size.group(1)) or {}).get("accuracy")
         if ".fill." in path:
             s = "draws" if side == "L188_DRAWS" else "zero" if side.endswith("ZERO") else (chosen or {}).get(task)
             return (lambda m: _fill_r30(fill, m, task, s)) if s else None
@@ -6134,6 +6144,9 @@ CAPTIONS = {
     "jc1_conf": ("tab:jc1conf", "The JetClass confusion percentages of every fine-tuned network, as the confusion "
                  "figures draw them."),
     "summary_auc": ("tab:summaryauc", "The AUC beside each headline metric of table~\\ref{tab:summary}."),
+    # PI 2026-11-23 (LEDGER SP-13, step 4): the supplement's copy with the top and quark/gluon columns
+    "summary_auc_full": ("tab:summaryaucfull", "The AUC beside each headline metric of table~\\ref{tab:summary}, "
+                         "on every task."),
     # PI 2026-11-23 (LEDGER SP-9): one row per stage in the appendix; each run's row in the data release (compute_full)
     "compute": ("tab:compute", "GPU types and GPU-hours of each stage: pretraining every run of every network, summed "
                 "over the training and validation passes of its epochs as each epoch recorded its device, and "
@@ -6174,6 +6187,7 @@ PLACEHOLDERS = (("probes", "mlst_probes", True, None), ("probes_n", "mlst_probes
                 ("jetclass_nbkg", "mlst_jetclass_nbkg", True, None),
                 ("coarse", "mlst_coarse", True, None), ("qcdhf", "mlst_qcdhf", False, {"__QCDHF_C__": r"\pending{n}", "__QCDHF_LIGHT__": r"\pending{n}"}),
                 ("summary", "mlst_summary", False, None), ("summary_auc", "mlst_summary_auc", True, None),
+                ("summary_auc_full", "mlst_summary_auc_full", True, None),
                 ("sets", "mlst_sets", False, None), ("randparts", "mlst_randparts", True, None),
                 ("masseffect", "mlst_masseffect", True, None), ("jc1_conf", "mlst_jc1_conf", True, None), ("bench_qg_herwig", "mlst_bench_qg_herwig", False, None),
                 ("published", "mlst_published", True, None), ("labelsets", "mlst_labelsets", True, None),
@@ -6618,6 +6632,10 @@ CAPTION_SHORT = {
                     "fine-tuned networks of table~\\ref{tab:summary}, on the same sets, averaged on JetClass-II and "
                     "JetClass over the classes, each against the rest, and on JetClass-II also over its resonant and "
                     "over its QCD classes alone." + _runs("set", "flav", "mass", "rand")),
+    # PI 2026-11-23 (LEDGER SP-13, step 4): the supplement's copy, with the top and quark/gluon columns
+    "summary_auc_full": ("Every column of table~\\ref{tab:summaryauc} and the AUC of the same networks on top tagging "
+                         "and on quark/gluon tagging, scored on Pythia and on Herwig jets. The released Sophon "
+                         "checkpoint's dashes are those of table~\\ref{tab:summary}." + _runs("set", "flav", "mass", "rand")),
     "published": ("Published models beside ours, the mean $\\pm$ standard deviation over three runs. Models marked "
                  "fine-tuned and OmniLearned are pretrained on other data, training jets counting the downstream set. "
                  "AUC is the area under the receiver operating characteristic curve, on JetClass "
@@ -7002,7 +7020,7 @@ def uniform_columns(tab: str, floor: int | None = None) -> str:
 # table has published rows, which take part by the value and the standard deviation they print (none: zero); whole:
 # the tabular is one block whatever its headings; blocks: the caption says "their column under their italic heading" (of: other words); best: the
 # caption's sentence before the bold note.
-BOLD = {"summary": {"blocks": True}, "summary_auc": {"blocks": True}, "published": {"of": "their column and task", "published": True, "skip": (1, 2)},
+BOLD = {"summary": {"blocks": True}, "summary_auc": {"blocks": True}, "summary_auc_full": {"blocks": True}, "published": {"of": "their column and task", "published": True, "skip": (1, 2)},
         "labelsets": {}, "probes": {}, "pairs": {"blocks": True}, "probes_n": {"blocks": True}, "ft": {"blocks": True},
         "jc1_class_auc": {"blocks": True}, "jc1_class_auc_full": {"blocks": True}, "labelsets_full": {},
         "mass": {"blocks": True, "lower": (1,), "unity": (2,)},
@@ -7773,6 +7791,9 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         # rule (split_wide) where a turned page does not hold them
         out["tables/mlst_summary_auc.tex"] = _float("summary_auc", table_summary(
             fits_s, fill, chosen, per, runs_s, TAB, SUMMARY_AUC_TABLE, "summary_auc", data=data), True, pages=True,
+            colsep_pt=3)
+        out["tables/mlst_summary_auc_full.tex"] = _float("summary_auc_full", table_summary(
+            fits_s, fill, chosen, per, runs_s, TAB, SUMMARY_AUC_FULL, "summary_auc_full", data=data), True, pages=True,
             colsep_pt=3)
         out["tables/mlst_labelsets.tex"] = _float("labelsets", table_labelsets(per, runs, TAB), True, pages=True,
                                                   whole="turned", colsep_pt=6)
