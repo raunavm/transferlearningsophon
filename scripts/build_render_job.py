@@ -169,15 +169,16 @@ def main() -> int:
     ap.add_argument("--mockups", action="store_true", help="the figure mock-ups instead of the paper")
     ap.add_argument("--book", action="store_true", help="the results book (main text and appendix) instead of the paper")
     ap.add_argument("--release", action="store_true", help="the data release (experiments/FIGS/data_release.py)")
-    ap.add_argument("--preview", action="store_true", help="today's partial results (MLST_FT_PREVIEW=1), the book or the paper")
+    ap.add_argument("--preview", action="store_true", help="today's partial results (MLST_FT_PREVIEW=1), the book, the paper or the release")
     storage_line.add_argument(ap)
     a = ap.parse_args()
     mode = MOCKUPS if a.mockups else BOOK if a.book else RELEASE if a.release else PAPER
+    release = mode is RELEASE
     if a.preview:
-        if mode in (MOCKUPS, RELEASE):
-            raise SystemExit("FATAL: --preview is for the book or the paper")
+        if mode is MOCKUPS:
+            raise SystemExit("FATAL: --preview is for the book, the paper or the release")
         # PI 2026-11-22: the paper read end to end while the reruns run: its tables from the partial read-out
-        mode = {**mode, "suffix": "-bookpreview" if mode is BOOK else "-preview",
+        mode = {**mode, "suffix": "-bookpreview" if mode is BOOK else "-releasepreview" if release else "-preview",
                 "what": f"{mode['what']} (preview of partial results)",
                 "draw": "          export MLST_FT_PREVIEW=1\n" + mode["draw"]}
     line = storage_line.check(a.storage_line)
@@ -186,7 +187,7 @@ def main() -> int:
     remote = subprocess.run(["git", "branch", "-r", "--contains", commit], cwd=ROOT,
                             capture_output=True, text=True).stdout
     # the pod clones every branch, so the release may run from a pushed branch before it reaches main
-    if "origin/main" not in remote and not (mode is RELEASE and "origin/" in remote):
+    if "origin/main" not in remote and not (release and "origin/" in remote):
         raise SystemExit(f"FATAL: {commit[:7]} is not pushed; the pod clones it from GitHub")
     out = OUT_DIR / f"job-render{mode['suffix']}-{commit[:7]}-raunav.yaml"
     OUT_DIR.mkdir(parents=True, exist_ok=True)

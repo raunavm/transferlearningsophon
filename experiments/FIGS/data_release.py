@@ -31,6 +31,7 @@ import importlib.util
 import io
 import json
 import math
+import os
 import pathlib
 import re
 import subprocess
@@ -1219,7 +1220,7 @@ def items(built: dict, rec: Recorder, figs: dict, fig_notes: dict) -> list:
 README_HEAD = """DATA RELEASE
 Label granularity in supervised pretraining of jet foundation models
 
-Version: commit {commit} of the analysis repository; written {date} by experiments/FIGS/data_release.py.
+Version: commit {commit} of the analysis repository; written {date} by experiments/FIGS/data_release.py.{preview}
 
 This release holds the values behind every figure and table of the paper, its appendix and its
 supplementary material: every network, pretraining run, bin and class, at full precision, as CSV
@@ -1333,7 +1334,10 @@ ITEMS (paper order: main text, appendix, supplement; then the generated tables p
 
 
 def readme(commit: str, its: list, cover: str, size: str, pindex: list, fig_rows: dict) -> str:
-    out = [README_HEAD.format(commit=commit, date=datetime.date.today().isoformat(), coverage=cover, size=size)]
+    preview = ("\nPREVIEW: built from the partial fine-tuning results (MLST_FT_PREVIEW=1) while reruns are running; "
+               "not the\nfinal release." if os.environ.get("MLST_FT_PREVIEW") == "1" else "")
+    out = [README_HEAD.format(commit=commit, date=datetime.date.today().isoformat(), coverage=cover, size=size,
+                              preview=preview)]
     for key, kind, tier, num, sentence, files, note in its:
         out.append(f"  {num or '-':<11} {key} ({kind}, {tier})")
         if sentence:
