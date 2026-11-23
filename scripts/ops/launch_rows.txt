@@ -14,6 +14,7 @@ ft-budget-fixed-sweep-edge10-raunav|experiments/FT/k8s/budget/job-ft-budget-fixe
 ft-budget-fixed-sweep-edge12-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-sweep-edge12-raunav.yaml|1
 ft-budget-fixed-sweep-edge13-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-sweep-edge13-raunav.yaml|1
 ft-budget-fixed-sweep-edge14-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-sweep-edge14-raunav.yaml|1
+ft-budget-fixed-sweep-edge15-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-sweep-edge15-raunav.yaml|1
 ft-budget-fixed-rate-jc2b1e5-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-jc2b1e5-raunav.yaml|16
 ft-budget-fixed-rate-scratchjc2b1e5-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-scratchjc2b1e5-raunav.yaml|3
 ft-budget-fixed-rate-qg1e3-raunav|experiments/FT/k8s/budget/job-ft-budget-fixed-rate-qg1e3-raunav.yaml|8
