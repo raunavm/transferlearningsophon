@@ -946,12 +946,16 @@ def table_pair_auc(fits, runs, fmt_pm, status, rows) -> str:
             return "merged" if all(x == "merged" for x in st) else "apart" if all(x == "apart" for x in st) else "some"
         status = {**status, RAND_POOLED: {key: pooled(key) for key, *_ in PAIRS}}
     n = len(PAIR_AUC_COLS)
+    # each pair's name on two lines (signal, then "vs" the background), so that the table stays upright (FG-25)
+    halves = [h.split(" vs ", 1) for _, h, *_ in PAIR_AUC_COLS]
     out = [r"\begin{tabular}{l" + "c" * n + "}", r"\toprule", rf" & \multicolumn{{{n}}}{{c}}{{AUC}} \\",
-           rf"\cmidrule(lr){{2-{1 + n}}}", " & " + " & ".join(h for _, h, *_ in PAIR_AUC_COLS) + r" \\", r"\midrule"]
+           rf"\cmidrule(lr){{2-{1 + n}}}", " & " + " & ".join(a for a, _ in halves) + r" \\",
+           " & " + " & ".join("vs " + b for _, b in halves) + r" \\", r"\midrule"]
     for arm in rows:
         cells = [_cell([_pair(fits, m, key) for m in runs[arm]], len(runs[arm]), fmt_pm)
                  + mark[status.get(arm, {}).get(key, "apart")] for key, *_ in PAIR_AUC_COLS]
-        out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
+        lab = r"\quad " + INIT_BN_SUB if arm == INIT_BN else _row(arm, runs)      # under the random network, as Table 2
+        out.append(lab + " & " + " & ".join(cells) + r" \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}"])
 
 
@@ -4195,12 +4199,11 @@ def table_lrsweep(rows: list) -> str:
                 else:
                     cells.append(f"{v:.{dec if lr in tied else 4}f}"
                                  + (star if r["status"].startswith("settled") and lr == r["best"] else ""))
-            first = name if j == 0 else ""
+            first = name if j == 0 or r["kind"] == "pre" else ""   # review of 5f4e1b8 (C7): a page that opens mid-task names it
             size = _power(str(r["n"])) if r["kind"] == "pre" else ""
             mode = "pretrained" if r["kind"] == "pre" else SCRATCH_LABEL
-            # review of render dfe5942 (C): a size's pretrained row never ends a page apart from its from-scratch row;
-            # review of render 5f4e1b8 (C7): nor does any row of a task apart from the task's first, which names it
-            end = r" \\*" if j < len(block) - 1 else r" \\"
+            # review of render dfe5942 (C): a size's pretrained row never ends a page apart from its from-scratch row
+            end = r" \\*" if r["kind"] == "pre" else r" \\"
             out.append(f"{first} & {size} & {mode} & " + " & ".join(cells) + end)
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
@@ -4654,7 +4657,7 @@ def table_randparts(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID) ->
 
 
 # review of render 5f4e1b8 (B17): what each mode of Table 2 puts in the missing top and quark/gluon inputs
-SUMMARY_FILL_NOTE = {"lp": r", missing inputs as \LpSubstitutionTop{} (top) and \LpSubstitutionQg{} (quark/gluon)",
+SUMMARY_FILL_NOTE = {"lp": r", missing inputs \LpSubstitutionTop{} (top), \LpSubstitutionQg{} (quark/gluon)",
                      "ft": ", missing inputs set to zero"}
 
 
@@ -5337,12 +5340,12 @@ def text_ratio_words(journal: pathlib.Path) -> set:
 
 
 def _printed_mean(v: list, extra: int = 0) -> float:
-    """A side's mean as a table prints it (_printed_place): at its SD's PDG place, at most MAX_DECIMALS, and extra places
-    more where its table has them (EXTRA_DIGIT); a single value (the soft-drop mass, one run) or runs that agree, as it
+    """A side's mean as a table prints it (_printed_place): at its SD's PDG place and extra places more where its table
+    has them (EXTRA_DIGIT), at most MAX_DECIMALS; a single value (the soft-drop mass, one run) or runs that agree, as it
     is."""
     m = float(np.mean(v))
     sd = float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
-    return m if _zero_sd(m, sd) else round(m, min(_pdg_place(sd), MAX_DECIMALS) + extra)
+    return m if _zero_sd(m, sd) else round(m, min(_pdg_place(sd) + extra, MAX_DECIMALS))
 
 
 RATIO_CHECK_COLS = ("macro", "heading", "first", "second", "noun", "ratio_full_precision", "ratio_printed_means",
@@ -6795,7 +6798,8 @@ CAPTION_SHORT = {
     "pair_auc": ("The area under the receiver operating characteristic curve (AUC) of binary linear probes on the frozen "
                  "features separating pairs of JetClass-II classes, the second-named the background, scored on up to "
                  "\\JcBalPairTestPerSide{} test jets of each side. The values carry one digit more than the standard "
-                 "deviation's rounding gives, so that the ratios of $1-\\mathrm{AUC}$ the text quotes follow from them."
+                 "deviation's rounding gives, up to five decimals, so that the ratios of $1-\\mathrm{AUC}$ the text "
+                 "quotes follow from them."
                  + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER SP-9, merge 6; SC-1 (1), (4)): what the table holds, no finding; at most 135 words.
     # PI 2026-11-23 (LEDGER SP-13, step 2): Delta, sigma and Delta / sigma, independent-sample rows marked (KEY_MARKS)
@@ -7415,7 +7419,7 @@ def _printed_place(kind: str, v: list, place: int) -> int:
     other token at its column's place. A mean +- SD prints alike in every table, whatever the column's place
     (2026-11-23 review A8, LEDGER TN-4: Table 1's 1,800 +- 60 had printed as 1,799 +- 56 in tab:published)."""
     if kind.lower() == "p" and not _zero_sd(v[0], v[1]):
-        return min(_pdg_place(v[1]), MAX_DECIMALS) + _EXTRA_NOW[0]
+        return min(_pdg_place(v[1]) + _EXTRA_NOW[0], MAX_DECIMALS)
     return place
 
 
