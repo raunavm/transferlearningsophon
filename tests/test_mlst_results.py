@@ -2653,7 +2653,8 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
     assert f.count(r"\newpage") == 1 and f.index("top tagging} \\\\") < f.index(r"\newpage") < f.index("(continued)}")
     assert M.BOLD["published"]["of"] == "their column and task"
     assert f.count(M.BOLD_NOTE) == 1 and "within three standard deviations" not in f and "never bold." in f
-    assert "The kinematic-inputs network is a reference, never bold." in f
+    # review of render 5f4e1b8 (B15; LEDGER CA-6): one name, the text following the row label
+    assert r"The \Kfull-class model with kinematic inputs only is a reference, never bold." in f
     assert r"\textbf" not in f and f.count(M.BOLD_ON) == t.count(M.BOLD_ON) > 0
 
 

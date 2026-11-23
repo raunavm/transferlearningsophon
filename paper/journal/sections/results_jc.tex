@@ -7,7 +7,7 @@
 \section{Results}\label{sec:results}
 
 Each subsection compares the four label sets first and the controls second, the
-controls against the \Kcoarse-class level whose class count they share. Linear probes on frozen features
+controls against the \Kcoarse-class level whose class count they share and against the \Kfull-class model. Linear probes on frozen features
 carry the comparison on the pretraining classes, checked by MLP probes, and fine-tuning carries it on the
 downstream benchmarks. Every difference the text states is tested in table~\ref{tab:tests}.
 
@@ -49,8 +49,9 @@ top-tagging working point. Circles are means and
 bars standard deviations over \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per mass network
 and flavor-boundary partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions, whose bar
 is their spread. The band is the \Kfull-class mean $\pm$ standard deviation. The random network, not drawn, has
-accuracies of \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$ of \MlstFTwoInitRthirtyMin{} to
-\MlstFTwoInitRthirtyMax{} (table~\ref{tab:summary}, with every value).}
+accuracies of \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$ of
+\MlstFTwoInitRthirtyMin{}--\MlstFTwoInitRthirtyMax{} (table~\ref{tab:summary}, which names the missing-input
+substitutions).}
 \label{fig:F2}
 \end{figure}
 % CHECK: F2(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
@@ -61,14 +62,13 @@ accuracies of \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$ o
 \caption{After fine-tuning, \pending{\Kcoarse{} classes are less accurate than \Kfull{} classes on JetClass-II and
 JetClass}, and no label set, mass network or partition differs from \Kfull{} classes in $R_{30}$ by more than
 three standard deviations in top-quark against QCD and quark against gluon jets. Accuracy and $R_{30}$ are
-defined as in figure~\ref{fig:F2}, after fine-tuning on \FtSizeESix{} jets or the full top and quark/gluon
-training sets.
+defined as in figure~\ref{fig:F2}, after fine-tuning, missing inputs set to zero, on \FtSizeESix{} jets or the full
+top and quark/gluon training sets.
 % CHECK: panel (a) draws every network once the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks reads out (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40)
-The same network trained from scratch, the fine-tuning reference, replaces the random network and the released
-Sophon checkpoint. Circles and bars are means and standard deviations over \MlstNRunsWord{} runs per label set
+The same network trained from scratch replaces the random network and the released Sophon checkpoint. Circles and bars are means and standard deviations over \MlstNRunsWord{} runs per label set
 and from scratch, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and \RandVtwoRuns{} each
-for \RandVtwoNPartitions{} random partitions, whose bar is their spread. The band is the \Kfull-class mean $\pm$
-one standard deviation. Every value is in table~\ref{tab:summary}.}
+for \RandVtwoNPartitions{} random partitions, whose bar is their spread. The band is as in figure~\ref{fig:F2}.
+Values are in table~\ref{tab:summary}.}
 \label{fig:F2-ft}
 \end{figure}
 
@@ -121,9 +121,8 @@ against the \Kfull-class model, from linear probes on frozen features (left) and
 \FtSizeESix{} class-balanced jets; points below the diagonal are recalled less often. Their mean weighted by test
 jets is the accuracy of figures~\ref{fig:F2} and~\ref{fig:F2-ft}. Points are means over the \MlstNRunsWord{}
 pretraining runs with bars of one standard deviation over runs and test jets; colors give what the
-\Kcoarse-class labels merge the class with. A point is filled where it differs from the \Kfull-class recall by more
-than three standard deviations, both run spreads and the paired bootstrap over the class's test jets combined, and
-open otherwise.}
+\Kcoarse-class labels merge the class with. Filled points differ from the \Kfull-class recall by more than three
+standard deviations, both run spreads and the paired bootstrap over the class's test jets combined.}
 \label{fig:PC-jc2}
 \end{figure}
 
@@ -161,7 +160,7 @@ recovers part of the loss of the \Kcoarse-class level on both pairs, neither of 
 boundary recovers part of it on the second pair (\MlstCmpBcFonerOverCoarsePr), while the partition with no
 flavor boundary does not differ there from the \Kcoarse-class level by more than three standard deviations,
 under the linear probe or the MLP probe (\MlstMlpCmpBcFzeroOverCoarsePr{}; figure~\ref{fig:F4-mech};
-tables~\ref{tab:pairauc}, \ref{tab:tests} and~\ref{tab:mlp}). On $X\to YY\to bbqq$ against $X\to YY\to ccqq$, which the
+tables~\ref{tab:pairauc}, \ref{tab:tests} and~\ref{tab:mlp}). On $X\to YY\to b\bar bqq$ against $X\to YY\to c\bar cqq$, which the
 $b$-quark boundary does cut, the partition with a random flavor boundary makes \MlstCmpBbqqFonerOverFonePr{}
 than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}; tables~\ref{tab:pairauc} and~\ref{tab:tests}).
 % CHECK: L3 with run SDs (gallery_placement, F4-mech): b-quark boundary - 17 on X->bb vs cc 8 sigma and on X->bc 6 sigma; random flavor boundary - 17 on X->bc 6 sigma (on X->bb vs cc 2.3, not claimed); no flavor boundary on X->bc 0.9 sigma from 17
@@ -171,15 +170,15 @@ than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}; tables~
 \paperfig{\linewidth}{F4-mech}
 \caption{Linear probes on \Kcoarse{} classes, which merge each pair, separate $X\to b\bar b$ from $c\bar c$ and $X\to bc$
 from $bq$, $cs$, the second-named the background, worse than \Kfull{} classes, and the $b$-quark boundary recovers
-part of both losses. Panels show one over the fraction of background jets kept against that of signal jets, with
+part of both losses. Panels show one over the background fraction kept against the signal fraction, with
 ratios to \Kfull{} classes. Curves average \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per mass network
 and flavor-boundary partition, and \RandVtwoRuns-run random partitions apart for the \MlstPairRandMergedBbWord{}
-($X\to b\bar b$) or \MlstPairRandMergedBcWord{} ($X\to bc$) merging the pair and the \MlstPairRandApartMechWord{}
-keeping it apart, \MlstPairRandPartlyBcWord{} merging $X\to bc$ in part left out. They end below
-\MlstMinBkgPass{} passing background jets, and \Kfull{} classes' one-standard-deviation band combines run spread and
-binomial uncertainty. The random
-network, not drawn, reaches \MlstPairInitRhalfMechMin{} to \MlstPairInitRhalfMechMax{} at 50\% of signal jets.
-Table~\ref{tab:tests} has the tested differences.}
+($X\to b\bar b$) or \MlstPairRandMergedBcWord{} ($X\to bc$) merging the pair and \MlstPairRandApartMechWord{}
+keeping it apart, \MlstPairRandPartlyBcWord{} partial merger of $X\to bc$ left out, \Kfull{} and \Kcoarse{} classes repeated beside
+them. They end below \MlstMinBkgPass{} passing background jets, and \Kfull{} classes' one-standard-deviation band
+combines run spread and binomial uncertainty. The random network, not drawn, reaches
+\MlstPairInitRhalfMechMin{}--\MlstPairInitRhalfMechMax{} at 50\% of signal jets. Table~\ref{tab:tests} tests the
+differences.}
 \label{fig:F4-mech}
 \end{figure}
 
@@ -187,7 +186,8 @@ Table~\ref{tab:tests} has the tested differences.}
 
 Each pretrained model is fine-tuned once on \FtSizeESix{} JetClass training jets, which carry every input the
 networks were pretrained on, and compared with the same network trained from scratch;
-table~\ref{tab:published} sets them beside the published ParticleNet and ParT, trained on more jets. After
+table~\ref{tab:published} sets the \Kfull-class model and the network trained from scratch beside the published
+ParticleNet and ParT, trained on more jets. After
 fine-tuning, the \Kcoarse-class model makes
 \pending{table~\ref{tab:summary} after the reruns} than the \Kfull-class model on JetClass; how the \Kres- and
 \Kmid-class models and the partitions compare with it is \pending{table~\ref{tab:summary} after the reruns}

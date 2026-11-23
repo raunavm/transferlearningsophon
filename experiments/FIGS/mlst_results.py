@@ -4198,8 +4198,9 @@ def table_lrsweep(rows: list) -> str:
             first = name if j == 0 else ""
             size = _power(str(r["n"])) if r["kind"] == "pre" else ""
             mode = "pretrained" if r["kind"] == "pre" else SCRATCH_LABEL
-            # review of render dfe5942 (C): a size's pretrained row never ends a page apart from its from-scratch row
-            end = r" \\*" if r["kind"] == "pre" else r" \\"
+            # review of render dfe5942 (C): a size's pretrained row never ends a page apart from its from-scratch row;
+            # review of render 5f4e1b8 (C7): nor does any row of a task apart from the task's first, which names it
+            end = r" \\*" if j < len(block) - 1 else r" \\"
             out.append(f"{first} & {size} & {mode} & " + " & ".join(cells) + end)
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
@@ -4248,10 +4249,14 @@ def table_inputs(root: pathlib.Path, offsets: dict | None) -> str:
 # diagnostic); (B5; LEDGER CA-15) the random network with BatchNorm recomputed defined here, under the random network
 SETS_TABLE = (("L188", r"\Kfull", "none (Sophon's classes)"), ("L162", r"\Kres", "QCD quark content"),
               ("L162_MASS", r"\Kres", r"as \Kres, with a mass output"),
-              ("R42_Q1", r"\Kmid", r"$b$/$c$ counts, $g$/$q$, $e$/$\mu$"), ("R16_Q1", r"\Kcoarse", r"as \Kmid, and quark flavor"),
+              # review of render 5f4e1b8 (B12): what each merges in words, not "b/c counts, g/q, e/mu" and "one b split"
+              ("R42_Q1", r"\Kmid", r"numbers of $b$ and $c$ quarks, gluon against light quark, electron against muon"),
+              ("R16_Q1", r"\Kcoarse", r"as \Kmid, and quark flavor"),
               ("R16_Q1_MASS", r"\Kcoarse", r"as \Kcoarse, with a mass output"),
-              ("FLAV_F0", r"\Kcoarse", "random groups of flavor families"), ("FLAV_F1", r"\Kcoarse", "as no boundary, one $b$ split"),
-              ("FLAV_F1R", r"\Kcoarse", "as no boundary, one random split"), (RAND_POOLED, r"\Kcoarse", "random groups"))
+              ("FLAV_F0", r"\Kcoarse", "random groups of flavor families"),
+              ("FLAV_F1", r"\Kcoarse", "as no flavor boundary, its four-quark decays with a $b$ quark moved"),
+              ("FLAV_F1R", r"\Kcoarse", "as no flavor boundary, as many four-quark decays moved at random"),
+              (RAND_POOLED, r"\Kcoarse", "random groups"))
 SETS_CONTROLS = ((INIT, "--", "no pretraining (initial weights)", None),
                  (INIT_BN, "--", "as random, BatchNorm statistics recomputed", None),
                  (SCRATCH, "--", "trained on the task alone", None), (SOPHON, r"\Kfull", "none; Sophon's training", 1),
@@ -4696,9 +4701,10 @@ def table_summary(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID, key=
         get = ([summary_probe(fits, fill, chosen, ds, met) for _, _, ds, met in grid] if mode == "lp"
                else [summary_ft(per, k, n, met) for k, n, _, met in grid])
         head_row = _full_row(nc, HEADING[mode], italic=True)
-        if xb and mode == "lp":     # the X->bb / X->bs columns are read by a transfer head, not a linear probe (CA-12)
+        if xb:      # the X->bb / X->bs columns are read by a transfer head, not a linear probe (CA-12), and in the
+            # fine-tuned block only the network trained from scratch fills them (review of render 5f4e1b8, C5)
             head_row = (rf"\multicolumn{{{1 + len(grid)}}}{{@{{}}l}}{{\textit{{{HEADING[mode]}}}}} & "
-                        rf"\multicolumn{{{len(SUMMARY_XBX)}}}{{c}}{{\textit{{{XBX_HEAD}}}}} \\")
+                        rf"\multicolumn{{{len(SUMMARY_XBX)}}}{{c}}{{\textit{{{XBX_HEAD if mode == 'lp' else SCRATCH_LABEL}}}}} \\")
         body = [head_row] + [row(LABEL[a], cells(a, get)) for a in SETS]
         ctl = [(r"\quad " + LABEL[a], cells(a, get)) for a in SUMMARY_CONTROLS]
         ctl = [(n, c) for n, c in ctl if any(x != "--" for x in c)]
@@ -4987,6 +4993,7 @@ _BB, _BC, _BBQQ = (rf"{_PAIR[k]}, AUC, " + HEADING["lp"] for k in ("bb_vs_cc", "
 _TOP_FILL, _QG_FILL = (rf"{t}, $R_{{30}}$, " + HEADING["lp"] + ", missing inputs"
                        for t in ("top tagging", "quark/gluon tagging (Pythia)"))
 _MASS_MLP, _MASS_HEAD = "jet mass, resolution, " + HEADING["mlp"], "jet mass, resolution, " + HEADING["head"]
+RATIO_PAIR_HEADS = (_BB, _BC, _BBQQ)       # the ratio words whose sides tab:pairauc prints
 PR_ROWS = {
     # results_jc
     "MlstCmpJcTwoMidOverFullPr": (_JC2_LP, "R42_Q1", "L188", _NO_MORE),
@@ -5321,12 +5328,13 @@ def text_ratio_words(journal: pathlib.Path) -> set:
     return {n for f in files if f.exists() for n in RATIO_WORD.findall(re.sub(r"(?<!\\)%.*", "", f.read_text()))}
 
 
-def _printed_mean(v: list) -> float:
-    """A side's mean as a table prints it (_printed_place): at its SD's PDG place, at most MAX_DECIMALS; a single value
-    (the soft-drop mass, one run) or runs that agree, as it is."""
+def _printed_mean(v: list, extra: int = 0) -> float:
+    """A side's mean as a table prints it (_printed_place): at its SD's PDG place, at most MAX_DECIMALS, and extra places
+    more where its table has them (EXTRA_DIGIT); a single value (the soft-drop mass, one run) or runs that agree, as it
+    is."""
     m = float(np.mean(v))
     sd = float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
-    return m if _zero_sd(m, sd) else round(m, min(_pdg_place(sd), MAX_DECIMALS))
+    return m if _zero_sd(m, sd) else round(m, min(_pdg_place(sd), MAX_DECIMALS) + extra)
 
 
 RATIO_CHECK_COLS = ("macro", "heading", "first", "second", "noun", "ratio_full_precision", "ratio_printed_means",
@@ -5380,7 +5388,9 @@ def ratio_words(em, rows: dict, used: set, src, sides: dict | None = None) -> No
             if not pair:
                 raise SystemExit(f"FATAL: \\{name}: tab:tests row {first} - {second} passes with no printed values of "
                                  "its sides to form the ratio from (LEDGER CS-6)")
-            a, b = (_printed_mean(s) for s in pair)
+            # the pair AUCs print in tab:pairauc (LEDGER DL-R #4), at its extra digit (EXTRA_DIGIT, LEDGER TX-3)
+            extra = EXTRA_DIGIT["pair_auc"] if head in RATIO_PAIR_HEADS else 0
+            a, b = (_printed_mean(s, extra) for s in pair)
             if (1 - b if h["noun"] == "errors" else b) == 0:
                 raise SystemExit(f"FATAL: \\{name}: its reference prints no error (or a zero), so no ratio")
             q = (1 - a) / (1 - b) if h["noun"] == "errors" else a / b
@@ -6544,7 +6554,7 @@ CAPTIONS = {
                 "on, and its validation accuracy on its own pretraining classes after the last of its 80 epochs. The "
                 "last part of the table gives that accuracy as the pretraining-curve figures draw it at the last epoch, the mean "
                 "$\\pm$ standard deviation over \\MlstNRunsWord{} runs per label set, \\RandFlavRuns{} per "
-                "flavor-boundary partition and \\MlstMassNRunsWord{} per network with an added mass output, and "
+                "flavor-boundary partition and \\MlstMassNRunsWord{} per mass network, and "
                 "over the five random partitions with one run each. A flavor boundary is a class boundary between "
                 "decays that differ only in quark flavor. The network pretrained with \\Kfull{} classes on the "
                 "kinematic inputs only has one run and is left out of the last part."),
@@ -6679,7 +6689,7 @@ NETS = "networks pretrained on JetClass-II with 188, 162, 43 and 17 classes"
 # experiments/MTX/bn_twins_v2.py --init, pretrain_v2.recompute_bn over BN_JETS jets)
 BN_DEF = (" The batch-normalization (BatchNorm) statistics of the random network with BatchNorm recomputed are "
           "re-estimated on \\DesignBnJets{} training jets.")
-ALL_NETS = ", of the two networks with an added mass output, of every 17-class partition"     # the supplement's full copies
+ALL_NETS = ", of the two mass networks, of every 17-class partition"     # the supplement's full copies
 # the captions of the paper's tables (PI 2026-11-12: what the table compares, then the definitions and run counts
 # needed to read it, in sentences; every mark of the table explained, and no other)
 PNETS = "the networks pretrained with 188, 162, 43 and 17 classes"
@@ -6775,9 +6785,9 @@ RHO_SHORT = "the ratio $\\rho$ of $1-\\mathrm{AUC}$ to the \\Kfull-class run of 
 CAPTION_SHORT = {
     # PI 2026-11-23 (LEDGER DL-R #4, CS-6): the AUCs the main text's error ratios on these pairs are formed from
     "pair_auc": ("The area under the receiver operating characteristic curve (AUC) of binary linear probes on the frozen "
-                 "features separating pairs of JetClass-II classes, the second-named the background, trained on up to "
-                 "\\JcBalPairTrainPerSide{} jets of each side and scored on up to \\JcBalPairTestPerSide{} of each "
-                 "side, each side's classes at their shares in the mixed test sample." + BN_DEF
+                 "features separating pairs of JetClass-II classes, the second-named the background, scored on up to "
+                 "\\JcBalPairTestPerSide{} test jets of each side. The values carry one digit more than the standard "
+                 "deviation's rounding gives, so that the ratios of $1-\\mathrm{AUC}$ the text quotes follow from them."
                  + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER SP-9, merge 6; SC-1 (1), (4)): what the table holds, no finding; at most 135 words.
     # PI 2026-11-23 (LEDGER SP-13, step 2): Delta, sigma and Delta / sigma, independent-sample rows marked (KEY_MARKS)
@@ -6818,7 +6828,7 @@ CAPTION_SHORT = {
                 "differences averaged over the runs." + PART_DEF
                 + _runs("set", "flav", "mass", "rand", "scratch"),
     "per_class": "The recall of each JetClass-II class, the fraction of its test jets the network assigns to it, "
-                 "for " + PNETS + ", the two networks with an added mass output "
+                 "for " + PNETS + ", the two mass networks "
                  "(\\Kres{} classes + mass, \\Kcoarse{} classes + mass) and the 17-class partitions, as linear probes on the frozen features trained on one million "
                  "class-balanced JetClass-II jets and fine-tuned on as many. The label sets come first and the "
                  "17-class partitions second, each with a linear-probe block and a fine-tuned block, named in every "
@@ -6853,7 +6863,8 @@ CAPTION_SHORT = {
             "JetClass-II classes differing only in quark flavor, which coarser label sets merge, the second-named the "
             "background. AUC is the area under the receiver operating characteristic curve, averaged over all, "
             "resonant or QCD classes, each against the rest. $R_{30}$ is one over the fraction of background jets kept "
-            "when the cut keeps 30\\% of signal jets, the top-tagging working point." + _runs("set", "flav", "mass", "rand")),
+            "when the cut keeps 30\\% of signal jets, the top-tagging working point. On top and quark/gluon tagging the "
+            "missing inputs are set to zero." + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md, no PART_DEF (tab:sets defines it)
     "coarse": "Linear probes on the frozen features of " + PNETS + ", of the two networks with an added mass "
               "output, of the 17-class partitions and of the random network, trained on one million class-balanced "
@@ -6866,7 +6877,7 @@ CAPTION_SHORT = {
                    + AUC_OVR.replace("the classes", "the target's groups") + BN_DEF + PART_DEF
                    + _runs("set", "flav", "mass", "rand1"),
     "qcdhf": "Rejection of QCD jets by the $X\\to b\\bar b$ discriminant of linear probes on the frozen features of "
-             + PNETS + ", of the two networks with an added mass output, of the 17-class partitions and of the "
+             + PNETS + ", of the two mass networks, of the 17-class partitions and of the "
              "random network, "
              "trained on one million class-balanced JetClass-II jets. The discriminant is the probe's $X\\to b\\bar b$ score divided by the sum of that score and the QCD scores. "
              "$R_{50}$ is the inverse QCD efficiency at 50\\% $X\\to b\\bar b$ efficiency, for QCD jets with two or "
@@ -6900,9 +6911,8 @@ CAPTION_SHORT = {
     "fill": ("$R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of signal jets, the "
              "top-tagging working point, of table~\\ref{tab:summary}'s linear probes on top-quark against QCD and quark "
              "against gluon jets, with missing inputs at zero, the training mean or real-particle draws. "
-             "Table~\\ref{tab:summary} uses \\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon, "
-             "and the released Sophon checkpoint and Herwig jets take the fill chosen for our networks. The "
-             "kinematic-inputs network misses nothing. BatchNorm recomputed means "
+             "Table~\\ref{tab:summary} uses \\LpSubstitutionTop{} for top and \\LpSubstitutionQg{} for quark/gluon. "
+             "BatchNorm recomputed means "
              "batch-normalization statistics re-estimated on \\DesignBnJets{} training jets."
              + _runs("set", "flav", "mass", "rand")),
     "fill_full": "Linear probes on the frozen features of every pretrained network and of the random network with "
@@ -6911,7 +6921,7 @@ CAPTION_SHORT = {
                  "or the quark/gluon data lack are substituted, and $R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of the signal jets, the working point of the top-tagging comparison, on top and quark/gluon tagging. The network on kinematic inputs only lacks "
                  "nothing and is scored on top tagging only. Herwig jets are not shown, as the substitution is chosen "
                  "on Pythia jets." + BN_DEF + PART_DEF + _runs("set", "flav", "mass", "rand1"),
-    "mass": ("Jet-mass resolution and median response of $r = m/m_{\\mathrm{gen}}$, the estimated mass over the "
+    "mass": ("Jet-mass resolution and median response of $r = m_{\\mathrm{est}}/\\mgen$, the estimated mass over the "
             "generator-level soft-drop mass, on JetClass-II test jets with a generator-level match, for the soft-drop "
             "mass, the mass output of the pretraining head and a multilayer-perceptron probe on the frozen features. "
             "The resolution is half the 15.9--84.1\\% quantile range of $r$ over its median.__PROBE_CENTRE__ The best "
@@ -6991,7 +7001,7 @@ CAPTION_SHORT = {
                     "(two million jets, no uncertainty). Linear probes are in table~\\ref{tab:jetclassprobe}."
                     + _runs("set", "flav", "mass", "rand")),
     "jetclass_all": "JetClass fine-tuning, in accuracy, AUC and the rejection of QCD jets for each signal class, of "
-                    + PNETS + ", of the two networks with an added mass output and of the 17-class partitions, "
+                    + PNETS + ", of the two mass networks and of the 17-class partitions, "
                     "beside training from scratch, each fine-tuned on one million JetClass jets and with "
                     + f"{V4.our_params(len(V4.JC1_COLS) + 1) / 1e6:.2f}" + " million parameters. " + AUC_OVR + AUC_JC + R_SUB + PART_DEF
                     + _runs("set", "flav", "mass", "rand"),
@@ -7030,7 +7040,9 @@ CAPTION_SHORT = {
                 "signal efficiency against QCD jets in the mass window \\XbxWindowLo--\\XbxWindowHi~GeV at the "
                 "header's QCD efficiency. A transfer head gives these columns, from "
                 "scratch training on \\MlstXbxScratchTrainBb{} ($X\\to b\\bar b$) or "
-                "\\MlstXbxScratchTrainBs{} ($X\\to bs$) jets a class. Dashes mark values not computed."
+                "\\MlstXbxScratchTrainBs{} ($X\\to bs$) jets a class. The linear probes on top and quark/gluon "
+                "tagging take \\LpSubstitutionTop{} and \\LpSubstitutionQg{} for the missing inputs, which "
+                "fine-tuning sets to zero. Dashes mark values not computed."
                 + _runs("set", "flav", "mass", "rand")),
     "masseffect": ("The networks pretrained with 162 and 17 classes, without and with an added mass output, on every "
                   "task, metric and read-out (rows). Definitions, training sets and inputs are those of "
@@ -7040,7 +7052,8 @@ CAPTION_SHORT = {
     # PI 2026-11-23 (LEDGER SP-9, merge 5; SC-1 (4)); SP-13 step 4: JetClass-II and JetClass only, so the released
     # Sophon checkpoint's dashes (its top and quark/gluon cells) left with their columns
     "summary_auc": ("The area under the receiver operating characteristic curve (AUC) of the linear probes and "
-                    "fine-tuned networks of table~\\ref{tab:summary}, on the same sets, averaged on JetClass-II and "
+                    "fine-tuned networks of table~\\ref{tab:summary} but the random network with BatchNorm recomputed, "
+                    "on the same sets, averaged on JetClass-II and "
                     "JetClass over the classes, each against the rest, and on JetClass-II also over its resonant and "
                     "over its QCD classes alone." + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER SP-13, step 4): the supplement's copy, with the top and quark/gluon columns
@@ -7384,11 +7397,21 @@ def _zero_sd(mean: float, sd: float) -> bool:
     return sd <= 1e-12 * max(1.0, abs(mean))
 
 
+# PI 2026-11-23 (LEDGER TX-3): a table whose quoted ratio differs, from full-precision and from printed means, at the
+# quoted digits gets one more digit: {table key: extra decimal places of its mean +- SD cells}. tab:pairauc: the 17-class
+# AUC on X->bc vs bq, cs printed as 0.885 made "94% more errors" and "21% fewer errors" where the full means give 95% and
+# 22% (render 26d1efd, build log "TX-3 DIFF")
+EXTRA_DIGIT = {"pair_auc": 1}
+_EXTRA_NOW = [0]        # the extra places of the table being set (_float), read by _printed_place
+
+
 def _printed_place(kind: str, v: list, place: int) -> int:
     """The decimal place _render prints a token at: a mean +- SD at the SD's PDG place (at most MAX_DECIMALS), every
     other token at its column's place. A mean +- SD prints alike in every table, whatever the column's place
     (2026-11-23 review A8, LEDGER TN-4: Table 1's 1,800 +- 60 had printed as 1,799 +- 56 in tab:published)."""
-    return min(_pdg_place(v[1]), MAX_DECIMALS) if kind.lower() == "p" and not _zero_sd(v[0], v[1]) else place
+    if kind.lower() == "p" and not _zero_sd(v[0], v[1]):
+        return min(_pdg_place(v[1]), MAX_DECIMALS) + _EXTRA_NOW[0]
+    return place
 
 
 def _render(kind: str, v: list, place: int, floor: int | None = None) -> str:
@@ -7775,13 +7798,17 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
         cap = cap.replace(" $^{*}$: a probe that did not converge.", "")
     # bold needs the headings (its blocks) and the tokens (the unrounded values); a part its builder printed
     # (tab:summary, tab:published, tab:labelsets, tab:probes) has no token left and was marked there
-    parts = [_labels(uniform_columns(_bold(key, _headings(b.strip(), _mode(key, k)))) if key in BOLD and V4.TOK_OPEN in b
-                     else _headings(uniform_columns(b.strip()), _mode(key, k))) for k, b in enumerate(body.split("%SPLIT%"))]
+    _EXTRA_NOW[0] = EXTRA_DIGIT.get(key, 0)
+    try:
+        parts = [_labels(uniform_columns(_bold(key, _headings(b.strip(), _mode(key, k)))) if key in BOLD and V4.TOK_OPEN in b
+                         else _headings(uniform_columns(b.strip()), _mode(key, k))) for k, b in enumerate(body.split("%SPLIT%"))]
+    finally:
+        _EXTRA_NOW[0] = 0
     parts = [re.sub(r"\\mbox\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", t) if "begin{tabular}" in t else t for t in parts]
     if key in BOLD and any(BOLD_ON in t for t in parts):
         cap += BOLD[key].get("best", "")
         cap += BOLD_NOTE_ROW if BOLD[key].get("of") == "their row" else BOLD_NOTE
-        refs = [w for lab, w in ((LABEL[INIT], "random network"), (LABEL["KIN"], "kinematic-inputs network"),
+        refs = [w for lab, w in ((LABEL[INIT], "random network"), (LABEL["KIN"], r"\Kfull-class model with kinematic inputs only"),
                                  (LABEL[SOPHON], "released Sophon checkpoint"))
                 if any(lab in t for t in parts)]          # the reference rows the table has
         refs += [w for w in ("from scratch", "soft-drop mass", "random selection")    # PI 2026-11-14: from scratch too
@@ -8120,8 +8147,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     atlas = _load(data / MASS_RES)
     if atlas:
         # review of render dfe5942 (A7; LEDGER PF-4): what the probe uses, exactly; its target is generator-level
-        centre = (" The probe regresses $\\theta$ of equation~(\\ref{eq:masstarget}), centred on one training median, so no "
-                  "class label enters.")
+        centre = (" The probe regresses $\\theta$ of equation~(\\ref{eq:masstarget}), centered on one training median, so no "
+                  "truth label is used.")
         out["tables/mlst_mass.tex"] = _float("mass", table_mass(atlas, runs, TAB), fill={"__PROBE_CENTRE__": centre})
         # the binned values as the mass figures draw them (atlas_res_fine_v3: ten jet-pT bins, the same jets and
         # inclusive values as atlas_res_v3)

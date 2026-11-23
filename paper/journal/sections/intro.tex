@@ -67,10 +67,10 @@ merges remove in turn the quark content of QCD jets, the number of $b$ or $c$ qu
 distinctions between gluons and light quarks and between electrons and muons, and quark flavor. Our first
 control is a set of random partitions, selected to cut across the \Kcoarse-class groups, in which the
 \LitJetClassTwoNResonantClasses{} resonant classes are split at random into \RandVtwoNResGroups{} groups, with QCD
-kept as the \RandVtwoQcdGroupOrd. Our second control is three random partitions that differ
+kept as the \RandVtwoQcdGroupOrd. Our second control is three flavor-boundary partitions, random partitions that differ
 in their flavor boundaries, the class boundaries between decays that differ only in quark flavor. Following
 GloParT, which regresses the jet mass together with the classification~\cite{glopart,glopartdp}, we also
-pretrain the \Kres- and \Kcoarse-class models with an auxiliary regression of the jet mass. We evaluate every model with linear
+pretrain the \Kres- and \Kcoarse-class models with an auxiliary regression of the jet mass, the mass networks. We evaluate every model with linear
 probes on the frozen features and by fine-tuning on JetClass-II, on JetClass~\cite{part}, on top
 tagging~\cite{toptag} and on quark/gluon discrimination~\cite{efn,qgpythia,qgherwig}, and with a transfer head
 on its frozen features on Sophon's $X\to b\bar b$ and $X\to bs$ benchmark~\cite{sophon}. % CHECK: pending Xbx* (section 4.7 waits for the samples)
@@ -81,8 +81,9 @@ on its frozen features on Sophon's $X\to b\bar b$ and $X\to bs$ benchmark~\cite{
 \caption{Design of the study. (a)~From each of \MlstNRunsWord{} seeds, one network is pretrained on the same
 jets once for each of four nested label sets with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, through a hidden layer of
 \DesignHeadHidden{} units; each merged class spans the rows it merges, and rows are schematic. (b)~The pretrained network is then used in two ways. Its frozen
-features, the output of the backbone with its weights held fixed, feed a linear probe, or a new head with
-its own hidden layer of \DesignHeadHidden{} units is added and all weights are fine-tuned. The colors of
+features, the output of the backbone with its weights held fixed, feed a linear probe, or for $X\to b\bar b$ and
+$X\to bs$ a transfer head, or a new head with its own hidden layer of \DesignHeadHidden{} units is added and all
+weights are fine-tuned. The colors of
 the label sets are those of every later figure.}
 \label{fig:design}
 \end{figure}
@@ -93,8 +94,8 @@ the label sets are those of every later figure.}
 % CHECK: the JetClass cost after fine-tuning is recomputed from Table 1 after the 10^6 reruns and re-tested at 3 sigma (PI SP-11); the 162- and 43-class differences there must read "consistent"
 % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull agree with 1 within their SD
 % CHECK: MlstCmpMlpResMassOverRes < 1; MlstCmpJcTwoResMassOverRes within a few per cent of 1 (sculpting is out of the findings: one mass-regression difference passes 3 sigma, PI 2026-11-09)
-We find that coarser pretraining labels make the frozen features substantially worse on the pretraining
-classes, a task that favors finer labels by construction: counted in wrongly ordered pairs of jets, a linear probe
+We find that coarser pretraining labels make the frozen features worse on the pretraining classes, a task that
+favors finer labels by construction, and substantially so at \Kmid{} and \Kcoarse{} classes: counted in wrongly ordered pairs of jets, a linear probe
 makes more errors there at every coarser level of the hierarchy, and the costliest step is the merge of quark
 flavor, while in accuracy it is the step that removes three distinctions at once. At the same number of classes, the random partitions lose less than
 the \Kcoarse-class level, and a single flavor boundary lowers the error of the probe, so which classes are
@@ -103,3 +104,8 @@ on JetClass, and on top tagging and quark/gluon discrimination the label sets sh
 auxiliary mass regression makes the jet mass more precisely predictable from the frozen features, with no
 resolved cost to the classification of the pretraining classes. A pretraining label set for jets should therefore contain every distinction that
 downstream discriminants sum over and, for use with frozen features, the flavor boundaries.
+
+% Outline (review of render 5f4e1b8, C21; STYLE.md: the introduction ends with the outline)
+Section~\ref{sec:related} places the study among pretraining objectives and studies of label granularity,
+section~\ref{sec:methods} gives the data, label sets, evaluation and uncertainties, section~\ref{sec:results} the
+results, and section~\ref{sec:discussion} what they mean for the choice of a label set.

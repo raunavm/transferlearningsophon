@@ -11,12 +11,13 @@ network of Signature-Oriented Pre-training for Heavy-resonance ObservatioN (Soph
 jets, in the same order and from the same initial weights, and change only the label set, along a
 hierarchy from Sophon's full set of classes to one that describes only the number and type of the prongs.
 Random partitions of the classes, selected to cut across the classes of the coarsest label set, and
-partitions that differ in a flavor boundary compare label sets at a fixed number of classes. Coarser labels make linear probes on the
-frozen features substantially worse on the pretraining classes, a task that favors finer labels by
-construction. Counted in wrongly ordered pairs of jets the costliest step is the merge of quark flavor, and in
+flavor-boundary partitions, which differ in a flavor boundary, compare label sets at a fixed number of classes. On
+the pretraining classes, a task that favors finer labels by construction, coarser labels make linear probes on the
+frozen features worse, and substantially so at the two coarsest levels. Counted in wrongly ordered pairs of jets the costliest step is the merge of quark flavor, and in
 accuracy the step that removes three distinctions at once; at a fixed number of classes, which classes
-are merged changes the cost. After fine-tuning, the coarsest labels cost \pending{Table 1 after the reruns} more
-errors on JetClass and no resolved difference on the public top-tagging and quark/gluon benchmarks. An auxiliary
+are merged changes the cost. After fine-tuning, the coarsest labels cost \pending{table~\ref{tab:summary} after the
+reruns} more errors on JetClass and show no resolved difference on the public top-tagging and quark/gluon
+benchmarks. An auxiliary
 jet-mass regression makes the mass more precisely predictable from the frozen features. A pretraining
 label set should contain every distinction that downstream discriminants sum over and, for use with frozen
 features, the flavor boundaries.

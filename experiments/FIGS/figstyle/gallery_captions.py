@@ -68,9 +68,9 @@ CAPTIONS = {
         "row's network against 188 classes, as linear probes (left) or fine-tuned (right) on one million "
         "class-balanced jets; points below the diagonal are recalled less often. Their test-jet-weighted mean is the "
         "accuracy of figures {fig:F2} and {fig:F2-ft}. Means over three pretraining runs with ±1 standard deviation "
-        "bars over runs and test jets; colors give what the 17 classes merge the class with. A point is filled where it "
-        "differs from the 188-class recall by more than three standard deviations, both run spreads and the paired "
-        "bootstrap over the class's test jets combined, and open otherwise. Values are in the data release."
+        "bars over runs and test jets; colors give what the 17 classes merge the class with. Filled points differ from "
+        "the 188-class recall by more than three standard deviations, both run spreads and the paired bootstrap over "
+        "the class's test jets combined. Values are in the data release."
     ),
     # PI 2026-11-23 (SP-13): the page captions of F4-mech, F4-other and F9b follow the paper's section captions (1db8bc37);
     # F4-mech's, at 141 words as written there, loses six connecting words to stay within 135 (CA-1); PI 2026-11-22
@@ -79,15 +79,15 @@ CAPTIONS = {
     "F4-mech": (
         'Linear probes on 17 classes, which merge each pair, separate X→bb̄ from cc̄ and X→bc from bq, cs, the '
         'second-named the background, worse than 188 classes, and the b-quark boundary recovers part of both losses. '
-        'Panels show one over the fraction of background jets kept against that of signal jets, with ratios to 188 '
-        'classes. Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and '
+        'Panels show one over the background fraction kept against the signal fraction, with ratios to 188 classes. '
+        'Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and '
         'flavor-boundary partition, and {m:RandVtwoRuns}-run random partitions apart for the '
-        '{m:MlstPairRandMergedBbWord} (X→bb̄) or {m:MlstPairRandMergedBcWord} (X→bc) merging the pair and the '
-        '{m:MlstPairRandApartMechWord} keeping it apart, {m:MlstPairRandPartlyBcWord} merging X→bc in part left out. '
-        'They end below {m:MlstMinBkgPass} passing background jets, and 188 classes\' one-standard-deviation band '
-        'combines run spread and binomial uncertainty. The '
-        'random network, not drawn, reaches {m:MlstPairInitRhalfMechMin} to {m:MlstPairInitRhalfMechMax} at 50% of '
-        'signal jets. Table {tab:tests} has the tested differences.'
+        '{m:MlstPairRandMergedBbWord} (X→bb̄) or {m:MlstPairRandMergedBcWord} (X→bc) merging the pair and '
+        '{m:MlstPairRandApartMechWord} keeping it apart, {m:MlstPairRandPartlyBcWord} partial merger of X→bc left out, '
+        '188 and 17 classes repeated beside them. They end below {m:MlstMinBkgPass} passing background jets, and 188 '
+        'classes\' one-standard-deviation band combines run spread and binomial uncertainty. The random network, not '
+        'drawn, reaches {m:MlstPairInitRhalfMechMin}–{m:MlstPairInitRhalfMechMax} at 50% of signal jets. Table '
+        '{tab:tests} tests the differences.'
     ),
     "ROC-main": (
         'Background rejection against signal efficiency with linear probes on frozen features, the mean over runs. '
@@ -117,7 +117,7 @@ CAPTIONS = {
         'release.'
     ),
     "F9b": (
-        'Each network with an added mass output resolves the jet mass better than the soft-drop mass in every bin of '
+        'Each mass network resolves the jet mass better than the soft-drop mass in every bin of '
         'jet pT and of generator-level mass. Panels show the median of the response r = m_est/m_gen and its distance '
         'from one, and the resolution, the width of the central 68% of r over twice its median, and its ratio to the '
         'soft-drop mass, against the reconstructed jet pT and the generator-level soft-drop mass m_gen. The estimates '
@@ -159,12 +159,12 @@ CAPTIONS = {
     # review of render dfe5942: the four other pairs are two figures, the resonance pair with its partitions (F4-other)
     # and the three QCD pairs, which every partition merges (F4-qcd)
     "F4-other": (
-        "With linear probes, 43 and 17 classes separate X→YY→bbqq from ccqq, the second-named the background, which "
+        "With linear probes, 43 and 17 classes separate X→YY→bb̄qq from cc̄qq, the second-named the background, which "
         "17 classes merge, less well than 188 classes. Panels, drawn as in figure {fig:F4-mech}, show (a) the label "
         "sets and (b) the 17-class partitions. Curves average {m:MlstNRunsWord} runs per label set, "
         "{m:MlstMassNRunsWord} per mass network and flavor-boundary partition, and {m:RandVtwoRuns} per random "
         "partition, {m:MlstPairRandMergedBbqqN} of them merging the pair and {m:MlstPairRandApartBbqqN} keeping it "
-        "apart. The random network, not drawn, reaches {init_bbqq} at 50% of signal jets. The three QCD pairs are in "
+        "apart, with 188 and 17 classes repeated in (b). The random network, not drawn, reaches {init_bbqq} at 50% of signal jets. The three QCD pairs are in "
         "the next figure, and table {tab:tests} has the tested differences."
     ),
     "F4-qcd": (
@@ -212,8 +212,8 @@ CAPTIONS = {
     "A10": (
         'With linear probes, 43 and 17 classes are less accurate on JetClass-II than 188 classes at every training-set '
         'size. The panels show accuracy on class-balanced JetClass-II and JetClass and R30, one over the fraction of '
-        'background jets kept when the cut keeps 30% of signal jets, the top-tagging working point, on top and '
-        'quark/gluon tagging, Pythia and Herwig, against training-set size. Lines are means and light bands ±1 '
+        'background jets kept when the cut keeps 30% of signal jets, the top-tagging working point, on top-quark against '
+        'QCD jets and quark against gluon jets, Pythia and Herwig, against training-set size. Lines are means and light bands ±1 '
         'standard deviation over the pretraining runs (three a label set, two a mass network). The random network '
         'and the values at the largest training sets are in table {tab:summary}, the others in the data release.'
     ),

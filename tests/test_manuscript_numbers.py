@@ -49,6 +49,7 @@ GENERATED = {"results_generated.tex",
              "tables/anomaly_per_run.tex",
              # the MLST results (experiments/FIGS/mlst_results.py)
              "tables/mlst_probes.tex", "tables/mlst_probes_n.tex", "tables/mlst_pairs.tex",
+             "tables/mlst_pair_auc.tex",       # PI 2026-11-23 (LEDGER DL-R #4): the pair AUCs behind the text's ratios
              "tables/mlst_mass.tex", "tables/compute.tex",
              "tables/mlst_ft.tex", "tables/mlst_ft_rej.tex",
              "tables/mlst_mlp.tex", "tables/mlst_fill.tex", "tables/mlst_fill_main.tex", "tables/mlst_jc1_class_auc.tex", "tables/mlst_sculpt.tex",

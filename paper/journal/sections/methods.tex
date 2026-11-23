@@ -59,7 +59,8 @@ $\tau$ lepton decaying to hadrons or to a lepton, or neutrino.
 The levels remove flavor before structure, so the coarsest still describes the decay topology an analysis
 selects on. At every level a class holds only QCD jets, only decays into quarks and gluons, or only decays with
 leptons. The step from \Kres{} to \Kmid{} classes is the only one that removes more than one kind of
-distinction, so no result in this paper attributes an effect of that step to one of its three.
+distinction, so no result in this paper attributes an effect of that step as a whole to one of its three; a class
+pair that only one of them merges, such as $X\to ee$ against $X\to\mu\mu$, shows the effect of that one.
 
 \input{tables/mlst_sets}
 
@@ -97,7 +98,7 @@ few of the class pairs merged by the \Kcoarse-class level as the share rule allo
 restricted to partitions built this way. We pretrain \RandVtwoNPartitions{} partitions, \RandVtwoRuns{} run each
 (appendix~\ref{sec:app-labels}).
 
-The flavor-boundary partitions, random partitions with a controlled flavor boundary, test whether a single flavor boundary, at a fixed number of
+The flavor-boundary partitions test whether a single flavor boundary, at a fixed number of
 classes and fixed group shares, accounts for the cost of the flavor merge. In the partition with no flavor
 boundary, every group is a union of whole families of decays that differ only in quark flavor. The partition
 with a $b$-quark boundary moves the four-quark decays \RandFlavSplitOrbit{} that contain a $b$ quark into another
@@ -108,7 +109,7 @@ against the \Kcoarse-class level.
 
 An auxiliary mass regression tests whether a physics target beyond the labels changes what the frozen features
 carry, and what it costs the classification. The \Kres- and \Kcoarse-class models are also pretrained, with
-\MlstMassNRunsWord{} seeds each, with an extra output $\hat\theta(x)$ that regresses the target $\theta$:
+\MlstMassNRunsWord{} seeds each, as mass networks with an extra output $\hat\theta(x)$ that regresses the target $\theta$:
 \begin{equation}\label{eq:masstarget}
   L = \Lcls + \lambda\,\Lreg, \qquad \Lreg = \log\cosh\bigl(\hat\theta(x) - \theta\bigr), \qquad
   \theta = \ln\bigl(\mgen / \msd\bigr),
@@ -118,7 +119,7 @@ jet; only jets with a generator-level match enter $\Lreg$. The loss has the form
 and~(11.7)]{glopart}, and $\lambda = \MlstMassLambda$ at both label sets is the value GloParT tuned for its
 regression terms~\cite[Eq.~(11.7)]{glopart}, not tuned here (appendix~\ref{sec:app-variants}).
 
-The \Kfull-class model with kinematic inputs only, the kinematic-inputs network below, pretrained once on the \FillTopNPresent{} of the
+The \Kfull-class model with kinematic inputs only, pretrained once on the \FillTopNPresent{} of the
 \FillNFeatures{} input features that the top-tagging data provide, as ParT pretrains a model for top
 tagging~\cite{part}, is a diagnostic of the input mismatch on top tagging, not a method we propose
 (appendix~\ref{sec:app-variants}).
@@ -243,7 +244,7 @@ where $q_p$ is the $p$-th percentile of the distribution of $r$, so that for a G
 its standard deviation divided by its median. Three estimates are compared on the same JetClass-II test jets
 with a generator-level match: the soft-drop mass itself, the regressed mass $\msd\,e^{\hat\theta}$ of the
 auxiliary mass regression, and an MLP probe that predicts $\theta$ from the frozen features, centered on one
-training median so that no class information enters (appendix~\ref{sec:app-mass}).
+training median so that no truth label is used (appendix~\ref{sec:app-mass}).
 
 Mass sculpting asks whether selecting on the summed score of the resonant classes makes the background mass
 distribution peak where a signal would. As CMS does~\cite[Sec.~6.2]{cmspart}, we select on
@@ -263,7 +264,7 @@ directly.
 
 We repeat Sophon's resonance-tagging benchmark~\cite[Sec.~III]{sophon} at every label set, for a spin-0
 resonance $X$ of mass \XbxMx~GeV decaying to $b\bar b$ or to $bs$, against JetClass-II QCD test jets in Sophon's
-soft-drop mass window, scaled to \XbxWindowLo--\XbxWindowHi~GeV. Both signals are tagged by a transfer head, a
+soft-drop mass window, \XbxWindowLo--\XbxWindowHi~GeV. Both signals are tagged by a transfer head, a
 multilayer perceptron on the frozen features whose first layer starts from the pretrained head's hidden layer,
 trained with Sophon's settings~\cite[App.~B.5]{sophon}, and by the same network trained from scratch on the
 signal; where $X\to b\bar b$ is its own class, at \Kfull{} and \Kres{} classes, also by Sophon's direct
@@ -273,16 +274,16 @@ background jets, and for a small signal its discovery significance is~\cite{cowa
 \begin{equation}\label{eq:signif}
   Z \approx \frac{\epsS N_S}{\sqrt{\epsB N_B}} = \frac{N_S}{\sqrt{N_B}}\,\frac{\epsS}{\sqrt{\epsB}} ,
 \end{equation}
-so at fixed yields $\epsS/\sqrt{\epsB}$ ranks selections by their reach without assuming event counts.
+so at fixed yields the figure of merit $\epsS/\sqrt{\epsB}$ ranks selections without assuming event counts.
 
 % ----------------------------------------------------------------------------
 \subsection{Uncertainties}\label{sec:uncertainties}
 
 Every uncertainty is the standard deviation over the independently pretrained networks of a configuration,
 each followed by one linear probe or one fine-tuning, except where a bootstrap of the test jets is added, as
-stated with it. Each label set has \MlstNRunsWord{} pretraining runs, the networks with an added mass output
+stated with it. Each label set has \MlstNRunsWord{} pretraining runs, the mass networks
 \MlstMassNRunsWord{} and the flavor-boundary partitions
-\RandFlavRuns{} each, and each random partition and the kinematic-inputs network one; the random partitions are
+\RandFlavRuns{} each, and each random partition one, as does the \Kfull-class model with kinematic inputs only; the random partitions are
 pooled over the \RandVtwoNPartitions{} partitions. The spread therefore includes the variation between pretraining
 runs, which Sophon does not report~\cite{sophon}. Values are rounded following the Particle Data
 Group~\cite{pdg}; with \MlstNRunsWord{} runs a standard deviation is itself uncertain by about \MlstSdRelUnc. The
