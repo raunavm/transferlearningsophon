@@ -14,6 +14,7 @@ at most PARALLEL pods at once. One Indexed Job, boot-tests-raunav:
        class probabilities below 1e6; same C as the v5 fits), the substitutions of the missing inputs, the fine-tuned
        top (against from scratch) and quark/gluon (Herwig over Pythia), and mass_sd_boot_v4.json
   4    waits for the 23 cache files, then probe_jc2bal_N1000000.all.json from them
+boot-tests-herwig-raunav (one pod, --herwig): R30 on Herwig minus on Pythia jets, unpaired, into HERWIG_OUT.
 boot-tests-smoke-raunav (one pod, --smoke): every input checked, one row (X->bb vs cc, 43 - 188 classes) into SMOKE, and
 one JetClass-II network into SMOKE's cache with its peak memory and seconds, to size the job.
 
@@ -261,6 +262,22 @@ def main_spec(tag: str, mem: str) -> str:
                  "tab:tests' paired test-jet bootstraps on stored outputs (PI 2026-11-23, SP-12 step 4)")
 
 
+HERWIG_OUT = f"{L3}/ft_qg_N1600000.herwig_pythia_unpaired.json"
+
+
+def herwig_spec(tag: str, mem: str) -> str:
+    """boot-tests-herwig-raunav (coordinator 2026-11-23): each network's R30 on Herwig minus on Pythia jets, two test
+    samples, so unpaired (paired_bootstrap: boot_sd^2 = each side's mean's bootstrap variance, added), into HERWIG_OUT."""
+    _t, cells = ft_inputs()[f"{L3}/ft_qg_N1600000.herwig_over_pythia.json"]
+    flags = "--headline --second-task qg_herwig" + "".join(
+        f" --diff herwig-pythia-{w}={','.join(f'{m}@second' for m in ms)}/{','.join(ms)}"
+        for w, ms in (("188", models("l188")), ("scratch", SCRATCH)))
+    row = "\n  ".join([check_inputs(cells.values()), pb(HERWIG_OUT, [f"--model {m}={p}" for m, p in cells.items()],
+                                                        flags, "qg")])
+    return _spec(tag, "boot-tests-herwig-raunav", [row], 1, mem,
+                 "tab:tests: R30 on Herwig minus on Pythia jets per network, unpaired (coordinator 2026-11-23)")
+
+
 def smoke_spec(tag: str, mem: str) -> str:
     inp = {m: pair_path("bb_vs_cc", m) for a in ("r42q1", "l188") for m in models(a)}
     row = pb(f"{SMOKE}/probe_jc2bal_pairs_bb_vs_cc.json", [f"--model {m}={p}" for m, p in inp.items()],
@@ -276,11 +293,13 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--tag", required=True, help="the pushed tag the pods clone")
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument("--herwig", action="store_true", help="boot-tests-herwig-raunav, the unpaired Herwig - Pythia rows")
     ap.add_argument("--mem", default="16Gi", help="memory request and limit of every pod")
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
         raise SystemExit(f"FATAL: --tag {a.tag} is not an mtx-sN.NN tag")
     name, text = (("boot-tests-smoke-raunav", smoke_spec(a.tag, a.mem)) if a.smoke
+                  else ("boot-tests-herwig-raunav", herwig_spec(a.tag, a.mem)) if a.herwig
                   else ("boot-tests-raunav", main_spec(a.tag, a.mem)))
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     p = OUT_DIR / f"job-{name}.yaml"

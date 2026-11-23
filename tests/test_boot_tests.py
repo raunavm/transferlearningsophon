@@ -119,6 +119,10 @@ def test_the_second_task_ratio_is_taken_per_resample(tmp_path, monkeypatch):
             [d["models"][m][k]["value"] for m in ("m1", "m2")]
         assert hp["delta"] == pytest.approx(np.mean(va) - np.mean(vb)) and hp["quantity"] == k
         assert (hp["sd_a"], hp["sd_b"]) == pytest.approx((np.std(va, ddof=1), np.std(vb, ddof=1))) and hp["boot_sd"] > 0
+        # two test samples: unpaired, each side's mean's bootstrap variance added
+        assert hp["resampling"] == "unpaired" and hp["boot_sd"] == pytest.approx(np.hypot(hp["boot_sd_a"], hp["boot_sd_b"]))
+        assert hp["sigma"] == pytest.approx(np.sqrt(hp["sd_a"] ** 2 + hp["sd_b"] ** 2 + hp["boot_sd"] ** 2))
+        assert "resampling" not in d["diffs"]["d"][k]
     assert d["second_task"] == "qg_herwig" and d["second_seed"] == d["seed"] + 1 and d["second_n_jets"] == yh.size
     with pytest.raises(SystemExit, match="not models"):
         PB.main([x for c in cells for x in ("--model", c)] + ["--task", "qg", "--headline", "--diff", "x=m1@second/m1",
@@ -159,3 +163,5 @@ def test_the_spec_is_ours_pinned_and_writes_new_files_only():
     for arm in b.JC2_ARMS:
         assert all(f"--model {m}=" in b.jc2_file() for m in b.models(arm))
     assert sorted(m for g in b.jc2_groups() for m in g) == sorted(b.jc2_inputs()) and len(b.jc2_inputs()) == 23
+    h = b.herwig_spec("mtx-s9.99", "4Gi")
+    assert "completions: 1\n" in h and f"[ -e {b.HERWIG_OUT} ] ||" in h and h.count("@second") == 6 and "-raunav\n" in h

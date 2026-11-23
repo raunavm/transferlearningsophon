@@ -46,7 +46,9 @@ tab:tests (PI 2026-11-23, LEDGER SP-12 step 4; SC-1 (1)), on the same resamples:
   --second-task TASK   every model's cell also scored on TASK's test set (other jets, their own resamples from
                seed + 1, shared by every model): <metric>_second, the headline metric there, and <metric>_ratio, it
                over that on --task, per model and per resample (e.g. R30 on Herwig over R30 on Pythia); a --diff side
-               may name <model>@second, the model's headline metrics on TASK's jets (Herwig minus Pythia jets)
+               may name <model>@second, the model's headline metrics on TASK's jets (Herwig minus Pythia jets); a
+               difference of a side on TASK's jets and one on --task's is unpaired (other jets, resampled
+               independently): boot_sd^2 = boot_sd_a^2 + boot_sd_b^2, each side's mean's bootstrap variance
   --cache DIR  each model's metrics and resampled metrics in DIR/<model>.npz, read instead of recomputed when its
                record (input, task, jets, b, seed, options) is the same, refused when it differs; with --cache-only
                the run fills the cache and writes no --out (a large set split over pods, then one run reads them all)
@@ -217,8 +219,8 @@ def metrics(y: np.ndarray, s: np.ndarray, c: np.ndarray, per_class: bool, head: 
     return out
 
 
-def _verdict(k: str, delta: float, sd_a, sd_b, rep: np.ndarray) -> dict:
-    boot_sd = _sd(rep)
+def _verdict(k: str, delta: float, sd_a, sd_b, rep: np.ndarray, boot_sd=False) -> dict:
+    boot_sd = _sd(rep) if boot_sd is False else boot_sd
     sigma = float(np.sqrt(sd_a ** 2 + sd_b ** 2 + boot_sd ** 2)) if None not in (sd_a, sd_b, boot_sd) else None
     return {"quantity": "one_minus_auc" if is_auc(k) else k, "delta": delta, "sd_a": sd_a, "sd_b": sd_b,
             "boot_sd": boot_sd, "sigma": sigma, "z": delta / sigma if sigma else None,
@@ -231,13 +233,19 @@ def _runs(res: dict, side: list, k: str) -> tuple:
     return v, np.mean([res[m][k][1] for m in side], axis=0), (float(v.std(ddof=1)) if v.size > 1 else None)
 
 
-def group_diff(res: dict, a: list, b: list) -> dict:
-    """Decision L3 for the mean over models a minus the mean over models b, per metric both sides have."""
+def group_diff(res: dict, a: list, b: list, unpaired: bool = False) -> dict:
+    """Decision L3 for the mean over models a minus the mean over models b, per metric both sides have. unpaired: the
+    sides are scored on different jets, resampled independently; boot_sd^2 is the sum of each side's mean's bootstrap
+    variance (boot_sd_a^2 + boot_sd_b^2), not the variance of the difference over resamples."""
     out = {}
     for k in [k for k in res[a[0]] if all(k in res[m] for m in a + b)]:
         (va, ra, sd_a), (vb, rb, sd_b) = _runs(res, a, k), _runs(res, b, k)
-        out[k] = _verdict(k, float(va.mean() - vb.mean()), sd_a, sd_b, ra - rb)
+        ba, bb = _sd(ra), _sd(rb)
+        boot = (float(np.hypot(ba, bb)) if None not in (ba, bb) else None) if unpaired else False
+        out[k] = _verdict(k, float(va.mean() - vb.mean()), sd_a, sd_b, ra - rb, boot)
         out[k].update({"n_a": len(a), "n_b": len(b)})
+        if unpaired:
+            out[k].update({"resampling": "unpaired", "boot_sd_a": ba, "boot_sd_b": bb})
     return out
 
 
@@ -382,7 +390,10 @@ def main(argv=None) -> int:
         # with --second-task, <model>@second is the model's headline metrics on the second task's jets
         view = {**res, **{f"{n}@second": {k.removesuffix("_second"): v for k, v in m.items() if k.endswith("_second")}
                           for n, m in res.items()}}
-        doc["diffs"] = {name: {"a": ab[0], "b": ab[1], **group_diff(view, *ab)} for name, ab in diffs.items()}
+        # a side on the second task's jets against one on the first's: no paired resampling exists (unpaired)
+        on2 = lambda side: any(n.endswith("@second") for n in side)  # noqa: E731
+        doc["diffs"] = {name: {"a": ab[0], "b": ab[1], **group_diff(view, *ab, unpaired=on2(ab[0]) != on2(ab[1]))}
+                        for name, ab in diffs.items()}
     if steps:
         doc["rule_step"] = ("delta = (mean A - mean B) - (mean B - mean C); sigma^2 = SD_A^2 + 4 SD_B^2 + SD_C^2 + "
                             "boot_sd^2, written as sd_a^2 = SD_A^2 + 2 SD_B^2 and sd_b^2 = 2 SD_B^2 + SD_C^2")
