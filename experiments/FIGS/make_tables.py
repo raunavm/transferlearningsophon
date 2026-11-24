@@ -307,14 +307,18 @@ def fmt_pm(mean, sd) -> str:
     Seeds that agree exactly (a spread of zero) print the common value alone."""
     if sd == 0:
         return fmt_one(mean)
+    raw = float(sd)
     sd, place = pdg(sd)
     cap = 3 - math.floor(math.log10(abs(float(mean)))) if mean else place
     if place > cap:
         if 0 < float(mean) < 1 and round(float(mean), cap) >= 1:
             return f"$>${_fixed(1 - 10.0 ** -cap, cap)}"
-        if round(sd, cap) == 0:
-            cap = cap + 1 if round(sd, cap + 1) else place
+        if round(raw, cap) == 0:
+            cap = cap + 1 if round(raw, cap + 1) else place
         place = cap
+        # rounded once, at the printed place (2026-11-24, the data release's check on the rerun cells): 0.000351 at four
+        # decimals is 0.0004, not the 0.0003 its PDG rounding 0.00035 rounds to; 0.000249 is 0.0002, not 0.00025's 0.0003
+        sd = raw
     if 0 < float(mean) < 1 and round(float(mean), place) >= 1:
         return f"$>${_fixed(1 - 10.0 ** -place, place)}"
     return f"{_fixed(mean, place)}\\,$\\pm$\\,{_fixed(sd, place)}"

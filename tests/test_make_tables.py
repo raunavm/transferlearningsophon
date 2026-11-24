@@ -650,6 +650,9 @@ def test_the_mean_is_printed_to_the_place_of_its_rounded_spread():
     assert M.fmt_pm(0.99998, 0.00001) == M.fmt_pm(0.99996, 0.0002) == "$>$0.9999"
     assert M.fmt_pm(0.98524, 0.00007) == "0.9852\\,$\\pm$\\,0.0001"
     assert M.fmt_pm(0.98524, 0.00024) == "0.9852\\,$\\pm$\\,0.0002"   # a spread at the fourth figure prints
+    # 2026-11-24: a spread capped at the fourth figure is its value rounded once, not its PDG rounding rounded again
+    assert M.fmt_pm(0.42360, 0.00035138) == "0.4236\\,$\\pm$\\,0.0004"
+    assert M.fmt_pm(0.83840, 0.00024872) == "0.8384\\,$\\pm$\\,0.0002"
     assert M.fmt_pm(57.705, 0.0013) == "57.705\\,$\\pm$\\,0.001"
     assert M.fmt_pm(0.5, 0.97) == "0.5\\,$\\pm$\\,1.0"
     assert M.fmt_pm_sci(2.3213e-3, 0.0712e-3) == "$(2.32 \\pm 0.07)\\times10^{-3}$"
