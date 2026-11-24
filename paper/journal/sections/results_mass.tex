@@ -12,7 +12,8 @@ has \MlstMassNRunsWord{} pretraining runs.
 The auxiliary mass regression gives a narrower mass response than the reconstructed soft-drop mass.
 Over all test jets, the regressed mass of the \Kres-class mass network % CHECK: MlstMassHeadResMassOverUncorr below 1 in both runs
 reaches \MlstMassHeadResMassOverUncorrPr{} of $\msd$. Its difference in resolution from the \Kcoarse-class % review of 5f4e1b8 (A5) and LEDGER TX-1: the 17-class network with the mass output, its tab:tests row 17mass head - 162mass head the null (-1.23 sigma)
-mass network is not resolved, and both stay narrower in every bin of jet $p_{\mathrm{T}}$ and of % CHECK: every pT bin of F9b has head resolution below groomed
+mass network is not resolved (smallest resolvable difference \MlstPwHeadRes{} of its resolution), and both stay
+narrower in every bin of jet $p_{\mathrm{T}}$ and of % CHECK: every pT bin of F9b has head resolution below groomed
 $\mgen$ (tables~\ref{tab:mass} and~\ref{tab:tests}; figure~\ref{fig:F9b}). The regressed mass also reaches % CHECK: MlstMassHeadResMassOverMlpRes below 1 in both runs
 \MlstMassHeadResMassOverMlpResPr{} of an MLP probe on the frozen features of the \Kres-class
 model pretrained without it, which, like the auxiliary mass regression, never sees the jet's class.
@@ -33,8 +34,7 @@ the features of every pretrained network in that table carry more (table~\ref{ta
 
 The auxiliary mass regression shows no resolved cost to the classification of the pretraining classes. A linear
 probe on the frozen features of the \Kres-class mass network and one on the \Kres-class % CHECK: MlstCmpJcTwoResMassOverRes today 1.022 and 1.016; its PrMax reads its tab:tests row (162mass-162, |Delta|/sigma 1.6 on 23 Nov: the null), and the null or "up to ... more errors" both fit "costs little"
-model differ on JetClass-II by no more than three standard deviations (\MlstCmpJcTwoResMassOverResPrMax{};
-table~\ref{tab:tests}). At \Kcoarse{} classes, where the mass term takes a larger share of the % CHECK: MlstMassLossShareCoarseMass above MlstMassLossShareResMass (today 28.7 vs 13.8 per cent)
+model differ on JetClass-II by no more than three standard deviations (table~\ref{tab:tests}). At \Kcoarse{} classes, where the mass term takes a larger share of the % CHECK: MlstMassLossShareCoarseMass above MlstMassLossShareResMass (today 28.7 vs 13.8 per cent)
 loss (appendix~\ref{sec:app-variants}), the mass network and the \Kcoarse-class model do not
 differ by more than three standard deviations either (table~\ref{tab:tests}); these tests resolve no difference
 smaller than \MlstPwMassClsRes{} of the \Kres-class model's errors and \MlstPwMassClsCoarse{} of the \Kcoarse-class
@@ -44,8 +44,9 @@ equation~(\ref{eq:ratio}), \MlstMlpCmpJcTwoResMassOverResPr{} at \Kres{} classes
 \MlstMlpCmpJcTwoCoarseMassOverCoarsePr{} at \Kcoarse{} classes; table~\ref{tab:mlp}), so this is not a limit of what
 a linear classifier can read. % LEDGER SH-6: equation (11) the only place 1 - AUC is printed
 % CHECK: MlstMlpCmpJcTwoResMassOverResPr and MlstMlpCmpJcTwoCoarseMassOverCoarsePr read their tab:tests rows (JetClass-II, AUC, MLP probe; no bootstrap on 23 Nov), the null unless a difference passes 3 sigma (fits_v5_mlp, class-balanced: 1.021 and 1.017, 1.057 and 0.987 in the 21 Nov build).
-Fine-tuning on top tagging shows no change from the auxiliary mass regression beyond three standard deviations % CHECK: l3/ft_top_N1200000.json 162mass-162 r30 z=-0.10, 17mass-17 z=-0.51; their ratio words failed 3 sigma and were removed (PI 2026-11-23, LEDGER SP-12 step 3)
-at either label set (table~\ref{tab:tests}). Its cost after fine-tuning on JetClass, where every input is
+After fine-tuning on top tagging, the $R_{30}$ difference the auxiliary mass regression makes is not resolved % CHECK: l3/ft_top_N1200000.json 162mass-162 r30 z=-0.10, 17mass-17 z=-0.51; their ratio words failed 3 sigma and were removed (PI 2026-11-23, LEDGER SP-12 step 3)
+at either label set (smallest resolvable difference \MlstPwTopMassRes{} and \MlstPwTopMassCoarse{} of the
+\Kres- and \Kcoarse-class values; table~\ref{tab:tests}). Its cost after fine-tuning on JetClass, where every input is
 present, is \pending{table~\ref{tab:summary} after the reruns}.
 % CHECK: M305 (claims_main): the 17-class model with the mass regression against the 17-class model on JetClass at 1e6 passed 3 sigma on the superseded cells; recompute from Table 1 after the one-rule JetClass 1e6 rerun and write it only if it passes
 
@@ -56,18 +57,18 @@ No difference between pretraining heads in how much a cut on them sculpts the QC
 three times its uncertainty, at a QCD efficiency of \SculptEffHigh{} or \SculptEffLow{} or at the cut that keeps
 50\% of the resonant jets (tables~\ref{tab:sculptmain} and~\ref{tab:tests}): neither a coarser label set against the \Kfull-class
 model, nor a mass network against its own label set, nor the three flavor-boundary partitions against the
-\Kfull-class model.
+\Kfull-class model (smallest resolvable difference \MlstPwSculpt{} of the reference network's distance).
 
 % BEGIN XBX
 \subsection{$X\to b\bar b$ and $X\to bs$ resonance tagging}\label{sec:xbx}
 
-The resonance benchmark repeats Sophon's~\cite[section~III]{sophon} at every label set, on samples of % CHECK: pending XbxMx and the spin and production of the staged samples (Sophon: spin-0)
+The resonance benchmark repeats Sophon's~\cite[Sec.~III]{sophon} at every label set, on samples of % CHECK: pending XbxMx and the spin and production of the staged samples (Sophon: spin-0)
 a resonance $X$ decaying to $b\bar b$ or to $bs$, with the background, mass window and metrics of
 section~\ref{sec:evaluation}. The transfer heads are trained on QCD jets from files that no pretraining run
 trained or validated on, drawn to match the signal in $p_{\mathrm{T}}$ and $\msd$, so no jet seen in pretraining
 enters the benchmark, and every model is scored on the same signal and QCD jets. Figure~\ref{fig:F11} draws
 $\epsS/\sqrt{\epsB}$ of equation~(\ref{eq:signif}), the figure of merit of a selection without event counts, where
-Sophon plots the significance $Z$ itself~\cite[figure~2]{sophon}; our curves rank the label sets on one background,
+Sophon plots the significance $Z$ itself~\cite[Fig.~2]{sophon}; our curves rank the label sets on one background,
 which has no trigger and no jets from $W$ or $Z$ bosons or top quarks, so their values are not comparable with
 Sophon's.
 

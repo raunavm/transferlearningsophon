@@ -32,10 +32,11 @@ features~\cite{sophon}. The initial weights follow PyTorch's default initializat
 Sophon's code (appendix~\ref{sec:app-pretrain}), so absolute performance need not match Sophon's model; every
 comparison here is between models initialized the same way.
 
-Every configuration is pretrained with the same settings (appendix~\ref{sec:app-pretrain}), so that within a seed
-the label set is the only difference between two models (figure~\ref{fig:design}(a)). Models with the same seed
-start from the same weights in every layer but the output layer, whose width is the number of classes, and see
-the same training examples in the same order. Each model sees \DesignExamplesSeen{} training examples and is
+Every configuration is pretrained with the same settings (appendix~\ref{sec:app-pretrain}) and, within a seed,
+from the same start (figure~\ref{fig:design}(a)): models with the same seed start from the same weights in every
+layer but the output layer, whose width is the number of classes, and see the same training examples in the same
+order. The hardware is not held fixed: pretraining ran on several GPU types with mixed precision
+(table~\ref{tab:compute}), which changes the rounding and the dropout masks drawn on the GPU. Each model sees \DesignExamplesSeen{} training examples and is
 evaluated at the first maximum of its validation accuracy within epochs
 \DesignWavgFirstEpoch--\DesignWavgLastEpoch, where the learning rate is lowest.
 
@@ -131,7 +132,7 @@ Four classification tasks each ask one question. JetClass-II at its \Kfull{} cla
 the frozen features keep. Its classes are the \Kfull-class model's own labels, so this task favors finer label
 sets by construction; we also report it over the resonant and the QCD classes separately, since only the
 \Kfull-class level divides the QCD jets. JetClass~\cite{part} has every input present but other classes, from
-the same simulation chain without pileup, and asks whether a label-set effect survives on new classes when no
+the same simulation chain without pileup, the additional proton-proton collisions of the same bunch crossing, and asks whether a label-set effect survives on new classes when no
 input is missing. Top tagging~\cite{toptag} and quark/gluon discrimination~\cite{efn,qgpythia}, with the companion
 Herwig sample~\cite{herwigsevenone,qgherwig} as a change of generator, are the public benchmarks on which analyses
 compare taggers, and they lack some inputs. The jet mass and the tagging of $X\to b\bar b$ and $X\to bs$ complete
@@ -178,9 +179,9 @@ downstream task alone, with \MlstFtRefSeedsWord{} seeds, is the reference for wh
 top-tagging and quark/gluon training sets use ParT's settings~\cite{part}; every other training set, including
 every JetClass and JetClass-II set, uses one rule for pretrained and from-scratch networks alike, with a learning
 rate chosen on validation for each task and size (appendix~\ref{sec:app-ft}). A rate at which the training loss of a
-network becomes non-finite, a crash or eviction being retried and never counted, scores below every rate that
-trained, and if any network of a row diverges at the chosen rate when the row is rerun, one of three seeds being
-enough, that rate fails for the whole row and the row is rerun at the next best rate. % LEDGER DL-10, FT-10: the rule of experiments/FT/rate_search.py (cell_state: DIVERGED on a non-finite loss in any attempt; evaluate: one paper cell diverged at the recorded rate sets the rate DIVERGED for the row; FIXED_RERUN_DIVERGED keeps it failed)
+network becomes non-finite scores below every rate that trained. If any network of a configuration diverges when it
+is rerun at the rate chosen for its task and size, one of three seeds being enough, that rate fails for the
+configuration, which is rerun at the next best rate. % LEDGER DL-10, FT-10: the rule of experiments/FT/rate_search.py (cell_state: DIVERGED on a non-finite loss in any attempt; evaluate: one paper cell diverged at the recorded rate sets the rate DIVERGED for the row; FIXED_RERUN_DIVERGED keeps it failed)
 Because fine-tuning on JetClass-II
 has the \Kfull-class pretraining task as its target, the transfer comparisons rest on the other tasks.
 
@@ -234,8 +235,8 @@ with each configuration's AUC its mean over its runs, the reference scored on th
 reference. It gives by what factor a configuration changes the errors where the AUCs lie close to one, and
 where on some pairs of classes a rejection would rest on fewer than $\nmin$ background jets.
 
-The jet-mass resolution asks how close a mass estimate $m_{\mathrm{est}}$ comes to the generator-level mass
-$\mgen$ of equation~(\ref{eq:masstarget}). For the response $r = m_{\mathrm{est}}/\mgen$ we use the resolution
+The jet-mass resolution asks how close a mass estimate $m_{\mathrm{est}}$ comes to $\mgen$, the generator-level
+mass of equation~(\ref{eq:masstarget}). For the response $r = m_{\mathrm{est}}/\mgen$ we use the resolution
 of ATLAS~\cite[Sec.~6]{atlasregression},
 \begin{equation}\label{eq:resolution}
   \sigma_r = \frac{q_{84.1} - q_{15.9}}{2\,q_{50}} ,
@@ -243,8 +244,9 @@ of ATLAS~\cite[Sec.~6]{atlasregression},
 where $q_p$ is the $p$-th percentile of the distribution of $r$, so that for a Gaussian response $\sigma_r$ is
 its standard deviation divided by its median. Three estimates are compared on the same JetClass-II test jets
 with a generator-level match: the soft-drop mass itself, the regressed mass $\msd\,e^{\hat\theta}$ of the
-auxiliary mass regression, and an MLP probe that predicts $\theta$ from the frozen features, centered on one
-training median so that no truth label is used (appendix~\ref{sec:app-mass}).
+auxiliary mass regression, and an MLP probe that predicts $\theta$ from the frozen features, its output shifted by
+one median of the training jets, the same for every jet, so that no class label is used
+(appendix~\ref{sec:app-mass}).
 
 Mass sculpting asks whether selecting on the summed score of the resonant classes makes the background mass
 distribution peak where a signal would. As CMS does~\cite[Sec.~6.2]{cmspart}, we select on
@@ -293,9 +295,11 @@ A ratio is formed from the two configurations' means over their runs, as the tab
 configurations are said to differ only when $|\Delta|$ exceeds three times $\sigma$, where $\Delta$ is the
 difference of their means over all their runs and $\sigma^2$ is the sum of the variance of each configuration
 over its runs and the variance of $\Delta$ over paired bootstrap resamples of the test jets, on which every model
-is scored (appendix~\ref{sec:app-tests}).
+is scored (appendix~\ref{sec:app-tests}). Otherwise the difference is not resolved, and its test resolves no
+difference smaller than $3\sigma$, which we give as a share of the reference configuration's value, of its errors
+$1-\AUC$ for an AUC.
 Where the two sides are scored on independent test samples, Herwig against Pythia jets, each sample is
-resampled separately and the two bootstrap variances add. \pending{One sentence (LEDGER SC-2): the rows whose $\sigma$
+resampled separately and the two bootstrap variances add. \pending{One sentence: the rows whose $\sigma$
 uses the paired bootstrap, those that use an unpaired analytic term (binomial for accuracy, $\AUC(1-\AUC)/\min(n_S,
 n_B)$ per network for the AUC) and those whose $\sigma$ is a lower bound, which back only a null.}
 Table~\ref{tab:tests} gives this test for every difference the text states.

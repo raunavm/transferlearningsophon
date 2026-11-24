@@ -14,14 +14,15 @@ After fine-tuning, on JetClass the
 \Kres- and \Kmid-class models are \pending{table~\ref{tab:summary} after the reruns} (table~\ref{tab:summary}).
 % CHECK: recompute from Table 1 after the JetClass 1e6 rerun and re-test at 3 sigma (PI SP-11): the 17-class cost must pass and the 162- and 43-class differences read "consistent" for this sentence to stand as written
 On top tagging and quark/gluon discrimination the fine-tuned label sets show no
-resolved difference (table~\ref{tab:summary}).
+resolved difference (tables~\ref{tab:summary} and~\ref{tab:tests}).
 With the missing inputs set to zero, the $R_{30}$ difference on top tagging between a linear probe on the frozen
 features of the \Kfull-class model and one on the random network with BatchNorm recomputed is not resolved
-(\MlstLpTopRthirtyFullOverInitBnZeroPr{}), nor is it for an MLP probe (\MlstMlpTopRthirtyFullOverInitBnPr{}); with the
+(smallest resolvable difference \MlstPwTopZeroInitBn{} of the random network's value), nor is it for an MLP probe (\MlstMlpTopRthirtyFullOverInitBnPr{}); with the
 substitution chosen on validation the linear probe reaches \MlstLpTopRthirtyFullOverInitBnPr{} of that network, and
 \MlstLpQgRthirtyFullOverInitBnPr{} on quark/gluon discrimination (tables~\ref{tab:fill} and~\ref{tab:summary}).
-On top tagging the zero value, more than the missing information, keeps the
-frozen features from doing better than a random network. % CHECK: ...FullOverInitBnZeroPr reads the null and ...FullOverInitBnPr a direction on both tasks, each from its tab:tests row
+On top tagging, random draws in place of the zeros give the linear probe
+\MlstLpTopRthirtyDrawOverZeroFullPr{} that it gives with zeros; these tests do not separate the effect of the zero
+value from that of the missing information (section~\ref{sec:top}). % CHECK: ...FullOverInitBnZeroPr reads the null and ...FullOverInitBnPr a direction on both tasks, each from its tab:tests row
 
 The results translate into concrete choices for a pretraining label set. Keep every distinction that a
 downstream discriminant sums over, because a merge removes the discriminant from the output layer
@@ -36,9 +37,9 @@ flavor: merging them has no resolved effect on the resonant classes but costs th
 Add an auxiliary mass regression: it makes the jet mass more precisely readable from the frozen features
 (table~\ref{tab:mass}). Its effect on mass sculpting is not resolved: no mass network differs from its own label set by more
 than three times the uncertainty (table~\ref{tab:tests}). It shows no resolved cost to the classification of the
-pretraining classes, and after fine-tuning on top tagging neither label set with it shows a change beyond three
-standard deviations; \MlstMassNRunsWord{} runs per model cannot exclude a modest one
-(section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; the sculpting clause: gallery_placement.F10B_STATED is empty under L3 (no mass-regression difference beyond 3 sigma); M305 (the 17-class mass network's JetClass cost after fine-tuning) waits on Table 1 after the reruns
+pretraining classes, and after fine-tuning on top tagging its $R_{30}$ difference is not resolved at either label
+set, these tests resolving no difference smaller than \MlstPwTopMassRes{} and \MlstPwTopMassCoarse{} of the
+label set's value (section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; the sculpting clause: gallery_placement.F10B_STATED is empty under L3 (no mass-regression difference beyond 3 sigma); M305 (the 17-class mass network's JetClass cost after fine-tuning) waits on Table 1 after the reruns
 For benchmarks with missing inputs, compare label sets by fine-tuning with the missing input features
 set to zero, which gives every label set identical inputs; input dropout during pretraining, which
 replaces some inputs with zeros, is the published alternative~\cite{omnilearn,jpjepa}.
@@ -48,7 +49,7 @@ pretrained model cannot tell the two apart.
 
 The study has four limitations: all pretraining and every evaluation but the Herwig quark/gluon sample use a
 single simulation family; one architecture and one model size are studied; each label set
-has \MlstNRunsWord{} pretraining runs and every other configuration fewer; and the networks are initialized % the outline's wording "fewer for the controls" is widened: the mass models (two runs) and the kinematic-only model (one run) are not controls
+has \MlstNRunsWord{} pretraining runs and every other pretrained configuration fewer; and the networks are initialized % the outline's wording "fewer for the controls" is widened: the mass models (two runs) and the kinematic-only model (one run) are not controls
 with a different scheme from Sophon's code, so their absolute performance need not match Sophon's published
 model, while every comparison is between models trained here.
 

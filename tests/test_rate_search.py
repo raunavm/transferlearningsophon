@@ -274,6 +274,11 @@ def test_table_a15_separates_a_tie_at_four_decimals_and_keeps_a_sizes_rows_toget
     assert pre.endswith(r"\\*") and scratch.endswith(r" \\")
     assert "0.805604$^{\\ast}$" in scratch and "0.805599 &" in scratch and "0.8050 &" in scratch
     assert "0.8214$^{\\ast}$" in pre
+    # fourth review (C9): a row still searching separates the leading tie too (top 1e4 from scratch, 0.9174 twice)
+    open_row = [{"task": "qg", "n": 10_000, "kind": "scratch", "status": "searching", "best": None,
+                 "values": {"3e-4": None, "1e-3": 0.917412, "3e-3": 0.917381}}]
+    line = next(ln for ln in M.table_lrsweep(open_row).splitlines() if M.SCRATCH_LABEL in ln)
+    assert "0.91741 &" in line and "0.91738 &" in line and "$^{\\ast}$" not in line
 
 
 def test_rerun_parts_split_the_label_sets_and_scratch_from_the_rest():

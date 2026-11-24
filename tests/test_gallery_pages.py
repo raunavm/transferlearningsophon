@@ -318,7 +318,8 @@ def test_the_pair_figures_draw_the_random_partitions_that_merge_the_pair_apart_f
                 assert any("\\" + u + "{}" in tex[f] for u in used), (f, used)
             partly[key] = sum(st[a][key] == "partly" for a in M.RAND)
     assert partly == {"bb_vs_cc": 0, "bc_vs_bq_cs": 1, "bbqq_vs_ccqq": 0}
-    assert r"\MlstPairRandPartlyBcWord{} partial merger of $X\to bc$ left out" in tex["results_jc.tex"]
+    # fourth review (C3): the partial merger said in words
+    assert r"\MlstPairRandPartlyBcWord{}" + "\nmerging $X\\to bc$ with $bq$ or $cs$ alone left out" in tex["results_jc.tex"]
     assert to_hex(R.S.SERIES[R._style("RAND_APART")]) == to_hex(R.S.SERIES["RAND"]) != to_hex(R.S.SERIES["RAND_MERGED"])
 
 

@@ -15,10 +15,11 @@ downstream benchmarks. Every difference the text states is tested in table~\ref{
 
 The first question is which distinctions the frozen features keep on the \Kfull{} classes the networks
 were pretrained on, scored by linear probes on class-balanced test jets. This task favors finer label sets by
-construction, and the costs of the coarser levels below carry this bias. Three kinds of comparison are free of
+construction, and the costs of the coarser levels below carry this bias. Two kinds of comparison are free of
 it: the \Kres-class model on the resonant classes, since its labels keep every resonant class of the
-\Kfull-class model, the controls, which have as many classes as the \Kcoarse-class level, and the coarser task
-on which the \Kfull{} classes are merged into \Kcoarse{} groups.
+\Kfull-class model, and the controls, which have as many classes as the \Kcoarse-class level. The coarser task on
+which the \Kfull{} classes are merged into \Kcoarse{} groups carries the opposite bias, as it is the
+\Kcoarse-class labels' own task.
 
 Counted in wrongly ordered pairs of jets, a linear probe separates the \Kfull{} classes worse at every coarser
 level of the hierarchy, and the largest step is the merge of quark flavor between \Kmid{} and \Kcoarse{}
@@ -29,9 +30,12 @@ classes costs more than the step from \Kres{} to \Kmid{} classes, although it me
 one kind of distinction where the other removes three. In accuracy the largest step is the other one: the accuracy
 falls from \Kres{} to \Kmid{} and to \Kcoarse{} classes, most between \Kres{} and \Kmid{} classes
 (figure~\ref{fig:F2}(a); tables~\ref{tab:summary} and~\ref{tab:tests}); between \Kfull{} and \Kres{} classes it does
-not differ by more than three standard deviations. Scored instead on the \Kcoarse{} groups of the \Kcoarse-class
-labels, the task those labels are trained on, linear probes on the \Kres-, \Kmid- and \Kcoarse-class models do
-not differ from the \Kfull-class model by more than three standard deviations (table~\ref{tab:coarse}).
+not differ by more than three standard deviations (smallest resolvable difference \MlstPwAccResLp{} of the
+\Kfull-class accuracy). Scored instead on the \Kcoarse{} groups of the \Kcoarse-class labels, the task those labels
+are trained on, linear probes on the \Kres-, \Kmid- and \Kcoarse-class models do not differ from the \Kfull-class
+model by more than three standard deviations (smallest resolvable difference \MlstPwCoarseTask{} of the
+\Kfull-class accuracy; tables~\ref{tab:coarse} and~\ref{tab:tests}). Even on the task that favors them, the coarser
+labels give the frozen features no resolved advantage over the \Kfull{} classes.
 % PI 2026-11-23 (LEDGER TX-2): "costliest" and "largest step" name their metric and rest on the largest step minus the
 % next-largest in tab:tests: in AUC (17 - 43) - (43 - 162) passes (-4.96 sigma, the quark-flavor merge), in accuracy the
 % same row passes the other way (+3.94 sigma, the 162 -> 43 step), so both are given here, in the intro and discussion.
@@ -63,12 +67,13 @@ with the missing-input substitutions).}
 JetClass}, and no label set, mass network or partition differs from \Kfull{} classes in $R_{30}$ by more than three
 standard deviations (\MlstPwRthirtyFt{} of its value) in top-quark against QCD and quark against gluon jets. Accuracy
 and $R_{30}$ are defined as in figure~\ref{fig:F2}, after fine-tuning, missing inputs set to zero, on \FtSizeESix{}
-jets or the full top and quark/gluon training sets (table~\ref{tab:summary}).
+jets or the full top and quark/gluon training sets.
 % CHECK: panel (a) draws every network once the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks reads out (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40)
 The same network trained from scratch replaces the random network, and the released Sophon checkpoint enters as a
 frozen-feature reference (figure~\ref{fig:F2}). Circles, bars and band are as in figure~\ref{fig:F2}, over
 \MlstNRunsWord{} runs per label set and from scratch, \MlstMassNRunsWord{} per mass network and flavor-boundary
-partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions, whose bar is their spread.}
+partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions, whose bar is their spread
+(table~\ref{tab:summary}).}
 \label{fig:F2-ft}
 \end{figure}
 
@@ -76,13 +81,15 @@ partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions
 % CHECK: F2-ft(c) every difference between label sets on top tagging within the run-to-run SD (gallery data_note: SD 56 to 151).
 
 On the resonant classes the difference between the \Kres- and the \Kfull-class model is not resolved, under the
-linear probe (\MlstCmpJcTwoResResOverFullPr) and under the MLP probe (\MlstMlpCmpJcTwoResResOverFullPr{};
+linear probe (smallest resolvable difference \MlstPwResonantRes{} of the \Kfull-class model's errors) and under the
+MLP probe (\MlstMlpCmpJcTwoResResOverFullPr{};
 table~\ref{tab:mlp}), so this is not a limit of what a linear classifier can read. Its cost lies in the QCD classes it
 merges, on which a linear probe makes \MlstCmpJcTwoQcdResOverFullPr{} (tables~\ref{tab:summaryauc}
 and~\ref{tab:tests}). The merge from \Kfull{} to \Kres{} classes moves no boundary between resonant classes: it
-removes only the division of QCD jets by their numbers of $b$, $c$ and $s$ quarks, and with it only a
-discriminant that weights each QCD subclass separately (section~\ref{sec:labelsets}). Only an analysis that needs
-that subdivision pays for the merge.
+removes only the division of QCD jets by their numbers of $b$, $c$ and $s$ quarks. That costs any use of the
+frozen features that separates QCD jets by flavor, as on the QCD pairs of figure~\ref{fig:F4-qcd}, and removes
+from the output layer any discriminant that weights each QCD subclass separately
+(section~\ref{sec:labelsets}).
 % CHECK: MlstCmpJcTwoQcdResOverFull > 1 beyond 3 sigma in its tab:tests row (today 1.087 +- 0.006).
 
 At a fixed number of classes, which classes are merged changes the cost. A random partition with
@@ -113,14 +120,15 @@ After fine-tuning on \FtSizeESix{} class-balanced jets, the \Kcoarse-class model
 \MlstCmpJcTwoCoarseOverFullPr{} (tables~\ref{tab:summaryauc} and~\ref{tab:tests}). Per class, the \Kcoarse-class loss
 is broad: with linear probes, \MlstJcTwoRecallCoarseLowClasses{} of the \Kfull{} classes are recalled less often
 than by the \Kfull-class model and \MlstJcTwoRecallCoarseHighClassesWord{} more often, beyond three standard
-deviations over runs and test jets, and after fine-tuning \pending{table~\ref{tab:summary} after the reruns}
+deviations over runs and test jets, where chance alone gives about \MlstJcTwoRecallChanceOneSide{} class in each
+direction, and after fine-tuning \pending{table~\ref{tab:summary} after the reruns}
 (figure~\ref{fig:PC-jc2}).
 % CHECK: the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40) fills Table 1's fine-tuned JetClass-II column and PC-jc2's right half; write the fine-tuned clause from them, tested at 3 sigma
 
 \begin{figure}[t]
 \centering
 \paperfig{\linewidth}{PC-jc2}
-\caption{The \Kcoarse-class loss on JetClass-II is spread over most of its \Kfull{} classes. Each point is one
+\caption{The \Kcoarse-class loss on JetClass-II is spread over most of the \Kfull{} classes. Each point is one
 class's recall, the fraction of its test jets assigned to it, for the \Kres-, \Kmid- or \Kcoarse-class model
 against the \Kfull-class model, from linear probes on frozen features (left) and after fine-tuning (right) on
 \FtSizeESix{} class-balanced jets; points below the diagonal are recalled less often. Their mean weighted by test
@@ -145,13 +153,13 @@ decay topology, and the pair stays readable.
 The \Kmid-class labels, which merge every decay with its lepton-flavor counterpart, also remove a distinction
 that the finer labels keep: on $X\to ee$ against $X\to\mu\mu$ the AUC of a linear probe falls to
 \MlstLpEemmAucMid{}, against \MlstLpEemmAucFull{} at \Kfull{} classes and \MlstLpEemmAucInitBn{} for the
-random network with BatchNorm recomputed (table~\ref{tab:tests}).
+random network with BatchNorm recomputed (tables~\ref{tab:pairauc} and~\ref{tab:tests}).
 
 The output layer can lose a discriminant while the frozen features keep most of what it needs. The
 boosted $|V_{cb}|$ measurement uses the scores of $X\to bq$ and $X\to cs$ in the denominator of its
 discriminant $D_{bc}$~\cite{vcbboosted}, so these classes must be told apart from $X\to bc$. In separating
 them, the difference between the \Kres- and the \Kfull-class features is not resolved, under the linear probe
-(\MlstCmpBcResOverFullPr) and the MLP probe (\MlstMlpCmpBcResOverFullPr{}; table~\ref{tab:mlp}). At \Kmid{}
+(smallest resolvable difference \MlstPwBcRes{} of the \Kfull-class model's errors) and the MLP probe (\MlstMlpCmpBcResOverFullPr{}; table~\ref{tab:mlp}). At \Kmid{}
 classes, where $X\to bc$ and $X\to bq$ share a class and $D_{bc}$ can no longer be formed, a linear probe makes
 only \MlstCmpBcMidOverFullPr{}; at \Kcoarse{} classes, which remove flavor altogether, it makes
 \MlstCmpBcCoarseOverFullPr{} (figure~\ref{fig:F4-mech}; tables~\ref{tab:pairauc} and~\ref{tab:tests}).
@@ -163,8 +171,8 @@ recovers part of the loss of the \Kcoarse-class level on both pairs, neither of 
 \MlstCmpBbFoneOverCoarsePr{} of the \Kcoarse-class level on $X\to b\bar b$ against $X\to c\bar c$ and
 \MlstCmpBcFoneOverCoarsePr{} on $X\to bc$ against $X\to bq$ and $X\to cs$. The partition with a random flavor
 boundary recovers part of it on the second pair (\MlstCmpBcFonerOverCoarsePr), while the partition with no
-flavor boundary does not differ there from the \Kcoarse-class level by more than three standard deviations,
-under the linear probe or the MLP probe (\MlstMlpCmpBcFzeroOverCoarsePr{}; figure~\ref{fig:F4-mech};
+flavor boundary does not differ there from the \Kcoarse-class level by more than three standard deviations
+(smallest resolvable difference \MlstPwBcFlavZero{} of its errors), under the linear probe or the MLP probe (\MlstMlpCmpBcFzeroOverCoarsePr{}; figure~\ref{fig:F4-mech};
 tables~\ref{tab:pairauc}, \ref{tab:tests} and~\ref{tab:mlp}). On $X\to YY\to b\bar bqq$ against $X\to YY\to c\bar cqq$, which the
 $b$-quark boundary does cut, the partition with a random flavor boundary makes \MlstCmpBbqqFonerOverFonePr{}
 than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}; tables~\ref{tab:pairauc} and~\ref{tab:tests}).
@@ -175,15 +183,14 @@ than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}; tables~
 \paperfig{\linewidth}{F4-mech}
 \caption{Linear probes on \Kcoarse{} classes, which merge each pair, separate $X\to b\bar b$ from $c\bar c$ and $X\to bc$
 from $bq$, $cs$, the second-named the background, worse than \Kfull{} classes, and the $b$-quark boundary recovers
-part of both losses. Panels show one over the background fraction kept against the signal fraction, with
-ratios to \Kfull{} classes. Curves average \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per mass network
-and flavor-boundary partition, and \RandVtwoRuns-run random partitions apart for the \MlstPairRandMergedBbWord{}
-($X\to b\bar b$) or \MlstPairRandMergedBcWord{} ($X\to bc$) merging the pair and \MlstPairRandApartMechWord{}
-keeping it apart, \MlstPairRandPartlyBcWord{} partial merger of $X\to bc$ left out, \Kfull{} and \Kcoarse{} classes repeated beside
-them. They end below \MlstMinBkgPass{} passing background jets, and \Kfull{} classes' one-standard-deviation band
-combines run spread and binomial uncertainty. The random network, not drawn, reaches
-\MlstPairInitRhalfMechMin{}--\MlstPairInitRhalfMechMax{} at 50\% of signal jets. Table~\ref{tab:tests} tests the
-differences.}
+part of both losses (table~\ref{tab:tests}). Panels show one over the background fraction kept against the signal
+fraction, with ratios to \Kfull{} classes. Curves average \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{}
+per mass network and flavor-boundary partition, and \RandVtwoRuns-run random partitions in two groups, the
+\MlstPairRandMergedBbWord{} ($X\to b\bar b$) or \MlstPairRandMergedBcWord{} ($X\to bc$) merging the pair and
+\MlstPairRandApartMechWord{} keeping it apart, beside \Kfull{} and \Kcoarse{} classes, \MlstPairRandPartlyBcWord{}
+merging $X\to bc$ with $bq$ or $cs$ alone left out. Curves end where under \MlstMinBkgPass{} background jets
+pass, and the \Kfull-class one-standard-deviation band combines run spread and binomial uncertainty. The random
+network, not drawn, reaches \MlstPairInitRhalfMechMin{}--\MlstPairInitRhalfMechMax{} at 50\% of signal jets.}
 \label{fig:F4-mech}
 \end{figure}
 

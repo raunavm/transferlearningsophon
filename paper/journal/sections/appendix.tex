@@ -206,8 +206,8 @@ the best validation accuracy over the whole schedule is kept; training never sto
 validation jets hold no jet of the \FtValAbsentClasses{} classes whose held-out jets the largest training set uses
 up. The pretrained layers train at a constant learning rate and the new head, hidden layer included, at
 \FtHeadCap. The networks trained from
-scratch train every weight at one rate with the training framework's default schedule, constant and then
-lowered near the end. The weight decay is \FtBudgetWeightDecay{} throughout. Top and quark/gluon are
+scratch train every weight at one rate with the schedule of the full sets, constant and then lowered to
+\MlstFtHeadDecayTo{} of its value over the last \MlstFtHeadDecayShare{} of the training. The weight decay is \FtBudgetWeightDecay{} throughout. Top and quark/gluon are
 fine-tuned on \FtSizeEThree, \FtSizeEFour{} and \FtSizeEFive{} jets below their full sets; JetClass and
 class-balanced JetClass-II on \FtSizeEFour, \FtSizeEFive{} and \FtSizeESix. On every task every pretrained network,
 controls included, is fine-tuned on the largest training set, on JetClass-II all \FtJcTwoNetsESix{}; at the smaller
@@ -309,7 +309,7 @@ The substitution for each task is the one whose linear probes have the lowest va
 over all models, and it is applied to every model, the random network included:
 \LpSubstitutionTop{} for top and \LpSubstitutionQg{} for quark/gluon. Table~\ref{tab:summary} gives $R_{30}$ on
 top and quark/gluon tagging under the chosen substitution, and table~\ref{tab:fill} under the other two, for
-every network, the random network with recomputed BatchNorm statistics included.
+every pretrained network and the random network with recomputed BatchNorm statistics.
 
 
 % ----------------------------------------------------------------------------
@@ -400,8 +400,8 @@ and $R_{30}$ of \MlstATenInitRthirtyMin{}--\MlstATenInitRthirtyMax{} over these 
 second-named the background, which \Kcoarse{} classes merge, less well than \Kfull{} classes. Panels, drawn as in
 figure~\ref{fig:F4-mech}, show (a) the label sets and (b) the \Kcoarse-class partitions. Curves average
 \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and
-\RandVtwoRuns{} per random partition, \MlstPairRandMergedBbqqN{} of them merging the pair and
-\MlstPairRandApartBbqqN{} keeping it apart, with \Kfull{} and \Kcoarse{} classes repeated in (b). The random
+\RandVtwoRuns{} per random partition, \MlstPairRandMergedBbqqWord{} of them merging the pair and
+\MlstPairRandApartBbqqWord{} keeping it apart, with \Kfull{} and \Kcoarse{} classes repeated in (b). The random
 network, not drawn, reaches \MlstPairInitRhalfOtherMin{} at
 50\% of signal jets. Figure~\ref{fig:F4-qcd} shows the three QCD pairs, and table~\ref{tab:tests} has the tested
 differences.}

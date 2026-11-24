@@ -618,6 +618,8 @@ def test_a_stages_gpu_hours_are_the_sum_of_its_printed_hours():
     rows = M.table_compute_stages({}, {"L188": []}, MT.fmt_int, ft_h=fth).splitlines()
     printed = [int(ln.split(" & ")[-1].removesuffix(r" \\").replace("{,}", "")) for ln in rows if "fine-tuning" in ln]
     assert printed == [2075 + 770, 506] and em.m["MlstFtGpuHours"] == MT.fmt_int(sum(printed))
+    # fourth review (B6): the rate searches' share the text quotes is printed in the table
+    assert rows[-3] == r"\quad of which choosing the learning rates &  & 701 \\" and em.m["MlstFtGpuHoursSearch"] in ("701", 701)
 
 
 def test_tab_sets_keeps_the_one_row_order_and_defines_the_recomputed_random_network():
@@ -2941,9 +2943,9 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
     assert M._runs("set", "mass") == lead + r", \MlstMassNRunsWord{} per mass network."
     assert M._runs("set", "flav") == lead + r", \MlstMassNRunsWord{} per flavor-boundary partition."
     assert M._runs("set", "flav", "mass", "rand") == M._runs("set", "flav", "mass", "rand", "init", "scratch") == (
-        lead + r", \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and over five random "
-               "partitions.")
-    assert M._runs("set", "rand") == lead + " and over five random partitions."
+        lead + r", \MlstMassNRunsWord{} per mass network and flavor-boundary partition, and five one-run random "
+               "partitions.")      # fourth review (B11; LEDGER CA-8): one run each, in every caption with the row
+    assert M._runs("set", "rand") == lead + " and five one-run random partitions."
     # a supplement copy with each random partition on its own row says so ("rand1")
     assert M._runs("set", "rand", "rand1") == M._runs("set", "rand") + " Each random partition is a single run on its own row."
     assert M.printed_caption("summary").endswith(M._runs("set", "flav", "mass", "rand"))
@@ -4348,8 +4350,9 @@ def test_the_per_class_count_of_the_jetclass_ii_sentence_is_the_build_s_and_chec
 
 def test_a_mean_and_sd_print_alike_in_every_table_and_bold_ties_only_at_the_printed_values():
     """Review of 5c40d69: (A8, LEDGER TN-4) a mean +- SD prints at its SD's place whatever the column's floor, so
-    tab:published prints Table 1's 1,800 +- 60, not 1,799 +- 56; (C, LEDGER BD-1) bold compares the values as printed,
-    so 36.9 +- 0.9 and 37 +- 4 do not tie."""
+    tab:published prints Table 1's 1,800 +- 60, not 1,799 +- 56. Fourth review (B8, LEDGER BD-1): the best is decided
+    at full precision, and a value ties with it at the printed place of the coarser of the two, so 37 +- 4 (36.62) is
+    bold beside the best 36.9 +- 0.9 (36.91), never instead of it."""
     tok = M.V4.tok
     assert M._render("p", [1799.4, 56.0], 0, floor=0) == r"1{,}800\,$\pm$\,60" == M._render("p", [1799.4, 56.0], -1)
     assert M._render("s", [1802.8], -1, floor=0) == "1{,}800" + M.SINGLE
@@ -4357,4 +4360,10 @@ def test_a_mean_and_sd_print_alike_in_every_table_and_bold_ties_only_at_the_prin
                      f"a & {tok('p', 36.91, 0.9)} \\\\", f"b & {tok('p', 36.62, 4.0)} \\\\", r"\bottomrule",
                      r"\end{tabular}"])
     out = M._bold("summary", tab)
-    assert M.V4.TOK_OPEN + "P 36.62" in out and M.V4.TOK_OPEN + "P 36.91" not in out
+    assert M.V4.TOK_OPEN + "P 36.62" in out and M.V4.TOK_OPEN + "P 36.91" in out
+    # 36 +- 4 (36.4) reads 36 against the best's 37 at the coarser place: the best alone; a coarser best (37.3 +- 4)
+    # ties with 36.9 +- 0.9, which reads 37 at that place
+    for a, b, want in ((36.91, 36.4, {"P 36.91"}), (36.91, 37.3, {"P 36.91", "P 37.3"})):
+        tab2 = tab.replace(tok("p", 36.91, 0.9), tok("p", a, 0.9)).replace(tok("p", 36.62, 4.0), tok("p", b, 4.0))
+        out2 = M._bold("summary", tab2)
+        assert {k for k in (f"P {a}", f"P {b}") if M.V4.TOK_OPEN + k in out2} == want, (a, b)

@@ -77,16 +77,15 @@ CAPTIONS = {
     # the figure's row names say, and so does this one; review of render 5f4e1b8: the partition counts per pair in words
     "F4-mech": (
         'Linear probes on 17 classes, which merge each pair, separate X→bb̄ from cc̄ and X→bc from bq, cs, the '
-        'second-named the background, worse than 188 classes, and the b-quark boundary recovers part of both losses. '
-        'Panels show one over the background fraction kept against the signal fraction, with ratios to 188 classes. '
-        'Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass network and '
-        'flavor-boundary partition, and {m:RandVtwoRuns}-run random partitions apart for the '
+        'second-named the background, worse than 188 classes, and the b-quark boundary recovers part of both losses '
+        '(table {tab:tests}). Panels show one over the background fraction kept against the signal fraction, with '
+        'ratios to 188 classes. Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass '
+        'network and flavor-boundary partition, and {m:RandVtwoRuns}-run random partitions in two groups, the '
         '{m:MlstPairRandMergedBbWord} (X→bb̄) or {m:MlstPairRandMergedBcWord} (X→bc) merging the pair and '
-        '{m:MlstPairRandApartMechWord} keeping it apart, {m:MlstPairRandPartlyBcWord} partial merger of X→bc left out, '
-        '188 and 17 classes repeated beside them. They end below {m:MlstMinBkgPass} passing background jets, and 188 '
-        'classes\' one-standard-deviation band combines run spread and binomial uncertainty. The random network, not '
-        'drawn, reaches {m:MlstPairInitRhalfMechMin}–{m:MlstPairInitRhalfMechMax} at 50% of signal jets. Table '
-        '{tab:tests} tests the differences.'
+        '{m:MlstPairRandApartMechWord} keeping it apart, beside 188 and 17 classes, {m:MlstPairRandPartlyBcWord} '
+        'merging X→bc with bq or cs alone left out. Curves end where under {m:MlstMinBkgPass} background jets pass, '
+        'and the 188-class one-standard-deviation band combines run spread and binomial uncertainty. The random '
+        'network, not drawn, reaches {m:MlstPairInitRhalfMechMin}–{m:MlstPairInitRhalfMechMax} at 50% of signal jets.'
     ),
     "ROC-main": (
         'Background rejection against signal efficiency with linear probes on frozen features, the mean over runs. '
@@ -163,7 +162,7 @@ CAPTIONS = {
         "17 classes merge, less well than 188 classes. Panels, drawn as in figure {fig:F4-mech}, show (a) the label "
         "sets and (b) the 17-class partitions. Curves average {m:MlstNRunsWord} runs per label set, "
         "{m:MlstMassNRunsWord} per mass network and flavor-boundary partition, and {m:RandVtwoRuns} per random "
-        "partition, {m:MlstPairRandMergedBbqqN} of them merging the pair and {m:MlstPairRandApartBbqqN} keeping it "
+        "partition, {m:MlstPairRandMergedBbqqWord} of them merging the pair and {m:MlstPairRandApartBbqqWord} keeping it "
         "apart, with 188 and 17 classes repeated in (b). The random network, not drawn, reaches {init_bbqq} at 50% of signal jets. The three QCD pairs are in "
         "the next figure, and table {tab:tests} has the tested differences."
     ),

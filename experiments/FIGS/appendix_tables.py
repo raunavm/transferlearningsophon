@@ -178,7 +178,8 @@ def table_vocabulary(rows: list[dict]) -> str:
     for r in rows:
         for rung in SHOWN:
             order[rung].setdefault(r[rung], len(order[rung]))
-    key = lambda r: tuple(order[g][r[g]] for g in ("R16_Q1", "R42_Q1", "R63_Q1")) + (int(r["jet_label"]),)
+    # fourth review (C11): the blocks in the order of their 17-class group numbers, as the caption says they are numbered
+    key = lambda r: (int(r["R16_Q1"]),) + tuple(order[g][r[g]] for g in ("R42_Q1", "R63_Q1")) + (int(r["jet_label"]),)
     sizes = {rung: len({r[rung] for r in rows}) for rung in RUNGS}
     members = collections.OrderedDict()
     for r in sorted(rows, key=key):
