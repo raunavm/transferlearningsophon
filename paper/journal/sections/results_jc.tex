@@ -142,7 +142,9 @@ that the finer labels keep: on $X\to ee$ against $X\to\mu\mu$ the AUC of a linea
 random network with BatchNorm recomputed, so the \Kmid-class features separate the two less well than those of that
 random network. At \Kcoarse{} classes, which merge them too, it is \MlstLpEemmAucCoarse{},
 whose difference from \Kfull{} classes is not resolved (smallest resolvable difference \MlstPwEeCoarse{} in AUC,
-the \Kfull-class errors being too few for a share; tables~\ref{tab:pairauc} and~\ref{tab:tests}).
+the \Kfull-class errors being too few for a share). Under the MLP probe it is \MlstMlpEemmAucCoarse{} against
+\MlstMlpEemmAucFull{} at \Kfull{} classes, a difference not resolved either (smallest resolvable difference
+\MlstPwEeCoarseMlp{} in AUC; tables~\ref{tab:pairauc} and~\ref{tab:tests}).
 
 The output layer can lose a discriminant while the frozen features keep most of what it needs. The
 boosted $|V_{cb}|$ measurement uses the scores of $X\to bq$ and $X\to cs$ in the denominator of its
