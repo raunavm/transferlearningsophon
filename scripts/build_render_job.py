@@ -179,21 +179,42 @@ RELEASE = {"check": "", "what": "data release", "suffix": "-release", "texdir": 
 """}
 
 
+# the rewrite's checkpoint (PI 2026-11-24, LEDGER RW-10): Tables 1-3 and the abstract's numbers from the build
+# (experiments/FIGS/mlst_v2_tables.py, which stops when a clause of the abstract has no passing test), then
+# paper/journal/v2/checkpoint.tex; no figure is drawn
+CHECKPOINT = {"what": "rewrite checkpoint", "suffix": "-checkpoint", "texdir": "paper/journal/v2", "texfile": "checkpoint",
+              "draw": """          pip install --no-cache-dir -q pymupdf==1.26.7 || exit 1
+          python3 experiments/FIGS/mlst_v2_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
+          tail -n 60 ${OUT}/tables.txt
+          grep -q "^V2 TABLES COMPLETE" ${OUT}/tables.txt || exit 3
+""",
+              "collect": """          mkdir -p ${OUT}/paper/journal/v2
+          cp -rf paper/journal/v2/tables ${OUT}/paper/journal/v2/ 2>/dev/null
+          cp -f paper/journal/v2/checkpoint.pdf ${OUT}/checkpoint.pdf 2>/dev/null
+""",
+              "check": """          python3 scripts/overfull_floats.py ${OUT}/tectonic.txt paper/journal/v2 > ${OUT}/overfull.txt 2>&1; rc=$?
+          cat ${OUT}/overfull.txt
+          [ "${rc}" -eq 0 ] || { echo "FATAL: the checkpoint build stops on an overfull float (overfull.txt)"; exit 4; }
+"""}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mockups", action="store_true", help="the figure mock-ups instead of the paper")
     ap.add_argument("--book", action="store_true", help="the results book (main text and appendix) instead of the paper")
     ap.add_argument("--release", action="store_true", help="the data release (experiments/FIGS/data_release.py)")
+    ap.add_argument("--checkpoint", action="store_true", help="the rewrite's checkpoint PDF (paper/journal/v2/checkpoint.tex)")
     ap.add_argument("--preview", action="store_true", help="today's partial results (MLST_FT_PREVIEW=1), the book, the paper or the release")
     storage_line.add_argument(ap)
     a = ap.parse_args()
-    mode = MOCKUPS if a.mockups else BOOK if a.book else RELEASE if a.release else PAPER
+    mode = MOCKUPS if a.mockups else BOOK if a.book else RELEASE if a.release else CHECKPOINT if a.checkpoint else PAPER
     release = mode is RELEASE
     if a.preview:
         if mode is MOCKUPS:
             raise SystemExit("FATAL: --preview is for the book, the paper or the release")
         # PI 2026-11-22: the paper read end to end while the reruns run: its tables from the partial read-out
-        mode = {**mode, "suffix": "-bookpreview" if mode is BOOK else "-releasepreview" if release else "-preview",
+        mode = {**mode, "suffix": ("-bookpreview" if mode is BOOK else "-releasepreview" if release
+                                   else "-checkpoint" if mode is CHECKPOINT else "-preview"),
                 "what": f"{mode['what']} (preview of partial results)",
                 "draw": "          export MLST_FT_PREVIEW=1\n" + mode["draw"]}
     line = storage_line.check(a.storage_line)
