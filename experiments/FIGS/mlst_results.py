@@ -5205,8 +5205,12 @@ TESTS = (
     # review of 5c40d69 (B4, LEDGER CS-18): the multilayer-perceptron probe beside the linear-probe nulls where tab:mlp
     # holds it like for like, the partition with no flavor boundary against 17 classes on X->bc and the 188-class
     # network against the random network on top tagging with the missing inputs at zero (bootstrap pending)
-    (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], (("L162", "L188", None), ("R16_Q1", "L188", None),
-                                                          ("FLAV_F0", "R16_Q1", None))),
+    # PI 2026-11-24 (LEDGER SC-2c): 17 - 188 from the CPU refit on the family's EPYC 7402P (bs3-mlp-bcpair), equal to
+    # fits_v5_mlp bit for bit, and its paired bootstrap (bs3-boot-bcpair)
+    (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"],
+     (("L162", "L188", None),
+      ("R16_Q1", "L188", ("file", "l3_bs3/mlp_jc2bal_pairs_bc_vs_bq_cs.json", "r16q1-188", "auc")),
+      ("FLAV_F0", "R16_Q1", None))),
     # tab:coarse: the label sets scored on the 17 merged groups
     (r"JetClass-II, accuracy on the 17 merged groups, " + HEADING["lp"],
      tuple((a, "L188_17", ("file", "l3_v5/probe_jc2bal_R16_Q1_N1000000.json", d, "accuracy"))
@@ -5272,6 +5276,8 @@ PR_ROWS = {
     "MlstCmpBbMidOverFullPr": (_BB, "R42_Q1", "L188", "a difference within three standard deviations"),
     # MlstCmpBcResOverFull: its null now prints its PW-1 share (fourth review, B1/C5)
     "MlstMlpCmpBcResOverFullPr": (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], "L162", "L188", _NULL),
+    # PI 2026-11-24 (LEDGER SC-2c, DL-9): the MLP probe beside the linear probe at 17 classes on X->bc
+    "MlstMlpCmpBcCoarseOverFullPr": (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], "R16_Q1", "L188", _NO_MORE),
     "MlstCmpBcMidOverFullPr": (_BC, "R42_Q1", "L188", "a difference within three standard deviations"),
     "MlstCmpBcCoarseOverFullPr": (_BC, "R16_Q1", "L188", _NO_MORE),
     "MlstCmpBbFoneOverCoarsePr": (_BB, "FLAV_F1", "R16_Q1", _same("errors")),
@@ -5402,6 +5408,9 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
         bs3_task = "qg_herwig" if "_qg_herwig_" in path else task
         if path.startswith("l3_bs3/mlp0_"):
             return lambda m: _mlp_val(mlp or {}, m, bs3_task, mkey if mkey in ("auc", "accuracy") else "r30")
+        if path.startswith("l3_bs3/mlp_jc2bal_pairs_"):     # SC-2c: tab:mlp's pair AUC (fits_v5_mlp), refitted bit for bit
+            pair = re.search(r"_pairs_([a-z_]+?)\.json$", path).group(1)
+            return lambda m: _mlp_val(mlp or {}, m, pair, mkey)
         if path.startswith("l3_bs3/mlp_jc2bal_R16_Q1_"):
             return lambda m: _bs3_val(bs3 or {}, "coarse", m, "jc2bal_coarse", "accuracy")
         if path.startswith("l3_bs3/mlp_jc2bal_"):
@@ -5788,7 +5797,9 @@ PW_ROWS = {
 # 17-class mass network differs from 188 classes in R30, above it on top tagging (the Fig. 2 caption)
 MLP_STATED = {("JetClass-II, accuracy on the 17 merged groups, " + HEADING["mlp"], "R16_Q1_17", "L188_17"): -1,
               (r"top tagging, $R_{30}$, " + HEADING["mlp"] + ", missing inputs as for the linear probe", "R16_Q1_MASS",
-               "L188"): 1}
+               "L188"): 1,
+              # SC-2c (PI 2026-11-24): on X->bc the MLP probe on the 17-class features falls below 188 classes
+              (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], "R16_Q1", "L188"): -1}
 MLP_N2 = tuple(rf"{h}, $R_{{30}}$, " + HEADING["mlp"] + ", missing inputs as for the linear probe"
                for h in ("top tagging", "quark/gluon tagging (Pythia)", "quark/gluon tagging (Herwig)"))
 
