@@ -36,18 +36,18 @@
 \op{5} \textit{4.2 Class pairs (Fig.~3: two pairs, label sets and random groupings).} A pair that differs only in a merged flavor ($X\to b\bar b$ against $X\to c\bar c$) becomes much harder to separate.
 \op{6} A pair loses little until the label set merges its flavor.
 \op{7} A discriminant summed from fine classes therefore needs those classes among the pretraining labels.
-\op{8} \textit{4.3 Fine-tuning (Table~3, Fig.~4: fine-tuning against training size).} JetClass: \pending{pending the fine-tuned JetClass cells}.
+\op{8} \textit{4.3 Fine-tuning (Table~3, Fig.~4: fine-tuning against training size).} JetClass accuracy falls from \VtwoFtJcOneFullPct\% at \Kfull{} to \VtwoFtJcOneCoarsePct\% at \Kcoarse{} classes, significant at \Kmid{} and \Kcoarse{} classes and not at \Kres; JetClass-II likewise.
 \op{9} Top tagging: no significant difference between label sets; one sentence on the run-to-run spread.
 \op{10} Quark--gluon discrimination: no significant difference; the same sentence.
-\op{11} Training size: \pending{pending the cells below the full sets}.
+\op{11} Training size: on JetClass-II the \Kcoarse-class model stays significantly behind at every training size; \pending{JetClass and the benchmarks: rows pending}.
 \op{12} Pretrained models against the network trained from scratch.
 \op{13} \textit{4.4 Jet mass (Table~4).} The mass regression sharpens the mass resolution obtained from the frozen features.
-\op{14} It has no significant cost in classification.
+\op{14} \changed{It has no significant cost in frozen-feature classification; fine-tuned, the \Kcoarse-class model with it is slightly but significantly less accurate.}
 \op{15} \textit{4.5 Resonance benchmark (Fig.~5: $X\to b\bar b$ and $X\to bs$).} Transfer learning on the frozen features loses signal efficiency for both resonances at \Kcoarse{} classes.
 \op{16} On $X\to bs$ the \Kfull-class model stays well above the same classifier trained from scratch.
 \osec{5 Discussion and conclusion}{about 600 words, prose}
 \op{1} A label set should keep the flavor distinctions that analyses read from frozen features or summed scores.
-\op{2} After fine-tuning: \pending{pending the JetClass result}.
+\op{2} After fine-tuning the cost of the coarsest labels is small but significant on JetClass and JetClass-II, and not seen on top tagging or quark--gluon discrimination.
 \op{3} Limitations in three sentences: one architecture and dataset; simulation only; one step merges several distinctions at once.
 \op{4} Conclusion.
 \osec{Appendix}{at most 15 pages}

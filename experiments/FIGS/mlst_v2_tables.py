@@ -278,7 +278,7 @@ FT_HEAD = [r" & JetClass-II & JetClass & Top tagging & Quark/gluon \\",
 
 
 def tables23(got: dict, maps: dict) -> tuple:
-    """(Table 2, Table 3, the fine-tuned cells that are pending as [(row, column)], Table 2's columns)."""
+    """(Table 2, Table 3, the fine-tuned cells that are pending as [(row, column)], Table 2's columns, Table 3's)."""
     R = got["R"]
     fits, fill, chosen, per, runs = got["summary"][:5]
     runs = R._pooled(runs)
@@ -318,39 +318,53 @@ def tables23(got: dict, maps: dict) -> tuple:
                 "Bold: best pretrained model.", "tab:finetuned",
                 [r"\begin{tabular}{@{}l" + "c" * len(ft_cols) + "@{}}", r"\toprule", *FT_HEAD, *body, r"\bottomrule",
                  r"\end{tabular}"])
-    return t2, t3, pending, lp_cols
+    return t2, t3, pending, lp_cols, ft_cols
 
 
-# The abstract's clauses (LEDGER RW-9) and the tested differences behind each: (clause, heading of the build's table of
-# tests, first network, second network, what must hold: "below" / "above" (first minus second beyond 3 sigma) or
-# "null" (within 3 sigma); "report": printed, never a stop (the abstract does not state it)).
-def claims(R) -> tuple:
+# The clauses of the abstract, the introduction and the outline (LEDGER RW-9) and the tested differences each rests on:
+# (clause, heading of the build's table of tests, first network, second network, what must hold: "below" / "above"
+# (first minus second beyond 3 sigma) or "null" (within 3 sigma); "report": printed, never a stop (not stated)).
+def claims(R, tested: dict) -> tuple:
     lp, ft = R.HEADING["lp"], R.HEADING["ft"]
     acc, auc = f"JetClass-II, accuracy, {lp}", f"JetClass-II, AUC, {lp}"
     pair = lambda k: f"{R._PAIR[k]}, AUC, {lp}"                    # noqa: E731
     top, qg = f"top tagging, $R_{{30}}$, {ft}", f"quark/gluon tagging (Pythia), $R_{{30}}$, {ft}"
+    jc1, jc2 = f"JetClass, accuracy, {ft}", f"JetClass-II, accuracy, {ft}"
+    sizes = sorted(h for h, a, b in tested if h.startswith(jc2 + ", ") and (a, b) == ("R16_Q1", "L188"))
+    if not sizes:
+        raise SystemExit("FATAL: no tested difference of fine-tuned JetClass-II below the largest training set")
     mass = "jet mass, resolution, multilayer-perceptron probe on the frozen features"
     mlp = "JetClass-II, AUC, multilayer-perceptron probe on the frozen features"
     less = "coarser labels: the 188 classes identified less accurately"
     pairs = "decays that differ only in a merged flavor are harder to separate"
     rand = "random groupings into 17 classes lose far less"
+    jet = "after fine-tuning the coarsest set remains worse on JetClass"
+    out = "outline 4.3: JetClass significant at 43 and 17 classes, not at 162; JetClass-II likewise; every training size"
     null = "no significant difference on top tagging and quark-gluon after fine-tuning"
     sharp = "mass regression sharpens the mass resolution of the frozen features"
-    cost = "mass regression: no significant cost in classification"
-    return ((less, acc, "L162", "L188", "report"), (less, auc, "L162", "L188", "below"), (less, acc, "R42_Q1", "L188", "below"), (less, acc, "R16_Q1", "L188", "below"),
+    cost = "mass regression: no significant cost in frozen-feature classification"
+    ftcost = "outline 4.4: fine-tuned, the 17-class model with mass regression is less accurate on JetClass"
+    notsaid = "not stated (the RW-9 draft's unscoped 'no significant cost in classification')"
+    return ((less, acc, "L162", "L188", "report"), (less, auc, "L162", "L188", "below"), (less, acc, "R42_Q1", "L188", "below"),
+            (less, acc, "R16_Q1", "L188", "below"),
             (pairs, pair("bb_vs_cc"), "R16_Q1", "L188", "below"), (pairs, pair("bbqq_vs_ccqq"), "R16_Q1", "L188", "below"),
             (pairs, pair("bc_vs_bq_cs"), "R42_Q1", "L188", "below"),
-            (rand, auc, RAND, "R16_Q1", "above"), (rand, acc, RAND, "R42_Q1", "above"), (rand, acc, "R16_Q1", "R42_Q1", "below"),
+            (rand, acc, RAND, "R16_Q1", "above"), (rand, auc, RAND, "R16_Q1", "above"),
+            (jet, jc1, "R16_Q1", "L188", "below"), (jet, jc2, "R16_Q1", "L188", "below"),
+            (out, jc1, "R42_Q1", "L188", "below"), (out, jc1, "L162", "L188", "null"),
+            (out, jc2, "R42_Q1", "L188", "below"), (out, jc2, "L162", "L188", "null"),
+            *[(out, h, "R16_Q1", "L188", "below") for h in sizes],
             *[(null, h, a, "L188", "null") for h in (top, qg) for a in ("L162", "R42_Q1", "R16_Q1")],
             (sharp, mass, "L162_MASS", "L162", "below"), (sharp, mass, "R16_Q1_MASS", "R16_Q1", "below"),
-            *[(cost, h, m, b, "null") for h in (acc, auc, mlp, top) for m, b in MASS],
-            *[(cost, qg, m, "L188", "null") for m, _ in MASS])
+            *[(cost, h, m, b, "null") for h in (acc, auc, mlp) for m, b in MASS],
+            (ftcost, jc1, "R16_Q1_MASS", "R16_Q1", "below"), (notsaid, jc1, "L162_MASS", "L162", "report"),
+            *[(notsaid, top, m, b, "report") for m, b in MASS], *[(notsaid, qg, m, "L188", "report") for m, _ in MASS])
 
 
 def check_claims(R, tested: dict) -> tuple:
     """(one line per tested difference, the lines whose test is missing or fails)."""
     lines, bad = [], []
-    for clause, head, a, b, want in claims(R):
+    for clause, head, a, b, want in claims(R, tested):
         v = tested.get((head, a, b))
         if not isinstance(v, tuple):
             verdict, nums = "MISSING" if v is None else "PENDING (rerun bootstrap)", ""
@@ -368,15 +382,23 @@ def check_claims(R, tested: dict) -> tuple:
     return lines, bad
 
 
-def numbers(lp_cols, maps: dict, runs: dict) -> str:
+def numbers(lp_cols, ft_cols, maps: dict, runs: dict) -> str:
     """The numbers of the abstract, the introduction and the outline: the class counts of the label sets, the run
     counts in words, and the JetClass-II linear-probe accuracy of the 17- and the 188-class model in percent."""
     get = dict((n, g) for n, _, g in lp_cols)["JetClass-II accuracy"]
     pct = lambda a: f"{100 * float(np.mean([float(x) for x in get(a)])):.0f}"      # noqa: E731
+    ftv = dict((n, g) for n, _, g in ft_cols)
+
+    def ft_pct(col, arm):
+        """A fine-tuned accuracy in percent to one decimal; a red bracket while a run of it is missing."""
+        v = [x for x in ftv[col](arm) if x is not None]
+        return f"{100 * float(np.mean([float(x) for x in v])):.1f}" if len(v) == len(runs[arm]) else r"\pending{pending}"
     one = lambda xs: MT.words(xs.pop()) if len(xs) == 1 else None                  # noqa: E731
     out = {"Kfull": len(set(maps["L188"].values())), "Kres": len(set(maps["L162"].values())),
            "Kmid": len(set(maps["R42_Q1"].values())), "Kcoarse": len(set(maps["R16_Q1"].values())),
            "VtwoAccCoarsePct": pct("R16_Q1"), "VtwoAccFullPct": pct("L188"),
+           "VtwoFtJcOneCoarsePct": ft_pct("JetClass accuracy", "R16_Q1"), "VtwoFtJcOneFullPct": ft_pct("JetClass accuracy", "L188"),
+           "VtwoFtJcTwoCoarsePct": ft_pct("JetClass-II accuracy", "R16_Q1"), "VtwoFtJcTwoFullPct": ft_pct("JetClass-II accuracy", "L188"),
            "VtwoRunsWord": one({len(runs[a]) for a in NESTED}), "VtwoMassRunsWord": one({len(runs[m]) for m, _ in MASS}),
            "VtwoRandWord": MT.words(len([c for c in maps if c.startswith("RAND2_p")]))}
     if None in out.values():
@@ -388,10 +410,10 @@ def main() -> int:
     maps = class_maps(REPO)
     got = capture(REPO)
     R = got["R"]
-    t2, t3, pending, lp_cols = tables23(got, maps)
+    t2, t3, pending, lp_cols, ft_cols = tables23(got, maps)
     lines, bad = check_claims(R, got["tested"])
     out = {"table1.tex": table1(maps, R._pooled(got["summary"][4])), "table2.tex": t2, "table3.tex": t3,
-           "numbers.tex": numbers(lp_cols, maps, got["summary"][4]), "claims.txt": "\n".join(lines) + "\n",
+           "numbers.tex": numbers(lp_cols, ft_cols, maps, R._pooled(got["summary"][4])), "claims.txt": "\n".join(lines) + "\n",
            "pending.txt": "".join(f"Table 3 | {r} | {c}\n" for r, c in pending)}
     d = REPO / OUT
     d.mkdir(parents=True, exist_ok=True)

@@ -16,6 +16,8 @@
 
 % A result whose input is not in yet: a red bold bracket (as in main.tex).
 \newcommand{\pending}[1]{\textcolor{red}{\textbf{[#1]}}}
+% Wording that differs from the PI's RW-9 draft of the abstract (2026-11-24), for the PI to see: red.
+\newcommand{\changed}[1]{\textcolor{red}{#1}}
 \input{tables/numbers}
 
 \title{Label granularity in supervised pretraining of jet foundation models}
@@ -26,12 +28,13 @@
 \maketitle
 \begin{abstract}
 \input{abstract}
+
+\medskip\noindent\changed{\footnotesize Not in the abstract, which is at its word limit as it stands. With its numbers,
+the JetClass clause reads ``the coarsest set remains worse on JetClass, \VtwoFtJcOneCoarsePct\% against
+\VtwoFtJcOneFullPct\%''. Closing sentence: ``Fine labels matter most for frozen features, less after fine-tuning.''}
 \end{abstract}
 
 \input{intro}
-% the sections the introduction's last sentence names are not in the checkpoint: their numbers, without their text
-{\refstepcounter{section}\label{sec:related}\refstepcounter{section}\label{sec:methods}%
-\refstepcounter{section}\label{sec:results}\refstepcounter{section}\label{sec:discussion}}
 
 \clearpage
 \input{tables/table1}

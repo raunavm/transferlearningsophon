@@ -5117,6 +5117,8 @@ TESTS = (
      + (("STEP_17_43", "STEP_43_162", ("file", _JC2_ALL, "step-r16q1-r42q1-l162", "accuracy")),)
      + _review2_rows("accuracy")
      + _jc2_lp("accuracy", tuple((a, "L188", d) for a, d in _PARTS_ALL)
+               # PI 2026-11-24 (LEDGER RW-9): the abstract's "random groupings lose far less", in accuracy, directly
+               + ((RAND_POOLED, "R16_Q1", "rand-r16q1"),)
                + ((RAND_POOLED, "R42_Q1", "rand-r42q1"), ("FLAV_F0", "R16_Q1", "flavf0-r16q1"),
                   ("FLAV_F1", "FLAV_F0", "flavf1-flavf0"), ("FLAV_F1R", "FLAV_F0", "flavf1r-flavf0"),
                   (RAND_POOLED, "FLAV_F1", "rand-flavf1"), (RAND_POOLED, "FLAV_F1R", "rand-flavf1r")))),
