@@ -48,19 +48,21 @@ $\Nout$ classes is a map $\pi$ from these classes onto $\{1,\dots,\Nout\}$; a mo
 predict $\pi(y)$. The four label sets we pretrain form the class hierarchy of figure~\ref{fig:design}(a), each
 merge removing a named set of physics distinctions, and table~\ref{tab:sets} lists them with the controls of
 this section, their classes and their runs. The \Kfull-class label set is Sophon's: one class for each resonant
-decay, and \LitJetClassTwoNQcdClasses{} QCD classes by the numbers of $b$, $c$ and $s$ quarks. The \Kres-class level merges these QCD classes into one and keeps every resonant class, so it removes
+decay, and \LitJetClassTwoNQcdClasses{} QCD classes by the numbers of $b$, $c$ and $s$ quarks, a light QCD jet
+having none of them. The \Kres-class level merges these QCD classes into one and keeps every resonant class, so it removes
 only the quark content of QCD jets. The \Kmid-class level labels each decay by its topology, the pattern of
-intermediate resonances and prongs, and by whether it contains a $b$ quark, else a $c$ quark, else only light
-quarks or gluons. It removes three kinds of distinction at once: the number of $b$ or $c$ quarks, gluon
-against light quark, and electron against muon, also for $\tau$ leptons that decay to either. Grouping gluons
-with light quarks is our choice; Sophon's classes keep them apart. The \Kcoarse-class level removes quark
-flavor. It keeps, for each decay, its number of prongs and the type of each: quark or gluon, electron or muon,
+intermediate resonances and prongs, and by whether it contains a $b$ quark, else a $c$ quark, else neither. It
+removes four kinds of distinction at once: the number of $b$ or $c$ quarks, $s$ against $u$ or $d$ quark, gluon
+against $u$, $d$ or $s$ quark, and electron against muon, also for $\tau$ leptons that decay to either. Grouping
+$s$ quarks and gluons with $u$ and $d$ quarks is our choice; Sophon's classes keep the three apart. The
+\Kcoarse-class level removes what remains of quark flavor, whether a decay contains a $b$ quark, a $c$ quark or
+neither. It keeps, for each decay, its number of prongs and the type of each: quark or gluon, electron or muon,
 $\tau$ lepton decaying to hadrons or to a lepton, or neutrino.
 
 The levels remove flavor before structure, so the coarsest still describes the decay topology an analysis
 selects on. At every level a class holds only QCD jets, only decays into quarks and gluons, or only decays with
 leptons. The step from \Kres{} to \Kmid{} classes is the only one that removes more than one kind of
-distinction, so no result in this paper attributes an effect of that step as a whole to one of its three; a class
+distinction, so no result in this paper attributes an effect of that step as a whole to one of its four; a class
 pair that only one of them merges, such as $X\to ee$ against $X\to\mu\mu$, shows the effect of that one.
 
 \input{tables/mlst_sets}
@@ -246,7 +248,7 @@ of ATLAS~\cite[Sec.~6]{atlasregression},
 where $q_p$ is the $p$-th percentile of the distribution of $r$, so that for a Gaussian response $\sigma_r$ is
 its standard deviation divided by its median. Three estimates are compared on the same JetClass-II test jets
 with a generator-level match: the soft-drop mass itself, the regressed mass $\msd\,e^{\hat\theta}$ of the
-auxiliary mass regression, and an MLP probe that predicts $\theta$ from the frozen features, its output shifted by
+auxiliary mass regression, the mass output of the pretraining head, and an MLP probe that predicts $\theta$ from the frozen features, its output shifted by
 one median of the training jets, the same for every jet, so that no class label is used
 (appendix~\ref{sec:app-mass}).
 
@@ -299,12 +301,15 @@ difference of their means over all their runs and $\sigma^2$ is the sum of the v
 over its runs and the variance of $\Delta$ over paired bootstrap resamples of the test jets, on which every model
 is scored (appendix~\ref{sec:app-tests}). Otherwise the difference is not resolved, and its test resolves no
 difference smaller than three times $\sigma$, which we give as a share of the reference configuration's value, of its errors
-$1-\AUC$ for an AUC.
+as counted in equation~(\ref{eq:ratio}) for an AUC.
 Where the two sides are scored on independent test samples, Herwig against Pythia jets, each sample is
 resampled separately and the two bootstrap variances add. Every row uses the paired bootstrap except two kinds,
 marked in the table: the transfer heads of the resonance benchmark, whose per-jet scores were not kept, take the
 binomial variance of each network's signal efficiency plus that of the QCD efficiency carried through the slope of
-its curve, the two sides added, a term larger than the paired bootstrap on every row that has both; and a side of one run, whose missing
+its curve, the two sides added, a term of the kind that exceeds the paired bootstrap on every
+accuracy and AUC difference whose per-jet scores were kept; and a side of one run, whose missing
 run spread makes $\sigma$ a lower bound, as for ParT's published result against our single run of its script, backs
 only a null.
-Table~\ref{tab:tests} gives this test for every difference the text states.
+Table~\ref{tab:tests} gives this test for every difference the text states, except the per-class marks of
+figure~\ref{fig:PC-jc2} and table~\ref{tab:jc1_class_auc}, which apply it to each class with the bootstrap over
+that class's test jets.

@@ -30,7 +30,7 @@ from-scratch value), but from scratch has a lower accuracy, AUC and $R_{50}$
 inputs only, which has no missing inputs here, and the \Kfull-class model fine-tuned with zeros is not resolved
 (the test resolves no difference finer than \MlstPwTopKin{} of the \Kfull-class value, a floor as the kinematic
 model has one run; table~\ref{tab:tests}). ParT's own training script, run unchanged on our hardware once, does not differ from the
-published result by more than three standard deviations, a lower bound on $\sigma$ (the test resolves no difference
+published result by more than three standard deviations, $\sigma$ being a lower bound as our side has one run (the test resolves no difference
 finer than \MlstPwPartRepro{} of the published value; appendix~\ref{sec:app-partrepro}; table~\ref{tab:tests}).
 
 % CHECK: MlstLpTopRthirtyFullOverInitBnZero agrees with 1 (two seeds of the randomly initialized network; today 1.04 and 1.08); MlstMlpTopRthirtyFullOverInitBn agrees with 1 (today 1.00 +- 0.31)
@@ -43,8 +43,9 @@ the zeros, the substitution chosen on validation, the linear probe on the \Kfull
 draws are not free of information, as they give each particle a species at the JetClass-II frequencies, a charge
 and the impact-parameter features of a real particle (appendix~\ref{sec:app-inputs}), so these tests do not separate the effect of the zero values from that
 of the missing information. After fine-tuning, the zeros cost no resolved $R_{30}$ against the model with kinematic
-inputs only (above); a constant replacement value used in both training and testing is consistent for a model
-trained with it~\cite[Theorem~3]{josse}.
+inputs only (above). Josse et al.\ show that a constant imputed in both training and testing, followed by a
+consistent learner, gives a consistent predictor~\cite[Theorem~3]{josse}; our tests do not check whether this is
+why. % fifth review (B7; CS-9): a statement about the cited result, not the stated reason for the null
 
 \subsection{Quark/gluon discrimination, Pythia and Herwig}\label{sec:qg}
 
@@ -61,7 +62,7 @@ table~\ref{tab:published}), and no label set differs from the \Kfull-class model
 deviations, the smallest difference these tests resolve being \MlstPwRthirtyFtQg{} of its $R_{30}$
 (table~\ref{tab:tests}). For the \Kcoarse-class model, too, the difference is not resolved % CHECK: MlstFtQgRthirtyFullOverPartPr must read the null of its tab:tests row (today 0.99 +- 0.02); the 17-188 row is in MlstPwRthirtyFtQg's range, whose build stops if it passes
 (tables~\ref{tab:summary} and~\ref{tab:tests}), although only the % CHECK: MlstFtQgRthirtyCoarseOverFullPr must read the null of its tab:tests row (today 0.99 +- 0.03); also Res, Mid
-\Kfull- and \Kres-class labels separate resonance decays to gluons from decays to light quarks, the
+\Kfull- and \Kres-class labels separate resonance decays to gluons from decays to $u$, $d$ or $s$ quarks, the
 distinction quark/gluon discrimination asks for. Tested on the Herwig sample, the fine-tuned \Kfull-class model
 keeps \MlstFtQgRthirtyHerwigOverPythiaFullPr{} it has on Pythia jets, and the network trained from scratch % CHECK: MlstFtQgRthirtyHerwigOverPythiaFull vs ...Scratch must agree within 2 SD (today 0.33 +- 0.02 vs 0.34 +- 0.01)
 \MlstFtQgRthirtyHerwigOverPythiaScratchPr{} (table~\ref{tab:summary}), and the difference of the two ratios is not
@@ -69,7 +70,7 @@ resolved (smallest resolvable difference \MlstPwHerwigRatio{} of the from-scratc
 earlier generator comparisons found
 Herwig's quark and gluon jets less separable than Pythia's~\cite{gras}. With the displacement inputs substituted
 as chosen on validation (\LpSubstitutionQg), a linear probe on the frozen \Kfull-class features rejects more
-background than one on the random network with BatchNorm recomputed (\MlstLpQgRthirtyFullOverInitBnPr{};
+Pythia background than one on the random network with BatchNorm recomputed (\MlstLpQgRthirtyFullOverInitBnPr{};
 tables~\ref{tab:summary} and~\ref{tab:tests}).
 
 \subsection{Fine-tuning with few training jets}\label{sec:fewjets}

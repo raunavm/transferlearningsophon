@@ -6,7 +6,9 @@ Frozen features keep what the pretraining labels separate: counted in wrongly or
 probe separates the \Kfull{} pretraining classes less well at every coarser level of the class hierarchy, and the
 costliest step is the merge of quark flavor, while in accuracy it is the step that removes three distinctions at once
 (table~\ref{tab:tests}). % LEDGER TX-2: the largest step minus the next-largest passes in each metric, (17 - 43) - (43 - 162) at -4.96 sigma in AUC and +3.94 in accuracy, naming different steps, so both are given
-Merging the QCD classes costs the QCD classes, and its effect on the resonant classes is not resolved. Random partitions
+Merging the QCD classes costs the QCD classes, and its effect on the resonant classes is not resolved under the linear
+probe (smallest resolvable difference \MlstPwResonantRes{} of the \Kfull-class model's errors) or the MLP probe
+(section~\ref{sec:jetclasstwo}). Random partitions
 with as many classes, selected to cut across the \Kcoarse-class groups, lose less than the physical
 \Kcoarse-class label set, so the class count alone does not set the cost.
 After fine-tuning, on JetClass the
@@ -14,10 +16,12 @@ After fine-tuning, on JetClass the
 \Kres- and \Kmid-class models are \pending{table~\ref{tab:summary} after the reruns} (table~\ref{tab:summary}).
 % CHECK: recompute from Table 1 after the JetClass 1e6 rerun and re-test at 3 sigma (PI SP-11): the 17-class cost must pass and the 162- and 43-class differences read "consistent" for this sentence to stand as written
 On top tagging and quark/gluon discrimination the fine-tuned label sets show no
-resolved difference (tables~\ref{tab:summary} and~\ref{tab:tests}).
+resolved difference (smallest resolvable differences \MlstPwRthirtyFtTop{} and \MlstPwRthirtyFtQg{} of the
+\Kfull-class $R_{30}$; tables~\ref{tab:summary} and~\ref{tab:tests}).
 With the substitution chosen on validation, a linear probe on the frozen features of the \Kfull-class model
 reaches \MlstLpTopRthirtyFullOverInitBnPr{} of one on the random network with BatchNorm recomputed on top tagging, and
-\MlstLpQgRthirtyFullOverInitBnPr{} on quark/gluon discrimination (tables~\ref{tab:fill} and~\ref{tab:summary}).
+\MlstLpQgRthirtyFullOverInitBnPr{} on quark/gluon discrimination with Pythia jets (tables~\ref{tab:fill},
+\ref{tab:summary} and~\ref{tab:tests}).
 On top tagging, random draws in place of the zeros give the linear probe
 \MlstLpTopRthirtyDrawOverZeroFullPr{} that it gives with zeros; these tests do not separate the effect of the zero
 value from that of the missing information (section~\ref{sec:top}). % CHECK: ...FullOverInitBnZeroPr reads the null and ...FullOverInitBnPr a direction on both tasks, each from its tab:tests row
@@ -30,13 +34,15 @@ whatever the frozen features keep: Sophon's $X\to b\bar{b}$ discriminant cannot 
 boundaries: on the pretraining classes the partitions with a single one make fewer errors under the linear probe than
 the partition without, though they also regroup other decays
 (table~\ref{tab:tests}). Keep the QCD classes apart where a downstream task separates QCD jets by
-flavor: merging them has no resolved effect on the resonant classes but costs the QCD pairs
+flavor: merging them has no resolved effect on the resonant classes (smallest resolvable difference
+\MlstPwResonantRes{} of the \Kfull-class model's errors) but costs the QCD pairs
 (figure~\ref{fig:F4-qcd}) and any discriminant that weights each QCD subclass separately
 (section~\ref{sec:labelsets}). % CHECK: MlstCmpJcTwoQcdResOverFull > 1 and the QCD pairs of F4-qcd show 162 below 188
 Add an auxiliary mass regression: it makes the jet mass more precisely readable from the frozen features
 (table~\ref{tab:mass}). Its effect on mass sculpting is not resolved: no mass network differs from its own label set by more
-than three times the uncertainty (table~\ref{tab:tests}). It shows no resolved cost to the classification of the
-pretraining classes, and after fine-tuning on top tagging its $R_{30}$ difference is not resolved at either label
+than three times the uncertainty (smallest resolvable difference \MlstPwSculptMass{} of the label set's distance;
+table~\ref{tab:tests}). It shows no resolved cost to the classification of the pretraining classes under linear or
+MLP probes (smallest resolvable differences \MlstPwMassClsAll{} of their errors), and after fine-tuning on top tagging its $R_{30}$ difference is not resolved at either label
 set, these tests resolving no difference smaller than \MlstPwTopMassRes{} and \MlstPwTopMassCoarse{} of the
 label set's value (section~\ref{sec:mass}). % CHECK: MlstCmpMlpResMassOverRes < 1; the sculpting clause: gallery_placement.F10B_STATED is empty under L3 (no mass-regression difference beyond 3 sigma); M305 (the 17-class mass network's JetClass cost after fine-tuning) waits on Table 1 after the reruns
 For benchmarks with missing inputs, compare label sets by fine-tuning with the missing input features

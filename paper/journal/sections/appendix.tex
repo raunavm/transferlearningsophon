@@ -57,7 +57,8 @@ and every JetClass-II jet also satisfies $|\eta| < \LitSophonEtaMax$~\cite[App.~
 are drawn with Sophon's reweighting, which gives each of its reweighting categories of the \Kfull{} classes the
 same distribution in $(p_{\mathrm{T}}, \msd)$ in order to avoid sculpting the background mass
 distribution~\cite[Sec.~II]{sophon}, with the same weights for every label set. The reweighting histograms read
-the files of the training jets but not those of the test jets; the probes and fine-tuning on JetClass-II use
+the files of the training jets, including files that no pretraining run trained or validated on, but not those of the
+test jets; the probes and fine-tuning on JetClass-II use
 jets from files that no pretraining run trained or validated on.
 
 Every model is the ParT network~\cite{part} in the configuration of Sophon's released
@@ -223,8 +224,7 @@ other combination of task and training-set size, the learning rate is chosen sep
 factors of about three. The chosen rate has the highest validation accuracy, averaged over one run each of the
 networks pretrained with \Kfull{} and \Kcoarse{} classes (one run when training from scratch), and the rates
 tried extend until it has a lower-scoring rate on each side, a diverged rate counting as lower-scoring as
-section~\ref{sec:evaluation} states. Rates are compared at full precision, and where two agree at four decimals
-table~\ref{tab:lrsweep} prints the digits that separate them. Every pretrained network at a given task and size uses the chosen rate, and the new head
+section~\ref{sec:evaluation} states. Rates are compared at full precision, and where a rate agrees with the best one at four decimals, table~\ref{tab:lrsweep} prints the digits that separate them. Every pretrained network at a given task and size uses the chosen rate, and the new head
 trains at \FtHeadCap{} at every rate. Table~\ref{tab:lrsweep} lists every rate tried.
 % PENDING (PI 2026-11-21): if any row stops at the floor, add: "The search goes no lower than \FtSearchFloor, where
 % fine-tuning approaches training only the new output layer on frozen features; for [rows] the chosen rate is \FtSearchFloor."
@@ -321,7 +321,7 @@ JetClass and the class pairs, and of top and quark/gluon with the missing inputs
 of the linear probes. With these zeros the MLP probe resolves some differences between label sets and
 partitions on top tagging beyond three standard deviations (table~\ref{tab:tests}): the partition with a $b$-quark
 boundary reaches a higher AUC and $R_{30}$ than the partition with no flavor boundary, and a higher $R_{30}$ than the
-\Kcoarse-class level and the partition with a random flavor boundary; the \Kres-class mass network reaches a higher
+\Kcoarse-class model and the partition with a random flavor boundary; the \Kres-class mass network reaches a higher
 AUC and $R_{30}$ than the partition with no flavor boundary. Table~\ref{tab:partrepro} gives ParT's top-tagging training script~\cite{part} run on our
 cluster unchanged and with Sophon's output head, each a single run. Unchanged, it
 reaches a rejection at 30\% signal efficiency of \MlstPartreproRthirtyPart, against ParT's published
@@ -364,7 +364,7 @@ each JetClass class, the fraction of its test jets assigned to it, for linear pr
 JetClass jets. Table~\ref{tab:pairauc} gives the AUC of the linear probes on the class pairs whose ratios $\rho$ of
 equation~(\ref{eq:ratio}) the text quotes, and figures~\ref{fig:F4-other} and~\ref{fig:F4-qcd} draw the linear probes on the other four pairs of
 classes that differ only in flavor, in the form of figure~\ref{fig:F4-mech}, where a QCD $b\bar b$ jet holds two or more $b$ quarks, a
-QCD $c\bar c$ jet two or more $c$ quarks and a light QCD jet no $b$, $c$ or $s$ quark. Each curve is evaluated on
+QCD $c\bar c$ jet two or more $c$ quarks and a light QCD jet, as in section~\ref{sec:labelsets}, no $b$, $c$ or $s$ quark. Each curve is evaluated on
 a fixed grid of signal efficiencies, with $\epsB$ interpolated linearly between neighboring thresholds.
 Figure~\ref{fig:CONF-share} draws the test of section~\ref{sec:jetclasstwo} on the label sets with \Kcoarse{}
 classes, fixed before it was run, the pass bar included.
@@ -453,8 +453,8 @@ it has more than one run.}
 $p_{\mathrm{T}}$ and of generator-level mass. Panels show the median of the response $r =
 m_{\mathrm{est}}/\mgen$ and its distance from one, and the resolution, the width of the central 68\% of $r$
 over twice its median, and its ratio to the soft-drop mass, against the reconstructed jet $p_{\mathrm{T}}$ and the
-generator-level soft-drop mass $\mgen$. The estimates are the soft-drop mass and the mass output of the \Kres-
-and \Kcoarse-class networks, on JetClass-II test jets with a generator-level match. Points are means over
+generator-level soft-drop mass $\mgen$. The estimates are the soft-drop mass and the regressed mass of the \Kres-
+and \Kcoarse-class mass networks, on JetClass-II test jets with a generator-level match. Points are means over
 \MlstMassNRunsWord{} pretraining runs, horizontal bars span each bin, and vertical bars of one standard deviation
 combine the spread over runs with the bootstrap over test jets. Values over all jets are in table~\ref{tab:mass}.}
 \label{fig:F9b}

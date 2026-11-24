@@ -4350,8 +4350,11 @@ def table_inputs(root: pathlib.Path, offsets: dict | None) -> str:
 SETS_TABLE = (("L188", r"\Kfull", "none (Sophon's classes)"), ("L162", r"\Kres", "QCD quark content"),
               ("L162_MASS", r"\Kres", r"as \Kres, with a mass output"),
               # review of render 5f4e1b8 (B12): what each merges in words, not "b/c counts, g/q, e/mu" and "one b split"
-              ("R42_Q1", r"\Kmid", r"numbers of $b$ and $c$ quarks, gluon against light quark, electron against muon"),
-              ("R16_Q1", r"\Kcoarse", r"as \Kmid, and quark flavor"),
+              ("R42_Q1", r"\Kmid", r"numbers of $b$ and $c$ quarks, $s$ against $u$ or $d$ quark, gluon against quark, "
+                                    r"electron against muon"),
+              # fifth review (A1): the 43-class step merges s with u and d quarks too (rung_label_maps.v1.csv, group 2
+              # gg, qq, sq, ss), and the 17-class step removes only whether a b or c quark is present
+              ("R16_Q1", r"\Kcoarse", r"as \Kmid, and whether a $b$ or $c$ quark is present"),
               ("R16_Q1_MASS", r"\Kcoarse", r"as \Kcoarse, with a mass output"),
               ("FLAV_F0", r"\Kcoarse", "random groups of flavor families"),
               ("FLAV_F1", r"\Kcoarse", "as no flavor boundary, its four-quark decays with a $b$ quark moved"),
@@ -5718,9 +5721,15 @@ def mlp_claim_check(rows: dict) -> None:
         raise SystemExit(f"FATAL (DL-9): MLP rows the Fig. 2 caption states as nulls pass 3 sigma: {extra}")
 
 
+# fifth review (B1): the introduction and discussion restate some nulls over several PW_ROWS at once; their range
+PW_UNION = {"MlstPwMassClsAll": ("MlstPwMassClsRes", "MlstPwMassClsCoarse", "MlstPwMlpMassRes", "MlstPwMlpMassCoarse")}
+
+
 def pw_macros(em, rows: dict, sides: dict, src) -> None:
     """PW_ROWS' macros, from table_tests' rows_out and sides_out: 3 sigma over the reference side's mean (over 1 - mean
-    for an AUC row), in per cent at two significant figures, a range over several rows; pending while a row waits."""
+    for an AUC row), in per cent at two significant figures, a range over several rows; pending while a row waits.
+    PW_UNION's macros give the range over their PW_ROWS' rows, pending if any of them waits."""
+    got = {}
     for name, (heads, firsts, second, *opt) in PW_ROWS.items():
         shares, wait = [], False
         for (h, a, b), v in rows.items():
@@ -5737,12 +5746,26 @@ def pw_macros(em, rows: dict, sides: dict, src) -> None:
             shares.append(3 * v[4] if "abs" in opt else 100 * 3 * v[4] / ref)
         if wait or not shares:
             em.macro(name, r"\pending{bootstrap}", src, "PW-1: a row waits for its bootstrap")
+            got[name] = None
             continue
+        got[name] = shares
         lo, hi = min(shares), max(shares)
         pct = "" if "abs" in opt else "\\%"
         body = f"{_sig2(lo)}{pct}" if _sig2(lo) == _sig2(hi) else f"{_sig2(lo)}--{_sig2(hi)}{pct}"
         em.macro(name, body, src, f"PW-1: 3 sigma over the reference value, {len(shares)} tab:tests rows, per cent"
                  if pct else "PW-1: 3 sigma of the tab:tests row, in the metric's units (the reference rounds to one)")
+    for name, parts in PW_UNION.items():
+        if any(got.get(n) is None for n in parts):
+            em.macro(name, r"\pending{bootstrap}", src, "PW-1: a row waits for its bootstrap")
+            continue
+        shares = [x for n in parts for x in got[n]]
+        lo, hi = min(shares), max(shares)
+        body = f"{_sig2(lo)}\\%" if _sig2(lo) == _sig2(hi) else f"{_sig2(lo)}--{_sig2(hi)}\\%"
+        em.macro(name, body, src, f"PW-1: the range of {', '.join(parts)}, {len(shares)} tab:tests rows, per cent")
+
+
+# fifth review (B1): the discussion's sculpting null is about the mass networks against their own label sets only
+SCULPT_MASS_PAIRS = {("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1")}
 
 
 def sculpt_pw_macro(em, sculpt: dict, sculpt_doc, runs: dict, src) -> None:
@@ -5750,12 +5773,13 @@ def sculpt_pw_macro(em, sculpt: dict, sculpt_doc, runs: dict, src) -> None:
     sculpting rows (every stated pair, every working point) of 3 sigma over the reference network's mean distance
     (tab:sculptmain's cells); FATAL if a row the text states as a null passes; pending without the inputs."""
     if not sculpt_doc or not sculpt:
-        em.macro("MlstPwSculpt", r"\pending{bootstrap}", src, "PW-1: the sculpting bootstrap or distances are absent")
+        for name in ("MlstPwSculpt", "MlstPwSculptMass"):
+            em.macro(name, r"\pending{bootstrap}", src, "PW-1: the sculpting bootstrap or distances are absent")
         return
     arm = {m.removeprefix("mtx-").rsplit("-s", 1)[0]: a for a, ms in runs.items() if a != RAND_POOLED for m in ms}
     arm.update(SCULPT_ARM)
     pooled = _pooled(runs)
-    shares = []
+    shares, mass = [], []
     for d in sculpt_doc["differences"].values():
         a, b = arm[d["configuration"]], arm[d["reference"]]
         if (a, b) in SCULPT_UNSTATED:
@@ -5770,12 +5794,20 @@ def sculpt_pw_macro(em, sculpt: dict, sculpt_doc, runs: dict, src) -> None:
             else:
                 ref = [None if (s := sculpt.get(m)) is None else math.sqrt(s["sig_eff_50"]["jsd"]) for m in pooled[b]]
             if None in ref or not ref:
-                em.macro("MlstPwSculpt", r"\pending{distances}", src, "PW-1: a reference distance is absent")
+                for name in ("MlstPwSculpt", "MlstPwSculptMass"):
+                    em.macro(name, r"\pending{distances}", src, "PW-1: a reference distance is absent")
                 return
             shares.append(100 * 3 * x["sigma"] / float(np.mean(ref)))
-    lo, hi = min(shares), max(shares)
-    em.macro("MlstPwSculpt", f"{_sig2(lo)}\\%" if _sig2(lo) == _sig2(hi) else f"{_sig2(lo)}--{_sig2(hi)}\\%", src,
-             f"PW-1: 3 sigma over the reference distance, {len(shares)} sculpting rows of tab:tests, per cent")
+            if (a, b) in SCULPT_MASS_PAIRS:
+                mass.append(shares[-1])
+    for name, sh, what in (("MlstPwSculpt", shares, "sculpting rows"),
+                           ("MlstPwSculptMass", mass, "sculpting rows of a mass network against its label set")):
+        if not sh:
+            em.macro(name, r"\pending{bootstrap}", src, f"PW-1: no {what} in the sculpting bootstrap")
+            continue
+        lo, hi = min(sh), max(sh)
+        em.macro(name, f"{_sig2(lo)}\\%" if _sig2(lo) == _sig2(hi) else f"{_sig2(lo)}--{_sig2(hi)}\\%", src,
+                 f"PW-1: 3 sigma over the reference distance, {len(sh)} {what} of tab:tests, per cent")
 
 
 RATIO_CHECK_COLS = ("macro", "heading", "first", "second", "noun", "ratio_full_precision", "ratio_printed_means",

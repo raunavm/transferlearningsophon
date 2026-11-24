@@ -1,5 +1,5 @@
 % Results, first part: the protocol paragraph, JetClass-II (the pretraining classes) and JetClass
-% (the in-distribution downstream test). Items (approved structure, PI SP-9, 2026-11-23): figures F2, F2-ft,
+% (new classes with every input present; fifth review A4). Items (approved structure, PI SP-9, 2026-11-23): figures F2, F2-ft,
 % PC-jc2, F4-mech; table tab:summary. Every number is a macro from results_generated.tex
 % (experiments/FIGS/make_tables.py); "% CHECK:" marks a claim whose direction must be confirmed against
 % the macro values at generation.
@@ -7,7 +7,7 @@
 \section{Results}\label{sec:results}
 
 Each subsection compares the four label sets first and the controls second, the
-controls against the \Kcoarse-class level whose class count they share and against the \Kfull-class model. Linear probes on frozen features
+controls against the \Kcoarse-class model, whose class count they share, and against the \Kfull-class model. Linear probes on frozen features
 carry the comparison on the pretraining classes, checked by MLP probes, and fine-tuning carries it on the
 downstream benchmarks. Every difference the text states is tested in table~\ref{tab:tests}.
 
@@ -20,12 +20,12 @@ label set fixed: the \Kres-class model on the resonant classes, since its labels
 which the \Kfull{} classes are merged into the \Kcoarse{} groups of the \Kcoarse-class labels, their own task.
 
 Counted in wrongly ordered pairs of jets, a linear probe separates the \Kfull{} classes worse at every coarser
-level of the hierarchy, and the largest step is the merge of quark flavor between \Kmid{} and \Kcoarse{}
+level of the hierarchy, and the largest step is the last merge of quark flavor, between \Kmid{} and \Kcoarse{}
 classes. On frozen features of the \Kmid-class model it makes \MlstCmpJcTwoMidOverFullPr{} than on those of
 the \Kfull-class model, and on the \Kcoarse-class model \MlstCmpJcTwoCoarseOverFullPr{}
 (tables~\ref{tab:summaryauc} and~\ref{tab:tests}). In wrongly ordered pairs the step from \Kmid{} to \Kcoarse{}
 classes costs more than the step from \Kres{} to \Kmid{} classes, although it merges far fewer classes and removes
-one kind of distinction where the other removes three. In accuracy the largest step is the other one: the accuracy
+one kind of distinction where the other removes four. In accuracy the largest step is the other one: the accuracy
 falls from \Kres{} to \Kmid{} and to \Kcoarse{} classes, most between \Kres{} and \Kmid{} classes
 (figure~\ref{fig:F2}(a); tables~\ref{tab:summary} and~\ref{tab:tests}); between \Kfull{} and \Kres{} classes it does
 not differ by more than three standard deviations under the linear probe or the MLP probe (smallest resolvable
@@ -95,15 +95,15 @@ from the output layer any discriminant that weights each QCD subclass separately
 % CHECK: MlstCmpJcTwoQcdResOverFull > 1 beyond 3 sigma in its tab:tests row (today 1.087 +- 0.006).
 
 At a fixed number of classes, which classes are merged changes the cost. A random partition with
-\Kcoarse{} classes makes \MlstCmpJcTwoRandOverCoarsePr{} than the \Kcoarse-class level of the
-hierarchy, and \MlstCmpJcTwoRandOverMidPr{} than the \Kmid-class level, which has more than twice as
+\Kcoarse{} classes makes \MlstCmpJcTwoRandOverCoarsePr{} than the \Kcoarse-class model of the
+hierarchy, and \MlstCmpJcTwoRandOverMidPr{} than the \Kmid-class model, whose labels have more than twice as
 many classes (table~\ref{tab:tests}); in accuracy, too, the random partitions lie above the \Kmid-class
-level (figure~\ref{fig:F2}(a); tables~\ref{tab:summary} and~\ref{tab:tests}).
+model (figure~\ref{fig:F2}(a); tables~\ref{tab:summary} and~\ref{tab:tests}).
 % CHECK: MlstCmpJcTwoRandOverMid < 1 beyond 3 sigma in its tab:tests row (today 0.918 +- 0.007); if it fails,
 % write "as few errors as the 43-class level".
 The flavor-boundary partitions, at the same class count, lie between the
-\Kcoarse-class level and the random partitions, with the partition that has no flavor boundary nearest
-the \Kcoarse-class level, in errors and in accuracy (table~\ref{tab:tests}).
+\Kcoarse-class model and the random partitions, with the partition that has no flavor boundary nearest
+the \Kcoarse-class model, in errors and in accuracy (table~\ref{tab:tests}).
 % CHECK: MlstCmpJcTwoFzeroOverCoarse > MlstCmpJcTwoF{one,oner}OverCoarse > MlstCmpJcTwoRandOverCoarse
 % (today 0.928/0.935, 0.794/0.775 and 0.786/0.772, 0.724).
 Because the partitions were selected to cut across the \Kcoarse-class groups
@@ -172,11 +172,11 @@ only \MlstCmpBcMidOverFullPr{}; at \Kcoarse{} classes, which remove flavor altog
 At a fixed number of classes, the three flavor-boundary partitions compare groupings that differ in a flavor
 boundary and, to keep the group shares, in other decays. They have \Kcoarse{} classes and the same group shares, and
 \RandFlavRuns{} pretraining runs each. The partition with a $b$-quark boundary, whose one flavor boundary lies between four-quark decays,
-recovers part of the loss of the \Kcoarse-class level on both pairs, neither of which it cuts: it makes
-\MlstCmpBbFoneOverCoarsePr{} of the \Kcoarse-class level on $X\to b\bar b$ against $X\to c\bar c$ and
+recovers part of the loss of the \Kcoarse-class model on both pairs, neither of which it cuts: it makes
+\MlstCmpBbFoneOverCoarsePr{} of the \Kcoarse-class model on $X\to b\bar b$ against $X\to c\bar c$ and
 \MlstCmpBcFoneOverCoarsePr{} on $X\to bc$ against $X\to bq$ and $X\to cs$. The partition with a random flavor
 boundary recovers part of it on the second pair (\MlstCmpBcFonerOverCoarsePr), while the partition with no
-flavor boundary does not differ there from the \Kcoarse-class level by more than three standard deviations
+flavor boundary does not differ there from the \Kcoarse-class model by more than three standard deviations
 (smallest resolvable difference \MlstPwBcFlavZero{} of its errors), nor on $X\to b\bar b$ against $X\to c\bar c$
 (\MlstPwBbFlavZero{}), under the linear probe or the MLP probe (\MlstMlpCmpBcFzeroOverCoarsePr{}; figure~\ref{fig:F4-mech};
 tables~\ref{tab:pairauc}, \ref{tab:tests} and~\ref{tab:mlp}). On $X\to YY\to b\bar bqq$ against $X\to YY\to c\bar cqq$, which the
@@ -191,16 +191,16 @@ than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}; tables~
 from $bq$, $cs$, the second-named the background, worse than \Kfull{} classes, and the $b$-quark-boundary partition recovers
 part of both losses (table~\ref{tab:tests}). Panels show one over the background fraction kept against the signal
 fraction, with ratios to \Kfull{} classes. Curves average \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{}
-per mass network and flavor-boundary partition, and \RandVtwoRuns-run random partitions in two groups, the
-\MlstPairRandMergedBbWord{} ($X\to b\bar b$) or \MlstPairRandMergedBcWord{} ($X\to bc$) merging the pair and
-\MlstPairRandApartMechWord{} keeping it apart, beside \Kfull{} and \Kcoarse{} classes, \MlstPairRandPartlyBcWord{}
-merging $X\to bc$ with $bq$ or $cs$ alone left out. Curves end where under \MlstMinBkgPass{} background jets
+per mass network and flavor-boundary partition, and \RandVtwoRuns-run random partitions, the
+\MlstPairRandMergedBbWord{} ($X\to b\bar b$) or \MlstPairRandMergedBcWord{} ($X\to bc$) that merge the pair shown separately
+from the \MlstPairRandApartMechWord{} that keep it apart; \MlstPairRandPartlyBcWord{} merging $X\to bc$ with only $bq$ or $cs$
+is left out, as it fits neither group. Curves end where under \MlstMinBkgPass{} background jets
 pass, and the \Kfull-class one-standard-deviation band combines run spread and binomial uncertainty. The random
 network, not drawn, reaches \MlstPairInitRhalfMechMin{}--\MlstPairInitRhalfMechMax{} at 50\% of signal jets.}
 \label{fig:F4-mech}
 \end{figure}
 
-\subsection{JetClass: the in-distribution downstream test}\label{sec:jetclass}
+\subsection{JetClass: new classes with every input present}\label{sec:jetclass}
 
 Each pretrained model is fine-tuned once on \FtSizeESix{} JetClass training jets, which carry every input the
 networks were pretrained on, and compared with the same network trained from scratch;

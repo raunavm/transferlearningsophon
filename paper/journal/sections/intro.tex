@@ -58,13 +58,14 @@ and leptons from the decay that it contains, with their flavors and the decay mo
 QCD jet by its number of $b$, $c$ and $s$ quarks. Jets are sampled so that groups of classes share one
 distribution of jet $p_{\mathrm T}$ and soft-drop mass, and the four-momenta are scaled to one fixed jet
 $p_{\mathrm T}$~\cite[Sec.~II and App.~B]{sophon}.
-In this paper we pretrain this network on the jets of JetClass-II and change only the label set
+In this paper we pretrain this network on the jets of JetClass-II and vary the label set
 (figure~\ref{fig:design}). The sampling
 groups do not depend on the label set, so models pretrained with the same seed see the same jets in the same
 order and start from the same initial weights in every layer but the output layer (section~\ref{sec:data}). The
 label sets are four levels of a class hierarchy, with \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, whose
 merges remove in turn the quark content of QCD jets, the number of $b$ or $c$ quarks together with the
-distinctions between gluons and light quarks and between electrons and muons, and quark flavor. Our first
+distinctions between $s$ and $u$ or $d$ quarks, between gluons and quarks and between electrons and muons, and
+what remains of quark flavor, whether a decay contains a $b$ quark, a $c$ quark or neither. Our first
 control is a set of random partitions, selected to cut across the \Kcoarse-class groups, in which the
 \LitJetClassTwoNResonantClasses{} resonant classes are split at random into \RandVtwoNResGroups{} groups, with QCD
 kept as the \RandVtwoQcdGroupOrd. Our second control is three flavor-boundary partitions, random partitions that differ
@@ -95,13 +96,15 @@ the label sets are those of every later figure.}
 % CHECK: MlstFtTopRthirty{Res,Mid,Coarse}OverFull and MlstFtQgRthirty{Res,Mid,Coarse}OverFull agree with 1 within their SD
 % CHECK: MlstCmpMlpResMassOverRes < 1; MlstCmpJcTwoResMassOverRes within a few per cent of 1 (sculpting is out of the findings: one mass-regression difference passes 3 sigma, PI 2026-11-09)
 We find that coarser pretraining labels make the frozen features worse on the pretraining classes, substantially so at \Kmid{} and \Kcoarse{} classes: counted in wrongly ordered pairs of jets, a linear probe
-makes more errors there at every coarser level of the hierarchy, and the costliest step is the merge of quark
-flavor, while in accuracy it is the step that removes three distinctions at once. At the same number of classes, the random partitions lose less than
-the \Kcoarse-class level, and the partitions with a single flavor boundary make fewer errors than the one without, so which classes are
+makes more errors there at every coarser level of the hierarchy, and the costliest step is the last merge of quark
+flavor, while in accuracy it is the step that removes four kinds of distinction at once. At the same number of classes, the random partitions lose less than
+the \Kcoarse-class model, and the partitions with a single flavor boundary make fewer errors than the one without, so which classes are
 merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \pending{table~\ref{tab:summary} after the reruns}
-on JetClass, and on top tagging and quark/gluon discrimination the label sets show no resolved difference. The
-auxiliary mass regression makes the jet mass more precisely predictable from the frozen features, with no
-resolved cost to the classification of the pretraining classes. A pretraining label set for jets should therefore contain every distinction that
+on JetClass, and on top tagging and quark/gluon discrimination the label sets show no resolved difference
+(smallest resolvable differences \MlstPwRthirtyFtTop{} and \MlstPwRthirtyFtQg{} of the \Kfull-class background
+rejection). The auxiliary mass regression makes the jet mass more precisely predictable from the frozen features,
+with no resolved cost to the classification of the pretraining classes under linear or MLP probes (smallest
+resolvable differences \MlstPwMassClsAll{} of their errors). A pretraining label set for jets should therefore contain every distinction that
 downstream discriminants sum over and, for use with frozen features, the flavor boundaries.
 
 % Outline (review of render 5f4e1b8, C21; STYLE.md: the introduction ends with the outline)
