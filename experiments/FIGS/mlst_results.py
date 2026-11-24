@@ -5010,6 +5010,11 @@ _MASSES_ALL = (("L162_MASS", "l162mass-188"), ("R16_Q1_MASS", "r16q1mass-188"))
 _PARTS_ALL = (("FLAV_F0", "flavf0-188"), ("FLAV_F1", "flavf1-188"), ("FLAV_F1R", "flavf1r-188"), (RAND_POOLED, "rand-188"))
 _SIZES = (1_000, 10_000, 100_000)       # the training-set sizes below a million of Figs. A8 and A10 (SIZE_TASKS)
 RERUN = ("rerun",)
+# The fine-tuned bootstraps on the one rule's cells at each row's recorded rate (2026-11-24, part A of the reruns done;
+# scripts/build_boot_tests_jobs.py ftfix_spec): bootstrap/l3_fixed/ft_<task>_N<N>.json, one file a task and size with
+# every difference of the task, so the .all copy is the same file. Top and quark/gluon on the full sets keep ParT's
+# recipe and their bootstrap/l3 files.
+L3_FIXED = "l3_fixed"
 # the side of a row named in TESTS_NAMES: the configuration whose runs it holds (the step's sides hold three, STEP_RUNS)
 TESTS_ARM = {"L188_DRAWS": "L188", "L188_ZERO": "L188", "INIT_BN_ZERO": INIT_BN, "L188_HERWIG": "L188",
              "L188_LP_ZERO": "L188", "INIT_BN_LP_ZERO": INIT_BN,
@@ -8214,13 +8219,6 @@ PLAIN = re.compile(rf"({_NUM})(?:{re.escape(PM)}({_NUM}))?")
 # per-run bootstrap SDs (None if not stored), "diffs": [(runs a, runs b, bootstrap SD of mean a - mean b)]}; a "p"
 # token carries the id as its third value (_boot_cell). 
 BOOT_REG: dict = {}
-
-
-# The fine-tuned bootstraps on the one rule's cells at each row's recorded rate (2026-11-24, part A of the reruns done;
-# scripts/build_boot_tests_jobs.py ftfix_spec): bootstrap/l3_fixed/ft_<task>_N<N>.json, one file a task and size with
-# every difference of the task, so the .all copy is the same file. Top and quark/gluon on the full sets keep ParT's
-# recipe and their bootstrap/l3 files.
-L3_FIXED = "l3_fixed"
 
 
 def _l3_doc(data: pathlib.Path, name: str, probe: bool) -> dict:
