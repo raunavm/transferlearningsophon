@@ -103,17 +103,28 @@ def xbx() -> str:
     return "\n".join(lines)
 
 
+# the pair pod's own stop (coordinator 2026-11-24: under 2 GPU-h): every step runs within what is left of CAP_S from the
+# pod's start, and a step stopped there (or killed) ends the pod with exit 42, which the job never retries
+CAP_S = 7020
+
+
+def capped(cmd: str) -> str:
+    return (f'LEFT=$(( {CAP_S} - $(date +%s) + T0 )); [ ${{LEFT}} -gt 60 ] || {{ echo "FATAL: the 2 GPU-h cap"; exit 42; }}\n'
+            f'timeout -s KILL ${{LEFT}} {cmd} || {{ RC=$?; echo "FATAL: stopped (exit ${{RC}}) at or before the 2 GPU-h cap"; exit 42; }}')
+
+
 def x_spec(tag: str, mem: str, part: str = "all") -> str:
     """part all: one pod for both; xbx or pairs: one of them (bs3-sophon-xbx-raunav, bs3-sophon-pairs-raunav), so
     that each job's GPU-hours are known before the next is launched."""
     bal = JB.BAL
-    steps = {"pairs": [BT.peak(f"bash -c 'source /tmp/sophon_fns.sh; pairs {PAIRS_OUT}/train 0 {bal}/pairs_train.parquet'"),
-                       BT.peak(f"bash -c 'source /tmp/sophon_fns.sh; pairs {PAIRS_OUT}/test 0 "
-                               + " ".join(f"{bal}/{p}" for p in JB.PAIRS_TEST_PARTS) + "'")]
+    steps = {"pairs": [capped(BT.peak(f"bash -c 'source /tmp/sophon_fns.sh; pairs {PAIRS_OUT}/train 0 {bal}/pairs_train.parquet'")),
+                       capped(BT.peak(f"bash -c 'source /tmp/sophon_fns.sh; pairs {PAIRS_OUT}/test 0 "
+                                      + " ".join(f"{bal}/{p}" for p in JB.PAIRS_TEST_PARTS) + "'"))]
              if part != "all" else [f"pairs {PAIRS_OUT}/train 0 {bal}/pairs_train.parquet",
                                     f"pairs {PAIRS_OUT}/test 0 " + " ".join(f"{bal}/{p}" for p in JB.PAIRS_TEST_PARTS)],
              "xbx": [xbx()]}
-    body = "\n".join([preamble(tag)] + (["declare -f pairs > /tmp/sophon_fns.sh"] if part == "pairs" else [])
+    body = "\n".join([preamble(tag)] + (["declare -f pairs > /tmp/sophon_fns.sh", f"T0=$(date +%s)  # the GPU-hour cap's start"]
+                                         if part == "pairs" else [])
                       + [s for k in ("pairs", "xbx") if part in ("all", k) for s in steps[k]]
                       + ['echo "SOPHON X COMPLETE"', ""])
     name = {"all": "bs3-sophon-x-raunav", "xbx": "bs3-sophon-xbx-raunav", "pairs": "bs3-sophon-pairs-raunav"}[part]

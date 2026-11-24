@@ -27,7 +27,7 @@ spec:
         - |
           set -euo pipefail
           retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
-          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.74 https://github.com/raunavm/transferlearningsophon.git tls; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.77 https://github.com/raunavm/transferlearningsophon.git tls; }
           retry clone || exit 1
           cd /workspace/tls
           retry pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
@@ -49,8 +49,11 @@ spec:
               --diag-stride 0 --no-pooled --data-test "$@" --out ${OUT} || exit 1
           }
           declare -f pairs > /tmp/sophon_fns.sh
-          python3 -c 'import resource, subprocess, sys, time; t = time.time(); r = subprocess.call(sys.argv[1:]); print("PEAK_RSS_MIB", resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss // 1024, "SECONDS", round(time.time() - t)); sys.exit(r)' bash -c 'source /tmp/sophon_fns.sh; pairs /data/results/eval/v2_linprobe_sophon/sophon-released/jc2bal_pairs/train 0 /data/finetune/jc2_bal/pairs_train.parquet'
-          python3 -c 'import resource, subprocess, sys, time; t = time.time(); r = subprocess.call(sys.argv[1:]); print("PEAK_RSS_MIB", resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss // 1024, "SECONDS", round(time.time() - t)); sys.exit(r)' bash -c 'source /tmp/sophon_fns.sh; pairs /data/results/eval/v2_linprobe_sophon/sophon-released/jc2bal_pairs/test 0 /data/finetune/jc2_bal/pairs_test_part0.parquet /data/finetune/jc2_bal/pairs_test_part1.parquet /data/finetune/jc2_bal/pairs_test_part2.parquet'
+          T0=$(date +%s)  # the GPU-hour cap's start
+          LEFT=$(( 7020 - $(date +%s) + T0 )); [ ${LEFT} -gt 60 ] || { echo "FATAL: the 2 GPU-h cap"; exit 42; }
+          timeout -s KILL ${LEFT} python3 -c 'import resource, subprocess, sys, time; t = time.time(); r = subprocess.call(sys.argv[1:]); print("PEAK_RSS_MIB", resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss // 1024, "SECONDS", round(time.time() - t)); sys.exit(r)' bash -c 'source /tmp/sophon_fns.sh; pairs /data/results/eval/v2_linprobe_sophon/sophon-released/jc2bal_pairs/train 0 /data/finetune/jc2_bal/pairs_train.parquet' || { RC=$?; echo "FATAL: stopped (exit ${RC}) at or before the 2 GPU-h cap"; exit 42; }
+          LEFT=$(( 7020 - $(date +%s) + T0 )); [ ${LEFT} -gt 60 ] || { echo "FATAL: the 2 GPU-h cap"; exit 42; }
+          timeout -s KILL ${LEFT} python3 -c 'import resource, subprocess, sys, time; t = time.time(); r = subprocess.call(sys.argv[1:]); print("PEAK_RSS_MIB", resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss // 1024, "SECONDS", round(time.time() - t)); sys.exit(r)' bash -c 'source /tmp/sophon_fns.sh; pairs /data/results/eval/v2_linprobe_sophon/sophon-released/jc2bal_pairs/test 0 /data/finetune/jc2_bal/pairs_test_part0.parquet /data/finetune/jc2_bal/pairs_test_part1.parquet /data/finetune/jc2_bal/pairs_test_part2.parquet' || { RC=$?; echo "FATAL: stopped (exit ${RC}) at or before the 2 GPU-h cap"; exit 42; }
           echo "SOPHON X COMPLETE"
         resources:
           requests: { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }

@@ -63,3 +63,10 @@ def test_the_cpu_parts_run_on_their_familys_cpu_model_with_its_threads():
     for part in ("mlp2", "pairfit"):
         assert all(f in BS.cpu_spec("mtx-s9.99", part, "8Gi") for f in BS.PAIRS_DONE)
     assert "--datasets jc1 top qg" in BS.cpu_spec("mtx-s9.99", "mlp", "7Gi")
+
+
+def test_the_pair_pod_stops_itself_before_2_gpu_hours():
+    pr = BS.x_spec("mtx-s9.99", "64Gi", "pairs")
+    assert BS.CAP_S < 7200 and pr.count("timeout -s KILL ${LEFT}") == 2 and "T0=$(date +%s)" in pr
+    assert pr.index("T0=$(date +%s)") < pr.index("timeout -s KILL")
+    assert "exit 42" in pr and "values: [42]" in pr        # FailIndex on 42: the job never retries a stopped pod
