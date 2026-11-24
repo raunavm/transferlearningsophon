@@ -115,7 +115,7 @@ def _boot_name(m, ck):
 
 
 def test_rows_are_the_runs_of_the_linear_probe_rows():
-    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 13 + 12 + 33 + 33 + 1 + 6
+    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 13 + 12 + 33 + 33 + 1 + 6 + 6
     paper = {f"mtx-{r}" for a, rs in BJ.ARMS.items() if a not in BJ.INIT and a != "kin" for r in rs}
     assert len(paper) == 27 and {m for f, m, ck in BJ.ROWS if f == "bench" and ck == "best70"} == paper
     assert {(m, ck) for f, m, ck in BJ.ROWS if f == "bench"} == {(m, ck) for f, m, ck in BJ.ROWS if f == "bench0"}
@@ -281,3 +281,12 @@ def test_bcpair_fits_the_one_pair_as_mlp_cells_does(tmp_path):
     assert len(probe.calls) == 1 and len(probe.calls[0][4]) == 30
     z = np.load(cells[f"pair_{MS.BC_PAIR}"]["scores"])
     assert np.array_equal(z["y"], np.r_[np.ones(10), np.zeros(20)]) and z["s"].shape == (30,)
+
+
+def test_ee_pair_and_jetclass_partition_rows():
+    assert [r[1] for r in BJ.ROWS if r[0] == "eepair"] == [f"mtx-{a}-s{k}" for a in ("l188", "r16q1") for k in (1, 2, 3)]
+    text = BJ.boot_spec("mtx-s9.99", "4Gi", "eepair")
+    assert "/eepair/probs/mtx-r16q1-s1/best70/jc2bal_pairs_ee_vs_mm.npz" in text and "--diff r16q1-188=" in text
+    text = BJ.jc1_parts_spec("mtx-s9.99", "6Gi")
+    assert "fits_v5_probs/mtx-rand2p5-s2/best70/jc1_N1000000.npz" in text and "--diff rand-r16q1=" in text
+    assert "--diff flavf0-188=" in text and "--diff rand-188=" in text and "mlp_scores" not in text.split("GENERATED")[0]

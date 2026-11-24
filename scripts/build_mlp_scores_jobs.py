@@ -51,7 +51,7 @@ ARMS = R5.BOOTALL_ARMS
 # bench: the fill chosen on validation (CS-8b, PI 2026-11-24: one configuration for Table 10 and the DL-9 rows), with
 # the random networks; bcpair: SC-2c's X->bc vs bq, cs pair MLP of 17 and 188 classes
 FAMILY_ARMS = {"jc2bal": ("l188", "l162", "l162mass", "r16q1", "r16q1mass"), "coarse": ("l188", "l162", "r42q1", "r16q1"),
-               "bench": tuple(ARMS) + ("init", "initbn"), "bcpair": ("l188", "r16q1"),
+               "bench": tuple(ARMS) + ("init", "initbn"), "bcpair": ("l188", "r16q1"), "eepair": ("l188", "r16q1"),
                "bench0": tuple(ARMS) + ("init", "initbn"), "kin": ("kin",)}
 INIT = {"init": "init", "initbn": "init_bn"}     # the random networks' checkpoints (init-sK's two)
 
@@ -70,7 +70,7 @@ SMOKE_NAME = {"jc2bal": "bs3-mlp-smoke-raunav", "bench": "bs3-mlp-smoke-bench-ra
 FILES = {"jc2bal": ("jc2bal_N1000000",), "coarse": ("jc2bal_R16_Q1_N1000000",),
          "bench": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000"),
          "bench0": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000"), "kin": ("top_N1200000",),
-         "bcpair": ("jc2bal_pairs_bc_vs_bq_cs",)}
+         "bcpair": ("jc2bal_pairs_bc_vs_bq_cs",), "eepair": ("jc2bal_pairs_ee_vs_mm",)}
 # the bootstraps: output -> (family, npz name, the differences (first arm, second arm), flags)
 BENCH_DIFFS = tuple((a, "l188") for a in FAMILY_ARMS["bench"][:10] if a != "l188")
 # every pair of Table 10's rows, 188 classes always the second side (Delta = the other row - 188 classes)
@@ -91,6 +91,8 @@ BOOT_OUT = {f"{BOOT}/mlp_jc2bal_N1000000.json": ("jc2bal", "jc2bal_N1000000", ((
             # SC-2c: the X->bc vs bq, cs pair MLP, 17 - 188 classes
             f"{BOOT}/mlp_jc2bal_pairs_bc_vs_bq_cs.json": ("bcpair", "jc2bal_pairs_bc_vs_bq_cs", (("r16q1", "l188"),),
                                                           "--headline"),
+            # fifth review B2: the X->ee vs X->mumu pair MLP beside the 17-class null
+            f"{BOOT}/mlp_jc2bal_pairs_ee_vs_mm.json": ("eepair", "jc2bal_pairs_ee_vs_mm", (("r16q1", "l188"),), "--headline"),
             # CS-5b: every pair of Table 10's rows on its printed zero-fill fits
             **{f"{BOOT}/mlp0_{n}.json": ("bench0", n, PAIRS0, "--headline") for n in FILES["bench0"]}}
 
@@ -162,6 +164,7 @@ BOOT_PARTS = {"jc2": (f"{BOOT}/mlp_jc2bal_N1000000.json", f"{BOOT}/mlp_jc2bal_R1
               "bench0": tuple(f"{BOOT}/mlp0_{n}.json" for n in FILES["bench0"]),
               "benchf": tuple(f"{BOOT}/mlpf_{n}.json" for n in FILES["bench"]),
               "bcpair": (f"{BOOT}/mlp_jc2bal_pairs_bc_vs_bq_cs.json",),
+              "eepair": (f"{BOOT}/mlp_jc2bal_pairs_ee_vs_mm.json",),
               "jc2mass": (MASS_OUT,)}
 
 
@@ -268,6 +271,22 @@ def cs15b_spec(tag: str, mem: str) -> str:
     return _spec(tag, "bs3-boot-cs15b-raunav", [body], 1, mem, "1",
                  "CS-15b: JetClass-II 10^6 accuracy, fine-tuned against linear probe, per arm (SC-1)")
 
+# ------------------------------------------------------------------ RN1: JetClass linear-probe accuracy, partitions (stored)
+JC1_OUT = f"{BOOT}/probe_jc1_N1000000.parts.json"
+JC1_DIFFS = (("flavf0", "l188"), ("rand", "l188"), ("rand", "r16q1"))
+
+
+def jc1_parts_spec(tag: str, mem: str) -> str:
+    """bs3-boot-jc1parts-raunav: the JetClass linear probes' stored test probabilities (fits_v5_probs jc1_N1000000.npz,
+    the jets of bootstrap/l3_v5/probe_jc1_N1000000.json), the partitions' rows; CPU, nothing fitted."""
+    arms = list(dict.fromkeys(x for p in JC1_DIFFS for x in p))
+    ins = {m: f"{R5.V5['fits_v5_probs']}/{m}/best70/jc1_N1000000.npz" for a in arms for m in models(a)}
+    cmd = ("python3 experiments/STATS/paired_bootstrap.py --task npz " + " ".join(f"--model {m}={p}" for m, p in ins.items())
+           + f" --headline {BT.diffs(JC1_DIFFS)} --b {B} --out {JC1_OUT}")
+    body = "\n  ".join([BT.check_inputs(ins.values()), f"mkdir -p {BOOT}", f"[ -e {JC1_OUT} ] || " + BT.peak(cmd)])
+    return _spec(tag, "bs3-boot-jc1parts-raunav", [body], 1, mem, "1",
+                 "RN1: JetClass linear-probe accuracy, the partitions against 188 and 17 classes (stored scores)")
+
 # ------------------------------------------------------------------ SC-2 #1: the transfer-head term on per-jet scores
 ANALYTIC_OUT = {f"{BOOT}/analytic_jc2bal_pairs_bc_vs_bq_cs.json":
                 lambda m: f"{R5.V5['fits_v5_probs']}/{m}/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
@@ -310,7 +329,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic", "ee",
-                                                      "mass-helper", "boot-kin", "cs15b"))
+                                                      "mass-helper", "boot-kin", "cs15b", "jc1parts"))
     ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
     ap.add_argument("--part", choices=tuple(BOOT_PARTS), help="with --what boot")
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
@@ -331,7 +350,8 @@ def main(argv=None) -> int:
                   "ee": lambda: ("bs3-boot-ee-raunav", ee_spec(a.tag, a.mem)),
                   "mass-helper": lambda: ("bs3-boot-jc2mass-helper-raunav", boot_mass_helper_spec(a.tag, a.mem)),
                   "boot-kin": lambda: ("bs3-boot-kin-raunav", boot_kin_spec(a.tag, a.mem)),
-                  "cs15b": lambda: ("bs3-boot-cs15b-raunav", cs15b_spec(a.tag, a.mem))}[a.what]()
+                  "cs15b": lambda: ("bs3-boot-cs15b-raunav", cs15b_spec(a.tag, a.mem)),
+                  "jc1parts": lambda: ("bs3-boot-jc1parts-raunav", jc1_parts_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)
     print(f"wrote {p.relative_to(ROOT)}")

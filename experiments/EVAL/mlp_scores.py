@@ -42,7 +42,7 @@ import time
 import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-FAMILIES = ("jc2bal", "coarse", "bench", "bench0", "kin", "bcpair")
+FAMILIES = ("jc2bal", "coarse", "bench", "bench0", "kin", "bcpair", "eepair")
 COARSE = "R16_Q1"
 FILL_ROOT = pathlib.Path("/data/results/eval/v2_linprobe_fill")
 FILL = {"top": "itop4", "qg": "nqg"}     # build_refit_v5_jobs.FILL_TAG: the substitutions chosen on validation
@@ -50,7 +50,7 @@ FILL = {"top": "itop4", "qg": "nqg"}     # build_refit_v5_jobs.FILL_TAG: the sub
 STORED = {"jc2bal": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"), "coarse": None, "bench": None,
           "bench0": pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2"),
           "kin": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"),
-          "bcpair": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp")}
+          "bcpair": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"), "eepair": None}
 STORED_BN = pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2_initbn")   # bench0's init_bn checkpoint
 COMPARED = {"jc2bal": ("accuracy", "macro_auc_ovr", "macro_auc_resonant", "macro_auc_qcd"),
             "bench0": ("accuracy", "auc", "r30", "r50"), "kin": ("accuracy", "auc", "r30", "r50"),
@@ -151,6 +151,32 @@ def bcpair(pb, probe, model: str, ckpt: str, out: pathlib.Path, pair: str = BC_P
                              "mlp": meta, "scores": save(out, model, ckpt, f"jc2bal_pairs_{pair}", yte, s=s)}}
 
 
+def eepair(pb, probe, model: str, ckpt: str, out: pathlib.Path) -> dict:
+    """probe_bal.sibling_pair_cells --sibling-test (X->ee vs X->mumu; fits_v5_sib2) with the MLP in place of the linear
+    probe (fifth review B2, CS-18): the pair's jets of the balanced 1e6 training set, a tenth held out, scored on every
+    test jet of the pair (jc2sib); scores kept."""
+    import csv
+    lr = _load("label_recovery", "experiments/EVAL/label_recovery.py")
+    with lr.MAP.open() as f:
+        label = {r["class_name"]: int(r["jet_label"]) for r in csv.DictReader(f)}
+    pair, (sig, bkg) = next(iter(pb.SIBLING_PAIRS.items()))
+    xtr, ytr, _ = pb.load(model, "jc2bal", pb.SIBLING_TRAIN, ckpt)
+    xte, yte_all, _ = pb.load(model, pb.SIBLING_ALL, "test", ckpt)
+    s, b = [label[n] for n in sig], [label[n] for n in bkg]
+    rs, rb = np.flatnonzero(np.isin(ytr, s)), np.flatnonzero(np.isin(ytr, b))
+    rows = np.concatenate([rs, rb])
+    y = np.concatenate([np.ones(rs.size, np.int64), np.zeros(rb.size, np.int64)])
+    r = np.random.default_rng([pb.PAIR_SEED, sum(map(ord, pair))])
+    isval = r.random(rows.size) < pb.PAIR_VAL_FRACTION
+    ts, tb = np.flatnonzero(np.isin(yte_all, s)), np.flatnonzero(np.isin(yte_all, b))
+    trow = np.concatenate([ts, tb])
+    yte = np.concatenate([np.ones(ts.size, np.int64), np.zeros(tb.size, np.int64)])
+    sc, meta = probe.fit_mlp(xtr[rows[~isval]], y[~isval], xtr[rows[isval]], y[isval], xte[trow])
+    return {f"pair_{pair}": {**pb.lp.binary_score_metrics(sc, yte, probe, threshold=0.0), **pb.lp.mlp_fit_record(meta),
+                             "mlp": meta, "n_train": int((~isval).sum()), "n_val": int(isval.sum()),
+                             "scores": save(out, model, ckpt, f"jc2bal_pairs_{pair}", yte, s=sc)}}
+
+
 def stored(family: str, model: str, ckpt: str, cells: dict, root=None) -> dict:
     """Each metric of the refit beside the stored fit's ({} without one): {cell: {metric: [stored, refit]}}."""
     root = (STORED_BN if family == "bench0" and ckpt == "init_bn" else STORED[family]) if root is None else root
@@ -182,6 +208,7 @@ def main(argv=None) -> int:
     cpu = _load("latent_scale_probe", "experiments/EVAL/latent_scale_probe.py").cpu_model()
     a.out.mkdir(parents=True, exist_ok=True)
     cells = (bcpair(pb, probe, a.model, a.checkpoint, a.out) if a.family == "bcpair"
+             else eepair(pb, probe, a.model, a.checkpoint, a.out) if a.family == "eepair"
              else bench(pb, probe, a.model, a.checkpoint, a.out, zero=True, datasets=("top",)) if a.family == "kin"
              else bench(pb, probe, a.model, a.checkpoint, a.out, zero=a.family == "bench0") if a.family.startswith("bench")
              else jc2bal(pb, probe, a.model, a.checkpoint, a.out, coarse=a.family == "coarse"))
