@@ -65,7 +65,8 @@ def release():
         except SystemExit as e:
             # while fine-tuning reruns are running the paper builds only as the preview (MLST_FT_PREVIEW=1, the
             # render job's --preview); its numbers are checked the same way
-            if "rate search is not settled" not in str(e):
+            # (RR-7, PI 2026-11-23: without the one rule's read-out the training-size points stop the build)
+            if "rate search is not settled" not in str(e) and "(RR-7)" not in str(e):
                 raise
             mp.setenv("MLST_FT_PREVIEW", "1")
             built, _, _ = MT.build(ROOT)

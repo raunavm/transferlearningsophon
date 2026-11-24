@@ -93,7 +93,8 @@ def test_the_main_text_is_the_pis_list_in_order():
               "F11-part", "UMAP-frozen", "UMAP-ft", "PC-jc1"):
         assert G.TIER[k] == G.SUPPLEMENT, k
     assert [f for f, _ in G.APPENDIX_FAMILIES] == ["Training details", "Checks of the method", "Headline metrics",
-                                                   "Training size", "Class pairs", "Per class", "Mass"]
+                                                   "Training size", "Class pairs", "Per class", "Mass",
+                                                   "Sculpting"]       # tab:sculptmain (LEDGER CS-2b)
     # the coverage map keeps its topical families (PI 2026-11-14, step 6)
     assert G.FAMILY_NAMES == ("Headline metrics", "Per class", "Class pairs", "Training size", "ROC curves", "Jet pT",
                               "Mass", "Sculpting", "Resonance tagging", "Embeddings", "Training details")

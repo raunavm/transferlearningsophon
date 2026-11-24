@@ -2301,14 +2301,6 @@ def load_ft(data: pathlib.Path) -> tuple:
             raise SystemExit(f"FATAL: {PREVIEW_ENV}=1 but neither {FIXED} nor {FIXED_PARTIAL} in {data / 'budget'}")
     if fixed.exists():      # the one rule (PI 2026-11-15) replaces every older tree below the full sets
         return tag, merge_kin(merge_fixed(per, fixed, preview=fixed.name == FIXED_PARTIAL), data / "budget" / KIN_FULL), absent
-    # PI 2026-11-23 (LEDGER RR-7): every training-size point, in the tables, the figures and the release, reads the
-    # fixed-schedule cell at its row's recorded rate; without the one rule's read-out none is read (the trees before it
-    # never are), only ParT's full sets, so no table prints such a point and the figures' check (gallery_labelset._settled)
-    # stops on any it would draw. Not a stop here: the gallery modules load this at import, in every test.
-    if not ft_preview():
-        return tag, merge_kin({key: {init: {n: v for n, v in by_n.items() if n >= FULL_N.get(key, math.inf)}
-                                     for init, by_n in cells.items()} for key, cells in per.items()},
-                              data / "budget" / KIN_FULL), absent
     return tag, merge_kin(merge_budget(per, data / "budget" / "budget_metrics.json",
                                        data / "budget" / "budget_long_metrics.json",
                                        [data / "budget" / f for f in SCRATCH_FULL], data / "budget" / PRE_FULL),
@@ -8358,6 +8350,13 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     method_macros(em, root, words)
     ft_recipe(em, data, {m[len("mtx-"):] for m in pre_runs}, fmt_int, missing, words)
     tag, per, absent = load_ft(data)
+    # PI 2026-11-23 (LEDGER RR-7): every training-size point, in the tables, the figures and the release, reads the
+    # fixed-schedule cell at its row's recorded rate, or the build stops: without the one rule's read-out the tables would
+    # print the trees before it. Here in build, not in load_ft, which the gallery modules call at import.
+    if ft_source(data).split()[0] not in (FIXED, FIXED_PARTIAL) and any(
+            n < FULL_N.get(key, math.inf) for key, cells in per.items() for by_n in cells.values() for n in by_n):
+        raise SystemExit(f"FATAL (RR-7): the fine-tuning read-out is {ft_source(data)}; a training-size point reads only "
+                         "the one rule's fixed-schedule cells")
     out["tables/ft_source.txt"] = ft_source(data) + "\n"
     if absent:
         missing.append("fine-tuning read-outs -- experiments/FIGS/data/v2/ft_mlst/: " + ", ".join(absent))
