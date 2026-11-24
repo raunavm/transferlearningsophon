@@ -55,6 +55,7 @@ import csv
 import importlib.util
 import functools
 import io
+import itertools
 import json
 import math
 import pathlib
@@ -1323,6 +1324,65 @@ def table_mlp(mlp, runs, fmt_pm, rows, raw_v4=None, nat=None, kin=False, rho=Tru
     return "\n".join(out + [""])
 
 
+# PI SP-14 (R2, R4): the paper's Table 10 keeps only the networks and columns that a sentence or a tab:tests row reads;
+# every other network and column is in the data release's copy (tab:mlpfull, table_mlp). Every sentence that cites
+# tab:mlp states a difference with its multilayer-perceptron tab:tests row (results_jc, results_mass, appendix D), so
+# the columns are the tasks and metrics of TESTS' multilayer-perceptron blocks that Table 10 holds and the networks
+# their sides (mlp_paper_cells); the accuracy, the 17 merged groups and the jet mass are tab:tests', tab:coarse's and
+# tab:mass's. In the order and with the headings of table_mlp: (task, metric or None for AUC, group, column)
+MLP_PAPER_ORDER = (("jc2_188", None, "JetClass-II", "AUC"), ("jc2_188_res", None, "JetClass-II", "AUC, resonant"),
+                   ("jc2_188_qcd", None, "JetClass-II", "AUC, QCD"), ("jc1", None, "JetClass", "AUC"),
+                   *((t, m, g, h) for t, g in (("top", "top"), ("qg", "quark/gluon, Pythia"),
+                                               ("qg_herwig", "quark/gluon, Herwig"))
+                     for m, h in ((None, "AUC"), ("r30", "$R_{30}$"))),
+                   *((k, None, h, "AUC") for k, h, *_ in MLP_PAIRS))
+_MLP_HEAD_OF = {"JetClass-II, AUC": ("jc2_188", None), "JetClass-II, AUC over the resonant classes": ("jc2_188_res", None),
+                "JetClass-II, AUC over the QCD classes": ("jc2_188_qcd", None), "JetClass, AUC": ("jc1", None),
+                **{f"{h}, {mh}": (t, m) for t, h in (("top", "top tagging"), ("qg", "quark/gluon tagging (Pythia)"),
+                                                     ("qg_herwig", "quark/gluon tagging (Herwig)"))
+                   for m, mh in ((None, "AUC"), ("r30", "$R_{30}$"))},
+                **{f"{h}, AUC": (k, None) for k, h, *_ in MLP_PAIRS}}
+
+
+def mlp_paper_cells(tests=None) -> tuple:
+    """(Table 10's columns in the paper, (task, metric) in MLP_PAPER_ORDER; its networks): those of TESTS'
+    multilayer-perceptron blocks whose task and metric Table 10 holds, and their two sides (TESTS_ARM)."""
+    cols, arms = set(), set()
+    for head, rows in TESTS if tests is None else tests:
+        if ", " + HEADING["mlp"] not in head:
+            continue
+        col = _MLP_HEAD_OF.get(head.split(", " + HEADING["mlp"])[0])
+        if col is None:
+            continue
+        cols.add(col)
+        arms |= {TESTS_ARM.get(x, x) for a, b, _ in rows for x in (a, b)}
+    return [(t, m) for t, m, *_ in MLP_PAPER_ORDER if (t, m) in cols], arms
+
+
+def table_mlp_paper(mlp, runs, fmt_pm, rows) -> str:
+    """tab:mlp as the paper prints it (mlp_paper_cells): the multilayer-perceptron probe, three seeds averaged, at the
+    largest training set, on the family the build reads; rows in the order of rows."""
+    cols, arms = mlp_paper_cells()
+    if not cols:
+        raise SystemExit("FATAL (SP-14): tab:mlp: no tab:tests row of the multilayer-perceptron probe reads it")
+    if arms - set(rows):
+        raise SystemExit(f"FATAL (SP-14): tab:mlp: tab:tests reads networks the table has no row for: {arms - set(rows)}")
+    spec = [next(o for o in MLP_PAPER_ORDER if o[:2] == c) for c in cols]
+    groups = [(g, sum(1 for _ in it)) for g, it in itertools.groupby(o[2] for o in spec)]
+    head, rules, at = [], [], 2
+    for g, n in groups:
+        head.append(rf"\multicolumn{{{n}}}{{c}}{{{g}}}" if n > 1 else g)
+        rules.append(rf"\cmidrule(lr){{{at}-{at + n - 1}}}")
+        at += n
+    out = [r"\begin{tabular}{l" + "c" * len(cols) + "}", r"\toprule", " & " + " & ".join(head) + r" \\", "".join(rules),
+           " & " + " & ".join(o[3] for o in spec) + r" \\", r"\midrule"]
+    for arm in (a for a in rows if a in arms):
+        ms, n = runs[arm], len(runs[arm])
+        cells = [_cell([_mlp_val(mlp, m, t, met) for m in ms], n, fmt_pm, frac=met is None) for t, met in cols]
+        out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
+    return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
+
+
 def _hidden_rows(raw_v4, runs, fmt_pm) -> list:
     """The linear probe on the pretraining head's 512-unit hidden layer beside the one on the class token (188 classes),
     as rows under a rule at the foot of the nonlinear-probe table's first block, in its JetClass-II AUC and quark/gluon
@@ -1723,7 +1783,7 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
                               (("ridge", RIDGE, MASS_ROWS),))):
         part = [] if i else [sd_row]
         for est, name, arms in ests:
-            # in \itshape, not \textit: _turned_long starts a page at a second mode heading, and these are not modes
+            # in \itshape, not \textit: _long starts a page at a second mode heading, and these are not modes
             part.append(r"\multicolumn{" + str(1 + 2 * ng) + r"}{@{}l}{{\itshape " + name + r"}} \\")
             for arm, ind in _mass_arms(atlas, runs, est, arms):
                 if arm == PARTITIONS:
@@ -1756,7 +1816,7 @@ def table_mass_detail(atlas, runs, fmt_pm) -> str:
                     out.append(f"soft-drop mass, {group[g]} jets & " + " & ".join(
                         "--" if x is None else V4.tok("p", float(x), float(e)) if e is not None and V4.tokens(fmt_pm)
                         else f"{x:.4f}" for x, e in zip(gv, gs)) + r" \\")
-                # italic, as every table's section headings; _turned_long breaks a page only at a mode heading (HEADING)
+                # italic, as every table's section headings; _long breaks a page only at a mode heading (HEADING)
                 out.append(sec(f"{name}, {group[g]} jets", 1 + len(bins)))
                 for arm, ind in _mass_arms(atlas, runs, est, arms):
                     if arm == PARTITIONS:
@@ -5613,11 +5673,29 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
                 rows_out[(SCULPT_FLOOR_HEAD, a, "FLOOR")] = v
         if floor_rows:
             blocks.append((SCULPT_FLOOR_HEAD, floor_rows))
+    # PI SP-14 (the 25-page row rule of SP-13 re-applied to every row added since 28932fe8): each meets (a), (b) or
+    # (c), the DL-9 MLP rows with the linear probes' substitutions (MLP_N2) by the Fig. 2 caption, so every row stays
+    # (appendix layout report, task 2)
+
+    def side(head, x):
+        """A side's name under its heading: what the heading already says is not repeated (SP-14: each row names only
+        its two sides)."""
+        t = name(x)
+        if "17 merged groups" in head:
+            t = t.replace(" on the 17 groups", "")
+        if HEADING["head"] in head:
+            t = t.replace(", head", "")
+        return t
+    return _tests_tabular(blocks, side, single, analytic, num), {r for r in replicas if r}
+
+
+def _tests_tabular(blocks: list, side, single: set, analytic: set, num) -> str:
+    """tab:tests' tabular: each block under its italic heading (task, metric, read-out), a row its two sides."""
     out = [r"\begin{tabular}{lccc}", r"\toprule", TESTS_HEAD, r"\midrule"]
     for k, (head, rows) in enumerate(blocks):
         block = [_full_row(4, head, italic=True)]
         for first, second, v, ind in rows:
-            lab = f"{name(first)} $-$ {name(second)}" + (INDEPENDENT if ind else "")
+            lab = f"{side(head, first)} $-$ {side(head, second)}" + (INDEPENDENT if ind else "")
             if isinstance(v, tuple) and len(v) > 5:       # a row over several (least), and its mark
                 lab += LEAST + (SINGLE_SIDE if v[5][1] else "")
             elif (head, first, second) in single:
@@ -5633,13 +5711,13 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
             block.append(lab + " & " + num(d, place) + " & " + num(sig, place) + " & "
                          + f"{d / sig:.2f}".replace("-", "$-$") + r" \\")
         # a block's rows never break apart from its heading; between two blocks a space, where the page may break
-        # LEDGER DL-14 (typographic): a block longer than a third of a turned page may break after its first three rows
+        # LEDGER DL-14 (typographic): a block longer than TESTS_GLUE_ROWS lines may break after its first three rows
         # and before its last two, so that the caption and a long first block never leave a page empty (render e2305ce:
         # the 22 accuracy rows and the caption, unbreakable, pushed the table off a blank page)
         glue = [i < 3 or i >= len(block) - 3 or len(block) <= TESTS_GLUE_ROWS for i in range(len(block) - 1)]
         out += (([r"\noalign{\penalty-100}\addlinespace"] if k else [])
                 + [ln.rstrip() + ("*" if g else "") for ln, g in zip(block[:-1], glue)] + block[-1:])
-    return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""]), {r for r in replicas if r}
+    return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
 RATIO_WORD = re.compile(r"\\([A-Za-z]+Pr(?:Max)?)(?![A-Za-z])")
@@ -5653,11 +5731,10 @@ def text_ratio_words(journal: pathlib.Path) -> set:
 
 def _printed_mean(v: list, extra: int = 0) -> float:
     """A side's mean as a table prints it (_printed_place): at its SD's PDG place and extra places more where its table
-    has them (EXTRA_DIGIT), at most MAX_DECIMALS; a single value (the soft-drop mass, one run) or runs that agree, as it
-    is."""
+    has them (EXTRA_DIGIT); a single value (the soft-drop mass, one run) or runs that agree, as it is."""
     m = float(np.mean(v))
     sd = float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
-    return m if _zero_sd(m, sd) else round(m, min(_pdg_place(sd) + extra, MAX_DECIMALS))
+    return m if _zero_sd(m, sd) else round(m, _pdg_place(sd) + extra)
 
 
 # PI 2026-11-23 (LEDGER PW-1): wherever the results state a null, the smallest difference its test resolves, 3 sigma of
@@ -6431,7 +6508,7 @@ def table_compute(comp, runs, fmt_int, extra=(), ft_gpus=None, ft_nodev=None, ft
              rf"\multicolumn{{5}}{{@{{}}l}}{{\textit{{Table~\ref{{{label}}} (continued)}}}} \\", r"\toprule", head,
              r"\midrule", r"\endhead"]
     # the closing rule follows the rows (below), no last foot: one taller than the empty foot lost the repeated
-    # heading on a page broken in the last chunk (longtable's end-of-table branch, as _turned_long)
+    # heading on a page broken in the last chunk (longtable's end-of-table branch, as _long)
     hours = {}
     arms = [a for a in ALL_ROWS if a in runs] + [a for a in runs if a not in ALL_ROWS + (INIT, INIT_BN)]   # L5 order
     # the partitions under their subheading, indented, as in the last block (round-1 fix 2026-11-13)
@@ -7623,6 +7700,13 @@ TEXT_CM = 15.5      # widest tabular kept whole (estimated): the 15 cm text bloc
 LABEL_CM = 6.3      # a wider row label wraps, at its commas, in a table that has to be split
 SHRINK_OK = 1.0     # nothing is shrunk (PI 2026-11-11); was 1.08 with adjustbox
 BODY_SCALE = 12 / 10.95     # the tables are set at the body size, 12 pt (PI 2026-11-12); the width model was calibrated at \\small
+# LS-1 (the user, 2026-11-24: no page sideways) and PI DL-14/SP-14 (no text below the template's table size): a table
+# too wide for the upright text block at the body size is set at the largest of these sizes at which it fits, down to
+# the iopjournal template's table size (iopjournal.cls sets every tabular at \fontsize{8}{10}); (command, points, leading)
+TABLE_SIZES = (("", 12.0, 14.5), (r"\small", 10.95, 13.6), (r"\footnotesize", 10.0, 12.0),
+               (r"\fontsize{8}{10}\selectfont", 8.0, 10.0))
+TEMPLATE_SIZE = TABLE_SIZES[-1][0]
+_SIZE_NOW = [TABLE_SIZES[0]]    # the size _cell_cm and _height_cm estimate at (_float sets it)
 
 
 def _depth0_split(s: str, sep: str) -> list[str]:
@@ -7642,7 +7726,8 @@ def _depth0_split(s: str, sep: str) -> list[str]:
 
 def _cell_cm(t: str) -> float:
     """Estimated printed width of a cell at the body size of the 12 pt paper (calibrated at \\small on the
-    generated tables, measured with LaTeX, and scaled by BODY_SCALE)."""
+    generated tables, measured with LaTeX, and scaled by BODY_SCALE), its text scaled to the size being tried
+    (_SIZE_NOW), its column padding not."""
     t = re.sub(r"\\multicolumn\{\d+\}\{(?:@\{\})?\w+\}", "", t)
     t = t.replace(BOLD_ON, "")      # a bold value (_bold) is as wide as a light one to 2% (BOLD_ON): one width model
     bold = 1.1 if r"\textbf" in t else 1.0
@@ -7654,7 +7739,8 @@ def _cell_cm(t: str) -> float:
     t = re.sub(r"_\{([^}]*)\}", lambda m: "x" * max(1, round(0.7 * len(m.group(1)))), t)
     t = re.sub(r"\\[a-zA-Z]+", "x", t)
     t = re.sub(r"[{}$^_~]", "", t).strip()
-    return (0.177 * len(t) + 0.1 * sum(c.isupper() for c in t)) * bold * BODY_SCALE + 0.42      # capitals are wider
+    return ((0.177 * len(t) + 0.1 * sum(c.isupper() for c in t)) * bold * BODY_SCALE * _SIZE_NOW[0][1] / 12
+            + 0.42)      # capitals are wider
 
 
 def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) -> list[str]:
@@ -7871,7 +7957,10 @@ def _mark_notes(cap: str, body: str) -> str:
     return cap + "".join(note for mark, note in MARK_NOTES if mark in body)
 
 
-MAX_DECIMALS = 5        # the finest place a column is printed at (0.98560 +- 0.00004)
+# the finest place a column of values without a standard deviation is printed at (_column_place); a mean +- SD prints
+# at its SD's own PDG place, however fine (fifth review B5, LEDGER SH-5: a cap at five decimals printed SDs of 6e-6
+# as +- 0.00001)
+MAX_DECIMALS = 5
 
 
 def _sd_place(sd: float) -> int:
@@ -7917,17 +8006,17 @@ _COL_NOW = [0]          # the column of the token being set (uniform_columns, _b
 
 
 def _printed_place(kind: str, v: list, place: int) -> int:
-    """The decimal place _render prints a token at: a mean +- SD at the SD's PDG place (at most MAX_DECIMALS), every
+    """The decimal place _render prints a token at: a mean +- SD at the SD's PDG place (SH-5, no cap), every
     other token at its column's place. A mean +- SD prints alike in every table, whatever the column's place
     (2026-11-23 review A8, LEDGER TN-4: Table 1's 1,800 +- 60 had printed as 1,799 +- 56 in tab:published)."""
     if kind.lower() == "p" and not _zero_sd(v[0], v[1]):
-        return min(_pdg_place(v[1]) + _EXTRA_NOW[0].get(_COL_NOW[0], 0), MAX_DECIMALS)
+        return _pdg_place(v[1]) + _EXTRA_NOW[0].get(_COL_NOW[0], 0)
     return place
 
 
 def _render(kind: str, v: list, place: int, floor: int | None = None) -> str:
     """A token: p mean +- SD rounded per cell as the PDG rounds (PI 2026-11-14: the SD to one or two significant
-    figures, _pdg_place, at most MAX_DECIMALS), the mean to match, or the mean with AGREE where the SD is zero or below
+    figures, _pdg_place, at its own place), the mean to match, or the mean with AGREE where the SD is zero or below
     the last digit shown; s a single run's value with SINGLE at its column's place; o a number that is not a run's, at
     its column's place (floor: uniform_columns never sets that place coarser)."""
     bold, kind = kind.isupper(), kind.lower()       # upper case: a cell _bold chose; the mark stays light
@@ -8171,8 +8260,10 @@ CONTINUED = (r"\providecommand{\TableContinued}[2]{\label{#2}\ifnum\getpagerefnu
              r"\makebox[\linewidth][l]{\textit{Table~\ref{#1} (continued)}}\par\smallskip\fi}")
 
 
-PORTRAIT_CM = 14.6      # the text block (15 cm) less the estimate's error: a tabular estimated wider is set in landscape, never shrunk or cut to fit
-LANDSCAPE_CM = 23.6     # the text block turned (24.7 cm) less the estimate's error: only a tabular wider than this is cut into blocks, each that wide
+# LS-1 (the user, 2026-11-24: "pages shouldnt be sideways"; PI SP-14): no table is set in landscape. A tabular estimated
+# wider than this (the 15 cm text block less the estimate's error) is cut into blocks of columns stacked one above the
+# other (split_wide), each repeating the row labels, at the tables' size: never shrunk
+PORTRAIT_CM = 14.6
 NO_WRAP = 99.0          # label_cm of a row-label column that never wraps
 
 
@@ -8184,23 +8275,24 @@ def _stretch(tab: str) -> str:
                   tab).replace(r"\end{tabular}", r"\end{tabular*}")      # every tabular of a block
 
 
-TAIL_KEEP = 5        # rows at the end of a turned longtable block that never break apart
+TAIL_KEEP = 5        # rows at the end of a longtable block that never break apart
 SHORT_BLOCK = 3      # a second mode block of at most this many rows does not start a page
 # a longtable's closing rule, bound to the last row and with no glue below it, where the page could break and open a
 # page holding only the repeated heading (booktabs' \bottomrule leaves \belowbottomsep below it; page review round 3)
 CLOSE_RULE = r"\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}"
 
 
-def _turned_long(blocks: list, cap: str, label: str, tail: list, whole: bool = False, sep: list = ()) -> str:
-    """Blocks of a table too wide for the upright page, in landscape across the whole line. A block that fits a turned
-    page stays whole on one (no stub of a few rows under a repeated heading, no heading stranded at the foot of a
-    page); a block taller than the page is a longtable whose rows break under its repeated heading. The caption
-    above the first block, "Table N (continued)" above every later block and page; one table number. whole: every
-    block is a page its builder chose and stays whole whatever the estimate."""
+def _long(blocks: list, cap: str, label: str, tail: list, whole: bool = False, sep: list = (), size: str = "") -> str:
+    """Blocks of a table taller than a page, upright across the whole line (LS-1). A block that fits a page stays
+    whole on one (no stub of a few rows under a repeated heading, no heading stranded at the foot of a page); a block
+    taller than the page is a longtable whose rows break under its repeated heading. The caption above the first
+    block, "Table N (continued)" above every later block and page; one table number. whole: every block is a page its
+    builder chose and stays whole whatever the estimate. size: the rows' type size (the captions stay at the body
+    size)."""
     cont = rf"\makebox[\linewidth][l]{{\textit{{Table~\ref{{{label}}} (continued)}}}}"
-    out = [r"\begin{landscape}", "{", LT_SETUP, *sep]
+    out = ["{", LT_SETUP, *sep]
     for k, b in enumerate(blocks):
-        fits = whole or _height_cm([b], "") + (0.45 * (len(cap) / 150 + 1) if k == 0 else 0.6) <= LAND_FULL_CM
+        fits = whole or _height_cm([b], "") + (0.45 * (len(cap) / 90 + 1) if k == 0 else 0.6) <= PAGE_FULL_CM
         if fits:
             if whole and k:         # a page its builder chose never shares one with the block before it
                 out.append(r"\newpage")
@@ -8209,7 +8301,7 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list, whole: bool = F
             head = ([r"\setlength{\abovecaptionskip}{0pt}", rf"\captionof{{table}}{{{cap}}}", rf"\label{{{label}}}", r"\par\medskip"] if k == 0
                     else [cont, r"\par\smallskip"])
             out += [r"\begin{center}", r"\begin{minipage}{\linewidth}\centering",
-                    *head, _stretch(b), r"\end{minipage}", r"\end{center}"]
+                    *head, *([size] if size else []), _stretch(b), r"\end{minipage}", r"\end{center}"]
             continue
         m = re.match(r"\s*\\begin\{tabular\}\{([lc]+)\}(.*)\\end\{tabular\}\s*$", b, re.S)
         if not m or r"\midrule" not in m.group(2):
@@ -8278,6 +8370,7 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list, whole: bool = F
         # a later block on a fresh page, so that its first heading is never left behind on the page before
         # (the first block's caption as far above its table as that of a block set whole: a medskip, added once)
         out += ([r"\newpage", r"\addtocounter{table}{-1}"] if k else [r"\addtolength{\belowcaptionskip}{\medskipamount}"]) + [      # a longtable steps the counter: one number a table
+                *([size] if size else []),        # the caption's size is LT_SETUP's \normalsize
                 r"\begin{longtable}{@{\extracolsep{\fill}}" + spec + "@{}}",
                 (rf"\caption{{{cap}}}\label{{{label}}}\\" if k == 0 else more), r"\toprule", head, r"\midrule", r"\endfirsthead",
                 more, r"\toprule", head, r"\midrule", r"\endhead",
@@ -8285,7 +8378,17 @@ def _turned_long(blocks: list, cap: str, label: str, tail: list, whole: bool = F
                 # page broken in the table's last chunk open without the repeated heading (longtable's end-of-table
                 # branch; tab:jetclassprobe, page review round 3)
                 rows, CLOSE_RULE, r"\end{longtable}"]
-    return "\n".join(out + [*tail, "}", r"\end{landscape}", ""])
+    return "\n".join(out + [*tail, "}", ""])
+
+
+def upright_check(out: dict, journal: pathlib.Path) -> None:
+    """LS-1 (the user, 2026-11-24: "pages shouldnt be sideways"): the build stops on a table the paper inputs that is
+    set in landscape."""
+    used = {m for f in sorted((journal / "sections").glob("*.tex")) + [journal / "main.tex"] if f.exists()
+            for m in re.findall(r"\\input\{(tables/[^}]+)\}", re.sub(r"(?<!\\)%.*", "", f.read_text()))}
+    turned = sorted(k for k in out if k.removesuffix(".tex") in used and "landscape" in out[k])
+    if turned:
+        raise SystemExit(f"FATAL (LS-1): tables of the paper set in landscape: {turned}")
 
 
 OPTIONAL_FILL = {"__PROBE_CENTRE__": ""}      # a sentence that depends on the data read, empty without it
@@ -8298,18 +8401,18 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
            label_cm: float = NO_WRAP, budget: float = PORTRAIT_CM, portrait_label_cm: float | None = None,
            colsep_pt: float = 4.0, pages: bool = False, whole: str | None = None, size: str = "",
            pad: bool = False) -> str:
-    """A generated table (PI 2026-11-11): at the full text width; a tabular wider than the text block is set in
-    landscape rather than cut into narrow blocks or shrunk; a row label never wraps; nothing is scaled. Only a
-    tabular wider than the landscape block is cut (split_wide), into blocks of that one width. label_cm and budget
-    are kept for the callers that passed them and no longer narrow anything. portrait_label_cm: upright and whole
-    whatever the estimate, the row labels wrapping at that width, 0 never (PI 2026-11-12: top, quark/gluon; one
-    block). pages: the body's %SPLIT% parts are the pages of a table that no single page holds (tab:summary,
-    tab:published, tab:labelsets), each set whole under the caption or "Table N (continued)". whole ("upright" or "turned"): that
-    orientation with no part cut, whatever the width estimate says, with the column padding at colsep_pt: for the
-    paper's tables whose width was measured with LaTeX at the body size (the text block is 15.0 cm upright and
-    24.7 cm turned). size: a type size below the body's for a table that no orientation holds at the body size
-    without breaking another rule of the brief (tab:probes; PI 2026-11-12: nothing else is below the
-    body size); the caption stays at the body size."""
+    """A generated table (PI 2026-11-11): at the full text width, upright (LS-1, the user 2026-11-24: no page is
+    sideways); a tabular wider than the text block at the body size is set at the largest of TABLE_SIZES at which it
+    fits, down to the template's table size (PI DL-14, SP-14), and only a tabular wider than the text block at that
+    size is cut into blocks of columns stacked one above the other (split_wide), each repeating the row labels; a
+    row label never wraps; nothing is scaled. label_cm and budget are kept for the callers that passed them and no
+    longer narrow anything. portrait_label_cm: upright and whole whatever the estimate, the row labels wrapping at
+    that width, 0 never (PI 2026-11-12: top, quark/gluon; one block). pages: the body's %SPLIT% parts, which were the
+    turned pages of a table before LS-1 (tab:summary, tab:published, tab:labelsets), are blocks like any other. whole:
+    the column padding at colsep_pt; "upright" also sets no part cut and keeps the body size or the size named,
+    whatever the width estimate says (a width measured with LaTeX; the text block is 15.0 cm); "turned" (the
+    landscape setting before LS-1) is now set like any other wide table. size: the type size its call names (one of
+    TABLE_SIZES), never cut; the caption stays at the body size."""
     env = "table*" if wide else "table"
     # PI 2026-11-23 (LEDGER DL-14, typographic only): the appendix's upright tables may share a float page ([tbp]); the
     # main text's stay at the top of a text page ([t])
@@ -8365,61 +8468,58 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
         return "\n".join([rf"\begin{{{env}}}{spec}", r"\centering", rf"\setlength{{\tabcolsep}}{{{colsep_pt:g}pt}}",
                           rf"\caption{{{cap}}}", rf"\label{{{label}}}", *([size] if size else []),
                           "\n\\par\\bigskip\n".join(boxes), *tail, rf"\end{{{env}}}", ""])
-    cut = {o: [t.strip() for b in parts for t in ([b] if whole else split_wide(b, w, NO_WRAP))]
-           for o, w in (("upright", PORTRAIT_CM), ("turned", LANDSCAPE_CM))}
-    # upright when nothing is cut; turned when that keeps the table whole; a table cut either way takes the
-    # orientation with fewer pages (upright on a tie)
-    one_turned_page = len(cut["turned"]) == len(parts) and _height_cm(cut["turned"], cap) <= LAND_PAGE_CM
-    # turned blocks flow as longtables, their rows breaking across pages; upright blocks stay whole, packed on pages
-    flow = math.ceil((sum(_height_cm([b], "") - 0.45 for b in cut["turned"]) + 0.45 * (len(cap) / 150 + 1)) / LAND_FULL_CM)
-    upright = whole != "turned" and (len(cut["upright"]) == len(parts) or (
-        len(cut["turned"]) > len(parts) and _pages(cut["upright"], cap, PAGE_FULL_CM, 90) <= flow))
-    # pad: the column padding at colsep_pt also for a table that is cut (tab:pairsfull, whose widest block the
-    # estimate puts a few points inside the turned page at LaTeX's default 6 pt)
-    sep = [rf"\setlength{{\tabcolsep}}{{{colsep_pt:g}pt}}"] if whole or pad else []
-    if not upright and not one_turned_page:     # wide, and more than a turned page: longtables in landscape
-        return _turned_long(cut["turned"], cap, label, tail, whole=pages, sep=sep)
-    boxes = [_stretch(t) for t in cut["upright" if upright else "turned"]]
-    turn = ([r"\begin{landscape}"], [r"\end{landscape}"]) if not upright else ([], [])
-    if _height_cm(boxes, cap) <= (PAGE_CM if upright else LAND_PAGE_CM):
-        return "\n".join([*turn[0], rf"\begin{{{env}}}{spec}", r"\centering", *sep,
+    # LS-1 (PI SP-14): upright, at the largest size of TABLE_SIZES at which no part is cut, down to the template's
+    # table size; at that size a part still wider than the text block is cut into blocks of columns (split_wide).
+    # whole="upright" (a width measured with LaTeX) or a size its call names: that size, never cut
+    fixed = whole == "upright" or size
+    ladder = [next((s for s in TABLE_SIZES if s[0] == size), (size, 12.0, 14.5))] if fixed else TABLE_SIZES
+    try:
+        for _SIZE_NOW[0] in ladder:
+            cut = [t.strip() for b in parts for t in ([b] if fixed else split_wide(b, PORTRAIT_CM, NO_WRAP))]
+            if len(cut) == len(parts):
+                break
+        size = _SIZE_NOW[0][0]
+        return _set(cut, cap, label, tail, env, spec, size,
+                    # pad: the column padding at colsep_pt also for a table that is cut (tab:pairsfull)
+                    [rf"\setlength{{\tabcolsep}}{{{colsep_pt:g}pt}}"] if whole or pad else [])
+    finally:
+        _SIZE_NOW[0] = TABLE_SIZES[0]
+
+
+def _set(cut: list, cap: str, label: str, tail: list, env: str, spec: str, size: str, sep: list) -> str:
+    """_float's blocks set upright at size: a float when they fit a page, blocks breaking between pages when not, and
+    longtables when a block is taller than a page."""
+    if any(_height_cm([b], "") > PAGE_FULL_CM for b in cut):     # a block taller than a page: longtables
+        return _long(cut, cap, label, tail, sep=sep, size=size)
+    boxes = [_stretch(t) for t in cut]
+    if _height_cm(boxes, cap) <= PAGE_CM:
+        return "\n".join([rf"\begin{{{env}}}{spec}", r"\centering", *sep,
                           rf"\caption{{{cap}}}", rf"\label{{{label}}}", *([size] if size else []),
                           "\n\\par\\bigskip\n".join(boxes), *tail,
-                          rf"\end{{{env}}}", *turn[1], ""])
+                          rf"\end{{{env}}}", ""])
     # taller than a page: not a float, so that it breaks between its blocks. The caption and the first block are one
     # unbreakable unit; a later block that starts a page says that it continues the table.
-    out = [*turn[0], CONTINUED, r"\begin{center}", *sep,
+    out = [CONTINUED, r"\begin{center}", *sep,
            r"\begin{minipage}{\linewidth}\centering",
            rf"\captionof{{table}}{{{cap}}}", rf"\label{{{label}}}", r"\par\medskip", *([size] if size else []), boxes[0],
            r"\end{minipage}"]
     for k, b in enumerate(boxes[1:], 2):
         out += [r"\par\bigskip", r"\begin{minipage}{\linewidth}\centering", rf"\TableContinued{{{label}}}{{{label}:{k}}}",
                 *([size] if size else []), b, r"\end{minipage}"]
-    return "\n".join(out + [*tail, r"\end{center}", *turn[1], ""])
+    return "\n".join(out + [*tail, r"\end{center}", ""])
 
 
-PAGE_FULL_CM, LAND_FULL_CM = 23.0, 13.0     # what a page holds of a table's blocks, upright and turned (estimated)
-
-
-def _pages(boxes: list, cap: str, page_cm: float, cap_chars: int) -> int:
-    """Pages a table's blocks take, each block whole on a page, the caption (cap_chars a line) above the first."""
-    pages, used = 1, 0.45 * (len(cap) / cap_chars + 1)
-    for b in boxes:
-        h = _height_cm([b], "") - 0.45
-        if used and used + h > page_cm:
-            pages, used = pages + 1, 0.0
-        used += h
-    return pages
+PAGE_FULL_CM = 23.0     # what a page holds of a table's blocks (estimated)
 
 
 PAGE_CM = 17.0      # a table estimated taller than this (of the 24.7 cm text height) is set to break across pages
-LAND_PAGE_CM = 12.5 # the same in landscape (of the 15 cm the turned page is high)
 
 
 def _height_cm(boxes: list, cap: str) -> float:
-    """Estimated height of a table at the body size: rows (a wrapped row label adds lines), rules and gaps between
-    blocks, and the caption."""
+    """Estimated height of a table at the size being tried (_SIZE_NOW): rows (a wrapped row label adds lines), rules
+    and gaps between blocks, and the caption at the body size."""
     h = 0.45 * (len(cap) / 90 + 1)
+    row = 0.52 * _SIZE_NOW[0][2] / 14.5
     for b in boxes:
         # a wrapping row-label column, the first of the spec (tab:sets' wrapping columns are later ones, FG-25)
         wrap = re.search(r"(?:\\begin\{(?:tabular|longtable)\}\{|\\extracolsep\{\\fill\}\})>\{\\raggedright"
@@ -8427,7 +8527,7 @@ def _height_cm(boxes: list, cap: str) -> float:
         lab = float(wrap.group(1)) + 0.42 if wrap else LABEL_CM
         for row in b.split(r"\\")[:-1]:
             first = _depth0_split(row.split("rule")[-1] if "rule" in row.split("&")[0] else row, "&")[0]
-            h += 0.52 * (math.ceil(_cell_cm(first) / lab) if wrap else 1)
+            h += row * (math.ceil(_cell_cm(first) / lab) if wrap else 1)
         h += 1.0
     return h
 
@@ -8689,8 +8789,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     if mlp:
         # PI 2026-11-23 (LEDGER SP-9): the paper's table with the random partitions pooled, each one in its copy; (LEDGER
         # CA-15, option a) the rho columns and the class-token against hidden-layer block in the copy only
-        out["tables/mlst_mlp.tex"] = _float("mlp", table_mlp(mlp, _pooled(runs), TAB, _paper_rows(rows_init), raw_v4,
-                                                             mlp_nat, kin=True, rho=False), True)
+        out["tables/mlst_mlp.tex"] = _float("mlp", table_mlp_paper(mlp, _pooled(runs), TAB, _paper_rows(rows_init)), True)
         out["tables/mlst_mlp_full.tex"] = _float("mlp_full", table_mlp(mlp, runs, TAB, rows_init, raw_v4, mlp_nat,
                                                                        kin=True), True)
         mlp_macros(em, mlp, runs, index, fmt_pm)
@@ -8829,7 +8928,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         ft_macros(em, per, runs, index, fmt_pm)
         topcheck_macros(em, data, per, index, fmt_pm, missing)
         # quark/gluon on Pythia only, Herwig apart (PI 2026-11-12); top and quark/gluon are wider than the upright
-        # text block at the columns' precision, so _float sets them in landscape, no row label wrapped
+        # text block at the columns' precision, so _float cuts them into blocks of columns, no row label wrapped
         out["tables/mlst_bench_top.tex"] = _float("bench_top", V4.table_bench(
             "top", per, runs, MAIN, LABEL, SCRATCH, TAB, TAB.two, kin=(LABEL["KIN"], KIN_INIT)),
             True)
@@ -8862,8 +8961,12 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     sided = {}          # and its two sides' printed run values, the ratio's (review of render dfe5942, A2, A3)
     body, reps = table_tests(data, runs, fits_s, fill, chosen, per if tag else {}, *tests_in, rows_out=tested, co=co,
                              sides_out=sided, mlp=mlp, bs3=bs3, sculpt=sculpt)
-    out["tables/mlst_tests.tex"] = _float("tests", body, True, whole="turned", colsep_pt=6, fill={
-        "__REPLICAS__": fmt_int(reps.pop()) if len(reps) == 1 else "the stated number of"})
+    reps = fmt_int(reps.pop()) if len(reps) == 1 else "the stated number of"
+    # upright (LS-1) at the template's table size (PI SP-14), one column of rows: two columns do not fit the 15 cm
+    # text block with no row label wrapped (TN-6), half a line holding about 27 characters of label at 8 pt and the
+    # labels running to 69
+    out["tables/mlst_tests.tex"] = _float("tests", body, True, whole="upright", colsep_pt=6, size=TEMPLATE_SIZE,
+                                          fill={"__REPLICAS__": reps})
     gap_macros(em, fits, per if tag else {}, runs, index, fmt_pm)
     out["tables/mlst_per_run.tex"] = _longtable("per_run", table_per_run(fits, per if tag else {}, runs, TAB, fill,
                                                                          chosen))
@@ -8977,4 +9080,5 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     left = [k for k, v in out.items() if V4.TOK_OPEN in v] + [n for n, b, _ in em.macros if V4.TOK_OPEN in b]
     if left:
         raise SystemExit(f"FATAL: unprinted value tokens in {left}")
+    upright_check(out, root / "paper/journal")
     return out

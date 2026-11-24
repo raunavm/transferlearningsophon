@@ -1719,8 +1719,11 @@ def test_a_table_column_prints_at_one_precision_its_standard_deviations_included
     assert _column(T(0.7153, 0.0024), T(0.7120, 0.0049), T(0.9760, 0.00003)) == [
         r"0.7153\,$\pm$\,0.0024", r"0.712\,$\pm$\,0.005", r"0.97600\,$\pm$\,0.00003"]
     assert _column(T(0.9760, 0.00003)) == [r"0.97600\,$\pm$\,0.00003"]           # alone: its own place
-    # never past MAX_DECIMALS: an AUC that is 1 to seven digits
-    assert M.MAX_DECIMALS == 5 and _column(T(0.99999946, 0.0000005)) == ["1.00000" + M.AGREE]
+    # fifth review B5 (LEDGER SH-5): a mean +- SD at its SD's own PDG place, however fine; no cap at five decimals
+    # (0.99768 +- 0.00001 printed for an SD of 6e-6)
+    assert _column(T(0.99999946, 0.0000005)) == [r"0.9999995\,$\pm$\,0.0000005"]
+    assert _column(T(0.997683, 0.0000064)) == [r"0.997683\,$\pm$\,0.000006"]
+    assert M._printed_mean([0.9976770, 0.9976830, 0.9976890]) == 0.997683
     # a value below 100 keeps its units beside large ones; without it the column is rounded to hundreds
     assert _column(T(1500.0, 200.0), T(1700.0, 300.0)) == [r"1{,}500\,$\pm$\,200", r"1{,}700\,$\pm$\,300"]
     assert M._column_place([("p", [1500.0, 200.0]), ("p", [1700.0, 300.0])]) == -2
@@ -1918,38 +1921,38 @@ def test_the_mode_is_an_italic_heading_over_the_rows_and_the_partitions_sit_unde
     assert M.MODES["probes_n_full"] == "lp" and M.MODES["ft_full"] == "ft"
 
 
-def test_a_table_too_wide_and_too_tall_is_a_landscape_longtable_with_one_caption():
-    """PI 2026-11-11: no narrow blocks, nothing shrunk, no wrapped label. A table wider than the upright page and
-    taller than the turned one is cut into full-width blocks in the orientation with fewer pages (landscape
-    longtables or upright whole blocks), the caption once and "continued" above every later page and block, one
-    table number."""
+def test_a_table_too_wide_and_too_tall_is_cut_upright_with_one_caption():
+    """LS-1 (the user, 2026-11-24) and PI SP-14: no landscape page. A table wider than the text block even at the
+    template's table size is cut there into full-width blocks of columns, upright, nothing scaled, no wrapped label:
+    upright whole blocks, or longtables where a block is taller than a page; the caption once and "continued" above
+    every later page and block, one table number."""
     rows = [M.LABEL[a] + " & " + " & ".join([M.TAB(0.9, 0.001)] * 14) + r" \\" for a in M.ALL_ROWS] * 3
     body = "\n".join([r"\begin{tabular}{l" + "c" * 14 + "}", r"\toprule", " & " + " & ".join(f"c{i}" for i in range(14))
                       + r" \\", r"\midrule", *rows, r"\bottomrule", r"\end{tabular}"])
     t = M._float("probes", body, True)
-    assert M.V4.TOK_OPEN not in t and "pretraining &" not in t
-    # the orientation with fewer pages (round 6): upright whole blocks, or landscape longtables
-    assert t.count(r"\caption") == 1 and t.count(r"\label{tab:probes}") == 1
+    assert M.V4.TOK_OPEN not in t and "pretraining &" not in t and M.TEMPLATE_SIZE in t
+    assert t.count(r"\caption") == 1 and t.count(r"\label{tab:probes}") == 1 and "landscape" not in t
     assert "(continued)" in t and "adjustbox" not in t and r"}p{" not in t and r"\mbox" not in t
     if r"\begin{longtable}" in t:
-        assert t.startswith(r"\begin{landscape}") and t.rstrip().endswith(r"\end{landscape}")
         n = t.count(r"\begin{longtable}{@{\extracolsep{\fill}}l")
         assert t.count(r"\addtocounter{table}{-1}") == n - 1 and t.count(r"\endhead") == n
     else:
         assert t.count(r"\begin{tabular*}{\linewidth}") > 1 and r"\TableContinued" in t
 
 
-def test_a_turned_longtable_closes_on_its_last_row_and_a_short_second_mode_shares_the_page():
-    """Page review round 3 (_turned_long): the closing rule follows the last row, bound to it and with no glue below
+def test_a_longtable_closes_on_its_last_row_and_a_short_second_mode_shares_the_page():
+    """Page review round 3 (_long, upright since LS-1): the closing rule follows the last row, bound to it and with no glue below
     (CLOSE_RULE), and there is no last foot (one taller than the foot lost the repeated "(continued)" heading on a
     page broken in the last chunk); a second mode block of at most SHORT_BLOCK rows does not start a page of its own
     (tab:mlp's linear probes were two rows alone on a page)."""
     assert M.CLOSE_RULE == r"\noalign{\nobreak\vskip\aboverulesep\hrule height\heavyrulewidth}" and M.SHORT_BLOCK == 3
     lp, ft = (M._full_row(15, M.HEADING[k], italic=True) for k in ("lp", "ft"))
-    rows = [M.LABEL[a] + " & " + " & ".join([M.TAB(0.9, 0.001)] * 14) + r" \\" for a in M.ALL_ROWS] * 2
+    # taller than an upright page at the template's table size (LS-1, SP-14): six times the rows
+    rows = [M.LABEL[a] + " & " + " & ".join([M.TAB(0.9, 0.001)] * 14) + r" \\" for a in M.ALL_ROWS] * 6
     body = "\n".join([r"\begin{tabular}{l" + "c" * 14 + "}", r"\toprule", " & " + " & ".join(f"c{i}" for i in range(14))
                       + r" \\", r"\midrule", lp, *rows, r"\midrule", ft, *rows[:3], r"\bottomrule", r"\end{tabular}"])
     t = M._float("mlp", body, True)
+    assert "landscape" not in t
     n = t.count(r"\begin{longtable}")
     assert n >= 1 and t.count(M.CLOSE_RULE) == n and r"\endlastfoot" not in t and r"\bottomrule" not in t
     lines = t.splitlines()
@@ -1974,45 +1977,76 @@ def test_a_table_that_fits_is_one_tabular_across_the_whole_line():
 
 
 def _sizes_in(tex: str) -> list:
-    """The type-size commands of a generated table (not \\smallskip)."""
-    return re.findall(r"\\(?:small|footnotesize|scriptsize|tiny)(?![a-zA-Z])", tex)
+    """The type-size commands of a generated table (not \\smallskip), the template's \\fontsize{8}{10} included."""
+    return re.findall(r"\\(?:small|footnotesize|scriptsize|tiny)(?![a-zA-Z])|\\fontsize\{8\}\{10\}\\selectfont", tex)
 
 
-def test_a_table_is_set_at_the_body_size_unless_its_call_names_a_size_and_whole_fixes_its_orientation():
-    """PI 2026-11-12: _float writes no type size of its own; size (tab:probes only) is set after the caption, which
-    stays at the body size. whole: that orientation with no cut whatever the width estimate, the
-    column padding at colsep_pt. pages: the %SPLIT% parts are pages, each whole under the caption or "(continued)"."""
-    wide = "\n".join([r"\begin{tabular}{l" + "c" * 14 + "}", r"\toprule", " & " + " & ".join(f"c{i}" for i in range(14)) + r" \\",
-                      r"\midrule", *(M.LABEL[a] + " & " + " & ".join([M.TAB(0.9, 0.001)] * 14) + r" \\" for a in M.MAIN),
-                      r"\bottomrule", r"\end{tabular}"])
-    spec = r"{@{\extracolsep{\fill}}l" + "c" * 14 + "@{}}"
+def _one_ladder_size(tex: str) -> bool:
+    """LS-1, PI DL-14 and SP-14: a table at the body size or at one smaller size of TABLE_SIZES, down to the
+    template's table size, and at nothing else."""
+    got = set(_sizes_in(tex))
+    return len(got) <= 1 and got <= {s for s, *_ in M.TABLE_SIZES[1:]}
+
+
+def test_a_table_is_set_at_the_largest_size_it_fits_and_a_size_or_whole_fixes_it():
+    """LS-1 (the user, 2026-11-24), PI DL-14 and SP-14: upright; a table too wide for the text block at the body size is
+    set at the largest of TABLE_SIZES at which no part is cut, down to the iopjournal template's table size
+    (\\fontsize{8}{10}), and cut into blocks of columns only if it is too wide there; the size after the caption, which
+    stays at the body size. size (tab:probes, tab:tests) or whole="upright": that size, never cut, the column padding
+    at colsep_pt. pages: the %SPLIT% parts are blocks like any other."""
+    assert M.TABLE_SIZES[0][0] == "" and M.TEMPLATE_SIZE == r"\fontsize{8}{10}\selectfont"
+    assert [s[1] for s in M.TABLE_SIZES] == sorted((s[1] for s in M.TABLE_SIZES), reverse=True)
+    tab = lambda n, rows=M.MAIN: "\n".join([r"\begin{tabular}{l" + "c" * n + "}", r"\toprule",     # noqa: E731
+                                            " & " + " & ".join(f"c{i}" for i in range(n)) + r" \\", r"\midrule",
+                                            *(M.LABEL[a] + " & " + " & ".join([M.TAB(0.9, 0.001)] * n) + r" \\" for a in rows),
+                                            r"\bottomrule", r"\end{tabular}"])
+    spec = lambda n: r"{@{\extracolsep{\fill}}l" + "c" * n + "@{}}"      # noqa: E731
+    # each table at the largest size at which it is one tabular, and the estimate's size reset after it (partrepro has
+    # no bold, which widens a cell)
+    assert "partrepro" not in M.BOLD
+    chosen = []
+    for n in (2, 4, 5, 6):
+        t = M._float("partrepro", tab(n), True)
+        got = _sizes_in(t)
+        size = got[0] if got else ""
+        chosen.append([s[0] for s in M.TABLE_SIZES].index(size))
+        assert len(set(got)) <= 1 and "landscape" not in t and t.count(r"\begin{tabular*}{\linewidth}" + spec(n)) == 1, n
+        k = [s[0] for s in M.TABLE_SIZES].index(size)
+        for bigger in M.TABLE_SIZES[:k]:
+            M._SIZE_NOW[0] = bigger
+            try:
+                assert len(M.split_wide(M.uniform_columns(tab(n)), M.PORTRAIT_CM, M.NO_WRAP)) > 1, (n, bigger)
+            finally:
+                M._SIZE_NOW[0] = M.TABLE_SIZES[0]
+        if size:
+            assert t.index(r"\caption{") < t.index(size) < t.index(r"\begin{tabular*}")
+        assert M._SIZE_NOW[0] == M.TABLE_SIZES[0]
+    # more columns, a size no larger; two columns at the body size, six below it
+    assert chosen == sorted(chosen) and chosen[0] == 0 and chosen[-1] > 0
+    wide = tab(14)
     auto = M._float("xbx", wide, True)
-    # too wide for a turned page: cut into blocks of fewer columns, in whichever orientation takes fewer pages
-    assert not _sizes_in(auto) and "tabcolsep" not in auto and spec not in auto
+    # too wide at the template's size: cut there into blocks of fewer columns
+    assert set(_sizes_in(auto)) == {M.TEMPLATE_SIZE} and "tabcolsep" not in auto and spec(14) not in auto
     assert auto.count(r"\begin{tabular*}{\linewidth}") + auto.count(r"\begin{longtable}") > 1
     up = M._float("xbx", wide, True, whole="upright")
-    assert "landscape" not in up and up.count(r"\begin{tabular*}{\linewidth}" + spec) == 1 and not _sizes_in(up)
+    assert "landscape" not in up and up.count(r"\begin{tabular*}{\linewidth}" + spec(14)) == 1 and not _sizes_in(up)
     assert r"\setlength{\tabcolsep}{4pt}" in up                                             # the default colsep_pt
+    # LS-1: "turned" is no orientation any more; such a table is set like any other, at its column padding
     turned = M._float("xbx", wide, True, whole="turned", colsep_pt=3.5)
-    assert turned.startswith(r"\begin{landscape}") and turned.rstrip().endswith(r"\end{landscape}")
-    assert turned.count(spec) == 1 and r"\setlength{\tabcolsep}{3.5pt}" in turned and not _sizes_in(turned)
+    assert "landscape" not in turned and spec(14) not in turned and r"\setlength{\tabcolsep}{3.5pt}" in turned
+    assert set(_sizes_in(turned)) == {M.TEMPLATE_SIZE}
     small = M._float("xbx", wide, True, whole="upright", size=r"\small")
     assert _sizes_in(small) == [r"\small"] and small.index(r"\caption{") < small.index(r"\small") < small.index(r"\begin{tabular*}")
     assert small.replace("\\small\n", "") == up
-    # pages: two tabulars joined by %SPLIT% are two whole turned pages, the second under "Table N (continued)"
-    tall = wide.replace(r"\bottomrule", "\n".join(M.LABEL[a] + r" & " + " & ".join(["1"] * 14) + r" \\" for a in M.MAIN * 2)
-                        + "\n" + r"\bottomrule")           # twelve rows: two of them are more than one turned page
+    # pages: two tabulars joined by %SPLIT%, each cut upright into blocks of columns, every block whole under the
+    # caption or a "Table N (continued)" that prints where it starts a page
+    tall = tab(14, M.MAIN * 3)
     pages = M._float("xbx", tall + "%SPLIT%" + tall, True, pages=True, whole="turned", colsep_pt=6)
-    assert pages.startswith(r"\begin{landscape}") and r"\begin{longtable}" not in pages
-    assert pages.count(r"\begin{minipage}{\linewidth}") == 2 and pages.count(spec) == 2
+    blocks = pages.count(r"\begin{minipage}{\linewidth}")
+    assert "landscape" not in pages and r"\begin{longtable}" not in pages and spec(14) not in pages and blocks > 2
     assert pages.count(r"\captionof{table}{") == 1 and pages.count(r"\label{tab:xbx}") == 1
-    assert pages.count(r"\textit{Table~\ref{tab:xbx} (continued)}") == 1 and r"\setlength{\tabcolsep}{6pt}" in pages
-    assert pages.index(r"\captionof{table}{") < pages.index(spec) < pages.index("(continued)") < pages.rindex(spec)
-    # a page its builder chose shares no page with the one before it: \newpage before the second and before no other;
-    # no skip above the caption that heads the first page
-    assert pages.count(r"\newpage") == 1 and pages.index(spec) < pages.index(r"\newpage") < pages.index("(continued)")
-    assert pages.index(r"\setlength{\abovecaptionskip}{0pt}") < pages.index(r"\captionof{table}{")
-    assert r"\newpage" not in turned and r"\newpage" not in up
+    assert pages.count(r"\TableContinued{tab:xbx}") == blocks - 1 and r"\setlength{\tabcolsep}{6pt}" in pages
+    assert r"\newpage" not in pages and r"\newpage" not in turned and r"\newpage" not in up
     # the longtable caption label ends with a full stop, as a float's
     assert "#1{#2. }#3" in M.LT_SETUP and "#2: " not in M.LT_SETUP
 
@@ -2648,17 +2682,18 @@ def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_row
         row("quark/gluon tagging", scratch)[3], row("quark/gluon tagging", scratch)[5],
         _unbold(row("quark/gluon tagging", ft)[3]), _unbold(row("quark/gluon tagging", ft)[5])]
     assert kin not in pages[1] and M.SINGLE not in pages[1] and M.SINGLE not in "".join(blocks["JetClass"])
-    # set: two whole turned pages under one caption and number, the second "(continued)"; the single-run sentence
+    # set upright (LS-1): the two pages cut into blocks of columns under one caption and number, each later block
+    # "(continued)" where it starts a page; the single-run sentence
     f = M._float("published", t, True, pages=True, whole="turned", colsep_pt=6)
-    assert f.startswith(r"\begin{landscape}") and r"\begin{longtable}" not in f and f.count(r"\begin{minipage}{\linewidth}") == 2
+    blocks = f.count(r"\begin{minipage}{\linewidth}")
+    assert "landscape" not in f and r"\begin{longtable}" not in f and blocks >= 2
     assert f.count(r"\captionof{table}{") == 1 and f.count(r"\label{tab:published}") == 1
-    assert f.count(r"\textit{Table~\ref{tab:published} (continued)}") == 1 and M.MARK_NOTES[0][1] in f and M.MARK_NOTES[1][1] in f
-    assert f.index("top tagging} \\\\") < f.index("(continued)}") < f.index("quark/gluon tagging} \\\\")
-    assert rf"\textit{{{M.HEADING['ft']}}}" not in f and M.PARTITIONS not in f and not _sizes_in(f)
+    assert f.count(r"\TableContinued{tab:published}") == blocks - 1 and M.MARK_NOTES[0][1] in f and M.MARK_NOTES[1][1] in f
+    assert f.index("top tagging} \\\\") < f.rindex("quark/gluon tagging} \\\\")
+    assert rf"\textit{{{M.HEADING['ft']}}}" not in f and M.PARTITIONS not in f and _one_ladder_size(f)
     assert M.CAPTIONS["published"][0] == "tab:published" and "published" not in M.MODES
     # the second page starts a page; the caption says what bold marks, once (PI 2026-11-19, restated 2026-11-22:
     # "Bold marks the best value in each column."; published values take part like any other)
-    assert f.count(r"\newpage") == 1 and f.index("top tagging} \\\\") < f.index(r"\newpage") < f.index("(continued)}")
     assert M.BOLD["published"]["of"] == "their column and task"
     assert f.count(M.BOLD_NOTE) == 1 and "within three standard deviations" not in f and "never bold." in f
     # review of render 5f4e1b8 (B15; LEDGER CA-6): one name, the text following the row label
@@ -2711,9 +2746,9 @@ def test_the_label_set_table_holds_the_fine_tuned_rows_the_comparison_table_does
     assert r"\textbf" not in t
     # a row with no value on any task is left out
     assert M.LABEL["FLAV_F0"] not in M.table_labelsets(_ft_full(runs, M.SETS), runs, M.TAB)
-    # set: one turned page at the body size, the bold sentence of a table without blocks
+    # set upright at the largest size it fits (LS-1, SP-14), the bold sentence of a table without blocks
     f = M._float("labelsets", t, True, pages=True, whole="turned", colsep_pt=6)
-    assert f.count(r"\label{tab:labelsets}") == 1 and f.count(rf"\textit{{{M.HEADING['ft']}}}") == 1 and not _sizes_in(f)
+    assert f.count(r"\label{tab:labelsets}") == 1 and f.count(rf"\textit{{{M.HEADING['ft']}}}") == 1 and _one_ladder_size(f)
     assert M.CAPTIONS["labelsets"][0] == "tab:labelsets" and "labelsets" not in M.MODES
     assert f.count(M.BOLD_NOTE) == 1 and "three standard deviations" not in f     # PI 2026-11-19 / 2026-11-22
     assert M.printed_caption("labelsets").startswith("The fine-tuned networks of table~\\ref{tab:summary} and training "
@@ -2803,10 +2838,10 @@ def test_the_probe_table_of_the_paper_holds_what_table_one_lacks_of_top_and_quar
                              {"top": "mean"}).splitlines()
     assert c[7:-2] == [rf"{full} & 0.9000{S} & 150{S} & 0.9000{S} & 100{S} & 0.9000{S} & 100{S} \\", r"\midrule",
                        rf"{sophon} & 0.9000{S} & 50{S} & 0.9000{S} & 50{S} & 0.9000{S} & 50{S} \\"]
-    # set as the build sets it: one turned page at the body size, the mark sentences and the bold sentence of a table
-    # without blocks in the caption
+    # set as the build sets it: upright at the largest size it fits (LS-1, SP-14), the mark sentences and the bold
+    # sentence of a table without blocks in the caption
     f = M._float("probes", t, True, pages=True, whole="turned", colsep_pt=6)
-    assert "landscape" in f and f.count(r"\label{tab:probes}") == 1 and not _sizes_in(f)
+    assert "landscape" not in f and f.count(r"\label{tab:probes}") == 1 and _one_ladder_size(f)
     assert all(note in f for _, note in M.MARK_NOTES[:2]) and f.count(sophon + " & ") == 1 and "(LP)" not in f
     assert M.KEY_MARKS["probes"][0][1] not in f
     # no bold cell: no bold sentence (it is said only where a cell is bold)
@@ -3021,9 +3056,9 @@ def test_every_caption_is_short_and_free_of_the_banned_forms():
 def test_the_generated_paper_tables_follow_the_table_rules():
     """The 20 tables as make_tables.py wrote them (paper/journal/tables, committed): every mark of a table has its
     sentence in the caption and no caption explains a mark the table lacks; never "<" or "+- 0"; no mode tag on a
-    row; thousands separators; "parameters"; the full text width, no wrapped row label, nothing scaled, and the body
-    size everywhere (2026-11-13: tab:probes, the one exception before, is one turned page at the body size). A bold
-    value is read without its wrapper."""
+    row; thousands separators; "parameters"; the full text width, no wrapped row label, nothing scaled, upright, and
+    the body size or one smaller size down to the template's table size (LS-1, PI DL-14, SP-14). A bold value is read
+    without its wrapper."""
     marks = {M.SINGLE: M.MARK_NOTES[0][1].strip(), M.AGREE: M.MARK_NOTES[1][1].strip()}
     own = (r"\dagger", r"\ddagger", r"\parallel", "^{*}", r"^{\ast}")
     small, tables = set(), _paper_tables()
@@ -3049,8 +3084,9 @@ def test_the_generated_paper_tables_follow_the_table_rules():
             assert r"{@{\extracolsep{\fill}}ll>{\raggedright\arraybackslash}p{" in tex, label
         assert tex.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}") + tex.count(
             r"\begin{longtable}{@{\extracolsep{\fill}}") >= 1, label
-        assert not re.search(r"adjustbox|resizebox|scalebox|\\(footnotesize|scriptsize|tiny)(?![a-zA-Z])", tex), label
-        if _sizes_in(tex):
+        # LS-1, PI DL-14 and SP-14: upright, at the body size or one smaller size down to the template's table size
+        assert not re.search(r"adjustbox|resizebox|scalebox|landscape|\\(scriptsize|tiny)(?![a-zA-Z])", tex), label
+        if not _one_ladder_size(tex):
             small.add(label)
     assert small == set()
     read = lambda label: tables[label][1].read_text()      # noqa: E731
@@ -3392,7 +3428,7 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
     for name, label in (("mlst_summary.tex", "summary"), ("mlst_summary_auc.tex", "summaryauc")):
         tex = (ROOT / "paper/journal/tables" / name).read_text()
         tabs = re.findall(r"\\begin\{tabular\*\}.*?\\end\{tabular\*\}", tex, re.S)
-        assert tex.startswith(r"\begin{landscape}") and len(tabs) == 2 and r"\begin{longtable}" not in tex and not _sizes_in(tex)
+        assert "landscape" not in tex and len(tabs) >= 2 and r"\begin{longtable}" not in tex and not _sizes_in(tex)    # LS-1
         assert tex.count(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccccc@{}}") == 2 and r"\setlength{\tabcolsep}{6pt}" in tex
         assert tex.count(r"\captionof{table}{") == tex.count(rf"\label{{tab:{label}}}") == 1
         assert tex.count(rf"\textit{{Table~\ref{{tab:{label}}} (continued)}}") == tex.count(r"\newpage") == 1
@@ -3815,7 +3851,8 @@ def test_every_placed_table_is_set_at_the_body_size_and_the_per_run_table_names_
     for item, _, _ in G.TABLES:
         for lab in item.split(" + "):
             tex = (ROOT / "paper/journal/tables" / f"{name[key[lab]]}.tex").read_text()
-            assert not _sizes_in(tex) and not re.search(r"\\(footnotesize|scriptsize|tiny)(?![a-zA-Z])", tex), lab
+            # LS-1, PI DL-14 and SP-14: the body size, or one smaller size down to the template's table size
+            assert _one_ladder_size(tex) and not re.search(r"\\(scriptsize|tiny)(?![a-zA-Z])", tex), lab
     per_run = (ROOT / "paper/journal/tables/mlst_per_run.tex").read_text()
     # the headline family's five panels in each mode (round-1 fix 2026-11-13: the per-run table reads as tab:summary)
     assert r"\multicolumn{5}{c}{linear probe on the frozen features} & \multicolumn{5}{c}{fine-tuned}" in per_run
@@ -4379,3 +4416,60 @@ def test_a_mean_and_sd_print_alike_in_every_table_and_bold_ties_only_at_the_prin
         tab2 = tab.replace(tok("p", 36.91, 0.9), tok("p", a, 0.9)).replace(tok("p", 36.62, 4.0), tok("p", b, 4.0))
         out2 = M._bold("summary", tab2)
         assert {k for k in (f"P {a}", f"P {b}") if M.V4.TOK_OPEN + k in out2} == want, (a, b)
+
+
+def test_the_tested_differences_table_keeps_every_row_and_names_only_the_two_sides(tmp_path):
+    """PI SP-14 (the 25-page row rule of SP-13 re-applied to the rows added since): every row meets (a), (b) or (c), the
+    MLP rows with the linear probes' substitutions (MLP_N2) by the Fig. 2 caption, so every TESTS block is printed.
+    Under its heading (task, metric, read-out) a row names only its two sides: the 17 merged groups and the pretraining
+    head are said by the heading, not repeated on the rows. Set upright at the template's table size, one column."""
+    body, _ = M.table_tests(tmp_path, M._paper(ROOT), {}, {}, {}, {})
+    for h, _rows in M.TESTS:
+        assert M._full_row(4, h, italic=True) in body, h
+    co = M._full_row(4, "JetClass-II, accuracy on the 17 merged groups, " + M.HEADING["lp"], italic=True)
+    block = body.split(co)[1].split(r"\addlinespace")[0]
+    assert "on the 17 groups" not in block and f"{M.LABEL['L162']} $-$ {M.LABEL['L188']} &" in block
+    head = M._full_row(4, "jet mass, resolution, " + M.HEADING["head"], italic=True)
+    block = body.split(head)[1].split(r"\addlinespace")[0]
+    assert ", head" not in block and f"{M.LABEL['L162_MASS']} $-$ soft-drop mass &" in block
+    f = M._float("tests", body, True, whole="upright", colsep_pt=6, size=M.TEMPLATE_SIZE, fill={"__REPLICAS__": "200"})
+    assert "landscape" not in f and _sizes_in(f) and set(_sizes_in(f)) == {M.TEMPLATE_SIZE}
+    assert f.count(r"\label{tab:tests}") == 1 and r"\begin{longtable}" in f
+    # the caption at the body size: the size comes after LT_SETUP's \normalsize caption definition, before the rows
+    assert f.index(M.LT_SETUP) < f.index(M.TEMPLATE_SIZE) < f.index(r"\begin{longtable}")
+
+
+def test_the_paper_mlp_table_keeps_only_the_networks_and_columns_a_tested_row_reads():
+    """PI SP-14 (R2, R4): tab:mlp prints the tasks and metrics of TESTS' multilayer-perceptron blocks that it holds and
+    the networks on their two sides (mlp_paper_cells), in the common row order and table_mlp's column order; the data
+    release's copy (table_mlp, tab:mlpfull) keeps every network and column. Set upright (LS-1)."""
+    cols, arms = M.mlp_paper_cells()
+    # every sentence that cites tab:mlp: the mass networks (results_mass), the resonant classes (results_jc), X -> bc
+    # (results_jc), top with the missing inputs as Table 10 fills them (appendix D)
+    assert {("jc2_188", None), ("jc2_188_res", None), ("bc_vs_bq_cs", None), ("top", None), ("top", "r30")} <= set(cols)
+    assert {"L188", "L162", "L162_MASS", "R16_Q1", "R16_Q1_MASS", "FLAV_F0"} <= arms
+    order = [(t, m) for t, m, *_ in M.MLP_PAPER_ORDER]
+    assert cols == sorted(cols, key=order.index) and ("jc1", None) not in cols
+    # a heading the table does not hold (accuracy, the 17 merged groups, the jet mass) adds no column
+    assert M.mlp_paper_cells(((r"JetClass-II, accuracy, " + M.HEADING["mlp"], (("L162", "L188", None),)),)) == ([], set())
+    runs = M._pooled(M._paper(ROOT))
+    rows = M._paper_rows(M.ALL_ROWS + (M.INIT, M.INIT_BN))
+    t = M.table_mlp_paper({}, runs, MT.fmt_pm, rows)
+    lines = t.splitlines()
+    assert lines[0] == r"\begin{tabular}{l" + "c" * len(cols) + "}"
+    names = [ln.split(" & ")[0] for ln in lines if " & " in ln and not ln.startswith(" & ")]
+    assert names == [M._row(a, runs) for a in rows if a in arms]
+    assert M.LABEL[M.INIT] not in names and M.LABEL["KIN"] not in t
+    full = M.table_mlp({}, runs, MT.fmt_pm, rows)
+    assert M.LABEL["R42_Q1"] in full and "JetClass" in full.replace("JetClass-II", "")
+    f = M._float("mlp", t, True)
+    assert "landscape" not in f and f.count(r"\label{tab:mlp}") == 1
+
+
+def test_the_build_stops_on_a_paper_table_set_in_landscape(tmp_path):
+    """LS-1 (the user, 2026-11-24): no page is sideways; a book-only table may still be (not input by the paper)."""
+    (tmp_path / "sections").mkdir()
+    (tmp_path / "sections" / "a.tex").write_text("\\input{tables/mlst_x}\n% \\input{tables/mlst_y}\n")
+    M.upright_check({"tables/mlst_x.tex": "\\begin{table}", "tables/mlst_y.tex": "\\begin{landscape}"}, tmp_path)
+    with pytest.raises(SystemExit, match="LS-1"):
+        M.upright_check({"tables/mlst_x.tex": "\\begin{landscape}"}, tmp_path)
