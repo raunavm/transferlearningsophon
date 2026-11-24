@@ -26,10 +26,10 @@ MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_perclass,
            gallery_compare)
 ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement, PI 2026-11-23,
          # LEDGER SP-9): main text, appendix by family, the data release (supplement tier)
-         "F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11", "VAL", "A10", "F4-other", "F4-qcd", "CONF-share",
+         "F1", "F2", "PC-jc2", "F4-mech", "A8", "F11", "VAL", "A10", "F4-other", "F4-qcd", "CONF-share",
          "F9b", "F4-mech-ft",
          "F4-other-ft", "F4-light-ft", "ROC-main", "ROC-main-ft", "PT", "A17-probe", "F10b", "F11-part", "UMAP-frozen",
-         "UMAP-ft", "F2a", "F2b", "PC-jc1", "F6", "F6-ft", "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand",
+         "UMAP-ft", "F2-ft", "F2a", "F2b", "PC-jc1", "F6", "F6-ft", "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand",
          "PC-jc2-mass", "PC-jc1-mass", "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-ee", "F4-rand", "F4-rand-qcd",
          "F4-rand-ft", "F4-rand-qcd-ft", "F8", "F8-auc", "A10-part", "A8-part", "F6-part", "F6-part-ft", "FJ-app",
          "FJ", "FJ-ctrl-app", "FJ-mass-app", "FJ-ctrl", "FJ-mass", "FJ-s", "A3R", "A3R-ft", "A3R-ctrl-ft", "A3R-s",

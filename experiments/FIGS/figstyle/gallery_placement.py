@@ -152,7 +152,7 @@ _FIGURES = (
     *((k, SUPPLEMENT, "In this UMAP projection, qualitatively, 188-class frozen features separate X→bb̄, cc̄ and qq̄ "
                     "more cleanly than 17-class ones, and after fine-tuning both separate them.")
       for k in ("UMAP-frozen", "UMAP-ft")),
-    ("F2-ft", SUPPLEMENT, "[[F2-ft]] draws the fine-tuned block of [[tab:summary]] in the form of [[F2]]: after "
+    ("F2-ft", SUPPLEMENT, "[[F2-ft]] draws the fine-tuned block of [[tab:summary]] in the form of [[F2]], where after "
                           "fine-tuning 17 classes stay below 188 on JetClass-II and JetClass."),
     *((k, SUPPLEMENT, "[[F2a]] and [[F2b]] repeat [[F2]] and [[F2-ft]] in the area under the ROC curve.")
       for k in ("F2a", "F2b")),
@@ -202,7 +202,7 @@ _FIGURES = (
 # (tab:*full); tab:boot nowhere (its probe spreads disagree with tab:probes; the file is kept).
 _TABLES = (
     # PI 2026-11-19 (B) and 2026-11-22 (Part 2): the compact table of label sets and controls, first in the main text
-    ("tab:sets", MAIN, "[[tab:sets]] lists the label sets and the controls: each one's classes, what it merges and its "
+    ("tab:sets", MAIN, "[[tab:sets]] lists the label sets and the controls, each with its classes, what it merges and its "
                        "runs."),
     # PI 2026-11-23 (LEDGER SP-9; merge 4): tab:xbx's two transfer-head columns at 1% QCD efficiency join Table 1
     ("tab:summary", MAIN, "[[tab:summary]] gives every value of [[F2]] and the fine-tuned headline metrics, with the "
