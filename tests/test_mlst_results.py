@@ -4140,7 +4140,8 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
              (rf"{M._PAIR['bb_vs_cc']}, AUC, {lp}", "FLAV_F1", "L188"), (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, {lp}", "FLAV_F1R", "L188"),
              (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, " + M.HEADING["mlp"], "FLAV_F0", "R16_Q1"),
              ("jet mass, resolution, " + M.HEADING["mlp"], "R16_Q1_MASS", M.INIT),
-             ("jet mass, resolution, " + M.HEADING["head"] + r", every bin of figure~\ref{fig:F9b}", "L162_MASS_BINS",
+             ("jet mass, resolution, " + M.HEADING["head"] + r", every bin of jet $p_{\mathrm{T}}$ and generator-level mass",
+              "L162_MASS_BINS",
               "SDMASS")]
     assert not [r for r in kept if r not in rows], [r for r in kept if r not in rows]
     gone = [(f"JetClass, accuracy, {lp}", a, "L188") for a in ("L162", "R42_Q1", "R16_Q1")]

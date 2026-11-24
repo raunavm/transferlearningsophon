@@ -3557,7 +3557,7 @@ def pair_figure_macros(em, data: pathlib.Path, root: pathlib.Path, runs: dict, s
             return None
         i = int(np.argmin(np.abs(s[0] - INIT_EPS)))
         return float(s[1][i]) if abs(s[0][i] - INIT_EPS) < 1e-9 and np.isfinite(s[1][i]) else None
-    fmt = lambda x: f"{x:.2g}" if x < 10 else f"{x:.0f}"      # noqa: E731
+    fmt = lambda x: f"{x:#.2g}" if x < 9.95 else f"{x:.0f}"   # noqa: E731  (# keeps a trailing zero: 0.10, 4.0)
     for fig, keys in PAIR_FIGS.items():
         v = [[rej(m, k) for m in runs[INIT]] for k in keys]
         src = data / V4.ROC_DIR / fam / f"{runs[INIT][0]}.json"
@@ -4616,7 +4616,7 @@ def f2_init_macros(em, fits, fill, chosen, runs: dict, src) -> None:
     (PI 2026-11-23, LEDGER CA-16): its mean accuracy on JetClass-II and on JetClass and the lowest and highest of its
     mean R30 on top and quark/gluon tagging, as Table 1's random-network row reads them (summary_probe), at two
     significant figures (as the class-pair figures' clauses, pair_figure_macros)."""
-    fmt = lambda x: f"{x:.2g}" if x < 10 else f"{x:.0f}"      # noqa: E731
+    fmt = lambda x: f"{x:#.2g}" if x < 9.95 else f"{x:.0f}"   # noqa: E731  (# keeps a trailing zero: 0.10, 4.0)
     # PI 2026-11-23 (LEDGER SH-13): the random network with BatchNorm recomputed, not drawn either, gets the same clause
     for arm, word in ((INIT, "Init"), (INIT_BN, "InitBn")):
         mean = {}
@@ -4658,7 +4658,7 @@ def a10_init_macros(em, fits, fill, chosen, runs: dict, src) -> None:
     its caption (PI 2026-11-23, LEDGER SH-13): the lowest and highest over the training-set sizes of its mean
     linear-probe accuracy on JetClass-II and on JetClass, and of its mean R30 on top and quark/gluon tagging (Pythia
     and Herwig), the points as the figure reads them (_size_values), at two significant figures (f2_init_macros)."""
-    fmt = lambda x: f"{x:.2g}" if x < 10 else f"{x:.0f}"      # noqa: E731
+    fmt = lambda x: f"{x:#.2g}" if x < 9.95 else f"{x:.0f}"   # noqa: E731  (# keeps a trailing zero: 0.10, 4.0)
     vals = {key: _size_values(fits, fill, chosen, runs.get(INIT, []), ds, met) for key, _, ds, met in SUMMARY_PANELS}
     r30 = vals["top"] + vals["qg"] + vals["qg_herwig"]
     groups = {"AccJcTwo": vals["jc2"], "AccJcOne": vals["jc1"],
@@ -5052,7 +5052,8 @@ TESTS = (
         ("R16_Q1_MASS_HEAD", "SDMASS", ("mass_group", "17 classes + mass", "regressed")),
         ("R16_Q1_MASS_HEAD", "L162_MASS_HEAD", ("mass", "17 classes + mass - 162 classes + mass", "regressed")),
         ("L162_MASS_HEAD", "L162_MLP", ("mass", "162 classes + mass, regressed - 162 classes, mlp", "cross")))),
-    (r"jet mass, resolution, " + HEADING["head"] + r", every bin of figure~\ref{fig:F9b}",
+    # the bins in words, not by figure: the results book sets this table with no figure reference (make_results_book)
+    (r"jet mass, resolution, " + HEADING["head"] + r", every bin of jet $p_{\mathrm{T}}$ and generator-level mass",
      tuple((f"{a}_BINS", "SDMASS", ("least", tuple((f"{a}_HEAD", "SDMASS", ("mass_group", g, "regressed", b))
                                                    for b in F9B_BINS)))
            for a, g in (("L162_MASS", "162 classes + mass"), ("R16_Q1_MASS", "17 classes + mass")))),
@@ -6930,7 +6931,7 @@ CAPTION_SHORT = {
                  "features separating pairs of JetClass-II classes, the second-named the background, scored on up to "
                  "\\JcBalPairTestPerSide{} test jets of each side. The $X\\to bc$ column carries one digit more than "
                  "the standard deviation's rounding gives, up to five decimals, so that the ratios $\\rho$ of "
-                 "equation~(\\ref{eq:ratio}) the text quotes follow from it."
+                 "equation~(\\ref{eq:ratio}), which the text quotes, follow from it."
                  + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER SP-9, merge 6; SC-1 (1), (4)): what the table holds, no finding; at most 135 words.
     # PI 2026-11-23 (LEDGER SP-13, step 2): Delta, sigma and Delta / sigma, independent-sample rows marked (KEY_MARKS)
