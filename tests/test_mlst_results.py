@@ -4180,8 +4180,10 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
     co = M._load(DATA / M.V4.pick(DATA, "linprobe/fits_v4_coarse"))
     sb = DATA / (M.SCULPT_BOOT_L3_RERUN if (DATA / M.SCULPT_BOOT_L3_RERUN).exists() else M.SCULPT_BOOT_L3)
     got = {}
+    bs3 = M.load_bs3_mlp(DATA)      # the statistics agent's refit (bs3; LEDGER DL-9, CS-5b), as build() reads it
     body, reps = M.table_tests(DATA, runs, fits, fill, chosen, M.load_ft(DATA)[1], json.loads(sb.read_text()),
-                               json.loads((DATA / M.MASS_SD_BOOT_TESTS).read_text()), rows_out=got, co=co)
+                               json.loads((DATA / M.MASS_SD_BOOT_TESTS).read_text()), rows_out=got, co=co,
+                               mlp=M.overlay_bs3_mlp(M.load_mlp(DATA), bs3), bs3=bs3)
     assert reps == {200}
     stored = [k for k, src in rows.items() if src not in (None, M.RERUN) and (src[0] != "l3" or src[1] == "lp")]
     assert len(stored) > 60 and not [k for k in stored if not isinstance(got[k], tuple)], \
