@@ -1647,7 +1647,7 @@
 \newcommand{\MlstProbeRunsDone}{27}  % experiments/FIGS/data/v2/index.json :: runs with a linear-probe fit (count) :: sha256 0f97a5afe94d6279 :: of the paper's runs
 \newcommand{\MlstPaperRuns}{27}  % configs/arms/v2_paper_runs.txt :: runs (count) :: sha256 b04562b14ea8cbc7
 \newcommand{\MlstSdRelUnc}{50\%}  % configs/arms/v2_paper_runs.txt :: relative standard error of a standard deviation from the runs of a hierarchy level, 1/sqrt(2(n-1)) :: sha256 b04562b14ea8cbc7
-\newcommand{\MlstPairsNWord}{six}  % experiments/FIGS/mlst_results.py :: PAIRS_TABLE (count) :: sha256 e9166474866e9a61 :: class pairs of tab:pairs
+\newcommand{\MlstPairsNWord}{six}  % experiments/FIGS/mlst_results.py :: PAIRS_TABLE (count) :: sha256 0597d6d6dceec084 :: class pairs of tab:pairs
 \newcommand{\MlstCmpJcTwoResOverFull}{1.026\,\ensuremath{\pm}\,0.005}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of L162 over L188, run by run :: sha256 0f97a5afe94d6279
 \newcommand{\MlstCmpJcTwoMidOverFull}{1.227\,\ensuremath{\pm}\,0.009}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L188, run by run :: sha256 0f97a5afe94d6279
 \newcommand{\MlstCmpJcTwoCoarseOverFull}{1.557\,\ensuremath{\pm}\,0.019}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L188, run by run :: sha256 0f97a5afe94d6279
@@ -1951,6 +1951,7 @@
 \newcommand{\MlstJcOneRecallWorstClass}{\ensuremath{H\to c\bar c}}  % experiments/FIGS/data/v2/perclass_recall/probe_jc1.json :: classes :: sha256 cd8a1be38d7fc777 :: its JetClass class
 \newcommand{\MlstJcTwoRecallCoarseLowClasses}{164}  % experiments/FIGS/data/v2/perclass_recall/probe_jc2.json :: diffs.R16_Q1-L188 (count, |delta| > 3 sigma) :: sha256 44a5b7526145875b :: JetClass-II classes of 188 the 17-class linear probe recalls less often than 188 classes
 \newcommand{\MlstJcTwoRecallCoarseHighClassesWord}{one}  % experiments/FIGS/data/v2/perclass_recall/probe_jc2.json :: diffs.R16_Q1-L188 (count, |delta| > 3 sigma) :: sha256 44a5b7526145875b :: JetClass-II classes the 17-class linear probe recalls more often than 188 classes
+\newcommand{\MlstJcTwoRecallChanceOneSide}{0.25}  % experiments/FIGS/data/v2/perclass_recall/probe_jc2.json :: diffs.R16_Q1-L188 (count of classes x one-sided Gaussian tail beyond 3 sigma) :: sha256 44a5b7526145875b :: per-class tests expected beyond 3 sigma in one direction by chance
 \newcommand{\MlstPerClassAucDiffResSeedSdMedian}{0.015}  % experiments/FIGS/data/v2/index.json :: median over classes of the SD over indices of 100 (AUC_c of L162 - AUC_c of 188), pp :: sha256 0f97a5afe94d6279
 \newcommand{\MlstPerClassAucDiffResMin}{\ensuremath{-}0.73}  % experiments/FIGS/data/v2/index.json :: most negative mean over indices of 100 (AUC_c of L162 - AUC_c of 188), pp :: sha256 0f97a5afe94d6279 :: label_QCD_bcss
 \newcommand{\MlstPerClassAucDiffResMinClass}{QCD, \ensuremath{bcss}}  % experiments/FIGS/data/v2/index.json :: its class, L162 :: sha256 0f97a5afe94d6279
@@ -2758,6 +2759,20 @@
 \newcommand{\MlstPwRthirtyFtQg}{6.9--10\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 9 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
 \newcommand{\MlstPwMassClsRes}{3.6\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
 \newcommand{\MlstPwMassClsCoarse}{13\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwAccResLp}{0.64\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwCoarseTask}{0.28--0.55\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 3 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwResonantRes}{1.6\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwBcRes}{1.6\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwBcFlavZero}{25\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwTopScratch}{29\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwTopKin}{25\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwTopMassRes}{46\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwTopMassCoarse}{30\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwTopZeroInitBn}{90\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwTopDrawsKin}{34\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwHerwigRatio}{16\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwHeadRes}{2.0\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent :: sha256 0f97a5afe94d6279
+\newcommand{\MlstPwSculpt}{18--58\%}  % experiments/FIGS/data/v2/index.json :: PW-1: 3 sigma over the reference distance, 24 sculpting rows of tab:tests, per cent :: sha256 0f97a5afe94d6279
 \newcommand{\MlstFtCmpJcTwoCoarseOverFullESix}{\pending{class-balanced JetClass-II fine-tuning}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 0f97a5afe94d6279 :: waits on class-balanced JetClass-II fine-tuning
 \newcommand{\MlstLpBbQgZeroAccDropFull}{\pending{pair probes with the quark/gluon inputs zeroed (open item O10, not run)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 0f97a5afe94d6279 :: waits on pair probes with the quark/gluon inputs zeroed (open item O10, not run)
 \newcommand{\MlstLpBbQgZeroAccDropCoarse}{\pending{pair probes with the quark/gluon inputs zeroed (open item O10, not run)}}  % experiments/FIGS/data/v2/index.json :: not computed yet :: sha256 0f97a5afe94d6279 :: waits on pair probes with the quark/gluon inputs zeroed (open item O10, not run)

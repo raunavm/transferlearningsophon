@@ -7613,6 +7613,12 @@
     "source_file": "experiments/FIGS/data/v2/perclass_recall/probe_jc1.json",
     "value": "6.0"
   },
+  "MlstJcTwoRecallChanceOneSide": {
+    "json_path": "diffs.R16_Q1-L188 (count of classes x one-sided Gaussian tail beyond 3 sigma)",
+    "sha256": "44a5b7526145875bd17e261a78f2577209f994e1c69e94c3a1dd90a4b8fa2ac1",
+    "source_file": "experiments/FIGS/data/v2/perclass_recall/probe_jc2.json",
+    "value": "0.25"
+  },
   "MlstJcTwoRecallCoarseHighClassesWord": {
     "json_path": "diffs.R16_Q1-L188 (count, |delta| > 3 sigma)",
     "sha256": "44a5b7526145875bd17e261a78f2577209f994e1c69e94c3a1dd90a4b8fa2ac1",
@@ -10153,7 +10159,7 @@
   },
   "MlstPairsNWord": {
     "json_path": "PAIRS_TABLE (count)",
-    "sha256": "e9166474866e9a61f99d49e3e6efd2017c6708eb3da308589e8cc8d1cf98019f",
+    "sha256": "0597d6d6dceec084798c1c34ff5a96f644d88c94aa8684797d3f3e4e3e9fa512",
     "source_file": "experiments/FIGS/mlst_results.py",
     "value": "six"
   },
@@ -10493,6 +10499,42 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0"
   },
+  "MlstPwAccResLp": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.64\\%"
+  },
+  "MlstPwBcFlavZero": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "25\\%"
+  },
+  "MlstPwBcRes": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.6\\%"
+  },
+  "MlstPwCoarseTask": {
+    "json_path": "PW-1: 3 sigma over the reference value, 3 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.28--0.55\\%"
+  },
+  "MlstPwHeadRes": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "2.0\\%"
+  },
+  "MlstPwHerwigRatio": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "16\\%"
+  },
   "MlstPwMassClsCoarse": {
     "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -10504,6 +10546,12 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "3.6\\%"
+  },
+  "MlstPwResonantRes": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "1.6\\%"
   },
   "MlstPwRthirtyFt": {
     "json_path": "PW-1: 3 sigma over the reference value, 27 tab:tests rows, per cent",
@@ -10528,6 +10576,48 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "11--78\\%"
+  },
+  "MlstPwSculpt": {
+    "json_path": "PW-1: 3 sigma over the reference distance, 24 sculpting rows of tab:tests, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "18--58\\%"
+  },
+  "MlstPwTopDrawsKin": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "34\\%"
+  },
+  "MlstPwTopKin": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "25\\%"
+  },
+  "MlstPwTopMassCoarse": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "30\\%"
+  },
+  "MlstPwTopMassRes": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "46\\%"
+  },
+  "MlstPwTopScratch": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "29\\%"
+  },
+  "MlstPwTopZeroInitBn": {
+    "json_path": "PW-1: 3 sigma over the reference value, 1 tab:tests rows, per cent",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "90\\%"
   },
   "MlstRocCutBbCoarse": {
     "json_path": "curves_v2/pairs curve bb_vs_cc: largest cut.eps_s over the R16_Q1 runs ('not reached' when a run's cut is null or leaves fewer than 2 grid points)",

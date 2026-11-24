@@ -952,9 +952,16 @@ def table_pair_auc(fits, runs, fmt_pm, status, rows) -> str:
     out = [r"\begin{tabular}{l" + "c" * n + "}", r"\toprule", rf" & \multicolumn{{{n}}}{{c}}{{AUC}} \\",
            rf"\cmidrule(lr){{2-{1 + n}}}", " & " + " & ".join(a for a, _ in halves) + r" \\",
            " & " + " & ".join("vs " + b for _, b in halves) + r" \\", r"\midrule"]
+    def auc(arm, key):
+        # an AUC below one that rounds to one at four decimals prints as NEAR_ONE (LEDGER TN-2), as the text quotes it
+        # (fourth review, B6: the X->ee vs mumu column)
+        v = [x for m in runs[arm] if (x := _pair(fits, m, key)) is not None]
+        if v and 0 < float(np.mean(v)) < 1 and round(float(np.mean(v)), 4) >= 1 and len(v) == len(runs[arm]):
+            return NEAR_ONE
+        return _cell([_pair(fits, m, key) for m in runs[arm]], len(runs[arm]), fmt_pm)
+
     for arm in rows:
-        cells = [_cell([_pair(fits, m, key) for m in runs[arm]], len(runs[arm]), fmt_pm)
-                 + mark[status.get(arm, {}).get(key, "apart")] for key, *_ in PAIR_AUC_COLS]
+        cells = [auc(arm, key) + mark[status.get(arm, {}).get(key, "apart")] for key, *_ in PAIR_AUC_COLS]
         lab = r"\quad " + INIT_BN_SUB if arm == INIT_BN else _row(arm, runs)      # under the random network, as Table 2
         out.append(lab + " & " + " & ".join(cells) + r" \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}"])
@@ -4308,7 +4315,7 @@ SETS_CONTROLS = ((INIT, "--", "no pretraining (initial weights)", None),
 # wrap in columns of these widths (cm), so the row labels, which never wrap, keep their width
 # fourth review (C1): at 3.5 cm the merges wrapped into up to five lines and the table ran into the page footer; the
 # label column (about 5.4 cm) and the class column leave about 6.8 cm for these two
-SETS_WRAP_CM = (4.8, 1.8)
+SETS_WRAP_CM = (4.4, 2.0)
 
 
 def table_sets(runs: dict) -> str:
