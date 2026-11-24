@@ -192,6 +192,17 @@ def boot_mass_spec(tag: str, mem: str, parts: int = 3) -> str:
                  "DL-3b: paired bootstrap of the MLP AUC, the mass networks against their label sets")
 
 
+def boot_mass_helper_spec(tag: str, mem: str, skip: int = 3) -> str:
+    """bs3-boot-jc2mass-helper-raunav: one pod a network for the networks after the first skip (the cache pods' later
+    networks), into the same MASS_CACHE; a network already cached is skipped, so the cache pods then find them there."""
+    fam, n, d, flags = BOOT_OUT[MASS_OUT]
+    ms = [m for a in dict.fromkeys(x for p in d for x in p) for m in models(a)][skip:]
+    pb = "python3 experiments/STATS/paired_bootstrap.py --task npz"
+    rows = [" && ".join([BT.check_inputs([npz(fam, m, n)]), f"[ -e {MASS_CACHE}/{m}.npz ] || " + BT.peak(
+        f"{pb} --model {m}={npz(fam, m, n)} {flags} --b {B} --cache {MASS_CACHE} --cache-only")]) for m in ms]
+    return _spec(tag, "bs3-boot-jc2mass-helper-raunav", rows, len(rows), mem, "1",
+                 "DL-3b: the mass bootstrap's later networks, one pod each, into the same cache")
+
 # ------------------------------------------------------------------ SC-2 #1: the transfer-head term on per-jet scores
 ANALYTIC_OUT = {f"{BOOT}/analytic_jc2bal_pairs_bc_vs_bq_cs.json":
                 lambda m: f"{R5.V5['fits_v5_probs']}/{m}/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
@@ -233,7 +244,8 @@ def ee_spec(tag: str, mem: str) -> str:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
-    ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic", "ee"))
+    ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic", "ee",
+                                                      "mass-helper"))
     ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
     ap.add_argument("--part", choices=tuple(BOOT_PARTS), help="with --what boot")
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
@@ -251,7 +263,8 @@ def main(argv=None) -> int:
                   "boot": lambda: (f"bs3-boot-{a.part}-raunav", boot_mass_spec(a.tag, a.mem) if a.part == "jc2mass"
                                    else boot_spec(a.tag, a.mem, a.part)),
                   "analytic": lambda: ("bs3-analytic-raunav", analytic_spec(a.tag, a.mem)),
-                  "ee": lambda: ("bs3-boot-ee-raunav", ee_spec(a.tag, a.mem))}[a.what]()
+                  "ee": lambda: ("bs3-boot-ee-raunav", ee_spec(a.tag, a.mem)),
+                  "mass-helper": lambda: ("bs3-boot-jc2mass-helper-raunav", boot_mass_helper_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)
     print(f"wrote {p.relative_to(ROOT)}")

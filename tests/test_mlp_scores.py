@@ -220,3 +220,10 @@ def test_the_mass_rows_fit_the_mass_networks_and_bootstrap_every_printed_auc():
     assert "--diff l162mass-l162=mtx-l162mass-s1,mtx-l162mass-s2/mtx-l162-s1,mtx-l162-s2,mtx-l162-s3" in text
     assert "--diff r16q1mass-r16q1=" in text and f"--out {BJ.MASS_OUT}" in text
     assert BJ.MASS_CACHE.startswith("/data/results/bootstrap_cache/")
+
+
+def test_the_mass_helper_takes_the_cache_pods_later_networks():
+    text = BJ.boot_mass_helper_spec("mtx-s9.99", "8Gi")
+    assert "name: bs3-boot-jc2mass-helper-raunav" in text and "completions: 7" in text and "parallelism: 7" in text
+    assert text.count("--cache-only") == 7 and f"--cache {BJ.MASS_CACHE}" in text and "--diff" not in text
+    assert "--model mtx-l162mass-s1=" not in text and "--model mtx-l162-s2=" in text and "--model mtx-r16q1-s3=" in text
