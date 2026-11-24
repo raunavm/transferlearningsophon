@@ -39,3 +39,10 @@ def test_the_two_parts_split_the_full_pod():
     assert all(f"{BS.JB.BAL}/{p}" in pr for p in BS.JB.PAIRS_TEST_PARTS)
     for t in (x, pr):
         assert BS.JB.SOPHON_SHA256 in t and 'nvidia.com/gpu: "1"' in t and "nvidia.com/a100" not in t
+
+
+def test_the_pair_pod_is_kept_near_the_volume():
+    pr, x = BS.x_spec("mtx-s9.99", "64Gi", "pairs"), BS.x_spec("mtx-s9.99", "16Gi", "xbx")
+    assert '"ucm-fiona01.ucmerced.edu"' in pr and pr.count("operator: In") >= 2 and "operator: NotIn" in pr
+    assert '"ucm-fiona01.ucmerced.edu"' not in x
+    assert not set(BS.NEAR) & {"node-2-3.sdsc.optiputer.net", "k8s-haosu-10.sdsc.optiputer.net", "ry-gpu-01.sdsc.optiputer.net"}

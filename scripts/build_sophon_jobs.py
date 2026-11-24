@@ -45,6 +45,13 @@ CK = f"/workspace/sophon/{TAG}.pt"
 PAIRS_OUT = f"{JB.SOPHON_ROOT}/{MODEL}/jc2bal_pairs"
 SIGNALS = ("xbb", "xbs")
 SMOKE, SMOKE_JETS = "/data/results/eval/bs3_smoke/sophon", 50_000
+# the pair sets near the volume (coordinator 2026-11-24, option a): the X->bx pod read 1,350 jets/s on ucm-fiona01, the
+# 64Gi pair pod 276 jets/s on chi-dgx-node04; general-GPU nodes at UC Merced and SDSC (Prometheus, 2026-11-24), the
+# grid's bad nodes still excluded
+NEAR = ("ucm-fiona01.ucmerced.edu", "clu-fiona2.ucmerced.edu") + tuple(
+    f"k8s-haosu-{i:02d}.sdsc.optiputer.net" for i in (2, 3, 5, 7, 9, 11, 16, 17, 19, 20, 21, 23, 24)) + tuple(
+    f"ry-gpu-{i:02d}.sdsc.optiputer.net" for i in (6, 7, 11, 12, 13, 14, 15, 16))
+PAIR_JETS = 1_127_621 + 2_116_561      # pairs_train, pairs_test (RUNS jc2bal-x rows)
 LINE = 88
 
 
@@ -112,7 +119,18 @@ def x_spec(tag: str, mem: str, part: str = "all") -> str:
     name = {"all": "bs3-sophon-x-raunav", "xbx": "bs3-sophon-xbx-raunav", "pairs": "bs3-sophon-pairs-raunav"}[part]
     what = {"all": "pair and X->bx features, the transfer-head fits", "xbx": "X->bx features and the transfer-head fits",
             "pairs": "the class-pair features"}[part]
-    return R5.indexed(name, body, 1, 1, mem, "4", f"the released Sophon checkpoint: {what} (SH-13)", gpu=True)
+    text = R5.indexed(name, body, 1, 1, mem, "4", f"the released Sophon checkpoint: {what} (SH-13)", gpu=True)
+    return near(text) if part == "pairs" else text
+
+
+def near(text: str) -> str:
+    """The pod kept to NEAR's nodes (a hostname term beside the region's)."""
+    old = '                values: ["us-west"]\n'
+    if text.count(old) != 1:
+        raise SystemExit("FATAL: the spec's region term changed")
+    nodes = ", ".join(f'"{n}"' for n in NEAR)
+    return text.replace(old, old + f"              - key: kubernetes.io/hostname\n                operator: In\n"
+                                   f"                values: [{nodes}]\n")
 
 
 def smoke_spec(tag: str, mem: str) -> str:

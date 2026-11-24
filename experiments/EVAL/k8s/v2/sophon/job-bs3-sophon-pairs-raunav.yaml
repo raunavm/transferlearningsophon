@@ -27,7 +27,7 @@ spec:
         - |
           set -euo pipefail
           retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
-          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.73 https://github.com/raunavm/transferlearningsophon.git tls; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.74 https://github.com/raunavm/transferlearningsophon.git tls; }
           retry clone || exit 1
           cd /workspace/tls
           retry pip install --no-cache-dir -q pyarrow==25.0.1 || exit 1
@@ -68,6 +68,9 @@ spec:
               - key: topology.kubernetes.io/region
                 operator: In
                 values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: In
+                values: ["ucm-fiona01.ucmerced.edu", "clu-fiona2.ucmerced.edu", "k8s-haosu-02.sdsc.optiputer.net", "k8s-haosu-03.sdsc.optiputer.net", "k8s-haosu-05.sdsc.optiputer.net", "k8s-haosu-07.sdsc.optiputer.net", "k8s-haosu-09.sdsc.optiputer.net", "k8s-haosu-11.sdsc.optiputer.net", "k8s-haosu-16.sdsc.optiputer.net", "k8s-haosu-17.sdsc.optiputer.net", "k8s-haosu-19.sdsc.optiputer.net", "k8s-haosu-20.sdsc.optiputer.net", "k8s-haosu-21.sdsc.optiputer.net", "k8s-haosu-23.sdsc.optiputer.net", "k8s-haosu-24.sdsc.optiputer.net", "ry-gpu-06.sdsc.optiputer.net", "ry-gpu-07.sdsc.optiputer.net", "ry-gpu-11.sdsc.optiputer.net", "ry-gpu-12.sdsc.optiputer.net", "ry-gpu-13.sdsc.optiputer.net", "ry-gpu-14.sdsc.optiputer.net", "ry-gpu-15.sdsc.optiputer.net", "ry-gpu-16.sdsc.optiputer.net"]
               - key: kubernetes.io/hostname
                 operator: NotIn
                 values: ["ry-gpu-01.sdsc.optiputer.net", "ry-gpu-03.sdsc.optiputer.net", "nautilus-ext-gpu01.fullerton.edu", "hcc-chase-shor-c4705.unl.edu", "hcc-chase-shor-c4709.unl.edu", "hcc-chase-shor-c4715.unl.edu", "k8s-chase-ci-07.calit2.optiputer.net", "nrp-fiona-001.sdmz.amnh.org", "ry-gpu-10.sdsc.optiputer.net", "ry-gpu-02.sdsc.optiputer.net", "ry-gpu-04.sdsc.optiputer.net", "ry-gpu-09.sdsc.optiputer.net", "nrp-01.laccd.edu", "k8s-haosu-10.sdsc.optiputer.net", "ry-gpu-08.sdsc.optiputer.net", "node-2-3.sdsc.optiputer.net"]
