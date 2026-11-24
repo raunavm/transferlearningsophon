@@ -15,10 +15,8 @@ After fine-tuning, on JetClass the
 % CHECK: recompute from Table 1 after the JetClass 1e6 rerun and re-test at 3 sigma (PI SP-11): the 17-class cost must pass and the 162- and 43-class differences read "consistent" for this sentence to stand as written
 On top tagging and quark/gluon discrimination the fine-tuned label sets show no
 resolved difference (tables~\ref{tab:summary} and~\ref{tab:tests}).
-With the missing inputs set to zero, the $R_{30}$ difference on top tagging between a linear probe on the frozen
-features of the \Kfull-class model and one on the random network with BatchNorm recomputed is not resolved
-(smallest resolvable difference \MlstPwTopZeroInitBn{} of the random network's value), nor is it for an MLP probe (\MlstMlpTopRthirtyFullOverInitBnPr{}); with the
-substitution chosen on validation the linear probe reaches \MlstLpTopRthirtyFullOverInitBnPr{} of that network, and
+With the substitution chosen on validation, a linear probe on the frozen features of the \Kfull-class model
+reaches \MlstLpTopRthirtyFullOverInitBnPr{} of one on the random network with BatchNorm recomputed on top tagging, and
 \MlstLpQgRthirtyFullOverInitBnPr{} on quark/gluon discrimination (tables~\ref{tab:fill} and~\ref{tab:summary}).
 On top tagging, random draws in place of the zeros give the linear probe
 \MlstLpTopRthirtyDrawOverZeroFullPr{} that it gives with zeros; these tests do not separate the effect of the zero
@@ -29,7 +27,8 @@ downstream discriminant sums over, because a merge removes the discriminant from
 whatever the frozen features keep: Sophon's $X\to b\bar{b}$ discriminant cannot be formed from the
 \Kmid-class labels, and the $D_{bc}$ discriminant of the boosted $|V_{cb}|$ measurement exists only at
 \Kfull{} and \Kres{} classes (section~\ref{sec:labelsets}). For use with frozen features, keep the flavor
-boundaries: on the pretraining classes a single one lowers the error of the linear probe
+boundaries: on the pretraining classes the partitions with a single one make fewer errors under the linear probe than
+the partition without, though they also regroup other decays
 (table~\ref{tab:tests}). Keep the QCD classes apart where a downstream task separates QCD jets by
 flavor: merging them has no resolved effect on the resonant classes but costs the QCD pairs
 (figure~\ref{fig:F4-qcd}) and any discriminant that weights each QCD subclass separately

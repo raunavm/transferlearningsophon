@@ -77,7 +77,7 @@ CAPTIONS = {
     # the figure's row names say, and so does this one; review of render 5f4e1b8: the partition counts per pair in words
     "F4-mech": (
         'Linear probes on 17 classes, which merge each pair, separate X→bb̄ from cc̄ and X→bc from bq, cs, the '
-        'second-named the background, worse than 188 classes, and the b-quark boundary recovers part of both losses '
+        'second-named the background, worse than 188 classes, and the b-quark-boundary partition recovers part of both losses '
         '(table {tab:tests}). Panels show one over the background fraction kept against the signal fraction, with '
         'ratios to 188 classes. Curves average {m:MlstNRunsWord} runs per label set, {m:MlstMassNRunsWord} per mass '
         'network and flavor-boundary partition, and {m:RandVtwoRuns}-run random partitions in two groups, the '

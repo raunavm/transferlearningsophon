@@ -104,7 +104,9 @@ classes and fixed group shares, accounts for the cost of the flavor merge. In th
 boundary, every group is a union of whole families of decays that differ only in quark flavor. The partition
 with a $b$-quark boundary moves the four-quark decays \RandFlavSplitOrbit{} that contain a $b$ quark into another
 group, and the partition with a random flavor boundary moves as many four-quark decays chosen at random; in both,
-decays of other forms move the other way to keep the group shares (appendix~\ref{sec:app-labels}). Each is
+decays of other forms move the other way to keep the group shares (appendix~\ref{sec:app-labels}), so the
+partitions differ in their grouping too, and a difference between them belongs to the partition, not to its boundary
+alone. Each is
 pretrained with \RandFlavRuns{} seeds. Like the random partitions, each has \Kcoarse{} classes and is read
 against the \Kcoarse-class level.
 
@@ -129,8 +131,7 @@ tagging~\cite{part}, is a diagnostic of the input mismatch on top tagging, not a
 \subsection{Evaluation}\label{sec:evaluation}
 
 Four classification tasks each ask one question. JetClass-II at its \Kfull{} classes asks which distinctions
-the frozen features keep. Its classes are the \Kfull-class model's own labels, so this task favors finer label
-sets by construction; we also report it over the resonant and the QCD classes separately, since only the
+the frozen features keep. Its classes are the \Kfull-class model's own labels; we also report it over the resonant and the QCD classes separately, since only the
 \Kfull-class level divides the QCD jets. JetClass~\cite{part} has every input present but other classes, from
 the same simulation chain without pileup, the additional proton-proton collisions of the same bunch crossing, and asks whether a label-set effect survives on new classes when no
 input is missing. Top tagging~\cite{toptag} and quark/gluon discrimination~\cite{efn,qgpythia}, with the companion
@@ -179,7 +180,8 @@ downstream task alone, with \MlstFtRefSeedsWord{} seeds, is the reference for wh
 top-tagging and quark/gluon training sets use ParT's settings~\cite{part}; every other training set, including
 every JetClass and JetClass-II set, uses one rule for pretrained and from-scratch networks alike, with a learning
 rate chosen on validation for each task and size (appendix~\ref{sec:app-ft}). A rate at which the training loss of a
-network becomes non-finite scores below every rate that trained. If any network of a configuration diverges when it
+network becomes non-finite scores below every rate that trained; crashes, evictions and storage failures are
+restarted and not counted as divergence. If any network of a configuration diverges when it
 is rerun at the rate chosen for its task and size, one of three seeds being enough, that rate fails for the
 configuration, which is rerun at the next best rate. % LEDGER DL-10, FT-10: the rule of experiments/FT/rate_search.py (cell_state: DIVERGED on a non-finite loss in any attempt; evaluate: one paper cell diverged at the recorded rate sets the rate DIVERGED for the row; FIXED_RERUN_DIVERGED keeps it failed)
 Because fine-tuning on JetClass-II
@@ -301,8 +303,8 @@ $1-\AUC$ for an AUC.
 Where the two sides are scored on independent test samples, Herwig against Pythia jets, each sample is
 resampled separately and the two bootstrap variances add. Every row uses the paired bootstrap except two kinds,
 marked in the table: the transfer heads of the resonance benchmark, whose per-jet scores were not kept, take the
-binomial variance of each network's signal efficiency, with the QCD jets' carried through the cut, the two sides
-added, a term larger than the paired bootstrap on every row that has both; and a side of one run, whose missing
+binomial variance of each network's signal efficiency plus that of the QCD efficiency carried through the slope of
+its curve, the two sides added, a term larger than the paired bootstrap on every row that has both; and a side of one run, whose missing
 run spread makes $\sigma$ a lower bound, as for ParT's published result against our single run of its script, backs
 only a null.
 Table~\ref{tab:tests} gives this test for every difference the text states.

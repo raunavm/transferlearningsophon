@@ -318,19 +318,19 @@ every pretrained network and the random network with recomputed BatchNorm statis
 
 Table~\ref{tab:mlp} gives the MLP probe on the same frozen features at the largest training set of JetClass-II,
 JetClass and the class pairs, and of top and quark/gluon with the missing inputs set to zero, on the test sets
-of the linear probes. With these zeros the MLP probe resolves some differences beyond three standard deviations
-(table~\ref{tab:tests}). On top tagging the partition with a $b$-quark boundary reaches a higher AUC and $R_{30}$
-than the partition with no flavor boundary and the random network, and a higher $R_{30}$ than the \Kcoarse-class
-level and the partition with a random flavor boundary; the \Kres-class mass network reaches a higher AUC and
-$R_{30}$ than the partition with no flavor boundary and the random network. On quark/gluon discrimination the
-two mass networks and the partitions with no and with a $b$-quark boundary reach a higher AUC than the random
-network, with and without BatchNorm recomputed. On the Herwig sample the random network reaches a higher $R_{30}$
-than the \Kres- and \Kmid-class models and every \Kcoarse-class partition. Table~\ref{tab:partrepro} gives ParT's top-tagging training script~\cite{part} run on our
+of the linear probes. With these zeros the MLP probe resolves some differences between label sets and
+partitions on top tagging beyond three standard deviations (table~\ref{tab:tests}): the partition with a $b$-quark
+boundary reaches a higher AUC and $R_{30}$ than the partition with no flavor boundary, and a higher $R_{30}$ than the
+\Kcoarse-class level and the partition with a random flavor boundary; the \Kres-class mass network reaches a higher
+AUC and $R_{30}$ than the partition with no flavor boundary. Table~\ref{tab:partrepro} gives ParT's top-tagging training script~\cite{part} run on our
 cluster unchanged and with Sophon's output head, each a single run. Unchanged, it
 reaches a rejection at 30\% signal efficiency of \MlstPartreproRthirtyPart, against ParT's published
 \LitPartTopRejScratch{} (table~\ref{tab:published}), and does not differ from it by more than three
 standard deviations, $\sigma$ being the published spread over ParT's trainings and our single run's counting term,
-a lower bound (table~\ref{tab:tests}). The network trained from scratch in
+a lower bound (table~\ref{tab:tests}). With Sophon's jet-$p_{\mathrm{T}}$ rescaling the $R_{30}$ difference from the
+unchanged script, each a single run, is not resolved; with $\sigma$ the two runs' counting terms only, a lower bound,
+the test resolves no difference finer than \MlstPwPartRescale{} of the unchanged script's value
+(table~\ref{tab:tests}). The network trained from scratch in
 table~\ref{tab:published} keeps Sophon's rescaling of every jet to a common transverse momentum because the
 pretrained models use it, so the comparison of pretrained and from-scratch networks shares every preprocessing
 step.

@@ -1033,13 +1033,15 @@ def test_the_part_reproduction_table_and_macros(tmp_path):
     # row are in the comparison table only (PI 2026-11-12: one table per number). Round-1 fix 2026-11-13: the caption
     # says once that every value is a single run, so no cell carries the single-run mark
     rows = t.splitlines()[4:-2]
-    assert [ln.split(" & ")[0] for ln in rows] == [name for _, name in M.PARTREPRO[:2]] == [
-        "ParT's training script, unchanged", "the same script with Sophon's output head"]
+    # DL-16c (PI 2026-11-24): the rescaling row back, with its null sentence and its tab:tests row
+    assert [ln.split(" & ")[0] for ln in rows] == [name for _, name in M.PARTREPRO] == [
+        "ParT's training script, unchanged", "the same script with Sophon's output head",
+        r"the same script with Sophon's jet-$p_{\mathrm{T}}$ rescaling"]
     assert "ParT, published" not in t and M.SCRATCH_LABEL not in t and "+" not in t
     assert rows[0] == r"ParT's training script, unchanged & 0.9400 & 0.9858 & 420 & 1{,}711 & 118 \\"
     # review of 5c40d69 (A8, LEDGER TN-4): the text's value is the table's, at the table's place (1,711 against 1,710)
     assert em.m["MlstPartreproRthirtyPart"] == rows[0].split(" & ")[4]
-    assert not any(M.SINGLE in ln for ln in rows) and len(rows) == 2 and r"1{,}224" not in t
+    assert not any(M.SINGLE in ln for ln in rows) and len(rows) == 3 and r"1{,}224" in t
     assert "Every value is from a single run" in M.printed_caption("partrepro")
     # with the fine-tuning read-out, each column at the place of the top-tagging column it is read against (from
     # scratch 1,400 +- 200: hundreds; 420 +- 20: tens), the macros unchanged
@@ -4140,7 +4142,6 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
                                                                 ("FLAV_F1", "FLAV_F0"), ("FLAV_F1R", "FLAV_F0"),
                                                                 ("RAND", "FLAV_F1"), ("RAND", "FLAV_F1R"))]
     kept += [(f"top tagging, $R_{{30}}$, {ft}", "KIN", "L188"),
-             (f"top tagging, $R_{{30}}$, {lp}, missing inputs", "L188_DRAWS", "KIN"),
              (f"top tagging, $R_{{30}}$, {ft} against the linear probe with zeros", "FT_EVERY", "L188_LP_ZERO"),
              (rf"{M._PAIR['bb_vs_cc']}, AUC, {lp}", "FLAV_F1", "L188"), (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, {lp}", "FLAV_F1R", "L188"),
              (rf"{M._PAIR['bc_vs_bq_cs']}, AUC, " + M.HEADING["mlp"], "FLAV_F0", "R16_Q1"),
@@ -4150,6 +4151,9 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
               "SDMASS")]
     assert not [r for r in kept if r not in rows], [r for r in kept if r not in rows]
     gone = [(f"JetClass, accuracy, {lp}", a, "L188") for a in ("L162", "R42_Q1", "R16_Q1")]
+    # PI 2026-11-24 (PW-2, CS-18b): the 90% zeros null and the draws - kinematic null left with their sentences
+    gone += [(f"top tagging, $R_{{30}}$, {lp}, missing inputs", "L188_DRAWS", "KIN"),
+             (f"top tagging, $R_{{30}}$, {lp}, missing inputs", "L188_ZERO", "INIT_BN_ZERO")]
     gone += [(f"JetClass-II, accuracy, {ft}, " + M._power("1000") + " training jets", "R16_Q1", "L188")]
     gone += [(f"top tagging, $R_{{30}}$, {ft}, published models", "L188", "PART_PUB"),
              (f"quark/gluon tagging (Pythia), $R_{{30}}$, {ft}, published models", "L188", "PART_PUB"),

@@ -4227,7 +4227,7 @@ def partrepro(em, data: pathlib.Path, per, fmt_pm, missing: list, runs: dict | N
     # PI 2026-11-23 (LEDGER DL-R #16): the rescaling row is kept only if a sentence states it, and none does, so the table
     # prints ParT's script unchanged and with Sophon's output head (the rescaling run's values stay in its macros and the
     # data release)
-    for v, name in PARTREPRO[:2]:   # one run each: the caption says so once (round-1 fix 2026-11-13), no mark per cell
+    for v, name in PARTREPRO:       # DL-16c (PI 2026-11-24): the rescaling row restored, with its null sentence; one run each: the caption says so once (round-1 fix 2026-11-13), no mark per cell
         d = docs.get(v)
         out.append(name + " & " + (" & ".join([_at(d[k], place[k]) for k in keys]
                                               + [_sep(str(d['r30_n_bkg_pass']))])
@@ -4909,6 +4909,8 @@ TESTS_NAMES = {"SCRATCH": SCRATCH_LABEL, "SDMASS": "soft-drop mass", "PART_PUB":
                "FT_EVERY": "fine-tuned networks", "L162_MASS_BINS": r"\Kres{} classes + mass, head",
                "R16_Q1_MASS_BINS": r"\Kcoarse{} classes + mass, head",
                "PART_FT_PUB": "ParT fine-tuned, published", "PART_OURS": "ParT's script on our cluster",
+               "PART_RESCALE": "ParT's script with Sophon's rescaling",
+               "FLOOR": "random selection of as many QCD jets",
                "L188_DRAWS": r"\Kfull{} classes, random draws", "L188_ZERO": r"\Kfull{} classes, zero",
                "INIT_BN_ZERO": "random network, BatchNorm recomputed, zero", "L188_HERWIG": r"\Kfull{} classes, Herwig over Pythia",
                "SCRATCH_HERWIG": "from scratch, Herwig over Pythia", "L188_17": r"\Kfull{} classes on the 17 groups",
@@ -4919,7 +4921,7 @@ TESTS_NAMES = {"SCRATCH": SCRATCH_LABEL, "SDMASS": "soft-drop mass", "PART_PUB":
                "L162_MASS_HEAD": r"\Kres{} classes + mass, head", "R16_Q1_MASS_HEAD": r"\Kcoarse{} classes + mass, head",
                # PI 2026-11-23 (LEDGER SP-12, step 3): the rows of the ratio words that had none (PR_ROWS); review of
                # render dfe5942 (C): one name, the MLP probe
-               "L162_MLP": r"\Kres{} classes, MLP probe",
+               "L162_MLP": r"\Kres{} classes, multilayer-perceptron probe",
                "L188_HERWIG_JETS": r"\Kfull{} classes on Herwig jets", "L188_PYTHIA_JETS": r"\Kfull{} classes on Pythia jets",
                "SCRATCH_HERWIG_JETS": "from scratch on Herwig jets", "SCRATCH_PYTHIA_JETS": "from scratch on Pythia jets"}
 _LEVELS = (("L162", "L188", "162-188"), ("R42_Q1", "L188", "43-188"), ("R16_Q1", "L188", "17-188"))
@@ -5016,19 +5018,12 @@ _MLP_NETS = (("L162", "l162-188"), ("R42_Q1", "r42q1-188"), ("R16_Q1", "r16q1-18
              ("FLAV_F1R", "flavf1r-188"), (RAND_POOLED, "rand-188"))
 # CS-5b (bs3, bs3_cs5b_mlp0_gaps.tsv): the 24 zero-filled MLP gaps that pass 3 sigma, (task, metric heading, metric,
 # file, rows)
-_MLP0_PASS = (
+_MLP0_PASS = (       # CS-5c (PI 2026-11-24): only the label-granularity gaps; those against a random network are in Table 10
     ("top tagging", "AUC", "auc", "top_N1200000",
-     (("L162_MASS", "FLAV_F0", "l162mass-flavf0"), ("L162_MASS", INIT, "l162mass-init"),
-      ("FLAV_F0", "FLAV_F1", "flavf0-flavf1"), ("FLAV_F1", INIT, "flavf1-init"))),
+     (("L162_MASS", "FLAV_F0", "l162mass-flavf0"), ("FLAV_F0", "FLAV_F1", "flavf0-flavf1"))),
     ("top tagging", "$R_{30}$", "r30", "top_N1200000",
-     (("R16_Q1", "FLAV_F1", "r16q1-flavf1"), ("L162_MASS", "FLAV_F0", "l162mass-flavf0"), ("L162_MASS", INIT, "l162mass-init"),
-      ("FLAV_F0", "FLAV_F1", "flavf0-flavf1"), ("FLAV_F1", "FLAV_F1R", "flavf1-flavf1r"), ("FLAV_F1", INIT, "flavf1-init"))),
-    ("quark/gluon tagging (Pythia)", "AUC", "auc", "qg_N1600000",
-     tuple((a, b, f"{k}-{w}") for a, k in (("L162_MASS", "l162mass"), ("R16_Q1_MASS", "r16q1mass"), ("FLAV_F0", "flavf0"),
-                                          ("FLAV_F1", "flavf1")) for b, w in ((INIT, "init"), (INIT_BN, "initbn")))),
-    ("quark/gluon tagging (Herwig)", "$R_{30}$", "r30", "qg_herwig_N1600000",
-     tuple((a, INIT, f"{k}-init") for a, k in (("L162", "l162"), ("R42_Q1", "r42q1"), ("FLAV_F0", "flavf0"),
-                                              ("FLAV_F1", "flavf1"), ("FLAV_F1R", "flavf1r"), (RAND_POOLED, "rand")))))
+     (("R16_Q1", "FLAV_F1", "r16q1-flavf1"), ("L162_MASS", "FLAV_F0", "l162mass-flavf0"),
+      ("FLAV_F0", "FLAV_F1", "flavf0-flavf1"), ("FLAV_F1", "FLAV_F1R", "flavf1-flavf1r"))))
 TESTS = (
     # Figs. 2 and 3, Table 1 (M005-M007, M040-M043, M149-M153, M157, M158, M163, M164, M166, M299, M300)
     # review of 5c40d69 (A7, B3): the accuracy falls most between 162 and 43 classes (17 - 43 and the step), the random
@@ -5096,10 +5091,8 @@ TESTS = (
     # tab:fill (M246, M253, M328, M329)
     (r"top tagging, $R_{30}$, " + HEADING["lp"] + ", missing inputs",
      tuple((a, b, ("file", "l3_v5/probe_top_N1200000.fill.json", d, "r30"))
-           for a, b, d in (("L188_DRAWS", "L188_ZERO", "188draws-188zero"), ("L188_ZERO", "INIT_BN_ZERO", "188zero-initbnzero"),
-                           ("L188", INIT_BN, "188-initbn")))
-     # results_bench: with draws, about the rejection of the kinematic-inputs network's probe (review of 5c40d69, B3)
-     + (("L188_DRAWS", "KIN", ("file", "l3_v5/probe_top_N1200000.kin.json", "188draws-kin", "r30")),)),
+           for a, b, d in (("L188_DRAWS", "L188_ZERO", "188draws-188zero"), ("L188", INIT_BN, "188-initbn")))),
+    # PI 2026-11-24 (PW-2, CS-18b): the zeros - random network null (90%) and draws - kinematic null left with their sentences
     (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["lp"] + ", missing inputs",
      (("L188", INIT_BN, ("file", "l3_v5/probe_qg_N1600000.fill.json", "188-initbn", "r30")),)),
     # tab:published, tab:partrepro (M236-M238, M243, M258, M260, M240; results_bench: from scratch against ParT's)
@@ -5109,12 +5102,15 @@ TESTS = (
     # dfe5942 (A1): our from scratch against ParT's is no null (an AUC gap of 7 run SDs, no per-jet scores for ParT's),
     # its sentence and row removed
     (_FT_TOP + ", published models", (("PART_OURS", "PART_PUB", ("part_published",)),)),     # A2 (bs3; SC-2)
+    # DL-16c (PI 2026-11-24): Sophon's rescaling against the unchanged script, one run each, the counting terms only
+    (_FT_TOP + ", ParT's training script", (("PART_RESCALE", "PART_OURS", ("part_rescale",)),)),
     (_FT_QG + ", published models", (("L188", "PART_FT_PUB", None),)),
     # Figs. 5 and A3: the class pairs, AUC (M187, M190, M194, M200, M334, the placement's sentences)
     *((rf"{_PAIR[k]}, AUC, " + HEADING["lp"], _pair_rows(k, rows) + _pair_rows(k, _FLAV188.get(k, ()), ".flav188")
        + (_EE_17 if k == "ee_vs_mm" else ()))
       for k, rows in (
-        ("bb_vs_cc", (("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"), ("FLAV_F1", "R16_Q1", "flavf1-r16q1"))),
+        ("bb_vs_cc", (("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"), ("FLAV_F1", "R16_Q1", "flavf1-r16q1"),
+                      ("FLAV_F0", "R16_Q1", "flavf0-r16q1"))),        # CS-9b (PI 2026-11-24)
         ("bc_vs_bq_cs", _QCD_PAIR + (("FLAV_F1", "R16_Q1", "flavf1-r16q1"), ("FLAV_F1R", "R16_Q1", "flavf1r-r16q1"),
                                      ("FLAV_F0", "R16_Q1", "flavf0-r16q1"), ("FLAV_F0", "L188", "flavf0-188"))),
         ("bbqq_vs_ccqq", (("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"),
@@ -5147,7 +5143,6 @@ TESTS = (
     # network against the random network on top tagging with the missing inputs at zero (bootstrap pending)
     (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], (("L162", "L188", None), ("R16_Q1", "L188", None),
                                                           ("FLAV_F0", "R16_Q1", None))),
-    (r"top tagging, $R_{30}$, " + HEADING["mlp"] + ", missing inputs", (("L188_ZERO", "INIT_BN_ZERO", None),)),
     # tab:coarse: the label sets scored on the 17 merged groups
     (r"JetClass-II, accuracy on the 17 merged groups, " + HEADING["lp"],
      tuple((a, "L188_17", ("file", "l3_v5/probe_jc2bal_R16_Q1_N1000000.json", d, "accuracy"))
@@ -5180,6 +5175,7 @@ TESTS = (
 # but those no sentence states (results_mass names no mass network and no random partition against 188 classes; PI
 # 2026-11-23, LEDGER SP-13)
 TESTS_SCULPT = r"mass sculpting, Jensen--Shannon distance, " + HEADING["direct"]
+SCULPT_FLOOR_HEAD = TESTS_SCULPT + r", $\epsB = 10\%$, against the floor"
 SCULPT_ARM = {"rand2p": RAND_POOLED}
 SCULPT_UNSTATED = (("L162_MASS", "L188"), ("R16_Q1_MASS", "L188"), (RAND_POOLED, "L188"))
 # PI 2026-11-23 (LEDGER SP-12, step 3): every ratio word the text uses, <name>Pr or <name>PrMax, and the tab:tests row
@@ -5220,8 +5216,7 @@ PR_ROWS = {
     "MlstCmpBbqqFonerOverFonePr": (_BBQQ, "FLAV_F1R", "FLAV_F1", _NO_MORE),
     # review of 5c40d69 (B4, LEDGER CS-18): the multilayer-perceptron probe beside two linear-probe nulls
     "MlstMlpCmpBcFzeroOverCoarsePr": (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], "FLAV_F0", "R16_Q1", _NULL),
-    "MlstMlpTopRthirtyFullOverInitBnPr": (r"top tagging, $R_{30}$, " + HEADING["mlp"] + ", missing inputs", "L188_ZERO",
-                                          "INIT_BN_ZERO", _NULL),
+    # MlstMlpTopRthirtyFullOverInitBn: its sentence left with the 90% null (PI 2026-11-24, PW-2)
     # results_bench
     "MlstLpTopRthirtyDrawOverZeroFullPr": (_TOP_FILL, "L188_DRAWS", "L188_ZERO", _same("rejection")),
     "MlstFtQgRthirtyFullOverPartPr": (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"] + ", published models",
@@ -5284,7 +5279,7 @@ TESTS_HEAD = r" & $\Delta$ & $\sigma$ & $\Delta/\sigma$ \\"
 
 def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_doc=None, mass_doc=None,
                 rows_out: dict | None = None, co: dict | None = None, sides_out: dict | None = None,
-                mlp: dict | None = None, bs3: dict | None = None) -> tuple:
+                mlp: dict | None = None, bs3: dict | None = None, sculpt: dict | None = None) -> tuple:
     r"""tab:tests (TESTS): (the table, the bootstrap replica counts read); rows_out, when given, takes each TESTS row's
     result, {(heading, first, second): None | "stale" | (delta, run SDs, bootstrap SD, sigma)}, for the ratio words
     (ratio_words). A row prints its stored difference Delta (an AUC row minus the stored 1 - AUC difference), sigma and
@@ -5545,12 +5540,30 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
         cur["sides"] = ([ours["r30"]], [mean])
         return _tests_side(e, first)
 
+    def rescale_row(first, second):
+        """DL-16c: ParT's script with Sophon's rescaling against it unchanged, one run each; sigma the two runs'
+        counting terms, R30 over the root of its passing background jets (a lower bound: no run spread)."""
+        pr = _load(data / "partrepro")
+        a, b = pr.get("rescale"), pr.get("part")
+        if not a or not b:
+            return None
+        ta, tb = (r["r30"] / math.sqrt(r["r30_n_bkg_pass"]) for r in (a, b))
+        e = {"delta": a["r30"] - b["r30"], "sd_a": 0.0, "sd_b": 0.0, "boot_sd": math.hypot(ta, tb),
+             "sigma": math.hypot(ta, tb)}
+        if abs(e["delta"]) > 3 * e["sigma"]:
+            raise SystemExit("FATAL: tab:tests, the rescaling row passes 3 sigma on a lower-bound sigma")
+        single.add((curhead[0], first, second))
+        cur["sides"] = ([a["r30"]], [b["r30"]])
+        return _tests_side(e, first)
+
     def row(head, first, second, src):
         curhead[0] = head
         if src is not None and src[0] == "xbx_analytic":
             return xbx_row(first, second, src[1])
         if src is not None and src[0] == "part_published":
             return part_row(first, second)
+        if src is not None and src[0] == "part_rescale":
+            return rescale_row(first, second)
         return (None if src is None else "stale" if src == RERUN else l3_row(first, second, src) if src[0] == "l3"
                 else file_row(head, first, second, src) if src[0] == "file" else least(head, src[1]) if src[0] == "least"
                 else mass_row(first, second, src))
@@ -5579,6 +5592,23 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
                 sides_out[(head, first, second)] = cur["sides"]
         blocks.append((head, got))
     blocks += [(h, [(a, b, v, False) for a, b, v in rs]) for h, rs in sculpt_rows()]
+    # CS-2c (PI 2026-11-24): every head against the floor of a random selection of as many QCD jets at 10% QCD
+    # efficiency (sculpt_above_floor: sigma^2 = run SD^2 + the floor's SD^2 over random selections)
+    if sculpt:
+        floor_rows = []
+        for a in SETS + FLAV + (RAND_POOLED,):
+            ms = [m for m in _pooled(runs)[a] if m in sculpt]
+            if not ms:
+                continue
+            f = sculpt_above_floor(sculpt, ms)["0.1"]
+            e = {"delta": f["distance"] - f["floor"], "sd_a": f["sd_runs"], "sd_b": 0.0, "boot_sd": f["sd_floor"],
+                 "sigma": math.hypot(f["sd_runs"], f["sd_floor"])}
+            v = _tests_side(e, a)
+            floor_rows.append((a, "FLOOR", v, False))
+            if rows_out is not None:
+                rows_out[(SCULPT_FLOOR_HEAD, a, "FLOOR")] = v
+        if floor_rows:
+            blocks.append((SCULPT_FLOOR_HEAD, floor_rows))
     out = [r"\begin{tabular}{lccc}", r"\toprule", TESTS_HEAD, r"\midrule"]
     for k, (head, rows) in enumerate(blocks):
         block = [_full_row(4, head, italic=True)]
@@ -5646,13 +5676,11 @@ PW_ROWS = {
     "MlstPwResonantRes": (("JetClass-II, AUC over the resonant classes, " + HEADING["lp"],), ("L162",), "L188"),
     "MlstPwBcRes": ((rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["lp"],), ("L162",), "L188"),
     "MlstPwBcFlavZero": ((rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["lp"],), ("FLAV_F0",), "R16_Q1"),
+    "MlstPwBbFlavZero": ((rf"{_PAIR['bb_vs_cc']}, AUC, " + HEADING["lp"],), ("FLAV_F0",), "R16_Q1"),       # CS-9b
     "MlstPwTopScratch": ((_FT_TOP,), ("L188",), "SCRATCH"),
     "MlstPwTopKin": ((_FT_TOP,), ("KIN",), "L188"),
     "MlstPwTopMassRes": ((_FT_TOP,), ("L162_MASS",), "L162"),
     "MlstPwTopMassCoarse": ((_FT_TOP,), ("R16_Q1_MASS",), "R16_Q1"),
-    "MlstPwTopZeroInitBn": ((r"top tagging, $R_{30}$, " + HEADING["lp"] + ", missing inputs",), ("L188_ZERO",),
-                            "INIT_BN_ZERO"),
-    "MlstPwTopDrawsKin": ((r"top tagging, $R_{30}$, " + HEADING["lp"] + ", missing inputs",), ("L188_DRAWS",), "KIN"),
     "MlstPwHerwigRatio": ((r"quark/gluon tagging (Herwig), $R_{30}$, " + HEADING["ft"],), ("L188_HERWIG",),
                           "SCRATCH_HERWIG"),
     "MlstPwHeadRes": (("jet mass, resolution, " + HEADING["head"],), ("R16_Q1_MASS_HEAD",), "L162_MASS_HEAD"),
@@ -5665,6 +5693,7 @@ PW_ROWS = {
     # the 188-class AUC rounds to one, so a share of its errors means nothing: 3 sigma in AUC ("abs")
     "MlstPwEeCoarse": ((rf"{_PAIR['ee_vs_mm']}, AUC, " + HEADING["lp"],), ("R16_Q1",), "L188", "abs"),
     "MlstPwPartRepro": ((_FT_TOP + ", published models",), ("PART_OURS",), "PART_PUB"),     # A2 (bs3), a lower bound
+    "MlstPwPartRescale": ((_FT_TOP + ", ParT's training script",), ("PART_RESCALE",), "PART_OURS"),   # DL-16c, a floor
 }
 # LEDGER DL-9 (bs3): the MLP results the text states beside the linear-probe nulls, checked where tab:tests is read: on
 # the 17 merged groups the 17-class model falls below 188 classes; with the linear probes' substitutions only the
@@ -7531,8 +7560,9 @@ CAPTION_SHORT = {
               "each jet to $p_{\\mathrm{T}}=\\DesignRescalePt$~GeV."),
     # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md, no finding, no typed number
     "partrepro": ("ParT's training script for top tagging, top-quark against QCD jets, run from "
-                  "scratch unchanged and with Sophon's output head, a \\DesignHeadHidden{}-unit hidden layer before "
-                  "the output. Accuracy is the fraction of test "
+                  "scratch unchanged and with one of two changes taken from Sophon, not combined, its output head, a "
+                  "\\DesignHeadHidden{}-unit hidden layer before the output, and its rescaling of each jet to "
+                  "$p_{\\mathrm{T}}=\\DesignRescalePt$~GeV. Accuracy is the fraction of test "
                   "jets classified correctly, AUC the area under the receiver operating characteristic curve, and "
                   "$R_{50}$ and $R_{30}$ one over the fraction of background jets kept when the cut keeps 50\\% or 30\\% "
                   "of signal jets, 30\\% being the top-tagging working point. Every value is from a single run, and the "
@@ -8795,7 +8825,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     tested = {}         # each row's result, which the ratio words read (ratio_words, PI 2026-11-23, LEDGER SP-12 step 3)
     sided = {}          # and its two sides' printed run values, the ratio's (review of render dfe5942, A2, A3)
     body, reps = table_tests(data, runs, fits_s, fill, chosen, per if tag else {}, *tests_in, rows_out=tested, co=co,
-                             sides_out=sided, mlp=mlp, bs3=bs3)
+                             sides_out=sided, mlp=mlp, bs3=bs3, sculpt=sculpt)
     out["tables/mlst_tests.tex"] = _float("tests", body, True, whole="turned", colsep_pt=6, fill={
         "__REPLICAS__": fmt_int(reps.pop()) if len(reps) == 1 else "the stated number of"})
     gap_macros(em, fits, per if tag else {}, runs, index, fmt_pm)
@@ -8887,6 +8917,9 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     pw_macros(em, tested, sided, index)
     mlp_claim_check(tested)
     sculpt_pw_macro(em, sculpt, tests_in[0], runs, index)
+    bad = [k for k, v in tested.items() if k[0] == SCULPT_FLOOR_HEAD and isinstance(v, tuple) and not v[0] > 3 * v[4]]
+    if bad:     # CS-2c: the text says every head sculpts at 10% QCD efficiency
+        raise SystemExit(f"FATAL (CS-2c): heads not above the sculpting floor at 10% QCD efficiency: {bad}")
     for r in vars(em).get("ratio_check", []):       # LEDGER TX-3: printed in the build log, one line a quoted ratio
         print(f"TX-3 {'ok  ' if r[7] == r[8] else 'DIFF'} {r[0]}: full {r[5]:.6g} ({r[7]}), printed means {r[6]:.6g} "
               f"({r[8]}); means {r[11]!r}, {r[12]!r} printed {r[9]!r}, {r[10]!r}")

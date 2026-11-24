@@ -57,7 +57,9 @@ No difference between pretraining heads in how much a cut on them sculpts the QC
 three times its uncertainty, at a QCD efficiency of \SculptEffHigh{} or \SculptEffLow{} or at the cut that keeps
 50\% of the resonant jets (tables~\ref{tab:sculptmain} and~\ref{tab:tests}): neither a coarser label set against the \Kfull-class
 model, nor a mass network against its own label set, nor the three flavor-boundary partitions against the
-\Kfull-class model (smallest resolvable difference \MlstPwSculpt{} of the reference network's distance).
+\Kfull-class model (smallest resolvable difference \MlstPwSculpt{} of the reference network's distance). At a QCD
+efficiency of \SculptEffHigh{} every head sculpts it beyond the floor, the distance a random selection of as many QCD
+jets shows (tables~\ref{tab:sculptmain} and~\ref{tab:tests}).
 
 % BEGIN XBX
 \subsection{$X\to b\bar b$ and $X\to bs$ resonance tagging}\label{sec:xbx}
@@ -72,16 +74,16 @@ Sophon plots the significance $Z$ itself~\cite[Fig.~2]{sophon}; our curves rank 
 which has no trigger and no jets from $W$ or $Z$ bosons or top quarks, so their values are not comparable with
 Sophon's.
 
-At a QCD efficiency of 1\%, \pending{the transfer head on the frozen features of the \Kcoarse-class model keeps fewer % CHECK: tests/test_xbx_claims_l3.py (gallery_placement.XBX): 17 - 188 is -4.9 sigma on X->bb and -5.8 on X->bs at eps_B = 1%
+At a QCD efficiency of 1\%, the transfer head on the frozen features of the \Kcoarse-class model keeps fewer % CHECK: tests/test_xbx_claims_l3.py (gallery_placement.XBX): 17 - 188 is -4.9 sigma on X->bb and -5.8 on X->bs at eps_B = 1%
 $X\to b\bar b$ and fewer $X\to bs$ jets than that on the \Kfull-class features, and on the \Kfull-class features % CHECK: 188 transfer head - from scratch on X->bs at eps_B = 1% needs its tab:tests row (claims_main M309, estimate passes); on X->bb from scratch is 57 +- 8 and is not compared
 it keeps more $X\to bs$ jets, a decay in no label set, than the network trained from scratch on the
-task} (tables~\ref{tab:summary} and~\ref{tab:tests}; figure~\ref{fig:F11}).
+task (tables~\ref{tab:summary} and~\ref{tab:tests}; figure~\ref{fig:F11}).
 
 \begin{figure}
 \centering
 \paperfig{\linewidth}{F11}
-\caption{\pending{At a QCD efficiency of 1\%, \Kcoarse{} classes keep fewer $X\to b\bar b$ and $X\to bs$ jets than
-\Kfull{} classes.} Panels show the signal efficiency over the square root of the QCD efficiency, the figure of merit of
+\caption{At a QCD efficiency of 1\%, \Kcoarse{} classes keep fewer $X\to b\bar b$ and $X\to bs$ jets than
+\Kfull{} classes. Panels show the signal efficiency over the square root of the QCD efficiency, the figure of merit of
 equation~(\ref{eq:signif}), against the QCD efficiency, for a transfer
 head on each label set and mass network, the same network trained from scratch on
 \MlstXbxScratchTrainBb{} ($X\to b\bar b$) or \MlstXbxScratchTrainBs{} ($X\to bs$) jets a class and

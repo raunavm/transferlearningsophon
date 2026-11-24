@@ -14,12 +14,10 @@ downstream benchmarks. Every difference the text states is tested in table~\ref{
 \subsection{JetClass-II: the pretraining classes}\label{sec:jetclasstwo}
 
 The first question is which distinctions the frozen features keep on the \Kfull{} classes the networks
-were pretrained on, scored by linear probes on class-balanced test jets. This task favors finer label sets by
-construction, and the costs of the coarser levels below carry this bias. Two kinds of comparison are free of
-it: the \Kres-class model on the resonant classes, since its labels keep every resonant class of the
-\Kfull-class model, and the controls, which have as many classes as the \Kcoarse-class level. The coarser task on
-which the \Kfull{} classes are merged into \Kcoarse{} groups carries the opposite bias, as it is the
-\Kcoarse-class labels' own task.
+were pretrained on, scored by linear probes on class-balanced test jets. Three comparisons hold more than the
+label set fixed: the \Kres-class model on the resonant classes, since its labels keep every resonant class of the
+\Kfull-class model; the controls, which have as many classes as the \Kcoarse-class level; and the coarser task on
+which the \Kfull{} classes are merged into the \Kcoarse{} groups of the \Kcoarse-class labels, their own task.
 
 Counted in wrongly ordered pairs of jets, a linear probe separates the \Kfull{} classes worse at every coarser
 level of the hierarchy, and the largest step is the merge of quark flavor between \Kmid{} and \Kcoarse{}
@@ -37,9 +35,9 @@ the \Kres-, \Kmid- and \Kcoarse-class models do not differ from the \Kfull-class
 deviations (smallest resolvable difference \MlstPwCoarseTask{} of the \Kfull-class accuracy). The MLP probe does
 not resolve the \Kres- or \Kmid-class model from it either (smallest resolvable difference \MlstPwCoarseTaskMlp{}),
 but it resolves the
-\Kcoarse-class model below it (tables~\ref{tab:coarse} and~\ref{tab:tests}). Even on the task that favors them, the
-coarser labels give the frozen features no resolved advantage over the \Kfull{} classes, and under the MLP probe
-the \Kcoarse-class features fall behind them.
+\Kcoarse-class model below it (tables~\ref{tab:coarse} and~\ref{tab:tests}). On their own task, then, the coarser
+labels give the frozen features no resolved advantage under the linear probe, and under the MLP probe the
+\Kcoarse-class features are worse.
 % PI 2026-11-23 (LEDGER TX-2): "costliest" and "largest step" name their metric and rest on the largest step minus the
 % next-largest in tab:tests: in AUC (17 - 43) - (43 - 162) passes (-4.96 sigma, the quark-flavor merge), in accuracy the
 % same row passes the other way (+3.94 sigma, the 162 -> 43 step), so both are given here, in the intro and discussion.
@@ -51,7 +49,7 @@ the \Kcoarse-class features fall behind them.
 \paperfig{\linewidth}{F2}
 \caption{With linear probes, \Kmid{} and \Kcoarse{} classes are less accurate on JetClass-II than \Kfull{} classes,
 and in $R_{30}$ on top-quark against QCD and quark against gluon jets no label set, mass network or partition differs
-from them beyond three standard deviations (\MlstPwRthirtyLp{} of its value), an MLP probe resolving only the
+from them beyond three standard deviations (\MlstPwRthirtyLp{} of its value), a multilayer-perceptron probe resolving only the
 \Kcoarse-class mass network, above them on top (table~\ref{tab:tests}).
 $R_{30}$ is one over the fraction of background jets kept with 30\% of signal jets kept, the top-tagging working
 point. Circles and bars are means and standard deviations over \MlstNRunsWord{} runs per label set,
@@ -157,7 +155,8 @@ decay topology, and the pair stays readable.
 The \Kmid-class labels, which merge every decay with its lepton-flavor counterpart, also remove a distinction
 that the finer labels keep: on $X\to ee$ against $X\to\mu\mu$ the AUC of a linear probe falls to
 \MlstLpEemmAucMid{}, against \MlstLpEemmAucFull{} at \Kfull{} classes and \MlstLpEemmAucInitBn{} for the
-random network with BatchNorm recomputed. At \Kcoarse{} classes, which merge them too, it is \MlstLpEemmAucCoarse{},
+random network with BatchNorm recomputed, so the \Kmid-class features separate the two less well than those of that
+random network. At \Kcoarse{} classes, which merge them too, it is \MlstLpEemmAucCoarse{},
 whose difference from \Kfull{} classes is not resolved (smallest resolvable difference \MlstPwEeCoarse{} in AUC,
 the \Kfull-class errors being too few for a share; tables~\ref{tab:pairauc} and~\ref{tab:tests}).
 
@@ -170,15 +169,16 @@ classes, where $X\to bc$ and $X\to bq$ share a class and $D_{bc}$ can no longer 
 only \MlstCmpBcMidOverFullPr{}; at \Kcoarse{} classes, which remove flavor altogether, it makes
 \MlstCmpBcCoarseOverFullPr{} (figure~\ref{fig:F4-mech}; tables~\ref{tab:pairauc} and~\ref{tab:tests}).
 
-At a fixed number of classes, the three flavor-boundary partitions test whether a flavor
-boundary keeps quark flavor readable. They have \Kcoarse{} classes and the same group shares, and
+At a fixed number of classes, the three flavor-boundary partitions compare groupings that differ in a flavor
+boundary and, to keep the group shares, in other decays. They have \Kcoarse{} classes and the same group shares, and
 \RandFlavRuns{} pretraining runs each. The partition with a $b$-quark boundary, whose one flavor boundary lies between four-quark decays,
 recovers part of the loss of the \Kcoarse-class level on both pairs, neither of which it cuts: it makes
 \MlstCmpBbFoneOverCoarsePr{} of the \Kcoarse-class level on $X\to b\bar b$ against $X\to c\bar c$ and
 \MlstCmpBcFoneOverCoarsePr{} on $X\to bc$ against $X\to bq$ and $X\to cs$. The partition with a random flavor
 boundary recovers part of it on the second pair (\MlstCmpBcFonerOverCoarsePr), while the partition with no
 flavor boundary does not differ there from the \Kcoarse-class level by more than three standard deviations
-(smallest resolvable difference \MlstPwBcFlavZero{} of its errors), under the linear probe or the MLP probe (\MlstMlpCmpBcFzeroOverCoarsePr{}; figure~\ref{fig:F4-mech};
+(smallest resolvable difference \MlstPwBcFlavZero{} of its errors), nor on $X\to b\bar b$ against $X\to c\bar c$
+(\MlstPwBbFlavZero{}), under the linear probe or the MLP probe (\MlstMlpCmpBcFzeroOverCoarsePr{}; figure~\ref{fig:F4-mech};
 tables~\ref{tab:pairauc}, \ref{tab:tests} and~\ref{tab:mlp}). On $X\to YY\to b\bar bqq$ against $X\to YY\to c\bar cqq$, which the
 $b$-quark boundary does cut, the partition with a random flavor boundary makes \MlstCmpBbqqFonerOverFonePr{}
 than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}; tables~\ref{tab:pairauc} and~\ref{tab:tests}).
@@ -188,7 +188,7 @@ than the partition with a $b$-quark boundary (figure~\ref{fig:F4-other}; tables~
 \centering
 \paperfig{\linewidth}{F4-mech}
 \caption{Linear probes on \Kcoarse{} classes, which merge each pair, separate $X\to b\bar b$ from $c\bar c$ and $X\to bc$
-from $bq$, $cs$, the second-named the background, worse than \Kfull{} classes, and the $b$-quark boundary recovers
+from $bq$, $cs$, the second-named the background, worse than \Kfull{} classes, and the $b$-quark-boundary partition recovers
 part of both losses (table~\ref{tab:tests}). Panels show one over the background fraction kept against the signal
 fraction, with ratios to \Kfull{} classes. Curves average \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{}
 per mass network and flavor-boundary partition, and \RandVtwoRuns-run random partitions in two groups, the
