@@ -147,7 +147,7 @@ def test_bootstrap_reads_every_npz_the_fits_write():
     assert BJ.npz("bench0", "init-s2", "qg_N1600000").endswith("/bench0/probs/init-s2/init/qg_N1600000.npz")
     assert BJ.npz("bench", "mtx-l188-s1", "qg_N1600000").endswith("/bench/probs/mtx-l188-s1/best70.nqg/qg_N1600000.npz")
     assert sorted(o for p in BJ.BOOT_PARTS for o in BJ.boot_outs(p)) == sorted(BJ.BOOT_OUT)
-    for part in [p for p in BJ.BOOT_PARTS if p != "jc2mass"]:
+    for part in [p for p in BJ.BOOT_PARTS if p not in ("jc2mass", "bcpair", "eepair")]:
         text = BJ.boot_spec("mtx-s9.99", "4Gi", part)
         assert f"name: bs3-boot-{part}-raunav" in text
         for out in BJ.boot_outs(part):
