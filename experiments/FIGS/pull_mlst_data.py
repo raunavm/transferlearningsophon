@@ -358,6 +358,9 @@ def main() -> int:
                 add(f"{name}/{f.relative_to(d)}", b)
         for f in sorted((EVAL / "xbx" / "fits_ihep").glob("*/*.json")):
             add(f"xbx/{f.parent.name}/{f.name}", f.read_bytes())
+        # the statistics agent's MLP refit (bs3, 2026-11-23; LEDGER DL-9, CS-5b): each run's summary, not its scores
+        for f in sorted((EVAL / "bs3_mlp").glob("*/*.json")):
+            add(f"bs3_mlp/{f.parent.name}/{f.name}", f.read_bytes())
         # v4 (2026-10-31): each file must parse, so one still being written stops the pull
         bal = pathlib.Path("/data/finetune/jc2_bal")
         v4 = ((EVAL / "v2_linprobe_bal" / "fits_v4", "linprobe/fits_v4", "*.json"),
