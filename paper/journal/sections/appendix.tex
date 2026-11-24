@@ -317,12 +317,8 @@ every pretrained network and the random network with recomputed BatchNorm statis
 % ----------------------------------------------------------------------------
 
 Table~\ref{tab:mlp} gives the MLP probe on the same frozen features at the largest training set of JetClass-II,
-JetClass and the class pairs, and of top and quark/gluon with the missing inputs set to zero, on the test sets
-of the linear probes. With these zeros the MLP probe resolves some differences between label sets and
-partitions on top tagging beyond three standard deviations (table~\ref{tab:tests}): the partition with a $b$-quark
-boundary reaches a higher AUC and $R_{30}$ than the partition with no flavor boundary, and a higher $R_{30}$ than the
-\Kcoarse-class model and the partition with a random flavor boundary; the \Kres-class mass network reaches a higher
-AUC and $R_{30}$ than the partition with no flavor boundary. Table~\ref{tab:partrepro} gives ParT's top-tagging training script~\cite{part} run on our
+JetClass and the class pairs, and of top and quark/gluon with the missing inputs set as for the linear probes
+(table~\ref{tab:fill}), on the test sets of the linear probes. Table~\ref{tab:partrepro} gives ParT's top-tagging training script~\cite{part} run on our
 cluster unchanged and with Sophon's output head, each a single run. Unchanged, it
 reaches a rejection at 30\% signal efficiency of \MlstPartreproRthirtyPart, against ParT's published
 \LitPartTopRejScratch{} (table~\ref{tab:published}), and does not differ from it by more than three

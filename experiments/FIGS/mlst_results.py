@@ -1216,9 +1216,12 @@ def _bs3_model(stem: str, ck: str) -> str:
 
 def overlay_bs3_mlp(mlp: dict, bs3: dict) -> dict:
     """mlp with the bs3 refit in place of the earlier fits wherever the refit has the cell (CS-5b: Table 10 reads the
-    values its tested gaps were computed from): JetClass-II (jc2bal), top and quark/gluon with zeros (bench0), the
+    values its tested gaps were computed from): JetClass-II (jc2bal), top and quark/gluon on the fill chosen on
+    validation (bench; CS-8b), the
     kinematic-inputs network on top (kin)."""
-    for fam, rename in (("jc2bal", {"jc2bal": "jc2_188"}), ("bench0", {}), ("kin", {})):
+    # PI 2026-11-24 (LEDGER CS-8b): top and quark/gluon from bench, the fill chosen on validation (tab:fill), the
+    # random networks included (bs3-mlp-bench2); bench0 (zeros) is no longer read
+    for fam, rename in (("jc2bal", {"jc2bal": "jc2_188"}), ("bench", {}), ("kin", {})):
         for stem, doc in bs3.get(fam, {}).items():
             for ck, cells in doc.get("cells", {}).items():
                 model = _bs3_model(stem, ck)
@@ -1431,7 +1434,7 @@ def mlp_macros(em, mlp, runs, index, fmt_pm) -> None:
         for arm in MAIN:
             r, k = _ratio_vals(runs, arm, INIT_BN, f)
             _emit_ratio(em, f"MlstMlp{PAIR_WORD[t]}Rthirty{WORD[arm]}OverInitBn", r, k, fmt_pm, index,
-                        f"nonlinear probe {t}, missing inputs zero: R30 of {arm} over the BatchNorm-recomputed random "
+                        f"nonlinear probe {t}, missing inputs as for the linear probe (CS-8b): R30 of {arm} over the BatchNorm-recomputed random "
                         "network of the same index", "rejection")
 
 
@@ -5094,14 +5097,8 @@ _XBX_SRC = lambda sig: ("xbx_analytic", sig) if XBX_ANALYTIC else None       # n
 _MLP_NETS = (("L162", "l162-188"), ("R42_Q1", "r42q1-188"), ("R16_Q1", "r16q1-188"), ("L162_MASS", "l162mass-188"),
              ("R16_Q1_MASS", "r16q1mass-188"), ("FLAV_F0", "flavf0-188"), ("FLAV_F1", "flavf1-188"),
              ("FLAV_F1R", "flavf1r-188"), (RAND_POOLED, "rand-188"))
-# CS-5b (bs3, bs3_cs5b_mlp0_gaps.tsv): the 24 zero-filled MLP gaps that pass 3 sigma, (task, metric heading, metric,
-# file, rows)
-_MLP0_PASS = (       # CS-5c (PI 2026-11-24): only the label-granularity gaps; those against a random network are in Table 10
-    ("top tagging", "AUC", "auc", "top_N1200000",
-     (("L162_MASS", "FLAV_F0", "l162mass-flavf0"), ("FLAV_F0", "FLAV_F1", "flavf0-flavf1"))),
-    ("top tagging", "$R_{30}$", "r30", "top_N1200000",
-     (("R16_Q1", "FLAV_F1", "r16q1-flavf1"), ("L162_MASS", "FLAV_F0", "l162mass-flavf0"),
-      ("FLAV_F0", "FLAV_F1", "flavf0-flavf1"), ("FLAV_F1", "FLAV_F1R", "flavf1-flavf1r"))))
+# CS-5b's zero-filled MLP gaps (bs3_cs5b_mlp0_gaps.tsv) left with their sentences: on the fill chosen on validation
+# (CS-8b, bs3-boot-benchf) none of the six label-set gaps passes; the new passes go to the PI under CS-5c first
 TESTS = (
     # Figs. 2 and 3, Table 1 (M005-M007, M040-M043, M149-M153, M157, M158, M163, M164, M166, M299, M300)
     # review of 5c40d69 (A7, B3): the accuracy falls most between 162 and 43 classes (17 - 43 and the step), the random
@@ -5218,10 +5215,6 @@ TESTS = (
        tuple((a, "L188", ("file", f"l3_bs3/mlp_{f}.json", d, "r30")) for a, d in _MLP_NETS))
       for h, f in (("top tagging", "top_N1200000"), ("quark/gluon tagging (Pythia)", "qg_N1600000"),
                    ("quark/gluon tagging (Herwig)", "qg_herwig_N1600000"))),
-    # CS-5b (bs3): the gaps of Table 10's zero-filled columns that pass 3 sigma with the full sigma, each stated
-    *((rf"{h}, {met_h}, " + HEADING["mlp"] + ", missing inputs set to zero",
-       tuple((a, b, ("file", f"l3_bs3/mlp0_{f}.json", d, met)) for a, b, d in rows))
-      for h, met_h, met, f, rows in _MLP0_PASS),
     (r"JetClass-II, AUC over the resonant classes, " + HEADING["mlp"], (("L162", "L188", None),)),
     # review of 5c40d69 (B4, LEDGER CS-18): the multilayer-perceptron probe beside the linear-probe nulls where tab:mlp
     # holds it like for like, the partition with no flavor boundary against 17 classes on X->bc and the 188-class
@@ -5428,10 +5421,10 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
         fine-tuned R30 on the full top or quark/gluon set (Herwig over Pythia, run by run)."""
         task = "top" if "_top_" in path else "qg"
         # the statistics agent's refit (bs3; LEDGER DL-9, CS-5b): the MLP values its rows were bootstrapped from, as
-        # Table 10 (zeros, JetClass-II; overlay_bs3_mlp), Table 14 (the 17 groups) and the refit with the linear probes'
-        # substitution (top and quark/gluon) read them
+        # Table 10 (overlay_bs3_mlp; top and quark/gluon on the chosen fill, CS-8b), Table 14 (the 17 groups) and the
+        # refit with the linear probes' substitution (top and quark/gluon) read them
         bs3_task = "qg_herwig" if "_qg_herwig_" in path else task
-        if path.startswith("l3_bs3/mlp0_"):
+        if path.startswith("l3_bs3/mlpf_"):
             return lambda m: _mlp_val(mlp or {}, m, bs3_task, mkey if mkey in ("auc", "accuracy") else "r30")
         if path.startswith("l3_bs3/mlp_jc2bal_pairs_"):     # SC-2c: tab:mlp's pair AUC (fits_v5_mlp), refitted bit for bit
             pair = re.search(r"_pairs_([a-z_]+?)\.json$", path).group(1)
@@ -6912,7 +6905,7 @@ CAPTIONS = {
             "on each task (a multilayer perceptron with one hidden layer of \\LpMlpHidden{} units, "
             "\\LpMlpSeedsWord{} seeds averaged) at the largest training set: class-balanced JetClass-II AUC (all, resonant and QCD "
             "classes) with the ratio $\\rho$ of $1-\\mathrm{AUC}$, equation~(\\ref{eq:ratio}), to the \\Kfull-class run of the same seed, JetClass AUC, and AUC and $R_{30}$ "
-            "on top, quark/gluon and Herwig jets (missing inputs set to zero); then the class pairs of "
+            "on top, quark/gluon and Herwig jets (missing inputs as for the linear probe); then the class pairs of "
             "table~\\ref{tab:pairs}, class-balanced, except $X\\to ee$ vs $\\mu\\mu$, which has no nonlinear probe. "
             "The models with the mass regression and the numbered random partitions have no nonlinear probe on the "
             "class-balanced test set: they show a dash in its columns and are left out of the pair blocks; the next block gives "
@@ -7524,7 +7517,7 @@ CAPTION_SHORT = {
             "JetClass-II classes differing only in quark flavor, which coarser label sets merge, the second-named the "
             "background. AUC is the area under the receiver operating characteristic curve, averaged over all, "
             "resonant or QCD classes, each against the rest, and $R_{30}$ is defined as in table~\\ref{tab:summary}. "
-            "Missing top and quark/gluon inputs are set to zero." + _runs("set", "flav", "mass", "rand")),
+            "Missing top and quark/gluon inputs are set as for the linear probe." + _runs("set", "flav", "mass", "rand")),
     # PI 2026-11-23 (LEDGER CA-15): the proposal of docs/CAPTION_CUTS_1123.md, no PART_DEF (tab:sets defines it)
     "coarse": "Linear probes on the frozen features of " + PNETS + ", of the two mass networks, "
               "of the 17-class partitions and of the random network, trained on one million class-balanced "
