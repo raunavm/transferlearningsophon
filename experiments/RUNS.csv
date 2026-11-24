@@ -2401,3 +2401,6 @@ mtx2-tests-px3o-1c8de98-raunav,2026-11-24T04:31:13Z,launched,"tests/test_mlst_re
 mtx2-tests-px3o-1c8de98-raunav,2026-11-24T04:32:44Z,complete,"19 failed, 130 passed: one new, the tested-differences test calling table_tests without the refit (fixed in c662d68).",experiments/MTX/k8s/v2/tests/job-mtx2-tests-px3o-1c8de98-raunav.yaml
 mtx2-tests-px3p-c662d68-raunav,2026-11-24T04:33:13Z,launched,"tests/test_mlst_results.py at c662d68 (CPU only).",experiments/MTX/k8s/v2/tests/job-mtx2-tests-px3p-c662d68-raunav.yaml
 mtx2-tests-px3p-c662d68-raunav,2026-11-24T04:41:46Z,complete,"18 failed, 131 passed in 137.76s (0:02:17): the same failures as px3nbase on this file, none new.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-px3p-c662d68-raunav.yaml
+mtx2-tests-gt8e-3a8b3e6-raunav,2026-11-24T04:56:46Z,launched,"GT-8 before the section-24 render (CPU only).",experiments/MTX/k8s/v2/tests/job-mtx2-tests-gt8e-3a8b3e6-raunav.yaml
+bs3-inspect-raunav,2026-11-24T04:57:10Z,relaunched,"RR-8 read: the 27 quark/gluon 1e5 rerun cells at 3e-4 (ft_v2/fixed_rate/leg_qg/*/N100000/s1) all have DONE and features/logits_herwig.npy; Sophon's per-class JetClass recall read (accuracy 0.76788).",experiments/STATS/k8s/job-bs3-inspect-raunav.yaml
+bs3-inspect-raunav,2026-11-24T04:57:58Z,deleted,"Reads done; deleted by name.",experiments/STATS/k8s/job-bs3-inspect-raunav.yaml
