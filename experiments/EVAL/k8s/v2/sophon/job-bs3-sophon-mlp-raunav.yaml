@@ -27,7 +27,7 @@ spec:
         - |
           set -euo pipefail
           retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
-          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.75 https://github.com/raunavm/transferlearningsophon.git tls; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.77 https://github.com/raunavm/transferlearningsophon.git tls; }
           retry clone || exit 1
           cd /workspace/tls
           CPU=$(grep -m1 "^model name" /proc/cpuinfo | cut -d: -f2- | sed "s/^ *//;s/ *$//"); [ "${CPU}" = "AMD EPYC 7402P 24-Core Processor" ] || { echo "FATAL: this node's CPU is ${CPU}, not AMD EPYC 7402P 24-Core Processor: nothing fitted"; exit 42; }
@@ -38,8 +38,8 @@ spec:
           python3 -c 'import resource, subprocess, sys, time; t = time.time(); r = subprocess.call(sys.argv[1:]); print("PEAK_RSS_MIB", resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss // 1024, "SECONDS", round(time.time() - t)); sys.exit(r)' python3 experiments/EVAL/probe_sophon.py mlp --datasets jc1 top qg --out /data/results/eval/bs3_sophon/fits_mlp_bench
           echo "SOPHON MLP COMPLETE"
         resources:
-          requests: { memory: "7Gi", cpu: "4", ephemeral-storage: "20Gi" }
-          limits:   { memory: "7Gi", cpu: "4", ephemeral-storage: "20Gi" }
+          requests: { memory: "20Gi", cpu: "4", ephemeral-storage: "20Gi" }
+          limits:   { memory: "20Gi", cpu: "4", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
