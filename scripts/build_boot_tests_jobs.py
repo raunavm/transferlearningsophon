@@ -473,9 +473,10 @@ def ftfix_row(files) -> str:
     return "\n  ".join([check_inputs(done), f"mkdir -p {L3_FIXED}"] + lines)
 
 
-def ftfix_spec(tag: str, mem: str, smoke: bool = False) -> str:
-    """boot-ftfix-raunav: one pod a JetClass-II or JetClass file and one for the nine top and quark/gluon files below
-    the full sets; its smoke (boot-ftfix-smoke-acc-raunav): two networks of each 1e6 file into SMOKE, for peak and
+def ftfix_spec(tag: str, mem: str, smoke: bool = False, bench: bool = False) -> str:
+    """boot-ftfix-raunav: one pod a JetClass-II or JetClass file; boot-ftfix-bench-raunav (bench): one pod for the nine
+    top and quark/gluon files below the full sets, a job of its own for its own memory (2026-11-24: the accuracy smoke
+    peaked at 4,838 MiB on JetClass-II and 4,220 MiB on JetClass; bs3-boot-benchf at 824 MiB on top); its smoke (boot-ftfix-smoke-acc-raunav): two networks of each 1e6 file into SMOKE, for peak and
     seconds (boot-ftfix-smoke-raunav, 2026-11-24 08:17, was the same with --headline: the macro AUC too)."""
     if smoke:
         rows = []
@@ -487,7 +488,10 @@ def ftfix_spec(tag: str, mem: str, smoke: bool = False) -> str:
                                      f"[ -e {out} ] || " + peak(cmd)]))
         return _spec(tag, "boot-ftfix-smoke-acc-raunav", rows, 2, mem,
                      "fine-tuned rows after the reruns, smoke: two networks of each 1e6 file, peak memory and seconds")
-    rows = [ftfix_row([f]) for f in FTFIX_FILES] + [ftfix_row(FTFIX_BENCH)]
+    if bench:
+        return _spec(tag, "boot-ftfix-bench-raunav", [ftfix_row(FTFIX_BENCH)], 1, mem,
+                     "paired test-jet bootstraps of fine-tuned top and quark/gluon below the full sets (2026-11-24)")
+    rows = [ftfix_row([f]) for f in FTFIX_FILES]
     return _spec(tag, "boot-ftfix-raunav", rows, len(rows), mem,
                  "paired test-jet bootstraps of the fine-tuned rows on the fixed-schedule rerun cells (2026-11-24)")
 
@@ -501,7 +505,7 @@ def main(argv=None) -> int:
     ap.add_argument("--node", help="one node of CPU_MODEL's (R5.CPU_NODES) instead of all of them")
     ap.add_argument("--review", choices=("smoke", "a", "b"), help="the review rows: the smoke, or job a or b")
     ap.add_argument("--review2", choices=("smoke", "job"), help="the second review's rows from the cache")
-    ap.add_argument("--ftfix", choices=("smoke", "job"), help="the fine-tuned rows on the fixed-schedule rerun cells")
+    ap.add_argument("--ftfix", choices=("smoke", "job", "bench"), help="the fine-tuned rows on the fixed-schedule rerun cells")
     ap.add_argument("--mem", default="16Gi", help="memory request and limit of every pod")
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
@@ -510,8 +514,9 @@ def main(argv=None) -> int:
               | {k[12]: (k, v) for k, v in review_specs(a.tag, a.mem).items()}) if a.review else {}
     name, text = (("boot-review2-smoke-raunav" if a.review2 == "smoke" else "boot-review2-raunav",
                    review2_spec(a.tag, a.mem, a.review2 == "smoke")) if a.review2
-                  else ("boot-ftfix-smoke-acc-raunav" if a.ftfix == "smoke" else "boot-ftfix-raunav",
-                        ftfix_spec(a.tag, a.mem, a.ftfix == "smoke")) if a.ftfix
+                  else ({"smoke": "boot-ftfix-smoke-acc-raunav", "job": "boot-ftfix-raunav",
+                         "bench": "boot-ftfix-bench-raunav"}[a.ftfix],
+                        ftfix_spec(a.tag, a.mem, a.ftfix == "smoke", a.ftfix == "bench")) if a.ftfix
                   else review[a.review] if a.review
                   else ("boot-tests-smoke-raunav", smoke_spec(a.tag, a.mem)) if a.smoke
                   else ("boot-tests-herwig-raunav", herwig_spec(a.tag, a.mem)) if a.herwig

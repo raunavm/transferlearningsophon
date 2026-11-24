@@ -226,8 +226,11 @@ def test_the_rerun_rows_read_each_cell_at_its_rows_recorded_rate():
     assert len(d) == len({x.split("=")[0] for x in d}) and {"--diff 162-188", "17mass-17", "rand-188", "rand-r16q1",
                                                              "l162mass-188", "188-scratch"} <= {x.split("=")[0] for x in d}
     assert "rand" not in b.ftfix_diffs(False) and "flav" not in b.ftfix_diffs(False)
-    text, smoke = b.ftfix_spec("mtx-s9.99", "8Gi"), b.ftfix_spec("mtx-s9.99", "8Gi", smoke=True)
-    assert "completions: 6\n" in text and "name: boot-ftfix-raunav\n" in text and "nvidia.com/gpu" not in text
+    jc, bench = b.ftfix_spec("mtx-s9.99", "8Gi"), b.ftfix_spec("mtx-s9.99", "2Gi", bench=True)
+    assert "completions: 5\n" in jc and "name: boot-ftfix-raunav\n" in jc and 'memory: "8Gi"' in jc
+    assert "completions: 1\n" in bench and "name: boot-ftfix-bench-raunav\n" in bench and 'memory: "2Gi"' in bench
+    text, smoke = jc + bench, b.ftfix_spec("mtx-s9.99", "8Gi", smoke=True)
+    assert "nvidia.com/gpu" not in text
     outs = [b.ftfix_out(name, n) for _pb, _t, name, n, _p in b.FTFIX_FILES + b.FTFIX_BENCH]
     assert len(set(outs)) == 14 and all(o.startswith("/data/results/bootstrap/l3_fixed/ft_") for o in outs)
     assert all(text.count(f"[ -e {o} ] ||") == 1 for o in outs)
