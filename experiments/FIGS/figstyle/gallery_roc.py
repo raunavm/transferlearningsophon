@@ -420,7 +420,7 @@ def _x_ticks(axes: list, lo: float, w: float, last: bool = True) -> None:
 def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_names: tuple = (), wgap: float = Y_LABEL_GAP,
               share=lambda i, j: 0, own_y: bool = False, fit_x: bool = True, legend_slot: tuple | None = None,
               ratio_scale: str | None = None, ratio: float = RATIO_HEIGHT, hgap: float = 1.35 + X_LABEL,
-              left: float | None = None, one_x: bool = False) -> None:
+              left: float | None = None, one_x: bool = False, bands: tuple = ()) -> None:
     """grid: rows of panels (docs, curve key, networks, title); a panel None is left out (its slot stays empty). Each
     panel w cm wide and aspect * w high, its ratio panel RATIO_HEIGHT of that under it. share(i, j): panels of one key
     share their y range and their ratio range (in a row only the first shows its tick labels unless own_y). fit_x: each
@@ -430,7 +430,8 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
     slot while it fits. Titles with a line break take a second line's room. FG-8 (PI 2026-11-20): every panel has its
     own x and y labels, so the gap between panels holds a y label and the gap between rows an x label; own_y: every
     panel its tick numbers too. ratio: a ratio panel's height over its panel's; hgap: cm between rows; left: cm left of
-    the first column (the turned row names, the tick numbers and the y label)."""
+    the first column (the turned row names, the tick numbers and the y label). bands: networks that keep their band in
+    any panel besides L21's (Fig. 5's flavor-boundary partitions, PI 2026-11-24, LEDGER TX-7)."""
     rows, cols = len(grid), max(len(r) for r in grid)
     left = ((0.65 if row_names else 0.1) + 1.25) if left is None else left
     h = aspect * w
@@ -471,7 +472,7 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
                 look = S.look(_style(net), linewidth=lw, zorder=z)
                 ax.plot(s[0], s[1], **look)
                 # L21: in a panel of more than three networks only 188 classes and the mode's reference keep a band
-                rel = _rel_error(docs, models, key) if L.keeps_band(net, len(nets)) else None
+                rel = _rel_error(docs, models, key) if L.keeps_band(net, len(nets)) or net in bands else None
                 values[share(i, j)] += _ratio(rx, s, ref, rel, **look)
                 handles.setdefault(net, Line2D([], [], **S.look(_style(net)), linewidth=lw, label=_name(net)))
             S.title(ax, name)
@@ -516,26 +517,30 @@ def _roc_grid(path: pathlib.Path, grid: list, *, w: float, aspect: float, row_na
     S.save(fig, path)
 
 
-def _pair_grid(path: pathlib.Path, family: str, pairs: tuple, w: float, aspect: float) -> None:
+def _pair_grid(path: pathlib.Path, family: str, pairs: tuple, w: float, aspect: float, bands: tuple = ()) -> None:
     """Columns the pairs, upper row the label sets with the mass networks (fine-tuned: and from scratch), lower row the
-    flavor-boundary partitions with 188 and 17 classes for reference; one y range for the figure, one ratio range a row."""
+    flavor-boundary partitions with 188 and 17 classes for reference; one y range for the figure, one ratio range a row.
+    bands: the networks that keep a band in the ratio panels besides 188 classes (_roc_grid)."""
     docs = _family(family)
     ref = ("SCRATCH",) if family == "pairs_ft" else ()
     name = (lambda t: _two_lines(t)) if w < 3.5 else (lambda t: t)
     _roc_grid(path, [[(docs, k, LABEL_SETS + ref, name(PAIR_TITLE[k])) for k in pairs],
                      [(docs, k, PAIR_PARTITIONS, name(PAIR_TITLE[k])) for k in pairs]],
               w=w, aspect=aspect, row_names=("Label sets", "17-class partitions"), share=lambda i, j: i,
-              ratio_scale="log", own_y=True, wgap=PAIR_WGAP, left=PAIR_LEFT)    # logarithmic ratio panels everywhere
+              ratio_scale="log", own_y=True, wgap=PAIR_WGAP, left=PAIR_LEFT, bands=bands)    # logarithmic ratio panels
 
 
 PAIR_W = {2: 6.1, 3: 4.15, 4: 3.0}      # cm: a panel of two, three or four in a row beside the turned row names
 # FG-8 (review of render dfe5942, B9): every pair panel shows its own y tick numbers and y label, so the right column's
 # sit in the gap, clear of the panel to the left, and the turned row names take less room: 1.45 + 6.1 + 1.25 + 6.1 cm
 PAIR_LEFT, PAIR_WGAP = 1.45, 1.25
+FLAV_BANDS = PARTITIONS[:3]         # Fig. 5's ratio panels: the flavor-boundary partitions' bands (draw_f4_mech)
 
 
 def draw_f4_mech(path: pathlib.Path) -> None:
-    _pair_grid(path, "pairs", MECHANISM, PAIR_W[2], 0.72)
+    # PI 2026-11-24 (LEDGER TX-7): the no-flavor-boundary curve runs visibly below 17 classes on X->bb vs cc, so the
+    # figure shows its run spread; the three flavor-boundary partitions keep their bands, as 188 classes does
+    _pair_grid(path, "pairs", MECHANISM, PAIR_W[2], 0.72, bands=FLAV_BANDS)
 
 
 def draw_f4_mech_ft(path: pathlib.Path) -> None:

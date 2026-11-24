@@ -174,6 +174,9 @@ def test_the_class_pair_family_has_one_form_for_both_modes_and_every_pair(monkey
         assert kw["row_names"] == ("Label sets", "17-class partitions")
         assert all(":" not in title for row in grid for *_, title in row)            # L7: no colon in a panel title
     assert [k for k, *_ in calls[0][0][0]] == [k for k, *_ in calls[1][0][0]]   # one pair order in both modes
+    # PI 2026-11-24 (LEDGER TX-7): Fig. 5 (F4-mech) shows the flavor-boundary partitions' bands; the others do not
+    assert calls[0][1]["bands"] == R.FLAV_BANDS == R.PARTITIONS[:3] == ("FLAV_F0", "FLAV_F1", "FLAV_F1R")
+    assert all(kw["bands"] == () for _, kw in calls[1:])
 
 
 def test_the_other_flavor_pairs_are_the_resonance_pair_with_its_partitions_and_the_qcd_pairs(monkeypatch):
