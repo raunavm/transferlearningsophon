@@ -1,0 +1,15 @@
+% The abstract (PI 2026-11-24, LEDGER RW-9: the PI's draft, at most 180 words). Each clause is tested in
+% experiments/FIGS/mlst_v2_tables.py (claims), which stops the build when a test is missing or fails. The two
+% brackets wait for the fine-tuned JetClass cells of the fixed-schedule reruns and their bootstrap.
+Jet foundation models are often pretrained to classify simulated jets into hundreds of fine classes. Whether such
+fine labels improve the pretrained model has not been tested in a controlled way, because published comparisons
+change the training jets together with the labels. We pretrain the Sophon model on the same JetClass-II jets with
+four nested label sets of \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, which progressively merge quark and lepton
+flavors while keeping the decay topology. With coarser labels, a linear classifier on the frozen features identifies
+the \Kfull{} classes less accurately, \VtwoAccCoarsePct\% against \VtwoAccFullPct\% for the coarsest and the finest
+set, and decays that differ only in a merged flavor become much harder to separate. Random groupings into \Kcoarse{}
+classes lose far less, so the loss depends on which classes are merged and not only on how many. After fine-tuning,
+\pending{the JetClass accuracy of the \Kcoarse- and \Kfull-class models, and whether they differ} and no significant
+difference is seen on the top-tagging and quark--gluon benchmarks. An auxiliary jet-mass regression sharpens the mass
+resolution of the frozen features at no significant cost in classification. Fine labels therefore matter most when
+the pretrained features are used frozen\pending{; after fine-tuning: one clause from the JetClass result}.

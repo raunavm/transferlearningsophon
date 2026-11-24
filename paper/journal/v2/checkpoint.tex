@@ -1,0 +1,51 @@
+% The PI's checkpoint of the rewrite (PI 2026-11-24, LEDGER RW-10): the abstract and the introduction, Table 1 in
+% versions A and B, Tables 2 and 3, and the outline of the whole paper. Class and page layout as paper/journal/main.tex.
+% Every number is a macro of tables/numbers.tex or a cell of tables/table*.tex, written by
+% experiments/FIGS/mlst_v2_tables.py from the paper's build. Build: scripts/build_render_job.py --checkpoint --preview.
+\documentclass[12pt]{article}
+\usepackage[a4paper,textwidth=15cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{placeins}
+\usepackage[labelsep=period]{caption}
+\setlength{\belowcaptionskip}{6pt}
+\usepackage[hidelinks]{hyperref}
+
+% A result whose input is not in yet: a red bold bracket (as in main.tex).
+\newcommand{\pending}[1]{\textcolor{red}{\textbf{[#1]}}}
+\input{tables/numbers}
+
+\title{Label granularity in supervised pretraining of jet foundation models}
+\author{\pending{author list and affiliations}}
+\date{}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+\input{abstract}
+\end{abstract}
+
+\input{intro}
+% the sections the introduction's last sentence names are not in the checkpoint: their numbers, without their text
+{\refstepcounter{section}\label{sec:related}\refstepcounter{section}\label{sec:methods}%
+\refstepcounter{section}\label{sec:results}\refstepcounter{section}\label{sec:discussion}}
+
+\clearpage
+\input{tables/table1}
+\clearpage
+\setcounter{table}{1}
+\input{tables/table2}
+\clearpage
+\input{tables/table3}
+\clearpage
+\input{outline}
+
+\clearpage
+{\footnotesize
+\bibliographystyle{unsrt}
+\bibliography{../refs}
+}
+\end{document}
