@@ -212,7 +212,7 @@ def test_the_second_review_spec_reads_the_cache_only():
 
 def test_the_rerun_rows_read_each_cell_at_its_rows_recorded_rate():
     """2026-11-24, part A of the fixed-schedule reruns: the fine-tuned bootstraps read build_ft_budget_jobs.
-    paper_fixed_cells, the partitions only at 1e6, into new files of bootstrap/l3_rerun."""
+    paper_fixed_cells, the partitions only at 1e6, into new files of bootstrap/l3_fixed."""
     b = _load("build_boot_tests_jobs_t", "scripts/build_boot_tests_jobs.py")
     fb = _load("build_ft_budget_jobs_t", "scripts/build_ft_budget_jobs.py")
     paper = {c["out"] for c in fb.paper_fixed_cells()}
@@ -229,7 +229,7 @@ def test_the_rerun_rows_read_each_cell_at_its_rows_recorded_rate():
     text, smoke = b.ftfix_spec("mtx-s9.99", "8Gi"), b.ftfix_spec("mtx-s9.99", "8Gi", smoke=True)
     assert "completions: 6\n" in text and "name: boot-ftfix-raunav\n" in text and "nvidia.com/gpu" not in text
     outs = [b.ftfix_out(name, n) for _pb, _t, name, n, _p in b.FTFIX_FILES + b.FTFIX_BENCH]
-    assert len(set(outs)) == 14 and all(o.startswith("/data/results/bootstrap/l3_rerun/ft_") for o in outs)
+    assert len(set(outs)) == 14 and all(o.startswith("/data/results/bootstrap/l3_fixed/ft_") for o in outs)
     assert all(text.count(f"[ -e {o} ] ||") == 1 for o in outs)
     assert "completions: 2\n" in smoke and "name: boot-ftfix-smoke-raunav\n" in smoke and b.SMOKE in smoke
-    assert "/l3_rerun/" not in smoke.replace("mkdir -p", "")
+    assert "/l3_fixed/" not in smoke

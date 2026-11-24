@@ -416,10 +416,11 @@ def smoke_spec(tag: str, mem: str) -> str:
 # ------------------------------------------------------------------ the fine-tuned rows after the reruns (2026-11-24)
 # Part A of the fixed-schedule reruns is done: the paired test-jet bootstrap of every fine-tuned difference on the one
 # rule's cells at each row's recorded rate (build_ft_budget_jobs.paper_fixed_cells), one new file a task and size in
-# BL.OUT_RERUN, every difference of the task in it under both names the readers use (BL.DIFFS, R5.BOOTALL_DIFFS).
+# L3_FIXED, every difference of the task in it under both names the readers use (BL.DIFFS, R5.BOOTALL_DIFFS). Its own
+# folder: the pull keeps bootstrap/<family>/ as it is, and BL.OUT_RERUN's files go to l3_rerun/ outside bootstrap/.
 # The partitions' cells below 1e6 are part B (results book only), so those files hold the label sets, the mass
 # networks and from scratch. Top and quark/gluon on the full sets keep ParT's recipe: their files stay in L3.
-L3_RERUN = BL.OUT_RERUN
+L3_FIXED = "/data/results/bootstrap/l3_fixed"
 FTFIX_SETS = ("l188", "l162", "r42q1", "r16q1", "l162mass", "r16q1mass")
 FTFIX_PARTS = ("flavf0", "flavf1", "flavf1r", "rand")
 # (paired_bootstrap's task, the builder's task, the file's name, size, with the partitions)
@@ -431,7 +432,7 @@ FTFIX_SMOKE = ("mtx-l188-s1", "mtx-l188-s2")
 
 
 def ftfix_out(name: str, n: int) -> str:
-    return f"{L3_RERUN}/ft_{name}_N{n}.json"
+    return f"{L3_FIXED}/ft_{name}_N{n}.json"
 
 
 def ftfix_cells(task: str, n: int, parts: bool) -> dict[str, str]:
@@ -462,7 +463,7 @@ def ftfix_row(files) -> str:
         done += [f"{c}/DONE" for c in cells.values()]
         cmd = pb(ftfix_out(name, n), [f"--model {m}={c}" for m, c in cells.items()], "--headline " + ftfix_diffs(parts), pb_task)
         lines.append(" || ".join((lambda a, b: (a, peak(b)))(*cmd.split(" || ", 1))))
-    return "\n  ".join([check_inputs(done), f"mkdir -p {L3_RERUN}"] + lines)
+    return "\n  ".join([check_inputs(done), f"mkdir -p {L3_FIXED}"] + lines)
 
 
 def ftfix_spec(tag: str, mem: str, smoke: bool = False) -> str:
