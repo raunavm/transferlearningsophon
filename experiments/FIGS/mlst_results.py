@@ -8497,8 +8497,15 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     ladder = [next((s for s in TABLE_SIZES if s[0] == size), (size, 12.0, 14.5))] if fixed else TABLE_SIZES
     try:
         for _SIZE_NOW[0] in ladder:
-            cut = [t.strip() for b in parts for t in ([b] if fixed else split_wide(b, PORTRAIT_CM, NO_WRAP))]
-            if len(cut) == len(parts):
+            cut, fits = [], True
+            for b in parts:
+                # a tabular with spacing rows split_wide does not read (tab:sculptboot's \addlinespace) is measured
+                # without them and never cut
+                plain = re.sub(r"\\\\\[[^]]*\]", r"\\\\", re.sub(r"\\addlinespace(\[[^]]*\])?", "", b))
+                whole_b = fixed or len(split_wide(plain, PORTRAIT_CM, NO_WRAP)) == 1
+                fits &= whole_b
+                cut += [b.strip()] if whole_b or plain != b else [t.strip() for t in split_wide(b, PORTRAIT_CM, NO_WRAP)]
+            if fits:
                 break
         size = _SIZE_NOW[0][0]
         return _set(cut, cap, label, tail, env, spec, size,

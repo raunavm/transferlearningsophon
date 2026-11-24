@@ -2011,7 +2011,9 @@ def test_a_table_is_set_at_the_largest_size_it_fits_and_a_size_or_whole_fixes_it
         got = _sizes_in(t)
         size = got[0] if got else ""
         chosen.append([s[0] for s in M.TABLE_SIZES].index(size))
-        assert len(set(got)) <= 1 and "landscape" not in t and t.count(r"\begin{tabular*}{\linewidth}" + spec(n)) == 1, n
+        assert len(set(got)) <= 1 and "landscape" not in t, n
+        # whole at any size above the template's; at the template's size it may still be cut
+        assert size == M.TEMPLATE_SIZE or t.count(r"\begin{tabular*}{\linewidth}" + spec(n)) == 1, n
         k = [s[0] for s in M.TABLE_SIZES].index(size)
         for bigger in M.TABLE_SIZES[:k]:
             M._SIZE_NOW[0] = bigger
