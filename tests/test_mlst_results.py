@@ -4099,7 +4099,7 @@ def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_o
     body, reps = M.table_tests(tmp_path, runs, {}, {}, {}, per)
     assert reps == {200} and body.startswith(r"\begin{tabular}{lccc}") and M.TESTS_HEAD in body
     lines = body.splitlines()
-    head = M._full_row(4, "JetClass, accuracy, " + M.HEADING["ft"], italic=True)
+    head = M._tests_head("JetClass, accuracy, " + M.HEADING["ft"])
     i = lines.index(head + "*")
     rows = lines[i + 1:i + 1 + 7]
     name = lambda a, b: f"{M.LABEL[a]} $-$ {M.LABEL[b]}"         # noqa: E731
@@ -4139,7 +4139,7 @@ def test_the_tested_differences_table_reads_the_stored_sculpting_and_mass_bootst
     sdoc, mdoc = json.loads(sb.read_text()), json.loads(mass.read_text())
     body, reps = M.table_tests(DATA, M._paper(ROOT), {}, {}, {}, {}, sdoc, mdoc)
     assert reps == {sdoc["replicas"]} | {mdoc["boot"]}
-    heads = [ln for ln in body.splitlines() if ln.startswith(r"\multicolumn{4}{@{}l}{\textit{")]
+    heads = [ln for ln in body.splitlines() if ln.startswith(M._tests_head("").split(r"\textit{")[0] + r"\textit{")]
     assert sum(M.TESTS_SCULPT in h for h in heads) == len(M.SCULPT_BOOT_WPS)
     # PI 2026-11-23 (LEDGER SP-13): no mass network and no random partition against 188 classes (no sentence states them)
     unstated = {("l162mass", "l188"), ("r16q1mass", "l188"), ("rand2p", "l188")}
@@ -4429,11 +4429,11 @@ def test_the_tested_differences_table_keeps_every_row_and_names_only_the_two_sid
     head are said by the heading, not repeated on the rows. Set upright at the template's table size, one column."""
     body, _ = M.table_tests(tmp_path, M._paper(ROOT), {}, {}, {}, {})
     for h, _rows in M.TESTS:
-        assert M._full_row(4, h, italic=True) in body, h
-    co = M._full_row(4, "JetClass-II, accuracy on the 17 merged groups, " + M.HEADING["lp"], italic=True)
+        assert M._tests_head(h) in body, h
+    co = M._tests_head("JetClass-II, accuracy on the 17 merged groups, " + M.HEADING["lp"])
     block = body.split(co)[1].split(r"\addlinespace")[0]
     assert "on the 17 groups" not in block and f"{M.LABEL['L162']} $-$ {M.LABEL['L188']} &" in block
-    head = M._full_row(4, "jet mass, resolution, " + M.HEADING["head"], italic=True)
+    head = M._tests_head("jet mass, resolution, " + M.HEADING["head"])
     block = body.split(head)[1].split(r"\addlinespace")[0]
     assert ", head" not in block and f"{M.LABEL['L162_MASS']} $-$ soft-drop mass &" in block
     f = M._float("tests", body, True, whole="upright", colsep_pt=6, size=M.TEMPLATE_SIZE, fill={"__REPLICAS__": "200"})

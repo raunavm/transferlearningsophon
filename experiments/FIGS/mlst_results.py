@@ -5689,11 +5689,17 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
     return _tests_tabular(blocks, side, single, analytic, num), {r for r in replicas if r}
 
 
+def _tests_head(head: str) -> str:
+    """A tab:tests block heading (task, metric, read-out) across the line, wrapping where it is longer (a heading, not a
+    row label: TN-6 holds for the rows; at 8 pt the longest ran 46 pt over the text block on one line)."""
+    return r"\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{\linewidth}@{}}{\textit{" + head + r"}} \\"
+
+
 def _tests_tabular(blocks: list, side, single: set, analytic: set, num) -> str:
     """tab:tests' tabular: each block under its italic heading (task, metric, read-out), a row its two sides."""
     out = [r"\begin{tabular}{lccc}", r"\toprule", TESTS_HEAD, r"\midrule"]
     for k, (head, rows) in enumerate(blocks):
-        block = [_full_row(4, head, italic=True)]
+        block = [_tests_head(head)]
         for first, second, v, ind in rows:
             lab = f"{side(head, first)} $-$ {side(head, second)}" + (INDEPENDENT if ind else "")
             if isinstance(v, tuple) and len(v) > 5:       # a row over several (least), and its mark
@@ -7728,9 +7734,11 @@ SHRINK_OK = 1.0     # nothing is shrunk (PI 2026-11-11); was 1.08 with adjustbox
 BODY_SCALE = 12 / 10.95     # the tables are set at the body size, 12 pt (PI 2026-11-12); the width model was calibrated at \\small
 # LS-1 (the user, 2026-11-24: no page sideways) and PI DL-14/SP-14 (no text below the template's table size): a table
 # too wide for the upright text block at the body size is set at the largest of these sizes at which it fits, down to
-# the iopjournal template's table size (iopjournal.cls sets every tabular at \fontsize{8}{10}); (command, points, leading)
-TABLE_SIZES = (("", 12.0, 14.5), (r"\small", 10.95, 13.6), (r"\footnotesize", 10.0, 12.0),
-               (r"\fontsize{8}{10}\selectfont", 8.0, 10.0))
+# the iopjournal template's table size (iopjournal.cls sets every tabular at \fontsize{8}{10}); (command, points, leading,
+# text width against the body size: Latin Modern's smaller design sizes are wider, cmr10 and cmr8 digits 0.851 and 0.723
+# of cmr12's, not 10/12 and 8/12)
+TABLE_SIZES = (("", 12.0, 14.5, 1.0), (r"\small", 10.95, 13.6, 0.932), (r"\footnotesize", 10.0, 12.0, 0.851),
+               (r"\fontsize{8}{10}\selectfont", 8.0, 10.0, 0.723))
 TEMPLATE_SIZE = TABLE_SIZES[-1][0]
 _SIZE_NOW = [TABLE_SIZES[0]]    # the size _cell_cm and _height_cm estimate at (_float sets it)
 
@@ -7765,7 +7773,7 @@ def _cell_cm(t: str) -> float:
     t = re.sub(r"_\{([^}]*)\}", lambda m: "x" * max(1, round(0.7 * len(m.group(1)))), t)
     t = re.sub(r"\\[a-zA-Z]+", "x", t)
     t = re.sub(r"[{}$^_~]", "", t).strip()
-    return ((0.177 * len(t) + 0.1 * sum(c.isupper() for c in t)) * bold * BODY_SCALE * _SIZE_NOW[0][1] / 12
+    return ((0.177 * len(t) + 0.1 * sum(c.isupper() for c in t)) * bold * BODY_SCALE * _SIZE_NOW[0][3]
             + 0.42)      # capitals are wider
 
 
@@ -7837,7 +7845,9 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
     # the label column at the width of the longest label, at most label_cm, never below the widest part a label
     # cannot break (its network); the blocks are cut for that width
     label_w = max(atom, min(width[0], label_cm))
-    if label_w + wide(nlab, n) - lab <= budget * SHRINK_OK:     # a few per cent over: one block, shrunk by adjustbox
+    # the first label column at label_w, the other label columns as they are (LS-1 layout: "- lab" left out the
+    # widths of label columns after the first, so tab:lrsweep's three passed as fitting and ran 114 pt over)
+    if label_w + wide(nlab, n) - width[0] <= budget * SHRINK_OK:     # a few per cent over: one block
         return [tab if label_w >= width[0] else re.sub(
             r"^(\s*\\begin\{tabular\}\{)l", lambda m: m.group(1) + r">{\raggedright\arraybackslash}p{"
             + f"{label_w - 0.42:.1f}" + "cm}", tab, count=1)]
@@ -7867,6 +7877,10 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
                 parts, shown = [], False
                 for s0, span, al, txt in cells:
                     k = sum(keep(c) for c in range(s0, s0 + span))
+                    # a heading over the labels and some data columns, none of them in this block, beside another
+                    # heading that is (Table 1's linear-probe heading beside "transfer head"): left empty here
+                    if s0 < nlab < s0 + span and not any(keep(c) for c in range(nlab, s0 + span)) and len(cells) > 1:
+                        txt = ""
                     if k:
                         parts.append(rf"\multicolumn{{{k}}}{{{al or 'c'}}}{{{txt}}}" if al or k > 1 else txt)
                         shown |= txt.strip() not in ("", "--") if s0 >= nlab or span > 1 or not body else False
@@ -8498,7 +8512,7 @@ def _float(key: str, body: str, wide: bool = False, fill: dict | None = None, no
     # table size; at that size a part still wider than the text block is cut into blocks of columns (split_wide).
     # whole="upright" (a width measured with LaTeX) or a size its call names: that size, never cut
     fixed = whole == "upright" or size
-    ladder = [next((s for s in TABLE_SIZES if s[0] == size), (size, 12.0, 14.5))] if fixed else TABLE_SIZES
+    ladder = [next((s for s in TABLE_SIZES if s[0] == size), TABLE_SIZES[0])] if fixed else TABLE_SIZES
     try:
         for _SIZE_NOW[0] in ladder:
             cut, fits = [], True
