@@ -358,6 +358,8 @@ equation~(\ref{eq:ratio}) the text quotes, and figures~\ref{fig:F4-other} and~\r
 classes that differ only in flavor, in the form of figure~\ref{fig:F4-mech}, where a QCD $b\bar b$ jet holds two or more $b$ quarks, a
 QCD $c\bar c$ jet two or more $c$ quarks and a light QCD jet no $b$, $c$ or $s$ quark. Each curve is evaluated on
 a fixed grid of signal efficiencies, with $\epsB$ interpolated linearly between neighboring thresholds.
+Figure~\ref{fig:CONF-share} draws the test of section~\ref{sec:jetclasstwo} on the label sets with \Kcoarse{}
+classes, fixed before it was run, the pass bar included.
 Figure~\ref{fig:F9b} draws the median response and the resolution of the regressed mass on JetClass-II test jets
 with a generator-level match, divided into training, validation and evaluation parts for the regressions on
 frozen features, against the reconstructed jet $p_{\mathrm T}$, where ATLAS bins in the true
@@ -375,7 +377,9 @@ the working points of table~\ref{tab:tests}, beside the statistical floor of a r
 sets and the two mass networks against the number of training jets, the panels defined as in
 figure~\ref{fig:A8}, top-quark against QCD jets and quark against gluon jets with the first named the signal. Lines are means over \MlstNRunsWord{} runs per label set and \MlstMassNRunsWord{} per mass
 network, bands one standard deviation. The missing inputs of top and quark/gluon discrimination are substituted as
-chosen on validation.}
+chosen on validation. The random network, not drawn, has accuracies of
+\MlstATenInitAccJcTwoMin{}--\MlstATenInitAccJcTwoMax{} and \MlstATenInitAccJcOneMin{}--\MlstATenInitAccJcOneMax{}
+and $R_{30}$ of \MlstATenInitRthirtyMin{}--\MlstATenInitRthirtyMax{} over these sizes.}
 \label{fig:A10}
 \end{figure}
 
@@ -415,6 +419,23 @@ over \MlstNRunsWord{} runs per label set and \MlstMassNRunsWord{} per mass netwo
 reaches \MlstPairInitRhalfQcdMin{} to \MlstPairInitRhalfQcdMax{} at 50\% of signal jets. Table~\ref{tab:tests} has
 the tested differences.}
 \label{fig:F4-qcd}
+\end{figure}
+
+% PI 2026-11-23 (LEDGER DL-8b, CS-10): the pre-registered confusion test passed (experiments/EVAL/confusion_share.py,
+% data/v2/stats/confusion_share.json), one appendix figure and one sentence (section 4.1)
+\begin{figure}[tbp]
+\centering
+\paperfig{\linewidth}{CONF-share}
+\caption{Among the \MlstConfShareNWord{} label sets with \Kcoarse{} classes, the ordering in linear-probe accuracy on
+JetClass-II is consistent with the share of the \Kfull-class probe's confusions between resonant classes that each
+keeps apart, with a Spearman correlation of \MlstConfShareRho{} against a bar of \MlstConfShareBar{} set before the
+test was run. The share weights each pair of resonant classes by how often the \Kfull-class linear probe
+mistakes one for the other, over its \MlstNRunsWord{} runs, and keeps the pairs the label set
+puts in different groups. Each point is one label set, its accuracy at the largest training set, as in
+figure~\ref{fig:F2}(a), the mean over its runs (\MlstNRunsWord{} for the \Kcoarse-class level, \MlstMassNRunsWord{}
+per flavor-boundary partition and one per random partition, drawn open), with bars of one standard deviation where
+it has more than one run.}
+\label{fig:CONF-share}
 \end{figure}
 
 \begin{figure}[tbp]

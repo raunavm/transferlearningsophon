@@ -68,7 +68,7 @@ CAPTIONS = {
         "row's network against 188 classes, as linear probes (left) or fine-tuned (right) on one million "
         "class-balanced jets; points below the diagonal are recalled less often. Their test-jet-weighted mean is the "
         "accuracy of figures {fig:F2} and {fig:F2-ft}. Means over three pretraining runs with ±1 standard deviation "
-        "bars over runs and test jets; colors give what the 17 classes merge the class with. Filled points are the "
+        "bars over runs and test jets; colors give what each row's labels merge the class with. Filled points are the "
         "classes the first sentence counts. Values are in the data release."
     ),
     # PI 2026-11-23 (SP-13): the page captions of F4-mech, F4-other and F9b follow the paper's section captions (1db8bc37);
@@ -173,6 +173,18 @@ CAPTIONS = {
         "partition merges the QCD classes. Curves are means over {m:MlstNRunsWord} runs per label set and "
         "{m:MlstMassNRunsWord} per mass network. The random network, not drawn, reaches {init_qcd} at 50% of signal "
         "jets. Table {tab:tests} has the tested differences."
+    ),
+    # PI 2026-11-23 (LEDGER DL-8b, CS-10): the paper's caption (appendix.tex), word for word
+    "CONF-share": (
+        "Among the {m:MlstConfShareNWord} label sets with 17 classes, the ordering in linear-probe accuracy on "
+        "JetClass-II is consistent with the share of the 188-class probe's confusions between resonant classes that "
+        "each keeps apart, with a Spearman correlation of {m:MlstConfShareRho} against a bar of {m:MlstConfShareBar} "
+        "set before the test was run. The share weights each pair of resonant classes by how often the 188-class "
+        "linear probe mistakes one for the other, over its {m:MlstNRunsWord} runs, and keeps "
+        "the pairs the label set puts in different groups. Each point is one label set, its accuracy at the largest "
+        "training set, as in figure {fig:F2}(a), the mean over its runs ({m:MlstNRunsWord} for the 17-class level, "
+        "{m:MlstMassNRunsWord} per flavor-boundary partition and one per random partition, drawn open), with bars of "
+        "one standard deviation where it has more than one run."
     ),
     "F4-mech-ft": (
         "After fine-tuning, 17 classes still separate X→bb̄ from cc̄ and X→bc from bq, cs worse than 188 classes. The "

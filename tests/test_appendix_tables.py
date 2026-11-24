@@ -135,8 +135,9 @@ def test_the_class_map_has_one_row_per_43_class_group_in_blocks_of_the_17_class_
 
 
 def test_a_partition_that_keeps_the_prong_boundaries_stops_the_build():
-    """methods.tex says the partitions cut across the 17-class groups and mix decays with different numbers of prongs;
-    with no partition column printed, the build checks it where the maps are read (RR-7)."""
+    """The partitions cut across the 17-class groups and mix decays with different numbers of prongs (the supplement's
+    tab:randprong; methods.tex no longer says it, as the class map prints no partition column: R5, PI 2026-11-23);
+    the build checks it where the maps are read (RR-7)."""
     parts = A.partitions(MAPS, ROWS)
     A.check_partitions_mix_prongs(ROWS, parts)
     by_prong = {r["class_name"]: r["R16_Q1"] for r in ROWS}            # the 17-class grouping keeps every prong count apart

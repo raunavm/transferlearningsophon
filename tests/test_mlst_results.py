@@ -3365,8 +3365,11 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
     cap, auc = M.printed_caption("summary"), M.printed_caption("summary_auc")
     # PI 2026-11-19 (A): R30 in plain words with why 30%; PI 2026-11-22: the released checkpoint's top and quark/gluon
     # probes use the same substitutions (the same-fill refit), so no zero-filled note
-    assert ("$R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of the signal jets, the "
-            "working point of the top-tagging comparison") in cap and "class pairs" not in cap
+    # PI 2026-11-23 (LEDGER SH-13): the dash clause fitted by the same reason in fewer words
+    assert ("$R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of signal jets, the "
+            "top-tagging working point") in cap and "class pairs" not in cap
+    assert ("Dashes mark where the random networks have no pretrained head for a transfer head and resonance tagging "
+            "fine-tunes no network.") in cap and ":" not in cap.split("Dashes")[1].split(".")[0]
     assert re.findall(r"\\ref\{([^}]*)\}", cap) == [] and "zero-filled" not in cap
     assert M.PART_DEF not in cap
     # PI 2026-11-23, LEDGER SP-9 (merge 5): and on JetClass-II over the resonant and the QCD classes
@@ -4298,6 +4301,14 @@ def test_table_one_takes_the_transfer_head_columns_of_the_resonance_table():
     mean = float(re.sub(r"\{\\fontseries\{b\}\\selectfont |\}", "", got).split(r"\,$\pm$\,")[0])
     assert mean == pytest.approx(100 * statistics.mean(want), abs=0.051)
     assert cells(row(lp, M.LABEL[M.INIT]))[6:] == ["--", "--"]
+    # PI 2026-11-23 (LEDGER SH-13): the released Sophon checkpoint's transfer heads, queued, are pending, not dashes,
+    # and never put in the row of a checkpoint without probes
+    runs_s = {**runs, M.SOPHON: [M.SOPHON_MODEL]}
+    lp1 = M.table_summary({}, {}, {}, {}, runs_s, M.TAB, M.SUMMARY_GRID, "summary", xbx=xbx).split("%SPLIT%")[0]
+    assert not any(ln.startswith(M.LABEL[M.SOPHON] + " & ") for ln in lp1.splitlines())
+    sop = {M.SOPHON_MODEL: {"cells": {M.SOPHON_CK: {"jc2_188": {"1000000": {"accuracy": 0.4}}}}}}
+    lp2 = M.table_summary(sop, {}, {}, {}, runs_s, M.TAB, M.SUMMARY_GRID, "summary", xbx=xbx).split("%SPLIT%")[0]
+    assert cells(row(lp2, M.LABEL[M.SOPHON]))[6:] == [M.SOPHON_XBX_PENDING] * 2
     assert cells(row(ft, M.LABEL["L188"]))[6:] == ["--", "--"] and "--" not in cells(row(ft, M.SCRATCH_LABEL))[6:]
     # no headline cell without per; review of render dfe5942 (C; LEDGER SP-11, 2026-11-23: no superseded fine-tuning
     # value, the rerun's pending): a fine-tuned value not in yet is the rerun's pending mark, the dash only "not computed"

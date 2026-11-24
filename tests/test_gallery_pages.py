@@ -550,7 +550,8 @@ def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_p
     # PI 2026-11-14 (step 5): the mass probe joins the appendix, two task grids replace the JetClass-II UMAP grid
     # PI 2026-11-18: 9 main-text and 15 appendix figures; the 19 Nov placement: 7 and 16, PC-jc1 to the supplement
     # PI 2026-11-23, LEDGER SP-9: 7 main-text and 4 appendix figures; the others' captions stay on their release pages
-    assert sorted(K.CAPTIONS) == sorted(paper) and len(paper) == 11
+    # PI 2026-11-23, LEDGER DL-8b: the confusion test joins the appendix (7 main-text and 6 appendix figures)
+    assert sorted(K.CAPTIONS) == sorted(paper) and len(paper) == 13
     assert set(K.RELEASE_CAPTIONS) == set(K.RELEASE) and all(G.TIER[k] == G.SUPPLEMENT for k in K.RELEASE)
     for pid, raw in K.CAPTIONS.items():
         labels = re.findall(r"\{(tab:[a-z_0-9]+)\}", raw)

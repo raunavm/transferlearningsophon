@@ -48,9 +48,10 @@ $R_{30}$ is one over the fraction of background jets kept with 30\% of signal je
 point. Circles are means, bars standard deviations over \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per
 mass network and flavor-boundary partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions,
 whose bar is their spread, and the band the \Kfull-class mean $\pm$ standard deviation. The random network, not drawn,
-has accuracies of \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$ of
-\MlstFTwoInitRthirtyMin{}--\MlstFTwoInitRthirtyMax{}, \MlstFTwoInitBnAccJcTwo{}, \MlstFTwoInitBnAccJcOne{} and
-\MlstFTwoInitBnRthirtyMin{}--\MlstFTwoInitBnRthirtyMax{} with BatchNorm recomputed (table~\ref{tab:summary}).}
+has accuracies \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$
+\MlstFTwoInitRthirtyMin{}--\MlstFTwoInitRthirtyMax{}, with BatchNorm recomputed \MlstFTwoInitBnAccJcTwo{},
+\MlstFTwoInitBnAccJcOne{} and \MlstFTwoInitBnRthirtyMin{}--\MlstFTwoInitBnRthirtyMax{} (table~\ref{tab:summary},
+with the missing-input substitutions).}
 \label{fig:F2}
 \end{figure}
 % CHECK: F2(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
@@ -99,6 +100,11 @@ the \Kcoarse-class level, in errors and in accuracy (table~\ref{tab:tests}).
 Because the partitions were selected to cut across the \Kcoarse-class groups
 (section~\ref{sec:labelsets}), they show that the class count alone does not set the cost on the
 pretraining classes, not that any grouping into \Kcoarse{} classes would do as well.
+% PI 2026-11-23 (LEDGER DL-8b, CS-10): the pre-registered test passed; one sentence that the ordering is consistent with it
+Across the \MlstConfShareNWord{} label sets with \Kcoarse{} classes, the ordering in linear-probe accuracy is
+consistent with the share of the \Kfull-class probe's confusions between resonant classes that each keeps apart, in a
+test fixed before it was run (Spearman correlation \MlstConfShareRho{}, against a bar of \MlstConfShareBar;
+figure~\ref{fig:CONF-share}).
 
 Fine-tuning on JetClass-II measures how much of a merged distinction fine-tuning recovers: its target is
 the \Kfull-class pretraining task itself, so every distinction the coarse labels removed is rewarded again.
@@ -119,8 +125,8 @@ class's recall, the fraction of its test jets assigned to it, for the \Kres-, \K
 against the \Kfull-class model, from linear probes on frozen features (left) and after fine-tuning (right) on
 \FtSizeESix{} class-balanced jets; points below the diagonal are recalled less often. Their mean weighted by test
 jets is the accuracy of figures~\ref{fig:F2} and~\ref{fig:F2-ft}. Points are means over the \MlstNRunsWord{}
-pretraining runs with bars of one standard deviation over runs and test jets; colors give what the
-\Kcoarse-class labels merge the class with. Filled points differ from the \Kfull-class recall by more than three
+pretraining runs with bars of one standard deviation over runs and test jets; colors give what each
+row's labels merge the class with. Filled points differ from the \Kfull-class recall by more than three
 standard deviations, both run spreads and the paired bootstrap over the class's test jets combined.}
 \label{fig:PC-jc2}
 \end{figure}

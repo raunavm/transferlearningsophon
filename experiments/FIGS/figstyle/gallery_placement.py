@@ -93,7 +93,7 @@ _FIGURES = (
                  "million jets."),
     ("F11", MAIN, XBX),
     # PI 2026-11-23 (LEDGER SP-9, the structure approved as proposed, docs/STRUCTURE_PROPOSAL.md): the appendix
-    # holds VAL, A10, F4-other (split in two, F4-qcd, review of render dfe5942) and F9b, by family (APPENDIX_FAMILIES); every other figure placed before goes to the
+    # holds VAL, A10, F4-other (split in two, F4-qcd, review of render dfe5942), CONF-share (DL-8b) and F9b, by family (APPENDIX_FAMILIES); every other figure placed before goes to the
     # data release (the supplement tier: the results book and data_release.py)
     ("VAL", APPENDIX, "Validation accuracy levels off for every label set and mass network during pretraining."),
     # the 162-class probe in accuracy is within 2.2 sigma of 188 at every size, so the old "162 at all sizes but
@@ -106,6 +106,12 @@ _FIGURES = (
     ("F4-other", APPENDIX, "With linear probes, 43 and 17 classes separate X→YY→bb̄qq vs cc̄qq worse than 188 classes."),
     ("F4-qcd", APPENDIX, "With linear probes, 43 and 17 classes, and 162 classes, which merge the QCD classes, separate "
                          "the three QCD pairs worse than 188 classes."),
+    # PI 2026-11-23 (LEDGER DL-8b, CS-10): the pre-registered confusion test passed, one appendix figure and one
+    # sentence, in the per-class family after tab:jc1_class_auc
+    ("CONF-share", APPENDIX, "Among the nine label sets with 17 classes, the ordering in linear-probe accuracy on "
+                             "JetClass-II is consistent with the share of the 188-class probe's confusions between "
+                             "resonant classes that each keeps apart (Spearman correlation 0.82, against a bar of 0.8 set "
+                             "before the test was run)."),
     # PI 2026-11-13 (L9): Fig. 8 to the appendix; Table 5 (tab:mass) stays in the main text and carries the claim;
     # audit 3: in the 20-50 GeV generator-mass bin both mass outputs are more biased than the soft-drop mass
     ("F9b", APPENDIX, "An auxiliary mass regression gives a better jet-mass resolution than the soft-drop mass in every "
@@ -379,7 +385,7 @@ APPENDIX_FAMILIES = (
     ("Headline metrics", ("tab:summaryauc", "tab:tests", "tab:coarse")),
     ("Training size", ("A10",)),
     ("Class pairs", ("tab:pairauc", "F4-other", "F4-qcd")),
-    ("Per class", ("tab:jc1_class_auc",)),
+    ("Per class", ("tab:jc1_class_auc", "CONF-share")),      # CONF-share: LEDGER DL-8b
     ("Mass", ("F9b",)),
     ("Sculpting", ("tab:sculptmain",)),
 )
@@ -413,6 +419,7 @@ SHOWS = {
     "tab:published": ("Headline metrics", (FT,), ("sets",)), "tab:mlp": ("Headline metrics", (LP,), GROUPS),
     "tab:coarse": ("Headline metrics", (LP,), GROUPS),
     "PC-jc2": ("Per class", (LP, FT), ("sets",)), "tab:jc1_class_auc": ("Per class", (LP,), GROUPS),
+    "CONF-share": ("Per class", (LP,), ("sets", "part")),          # 17 classes and its partitions (LEDGER DL-8b)
     **{k: ("Class pairs", (LP,), GROUPS) for k in ("F4-mech", "F4-other", "tab:pairauc")},
     "F4-qcd": ("Class pairs", (LP,), ("sets", "mass")),
     "A8": ("Training size", (FT,), ("sets", "mass")), "A10": ("Training size", (LP,), ("sets", "mass")),
