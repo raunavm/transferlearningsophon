@@ -49,7 +49,7 @@ ARMS = R5.BOOTALL_ARMS
 # jc2bal: 188 and 162 classes (DL-9, the accuracy null) and the mass networks with their label sets (DL-3b: the MLP
 # AUC rows 162 + mass - 162 and 17 + mass - 17 of tab:tests)
 FAMILY_ARMS = {"jc2bal": ("l188", "l162", "l162mass", "r16q1", "r16q1mass"), "coarse": ("l188", "l162", "r42q1", "r16q1"), "bench": tuple(ARMS),
-               "bench0": tuple(ARMS) + ("init", "initbn")}
+               "bench0": tuple(ARMS) + ("init", "initbn"), "kin": ("kin",)}
 INIT = {"init": "init", "initbn": "init_bn"}     # the random networks' checkpoints (init-sK's two)
 
 
@@ -58,14 +58,15 @@ def row_of(arm: str, r: str) -> tuple[str, str]:
     return (f"init-{r.rsplit('-', 1)[1]}", INIT[arm]) if arm in INIT else (f"mtx-{r}", "best70")
 
 
-ARMS = {**ARMS, "init": ("init-s1", "init-s2", "init-s3"), "initbn": ("initbn-s1", "initbn-s2", "initbn-s3")}
+ARMS = {**ARMS, "init": ("init-s1", "init-s2", "init-s3"), "initbn": ("initbn-s1", "initbn-s2", "initbn-s3"),
+        "kin": ("l188kin-s1",)}
 ROWS = [(f, *row_of(a, r)) for f, arms in FAMILY_ARMS.items() for a in arms for r in ARMS[a]]
 # smokes: jc2bal, the largest output and a bit-for-bit check against fits_v5_mlp; bench, the largest training set
 SMOKES = {"jc2bal": ("jc2bal", "mtx-l188-s1", "best70"), "bench": ("bench", "mtx-l188-s1", "best70")}
 SMOKE_NAME = {"jc2bal": "bs3-mlp-smoke-raunav", "bench": "bs3-mlp-smoke-bench-raunav"}
 FILES = {"jc2bal": ("jc2bal_N1000000",), "coarse": ("jc2bal_R16_Q1_N1000000",),
          "bench": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000"),
-         "bench0": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000")}
+         "bench0": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000"), "kin": ("top_N1200000",)}
 # the bootstraps: output -> (family, npz name, the differences (first arm, second arm), flags)
 BENCH_DIFFS = tuple((a, "l188") for a in FAMILY_ARMS["bench"] if a != "l188")
 # every pair of Table 10's rows, 188 classes always the second side (Delta = the other row - 188 classes)
@@ -203,6 +204,21 @@ def boot_mass_helper_spec(tag: str, mem: str, skip: int = 3) -> str:
     return _spec(tag, "bs3-boot-jc2mass-helper-raunav", rows, len(rows), mem, "1",
                  "DL-3b: the mass bootstrap's later networks, one pod each, into the same cache")
 
+# ------------------------------------------------------------------ fourth review B5: 188 with draws against kinematic inputs
+KIN_OUT = f"{BOOT}/mlp_top_N1200000.kin.json"
+
+
+def boot_kin_spec(tag: str, mem: str) -> str:
+    """bs3-boot-kin-raunav: the MLP of 188 classes with random draws (bench) against the kinematic-inputs network's
+    (kin, one run: the sigma lacks its run spread, a lower bound), on the same top test jets, as the linear-probe row
+    bootstrap/l3_v5/probe_top_N1200000.kin.json 188draws-kin."""
+    ins = {**{m: npz("bench", m, "top_N1200000") for m in models("l188")}, "mtx-l188kin-s1": npz("kin", "mtx-l188kin-s1", "top_N1200000")}
+    cmd = ("python3 experiments/STATS/paired_bootstrap.py --task npz " + " ".join(f"--model {m}={p}" for m, p in ins.items())
+           + f" --headline --diff 188draws-kin={','.join(models('l188'))}/mtx-l188kin-s1 --b {B} --out {KIN_OUT}")
+    body = "\n  ".join([BT.check_inputs(ins.values()), f"mkdir -p {BOOT}", f"[ -e {KIN_OUT} ] || " + BT.peak(cmd)])
+    return _spec(tag, "bs3-boot-kin-raunav", [body], 1, mem, "1",
+                 "fourth review B5: the MLP, 188 classes with random draws against the kinematic-inputs network (top R30)")
+
 # ------------------------------------------------------------------ SC-2 #1: the transfer-head term on per-jet scores
 ANALYTIC_OUT = {f"{BOOT}/analytic_jc2bal_pairs_bc_vs_bq_cs.json":
                 lambda m: f"{R5.V5['fits_v5_probs']}/{m}/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
@@ -245,7 +261,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic", "ee",
-                                                      "mass-helper"))
+                                                      "mass-helper", "boot-kin"))
     ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
     ap.add_argument("--part", choices=tuple(BOOT_PARTS), help="with --what boot")
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
@@ -264,7 +280,8 @@ def main(argv=None) -> int:
                                    else boot_spec(a.tag, a.mem, a.part)),
                   "analytic": lambda: ("bs3-analytic-raunav", analytic_spec(a.tag, a.mem)),
                   "ee": lambda: ("bs3-boot-ee-raunav", ee_spec(a.tag, a.mem)),
-                  "mass-helper": lambda: ("bs3-boot-jc2mass-helper-raunav", boot_mass_helper_spec(a.tag, a.mem))}[a.what]()
+                  "mass-helper": lambda: ("bs3-boot-jc2mass-helper-raunav", boot_mass_helper_spec(a.tag, a.mem)),
+                  "boot-kin": lambda: ("bs3-boot-kin-raunav", boot_kin_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)
     print(f"wrote {p.relative_to(ROOT)}")

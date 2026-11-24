@@ -115,8 +115,8 @@ def _boot_name(m, ck):
 
 
 def test_rows_are_the_runs_of_the_linear_probe_rows():
-    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 13 + 12 + 27 + 33
-    paper = {f"mtx-{r}" for a, rs in BJ.ARMS.items() if a not in BJ.INIT for r in rs}
+    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 13 + 12 + 27 + 33 + 1
+    paper = {f"mtx-{r}" for a, rs in BJ.ARMS.items() if a not in BJ.INIT and a != "kin" for r in rs}
     assert len(paper) == 27 and {m for f, m, ck in BJ.ROWS if f == "bench"} == paper
     assert {(m, ck) for f, m, ck in BJ.ROWS if f == "bench0"} == {(m, "best70") for m in paper} | {
         (f"init-s{k}", ck) for k in (1, 2, 3) for ck in ("init", "init_bn")}
@@ -138,7 +138,7 @@ def test_specs_pin_one_cpu_model_and_request_the_mlp_threads(which):
 
 
 def test_bootstrap_reads_every_npz_the_fits_write():
-    want = {BJ.npz(f, _boot_name(m, ck), n) for f, m, ck in BJ.ROWS for n in BJ.FILES[f]}
+    want = {BJ.npz(f, _boot_name(m, ck), n) for f, m, ck in BJ.ROWS if f != "kin" for n in BJ.FILES[f]}
     assert set(BJ.boot_inputs()) == want
     assert BJ.B == 200
     assert set().union(*(BJ.boot_inputs(p) for p in BJ.BOOT_PARTS)) == want
@@ -227,3 +227,17 @@ def test_the_mass_helper_takes_the_cache_pods_later_networks():
     assert "name: bs3-boot-jc2mass-helper-raunav" in text and "completions: 7" in text and "parallelism: 7" in text
     assert text.count("--cache-only") == 7 and f"--cache {BJ.MASS_CACHE}" in text and "--diff" not in text
     assert "--model mtx-l162mass-s1=" not in text and "--model mtx-l162-s2=" in text and "--model mtx-r16q1-s3=" in text
+
+
+def test_the_kinematic_row_fits_top_alone_and_pairs_with_188_draws(tmp_path):
+    assert [r for r in BJ.ROWS if r[0] == "kin"] == [("kin", "mtx-l188kin-s1", "best70")]
+    pb, _ = _pb(tmp_path)
+    pb.lp.train_sizes = lambda root, ds: [1000, 1200000]
+    probe = Probe()
+    cells = MS.bench(pb, probe, "mtx-l188kin-s1", "best70", tmp_path / "out", zero=True, datasets=("top",))
+    assert sorted(cells) == ["top"] and len(probe.calls) == 1 and cells["top"]["fill"] == "zero"
+    assert MS.STORED["kin"].name == "fits_v5_mlp"
+    text = BJ.boot_kin_spec("mtx-s9.99", "2Gi")
+    assert "/bench/probs/mtx-l188-s2/best70.itop4/top_N1200000.npz" in text
+    assert "/kin/probs/mtx-l188kin-s1/best70/top_N1200000.npz" in text
+    assert "--diff 188draws-kin=mtx-l188-s1,mtx-l188-s2,mtx-l188-s3/mtx-l188kin-s1" in text

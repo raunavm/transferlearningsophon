@@ -38,6 +38,7 @@ def _load(name: str, rel: str):
 
 
 R5 = _load("build_refit_v5_jobs", "scripts/build_refit_v5_jobs.py")
+BT = _load("build_boot_tests_jobs", "scripts/build_boot_tests_jobs.py")
 JB, XB = R5.JB, _load("build_xbx_jobs", "scripts/build_xbx_jobs.py")
 MODEL, TAG = JB.SOPHON_MODEL, JB.SOPHON_TAG
 CK = f"/workspace/sophon/{TAG}.pt"
@@ -95,15 +96,23 @@ def xbx() -> str:
     return "\n".join(lines)
 
 
-def x_spec(tag: str, mem: str) -> str:
+def x_spec(tag: str, mem: str, part: str = "all") -> str:
+    """part all: one pod for both; xbx or pairs: one of them (bs3-sophon-xbx-raunav, bs3-sophon-pairs-raunav), so
+    that each job's GPU-hours are known before the next is launched."""
     bal = JB.BAL
-    body = "\n".join([preamble(tag),
-                      f"pairs {PAIRS_OUT}/train 0 {bal}/pairs_train.parquet",
-                      f"pairs {PAIRS_OUT}/test 0 " + " ".join(f"{bal}/{p}" for p in JB.PAIRS_TEST_PARTS),
-                      xbx(), 'echo "SOPHON X COMPLETE"', ""])
-    return R5.indexed("bs3-sophon-x-raunav", body, 1, 1, mem, "4",
-                      "the released Sophon checkpoint: pair and X->bx features, the transfer-head fits (SH-13)",
-                      gpu=True)
+    steps = {"pairs": [BT.peak(f"bash -c 'source /tmp/sophon_fns.sh; pairs {PAIRS_OUT}/train 0 {bal}/pairs_train.parquet'"),
+                       BT.peak(f"bash -c 'source /tmp/sophon_fns.sh; pairs {PAIRS_OUT}/test 0 "
+                               + " ".join(f"{bal}/{p}" for p in JB.PAIRS_TEST_PARTS) + "'")]
+             if part != "all" else [f"pairs {PAIRS_OUT}/train 0 {bal}/pairs_train.parquet",
+                                    f"pairs {PAIRS_OUT}/test 0 " + " ".join(f"{bal}/{p}" for p in JB.PAIRS_TEST_PARTS)],
+             "xbx": [xbx()]}
+    body = "\n".join([preamble(tag)] + (["declare -f pairs > /tmp/sophon_fns.sh"] if part == "pairs" else [])
+                      + [s for k in ("pairs", "xbx") if part in ("all", k) for s in steps[k]]
+                      + ['echo "SOPHON X COMPLETE"', ""])
+    name = {"all": "bs3-sophon-x-raunav", "xbx": "bs3-sophon-xbx-raunav", "pairs": "bs3-sophon-pairs-raunav"}[part]
+    what = {"all": "pair and X->bx features, the transfer-head fits", "xbx": "X->bx features and the transfer-head fits",
+            "pairs": "the class-pair features"}[part]
+    return R5.indexed(name, body, 1, 1, mem, "4", f"the released Sophon checkpoint: {what} (SH-13)", gpu=True)
 
 
 def smoke_spec(tag: str, mem: str) -> str:
@@ -123,7 +132,9 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, text in (("bs3-sophon-x-smoke-raunav", smoke_spec(a.tag, a.smoke_mem)),
-                       ("bs3-sophon-x-raunav", x_spec(a.tag, a.mem))):
+                       ("bs3-sophon-x-raunav", x_spec(a.tag, a.mem)),
+                       ("bs3-sophon-xbx-raunav", x_spec(a.tag, a.mem, "xbx")),
+                       ("bs3-sophon-pairs-raunav", x_spec(a.tag, a.mem, "pairs"))):
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(f"wrote {p.relative_to(ROOT)}")

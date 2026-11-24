@@ -14,6 +14,8 @@ Families (each on one CPU model, PF-1; the job pins it and the pod refuses any o
   bench0   as bench with the missing inputs at zero, the config's fill, on the features fits_v3_mlp2 read
            (tab:mlp's top and quark/gluon columns as printed; PI 2026-11-23, LEDGER CS-5b: the full sigma of the gaps
            Table 10 prints), the random networks (checkpoints init and init_bn) among them
+  kin      the kinematic-inputs network's top MLP (fits_v5_mlp's, nothing missing), as bench0 on top alone (fourth review
+           B5: the MLP beside the null between 188 classes with random draws and this network)
   bench    linear_probe_v2.mlp_cells, cell set v4 (tab:mlp's top and quark/gluon fit): top tagging and quark/gluon at
            their largest training set, the quark/gluon probe also scored on the Herwig jets; s, the logit difference.
            The missing inputs take the substitution the linear probes of Fig. 2 and Table 2 use (FILL: random draws on
@@ -40,16 +42,17 @@ import time
 import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-FAMILIES = ("jc2bal", "coarse", "bench", "bench0")
+FAMILIES = ("jc2bal", "coarse", "bench", "bench0", "kin")
 COARSE = "R16_Q1"
 FILL_ROOT = pathlib.Path("/data/results/eval/v2_linprobe_fill")
 FILL = {"top": "itop4", "qg": "nqg"}     # build_refit_v5_jobs.FILL_TAG: the substitutions chosen on validation
 # the stored fits each family repeats, for the comparison recorded beside every metric
 STORED = {"jc2bal": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"), "coarse": None, "bench": None,
-          "bench0": pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2")}
+          "bench0": pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2"),
+          "kin": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp")}
 STORED_BN = pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2_initbn")   # bench0's init_bn checkpoint
 COMPARED = {"jc2bal": ("accuracy", "macro_auc_ovr", "macro_auc_resonant", "macro_auc_qcd"),
-            "bench0": ("accuracy", "auc", "r30", "r50")}
+            "bench0": ("accuracy", "auc", "r30", "r50"), "kin": ("accuracy", "auc", "r30", "r50")}
 
 
 def _load(name: str, rel: str):
@@ -98,12 +101,12 @@ def jc2bal(pb, probe, model: str, ckpt: str, out: pathlib.Path, coarse: bool) ->
 
 
 def bench(pb, probe, model: str, ckpt: str, out: pathlib.Path, fill_root: pathlib.Path = FILL_ROOT,
-          zero: bool = False) -> dict:
+          zero: bool = False, datasets=("top", "qg")) -> dict:
     """linear_probe_v2.mlp_cells (cell set v4) on top and quark/gluon under the linear probes' substitution (FILL),
     or with zero the config's zeros on fits_v3_mlp2's features (pb.OLD_ROOT); Herwig scored by the quark/gluon probe."""
     lp, root, cells = pb.lp, (pb.OLD_ROOT if zero else fill_root) / model, {}
     fill = {ds: "zero" for ds in FILL} if zero else FILL
-    for ds in ("top", "qg"):
+    for ds in datasets:
         tag = ckpt if zero else f"{ckpt}.{FILL[ds]}"
         n = max(lp.train_sizes(root, ds))
         xva, yva, _ = lp.load_split(root / ds / "val" / tag)
@@ -156,7 +159,8 @@ def main(argv=None) -> int:
     probe = _load("probe", "experiments/EVAL/probe.py")
     cpu = _load("latent_scale_probe", "experiments/EVAL/latent_scale_probe.py").cpu_model()
     a.out.mkdir(parents=True, exist_ok=True)
-    cells = (bench(pb, probe, a.model, a.checkpoint, a.out, zero=a.family == "bench0") if a.family.startswith("bench")
+    cells = (bench(pb, probe, a.model, a.checkpoint, a.out, zero=True, datasets=("top",)) if a.family == "kin"
+             else bench(pb, probe, a.model, a.checkpoint, a.out, zero=a.family == "bench0") if a.family.startswith("bench")
              else jc2bal(pb, probe, a.model, a.checkpoint, a.out, coarse=a.family == "coarse"))
     doc = {"model": a.model, "family": a.family, "checkpoints": [a.checkpoint], "probe": "mlp",
            "mlp_threads": probe.MLP_THREADS, "mlp_seeds": list(probe.MLP_SEEDS), "mlp_schedule": probe.MLP_SCHEDULE,
