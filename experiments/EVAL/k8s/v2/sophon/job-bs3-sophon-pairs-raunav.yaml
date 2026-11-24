@@ -53,8 +53,8 @@ spec:
           python3 -c 'import resource, subprocess, sys, time; t = time.time(); r = subprocess.call(sys.argv[1:]); print("PEAK_RSS_MIB", resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss // 1024, "SECONDS", round(time.time() - t)); sys.exit(r)' bash -c 'source /tmp/sophon_fns.sh; pairs /data/results/eval/v2_linprobe_sophon/sophon-released/jc2bal_pairs/test 0 /data/finetune/jc2_bal/pairs_test_part0.parquet /data/finetune/jc2_bal/pairs_test_part1.parquet /data/finetune/jc2_bal/pairs_test_part2.parquet'
           echo "SOPHON X COMPLETE"
         resources:
-          requests: { memory: "8Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
-          limits:   { memory: "8Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          requests: { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
+          limits:   { memory: "64Gi", cpu: "4", nvidia.com/gpu: "1", ephemeral-storage: "20Gi" }
         volumeMounts:
         - { name: data, mountPath: /data }
         - { name: dshm, mountPath: /dev/shm }
