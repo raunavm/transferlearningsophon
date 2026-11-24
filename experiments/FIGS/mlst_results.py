@@ -7929,7 +7929,19 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
                         parts.append(rf"\multicolumn{{{k}}}{{{al or 'c'}}}{{{txt}}}" if al or k > 1 else txt)
                         shown |= txt.strip() not in ("", "--") if s0 >= nlab or span > 1 or not body else False
                         shown |= not body and bool(txt.strip())
-                if shown:
+                # a heading over the labels cut short beside another (Table 1's linear-probe heading beside
+                # "transfer head") takes a row of its own across the block, the others the row below it
+                ncols = nlab + b - a
+                head = next((i for i, (s0, span, al, txt) in enumerate(cells) if s0 < nlab < s0 + span), None)
+                if shown and head is not None and len(cells) > 1 and parts[0] is not None:
+                    k0 = sum(keep(c) for c in range(cells[head][0], sum(cells[head][:2])))
+                    if head == 0 and nlab < k0 < ncols and cells[0][3].strip():
+                        parts = [rf"\multicolumn{{{ncols}}}{{{cells[0][2] or 'l'}}}{{{cells[0][3]}}}", None,
+                                 rf"\multicolumn{{{k0}}}{{l}}{{}}"] + parts[1:]
+                if shown and None in parts:
+                    i = parts.index(None)
+                    line += ("\n" if line else "") + parts[0] + r" \\" + "\n" + " & ".join(parts[i + 1:]) + r" \\"
+                elif shown:
                     line += ("\n" if line else "") + " & ".join(parts) + r" \\"
             if line:
                 lines.append(line)
