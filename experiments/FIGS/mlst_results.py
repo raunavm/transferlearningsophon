@@ -5105,7 +5105,7 @@ PR_ROWS = {
     # results_jc
     "MlstCmpJcTwoMidOverFullPr": (_JC2_LP, "R42_Q1", "L188", _NO_MORE),
     "MlstCmpJcTwoCoarseOverFullPr": (_JC2_LP, "R16_Q1", "L188", _NO_MORE),
-    "MlstCmpJcTwoResResOverFullPr": ("JetClass-II, AUC over the resonant classes, " + HEADING["lp"], "L162", "L188", _NULL),
+    # MlstCmpJcTwoResResOverFull: its null now prints its PW-1 share (fourth review, B1/C5)
     "MlstMlpCmpJcTwoResResOverFullPr": ("JetClass-II, AUC over the resonant classes, " + HEADING["mlp"], "L162", "L188",
                                         _NULL),
     "MlstCmpJcTwoQcdResOverFullPr": ("JetClass-II, AUC over the QCD classes, " + HEADING["lp"], "L162", "L188", _NO_MORE),
@@ -5113,7 +5113,7 @@ PR_ROWS = {
     "MlstCmpJcTwoRandOverMidPr": (_JC2_LP, RAND_POOLED, "R42_Q1", _NO_FEWER),
     "MlstCmpBbCoarseOverFullPr": (_BB, "R16_Q1", "L188", _same("errors")),
     "MlstCmpBbMidOverFullPr": (_BB, "R42_Q1", "L188", "a difference within three standard deviations"),
-    "MlstCmpBcResOverFullPr": (_BC, "L162", "L188", _NULL),
+    # MlstCmpBcResOverFull: its null now prints its PW-1 share (fourth review, B1/C5)
     "MlstMlpCmpBcResOverFullPr": (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], "L162", "L188", _NULL),
     "MlstCmpBcMidOverFullPr": (_BC, "R42_Q1", "L188", "a difference within three standard deviations"),
     "MlstCmpBcCoarseOverFullPr": (_BC, "R16_Q1", "L188", _NO_MORE),
@@ -5129,7 +5129,7 @@ PR_ROWS = {
     "MlstLpTopRthirtyDrawOverZeroFullPr": (_TOP_FILL, "L188_DRAWS", "L188_ZERO", _same("rejection")),
     "MlstFtQgRthirtyFullOverPartPr": (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"] + ", published models",
                                       "L188", "PART_FT_PUB", _NULL),
-    "MlstFtQgRthirtyCoarseOverFullPr": (r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"], "R16_Q1", "L188", _NULL),
+    # MlstFtQgRthirtyCoarseOverFull: its null now prints its PW-1 share (fourth review, B1/C5)
     "MlstFtQgRthirtyHerwigOverPythiaFullPr": (r"quark/gluon tagging, $R_{30}$, " + HEADING["ft"] + ", Herwig against Pythia jets",
                                               "L188_HERWIG_JETS", "L188_PYTHIA_JETS", _same("rejection")),
     "MlstFtQgRthirtyHerwigOverPythiaScratchPr": (r"quark/gluon tagging, $R_{30}$, " + HEADING["ft"]
@@ -5137,7 +5137,7 @@ PR_ROWS = {
                                                  "SCRATCH_PYTHIA_JETS", "a rejection on Herwig jets within three standard deviations of that on Pythia jets"),
     "MlstLpQgRthirtyFullOverInitBnPr": (_QG_FILL, "L188", INIT_BN, _NULL),
     # discussion
-    "MlstLpTopRthirtyFullOverInitBnZeroPr": (_TOP_FILL, "L188_ZERO", "INIT_BN_ZERO", _NULL),
+    # MlstLpTopRthirtyFullOverInitBnZero: its null now prints its PW-1 share (fourth review, B1/C5)
     "MlstLpTopRthirtyFullOverInitBnPr": (_TOP_FILL, "L188", INIT_BN, _same("rejection")),
     # results_mass
     "MlstMassHeadResMassOverUncorrPr": (_MASS_HEAD, "L162_MASS_HEAD", "SDMASS", _same("resolution")),
@@ -5145,7 +5145,7 @@ PR_ROWS = {
     "MlstCmpMlpResMassOverResPr": (_MASS_MLP, "L162_MASS", "L162", _same("resolution")),
     "MlstCmpMlpCoarseMassOverCoarsePr": (_MASS_MLP, "R16_Q1_MASS", "R16_Q1", _same("resolution")),
     "MlstCmpMlpCoarseOverFullPr": (_MASS_MLP, "R16_Q1", "L188", _NULL),
-    "MlstCmpJcTwoResMassOverResPrMax": (_JC2_LP, "L162_MASS", "L162", _NULL),
+    # MlstCmpJcTwoResMassOverResPrMax: its null now prints its PW-1 share (fourth review, B1/C5)
     "MlstMlpCmpJcTwoResMassOverResPr": (_JC2_MLP, "L162_MASS", "L162", _NULL),
     "MlstMlpCmpJcTwoCoarseMassOverCoarsePr": (_JC2_MLP, "R16_Q1_MASS", "R16_Q1", _NULL),
 }
@@ -6856,14 +6856,14 @@ REQUIRED = (
     ("MlstFtTopRthirtyFullOverScratchEThree", "fixed-budget fine-tuning (budget_metrics.json)", "Pr"),
     ("MlstFtTopDataEquivJets", "fixed-budget fine-tuning (budget_metrics.json)", ""),
     ("MlstFtQgRthirtyFullOverPart", "fine-tuning read-outs", "Pr"),
-    ("MlstFtQgRthirtyCoarseOverFull", "fine-tuning read-outs", "Pr"),
+    ("MlstFtQgRthirtyCoarseOverFull", "fine-tuning read-outs", ""),      # no ratio word: PW-1 (fourth review)
     ("MlstFtQgRthirtyHerwigOverPythiaFull", "fine-tuning read-outs", "Pr"),
     ("MlstFtQgRthirtyHerwigOverPythiaScratch", "fine-tuning read-outs", "Pr"),
     ("MlstPartreproRthirtyRescaleOverPart", "partrepro", "Pr"), ("MlstPartreproSliceDropRatio", "not run", ""),
     ("MlstLpJcTwoTopZeroAccDropFull", "fits_v4", "Pr"), ("MlstLpJcTwoQgZeroAccDropFull", "fits_v4", "Pr"),
     ("MlstLpTopRthirtyDrawOverZeroFull", "fill fits", "Pr"), ("MlstLpTopRthirtyKinOverFull", "kinematic-only probe", "Pr"),
     ("MlstLpTopRthirtyFullOverInitBn", "fill fits", "Pr"), ("MlstLpQgRthirtyFullOverInitBn", "fill fits", "Pr"),
-    ("MlstLpTopRthirtyFullOverInitBnZero", "probes", "Pr"), ("MlstLpQgRthirtyFullOverInitBnZero", "probes", "Pr"),
+    ("MlstLpTopRthirtyFullOverInitBnZero", "probes", ""), ("MlstLpQgRthirtyFullOverInitBnZero", "probes", "Pr"),
     ("MlstLpJcOneGapFracEFour", "fixed-budget fine-tuning (budget_metrics.json)", "Pr"),
     ("MlstMassHeadResMassOverUncorr", "head/atlas_res_v3", "Pr PrMax"),
     ("MlstMassHeadResMassOverMlpRes", "head/atlas_res_v3", "Pr PrMax"),
