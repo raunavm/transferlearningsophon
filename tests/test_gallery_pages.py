@@ -1031,6 +1031,7 @@ def test_a_figure_of_one_mode_names_it_in_a_heading_above_its_panels(tmp_path):
     # distances from the bottom unchanged, so from the top each grew by HEADING_CM
     assert (ax.get_window_extent().y1, leg.get_window_extent().y1) == pytest.approx(before, abs=0.01 * cm)
     assert [t.get_text() for t in fig.texts] == ["Linear probe"]
+    assert fig.texts[0].get_fontstyle() == "italic"            # CA-12: the mode as an italic heading
     matplotlib.pyplot.close(fig)
 
 

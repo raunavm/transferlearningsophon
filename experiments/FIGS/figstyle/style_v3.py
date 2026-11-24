@@ -123,7 +123,8 @@ def legend(ax, **kw):
 
 
 # PI 2026-11-14: a figure that holds one mode names it in a heading above the panels ({page id: heading}, filled by
-# gallery_figures); the figure grows HEADING_CM at the top and everything already drawn keeps its place below
+# gallery_figures); the figure grows HEADING_CM at the top and everything already drawn keeps its place below. CA-12:
+# the heading is italic, as the two-mode figures' column headings (gallery_perclass) and the tables' block headings
 HEADINGS: dict = {}
 HEADING_CM = 0.5
 
@@ -134,7 +135,7 @@ def _add_heading(fig, text: str) -> None:
     from matplotlib.transforms import Bbox
     cm = 1 / 2.54
     if not getattr(fig, "exact_size", False):          # a tight box takes the heading in as it is
-        fig.suptitle(text, fontsize=9.0, y=1.0, va="bottom")
+        fig.suptitle(text, fontsize=9.0, y=1.0, va="bottom", fontstyle="italic")
         return
     W, H = fig.get_size_inches()
     new_h = H + HEADING_CM * cm
@@ -156,7 +157,7 @@ def _add_heading(fig, text: str) -> None:
     fig.set_size_inches(W, new_h)
     for leg, b in anchors:
         leg.set_bbox_to_anchor(Bbox.from_extents(b.x0, b.y0 * k, b.x1, b.y1 * k), transform=fig.transFigure)
-    fig.text(0.5, 1 - 0.15 * cm / new_h, text, ha="center", va="top", fontsize=9.0)
+    fig.text(0.5, 1 - 0.15 * cm / new_h, text, ha="center", va="top", fontsize=9.0, fontstyle="italic")
 
 
 def save(fig, path: pathlib.Path) -> list:
