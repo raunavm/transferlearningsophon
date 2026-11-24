@@ -107,6 +107,27 @@ def test_a_partial_readout_is_read_only_as_a_preview(tmp_path):
         M.merge_fixed(_per(), p, preview=True)
 
 
+def test_a_wrong_rate_or_edge_quark_gluon_row_takes_its_herwig_cells_with_it(tmp_path):
+    """RR-7 (PI 2026-11-23; the figure agent's check of a36d8fc8): the Herwig cells re-score the quark/gluon runs, so
+    rate_mismatches and edge_failures skip them; a preview that drops a quark/gluon row for a wrong rate or an edge
+    check drops the Herwig cells of the same runs, and a wrong-rate Herwig value is never read."""
+    p = tmp_path / M.FIXED_PARTIAL
+    for spoil, what in ((lambda c: c["recipe"].update(lr="1e-2"), "rate"),
+                        (lambda c: c["early_stop"].update(best_epoch=0), "edge")):
+        d = _doc()
+        k = next(k for k in sorted(d["cells"]) if k.startswith("leg_qg/") and "/N100000/" in k
+                 and f"/{M.BUDGET_SCRATCH}/" not in k)
+        spoil(d["cells"][k])
+        p.write_text(json.dumps(d))
+        with pytest.raises(SystemExit, match="recorded rate" if what == "rate" else "edge of the schedule"):
+            M.merge_fixed(_per(), p)
+        out = M.merge_fixed(_per(), p, preview=True)
+        for key in ("qg", "qg_herwig"):
+            assert all(100_000 not in by_n for by_n in out[key].values()), (what, key)
+            assert any(10_000 in by_n for by_n in out[key].values()), (what, key)
+        assert any(100_000 in by_n for by_n in out["top"].values()), what       # another tree keeps its row
+
+
 def test_load_ft_reads_the_partial_readout_only_with_the_preview_switch(tmp_path, monkeypatch):
     (tmp_path / "ft_mlst").mkdir()
     (tmp_path / "budget").mkdir()

@@ -2382,14 +2382,17 @@ def merge_fixed(per: dict, path: pathlib.Path, preview: bool = False) -> dict:
     if not preview and any(row_unsettled(key, n) for key, _, n in _budget_cells(path)):
         raise SystemExit(f"FATAL: {path}: a row whose rate search has not settled (build_ft_budget_jobs.FIXED_ROW_RATE)")
     # RR-7 (PI 2026-11-23): a row whose rate search has not settled has no recorded rate, so a preview prints none of it
+    # RR-7 (figure agent's check, 2026-11-23): a dropped row takes with it every key that re-scores the same runs (the
+    # Herwig cells are the quark/gluon runs scored on Herwig jets, so rate_mismatches and edge_failures skip them)
+    same_runs = lambda pairs: {(k, n) for t, n in pairs for k in BUDGET_TREE if BUDGET_TREE[k][0] == BUDGET_TREE[t][0]}  # noqa: E731
     unsettled = {(key, n) for key, _, n in _budget_cells(path) if row_unsettled(key, n)}
-    for key, n in {(key, n) for key, _, n, _ in wrong} | unsettled:
+    for key, n in same_runs({(key, n) for key, _, n, _ in wrong} | unsettled):
         for by_n in out.get(key, {}).values():
             by_n.pop(n, None)
     edge = edge_failures(_budget_cells(path))
     if edge and not preview:
         raise SystemExit(f"FATAL: {path}: {len(edge)} cells with the best check at an edge of the schedule: {edge[:10]}")
-    for key, n in {(key, n) for key, _, n, _ in edge}:
+    for key, n in same_runs({(key, n) for key, _, n, _ in edge}):
         for by_n in out.get(key, {}).values():
             by_n.pop(n, None)
     return out
@@ -4582,6 +4585,9 @@ XBX_HEAD = "transfer head"
 INIT_BN_SUB = "BatchNorm recomputed"
 
 
+SOPHON_XBX_PENDING = r"\pending{no run yet}"     # Table 2's Sophon transfer-head cells until the SH-13 fits
+
+
 def summary_xbx(xbx: dict | None) -> dict:
     """The X->bb / X->bs columns of Table 1 (SUMMARY_XBX): {"cell": f(models, signal) -> the transfer head's signal
     efficiency in percent, mean +- SD over the runs, "scratch": f(signal) -> from scratch's, "star": the one QCD
@@ -4626,6 +4632,42 @@ def f2_init_macros(em, fits, fill, chosen, runs: dict, src) -> None:
             em.macro(name, fmt(x) if x is not None else r"\pending{random network}", src,
                      f"linear probes of the random network ({arm}), Table 1's cells, mean over its initializations",
                      "figure F2's caption: the random network, not drawn")
+
+
+def _size_values(fits, fill, chosen, models: list, ds: str, met: str) -> list:
+    """[mean over models at each training-set size] of a linear probe, as the training-size figures read their points
+    (paper_figures.probe_series): every size of the task, top and quark/gluon under the substitution chosen on
+    validation, a size where a run's rejection is a lower limit (no background jet passed) not drawn."""
+    if ds in SUBST_KEY:
+        sizes = _bench_sizes(fits, fill, chosen, ds)
+        recs = lambda n: [_rej(_bench_rec(fits, fill, chosen, m, ds, n), met) for m in models]     # noqa: E731
+    else:
+        sizes = sorted({n for f in fits.values() for ck in f["cells"].values() for n in ck.get(ds, {})}, key=int)
+        recs = lambda n: [(lambda r: None if r is None else r.get(met))(_probe_rec(fits, m, ds, n))     # noqa: E731
+                          for m in models]
+    out = []
+    for n in sizes:
+        v = [x for x in recs(n) if x is not None]
+        if v and not any(isinstance(x, Bound) for x in v):
+            out.append(float(np.mean([float(x) for x in v])))
+    return out
+
+
+def a10_init_macros(em, fits, fill, chosen, runs: dict, src) -> None:
+    """Figure A10's random network, not drawn (PI 2026-11-19 (B): its points would set the y range), in one clause of
+    its caption (PI 2026-11-23, LEDGER SH-13): the lowest and highest over the training-set sizes of its mean
+    linear-probe accuracy on JetClass-II and on JetClass, and of its mean R30 on top and quark/gluon tagging (Pythia
+    and Herwig), the points as the figure reads them (_size_values), at two significant figures (f2_init_macros)."""
+    fmt = lambda x: f"{x:.2g}" if x < 10 else f"{x:.0f}"      # noqa: E731
+    vals = {key: _size_values(fits, fill, chosen, runs.get(INIT, []), ds, met) for key, _, ds, met in SUMMARY_PANELS}
+    r30 = vals["top"] + vals["qg"] + vals["qg_herwig"]
+    groups = {"AccJcTwo": vals["jc2"], "AccJcOne": vals["jc1"],
+              "Rthirty": r30 if all(vals[k] for k in ("top", "qg", "qg_herwig")) else []}
+    for word, v in groups.items():
+        for end, f in (("Min", min), ("Max", max)):
+            em.macro(f"MlstATenInit{word}{end}", fmt(f(v)) if v else r"\pending{random network}", src,
+                     f"linear probes of the random network ({INIT}), mean over its initializations at each training-set "
+                     f"size, the {end.lower()} over the sizes", "figure A10's caption: the random network, not drawn")
 
 
 def _summary_head(grid, xb: dict) -> list:
@@ -4700,7 +4742,8 @@ def table_summary(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID, key=
     read them; runs: with SOPHON. A row with no value for a task: a dash. A partition row with no value on any task is
     left out. key: the table's BOLD entry (tab:summary, tab:summaryauc). xbx (Table 1, PI 2026-11-23, LEDGER SP-9):
     the X->bb / X->bs transfer-head columns after the grid's (summary_xbx), the pretrained networks' in the
-    linear-probe part, from scratch's in the fine-tuned part, a dash in every other cell."""
+    linear-probe part (the released Sophon checkpoint's pending until its fits are in), from scratch's in the fine-tuned
+    part, a dash in every other cell."""
     runs = _pooled(runs)
     mode_now = ["lp"]          # the mode cells() is building, for the L3 bootstrap of its cells (A3)
     xb = summary_xbx(xbx)
@@ -4718,8 +4761,10 @@ def table_summary(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID, key=
                 c = _boot_cell(c, *summary_l3(data, mode_now[0], k, met, chosen or {}), ms)
             out.append(c)
         if xb:
-            out += [xb["cell"](ms, sig, fmt_pm) if mode_now[0] == "lp" and arm != SOPHON else "--"
-                    for sig, _ in SUMMARY_XBX]
+            # PI 2026-11-23 (LEDGER SH-13, CA-16): the released Sophon checkpoint's transfer heads are queued, pending
+            # until their fits are in; a dash is only what the caption's dash clause names
+            out += [(lambda c: SOPHON_XBX_PENDING if arm == SOPHON and c == "--" else c)(xb["cell"](ms, sig, fmt_pm))
+                    if mode_now[0] == "lp" else "--" for sig, _ in SUMMARY_XBX]
         return out
 
     def scratch():
@@ -4760,7 +4805,7 @@ def table_summary(fits, fill, chosen, per, runs, fmt_pm, grid=SUMMARY_GRID, key=
                 # network's row, so that its label keeps the turned page's width (TN-6: no wrapped label)
                 body.append(row(r"\quad " + INIT_BN_SUB, cells(INIT_BN, get)))
             c = cells(SOPHON, get) if SOPHON in runs else []
-            if any(x != "--" for x in c):
+            if any(x != "--" for x in c[:len(grid)]):
                 body += [r"\midrule", row(LABEL[SOPHON], c)]
         else:
             body.append(row(SCRATCH_LABEL, scratch()))
@@ -7131,13 +7176,16 @@ CAPTION_SHORT = {
     # and in tab:tests): the X->bb / X->bs columns of tab:xbx
     # review of 5c40d69 (B7, LEDGER CA-3): signal and background named, and the from-scratch training size per class
     # review of render dfe5942 (B8): the dashes defined, the words cut to keep 135
+    # PI 2026-11-23 (LEDGER SH-13): the dash clause, without a colon; the 135 words cut from content, not conventions:
+    # "the top-tagging working point" for the same reason in fewer words, the transfer head named by the block heading
+    # (B17) and the QCD efficiency by the column heading; the released Sophon checkpoint's transfer heads are pending
     "summary": ("Accuracy on class-balanced JetClass-II and JetClass, $R_{30}$, one over the fraction of background "
-                "jets kept when the cut keeps 30\\% of the signal jets, the working point of the top-tagging comparison, "
+                "jets kept when the cut keeps 30\\% of signal jets, the top-tagging working point, "
                 "for top-quark against QCD and quark against gluon jets, and the $X\\to b\\bar b$ and $X\\to bs$ "
-                "signal efficiency against QCD jets in the mass window \\XbxWindowLo--\\XbxWindowHi~GeV at the "
-                "header's QCD efficiency. A transfer head gives these columns, from "
-                "scratch training on \\MlstXbxScratchTrainBb{} ($X\\to b\\bar b$) or "
-                "\\MlstXbxScratchTrainBs{} ($X\\to bs$) jets a class. Dashes mark values not computed."
+                "signal efficiency against QCD jets in the mass window \\XbxWindowLo--\\XbxWindowHi~GeV. Training "
+                "from scratch uses \\MlstXbxScratchTrainBb{} ($X\\to b\\bar b$) or "
+                "\\MlstXbxScratchTrainBs{} ($X\\to bs$) jets a class. Dashes mark where the random networks have "
+                "no pretrained head for a transfer head and resonance tagging fine-tunes no network."
                 + _runs("set", "flav", "mass", "rand")),
     "masseffect": ("The networks pretrained with 162 and 17 classes, without and with an added mass output, on every "
                   "task, metric and read-out (rows). Definitions, training sets and inputs are those of "
@@ -8271,8 +8319,9 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     loss_share_macros(em, comp, runs, index, fmt_pm, root)
     atlas = _load(data / MASS_RES)
     if atlas:
-        # review of render dfe5942 (A7; LEDGER PF-4): what the probe uses, exactly; its target is generator-level
-        centre = (" The probe regresses $\\theta$ of equation~(\\ref{eq:masstarget}), centered on one training median, so no "
+        # review of render dfe5942 (A7; LEDGER PF-4): what the probe uses, exactly; its target is generator-level. The
+        # target written out, not referred to: the results book has no equations (its preview at b0ee1a8 stopped here)
+        centre = (" The probe regresses $\\theta = \\ln(\\mgen/\\msd)$, centered on one training median, so no "
                   "truth label is used.")
         out["tables/mlst_mass.tex"] = _float("mass", table_mass(atlas, runs, TAB), fill={"__PROBE_CENTRE__": centre})
         # the binned values as the mass figures draw them (atlas_res_fine_v3: ten jet-pT bins, the same jets and
@@ -8405,6 +8454,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
                                                                          xbx=xbx),
                                                 True, pages=True, whole="turned", colsep_pt=3)
         f2_init_macros(em, fits_s, fill, chosen, runs_s, index)
+        a10_init_macros(em, fits_s, fill, chosen, runs_s, index)
         out["tables/mlst_randparts.tex"] = _float("randparts", table_randparts(fits_s, fill, chosen, per, runs_s, TAB),
                                                   True, pages=True, whole="turned", colsep_pt=6)
         # PI 2026-11-23 (LEDGER SP-9): seven columns, the resonant and QCD AUC beside JetClass-II's; cut by the width

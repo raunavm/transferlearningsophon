@@ -19,8 +19,9 @@ SIZES = {"jc2bal": ("1000", N6), "jc1": ("1000", N6), "top": ("1000", "1200000")
          "qg_herwig": ("1000", "1600000")}
 FT_SIZES = {"jc2": (10_000, 1_000_000), "jc1": (10_000, 1_000_000), "top": (1_000, 1_200_000),
             "qg": (1_000, 1_600_000), "qg_herwig": (1_000, 1_600_000)}
-# the commit the mock-up spec is compared with (the last before the paper build was added)
-BASE = "62fdbb5"
+# the commit the mock-up spec is compared with: 39f88740, its last deliberate change (no stale PDF after a failed
+# compile, 2026-11-22); the paper build was added after 62fdbb5 (ledger section 23, RR-7: the pin updated)
+BASE = "39f88740"
 
 
 def _mod(name, rel):
@@ -488,6 +489,9 @@ def test_the_render_job_builds_the_paper_and_keeps_the_mockup_spec(tmp_path):
     assert "python3 experiments/FIGS/paper_figures.py > ${OUT}/figures.txt 2>&1; echo \"figures rc=$?\"" in draw
     assert "deck_figures" not in draw and "mlst_figures" not in draw
     assert draw.index("make_tables.py") < draw.index("paper_figures.py")
+    # PI 2026-11-23 (ledger section 23, RR-7): a training-size figure that is not the one rule's stops the render
+    rr7 = 'if grep -qF "FAILED SystemExit: FATAL (RR-7)" ${OUT}/gallery.txt; then cat ${OUT}/gallery.txt; exit 5; fi'
+    assert rr7 in draw and draw.index("gallery_figures.py --paper") < draw.index(rr7)
     for path in ("figures/mlst/*.pdf", "paper/journal/results_generated.tex", "paper/journal/provenance.json",
                  "paper/journal/tables", "paper/journal/main.pdf"):
         assert path in collect, path

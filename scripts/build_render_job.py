@@ -116,6 +116,9 @@ PAPER = {"what": "paper", "suffix": "", "texdir": "paper/journal", "texfile": "m
           python3 experiments/FIGS/paper_figures.py > ${OUT}/figures.txt 2>&1; echo "figures rc=$?"
           python3 experiments/FIGS/figstyle/gallery_figures.py --paper --outdir figures/mlst/gallery > ${OUT}/gallery.txt 2>&1; echo "gallery rc=$?"
           tail -n 15 ${OUT}/tables.txt ${OUT}/figures.txt ${OUT}/gallery.txt
+          # PI 2026-11-23 (LEDGER RR-7): no paper with a training-size figure the one rule's read-out did not draw
+          # (gallery_figures prints "<page>: FAILED SystemExit: FATAL (RR-7): ..." for it)
+          if grep -qF "FAILED SystemExit: FATAL (RR-7)" ${OUT}/gallery.txt; then cat ${OUT}/gallery.txt; exit 5; fi
 """,
          "collect": """          mkdir -p ${OUT}/figures/mlst ${OUT}/paper/journal
           cp -f figures/mlst/*.pdf figures/mlst/*.png ${OUT}/figures/mlst/ 2>/dev/null
