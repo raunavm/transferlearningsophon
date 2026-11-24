@@ -70,3 +70,9 @@ def test_the_pair_pod_stops_itself_before_2_gpu_hours():
     assert BS.CAP_S < 7200 and pr.count("timeout -s KILL ${LEFT}") == 2 and "T0=$(date +%s)" in pr
     assert pr.index("T0=$(date +%s)") < pr.index("timeout -s KILL")
     assert "exit 42" in pr and "values: [42]" in pr        # FailIndex on 42: the job never retries a stopped pod
+
+
+def test_sophons_table_10_mlp_takes_the_chosen_fill():
+    text = BS.cpu_spec("mtx-s9.99", "mlpf", "8Gi")
+    assert "mlp_scores.py --family bench --model sophon-released --checkpoint released" in text
+    assert "--fill-root /data/results/eval/v2_linprobe_sophon_fill" in text and "AMD EPYC 7402P" in text

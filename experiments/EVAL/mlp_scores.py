@@ -198,6 +198,8 @@ def main(argv=None) -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--checkpoint", default="best70")
     ap.add_argument("--out", required=True, type=pathlib.Path)
+    ap.add_argument("--fill-root", type=pathlib.Path, default=FILL_ROOT,
+                    help="bench: the substituted features' root (the released Sophon checkpoint's: v2_linprobe_sophon_fill)")
     a = ap.parse_args(argv)
     out = a.out / out_name(a.model, a.checkpoint)
     if out.exists():
@@ -210,7 +212,8 @@ def main(argv=None) -> int:
     cells = (bcpair(pb, probe, a.model, a.checkpoint, a.out) if a.family == "bcpair"
              else eepair(pb, probe, a.model, a.checkpoint, a.out) if a.family == "eepair"
              else bench(pb, probe, a.model, a.checkpoint, a.out, zero=True, datasets=("top",)) if a.family == "kin"
-             else bench(pb, probe, a.model, a.checkpoint, a.out, zero=a.family == "bench0") if a.family.startswith("bench")
+             else bench(pb, probe, a.model, a.checkpoint, a.out, fill_root=a.fill_root, zero=a.family == "bench0")
+             if a.family.startswith("bench")
              else jc2bal(pb, probe, a.model, a.checkpoint, a.out, coarse=a.family == "coarse"))
     doc = {"model": a.model, "family": a.family, "checkpoints": [a.checkpoint], "probe": "mlp",
            "mlp_threads": probe.MLP_THREADS, "mlp_seeds": list(probe.MLP_SEEDS), "mlp_schedule": probe.MLP_SCHEDULE,

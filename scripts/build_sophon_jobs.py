@@ -158,8 +158,8 @@ OUT = "/data/results/eval/bs3_sophon"
 MASS_VIEW = f"{OUT}/{MODEL}/jc2/test/{TAG}"                  # the TEST2M mass jets' features, v2 layout
 OBS_DIR = "/data/results/eval/v2_head/mtx-l188-s1/test/best70"   # build_head_jobs.OBS_MODEL's head outputs
 CPU_OF = {"mass": R5.FAMILY_CPU["atlas"], "pairfit": R5.FAMILY_CPU["linear"], "recall": R5.FAMILY_CPU["linear"],
-          "mlp": R5.FAMILY_CPU["mlp"], "mlp2": R5.FAMILY_CPU["mlp"]}
-THREADS = {"mass": "8", "pairfit": "8", "recall": "1", "mlp": "4", "mlp2": "4"}
+          "mlp": R5.FAMILY_CPU["mlp"], "mlp2": R5.FAMILY_CPU["mlp"], "mlpf": R5.FAMILY_CPU["mlp"]}
+THREADS = {"mass": "8", "pairfit": "8", "recall": "1", "mlp": "4", "mlp2": "4", "mlpf": "4"}
 PAIRS_DONE = [f"{PAIRS_OUT}/{s}/{TAG}/manifest.json" for s in ("train", "test")]
 
 
@@ -174,6 +174,9 @@ def cpu_steps(part: str) -> list[str]:
                      f"--features {MASS_VIEW} --arm {TAG} --out-dir {OUT}/atlas_res_v3 --grid v2 --centre global "
                      f"--mlp-max-epochs {R5.MASS_MLP_EPOCHS}")],
         "mlp": [BT.peak(f"{ps} mlp --datasets jc1 top qg --out {OUT}/fits_mlp_bench")],
+        # CS-8b: Table 10's top and quark/gluon MLP on the fill chosen on validation, as bs3_mlp/bench fits our networks
+        "mlpf": [BT.peak(f"python3 experiments/EVAL/mlp_scores.py --family bench --model {MODEL} --checkpoint {TAG} "
+                         f"--out /data/results/eval/bs3_mlp/bench --fill-root {JB.SOPHON_ROOT.replace('v2_linprobe_sophon', 'v2_linprobe_sophon_fill')}")],
         "mlp2": [BT.check_inputs(PAIRS_DONE), BT.peak(f"{ps} mlp --datasets jc2bal --out {OUT}/fits_mlp_jc2bal")],
         "recall": [BT.peak(f"{ps} recall --out {OUT}/perclass_recall")],
         "pairfit": [BT.check_inputs(PAIRS_DONE),
@@ -193,7 +196,7 @@ USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
     return R5.pin_cpu(text, CPU_OF[part])
 
 
-CPU_MEM = {"mass": "8Gi", "mlp": "7Gi", "mlp2": "12Gi", "recall": "4Gi", "pairfit": "8Gi"}
+CPU_MEM = {"mass": "8Gi", "mlp": "7Gi", "mlp2": "12Gi", "recall": "4Gi", "pairfit": "8Gi", "mlpf": "8Gi"}
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
@@ -206,7 +209,7 @@ def main(argv=None) -> int:
                        ("bs3-sophon-x-raunav", x_spec(a.tag, a.mem)),
                        ("bs3-sophon-xbx-raunav", x_spec(a.tag, a.mem, "xbx")),
                        ("bs3-sophon-pairs-raunav", x_spec(a.tag, a.mem, "pairs")),
-                       *((f"bs3-sophon-{p}-raunav", cpu_spec(a.tag, p, CPU_MEM[p])) for p in ("mass", "mlp", "mlp2", "recall", "pairfit"))):
+                       *((f"bs3-sophon-{p}-raunav", cpu_spec(a.tag, p, CPU_MEM[p])) for p in ("mass", "mlp", "mlp2", "recall", "pairfit", "mlpf"))):
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(f"wrote {p.relative_to(ROOT)}")
