@@ -1717,8 +1717,9 @@ def test_a_table_column_prints_at_one_precision_its_standard_deviations_included
     # one digit, not more: an SD still zero one digit finer prints the value with the agreement mark
     # PI 2026-11-14: per cell as the PDG rounds, so no SD prints as zero and no agreement mark is needed here
     assert _column(T(0.7153, 0.0024), T(0.7120, 0.0049), T(0.9760, 0.00003)) == [
-        r"0.7153\,$\pm$\,0.0024", r"0.712\,$\pm$\,0.005", r"0.97600\,$\pm$\,0.00003"]
-    assert _column(T(0.9760, 0.00003)) == [r"0.97600\,$\pm$\,0.00003"]           # alone: its own place
+        r"0.7153\,$\pm$\,0.0024", r"0.712\,$\pm$\,0.005", r"0.976000\,$\pm$\,0.000030"]
+    # SH-5 / fifth review B5: an SD whose first digits are 100-354 keeps two figures at any place (no five-decimal cap)
+    assert _column(T(0.9760, 0.00003)) == [r"0.976000\,$\pm$\,0.000030"]           # alone: its own place
     # fifth review B5 (LEDGER SH-5): a mean +- SD at its SD's own PDG place, however fine; no cap at five decimals
     # (0.99768 +- 0.00001 printed for an SD of 6e-6)
     assert _column(T(0.99999946, 0.0000005)) == [r"0.9999995\,$\pm$\,0.0000005"]
@@ -3192,7 +3193,8 @@ def test_a_bold_value_is_in_the_bold_series_that_is_not_extended_and_its_mark_st
     assert M._render("p", [0.5, 0.01], 2) == pm and M._render("P", [0.5, 0.01], 2) == M._b(pm)
     assert M._render("s", [0.94], 4) == "0.9400" + M.SINGLE and M._render("S", [0.94], 4) == M._b("0.9400") + M.SINGLE
     assert M._render("p", [0.5, 0.0], 3) == "0.500" + M.AGREE and M._render("P", [0.5, 0.0], 3) == M._b("0.500") + M.AGREE
-    assert M._render("P", [0.91472, 0.000001], 5) == M._b("0.91472") + M.AGREE        # an SD that prints as zero
+    # fifth review B5 (SH-5): an SD prints at its own PDG place however fine, so only a zero SD takes the mark
+    assert M._render("P", [0.91472, 0.000001], 5) == M._b(r"0.9147200\,$\pm$\,0.0000010")
     assert M._render("P", [1802.0, 60.0], -1) == M._b(r"1{,}800\,$\pm$\,60")
     # uniform_columns: the kind's case does not move the column's place
     tok, T = M.V4.tok, M.TAB

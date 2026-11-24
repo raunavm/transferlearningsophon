@@ -8541,7 +8541,7 @@ def _height_cm(boxes: list, cap: str) -> float:
     """Estimated height of a table at the size being tried (_SIZE_NOW): rows (a wrapped row label adds lines), rules
     and gaps between blocks, and the caption at the body size."""
     h = 0.45 * (len(cap) / 90 + 1)
-    row = 0.52 * _SIZE_NOW[0][2] / 14.5
+    line_cm = 0.52 * _SIZE_NOW[0][2] / 14.5
     for b in boxes:
         # a wrapping row-label column, the first of the spec (tab:sets' wrapping columns are later ones, FG-25)
         wrap = re.search(r"(?:\\begin\{(?:tabular|longtable)\}\{|\\extracolsep\{\\fill\}\})>\{\\raggedright"
@@ -8549,7 +8549,7 @@ def _height_cm(boxes: list, cap: str) -> float:
         lab = float(wrap.group(1)) + 0.42 if wrap else LABEL_CM
         for row in b.split(r"\\")[:-1]:
             first = _depth0_split(row.split("rule")[-1] if "rule" in row.split("&")[0] else row, "&")[0]
-            h += row * (math.ceil(_cell_cm(first) / lab) if wrap else 1)
+            h += line_cm * (math.ceil(_cell_cm(first) / lab) if wrap else 1)
         h += 1.0
     return h
 
