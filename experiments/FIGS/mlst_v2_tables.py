@@ -34,7 +34,7 @@ SIGMA = 3.0     # the meaning of "significant" (STYLE section 4)
 # JetClass-II classes that differ in it). A label set keeps it when it keeps every pair apart and merges it when it
 # merges every pair; anything else is "mixed", which stops the build for a nested label set.
 DISTINCTIONS = (
-    (("QCD", "flavor"), "the QCD classes", (("QCD_bb", "QCD_light"), ("QCD_cc", "QCD_b"), ("QCD_s", "QCD_light"))),
+    (("QCD", "flavor"), "the QCD classes into one", (("QCD_bb", "QCD_light"), ("QCD_cc", "QCD_b"), ("QCD_s", "QCD_light"))),
     (("$b$, $c$", "number"), "the number of $b$ and $c$ quarks",
      (("X_bb", "X_bq"), ("X_cc", "X_cq"), ("X_YY_bbqq", "X_YY_qqqb"), ("X_YY_bbb", "X_YY_qqb"))),
     (("$s$ vs", "$u$, $d$"), "$s$ with $u$, $d$", (("X_ss", "X_qq"), ("X_cs", "X_cq"), ("X_YY_ssqq", "X_YY_qqqq"))),
@@ -163,7 +163,7 @@ def table1(maps: dict, runs: dict) -> str:
              + n_runs[RAND] + r" \\")
     n_res = len([k for k in maps["L188"] if not k.startswith("QCD")])
     b.append(f"{name(maps, RAND)} & {res} + {qcd} & the {n_res} resonant classes into {res} random groups, "
-             f"the QCD classes into one & varies & {n_runs[RAND]}" + r" \\")
+             f"QCD into one & varies & {n_runs[RAND]}" + r" \\")
     for mass, base in MASS:
         m = maps[base]
         a.append(f"{name(maps, mass)} & {cls(m)} & " + " & ".join(sym(x) for x in marks(maps, base))

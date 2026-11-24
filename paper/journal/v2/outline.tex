@@ -16,34 +16,34 @@
 \op{2} In image classification finer labels help more for frozen features than after fine-tuning, depending on the grouping.
 \op{3} Auxiliary targets such as the jet mass, and transfer from frozen features, have not been studied against the label set.
 \osec{3 Methods}{about 1,400 words; Table 1 and Fig.~1 (design) in 3.2}
-\\op{1} \\textit{3.1 Data and model.} JetClass-II, its \Kfull{} classes and the selection of the jets.
+\op{1} \textit{3.1 Data and model.} JetClass-II, its \Kfull{} classes and the selection of the jets.
 \op{2} The Sophon network and the frozen features that probes and transfer learning read.
 \op{3} Every model sees the same jets in the same order from the same initial weights.
-\\op{4} \\textit{3.2 Label sets.} The four nested label sets and the distinctions each merges (Table~1, Fig.~1).
+\op{4} \textit{3.2 Label sets.} The four nested label sets and the distinctions each merges (Table~1, Fig.~1).
 \op{5} A merged class scores the sum of the classes it merges (equation), which fixes the discriminants a label set can form.
-\\op{6} \\textit{3.3 Controls.} Random groupings keep the class count and class sizes of the \Kcoarse-class set but not its physics.
+\op{6} \textit{3.3 Controls.} Random groupings keep the class count and class sizes of the \Kcoarse-class set but not its physics.
 \op{7} The mass regression adds one output and one loss term (equation) to the \Kres- and \Kcoarse-class models.
-\\op{8} \\textit{3.4 Evaluation.} Linear probes on the frozen features: JetClass-II classes, class pairs, benchmarks; one sentence on missing inputs.
+\op{8} \textit{3.4 Evaluation.} Linear probes on the frozen features: JetClass-II classes, class pairs, benchmarks; one sentence on missing inputs.
 \op{9} Fine-tuning with one schedule for every model, and the same network trained from scratch as reference.
 \op{10} Accuracy, AUC and Rej$_{30\%}$ as in ParT, and the mass resolution (equation).
 \op{11} Sophon's $X\to b\bar b$ and $X\to bs$ benchmark by transfer learning on the frozen features.
-\\op{12} \\textit{3.5 Uncertainties.} Mean and standard deviation over pretraining runs; ``significant'' is beyond three standard deviations (run spreads and test-sample bootstrap).
+\op{12} \textit{3.5 Uncertainties.} Mean and standard deviation over pretraining runs; ``significant'' is beyond three standard deviations (run spreads and test-sample bootstrap).
 \osec{4 Results}{about 2,600 words}
-\\op{1} \\textit{4.1 The pretraining classes (Table~2, Fig.~2: frozen-feature summary).} Linear-probe accuracy on the \Kfull{} classes falls with coarser labels, from \VtwoAccFullPct\% to \VtwoAccCoarsePct\%.
+\op{1} \textit{4.1 The pretraining classes (Table~2, Fig.~2: frozen-feature summary).} Linear-probe accuracy on the \Kfull{} classes falls with coarser labels, from \VtwoAccFullPct\% to \VtwoAccCoarsePct\%.
 \op{2} The \Kres-class model loses only on the QCD classes it merges.
 \op{3} Random groupings lose far less than the \Kcoarse-class model, so which classes are merged matters.
 \op{4} The untrained network and Sophon (released) set the scale; one sentence on the MLP probe.
-\\op{5} \\textit{4.2 Class pairs (Fig.~3: two pairs, label sets and random groupings).} A pair that differs only in a merged flavor ($X\to b\bar b$ against $X\to c\bar c$) becomes much harder to separate.
+\op{5} \textit{4.2 Class pairs (Fig.~3: two pairs, label sets and random groupings).} A pair that differs only in a merged flavor ($X\to b\bar b$ against $X\to c\bar c$) becomes much harder to separate.
 \op{6} A pair loses little until the label set merges its flavor.
 \op{7} A discriminant summed from fine classes therefore needs those classes among the pretraining labels.
-\\op{8} \\textit{4.3 Fine-tuning (Table~3, Fig.~4: fine-tuning against training size).} JetClass: \pending{pending the fine-tuned JetClass cells}.
+\op{8} \textit{4.3 Fine-tuning (Table~3, Fig.~4: fine-tuning against training size).} JetClass: \pending{pending the fine-tuned JetClass cells}.
 \op{9} Top tagging: no significant difference between label sets; one sentence on the run-to-run spread.
 \op{10} Quark--gluon discrimination: no significant difference; the same sentence.
 \op{11} Training size: \pending{pending the cells below the full sets}.
 \op{12} Pretrained models against the network trained from scratch.
-\\op{13} \\textit{4.4 Jet mass (Table~4).} The mass regression sharpens the mass resolution obtained from the frozen features.
+\op{13} \textit{4.4 Jet mass (Table~4).} The mass regression sharpens the mass resolution obtained from the frozen features.
 \op{14} It has no significant cost in classification.
-\\op{15} \\textit{4.5 Resonance benchmark (Fig.~5: $X\to b\bar b$ and $X\to bs$).} Transfer learning on the frozen features loses signal efficiency for both resonances at \Kcoarse{} classes.
+\op{15} \textit{4.5 Resonance benchmark (Fig.~5: $X\to b\bar b$ and $X\to bs$).} Transfer learning on the frozen features loses signal efficiency for both resonances at \Kcoarse{} classes.
 \op{16} On $X\to bs$ the \Kfull-class model stays well above the same classifier trained from scratch.
 \osec{5 Discussion and conclusion}{about 600 words, prose}
 \op{1} A label set should keep the flavor distinctions that analyses read from frozen features or summed scores.
