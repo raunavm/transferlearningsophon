@@ -251,7 +251,9 @@ FIXED_ROW_RATE = {("jc2b", 10_000): "1e-3",       # 2026-11-21: mean 0.3665 at 1
                   ("jc1", 10_000): "1e-3",        # 2026-11-22: 0.80917 at 1e-3 (3e-3 0.80876, 3e-4 0.80451, 1e-2 0.79976)
                   ("jc1", 1_000_000): "1e-4",     # 2026-11-23: 0.8493 at 1e-4 (3e-5 0.8482, 3e-4 0.8477, 1e-2 0.8328)
                   # 2026-11-23 16:09 UTC: 0.8365 at 3e-4 (1e-4 0.8364, 1e-3 0.8362, 3e-3 0.8360, 1e-2 0.8355)
-                  ("qg", 100_000): "3e-4"}
+                  ("qg", 100_000): "3e-4",
+                  # 2026-11-24: 0.8364 at 1e-4 (3e-5 0.8347, 3e-4 0.8355, 1e-3 0.8337, 3e-3 0.8329, 1e-2 0.8266)
+                  ("jc1", 100_000): "1e-4"}
 # from scratch, seeds SCRATCH_SEEDS, where its search moved it: qg 1e3 best 1e-4 0.7826 (3e-5 0.7817, 3e-4 0.7705)
 FIXED_ROW_RATE_SCRATCH = {("qg", 1_000): "1e-4",
                           # 2026-11-22: JetClass-II 1e6 best 3e-3 0.3812 (1e-3 0.3769, 3e-4 0.3736, 1e-2 diverged)
@@ -296,7 +298,9 @@ FIXED_RATE_ORDER = (("jc2b", 10_000, "pre"), ("qg", 1_000, "pre"), ("qg", 1_000,
                     # 2026-11-23 14:48 UTC
                     ("top", 1_000, "scratch"),
                     # 2026-11-23 16:09 UTC
-                    ("qg", 100_000, "pre"))
+                    ("qg", 100_000, "pre"),
+                    # 2026-11-24, after edge20 (3e-5) read lower
+                    ("jc1", 100_000, "pre"))
 # PI rule FT-10 (2026-11-21): "a chosen rate that diverges in a rerun fails the row: next best rate". The row's
 # chosen rate stays failed here (rate_search reads it), and its rerun at the next best rate goes into FIXED_RATE2_ROOT:
 # the cell script never retries a folder with a DIVERGED record, and those folders stay as the record of the divergence.
