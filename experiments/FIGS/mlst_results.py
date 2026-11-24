@@ -3693,6 +3693,20 @@ def pair_figure_macros(em, data: pathlib.Path, root: pathlib.Path, runs: dict, s
         em.macro(f"MlstPairInitRhalf{fig}Max", fmt(max(means)), src, what, "the random network, highest over the pairs")
 
 
+def eemm_mlp_macros(em, data: pathlib.Path, runs: dict, fmt_pm) -> None:
+    """MlstMlpEemmAuc{Coarse,Full}: the MLP probe's X->ee vs X->mumu AUC at 17 and 188 classes (R5-17, fifth review B2),
+    the values of its tab:tests row's bootstrap file (EE_MLP), whose runs must be the paper's; pending until pulled."""
+    f = data / "bootstrap" / EE_MLP
+    doc = json.loads(f.read_text()) if f.exists() else {}
+    for arm in ("R16_Q1", "L188"):
+        recs = [doc.get("models", {}).get(m, {}).get("auc") for m in runs[arm]]
+        if doc and None in recs:
+            raise SystemExit(f"FATAL: {f}: the runs of {arm} are not the paper's {runs[arm]}")
+        em.macro(f"MlstMlpEemmAuc{WORD[arm]}", _cell([1 - r["one_minus_auc"] for r in recs], len(recs), fmt_pm,
+                                                     sep=TEXT_SEP) if doc else r"\pending{bootstrap}",
+                 f if doc else data / "index.json", f"MLP probe ee_vs_mm (bs3-mlp-eepair): AUC, {arm}")
+
+
 def eemm_macros(em, fits: dict, runs: dict, index, fmt_pm, fmt_int, status: dict | None = None) -> None:
     """The X->ee vs X->mumu linear probe (fits_v4_sib, merged by mlst_v4.load_fits): MlstLpEemmAuc{W},
     MlstLpEemmAucRandMerged over the random partitions that merge the pair (status: merge_status),
@@ -5075,6 +5089,7 @@ ANALYTIC_MARK = r"$^{\dagger}$"
 LIT_BENCH = pathlib.Path(__file__).resolve().parent / "data" / "literature_benchmarks.json"
 # R5-17 (bs3): the 17-class level, which also merges electron and muon, beside the 43-class one
 _EE_17 = (("R16_Q1", "L188", ("file", "l3_bs3/probe_jc2bal_pairs_ee_vs_mm.r16q1.json", "r16q1-188", "auc")),)
+EE_MLP = "l3_bs3/mlp_jc2bal_pairs_ee_vs_mm.json"      # R5-17 / fifth review B2: the MLP probe's file (eemm_mlp_macros)
 _XBX_SRC = lambda sig: ("xbx_analytic", sig) if XBX_ANALYTIC else None       # noqa: E731  SC-2 (#1), easy to revert
 _MLP_NETS = (("L162", "l162-188"), ("R42_Q1", "r42q1-188"), ("R16_Q1", "r16q1-188"), ("L162_MASS", "l162mass-188"),
              ("R16_Q1_MASS", "r16q1mass-188"), ("FLAV_F0", "flavf0-188"), ("FLAV_F1", "flavf1-188"),
@@ -5211,6 +5226,10 @@ TESTS = (
      (("L162", "L188", None),
       ("R16_Q1", "L188", ("file", "l3_bs3/mlp_jc2bal_pairs_bc_vs_bq_cs.json", "r16q1-188", "auc")),
       ("FLAV_F0", "R16_Q1", None))),
+    # R5-17 / fifth review B2 (stats2): the MLP probe beside the 17-class X->ee vs mumu linear probe (bs3-mlp-eepair, the
+    # sibling-pair protocol on the family's EPYC 7402P); tab:mlp has no X->ee column, the text prints its values
+    (rf"{_PAIR['ee_vs_mm']}, AUC, " + HEADING["mlp"],
+     (("R16_Q1", "L188", ("file", EE_MLP, "r16q1-188", "auc")),)),
     # tab:coarse: the label sets scored on the 17 merged groups
     (r"JetClass-II, accuracy on the 17 merged groups, " + HEADING["lp"],
      tuple((a, "L188_17", ("file", "l3_v5/probe_jc2bal_R16_Q1_N1000000.json", d, "accuracy"))
@@ -5410,6 +5429,9 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
             return lambda m: _mlp_val(mlp or {}, m, bs3_task, mkey if mkey in ("auc", "accuracy") else "r30")
         if path.startswith("l3_bs3/mlp_jc2bal_pairs_"):     # SC-2c: tab:mlp's pair AUC (fits_v5_mlp), refitted bit for bit
             pair = re.search(r"_pairs_([a-z_]+?)\.json$", path).group(1)
+            if path == EE_MLP:      # no tab:mlp column: the text prints the file's own values (eemm_mlp_macros)
+                own = json.loads((data / "bootstrap" / path).read_text())["models"]
+                return lambda m: 1 - own[m][mkey]["one_minus_auc"]
             return lambda m: _mlp_val(mlp or {}, m, pair, mkey)
         if path.startswith("l3_bs3/mlp_jc2bal_R16_Q1_"):
             return lambda m: _bs3_val(bs3 or {}, "coarse", m, "jc2bal_coarse", "accuracy")
@@ -5789,6 +5811,7 @@ PW_ROWS = {
     "MlstPwMlpMassCoarse": (("JetClass-II, AUC, " + HEADING["mlp"],), ("R16_Q1_MASS",), "R16_Q1"),
     # the 188-class AUC rounds to one, so a share of its errors means nothing: 3 sigma in AUC ("abs")
     "MlstPwEeCoarse": ((rf"{_PAIR['ee_vs_mm']}, AUC, " + HEADING["lp"],), ("R16_Q1",), "L188", "abs"),
+    "MlstPwEeCoarseMlp": ((rf"{_PAIR['ee_vs_mm']}, AUC, " + HEADING["mlp"],), ("R16_Q1",), "L188", "abs"),
     "MlstPwPartRepro": ((_FT_TOP + ", published models",), ("PART_OURS",), "PART_PUB"),     # A2 (bs3), a lower bound
     "MlstPwPartRescale": ((_FT_TOP + ", ParT's training script",), ("PART_RESCALE",), "PART_OURS"),   # DL-16c, a floor
 }
@@ -7823,7 +7846,11 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
         for s0, span, _, txt in cells or []:
             if span == 1:
                 width[s0] = max(width[s0], _cell_cm(txt))
-    spans = [(s0, s0 + span, _cell_cm(txt)) for _, cells in rows for s0, span, _, txt in cells or [] if 1 < span < n]
+    # a heading that starts over the row labels (a mode heading beside another, Table 1) is set across the whole line,
+    # as every block is (_stretch), so it widens no block: with it, Table 1's linear-probe block was cut into five
+    # blocks of one column each
+    spans = [(s0, s0 + span, _cell_cm(txt)) for _, cells in rows for s0, span, _, txt in cells or []
+             if 1 < span < n and s0 >= nlab]
     lab = sum(width[:nlab])
 
     def wide(i, j):                                 # a block of columns i..j-1, widened by any header cell in it
@@ -8750,6 +8777,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     comparisons(em, fits, runs, status, index, fmt_pm)
     pair_figure_macros(em, data, root, runs, status, words, missing)
     eemm_macros(em, fits, runs, index, fmt_pm, fmt_int, status)
+    eemm_mlp_macros(em, data, runs, fmt_pm)
     probe_abs_macros(em, fits, runs, index, fmt_pm)
     if fits3:
         bn_macros(em, fits3, runs, index)
