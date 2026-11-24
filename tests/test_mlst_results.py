@@ -4449,8 +4449,10 @@ def test_the_paper_mlp_table_keeps_only_the_networks_and_columns_a_tested_row_re
     release's copy (table_mlp, tab:mlpfull) keeps every network and column. Set upright (LS-1)."""
     cols, arms = M.mlp_paper_cells()
     # every sentence that cites tab:mlp: the mass networks (results_mass), the resonant classes (results_jc), X -> bc
-    # (results_jc), top with the missing inputs as Table 10 fills them (appendix D)
-    assert {("jc2_188", None), ("jc2_188_res", None), ("bc_vs_bq_cs", None), ("top", None), ("top", "r30")} <= set(cols)
+    # (results_jc), top R30 with the missing inputs as for the linear probe (the Fig. 2 caption's MLP clause); PI
+    # 2026-11-24 (LEDGER CS-8b): on the fill chosen on validation the zero-fill top AUC gaps of appendix D no longer
+    # pass, their rows and sentence left, so no tested row reads the top AUC column
+    assert {("jc2_188", None), ("jc2_188_res", None), ("bc_vs_bq_cs", None), ("top", "r30")} <= set(cols)
     assert {"L188", "L162", "L162_MASS", "R16_Q1", "R16_Q1_MASS", "FLAV_F0"} <= arms
     order = [(t, m) for t, m, *_ in M.MLP_PAPER_ORDER]
     assert cols == sorted(cols, key=order.index) and ("jc1", None) not in cols
