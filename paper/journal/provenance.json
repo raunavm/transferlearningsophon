@@ -4725,7 +4725,7 @@
     "json_path": "linear probes of the random network (INIT), mean over its initializations at each training-set size, the min over the sizes",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.02"
+    "value": "0.020"
   },
   "MlstATenInitRthirtyMax": {
     "json_path": "linear probes of the random network (INIT), mean over its initializations at each training-set size, the max over the sizes",
@@ -6093,7 +6093,7 @@
     "json_path": "linear probes of the random network (INIT_BN), Table 1's cells, mean over its initializations",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.1"
+    "value": "0.10"
   },
   "MlstFTwoInitBnRthirtyMax": {
     "json_path": "linear probes of the random network (INIT_BN), Table 1's cells, mean over its initializations",
@@ -9927,13 +9927,13 @@
     "json_path": "curves[bbqq_vs_ccqq].rejection at eps_grid 0.5, mean over init-s1, init-s2, init-s3 (pairs_v5/<run>.json)",
     "sha256": "51d0b7595e3cfdff411310a74b5b5d3de98c4a8b7a18c43a347727a7d085a3fe",
     "source_file": "experiments/FIGS/data/v2/curves_v2/pairs_v5/init-s1.json",
-    "value": "4"
+    "value": "4.0"
   },
   "MlstPairInitRhalfOtherMin": {
     "json_path": "curves[bbqq_vs_ccqq].rejection at eps_grid 0.5, mean over init-s1, init-s2, init-s3 (pairs_v5/<run>.json)",
     "sha256": "51d0b7595e3cfdff411310a74b5b5d3de98c4a8b7a18c43a347727a7d085a3fe",
     "source_file": "experiments/FIGS/data/v2/curves_v2/pairs_v5/init-s1.json",
-    "value": "4"
+    "value": "4.0"
   },
   "MlstPairInitRhalfQcdMax": {
     "json_path": "curves[qcd_bb_vs_cc|qcd_b_vs_light|qcd_c_vs_light].rejection at eps_grid 0.5, mean over init-s1, init-s2, init-s3 (pairs_v5/<run>.json)",
@@ -10153,7 +10153,7 @@
   },
   "MlstPairsNWord": {
     "json_path": "PAIRS_TABLE (count)",
-    "sha256": "262d024cd7daa553065ba19844a6fa9d5a9f606a2eb588c709d6172829bfd7b0",
+    "sha256": "e9166474866e9a61f99d49e3e6efd2017c6708eb3da308589e8cc8d1cf98019f",
     "source_file": "experiments/FIGS/mlst_results.py",
     "value": "six"
   },

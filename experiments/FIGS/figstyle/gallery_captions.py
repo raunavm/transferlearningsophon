@@ -117,9 +117,10 @@ CAPTIONS = {
     ),
     "F9b": (
         'Each mass network resolves the jet mass better than the soft-drop mass in every bin of '
-        'jet pT and of generator-level mass. Panels show the median of the response r = m_est/m_gen and its distance '
-        'from one, and the resolution, the width of the central 68% of r over twice its median, and its ratio to the '
-        'soft-drop mass, against the reconstructed jet pT and the generator-level soft-drop mass m_gen. The estimates '
+        'jet pT and of generator-level mass. Panels show the median of the response r, the estimated mass over the '
+        'generator-level soft-drop mass, and its distance from one, and the resolution, the width of the central 68% '
+        'of r over twice its median, and its ratio to the soft-drop mass, against the reconstructed jet pT and the '
+        'generator-level soft-drop mass. The estimates '
         'are the soft-drop mass and the mass output of the 162- and 17-class networks, on JetClass-II test jets matched '
         'at generator level. Points are means over {m:MlstMassNRunsWord} runs, horizontal bars span each bin, and '
         'vertical bars of one standard deviation combine the spread over runs with the bootstrap over test jets. '
