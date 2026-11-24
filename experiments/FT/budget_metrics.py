@@ -121,6 +121,13 @@ def main(argv=None) -> int:
     expect = fixed_keys() if a.expect_fixed else None
     if expect is not None:
         doc["expected"] = len(expect)
+        # the cells sit in the main tree (--root) and the rerun trees beside it (fixed_rate, fixed_rate2): resolved
+        # from --root, so the jobs' --root /data/results/ft_v2/fixed reads the same folders and a test's tmp root
+        # reads none of /data (the full suite of 14184f3 spent hours here reading every finished cell on /data)
+        b = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
+        main_tree, ft_root = pathlib.Path(b.FIXED_ROOT), pathlib.Path(b.FIXED_ROOT).parent
+        expect = {k: a.root / p.relative_to(main_tree) if p.is_relative_to(main_tree)
+                  else a.root.parent / p.relative_to(ft_root) for k, p in expect.items()}
     for tree in a.trees:
         found = [(f"{tree}/{c.relative_to(a.root / tree)}", c) for c in sorted((a.root / tree).glob("*/N*/s*"))] \
             if expect is None else [(k, expect[k]) for k in sorted(expect) if k.startswith(tree + "/")]
