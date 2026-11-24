@@ -5112,8 +5112,9 @@ TESTS = (
     *((rf"{_PAIR[k]}, AUC, " + HEADING["lp"], _pair_rows(k, rows) + _pair_rows(k, _FLAV188.get(k, ()), ".flav188")
        + (_EE_17 if k == "ee_vs_mm" else ()))
       for k, rows in (
-        ("bb_vs_cc", (("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"), ("FLAV_F1", "R16_Q1", "flavf1-r16q1"),
-                      ("FLAV_F0", "R16_Q1", "flavf0-r16q1"))),        # CS-9b (PI 2026-11-24)
+        # PI 2026-11-24 (TX-7, PW-2): the no-flavor-boundary - 17 row (CS-9b) removed with its null, which resolved
+        # only differences above 380%; Fig. 5 draws that curve's run spread instead
+        ("bb_vs_cc", (("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"), ("FLAV_F1", "R16_Q1", "flavf1-r16q1"))),
         ("bc_vs_bq_cs", _QCD_PAIR + (("FLAV_F1", "R16_Q1", "flavf1-r16q1"), ("FLAV_F1R", "R16_Q1", "flavf1r-r16q1"),
                                      ("FLAV_F0", "R16_Q1", "flavf0-r16q1"), ("FLAV_F0", "L188", "flavf0-188"))),
         ("bbqq_vs_ccqq", (("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"),
@@ -5679,7 +5680,6 @@ PW_ROWS = {
     "MlstPwResonantRes": (("JetClass-II, AUC over the resonant classes, " + HEADING["lp"],), ("L162",), "L188"),
     "MlstPwBcRes": ((rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["lp"],), ("L162",), "L188"),
     "MlstPwBcFlavZero": ((rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["lp"],), ("FLAV_F0",), "R16_Q1"),
-    "MlstPwBbFlavZero": ((rf"{_PAIR['bb_vs_cc']}, AUC, " + HEADING["lp"],), ("FLAV_F0",), "R16_Q1"),       # CS-9b
     "MlstPwTopScratch": ((_FT_TOP,), ("L188",), "SCRATCH"),
     "MlstPwTopKin": ((_FT_TOP,), ("KIN",), "L188"),
     "MlstPwTopMassRes": ((_FT_TOP,), ("L162_MASS",), "L162"),
