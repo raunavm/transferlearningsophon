@@ -54,7 +54,11 @@ probe () {       # ok / fail / none: the probe job on transfer-learning-vol writ
     P=$(kubectl get pods -n $NS --no-headers 2>/dev/null | awk -v j="$PROBE_NAME" 'index($1, j "-") == 1 {print $1; exit}'); [ -z "$P" ] && continue
     ph=$(kubectl get pod -n $NS $P -o jsonpath='{.status.phase}' 2>/dev/null)
     if [ "$ph" = Succeeded ] || [ "$ph" = Failed ]; then
-      kubectl logs -n $NS $P 2>/dev/null | grep -q WRITE_OK && v=ok || v=fail
+      # PI 2026-11-24: a probe the laptop could not read (offline) is no probe, never a failed one. A log that cannot
+      # be read counts as fail only when the API still answers for the pod (it never ran: no log); otherwise ask again
+      if L=$(kubectl logs -n $NS $P 2>/dev/null); then echo "$L" | grep -q WRITE_OK && v=ok || v=fail
+      elif kubectl get pod -n $NS $P >/dev/null 2>&1; then v=fail
+      else continue; fi
       break
     fi
   done
