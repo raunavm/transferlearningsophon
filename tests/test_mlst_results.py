@@ -159,6 +159,7 @@ def test_the_index_covers_every_kind_of_pulled_file():
     assert {"compute", "linprobe/fits_v3"} <= kinds <= {
         "compute", "linprobe/fits3000", "linprobe/mass", "linprobe/fits_v3", "linprobe/fits_v3_mlp", "ft_mlst",
         "head", "fillcontrol", "curves", "bootstrap", "xbx", "jc2_test", "linprobe/fits_v3_mlp2",
+        "bs3_mlp",      # 2026-11-24: the statistics agent's MLP refit (LEDGER DL-9, CS-5b), each run's summary
         "checks",       # 2026-11-09: the TEST2M disjointness proof, pulled from /data/results/checks
         "linprobe/fits_v3_mlp2_initbn", "linprobe/fits_v3_initbn",
         # 2026-10-31 (pull_mlst_data.py v4): the v4 probes and the outputs beside them
@@ -4076,7 +4077,9 @@ def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_o
             assert all(x in M.TESTS_NAMES or x in M.LABEL for x in (first, second)), (heading, first, second)
             # review of 5c40d69 (B3): a row over several ("least") holds rows of the kinds the builder reads
             subs = [s for *_, s in src[1]] if src not in (None, M.RERUN) and src[0] == "least" else [src]
-            assert all(s is None or s == M.RERUN or s[0] in ("l3", "file", "mass", "mass_group") for s in subs), (heading, src)
+            # bs3 (SC-2): the transfer heads' analytic term and the published-result row are sources too
+            assert all(s is None or s == M.RERUN or s[0] in ("l3", "file", "mass", "mass_group", "xbx_analytic",
+                                                              "part_published") for s in subs), (heading, src)
     assert M.SUMMARY_L3[("ft", "jc1")] == "ft_jc1_N1000000.json"
 
 
@@ -4161,7 +4164,8 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
              (f"top tagging, $R_{{30}}$, {ft}, published models", "SCRATCH", "PART_PUB")]
     assert not [r for r in gone if r in rows], [r for r in gone if r in rows]
     assert not any(h.startswith("JetClass, accuracy, " + ft + ", published") for h, *_ in rows)
-    assert rows[(f"top tagging, $R_{{30}}$, {ft}, published models", "PART_OURS", "PART_PUB")] is None
+    # A2 (bs3; SC-2): ParT's script against its published result, the published spread and our run's counting term
+    assert rows[(f"top tagging, $R_{{30}}$, {ft}, published models", "PART_OURS", "PART_PUB")] == ("part_published",)
     for task in ("top", "qg"):                 # a mass network against its own label set: fine-tuned top tagging only
         for mode in ("lp", "ft"):
             head = ("top tagging" if task == "top" else "quark/gluon tagging (Pythia)") + ", $R_{30}$, " + M.HEADING[mode]
