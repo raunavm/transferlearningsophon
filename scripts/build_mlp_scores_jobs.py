@@ -48,7 +48,10 @@ B = BT.B
 ARMS = R5.BOOTALL_ARMS
 # jc2bal: 188 and 162 classes (DL-9, the accuracy null) and the mass networks with their label sets (DL-3b: the MLP
 # AUC rows 162 + mass - 162 and 17 + mass - 17 of tab:tests)
-FAMILY_ARMS = {"jc2bal": ("l188", "l162", "l162mass", "r16q1", "r16q1mass"), "coarse": ("l188", "l162", "r42q1", "r16q1"), "bench": tuple(ARMS),
+# bench: the fill chosen on validation (CS-8b, PI 2026-11-24: one configuration for Table 10 and the DL-9 rows), with
+# the random networks; bcpair: SC-2c's X->bc vs bq, cs pair MLP of 17 and 188 classes
+FAMILY_ARMS = {"jc2bal": ("l188", "l162", "l162mass", "r16q1", "r16q1mass"), "coarse": ("l188", "l162", "r42q1", "r16q1"),
+               "bench": tuple(ARMS) + ("init", "initbn"), "bcpair": ("l188", "r16q1"),
                "bench0": tuple(ARMS) + ("init", "initbn"), "kin": ("kin",)}
 INIT = {"init": "init", "initbn": "init_bn"}     # the random networks' checkpoints (init-sK's two)
 
@@ -66,11 +69,13 @@ SMOKES = {"jc2bal": ("jc2bal", "mtx-l188-s1", "best70"), "bench": ("bench", "mtx
 SMOKE_NAME = {"jc2bal": "bs3-mlp-smoke-raunav", "bench": "bs3-mlp-smoke-bench-raunav"}
 FILES = {"jc2bal": ("jc2bal_N1000000",), "coarse": ("jc2bal_R16_Q1_N1000000",),
          "bench": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000"),
-         "bench0": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000"), "kin": ("top_N1200000",)}
+         "bench0": ("top_N1200000", "qg_N1600000", "qg_herwig_N1600000"), "kin": ("top_N1200000",),
+         "bcpair": ("jc2bal_pairs_bc_vs_bq_cs",)}
 # the bootstraps: output -> (family, npz name, the differences (first arm, second arm), flags)
-BENCH_DIFFS = tuple((a, "l188") for a in FAMILY_ARMS["bench"] if a != "l188")
+BENCH_DIFFS = tuple((a, "l188") for a in FAMILY_ARMS["bench"][:10] if a != "l188")
 # every pair of Table 10's rows, 188 classes always the second side (Delta = the other row - 188 classes)
 PAIRS0 = tuple((b, a) if a == "l188" else (a, b) for a, b in itertools.combinations(FAMILY_ARMS["bench0"], 2))
+PAIRSF = tuple((b, a) if a == "l188" else (a, b) for a, b in itertools.combinations(FAMILY_ARMS["bench"], 2))
 MASS_OUT = f"{BOOT}/mlp_jc2bal_N1000000.mass.json"
 MASS_CACHE = "/data/results/bootstrap_cache/bs3_mlp_jc2bal_N1000000"     # outside bootstrap/: never pulled
 BOOT_OUT = {f"{BOOT}/mlp_jc2bal_N1000000.json": ("jc2bal", "jc2bal_N1000000", (("l162", "l188"),), "--headline-only"),
@@ -81,6 +86,11 @@ BOOT_OUT = {f"{BOOT}/mlp_jc2bal_N1000000.json": ("jc2bal", "jc2bal_N1000000", ((
             # DL-3b: the mass networks against their label sets, every metric tab:mlp prints (AUC, resonant, QCD)
             MASS_OUT: ("jc2bal", "jc2bal_N1000000", (("l162mass", "l162"), ("r16q1mass", "r16q1")),
                        "--headline --native-groups"),
+            # CS-8b: every pair of Table 10's rows on the fill chosen on validation (the configuration Table 10 takes)
+            **{f"{BOOT}/mlpf_{n}.json": ("bench", n, PAIRSF, "--headline") for n in FILES["bench"]},
+            # SC-2c: the X->bc vs bq, cs pair MLP, 17 - 188 classes
+            f"{BOOT}/mlp_jc2bal_pairs_bc_vs_bq_cs.json": ("bcpair", "jc2bal_pairs_bc_vs_bq_cs", (("r16q1", "l188"),),
+                                                          "--headline"),
             # CS-5b: every pair of Table 10's rows on its printed zero-fill fits
             **{f"{BOOT}/mlp0_{n}.json": ("bench0", n, PAIRS0, "--headline") for n in FILES["bench0"]}}
 
@@ -90,15 +100,16 @@ def models(arm: str) -> list[str]:
     return [r if arm in INIT else f"mtx-{r}" for r in ARMS[arm]]
 
 
-# bench: the linear probes' substitution of the missing inputs (mlp_scores.FILL; third review of 5f4e1b8, B3(c))
-CKPT = {"top_N1200000": "best70.itop4", "qg_N1600000": "best70.nqg", "qg_herwig_N1600000": "best70.nqg"}
+# bench: the linear probes' substitution of the missing inputs (mlp_scores.FILL; third review of 5f4e1b8, B3(c)), after
+# the checkpoint (best70, or the random networks' init and init_bn)
+FILL_OF = {"top_N1200000": "itop4", "qg_N1600000": "nqg", "qg_herwig_N1600000": "nqg"}
 
 
 def npz(family: str, model: str, name: str) -> str:
     """A model's scores as mlp_scores writes them; model as models() names it (initbn-sK: init-sK at init_bn)."""
     run, ck = (model.replace("initbn-", "init-"), "init_bn") if model.startswith("initbn-") else (
         (model, "init") if model.startswith("init-") else (model, "best70"))
-    return f"{OUT}/{family}/probs/{run}/{CKPT.get(name, ck) if family == 'bench' else ck}/{name}.npz"
+    return f"{OUT}/{family}/probs/{run}/{f'{ck}.{FILL_OF[name]}' if family == 'bench' else ck}/{name}.npz"
 
 
 def guard() -> str:
@@ -149,6 +160,8 @@ def smoke_spec(tag: str, mem: str, which: str = "jc2bal") -> str:
 BOOT_PARTS = {"jc2": (f"{BOOT}/mlp_jc2bal_N1000000.json", f"{BOOT}/mlp_jc2bal_R16_Q1_N1000000.json"),
               "bench": tuple(f"{BOOT}/mlp_{n}.json" for n in FILES["bench"]),
               "bench0": tuple(f"{BOOT}/mlp0_{n}.json" for n in FILES["bench0"]),
+              "benchf": tuple(f"{BOOT}/mlpf_{n}.json" for n in FILES["bench"]),
+              "bcpair": (f"{BOOT}/mlp_jc2bal_pairs_bc_vs_bq_cs.json",),
               "jc2mass": (MASS_OUT,)}
 
 

@@ -115,9 +115,10 @@ def _boot_name(m, ck):
 
 
 def test_rows_are_the_runs_of_the_linear_probe_rows():
-    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 13 + 12 + 27 + 33 + 1
+    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 13 + 12 + 33 + 33 + 1 + 6
     paper = {f"mtx-{r}" for a, rs in BJ.ARMS.items() if a not in BJ.INIT and a != "kin" for r in rs}
-    assert len(paper) == 27 and {m for f, m, ck in BJ.ROWS if f == "bench"} == paper
+    assert len(paper) == 27 and {m for f, m, ck in BJ.ROWS if f == "bench" and ck == "best70"} == paper
+    assert {(m, ck) for f, m, ck in BJ.ROWS if f == "bench"} == {(m, ck) for f, m, ck in BJ.ROWS if f == "bench0"}
     assert {(m, ck) for f, m, ck in BJ.ROWS if f == "bench0"} == {(m, "best70") for m in paper} | {
         (f"init-s{k}", ck) for k in (1, 2, 3) for ck in ("init", "init_bn")}
     for fam, row in BJ.SMOKES.items():
@@ -254,3 +255,29 @@ def test_cs15b_pairs_each_networks_cell_with_its_probe():
     text = BJ.cs15b_spec("mtx-s9.99", "8Gi")
     assert "--task jc2b " in text and "--headline-only" in text and "--diff ft-lp-l188=ft-mtx-l188-s1," in text
     assert "name: bs3-boot-cs15b-raunav" in text
+
+
+def test_cs8b_and_sc2c_rows():
+    assert BJ.npz("bench", "initbn-s2", "top_N1200000").endswith("/bench/probs/init-s2/init_bn.itop4/top_N1200000.npz")
+    assert BJ.npz("bench", "init-s1", "qg_herwig_N1600000").endswith("/bench/probs/init-s1/init.nqg/qg_herwig_N1600000.npz")
+    for fam, n, d, flags in BJ.boot_outs("benchf").values():
+        assert fam == "bench" and len(d) == 66 and all(a != "l188" for a, b in d)
+    assert [r for r in BJ.ROWS if r[0] == "bcpair"] == [("bcpair", f"mtx-{a}-s{k}", "best70") for a in ("l188", "r16q1") for k in (1, 2, 3)]
+    text = BJ.boot_spec("mtx-s9.99", "4Gi", "bcpair")
+    assert "--diff r16q1-188=" in text and "/bcpair/probs/mtx-r16q1-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz" in text
+    assert "--family bench " in BJ.fit_spec("mtx-s9.99", "bench", "7Gi", 6, True, ("init", "initbn"), "2")
+
+
+def test_bcpair_fits_the_one_pair_as_mlp_cells_does(tmp_path):
+    pb, _ = _pb(tmp_path)
+    r = np.random.default_rng(5)
+    sides = {"signal": np.arange(0, 20), "background": np.arange(20, 50)}
+    te = {"signal": np.arange(0, 10), "background": np.arange(10, 30)}
+    pb.pair_index = lambda: {"train": {MS.BC_PAIR: sides}, "test": {MS.BC_PAIR: te}}
+    pb.load = lambda m, ds, split, ck: (r.normal(size=(60, 4)).astype(np.float32), None, None)
+    pb.PAIR_SEED, pb.PAIR_VAL_FRACTION = 20261031, 0.1
+    probe = Probe()
+    cells = MS.bcpair(pb, probe, "mtx-l188-s1", "best70", tmp_path)
+    assert len(probe.calls) == 1 and len(probe.calls[0][4]) == 30
+    z = np.load(cells[f"pair_{MS.BC_PAIR}"]["scores"])
+    assert np.array_equal(z["y"], np.r_[np.ones(10), np.zeros(20)]) and z["s"].shape == (30,)

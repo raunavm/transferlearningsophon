@@ -42,17 +42,20 @@ import time
 import numpy as np
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-FAMILIES = ("jc2bal", "coarse", "bench", "bench0", "kin")
+FAMILIES = ("jc2bal", "coarse", "bench", "bench0", "kin", "bcpair")
 COARSE = "R16_Q1"
 FILL_ROOT = pathlib.Path("/data/results/eval/v2_linprobe_fill")
 FILL = {"top": "itop4", "qg": "nqg"}     # build_refit_v5_jobs.FILL_TAG: the substitutions chosen on validation
 # the stored fits each family repeats, for the comparison recorded beside every metric
 STORED = {"jc2bal": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"), "coarse": None, "bench": None,
           "bench0": pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2"),
-          "kin": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp")}
+          "kin": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp"),
+          "bcpair": pathlib.Path("/data/results/eval/v2_linprobe_bal/fits_v5_mlp")}
 STORED_BN = pathlib.Path("/data/results/eval/v2_linprobe/fits_v3_mlp2_initbn")   # bench0's init_bn checkpoint
 COMPARED = {"jc2bal": ("accuracy", "macro_auc_ovr", "macro_auc_resonant", "macro_auc_qcd"),
-            "bench0": ("accuracy", "auc", "r30", "r50"), "kin": ("accuracy", "auc", "r30", "r50")}
+            "bench0": ("accuracy", "auc", "r30", "r50"), "kin": ("accuracy", "auc", "r30", "r50"),
+            "bcpair": ("accuracy", "auc")}
+BC_PAIR = "bc_vs_bq_cs"
 
 
 def _load(name: str, rel: str):
@@ -129,6 +132,25 @@ def bench(pb, probe, model: str, ckpt: str, out: pathlib.Path, fill_root: pathli
     return cells
 
 
+def bcpair(pb, probe, model: str, ckpt: str, out: pathlib.Path, pair: str = BC_PAIR) -> dict:
+    """probe_bal.mlp_cells' pair loop for one pair (PI 2026-11-24, SC-2c: X->bc vs bq, cs), scores kept; the pair's own
+    validation split and fit_mlp's seeds make it independent of the pairs fitted before it there."""
+    xtr_all, _, _ = pb.load(model, "jc2bal_pairs", "train", ckpt)
+    xte_all, _, _ = pb.load(model, "jc2bal_pairs", "test", ckpt)
+    idx = pb.pair_index()
+    sides = idx["train"][pair]
+    rows = np.concatenate([sides["signal"], sides["background"]])
+    y = np.concatenate([np.ones(sides["signal"].size, np.int64), np.zeros(sides["background"].size, np.int64)])
+    r = np.random.default_rng([pb.PAIR_SEED, sum(map(ord, pair))])
+    isval = r.random(rows.size) < pb.PAIR_VAL_FRACTION
+    te = idx["test"][pair]
+    trow = np.concatenate([te["signal"], te["background"]])
+    yte = np.concatenate([np.ones(te["signal"].size, np.int64), np.zeros(te["background"].size, np.int64)])
+    s, meta = probe.fit_mlp(xtr_all[rows[~isval]], y[~isval], xtr_all[rows[isval]], y[isval], xte_all[trow])
+    return {f"pair_{pair}": {**pb.lp.binary_score_metrics(s, yte, probe, threshold=0.0), **pb.lp.mlp_fit_record(meta),
+                             "mlp": meta, "scores": save(out, model, ckpt, f"jc2bal_pairs_{pair}", yte, s=s)}}
+
+
 def stored(family: str, model: str, ckpt: str, cells: dict, root=None) -> dict:
     """Each metric of the refit beside the stored fit's ({} without one): {cell: {metric: [stored, refit]}}."""
     root = (STORED_BN if family == "bench0" and ckpt == "init_bn" else STORED[family]) if root is None else root
@@ -159,7 +181,8 @@ def main(argv=None) -> int:
     probe = _load("probe", "experiments/EVAL/probe.py")
     cpu = _load("latent_scale_probe", "experiments/EVAL/latent_scale_probe.py").cpu_model()
     a.out.mkdir(parents=True, exist_ok=True)
-    cells = (bench(pb, probe, a.model, a.checkpoint, a.out, zero=True, datasets=("top",)) if a.family == "kin"
+    cells = (bcpair(pb, probe, a.model, a.checkpoint, a.out) if a.family == "bcpair"
+             else bench(pb, probe, a.model, a.checkpoint, a.out, zero=True, datasets=("top",)) if a.family == "kin"
              else bench(pb, probe, a.model, a.checkpoint, a.out, zero=a.family == "bench0") if a.family.startswith("bench")
              else jc2bal(pb, probe, a.model, a.checkpoint, a.out, coarse=a.family == "coarse"))
     doc = {"model": a.model, "family": a.family, "checkpoints": [a.checkpoint], "probe": "mlp",
