@@ -218,7 +218,8 @@ def test_a_grid_of_different_pairs_puts_every_panel_on_one_x_range(monkeypatch):
     matplotlib.pyplot.close(figs[0])
 
 
-def test_the_headline_panels_of_one_metric_share_one_relative_range_below_and_above_188_classes(monkeypatch):
+def test_the_headline_panels_of_one_metric_share_one_relative_range_below_and_above_188_classes(monkeypatch,
+                                                                                                tmp_path):
     """FG-2 (PI 2026-11-20: one relative range per metric about the 188-class mean, ticks in absolute units); review of
     render 5f4e1b8 (C6): the range runs from the largest deviation below 188 classes to the largest above, so a side no
     network reaches is not drawn and a small loss (JetClass) takes twice the width it had; CA-10 (B12): no "SD" in the
@@ -230,7 +231,7 @@ def test_the_headline_panels_of_one_metric_share_one_relative_range_below_and_ab
         return lambda m: base[ds] * (1 if m in L.RUNS["L188"] else 1 - drop[ds])
     figs = []
     monkeypatch.setattr(L.S, "save", lambda fig, path: figs.append(fig))
-    L._draw_hv(None, value, (), L._head(), "none", "relative")
+    L._draw_hv(tmp_path / "F2.pdf", value, (), L._head(), "none", "relative")
     titles = {key: f"({x}) {t}" for x, (key, *_, t) in zip("abcde", L.HV_PANELS)}
     axes = {key: next(ax for ax in figs[0].axes if ax.get_title() == t) for key, t in titles.items()}
     rel = {key: tuple(x / base[ds] - 1 for x in axes[key].get_xlim()) for key, _, ds, *_ in L.HV_PANELS}
@@ -321,7 +322,7 @@ def test_the_pair_figures_draw_the_random_partitions_that_merge_the_pair_apart_f
     assert to_hex(R.S.SERIES[R._style("RAND_APART")]) == to_hex(R.S.SERIES["RAND"]) != to_hex(R.S.SERIES["RAND_MERGED"])
 
 
-@pytest.mark.parametrize("pid", ["F4-mech", "F4-other", "F4-qcd", "F9b", "A8", "A10", "F11", "PC-jc2"])
+@pytest.mark.parametrize("pid", ["F4-mech", "F4-other", "F4-qcd", "F9b", "A8", "A10", "F11", "PC-jc2", "CONF-share"])
 def test_every_panel_has_its_own_x_and_y_labels(pid, monkeypatch, tmp_path):
     """FG-8 (PI 2026-11-20): "every panel has its own x and y labels naming exactly what it shows", in the figures the
     reviews of renders 5c40d69 and dfe5942 named (Figs. 4, 5, 6, 7, 9, 10, 11): every axes has a y label, and every
@@ -334,6 +335,10 @@ def test_every_panel_has_its_own_x_and_y_labels(pid, monkeypatch, tmp_path):
     try:
         pages[pid].draw(tmp_path / f"{pid}.pdf")
     except L.C.Absent as e:
+        pytest.skip(f"{pid}: {e}")
+    except SystemExit as e:         # RR-7 (PI 2026-11-23): no training-size figure without the one rule's cells
+        if "(RR-7)" not in str(e):
+            raise
         pytest.skip(f"{pid}: {e}")
     (fig,) = figs
     assert fig.axes and all(ax.get_ylabel() for ax in fig.axes), pid
@@ -357,13 +362,45 @@ def test_the_per_class_figure_marks_the_classes_its_sentence_counts(monkeypatch,
     except L.C.Absent as e:
         pytest.skip(str(e))
     (fig,) = figs
-    for a, _ in PC.FIG4:
+    for i, (a, _) in enumerate(PC.FIG4):
         d = PC._doc("jc2", 0)["diffs"][f"{a}-L188"]
-        ax = next(x for x in fig.axes if x.get_title().endswith(f"{L.S.LEGEND[a]}, linear probe"))
+        # CA-12 (review of render 5f4e1b8, B13): the mode heads its column, the linear probes the left one
+        ax = next(x for x in fig.axes if x.get_title() == f"({'abcdef'[2 * i]}) {L.S.LEGEND[a]}")
         pts = [ln for ln in ax.lines if ln.get_linestyle() in ("None", "none", "")]
         filled = [ln for ln in pts if to_hex(ln.get_markerfacecolor()) != "#ffffff"]
         assert len(pts) == len(d["delta"]) and len(filled) == len(d["lower"]) + len(d["higher"]), a
     assert PC.WITHIN in [t.get_text().replace("\n", " ") for leg in fig.legends for t in leg.get_texts()]
+    matplotlib.pyplot.close(fig)
+
+
+def test_the_confusion_test_figure_draws_the_nine_label_sets_at_their_share_and_accuracy(monkeypatch, tmp_path):
+    """DL-8b (PI 2026-11-23): the pre-registered confusion test (CS-10) is an appendix figure, one point per 17-group
+    label set (the 17-class level, three flavor-boundary partitions, five random partitions) at the share of the
+    188-class probe's resonant confusions it keeps apart (x) and its mean JetClass-II linear-probe accuracy (y), a
+    single run open (FG-6); one panel of a single-panel figure's size at the text width, labelled, under the heading
+    "Linear probe" (CA-13), and drawn by the paper's render (PAPER)."""
+    import json
+    import gallery_figures as GF
+    figs = []
+    monkeypatch.setattr(PC.S, "save", lambda fig, path: figs.append(fig))
+    try:
+        PC.draw_conf_share(tmp_path / "CONF-share.pdf")
+    except L.C.Absent as e:
+        pytest.skip(str(e))
+    groups = json.loads(PC.SHARE.read_text())["groupings"]
+    (fig,) = figs
+    (ax,) = fig.axes
+    pts = sorted((ln for ln in ax.lines if ln.get_linestyle() in ("None", "none", "")),
+                 key=lambda ln: ln.get_xdata()[0])
+    want = sorted((g["share_apart"], float(np.mean(list(g["accuracy_runs"].values())))) for g in groups.values())
+    assert len(groups) == len(pts) == 9
+    assert [ln.get_xdata()[0] for ln in pts] == pytest.approx([x for x, _ in want])
+    assert [ln.get_ydata()[0] for ln in pts] == pytest.approx([y for _, y in want])
+    single = [ln for ln in pts if to_hex(ln.get_markerfacecolor()) == "#ffffff"]
+    assert len(single) == sum(len(g["accuracy_runs"]) == 1 for g in groups.values()) == 5
+    assert fig.get_figwidth() * 2.54 == pytest.approx(PC.S.PRINT_W) and ax.get_position().width * PC.S.PRINT_W >= 6.1
+    assert ax.get_xlabel() and ax.get_ylabel() and not ax.get_title() and fig.legends
+    assert "CONF-share" in GF.PAPER and GF.MODE_HEADINGS["CONF-share"] == "Linear probe"
     matplotlib.pyplot.close(fig)
 
 
@@ -423,20 +460,28 @@ def test_the_linear_probe_training_size_figures_draw_no_published_full_training(
 def test_the_training_size_figures_draw_no_superseded_fine_tuning(monkeypatch):
     """LEDGER RR-3, FT-8, SP-11 (review of render 5c40d69, B11): below ParT's full top and quark/gluon sets a fine-tuned
     point is drawn only from the one-rule read-out and only where its row has a recorded rate; a row still in its rate
-    search (quark/gluon 1e5 pretrained on 23 Nov) waits for its rerun, and the trees before the one rule are not drawn."""
+    search (quark/gluon 1e5 pretrained on 23 Nov) waits for its rerun. RR-7 (PI 2026-11-23): the trees before the one
+    rule stop the figure instead of leaving only the full sets drawn."""
     M = L.M
     series = {1_000: [1.0], 10_000: [1.0], 100_000: [1.0], 1_600_000: [1.0]}
     rates = {("qg", 10_000, "pre"): "1e-2", ("qg", 100_000, "scratch"): "1e-3"}
     builder = type("B", (), {"row_rate": staticmethod(lambda task, n, kind: rates.get((task, n, kind)))})
     monkeypatch.setattr(M, "_rate_builder", lambda: builder)
+    cell = lambda lr: [{"recipe": {"lr": lr}, "r30": 1.0}]     # noqa: E731
+    cells = {("qg", "l188-s1", 10_000): cell("1e-2"), ("qg", M.SCRATCH, 100_000): cell("1e-3"),
+             ("qg_herwig", M.SCRATCH, 100_000): [{"r30": 1.0}]}
+    monkeypatch.setattr(M, "_budget_cells", lambda path: cells)
+    monkeypatch.setattr(L, "_fixed_cells", L._fixed_cells.__wrapped__)       # the read-out each call, not cached
     monkeypatch.setattr(M, "ft_source", lambda data: M.FIXED_PARTIAL + " (preview)")
-    assert sorted(L._settled(series, "qg", "pre")) == [10_000, 1_600_000]
-    assert sorted(L._settled(series, "qg_herwig", "scratch")) == [100_000, 1_600_000]
-    assert L._settled({10_000: [1.0], 1_000_000: [1.0]}, "jc1", "pre") == {}      # JetClass's 1e6 is a one-rule cell
+    pre, scratch = ("pre", "L188", ["l188-s1"], "r30"), ("scratch", "SCRATCH", [M.SCRATCH], "r30")
+    assert sorted(L._settled(series, "qg", *pre)) == [10_000, 1_600_000]
+    assert sorted(L._settled(series, "qg_herwig", *scratch)) == [100_000, 1_600_000]
+    assert L._settled({10_000: [1.0], 1_000_000: [1.0]}, "jc1", *pre) == {}      # JetClass's 1e6 is a one-rule cell
     monkeypatch.setattr(M, "ft_source", lambda data: M.FIXED)
-    assert sorted(L._settled(series, "qg", "pre")) == [10_000, 1_600_000]
+    assert sorted(L._settled(series, "qg", *pre)) == [10_000, 1_600_000]
     monkeypatch.setattr(M, "ft_source", lambda data: "budget, budget_long, fulldecay, prefull (the trees before the one rule)")
-    assert sorted(L._settled(series, "qg", "pre")) == [1_600_000]
+    with pytest.raises(SystemExit, match="RR-7"):
+        L._settled(series, "qg", *pre)
 
 
 def test_the_per_class_grid_puts_every_panel_on_one_range_and_colours_classes_not_networks(monkeypatch):
@@ -688,8 +733,8 @@ def test_no_figure_has_a_heading_and_no_panel_title_a_colon():
     assert any(f.startswith("text inside the panel") for f in fig_with(inside="0.98"))
 
 
-@pytest.mark.parametrize("pid", ["F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11", "F6", "F10b", "PT", "PT-part", "PT-bbcc",
-                                 "PT-bbcc-part"])
+@pytest.mark.parametrize("pid", ["F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11", "CONF-share", "F6", "F10b", "PT",
+                                 "PT-part", "PT-bbcc", "PT-bbcc-part"])
 def test_the_drawn_figures_follow_the_figure_rules(pid, monkeypatch, tmp_path):
     """The main-text figures, three appendix ones and the jet-pT family (round 2) as the gallery draws them: no heading, no colon in a panel title,
     no text in a panel (figcheck "title", L7); every dotted line black (a reference line, L6); from scratch solid; a mass
@@ -703,6 +748,10 @@ def test_the_drawn_figures_follow_the_figure_rules(pid, monkeypatch, tmp_path):
     try:
         pages[pid].draw(tmp_path / f"{pid}.pdf")
     except L.C.Absent as e:
+        pytest.skip(f"{pid}: {e}")
+    except SystemExit as e:         # RR-7 (PI 2026-11-23): no training-size figure without the one rule's cells
+        if "(RR-7)" not in str(e):
+            raise
         pytest.skip(f"{pid}: {e}")
     assert figs, pid
     allowed = {**{to_hex(L.S.SERIES[k]): ("-", "-.") for k in ("L162_MASS", "R16_Q1_MASS")},
