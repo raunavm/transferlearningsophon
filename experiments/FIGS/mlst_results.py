@@ -5129,7 +5129,8 @@ TESTS = (
     (r"JetClass-II, accuracy, " + HEADING["ft"], tuple((a, b, ("l3", "ft", "jc2", "accuracy", d, False)) for a, b, d in _LEVELS)),
     # M008, M045, M219 (the abstract's 17-class cost), M221, M226, M305
     (r"JetClass, accuracy, " + HEADING["ft"], tuple((a, b, ("l3", "ft", "jc1", "accuracy", d, False)) for a, b, d in _LEVELS + _MASSES)
-     + tuple((a, "R16_Q1", RERUN) for a, _ in _PARTS_ALL)),
+     + tuple((a, "R16_Q1", ("file", f"{L3_FIXED}/ft_jc1_N1000000.json", d.replace("-188", "-r16q1"), "accuracy"))
+             for a, d in _PARTS_ALL)),
     # PI 2026-11-24 (LEDGER TX-7, RN1): the JetClass linear-probe accuracy of the partitions, with the full sigma
     # (stats2, bs3-boot-jc1parts, the stored fits_v5 scores of Table 2's probes)
     (r"JetClass, accuracy, " + HEADING["lp"],
@@ -5141,7 +5142,8 @@ TESTS = (
     *((rf"JetClass-II, accuracy, {HEADING['lp']}, " + _power(f"{n:g}") + " training jets",
        tuple((a, "L188", ("file", f"l3_v5/probe_jc2bal_N{n}.v4.json", d, "accuracy"))
              for a, d in (("R42_Q1", "r42q1-188"), ("R16_Q1", "r16q1-188")))) for n in _SIZES),
-    *((rf"JetClass-II, accuracy, {HEADING['ft']}, " + _power(f"{n:g}") + " training jets", (("R16_Q1", "L188", RERUN),))
+    *((rf"JetClass-II, accuracy, {HEADING['ft']}, " + _power(f"{n:g}") + " training jets",
+       (("R16_Q1", "L188", ("file", f"{L3_FIXED}/ft_jc2bal_N{n}.json", "r16q1-188", "accuracy")),))
       for n in _SIZES[1:]),
     (r"top tagging, $R_{30}$, " + HEADING["lp"], _bench_block("top", "lp")),
     (_FT_TOP, _bench_block("top", "ft", own=True)
@@ -5426,6 +5428,14 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
         bs3_task = "qg_herwig" if "_qg_herwig_" in path else task
         if path.startswith("l3_bs3/mlpf_"):
             return lambda m: _mlp_val(mlp or {}, m, bs3_task, mkey if mkey in ("auc", "accuracy") else "r30")
+        fx = re.fullmatch(rf"{L3_FIXED}/ft_(jc2bal|jc1)_N(\d+)\.json", path)
+        if fx:      # the fine-tuned JetClass-II or JetClass cell of that size, as the size tables print it; a read-out
+            # of the trees before the one rule holds other cells (another rate): no printed value, the row pending
+            key, n = {"jc2bal": "jc2"}.get(fx.group(1), fx.group(1)), int(fx.group(2))
+            get = summary_ft(per, key, n, "accuracy" if mkey == "accuracy" else "macro_auc_ovr")
+            at_rate = lambda m: ((_ft_rec(per, key, m, n) or {}).get("recipe") or {}).get("lr") == expected_rate(  # noqa: E731
+                key, m[len("mtx-"):], n)
+            return (lambda m: get(m) if at_rate(m) else None) if get else None
         if path.startswith("l3_bs3/mlp_jc2bal_pairs_"):     # SC-2c: tab:mlp's pair AUC (fits_v5_mlp), refitted bit for bit
             pair = re.search(r"_pairs_([a-z_]+?)\.json$", path).group(1)
             if path == EE_MLP:      # no tab:mlp column: the text prints the file's own values (eemm_mlp_macros)
@@ -8206,8 +8216,19 @@ PLAIN = re.compile(rf"({_NUM})(?:{re.escape(PM)}({_NUM}))?")
 BOOT_REG: dict = {}
 
 
+# The fine-tuned bootstraps on the one rule's cells at each row's recorded rate (2026-11-24, part A of the reruns done;
+# scripts/build_boot_tests_jobs.py ftfix_spec): bootstrap/l3_fixed/ft_<task>_N<N>.json, one file a task and size with
+# every difference of the task, so the .all copy is the same file. Top and quark/gluon on the full sets keep ParT's
+# recipe and their bootstrap/l3 files.
+L3_FIXED = "l3_fixed"
+
+
 def _l3_doc(data: pathlib.Path, name: str, probe: bool) -> dict:
-    """bootstrap/l3_v5/name for a linear probe once the v5 refits are read, else bootstrap/l3/name; {} if absent."""
+    """bootstrap/l3_v5/name for a linear probe once the v5 refits are read, else bootstrap/l3/name; a fine-tuned
+    document from bootstrap/l3_fixed where the rerun cells have one; {} if absent."""
+    fixed = data / "bootstrap" / L3_FIXED / name.replace(".all.json", ".json")
+    if not probe and fixed.exists():
+        return json.loads(fixed.read_text())
     dirs = (["bootstrap/l3_v5"] if probe and V4.pick(data, "linprobe/fits_v4") != "linprobe/fits_v4" else []) + ["bootstrap/l3"]
     for d in dirs:
         if (data / d / name).exists():

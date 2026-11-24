@@ -4232,14 +4232,20 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
                                json.loads((DATA / M.MASS_SD_BOOT_TESTS).read_text()), rows_out=got, co=co,
                                mlp=M.overlay_bs3_mlp(M.load_mlp(DATA), bs3), bs3=bs3)
     assert reps == {200}
-    stored = [k for k, src in rows.items() if src not in (None, M.RERUN) and (src[0] != "l3" or src[1] == "lp")]
+    # 2026-11-24 (LEDGER SP-11, RR-7; part A of the fixed-schedule reruns done): the rows that waited for the rerun
+    # bootstrap read bootstrap/l3_fixed, the one rule's cells at each row's recorded rate; printed where the build's
+    # read-out is the one rule's, pending where it is not (never a value of the trees before it)
+    fixed = lambda src: src is not None and src[0] == "file" and src[1].startswith(M.L3_FIXED + "/")   # noqa: E731
+    stored = [k for k, src in rows.items() if src not in (None, M.RERUN) and (src[0] != "l3" or src[1] == "lp")
+              and not fixed(src)]
     assert len(stored) > 60 and not [k for k in stored if not isinstance(got[k], tuple)], \
         [k for k in stored if not isinstance(got[k], tuple)]
     for k in stored:
         d, sd_a, sd_b, boot, sig = got[k]
         assert sig == pytest.approx(math.sqrt(sd_a ** 2 + sd_b ** 2 + boot ** 2), rel=1e-9), k
-    assert [k for k, src in rows.items() if src == M.RERUN] and all(got[k] == "stale" for k, src in rows.items()
-                                                                     if src == M.RERUN)
+    assert not [k for k, src in rows.items() if src == M.RERUN] and len([k for k, src in rows.items() if fixed(src)]) == 6
+    one_rule = M.ft_source(DATA).split()[0] in (M.FIXED, M.FIXED_PARTIAL)
+    assert all(isinstance(got[k], tuple) if one_rule else got[k] == "stale" for k, src in rows.items() if fixed(src))
     marked = [ln.split(" & ")[0] for ln in body.splitlines() if M.INDEPENDENT in ln]
     assert marked == [M.TESTS_NAMES[a] + " $-$ " + M.TESTS_NAMES[b] + M.INDEPENDENT
                       for a, b in (("L188_HERWIG_JETS", "L188_PYTHIA_JETS"), ("SCRATCH_HERWIG_JETS", "SCRATCH_PYTHIA_JETS"))]
