@@ -5133,6 +5133,12 @@ TESTS = (
     # M008, M045, M219 (the abstract's 17-class cost), M221, M226, M305
     (r"JetClass, accuracy, " + HEADING["ft"], tuple((a, b, ("l3", "ft", "jc1", "accuracy", d, False)) for a, b, d in _LEVELS + _MASSES)
      + tuple((a, "R16_Q1", RERUN) for a, _ in _PARTS_ALL)),
+    # PI 2026-11-24 (LEDGER TX-7, RN1): the JetClass linear-probe accuracy of the partitions, with the full sigma
+    # (stats2, bs3-boot-jc1parts, the stored fits_v5 scores of Table 2's probes)
+    (r"JetClass, accuracy, " + HEADING["lp"],
+     tuple((a, b, ("file", "l3_bs3/probe_jc1_N1000000.parts.json", d, "accuracy"))
+           for a, b, d in (("FLAV_F0", "L188", "flavf0-188"), (RAND_POOLED, "L188", "rand-188"),
+                           (RAND_POOLED, "R16_Q1", "rand-r16q1")))),
     # Figs. A10 and A8 below a million jets: the probes' label-set rows pass 3 sigma (PI 2026-11-23, LEDGER SP-13 (c));
     # no JetClass-II network is fine-tuned on 10^3 jets
     *((rf"JetClass-II, accuracy, {HEADING['lp']}, " + _power(f"{n:g}") + " training jets",
@@ -5433,6 +5439,8 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
                 own = json.loads((data / "bootstrap" / path).read_text())["models"]
                 return lambda m: 1 - own[m][mkey]["one_minus_auc"]
             return lambda m: _mlp_val(mlp or {}, m, pair, mkey)
+        if path.startswith("l3_bs3/probe_jc1_"):        # RN1: Table 2's JetClass linear probe
+            return summary_probe(fits, fill, chosen, "jc1", "accuracy" if mkey == "accuracy" else "macro_auc_ovr")
         if path.startswith("l3_bs3/mlp_jc2bal_R16_Q1_"):
             return lambda m: _bs3_val(bs3 or {}, "coarse", m, "jc2bal_coarse", "accuracy")
         if path.startswith("l3_bs3/mlp_jc2bal_"):
@@ -5811,6 +5819,8 @@ PW_ROWS = {
     "MlstPwMlpMassCoarse": (("JetClass-II, AUC, " + HEADING["mlp"],), ("R16_Q1_MASS",), "R16_Q1"),
     # the 188-class AUC rounds to one, so a share of its errors means nothing: 3 sigma in AUC ("abs")
     "MlstPwEeCoarse": ((rf"{_PAIR['ee_vs_mm']}, AUC, " + HEADING["lp"],), ("R16_Q1",), "L188", "abs"),
+    # RN1 (PI 2026-11-24, TX-7): on JetClass the random partitions against 17 classes, a null
+    "MlstPwJcOneRandCoarse": (("JetClass, accuracy, " + HEADING["lp"],), (RAND_POOLED,), "R16_Q1"),
     "MlstPwEeCoarseMlp": ((rf"{_PAIR['ee_vs_mm']}, AUC, " + HEADING["mlp"],), ("R16_Q1",), "L188", "abs"),
     "MlstPwPartRepro": ((_FT_TOP + ", published models",), ("PART_OURS",), "PART_PUB"),     # A2 (bs3), a lower bound
     "MlstPwPartRescale": ((_FT_TOP + ", ParT's training script",), ("PART_RESCALE",), "PART_OURS"),   # DL-16c, a floor
@@ -5823,6 +5833,8 @@ MLP_STATED = {("JetClass-II, accuracy on the 17 merged groups, " + HEADING["mlp"
                "L188"): 1,
               # SC-2c (PI 2026-11-24): on X->bc the MLP probe on the 17-class features falls below 188 classes
               (rf"{_PAIR['bc_vs_bq_cs']}, AUC, " + HEADING["mlp"], "R16_Q1", "L188"): -1}
+# RN1 (PI 2026-11-24, TX-7): the JetClass linear-probe rows the text states as differences, both below 188 classes
+RN1_STATED = {("JetClass, accuracy, " + HEADING["lp"], a, "L188"): -1 for a in ("FLAV_F0", RAND_POOLED)}
 MLP_N2 = tuple(rf"{h}, $R_{{30}}$, " + HEADING["mlp"] + ", missing inputs as for the linear probe"
                for h in ("top tagging", "quark/gluon tagging (Pythia)", "quark/gluon tagging (Herwig)"))
 
@@ -5830,10 +5842,11 @@ MLP_N2 = tuple(rf"{h}, $R_{{30}}$, " + HEADING["mlp"] + ", missing inputs as for
 def mlp_claim_check(rows: dict) -> None:
     """FATAL unless the MLP rows the text states read as it says (MLP_STATED: the sign of a pass), and no other N2 row
     (MLP_N2) passes; a row still pending is let through (its sentence waits with it)."""
-    for key, sign in MLP_STATED.items():
+    for key, sign in {**MLP_STATED, **RN1_STATED}.items():
         v = rows.get(key)
         if isinstance(v, tuple) and not (sign * v[0] > 3 * v[4]):
-            raise SystemExit(f"FATAL (DL-9): {key[1]} - {key[2]} under '{key[0]}' no longer passes 3 sigma as the text states")
+            raise SystemExit(f"FATAL (DL-9, RN1): {key[1]} - {key[2]} under '{key[0]}' no longer passes 3 sigma as the "
+                             "text states")
     extra = [k for k, v in rows.items() if k[0] in MLP_N2 and k not in MLP_STATED and isinstance(v, tuple)
              and abs(v[0]) > 3 * v[4]]
     if extra:

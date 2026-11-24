@@ -91,8 +91,10 @@ the \Kcoarse-class model, in errors and in accuracy (table~\ref{tab:tests}).
 % CHECK: MlstCmpJcTwoFzeroOverCoarse > MlstCmpJcTwoF{one,oner}OverCoarse > MlstCmpJcTwoRandOverCoarse
 % (today 0.928/0.935, 0.794/0.775 and 0.786/0.772, 0.724).
 Because the partitions were selected to cut across the \Kcoarse-class groups
-(section~\ref{sec:labelsets}), they show that the class count alone does not set the cost on the
-pretraining classes, not that any grouping into \Kcoarse{} classes would do as well.
+(section~\ref{sec:labelsets}), this does not show that any grouping into \Kcoarse{} classes would do as well, and
+on JetClass the random partitions are not resolved from the \Kcoarse-class model (section~\ref{sec:jetclass}).
+% PI 2026-11-24 (LEDGER TX-7, RN1): "the class count alone does not set the cost" removed: on JetClass no difference at
+% a fixed count is resolved (random partitions - 17 classes, -2.30 sigma), so the two tasks do not both show one
 % PI 2026-11-23 (LEDGER DL-8b, CS-10): the pre-registered test passed; one sentence that the ordering is consistent with it
 Across the \MlstConfShareNWord{} label sets with \Kcoarse{} classes, the ordering in linear-probe accuracy is
 consistent with the share of the \Kfull-class probe's confusions between resonant classes that each keeps apart, in a
@@ -200,4 +202,8 @@ fine-tuning, the \Kcoarse-class model makes
 % PI SP-9: kept, the comparison passes 3 sigma (scratchpad/part0/jc1_class_auc_check.md: 35 of 90 cells below 188, none above)
 With linear probes on the frozen features, the \Kcoarse-class model recalls $H\to b\bar b$ and $H\to c\bar c$
 jets, and several other JetClass classes, less often than the \Kfull-class model, and no class more often, beyond
-three standard deviations (table~\ref{tab:jc1_class_auc}).
+three standard deviations (table~\ref{tab:jc1_class_auc}). In accuracy, linear probes on the frozen features of the
+partition with no flavor boundary and of the random partitions lie below the \Kfull-class model on JetClass. Unlike
+on JetClass-II, where the random partitions make fewer errors than the \Kcoarse-class model, on JetClass their
+accuracy is not resolved from that of the \Kcoarse-class model (smallest resolvable difference
+\MlstPwJcOneRandCoarse{} of its accuracy; tables~\ref{tab:summary} and~\ref{tab:tests}).

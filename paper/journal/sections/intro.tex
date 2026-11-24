@@ -97,9 +97,9 @@ the label sets are those of every later figure.}
 % CHECK: MlstCmpMlpResMassOverRes < 1; MlstCmpJcTwoResMassOverRes within a few per cent of 1 (sculpting is out of the findings: one mass-regression difference passes 3 sigma, PI 2026-11-09)
 We find that coarser pretraining labels make the frozen features worse on the pretraining classes, substantially so at \Kmid{} and \Kcoarse{} classes: counted in wrongly ordered pairs of jets, a linear probe
 makes more errors there at every coarser level of the hierarchy, and the costliest step is the last merge of quark
-flavor, while in accuracy it is the step that removes four kinds of distinction at once. At the same number of classes, the random partitions lose less than
+flavor, while in accuracy it is the step that removes four kinds of distinction at once. On the pretraining classes, at the same number of classes, the random partitions lose less than
 the \Kcoarse-class model, and the partitions with a single flavor boundary make fewer errors than the one without, so which classes are
-merged changes the cost. After fine-tuning, the \Kcoarse-class labels give \pending{table~\ref{tab:summary} after the reruns}
+merged changes the cost there. After fine-tuning, the \Kcoarse-class labels give \pending{table~\ref{tab:summary} after the reruns}
 on JetClass, and on top tagging and quark/gluon discrimination the label sets show no resolved difference
 (smallest resolvable differences \MlstPwRthirtyFtTop{} and \MlstPwRthirtyFtQg{} of the \Kfull-class background
 rejection). The auxiliary mass regression makes the jet mass more precisely predictable from the frozen features,
