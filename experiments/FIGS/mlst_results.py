@@ -7173,14 +7173,14 @@ KEY_MARKS = {
     "probes": (("^{*}", " $^{*}$~marks a probe that did not converge."),),
     # PI 2026-11-23 (LEDGER SP-13, step 2; SC-1a): the rows whose two sides are scored on independent samples
     "tests": ((r"^{\diamond}", " $^{\\diamond}$~marks sides scored on independent test samples, each resampled on its "
-                               "own, the two bootstrap variances adding."),
+                               "own."),
               # review of 5c40d69 (B3): a side of one run (the kinematic-inputs network), and a row over several
               (r"^{\circ}", " $^{\\circ}$~marks a side of one run, whose missing run spread makes $\\sigma$ a lower "
                             "bound."),
               (r"^{\ast}", " $^{\\ast}$~marks the least $|\\Delta|/\\sigma$ of several networks or bins."),
               # SC-2 (#1): the transfer heads, whose per-jet scores were not kept
-              (r"^{\dagger}", " $^{\\dagger}$~marks a test-sample term that is the binomial variance of each network's "
-                               "signal efficiency, the QCD jets' carried through the cut, the two sides added.")),
+              (r"^{\dagger}", " $^{\\dagger}$~marks the analytic test-sample term of section~\\ref{sec:uncertainties} in "
+                               "place of the bootstrap.")),
     "qcdhf": ((r"\dagger", " $^\\dagger$~marks a value for which fewer than \\MlstMinBkgPass{} jets pass in a run."),),
     "jetclass_rej": ((r"\dagger", " $^\\dagger$~marks a value with fewer than \\MlstMinBkgPass{} QCD jets passing in a "
                                   "run."),),
@@ -7235,8 +7235,7 @@ CAPTION_SHORT = {
     "tests": ("Every difference or null the text states, the mean over runs of the first network minus that of the "
               "second, on the metric, task and read-out of the heading above. $\\sigma$ adds in quadrature each "
               "network's standard deviation over its runs and that of $\\Delta$ over __REPLICAS__ bootstrap replicas "
-              "of the test jets, drawn once for both. A step row compares two merging steps, and a pending row waits "
-              "for its bootstrap. Run counts are those of table~\\ref{tab:sets}, the five random partitions forming "
+              "of the test jets, drawn once for both. A step row compares two merging steps. Run counts are those of table~\\ref{tab:sets}, the five random partitions forming "
               "one side."),
     # PI 2026-11-23 (LEDGER CA-15, option a): the rho columns and the linear-probe block, which left tab:mlp, are here
     "mlp_full": ("Every row of table~\\ref{tab:mlp}, with each random partition on its own row, $\\rho$, the ratio of "
