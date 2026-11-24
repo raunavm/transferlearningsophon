@@ -115,7 +115,7 @@ def _boot_name(m, ck):
 
 
 def test_rows_are_the_runs_of_the_linear_probe_rows():
-    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 6 + 12 + 27 + 33
+    assert len(BJ.ROWS) == len(set(BJ.ROWS)) == 13 + 12 + 27 + 33
     paper = {f"mtx-{r}" for a, rs in BJ.ARMS.items() if a not in BJ.INIT for r in rs}
     assert len(paper) == 27 and {m for f, m, ck in BJ.ROWS if f == "bench"} == paper
     assert {(m, ck) for f, m, ck in BJ.ROWS if f == "bench0"} == {(m, "best70") for m in paper} | {
@@ -146,7 +146,7 @@ def test_bootstrap_reads_every_npz_the_fits_write():
     assert BJ.npz("bench0", "init-s2", "qg_N1600000").endswith("/bench0/probs/init-s2/init/qg_N1600000.npz")
     assert BJ.npz("bench", "mtx-l188-s1", "qg_N1600000").endswith("/bench/probs/mtx-l188-s1/best70.nqg/qg_N1600000.npz")
     assert sorted(o for p in BJ.BOOT_PARTS for o in BJ.boot_outs(p)) == sorted(BJ.BOOT_OUT)
-    for part in BJ.BOOT_PARTS:
+    for part in [p for p in BJ.BOOT_PARTS if p != "jc2mass"]:
         text = BJ.boot_spec("mtx-s9.99", "4Gi", part)
         assert f"name: bs3-boot-{part}-raunav" in text
         for out in BJ.boot_outs(part):
@@ -206,3 +206,17 @@ def test_the_17_class_lepton_rows_read_the_stored_sibling_scores():
     assert "fits_v5_sib2_probs/mtx-r16q1-s1/best70/jc2bal_pairs_ee_vs_mm.npz" in text
     assert "fits_v5_sib2_probs/init-s3/init_bn/jc2bal_pairs_ee_vs_mm.npz" in text
     assert "--diff r16q1-188=" in text and "--diff r16q1-initbn=" in text and "experiments/EVAL/mlp_scores.py" not in text
+
+
+def test_the_mass_rows_fit_the_mass_networks_and_bootstrap_every_printed_auc():
+    rows = BJ.fit_rows("jc2bal", True, ("l162mass", "r16q1", "r16q1mass"))
+    assert sorted(m for _f, m, _c in rows) == sorted(["mtx-l162mass-s1", "mtx-l162mass-s2", "mtx-r16q1-s1", "mtx-r16q1-s2",
+                                                      "mtx-r16q1-s3", "mtx-r16q1mass-s1", "mtx-r16q1mass-s2"])
+    text = BJ.fit_spec("mtx-s9.99", "jc2bal", "12Gi", 7, True, ("l162mass", "r16q1", "r16q1mass"), "2")
+    assert "name: bs3-mlp-jc2bal2-raunav" in text and "completions: 7" in text and "mtx-l188-s1" not in text
+    text = BJ.boot_mass_spec("mtx-s9.99", "8Gi")
+    assert "name: bs3-boot-jc2mass-raunav" in text and "completions: 4" in text and "parallelism: 3" in text
+    assert text.count("--cache-only") == 3 and "--headline --native-groups" in text and BJ.MASS_CACHE in text
+    assert "--diff l162mass-l162=mtx-l162mass-s1,mtx-l162mass-s2/mtx-l162-s1,mtx-l162-s2,mtx-l162-s3" in text
+    assert "--diff r16q1mass-r16q1=" in text and f"--out {BJ.MASS_OUT}" in text
+    assert BJ.MASS_CACHE.startswith("/data/results/bootstrap_cache/")

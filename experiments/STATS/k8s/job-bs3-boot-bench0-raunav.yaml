@@ -27,7 +27,7 @@ spec:
         - |
           set -euo pipefail
           retry () { for T in 1 2 3 4 5; do "$@" && return 0; echo "attempt $T failed: $1"; sleep 30; done; return 1; }
-          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.68 https://github.com/raunavm/transferlearningsophon.git tls; }
+          clone () { mkdir -p /workspace && cd /workspace && rm -rf tls && git clone -q --depth 1 --branch mtx-s3.70 https://github.com/raunavm/transferlearningsophon.git tls; }
           retry clone || exit 1
           cd /workspace/tls
           CPU=$(grep -m1 "^model name" /proc/cpuinfo | cut -d: -f2- | sed "s/^ *//;s/ *$//"); [ "${CPU}" = "AMD EPYC 7402P 24-Core Processor" ] || { echo "FATAL: this node's CPU is ${CPU}, not AMD EPYC 7402P 24-Core Processor: nothing fitted"; exit 42; }

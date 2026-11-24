@@ -46,7 +46,9 @@ OUT = "/data/results/eval/bs3_mlp"       # <OUT>/<family>/<model>.json, <OUT>/<f
 BOOT = "/data/results/bootstrap/l3_bs3"
 B = BT.B
 ARMS = R5.BOOTALL_ARMS
-FAMILY_ARMS = {"jc2bal": ("l188", "l162"), "coarse": ("l188", "l162", "r42q1", "r16q1"), "bench": tuple(ARMS),
+# jc2bal: 188 and 162 classes (DL-9, the accuracy null) and the mass networks with their label sets (DL-3b: the MLP
+# AUC rows 162 + mass - 162 and 17 + mass - 17 of tab:tests)
+FAMILY_ARMS = {"jc2bal": ("l188", "l162", "l162mass", "r16q1", "r16q1mass"), "coarse": ("l188", "l162", "r42q1", "r16q1"), "bench": tuple(ARMS),
                "bench0": tuple(ARMS) + ("init", "initbn")}
 INIT = {"init": "init", "initbn": "init_bn"}     # the random networks' checkpoints (init-sK's two)
 
@@ -68,11 +70,16 @@ FILES = {"jc2bal": ("jc2bal_N1000000",), "coarse": ("jc2bal_R16_Q1_N1000000",),
 BENCH_DIFFS = tuple((a, "l188") for a in FAMILY_ARMS["bench"] if a != "l188")
 # every pair of Table 10's rows, 188 classes always the second side (Delta = the other row - 188 classes)
 PAIRS0 = tuple((b, a) if a == "l188" else (a, b) for a, b in itertools.combinations(FAMILY_ARMS["bench0"], 2))
+MASS_OUT = f"{BOOT}/mlp_jc2bal_N1000000.mass.json"
+MASS_CACHE = "/data/results/bootstrap_cache/bs3_mlp_jc2bal_N1000000"     # outside bootstrap/: never pulled
 BOOT_OUT = {f"{BOOT}/mlp_jc2bal_N1000000.json": ("jc2bal", "jc2bal_N1000000", (("l162", "l188"),), "--headline-only"),
             f"{BOOT}/mlp_jc2bal_R16_Q1_N1000000.json": ("coarse", "jc2bal_R16_Q1_N1000000",
                                                         (("l162", "l188"), ("r42q1", "l188"), ("r16q1", "l188")),
                                                         "--headline-only"),
             **{f"{BOOT}/mlp_{n}.json": ("bench", n, BENCH_DIFFS, "--headline") for n in FILES["bench"]},
+            # DL-3b: the mass networks against their label sets, every metric tab:mlp prints (AUC, resonant, QCD)
+            MASS_OUT: ("jc2bal", "jc2bal_N1000000", (("l162mass", "l162"), ("r16q1mass", "r16q1")),
+                       "--headline --native-groups"),
             # CS-5b: every pair of Table 10's rows on its printed zero-fill fits
             **{f"{BOOT}/mlp0_{n}.json": ("bench0", n, PAIRS0, "--headline") for n in FILES["bench0"]}}
 
@@ -117,15 +124,18 @@ def _spec(tag: str, name: str, rows: list[str], parallelism: int, mem: str, cpu:
     return R5.pin_cpu(text, CPU_MODEL)
 
 
-def fit_rows(family: str, skip_smoke: bool) -> list[tuple[str, str]]:
-    """The family's rows; with skip_smoke, without the row a smoke job fits (SMOKES)."""
-    return [r for r in ROWS if r[0] == family and not (skip_smoke and r in SMOKES.values())]
+def fit_rows(family: str, skip_smoke: bool, arms=None) -> list[tuple[str, str]]:
+    """The family's rows (arms: only those arms' runs); with skip_smoke, without the row a smoke job fits (SMOKES)."""
+    keep = {row_of(a, r) for a in arms for r in ARMS[a]} if arms else None
+    return [r for r in ROWS if r[0] == family and not (skip_smoke and r in SMOKES.values())
+            and (keep is None or tuple(r[1:]) in keep)]
 
 
-def fit_spec(tag: str, family: str, mem: str, parallelism: int, skip_smoke: bool) -> str:
-    """bs3-mlp-<family>-raunav: one job a family, so each family's pods are sized to its own measured peak."""
-    rows = [fit_row(*r) for r in fit_rows(family, skip_smoke)]
-    return _spec(tag, f"bs3-mlp-{family}-raunav", rows, parallelism, mem, THREADS,
+def fit_spec(tag: str, family: str, mem: str, parallelism: int, skip_smoke: bool, arms=None, suffix: str = "") -> str:
+    """bs3-mlp-<family><suffix>-raunav: one job a family (or a later set of its arms), so each family's pods are
+    sized to its own measured peak."""
+    rows = [fit_row(*r) for r in fit_rows(family, skip_smoke, arms)]
+    return _spec(tag, f"bs3-mlp-{family}{suffix}-raunav", rows, parallelism, mem, THREADS,
                  f"MLP probes with per-jet scores ({family}) for the main text's linear-probe nulls (PI 2026-11-23, DL-9)")
 
 
@@ -135,11 +145,14 @@ def smoke_spec(tag: str, mem: str, which: str = "jc2bal") -> str:
 
 
 # the bootstrap jobs: JetClass-II (jc2bal and coarse) and bench, each launched once its fits exist
-BOOT_PARTS = {"jc2": ("jc2bal", "coarse"), "bench": ("bench",), "bench0": ("bench0",)}
+BOOT_PARTS = {"jc2": (f"{BOOT}/mlp_jc2bal_N1000000.json", f"{BOOT}/mlp_jc2bal_R16_Q1_N1000000.json"),
+              "bench": tuple(f"{BOOT}/mlp_{n}.json" for n in FILES["bench"]),
+              "bench0": tuple(f"{BOOT}/mlp0_{n}.json" for n in FILES["bench0"]),
+              "jc2mass": (MASS_OUT,)}
 
 
 def boot_outs(part: str) -> dict:
-    return {o: v for o, v in BOOT_OUT.items() if v[0] in BOOT_PARTS[part]}
+    return {o: BOOT_OUT[o] for o in BOOT_PARTS[part]}
 
 
 def boot_inputs(part: str | None = None) -> list[str]:
@@ -157,6 +170,26 @@ def boot_spec(tag: str, mem: str, part: str) -> str:
                                                    f"{flags} {BT.diffs(d)} --b {B} --out {out}"))
     return _spec(tag, f"bs3-boot-{part}-raunav", ["\n  ".join(lines)], 1, mem, "1",
                  f"paired test-jet bootstraps of the MLP probes' differences ({part}; SC-1, B = 200)")
+
+
+def boot_mass_spec(tag: str, mem: str, parts: int = 3) -> str:
+    """bs3-boot-jc2mass-raunav: the macro AUC over 188 classes takes minutes per network and resample set, so indices
+    0..parts-1 fill MASS_CACHE (paired_bootstrap --cache-only, a share of the networks each) and the last index writes
+    MASS_OUT from the cache once every network is in it."""
+    fam, n, d, flags = BOOT_OUT[MASS_OUT]
+    ms = [m for a in dict.fromkeys(x for p in d for x in p) for m in models(a)]
+    inp = {m: npz(fam, m, n) for m in ms}
+    pb = "python3 experiments/STATS/paired_bootstrap.py --task npz"
+    rows = [" && ".join([BT.check_inputs([inp[m] for m in ms[i::parts]]),
+                         BT.peak(f"{pb} " + " ".join(f"--model {m}={inp[m]}" for m in ms[i::parts])
+                                 + f" {flags} --b {B} --cache {MASS_CACHE} --cache-only")]) for i in range(parts)]
+    wait = (f'T0=$(date +%s); while [ $(for m in {" ".join(ms)}; do [ -e {MASS_CACHE}/${{m}}.npz ] || echo x; done | wc -l) -gt 0 ]; '
+            'do [ $(( $(date +%s) - T0 )) -lt 36000 ] || { echo "FATAL: cache incomplete"; exit 42; }; sleep 120; done')
+    rows.append("\n  ".join([f"mkdir -p {BOOT}", wait, f"[ -e {MASS_OUT} ] || " + BT.peak(
+        f"{pb} " + " ".join(f"--model {m}={inp[m]}" for m in ms) + f" {flags} {BT.diffs(d)} --b {B} "
+        f"--cache {MASS_CACHE} --out {MASS_OUT}")]))
+    return _spec(tag, "bs3-boot-jc2mass-raunav", rows, parts, mem, "1",
+                 "DL-3b: paired bootstrap of the MLP AUC, the mass networks against their label sets")
 
 
 # ------------------------------------------------------------------ SC-2 #1: the transfer-head term on per-jet scores
@@ -206,13 +239,17 @@ def main(argv=None) -> int:
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
     ap.add_argument("--parallel", type=int, default=8)
     ap.add_argument("--skip-smoke", action="store_true", help="leave the smoke's row to the smoke job")
+    ap.add_argument("--arms", nargs="+", help="with --what fit: only these arms' runs")
+    ap.add_argument("--suffix", default="", help="with --what fit: a suffix to the job name (a later set of arms)")
     a = ap.parse_args(argv)
     if (a.what == "fit") != (a.family is not None) or (a.what == "boot") != (a.part is not None):
         raise SystemExit("FATAL: --family with --what fit and --part with --what boot, and only then")
     name, text = {"smoke": lambda: (SMOKE_NAME["jc2bal"], smoke_spec(a.tag, a.mem)),
                   "smoke-bench": lambda: (SMOKE_NAME["bench"], smoke_spec(a.tag, a.mem, "bench")),
-                  "fit": lambda: (f"bs3-mlp-{a.family}-raunav", fit_spec(a.tag, a.family, a.mem, a.parallel, a.skip_smoke)),
-                  "boot": lambda: (f"bs3-boot-{a.part}-raunav", boot_spec(a.tag, a.mem, a.part)),
+                  "fit": lambda: (f"bs3-mlp-{a.family}{a.suffix}-raunav",
+                                  fit_spec(a.tag, a.family, a.mem, a.parallel, a.skip_smoke, a.arms, a.suffix)),
+                  "boot": lambda: (f"bs3-boot-{a.part}-raunav", boot_mass_spec(a.tag, a.mem) if a.part == "jc2mass"
+                                   else boot_spec(a.tag, a.mem, a.part)),
                   "analytic": lambda: ("bs3-analytic-raunav", analytic_spec(a.tag, a.mem)),
                   "ee": lambda: ("bs3-boot-ee-raunav", ee_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
