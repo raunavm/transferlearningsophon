@@ -241,3 +241,16 @@ def test_the_kinematic_row_fits_top_alone_and_pairs_with_188_draws(tmp_path):
     assert "/bench/probs/mtx-l188-s2/best70.itop4/top_N1200000.npz" in text
     assert "/kin/probs/mtx-l188kin-s1/best70/top_N1200000.npz" in text
     assert "--diff 188draws-kin=mtx-l188-s1,mtx-l188-s2,mtx-l188-s3/mtx-l188kin-s1" in text
+
+
+def test_cs15b_pairs_each_networks_cell_with_its_probe():
+    ins = BJ.cs15b_inputs()
+    assert sorted(ins) == sorted(BJ.CS15B_ARMS) and len(BJ.CS15B_ARMS) == 10
+    for a, v in ins.items():
+        ft, lp = [p for n, p in v if n.startswith("ft-")], [p for n, p in v if n.startswith("lp-")]
+        assert len(ft) == len(lp) == len(BJ.ARMS[a])
+        assert all("/leg_jc2b/" in p and p.endswith(("/s1", "/s2", "/s3")) or "/N1000000/" in p for p in ft)
+        assert all(p.endswith("/best70/jc2bal_N1000000.npz") for p in lp)
+    text = BJ.cs15b_spec("mtx-s9.99", "8Gi")
+    assert "--task jc2b " in text and "--headline-only" in text and "--diff ft-lp-l188=ft-mtx-l188-s1," in text
+    assert "name: bs3-boot-cs15b-raunav" in text

@@ -219,6 +219,42 @@ def boot_kin_spec(tag: str, mem: str) -> str:
     return _spec(tag, "bs3-boot-kin-raunav", [body], 1, mem, "1",
                  "fourth review B5: the MLP, 188 classes with random draws against the kinematic-inputs network (top R30)")
 
+# ------------------------------------------------------------------ CS-15b: fine-tuned against linear probe (after the reruns)
+CS15B_OUT = f"{BOOT}/ft_lp_jc2bal_N1000000.json"
+CS15B_ARMS = tuple(a for a in ARMS if a not in INIT and a != "kin")
+
+
+def cs15b_inputs() -> dict[str, tuple[str, str]]:
+    """{arm: [(ft name, cell), (lp name, npz)]}: each pretrained network's JetClass-II 10^6 fine-tuning cell at its row's
+    recorded rate (build_ft_budget_jobs.paper_fixed_cells, read only) and its linear probe on the same 903,922 test jets
+    (fits_v5_probs); a network without its cell is an error here, not a silent gap."""
+    fb = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
+    cells = {c["init"]: c["out"] for c in fb.paper_fixed_cells() if c["task"] == "jc2b" and c["n"] == 1_000_000 and c["init"]}
+    out = {}
+    for a in CS15B_ARMS:
+        for m in models(a):
+            run = m.removeprefix("mtx-")
+            if run not in cells:
+                raise SystemExit(f"FATAL: no JetClass-II 10^6 fine-tuning cell for {run}")
+            out.setdefault(a, []).extend([(f"ft-{m}", cells[run]),
+                                          (f"lp-{m}", f"{R5.V5['fits_v5_probs']}/{m}/best70/jc2bal_N1000000.npz")])
+    return out
+
+
+def cs15b_spec(tag: str, mem: str) -> str:
+    """bs3-boot-cs15b-raunav (not launched before the 10^6 reruns land): accuracy, fine-tuned minus linear probe, per
+    arm, the same networks and test jets, SC-1 (paired_bootstrap --task jc2b reads the cells, the .npz as probes)."""
+    ins = cs15b_inputs()
+    ms = [x for v in ins.values() for x in v]
+    diffs = " ".join(f"--diff ft-lp-{a}={','.join(n for n, _ in v if n.startswith('ft-'))}/"
+                     f"{','.join(n for n, _ in v if n.startswith('lp-'))}" for a, v in ins.items())
+    done = [f"{p}/DONE" for n, p in ms if n.startswith("ft-")] + [p for n, p in ms if n.startswith("lp-")]
+    cmd = ("python3 experiments/STATS/paired_bootstrap.py --task jc2b " + " ".join(f"--model {n}={p}" for n, p in ms)
+           + f" --headline-only {diffs} --b {B} --out {CS15B_OUT}")
+    body = "\n  ".join([BT.check_inputs(done), f"mkdir -p {BOOT}", f"[ -e {CS15B_OUT} ] || " + BT.peak(cmd)])
+    return _spec(tag, "bs3-boot-cs15b-raunav", [body], 1, mem, "1",
+                 "CS-15b: JetClass-II 10^6 accuracy, fine-tuned against linear probe, per arm (SC-1)")
+
 # ------------------------------------------------------------------ SC-2 #1: the transfer-head term on per-jet scores
 ANALYTIC_OUT = {f"{BOOT}/analytic_jc2bal_pairs_bc_vs_bq_cs.json":
                 lambda m: f"{R5.V5['fits_v5_probs']}/{m}/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
@@ -261,7 +297,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic", "ee",
-                                                      "mass-helper", "boot-kin"))
+                                                      "mass-helper", "boot-kin", "cs15b"))
     ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
     ap.add_argument("--part", choices=tuple(BOOT_PARTS), help="with --what boot")
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
@@ -281,7 +317,8 @@ def main(argv=None) -> int:
                   "analytic": lambda: ("bs3-analytic-raunav", analytic_spec(a.tag, a.mem)),
                   "ee": lambda: ("bs3-boot-ee-raunav", ee_spec(a.tag, a.mem)),
                   "mass-helper": lambda: ("bs3-boot-jc2mass-helper-raunav", boot_mass_helper_spec(a.tag, a.mem)),
-                  "boot-kin": lambda: ("bs3-boot-kin-raunav", boot_kin_spec(a.tag, a.mem))}[a.what]()
+                  "boot-kin": lambda: ("bs3-boot-kin-raunav", boot_kin_spec(a.tag, a.mem)),
+                  "cs15b": lambda: ("bs3-boot-cs15b-raunav", cs15b_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)
     print(f"wrote {p.relative_to(ROOT)}")
