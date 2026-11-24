@@ -5530,9 +5530,9 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
         """A2 (bs3, 2026-11-23; SC-2: a substitute term may confirm a null): ParT's script on our cluster, one run,
         against ParT's published from-scratch R30, the published SD over its trainings and our run's counting term
         (R30 over the root of its passing background jets) added; our side has no run spread (a lower bound)."""
-        ours = _load(data / "partrepro" / "part.json")
-        pub = next((r for r in _load(LIT_BENCH).get("top", []) if r.get("method") == "ParT" and r.get("kind") == "scratch"),
-                   None)
+        ours = _load(data / "partrepro").get("part")
+        lit = json.loads(LIT_BENCH.read_text()) if LIT_BENCH.exists() else {}
+        pub = next((r for r in lit.get("top", []) if r.get("method") == "ParT" and r.get("kind") == "scratch"), None)
         if not ours or not pub or not pub.get("r30"):
             return None
         mean, sd = (float(x.replace(",", "")) for x in pub["r30"].split("±"))
@@ -5662,7 +5662,8 @@ PW_ROWS = {
                             "L188_17"),
     "MlstPwMlpMassRes": (("JetClass-II, AUC, " + HEADING["mlp"],), ("L162_MASS",), "L162"),
     "MlstPwMlpMassCoarse": (("JetClass-II, AUC, " + HEADING["mlp"],), ("R16_Q1_MASS",), "R16_Q1"),
-    "MlstPwEeCoarse": ((rf"{_PAIR['ee_vs_mm']}, AUC, " + HEADING["lp"],), ("R16_Q1",), "L188"),
+    # the 188-class AUC rounds to one, so a share of its errors means nothing: 3 sigma in AUC ("abs")
+    "MlstPwEeCoarse": ((rf"{_PAIR['ee_vs_mm']}, AUC, " + HEADING["lp"],), ("R16_Q1",), "L188", "abs"),
     "MlstPwPartRepro": ((_FT_TOP + ", published models",), ("PART_OURS",), "PART_PUB"),     # A2 (bs3), a lower bound
 }
 # LEDGER DL-9 (bs3): the MLP results the text states beside the linear-probe nulls, checked where tab:tests is read: on
@@ -5691,7 +5692,7 @@ def mlp_claim_check(rows: dict) -> None:
 def pw_macros(em, rows: dict, sides: dict, src) -> None:
     """PW_ROWS' macros, from table_tests' rows_out and sides_out: 3 sigma over the reference side's mean (over 1 - mean
     for an AUC row), in per cent at two significant figures, a range over several rows; pending while a row waits."""
-    for name, (heads, firsts, second) in PW_ROWS.items():
+    for name, (heads, firsts, second, *opt) in PW_ROWS.items():
         shares, wait = [], False
         for (h, a, b), v in rows.items():
             if h not in heads or b != second or a not in firsts:
@@ -5704,13 +5705,15 @@ def pw_macros(em, rows: dict, sides: dict, src) -> None:
                                  "that states a null there is wrong")
             ref = float(np.mean(sides[(h, a, b)][1]))
             ref = 1 - ref if "AUC" in h else ref
-            shares.append(100 * 3 * v[4] / ref)
+            shares.append(3 * v[4] if "abs" in opt else 100 * 3 * v[4] / ref)
         if wait or not shares:
             em.macro(name, r"\pending{bootstrap}", src, "PW-1: a row waits for its bootstrap")
             continue
         lo, hi = min(shares), max(shares)
-        body = f"{_sig2(lo)}\\%" if _sig2(lo) == _sig2(hi) else f"{_sig2(lo)}--{_sig2(hi)}\\%"
-        em.macro(name, body, src, f"PW-1: 3 sigma over the reference value, {len(shares)} tab:tests rows, per cent")
+        pct = "" if "abs" in opt else "\\%"
+        body = f"{_sig2(lo)}{pct}" if _sig2(lo) == _sig2(hi) else f"{_sig2(lo)}--{_sig2(hi)}{pct}"
+        em.macro(name, body, src, f"PW-1: 3 sigma over the reference value, {len(shares)} tab:tests rows, per cent"
+                 if pct else "PW-1: 3 sigma of the tab:tests row, in the metric's units (the reference rounds to one)")
 
 
 def sculpt_pw_macro(em, sculpt: dict, sculpt_doc, runs: dict, src) -> None:
