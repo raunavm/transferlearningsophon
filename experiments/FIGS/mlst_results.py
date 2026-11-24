@@ -5435,12 +5435,11 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
             return lambda m: _mlp_val(mlp or {}, m, bs3_task, mkey if mkey in ("auc", "accuracy") else "r30")
         fx = re.fullmatch(rf"{L3_FIXED}/ft_(jc2bal|jc1)_N(\d+)\.json", path)
         if fx:      # the fine-tuned JetClass-II or JetClass cell of that size, as the size tables print it; a read-out
-            # of the trees before the one rule holds other cells (another rate): no printed value, the row pending
-            key, n = {"jc2bal": "jc2"}.get(fx.group(1), fx.group(1)), int(fx.group(2))
-            get = summary_ft(per, key, n, "accuracy" if mkey == "accuracy" else "macro_auc_ovr")
-            at_rate = lambda m: ((_ft_rec(per, key, m, n) or {}).get("recipe") or {}).get("lr") == expected_rate(  # noqa: E731
-                key, m[len("mtx-"):], n)
-            return (lambda m: get(m) if at_rate(m) else None) if get else None
+            # of the trees before the one rule holds other cells: no printed value, the row pending
+            if ft_source(data).split()[0] not in (FIXED, FIXED_PARTIAL):
+                return None
+            return summary_ft(per, {"jc2bal": "jc2"}.get(fx.group(1), fx.group(1)), int(fx.group(2)),
+                              "accuracy" if mkey == "accuracy" else "macro_auc_ovr")
         if path.startswith("l3_bs3/mlp_jc2bal_pairs_"):     # SC-2c: tab:mlp's pair AUC (fits_v5_mlp), refitted bit for bit
             pair = re.search(r"_pairs_([a-z_]+?)\.json$", path).group(1)
             if path == EE_MLP:      # no tab:mlp column: the text prints the file's own values (eemm_mlp_macros)
