@@ -4350,8 +4350,8 @@ def table_inputs(root: pathlib.Path, offsets: dict | None) -> str:
 SETS_TABLE = (("L188", r"\Kfull", "none (Sophon's classes)"), ("L162", r"\Kres", "QCD quark content"),
               ("L162_MASS", r"\Kres", r"as \Kres, with a mass output"),
               # review of render 5f4e1b8 (B12): what each merges in words, not "b/c counts, g/q, e/mu" and "one b split"
-              ("R42_Q1", r"\Kmid", r"numbers of $b$ and $c$ quarks, $s$ against $u$ or $d$ quark, gluon against quark, "
-                                    r"electron against muon"),
+              ("R42_Q1", r"\Kmid", r"numbers of $b$ and $c$ quarks, $s$ against $u$ or $d$ quark, "
+                                    r"gluon against $u$, $d$ or $s$ quark, electron against muon"),
               # fifth review (A1): the 43-class step merges s with u and d quarks too (rung_label_maps.v1.csv, group 2
               # gg, qq, sq, ss), and the 17-class step removes only whether a b or c quark is present
               ("R16_Q1", r"\Kcoarse", r"as \Kmid, and whether a $b$ or $c$ quark is present"),
