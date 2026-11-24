@@ -5002,6 +5002,12 @@ _FT_TOP, _FT_QG = (r"top tagging, $R_{30}$, " + HEADING["ft"], r"quark/gluon tag
 # check the main text relies on (the ParT reproduction, the fill choice, the coarse-task null) or (c) it is a 3-sigma-
 # passing result about label granularity, or one waiting for its bootstrap that stays if it passes; the others left
 # (their values stay in the data release)
+# SC-2 (#1; bs3, 2026-11-23; the PI is asked to confirm the term): the transfer-head rows use an analytic test-sample
+# term, as their heads' per-jet scores were not kept; XBX_ANALYTIC = False puts them back to pending (no term)
+XBX_ANALYTIC = True
+XBX_EPS_B = 0.01
+ANALYTIC_MARK = r"$^{\dagger}$"
+LIT_BENCH = pathlib.Path(__file__).resolve().parent / "data" / "literature_benchmarks.json"
 # R5-17 (bs3): the 17-class level, which also merges electron and muon, beside the 43-class one
 _EE_17 = (("R16_Q1", "L188", ("file", "l3_bs3/probe_jc2bal_pairs_ee_vs_mm.r16q1.json", "r16q1-188", "auc")),)
 _XBX_SRC = lambda sig: ("xbx_analytic", sig) if XBX_ANALYTIC else None       # noqa: E731  SC-2 (#1), easy to revert
@@ -5271,12 +5277,6 @@ TESTS_GLUE_ROWS = 9         # a tab:tests block of at most this many lines (head
 INDEPENDENT = r"$^{\diamond}$"     # no other table carries it (SINGLE is the section sign)
 # a row with a side of one run, whose sigma lacks that side's run spread (a lower bound; review of 5c40d69, B3)
 SINGLE_SIDE = r"$^{\circ}$"
-# SC-2 (#1; bs3, 2026-11-23; the PI is asked to confirm the term): the transfer-head rows use an analytic test-sample
-# term, as their heads' per-jet scores were not kept; XBX_ANALYTIC = False puts them back to pending (no term)
-XBX_ANALYTIC = True
-XBX_EPS_B = 0.01
-ANALYTIC_MARK = r"$^{\dagger}$"
-LIT_BENCH = pathlib.Path(__file__).resolve().parent / "data" / "literature_benchmarks.json"
 # a row over several networks or bins, the one of least |Delta / sigma| (review of 5c40d69, B3)
 LEAST = r"$^{\ast}$"
 TESTS_HEAD = r" & $\Delta$ & $\sigma$ & $\Delta/\sigma$ \\"
