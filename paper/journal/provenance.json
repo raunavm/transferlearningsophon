@@ -5063,12 +5063,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.998\\,\\ensuremath{\\pm}\\,0.007"
   },
-  "MlstCmpBcResOverFullPr": {
-    "json_path": "binary probe bc_vs_bq_cs: (1 - AUC) of L162 over L188, run by run",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "no difference beyond three standard deviations"
-  },
   "MlstCmpEemmCoarseOverFull": {
     "json_path": "binary probe ee_vs_mm: (1 - AUC) of R16_Q1 over L188, run by run",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -5519,12 +5513,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.022 and 1.016"
   },
-  "MlstCmpJcTwoResMassOverResPrMax": {
-    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of L162_MASS over L162, run by run",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "no difference beyond three standard deviations"
-  },
   "MlstCmpJcTwoResMidOverFull": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of R42_Q1 over L188, run by run",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -5578,12 +5566,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.003\\,\\ensuremath{\\pm}\\,0.005"
-  },
-  "MlstCmpJcTwoResResOverFullPr": {
-    "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_resonant) of L162 over L188, run by run",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "no difference beyond three standard deviations"
   },
   "MlstCmpJcTwoTrainedCoarseMassOverCoarse": {
     "json_path": "linear probe jc2_188 N=1000000: (1 - macro_auc_trained) of R16_Q1_MASS over R16_Q1, run by run",
@@ -7072,12 +7054,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.06\\,\\ensuremath{\\pm}\\,0.11"
-  },
-  "MlstFtQgRthirtyCoarseOverFullPr": {
-    "json_path": "fine-tuning qg N=1600000: R30 of R16_Q1 over L188, run by run",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "no difference beyond three standard deviations"
   },
   "MlstFtQgRthirtyCoarseOverScratch": {
     "json_path": "fine-tuning qg N=1600000: R30 of each R16_Q1 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
@@ -8657,12 +8633,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.04\\,\\ensuremath{\\pm}\\,0.05"
   },
-  "MlstLpTopRthirtyFullOverInitBnZeroPr": {
-    "json_path": "linear probe top, largest set, zero: R30 of L188 over the BatchNorm-recomputed random network of the same index",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "no difference beyond three standard deviations"
-  },
   "MlstLpTopRthirtyFullZero": {
     "json_path": "linear probe top, largest set: R30 with zero, L188",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -10159,7 +10129,7 @@
   },
   "MlstPairsNWord": {
     "json_path": "PAIRS_TABLE (count)",
-    "sha256": "0597d6d6dceec084798c1c34ff5a96f644d88c94aa8684797d3f3e4e3e9fa512",
+    "sha256": "4120d482bf4b438e0d44ee23941e7ac0a0d47d5f78a01478a4171ead8bdee28f",
     "source_file": "experiments/FIGS/mlst_results.py",
     "value": "six"
   },
