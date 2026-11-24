@@ -145,6 +145,8 @@ NUMBER_WORD = re.compile(
 # with the reason it cannot change. Matched as PHRASES and removed before the
 # scan, so the allowance never extends to the bare word.
 ALLOWED_WORDS = [
+    (r"\bhundreds\s+of\s+fine\s+classes\b",
+     "the PI's abstract (2026-11-24, LEDGER RW-9): the order of magnitude of published label sets, not a result"),
     (r"\bfactors\s+of\s+about\s+three\b",
      "the PI's methods sentence (2026-11-21): the spacing of the learning-rate grid, a description of the search"),
     (r"\b(?:one|two|three|four)-(?=[^.;]{0,40}?prong)",
@@ -187,13 +189,16 @@ RATIO_OF_MEANS = re.compile(r"\\(\w*OmaRatio\w*|Rand(?:Sem)?CostFactor\w*|VcbFac
 # Drawings: their digits are TikZ coordinates and lengths, not numbers about data; every count
 # they print is a generated macro.
 DRAWINGS = {"fig_design.tex", "fig_f1.tex"}   # TikZ coordinates are not results
+# The checkpoint's outline page (PI 2026-11-24, LEDGER RW-10): a plan whose digits are section numbers, paragraph
+# numbers and word budgets; its results are macros like every other file's
+PLANS = {"v2/outline.tex"}
 
 
 def manuscript_files() -> list[pathlib.Path]:
     if not JOURNAL.is_dir():
         return []
     return sorted(p for p in JOURNAL.rglob("*.tex")
-                  if p.relative_to(JOURNAL).as_posix() not in GENERATED | DRAWINGS
+                  if p.relative_to(JOURNAL).as_posix() not in GENERATED | DRAWINGS | PLANS
                   and not p.relative_to(JOURNAL).as_posix().startswith(NOT_COMPILED))
 
 
@@ -308,7 +313,7 @@ def test_the_archived_draft_is_not_scanned_and_everything_else_is():
     assert not any(r.startswith("archive/") for r in rels)
     assert not rels & GENERATED
     on_disk = {p.relative_to(JOURNAL).as_posix() for p in JOURNAL.rglob("*.tex")} if JOURNAL.is_dir() else set()
-    assert rels == {r for r in on_disk if r not in GENERATED | DRAWINGS and not r.startswith(NOT_COMPILED)}
+    assert rels == {r for r in on_disk if r not in GENERATED | DRAWINGS | PLANS and not r.startswith(NOT_COMPILED)}
 
 
 def test_every_table_the_generator_writes_is_listed_as_generated():
