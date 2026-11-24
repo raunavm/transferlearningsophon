@@ -76,16 +76,16 @@ CAPTIONS = {
     # (LEDGER CA-1, counted as printed): the paper's drops "label sets above and 17-class partitions below", which
     # the figure's row names say, and so does this one; review of render 5f4e1b8: the partition counts per pair in words
     "F4-mech": (
-        'Linear probes on 17 classes, which merge each pair, separate X→bb̄ from cc̄ and X→bc from bq, cs, the '
+        'Linear probes on 17 classes, which merge the pairs, separate X→bb̄ from cc̄ and X→bc from bq, cs, the '
         'second-named the background, worse than 188 classes, and the b-quark-boundary partition recovers part of both losses '
         '(table {tab:tests}). Panels show one over the background fraction kept against the signal fraction, with '
         'ratios to 188 classes. Curves average {m:MlstNRunsWord} runs per label set and {m:MlstMassNRunsWord} per mass '
-        'network and flavor-boundary partition. The {m:RandVtwoRuns}-run random partitions that merge the pair, '
+        'network and flavor-boundary partition. The {m:RandVtwoRuns}-run random partitions merging the pair, '
         '{m:MlstPairRandMergedBbWord} (X→bb̄) or {m:MlstPairRandMergedBcWord} (X→bc), and the '
-        '{m:MlstPairRandApartMechWord} that keep it apart are averaged separately; the {m:MlstPairRandPartlyBcWord} '
-        'merging X→bc with bq alone is left out. Curves end where under {m:MlstMinBkgPass} background jets pass; the '
-        '188-class band, one standard deviation, combines run spread and binomial uncertainty. The random network, not '
-        'drawn, reaches {m:MlstPairInitRhalfMechMin}–{m:MlstPairInitRhalfMechMax} at 50% of signal jets.'
+        '{m:MlstPairRandApartMechWord} keeping it apart are averaged separately; the {m:MlstPairRandPartlyBcWord} '
+        'merging X→bc with bq alone is omitted. Curves end below {m:MlstMinBkgPass} passing background jets; the bands '
+        'of 188 classes and flavor-boundary partitions, one standard deviation, combine run spread and binomial '
+        'uncertainty. The random network, not drawn, reaches {m:MlstPairInitRhalfMechMin}–{m:MlstPairInitRhalfMechMax} at 50% of signal jets.'
     ),
     "ROC-main": (
         'Background rejection against signal efficiency with linear probes on frozen features, the mean over runs. '
