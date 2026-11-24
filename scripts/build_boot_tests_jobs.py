@@ -413,6 +413,76 @@ def smoke_spec(tag: str, mem: str) -> str:
                  "tab:tests' bootstraps, smoke: inputs, one row, one JetClass-II network's time and memory")
 
 
+# ------------------------------------------------------------------ the fine-tuned rows after the reruns (2026-11-24)
+# Part A of the fixed-schedule reruns is done: the paired test-jet bootstrap of every fine-tuned difference on the one
+# rule's cells at each row's recorded rate (build_ft_budget_jobs.paper_fixed_cells), one new file a task and size in
+# BL.OUT_RERUN, every difference of the task in it under both names the readers use (BL.DIFFS, R5.BOOTALL_DIFFS).
+# The partitions' cells below 1e6 are part B (results book only), so those files hold the label sets, the mass
+# networks and from scratch. Top and quark/gluon on the full sets keep ParT's recipe: their files stay in L3.
+L3_RERUN = BL.OUT_RERUN
+FTFIX_SETS = ("l188", "l162", "r42q1", "r16q1", "l162mass", "r16q1mass")
+FTFIX_PARTS = ("flavf0", "flavf1", "flavf1r", "rand")
+# (paired_bootstrap's task, the builder's task, the file's name, size, with the partitions)
+FTFIX_FILES = (("jc2b", "jc2b", "jc2bal", 1_000_000, True), ("jc1_all", "jc1", "jc1", 1_000_000, True),
+               ("jc1_all", "jc1", "jc1", 100_000, False), ("jc2b", "jc2b", "jc2bal", 100_000, False),
+               ("jc2b", "jc2b", "jc2bal", 10_000, False))
+FTFIX_BENCH = tuple((t, "top" if t == "top" else "qg", t, n, False) for n in SIZES for t in ("top", "qg", "qg_herwig"))
+FTFIX_SMOKE = ("mtx-l188-s1", "mtx-l188-s2")
+
+
+def ftfix_out(name: str, n: int) -> str:
+    return f"{L3_RERUN}/ft_{name}_N{n}.json"
+
+
+def ftfix_cells(task: str, n: int, parts: bool) -> dict[str, str]:
+    """{model: cell} of a task and size at its row's recorded rate: the label sets and mass networks, the partitions
+    with parts, and the three from-scratch trainings; a network without its cell is an error, not a gap."""
+    fb = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
+    cells = {(c["init"], c["s"]): c["out"] for c in fb.paper_fixed_cells() if c["task"] == task and c["n"] == n}
+    want = [(m, (m.removeprefix("mtx-"), 1)) for a in FTFIX_SETS + (FTFIX_PARTS if parts else ()) for m in models(a)]
+    want += [(m, ("", int(m.rsplit("-s", 1)[1]))) for m in SCRATCH]
+    if any(k not in cells for _, k in want):
+        raise SystemExit(f"FATAL: no {task} cell at {n} for {[m for m, k in want if k not in cells]}")
+    return {m: cells[k] for m, k in want}
+
+
+def ftfix_diffs(parts: bool) -> str:
+    side = lambda a: ",".join(SCRATCH if a == "scratch" else models(a))  # noqa: E731
+    arms = FTFIX_SETS + (FTFIX_PARTS if parts else ())
+    named = {**BL.DIFFS, **{k: v for k, v in R5.BOOTALL_DIFFS.items() if v[0] in arms},
+             "r42q1-l162": ("r42q1", "l162"), "r16q1-r42q1": ("r16q1", "r42q1"), "188-scratch": ("l188", "scratch"),
+             **({dname(a, "r16q1"): (a, "r16q1") for a in FTFIX_PARTS} if parts else {})}
+    return " ".join(f"--diff {k}={side(a)}/{side(b)}" for k, (a, b) in named.items())
+
+
+def ftfix_row(files) -> str:
+    lines, done = [], []
+    for pb_task, task, name, n, parts in files:
+        cells = ftfix_cells(task, n, parts)
+        done += [f"{c}/DONE" for c in cells.values()]
+        cmd = pb(ftfix_out(name, n), [f"--model {m}={c}" for m, c in cells.items()], "--headline " + ftfix_diffs(parts), pb_task)
+        lines.append(" || ".join((lambda a, b: (a, peak(b)))(*cmd.split(" || ", 1))))
+    return "\n  ".join([check_inputs(done), f"mkdir -p {L3_RERUN}"] + lines)
+
+
+def ftfix_spec(tag: str, mem: str, smoke: bool = False) -> str:
+    """boot-ftfix-raunav: one pod a JetClass-II or JetClass file and one for the nine top and quark/gluon files below
+    the full sets; its smoke (boot-ftfix-smoke-raunav): two networks of each 1e6 file into SMOKE, for peak and seconds."""
+    if smoke:
+        rows = []
+        for pb_task, task, name, n, _ in FTFIX_FILES[:2]:
+            cells = {m: c for m, c in ftfix_cells(task, n, False).items() if m in FTFIX_SMOKE}
+            out = f"{SMOKE}/ftfix_{name}_N{n}.json"
+            cmd = pb(out, [f"--model {m}={c}" for m, c in cells.items()], "--headline", pb_task).split(" || ", 1)[1]
+            rows.append("\n  ".join([check_inputs(f"{c}/DONE" for c in cells.values()), f"mkdir -p {SMOKE}",
+                                     f"[ -e {out} ] || " + peak(cmd)]))
+        return _spec(tag, "boot-ftfix-smoke-raunav", rows, 2, mem,
+                     "fine-tuned rows after the reruns, smoke: two networks of each 1e6 file, peak memory and seconds")
+    rows = [ftfix_row([f]) for f in FTFIX_FILES] + [ftfix_row(FTFIX_BENCH)]
+    return _spec(tag, "boot-ftfix-raunav", rows, len(rows), mem,
+                 "paired test-jet bootstraps of the fine-tuned rows on the fixed-schedule rerun cells (2026-11-24)")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--tag", required=True, help="the pushed tag the pods clone")
@@ -422,6 +492,7 @@ def main(argv=None) -> int:
     ap.add_argument("--node", help="one node of CPU_MODEL's (R5.CPU_NODES) instead of all of them")
     ap.add_argument("--review", choices=("smoke", "a", "b"), help="the review rows: the smoke, or job a or b")
     ap.add_argument("--review2", choices=("smoke", "job"), help="the second review's rows from the cache")
+    ap.add_argument("--ftfix", choices=("smoke", "job"), help="the fine-tuned rows on the fixed-schedule rerun cells")
     ap.add_argument("--mem", default="16Gi", help="memory request and limit of every pod")
     a = ap.parse_args(argv)
     if not re.fullmatch(r"mtx-s\d+\.\d+", a.tag):
@@ -430,6 +501,8 @@ def main(argv=None) -> int:
               | {k[12]: (k, v) for k, v in review_specs(a.tag, a.mem).items()}) if a.review else {}
     name, text = (("boot-review2-smoke-raunav" if a.review2 == "smoke" else "boot-review2-raunav",
                    review2_spec(a.tag, a.mem, a.review2 == "smoke")) if a.review2
+                  else ("boot-ftfix-smoke-raunav" if a.ftfix == "smoke" else "boot-ftfix-raunav",
+                        ftfix_spec(a.tag, a.mem, a.ftfix == "smoke")) if a.ftfix
                   else review[a.review] if a.review
                   else ("boot-tests-smoke-raunav", smoke_spec(a.tag, a.mem)) if a.smoke
                   else ("boot-tests-herwig-raunav", herwig_spec(a.tag, a.mem)) if a.herwig

@@ -208,3 +208,28 @@ def test_the_second_review_spec_reads_the_cache_only():
     assert f"--cache {b.CACHE} " in text and "--cache-only" not in text and f"[ -e {b.REVIEW2_OUT} ] ||" in text
     assert "--step step-r42q1-l162-188=" in text and "--step step-r16q1-r42q1-l162-188=" in text
     assert "--diff flavf1-r16q1=" in text and "--diff flavf1r-r16q1=" in text and text.count("--model ") == 16
+
+
+def test_the_rerun_rows_read_each_cell_at_its_rows_recorded_rate():
+    """2026-11-24, part A of the fixed-schedule reruns: the fine-tuned bootstraps read build_ft_budget_jobs.
+    paper_fixed_cells, the partitions only at 1e6, into new files of bootstrap/l3_rerun."""
+    b = _load("build_boot_tests_jobs_t", "scripts/build_boot_tests_jobs.py")
+    fb = _load("build_ft_budget_jobs_t", "scripts/build_ft_budget_jobs.py")
+    paper = {c["out"] for c in fb.paper_fixed_cells()}
+    for _pb, task, _name, n, parts in b.FTFIX_FILES + b.FTFIX_BENCH:
+        cells = b.ftfix_cells(task, n, parts)
+        assert set(cells.values()) <= paper and len(cells) == (30 if parts else 19)
+        assert all(f"/N{n}/s" in c for c in cells.values())
+        assert any(m.startswith("mtx-rand2p") for m in cells) == parts
+    assert all("/fixed_rate/" in c for c in b.ftfix_cells("jc1", 100_000, False).values())
+    d = b.ftfix_diffs(True).split(" --diff ")
+    assert len(d) == len({x.split("=")[0] for x in d}) and {"--diff 162-188", "17mass-17", "rand-188", "rand-r16q1",
+                                                             "l162mass-188", "188-scratch"} <= {x.split("=")[0] for x in d}
+    assert "rand" not in b.ftfix_diffs(False) and "flav" not in b.ftfix_diffs(False)
+    text, smoke = b.ftfix_spec("mtx-s9.99", "8Gi"), b.ftfix_spec("mtx-s9.99", "8Gi", smoke=True)
+    assert "completions: 6\n" in text and "name: boot-ftfix-raunav\n" in text and "nvidia.com/gpu" not in text
+    outs = [b.ftfix_out(name, n) for _pb, _t, name, n, _p in b.FTFIX_FILES + b.FTFIX_BENCH]
+    assert len(set(outs)) == 14 and all(o.startswith("/data/results/bootstrap/l3_rerun/ft_") for o in outs)
+    assert all(text.count(f"[ -e {o} ] ||") == 1 for o in outs)
+    assert "completions: 2\n" in smoke and "name: boot-ftfix-smoke-raunav\n" in smoke and b.SMOKE in smoke
+    assert "/l3_rerun/" not in smoke.replace("mkdir -p", "")
