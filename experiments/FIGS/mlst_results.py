@@ -5707,7 +5707,7 @@ def _tests_tabular(blocks: list, side, single: set, analytic: set, num) -> str:
                              + r"}} \\")
                 continue
             d, sig = v[0], v[4]
-            place = _pdg_place(sig)
+            place = _pdg_place(sig) + TESTS_EXTRA_DIGIT.get((head, first, second), 0)
             block.append(lab + " & " + num(d, place) + " & " + num(sig, place) + " & "
                          + f"{d / sig:.2f}".replace("-", "$-$") + r" \\")
         # a block's rows never break apart from its heading; between two blocks a space, where the page may break
@@ -5800,6 +5800,13 @@ def mlp_claim_check(rows: dict) -> None:
         raise SystemExit(f"FATAL (DL-9): MLP rows the Fig. 2 caption states as nulls pass 3 sigma: {extra}")
 
 
+# fifth review (A6; LEDGER TX-3): tab:tests rows printed with one more digit of sigma, so that a PW-1 share quoted from
+# them is reproducible from the printed values (17 + mass - 17, MLP AUC: sigma 0.00113 printed 0.0011 gave 12%, not 13%)
+TESTS_EXTRA_DIGIT = {("JetClass-II, AUC, " + HEADING["mlp"], "R16_Q1_MASS", "R16_Q1"): 1}
+# fifth review (B4; LEDGER CS-6): PW_ROWS macros whose reference value no table prints get <name>Ref, printed in the text
+# (the 188-class MLP accuracy on JetClass-II: Table 10 prints the AUC only)
+PW_REF = {"MlstPwAccResMlp"}
+
 # fifth review (B1): the introduction and discussion restate some nulls over several PW_ROWS at once; their range
 PW_UNION = {"MlstPwMassClsAll": ("MlstPwMassClsRes", "MlstPwMassClsCoarse", "MlstPwMlpMassRes", "MlstPwMlpMassCoarse")}
 
@@ -5823,8 +5830,23 @@ def pw_macros(em, rows: dict, sides: dict, src) -> None:
             ref = float(np.mean(sides[(h, a, b)][1]))
             ref = 1 - ref if "AUC" in h else ref
             shares.append(3 * v[4] if "abs" in opt else 100 * 3 * v[4] / ref)
+            # fifth review (A6; LEDGER TX-3, CS-6): the share from the printed sigma and reference, at the quoted digits;
+            # a row whose two differ gets one more digit of sigma in tab:tests (TESTS_EXTRA_DIGIT)
+            sig = round(v[4], _pdg_place(v[4]) + TESTS_EXTRA_DIGIT.get((h, a, b), 0))
+            pref = _printed_mean(sides[(h, a, b)][1])
+            pref = 1 - pref if "AUC" in h else pref
+            psh = 3 * sig if "abs" in opt else 100 * 3 * sig / pref
+            print(f"PW-1 {'ok  ' if _sig2(psh) == _sig2(shares[-1]) else 'DIFF'} {name}: {a} - {b} under '{h}': "
+                  f"full precision {_sig2(shares[-1])}, printed values {_sig2(psh)}")
+            if name in PW_REF:          # fifth review (B4; LEDGER CS-6): the reference value no table prints
+                vals = sides[(h, a, b)][1]
+                place = _pdg_place(float(np.std(vals, ddof=1)))
+                em.macro(name + "Ref", f"{_printed_mean(vals):.{place}f}", src,
+                         f"PW-1: the reference value of \\{name}, the mean of its tab:tests row's second side")
         if wait or not shares:
             em.macro(name, r"\pending{bootstrap}", src, "PW-1: a row waits for its bootstrap")
+            if name in PW_REF:
+                em.macro(name + "Ref", r"\pending{bootstrap}", src, "PW-1: a row waits for its bootstrap")
             got[name] = None
             continue
         got[name] = shares

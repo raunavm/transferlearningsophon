@@ -229,8 +229,8 @@ at a working point an analysis uses, because values of the AUC close to one hide
 shows: with pretraining, ParT's top-tagging AUC rises only from \LitPartTopAucScratch{} to \LitPartTopAucFt, while
 its $R_{30}$ rises from \LitPartTopRejScratch{} to \LitPartTopRejFt~\cite{part}.
 
-Between pretraining configurations on JetClass-II, label sets are compared by the ratio of $1-\AUC$, the
-fraction of signal--background pairs of jets that the classifier orders wrongly,
+Between pretraining configurations on JetClass-II, label sets are compared by the ratio of the fractions of
+signal--background pairs of jets that the classifiers order wrongly,
 \begin{equation}\label{eq:ratio}
   \rho = \frac{1-\AUC}{(1-\AUC)_{\mathrm{ref}}} ,
 \end{equation}
@@ -247,8 +247,8 @@ of ATLAS~\cite[Sec.~6]{atlasregression},
 \end{equation}
 where $q_p$ is the $p$-th percentile of the distribution of $r$, so that for a Gaussian response $\sigma_r$ is
 its standard deviation divided by its median. Three estimates are compared on the same JetClass-II test jets
-with a generator-level match: the soft-drop mass itself, the regressed mass $\msd\,e^{\hat\theta}$ of the
-auxiliary mass regression, the mass output of the pretraining head, and an MLP probe that predicts $\theta$ from the frozen features, its output shifted by
+with a generator-level match: the soft-drop mass itself, the regressed mass $\msd\,e^{\hat\theta}$, the mass output of the
+pretraining head of the mass networks, and an MLP probe that predicts $\theta$ from the frozen features, its output shifted by
 one median of the training jets, the same for every jet, so that no class label is used
 (appendix~\ref{sec:app-mass}).
 

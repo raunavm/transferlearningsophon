@@ -16,7 +16,7 @@ downstream benchmarks. Every difference the text states is tested in table~\ref{
 The first question is which distinctions the frozen features keep on the \Kfull{} classes the networks
 were pretrained on, scored by linear probes on class-balanced test jets. Three comparisons hold more than the
 label set fixed: the \Kres-class model on the resonant classes, since its labels keep every resonant class of the
-\Kfull-class model; the controls, which have as many classes as the \Kcoarse-class level; and the coarser task on
+\Kfull-class model; the controls, which have as many classes as the \Kcoarse-class labels; and the coarser task on
 which the \Kfull{} classes are merged into the \Kcoarse{} groups of the \Kcoarse-class labels, their own task.
 
 Counted in wrongly ordered pairs of jets, a linear probe separates the \Kfull{} classes worse at every coarser
@@ -29,7 +29,8 @@ one kind of distinction where the other removes four. In accuracy the largest st
 falls from \Kres{} to \Kmid{} and to \Kcoarse{} classes, most between \Kres{} and \Kmid{} classes
 (figure~\ref{fig:F2}(a); tables~\ref{tab:summary} and~\ref{tab:tests}); between \Kfull{} and \Kres{} classes it does
 not differ by more than three standard deviations under the linear probe or the MLP probe (smallest resolvable
-differences \MlstPwAccResLp{} and \MlstPwAccResMlp{} of the \Kfull-class accuracy; table~\ref{tab:tests}). Scored
+differences \MlstPwAccResLp{} and \MlstPwAccResMlp{} of the \Kfull-class accuracy, which is
+\MlstPwAccResMlpRef{} under the MLP probe; tables~\ref{tab:summary} and~\ref{tab:tests}). Scored
 instead on the \Kcoarse{} groups of the \Kcoarse-class labels, the task those labels are trained on, linear probes on
 the \Kres-, \Kmid- and \Kcoarse-class models do not differ from the \Kfull-class model by more than three standard
 deviations (smallest resolvable difference \MlstPwCoarseTask{} of the \Kfull-class accuracy). The MLP probe does
