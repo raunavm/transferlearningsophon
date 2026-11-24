@@ -1,0 +1,191 @@
+{
+ "script": "experiments/STATS/paired_bootstrap.py",
+ "script_sha256": "9975b2880435cda4783ce18976a8f0ba6008254c251280eb4098b1268a72ee52",
+ "task": "npz",
+ "b": 200,
+ "seed": 20261029,
+ "resampling": "test jets, with replacement within each class",
+ "n_jets": 903922,
+ "class_counts": {
+  "0": 50000,
+  "1": 5000,
+  "2": 10000,
+  "3": 10000,
+  "4": 145000,
+  "5": 25000,
+  "6": 50000,
+  "7": 50000,
+  "8": 50000,
+  "9": 135000,
+  "10": 25000,
+  "11": 50000,
+  "12": 50000,
+  "13": 60000,
+  "14": 60000,
+  "15": 30000,
+  "16": 98922
+ },
+ "jets_sha256": "394cada7c1d58fa939c4b8b9f19eca06f51ae6a46a0caf53d5ac2ed0bfaeb039",
+ "models": {
+  "mtx-l162-s1": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-l162-s1/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7228068351030288,
+    "sd": 0.0004455734226424681
+   }
+  },
+  "mtx-l162-s2": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-l162-s2/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7235535809505688,
+    "sd": 0.0004398277442241478
+   }
+  },
+  "mtx-l162-s3": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-l162-s3/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7227869218804277,
+    "sd": 0.00044647568205875854
+   }
+  },
+  "mtx-l188-s1": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-l188-s1/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7232836461553098,
+    "sd": 0.0004539029923120801
+   }
+  },
+  "mtx-l188-s2": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-l188-s2/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7236133206183719,
+    "sd": 0.0004495274401410973
+   }
+  },
+  "mtx-l188-s3": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-l188-s3/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7234230387135173,
+    "sd": 0.0004581212309005476
+   }
+  },
+  "mtx-r42q1-s1": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-r42q1-s1/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.722855511869387,
+    "sd": 0.0004559961343208045
+   }
+  },
+  "mtx-r42q1-s2": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-r42q1-s2/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7222282453574534,
+    "sd": 0.0004672162833152236
+   }
+  },
+  "mtx-r42q1-s3": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-r42q1-s3/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7227603709169597,
+    "sd": 0.00044214828921029065
+   }
+  },
+  "mtx-r16q1-s1": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-r16q1-s1/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7205289836954959,
+    "sd": 0.0004554912814768847
+   }
+  },
+  "mtx-r16q1-s2": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-r16q1-s2/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7206650573832698,
+    "sd": 0.0004493257501985094
+   }
+  },
+  "mtx-r16q1-s3": {
+   "input": "/data/results/eval/bs3_mlp/coarse/probs/mtx-r16q1-s3/best70/jc2bal_R16_Q1_N1000000.npz",
+   "accuracy": {
+    "value": 0.7191505461754444,
+    "sd": 0.00045369593834461766
+   }
+  }
+ },
+ "pairs": {},
+ "rule_l3": "delta = mean over A - mean over B; pass = |delta| > 3 sigma, sigma^2 = sd_a^2 + sd_b^2 + boot_sd^2 (decision L3, 2026-11-13)",
+ "diffs": {
+  "l162-188": {
+   "a": [
+    "mtx-l162-s1",
+    "mtx-l162-s2",
+    "mtx-l162-s3"
+   ],
+   "b": [
+    "mtx-l188-s1",
+    "mtx-l188-s2",
+    "mtx-l188-s3"
+   ],
+   "accuracy": {
+    "quantity": "accuracy",
+    "delta": -0.0003908891843912299,
+    "sd_a": 0.0004369958098735265,
+    "sd_b": 0.00016549055370523972,
+    "boot_sd": 0.0001546383970799339,
+    "sigma": 0.000492204728811231,
+    "z": -0.7941597500196765,
+    "pass": false,
+    "n_a": 3,
+    "n_b": 3
+   }
+  },
+  "r42q1-188": {
+   "a": [
+    "mtx-r42q1-s1",
+    "mtx-r42q1-s2",
+    "mtx-r42q1-s3"
+   ],
+   "b": [
+    "mtx-l188-s1",
+    "mtx-l188-s2",
+    "mtx-l188-s3"
+   ],
+   "accuracy": {
+    "quantity": "accuracy",
+    "delta": -0.0008252924477996082,
+    "sd_a": 0.0003380514479833623,
+    "sd_b": 0.00016549055370523972,
+    "boot_sd": 0.00017179248761815306,
+    "sigma": 0.0004137373123750721,
+    "z": -1.994725694576568,
+    "pass": false,
+    "n_a": 3,
+    "n_b": 3
+   }
+  },
+  "r16q1-188": {
+   "a": [
+    "mtx-r16q1-s1",
+    "mtx-r16q1-s2",
+    "mtx-r16q1-s3"
+   ],
+   "b": [
+    "mtx-l188-s1",
+    "mtx-l188-s2",
+    "mtx-l188-s3"
+   ],
+   "accuracy": {
+    "quantity": "accuracy",
+    "delta": -0.003325139410996325,
+    "sd_a": 0.0008378892372920346,
+    "sd_b": 0.00016549055370523972,
+    "boot_sd": 0.00020225348576243847,
+    "sigma": 0.0008776969692545094,
+    "z": -3.7884822751759106,
+    "pass": true,
+    "n_a": 3,
+    "n_b": 3
+   }
+  }
+ }
+}

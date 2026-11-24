@@ -1,0 +1,108 @@
+{
+ "script": "experiments/STATS/analytic_check.py",
+ "script_sha256": "1682935dc61846e35664677de894a3d28a5aaee6f55749fd730fba9f3c9606cb",
+ "metric": "eps_S at eps_B = 0.01",
+ "slope_K": 1.5848931924611136,
+ "b": 200,
+ "seed": 20261029,
+ "n_s": 200000,
+ "n_b": 200000,
+ "networks": {
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-r16q1-s1/best70/jc2bal_pairs_bc_vs_bq_cs.npz": {
+   "eps_s": 0.3618,
+   "analytic_sd": 0.004849719560842556,
+   "slope": 21.256146357134863,
+   "boot_sd": 0.005064823694330162
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-r16q1-s2/best70/jc2bal_pairs_bc_vs_bq_cs.npz": {
+   "eps_s": 0.371105,
+   "analytic_sd": 0.004116625939537365,
+   "slope": 17.85445010379844,
+   "boot_sd": 0.005042547587725114
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-r16q1-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz": {
+   "eps_s": 0.395805,
+   "analytic_sd": 0.0042395390886721404,
+   "slope": 18.410567164628937,
+   "boot_sd": 0.00443551624290571
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s1/best70/jc2bal_pairs_bc_vs_bq_cs.npz": {
+   "eps_s": 0.645775,
+   "analytic_sd": 0.00203306436640193,
+   "slope": 7.771486956582306,
+   "boot_sd": 0.001965193187883453
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s2/best70/jc2bal_pairs_bc_vs_bq_cs.npz": {
+   "eps_s": 0.644015,
+   "analytic_sd": 0.0020429199935285847,
+   "slope": 7.820232372847367,
+   "boot_sd": 0.001842842174679884
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz": {
+   "eps_s": 0.64815,
+   "analytic_sd": 0.001989716315013131,
+   "slope": 7.546104924388974,
+   "boot_sd": 0.001970736514968999
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l162-s1/best70/jc2bal_pairs_bc_vs_bq_cs.npz": {
+   "eps_s": 0.64524,
+   "analytic_sd": 0.0020090160835525834,
+   "slope": 7.643071612658189,
+   "boot_sd": 0.0020700759283770816
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l162-s2/best70/jc2bal_pairs_bc_vs_bq_cs.npz": {
+   "eps_s": 0.645555,
+   "analytic_sd": 0.002026898981819465,
+   "slope": 7.738465868144673,
+   "boot_sd": 0.0020624893917971588
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l162-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz": {
+   "eps_s": 0.64371,
+   "analytic_sd": 0.002003550354694827,
+   "slope": 7.611098812742393,
+   "boot_sd": 0.002024181408929614
+  }
+ },
+ "diffs": {
+  "r16q1-188": {
+   "a": [
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-r16q1-s1/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-r16q1-s2/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-r16q1-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz"
+   ],
+   "b": [
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s1/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s2/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz"
+   ],
+   "delta": -0.2697433333333333,
+   "sd_a": 0.01757371640642165,
+   "sd_b": 0.0020751084309018654,
+   "boot_sd_paired": 0.003681154506985062,
+   "analytic_sd_unpaired": 0.004844104233869991,
+   "analytic_over_paired": 1.3159198356597666,
+   "sigma_paired": 0.018074636423387053,
+   "sigma_analytic": 0.018346850660588335
+  },
+  "l162-188": {
+   "a": [
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l162-s1/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l162-s2/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l162-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz"
+   ],
+   "b": [
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s1/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s2/best70/jc2bal_pairs_bc_vs_bq_cs.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_probs/mtx-l188-s3/best70/jc2bal_pairs_bc_vs_bq_cs.npz"
+   ],
+   "delta": -0.0011449999999999516,
+   "sd_a": 0.0009869270489757602,
+   "sd_b": 0.0020751084309018654,
+   "boot_sd_paired": 0.0007631244293775248,
+   "analytic_sd_unpaired": 0.0028532217119560236,
+   "analytic_over_paired": 3.7388682659305985,
+   "sigma_paired": 0.002421251514137426,
+   "sigma_analytic": 0.0036634647722582603
+  }
+ }
+}

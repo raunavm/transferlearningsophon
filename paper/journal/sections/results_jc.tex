@@ -30,12 +30,16 @@ classes costs more than the step from \Kres{} to \Kmid{} classes, although it me
 one kind of distinction where the other removes three. In accuracy the largest step is the other one: the accuracy
 falls from \Kres{} to \Kmid{} and to \Kcoarse{} classes, most between \Kres{} and \Kmid{} classes
 (figure~\ref{fig:F2}(a); tables~\ref{tab:summary} and~\ref{tab:tests}); between \Kfull{} and \Kres{} classes it does
-not differ by more than three standard deviations (smallest resolvable difference \MlstPwAccResLp{} of the
-\Kfull-class accuracy). Scored instead on the \Kcoarse{} groups of the \Kcoarse-class labels, the task those labels
-are trained on, linear probes on the \Kres-, \Kmid- and \Kcoarse-class models do not differ from the \Kfull-class
-model by more than three standard deviations (smallest resolvable difference \MlstPwCoarseTask{} of the
-\Kfull-class accuracy; tables~\ref{tab:coarse} and~\ref{tab:tests}). Even on the task that favors them, the coarser
-labels give the frozen features no resolved advantage over the \Kfull{} classes.
+not differ by more than three standard deviations under the linear probe or the MLP probe (smallest resolvable
+differences \MlstPwAccResLp{} and \MlstPwAccResMlp{} of the \Kfull-class accuracy; table~\ref{tab:tests}). Scored
+instead on the \Kcoarse{} groups of the \Kcoarse-class labels, the task those labels are trained on, linear probes on
+the \Kres-, \Kmid- and \Kcoarse-class models do not differ from the \Kfull-class model by more than three standard
+deviations (smallest resolvable difference \MlstPwCoarseTask{} of the \Kfull-class accuracy). The MLP probe does
+not resolve the \Kres- or \Kmid-class model from it either (smallest resolvable difference \MlstPwCoarseTaskMlp{}),
+but it resolves the
+\Kcoarse-class model below it (tables~\ref{tab:coarse} and~\ref{tab:tests}). Even on the task that favors them, the
+coarser labels give the frozen features no resolved advantage over the \Kfull{} classes, and under the MLP probe
+the \Kcoarse-class features fall behind them.
 % PI 2026-11-23 (LEDGER TX-2): "costliest" and "largest step" name their metric and rest on the largest step minus the
 % next-largest in tab:tests: in AUC (17 - 43) - (43 - 162) passes (-4.96 sigma, the quark-flavor merge), in accuracy the
 % same row passes the other way (+3.94 sigma, the 162 -> 43 step), so both are given here, in the intro and discussion.
@@ -45,17 +49,17 @@ labels give the frozen features no resolved advantage over the \Kfull{} classes.
 \begin{figure}[t]
 \centering
 \paperfig{\linewidth}{F2}
-\caption{With linear probes, \Kmid{} and \Kcoarse{} classes are less accurate on class-balanced JetClass-II than
-\Kfull{} classes, and no label set, mass network or partition differs from \Kfull{} classes in $R_{30}$ by more than
-three standard deviations (\MlstPwRthirtyLp{} of its value) in top-quark against QCD and quark against gluon jets.
+\caption{With linear probes, \Kmid{} and \Kcoarse{} classes are less accurate on JetClass-II than \Kfull{} classes,
+and in $R_{30}$ on top-quark against QCD and quark against gluon jets no label set, mass network or partition differs
+from them beyond three standard deviations (\MlstPwRthirtyLp{} of its value), an MLP probe resolving only the
+\Kcoarse-class mass network, above them on top (table~\ref{tab:tests}).
 $R_{30}$ is one over the fraction of background jets kept with 30\% of signal jets kept, the top-tagging working
-point. Circles are means, bars standard deviations over \MlstNRunsWord{} runs per label set, \MlstMassNRunsWord{} per
-mass network and flavor-boundary partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions,
-whose bar is their spread, and the band the \Kfull-class mean $\pm$ standard deviation. The random network, not drawn,
+point. Circles and bars are means and standard deviations over \MlstNRunsWord{} runs per label set,
+\MlstMassNRunsWord{} per mass network and flavor-boundary partition and the \RandVtwoNPartitions{} one-run random
+partitions, the band those of \Kfull{} classes. The random network, not drawn,
 has accuracies \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$
 \MlstFTwoInitRthirtyMin{}--\MlstFTwoInitRthirtyMax{}, with BatchNorm recomputed \MlstFTwoInitBnAccJcTwo{},
-\MlstFTwoInitBnAccJcOne{} and \MlstFTwoInitBnRthirtyMin{}--\MlstFTwoInitBnRthirtyMax{} (table~\ref{tab:summary},
-with the missing-input substitutions).}
+\MlstFTwoInitBnAccJcOne{} and \MlstFTwoInitBnRthirtyMin{}--\MlstFTwoInitBnRthirtyMax{} (table~\ref{tab:summary}).}
 \label{fig:F2}
 \end{figure}
 % CHECK: F2(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
@@ -153,7 +157,9 @@ decay topology, and the pair stays readable.
 The \Kmid-class labels, which merge every decay with its lepton-flavor counterpart, also remove a distinction
 that the finer labels keep: on $X\to ee$ against $X\to\mu\mu$ the AUC of a linear probe falls to
 \MlstLpEemmAucMid{}, against \MlstLpEemmAucFull{} at \Kfull{} classes and \MlstLpEemmAucInitBn{} for the
-random network with BatchNorm recomputed (tables~\ref{tab:pairauc} and~\ref{tab:tests}).
+random network with BatchNorm recomputed. At \Kcoarse{} classes, which merge them too, it is \MlstLpEemmAucCoarse{},
+whose difference from \Kfull{} classes is not resolved (smallest resolvable difference \MlstPwEeCoarse{} of the
+\Kfull-class errors; tables~\ref{tab:pairauc} and~\ref{tab:tests}).
 
 The output layer can lose a discriminant while the frozen features keep most of what it needs. The
 boosted $|V_{cb}|$ measurement uses the scores of $X\to bq$ and $X\to cs$ in the denominator of its

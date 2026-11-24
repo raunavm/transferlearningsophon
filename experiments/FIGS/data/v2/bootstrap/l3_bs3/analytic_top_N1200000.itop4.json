@@ -1,0 +1,108 @@
+{
+ "script": "experiments/STATS/analytic_check.py",
+ "script_sha256": "1682935dc61846e35664677de894a3d28a5aaee6f55749fd730fba9f3c9606cb",
+ "metric": "eps_S at eps_B = 0.01",
+ "slope_K": 1.5848931924611136,
+ "b": 200,
+ "seed": 20261029,
+ "n_s": 202086,
+ "n_b": 201914,
+ "networks": {
+  "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-r16q1-s1/best70.itop4/top_N1200000.npz": {
+   "eps_s": 0.4822847698504597,
+   "analytic_sd": 0.00501042264695153,
+   "slope": 22.0638262855873,
+   "boot_sd": 0.005039440884080425
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-r16q1-s2/best70.itop4/top_N1200000.npz": {
+   "eps_s": 0.49303266925962214,
+   "analytic_sd": 0.004719379031297512,
+   "slope": 20.713043296739098,
+   "boot_sd": 0.004758441937226953
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-r16q1-s3/best70.itop4/top_N1200000.npz": {
+   "eps_s": 0.5016428649188959,
+   "analytic_sd": 0.004733580974501747,
+   "slope": 20.77892249780811,
+   "boot_sd": 0.0048943325700178
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l188-s1/best70.itop4/top_N1200000.npz": {
+   "eps_s": 0.4569143829854616,
+   "analytic_sd": 0.005086646836247897,
+   "slope": 22.420196452000017,
+   "boot_sd": 0.005819464689106971
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l188-s2/best70.itop4/top_N1200000.npz": {
+   "eps_s": 0.47967696921112796,
+   "analytic_sd": 0.005141838341649646,
+   "slope": 22.67230111120901,
+   "boot_sd": 0.00509004015948335
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l188-s3/best70.itop4/top_N1200000.npz": {
+   "eps_s": 0.4632730619637184,
+   "analytic_sd": 0.00440829913870218,
+   "slope": 19.267850744154195,
+   "boot_sd": 0.004012381991788944
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l162-s1/best70.itop4/top_N1200000.npz": {
+   "eps_s": 0.43044050552734975,
+   "analytic_sd": 0.005237248861208176,
+   "slope": 23.123080841358426,
+   "boot_sd": 0.00542670984250358
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l162-s2/best70.itop4/top_N1200000.npz": {
+   "eps_s": 0.4268826143325119,
+   "analytic_sd": 0.0046733869706630056,
+   "slope": 20.51229329033193,
+   "boot_sd": 0.005563463207040382
+  },
+  "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l162-s3/best70.itop4/top_N1200000.npz": {
+   "eps_s": 0.47535841176528804,
+   "analytic_sd": 0.004936943527142251,
+   "slope": 21.72405560290851,
+   "boot_sd": 0.0050634659109287505
+  }
+ },
+ "diffs": {
+  "r16q1-188": {
+   "a": [
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-r16q1-s1/best70.itop4/top_N1200000.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-r16q1-s2/best70.itop4/top_N1200000.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-r16q1-s3/best70.itop4/top_N1200000.npz"
+   ],
+   "b": [
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l188-s1/best70.itop4/top_N1200000.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l188-s2/best70.itop4/top_N1200000.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l188-s3/best70.itop4/top_N1200000.npz"
+   ],
+   "delta": 0.025698629956223185,
+   "sd_a": 0.009698699703904152,
+   "sd_b": 0.011744901752186175,
+   "boot_sd_paired": 0.0029772406620506547,
+   "analytic_sd_unpaired": 0.006859096902739635,
+   "analytic_over_paired": 2.30384361941881,
+   "sigma_paired": 0.015520033990774123,
+   "sigma_analytic": 0.016704930512761458
+  },
+  "l162-188": {
+   "a": [
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l162-s1/best70.itop4/top_N1200000.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l162-s2/best70.itop4/top_N1200000.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l162-s3/best70.itop4/top_N1200000.npz"
+   ],
+   "b": [
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l188-s1/best70.itop4/top_N1200000.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l188-s2/best70.itop4/top_N1200000.npz",
+    "/data/results/eval/v2_linprobe_bal/fits_v5_fill_probs/mtx-l188-s3/best70.itop4/top_N1200000.npz"
+   ],
+   "delta": -0.02239429417838612,
+   "sd_a": 0.027019066808761996,
+   "sd_b": 0.011744901752186175,
+   "boot_sd_paired": 0.002758197918181817,
+   "analytic_sd_unpaired": 0.006949708770499837,
+   "analytic_over_paired": 2.5196555782628653,
+   "sigma_paired": 0.02959020689587541,
+   "sigma_analytic": 0.030269970934568347
+  }
+ }
+}

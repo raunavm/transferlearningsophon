@@ -299,7 +299,10 @@ is scored (appendix~\ref{sec:app-tests}). Otherwise the difference is not resolv
 difference smaller than three times $\sigma$, which we give as a share of the reference configuration's value, of its errors
 $1-\AUC$ for an AUC.
 Where the two sides are scored on independent test samples, Herwig against Pythia jets, each sample is
-resampled separately and the two bootstrap variances add. \pending{One sentence: the rows whose $\sigma$
-uses the paired bootstrap, those that use an unpaired analytic term (binomial for accuracy, $\AUC(1-\AUC)/\min(n_S,
-n_B)$ per network for the AUC) and those whose $\sigma$ is a lower bound, which back only a null.}
+resampled separately and the two bootstrap variances add. Every row uses the paired bootstrap except two kinds,
+marked in the table: the transfer heads of the resonance benchmark, whose per-jet scores were not kept, take the
+binomial variance of each network's signal efficiency, with the QCD jets' carried through the cut, the two sides
+added, a term larger than the paired bootstrap on every row that has both; and a side of one run, whose missing
+run spread makes $\sigma$ a lower bound, as for ParT's published result against our single run of its script, backs
+only a null.
 Table~\ref{tab:tests} gives this test for every difference the text states.

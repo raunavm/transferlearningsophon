@@ -29,8 +29,9 @@ from-scratch value), but from scratch has a lower accuracy, AUC and $R_{50}$
 (tables~\ref{tab:published} and~\ref{tab:tests}). The $R_{30}$ difference between the \Kfull-class model with kinematic
 inputs only, which has no missing inputs here, and the \Kfull-class model fine-tuned with zeros is not resolved
 (smallest resolvable difference at least \MlstPwTopKin{} of the \Kfull-class value, the kinematic model having one
-run; table~\ref{tab:tests}). ParT's own training script, run unchanged on our hardware, \pending{does not differ from the
-published result by more than three standard deviations} (appendix~\ref{sec:app-partrepro}; table~\ref{tab:tests}).
+run; table~\ref{tab:tests}). ParT's own training script, run unchanged on our hardware once, does not differ from the
+published result by more than three standard deviations, a lower bound on $\sigma$ (smallest resolvable difference
+at least \MlstPwPartRepro{} of the published value; appendix~\ref{sec:app-partrepro}; table~\ref{tab:tests}).
 
 % CHECK: MlstLpTopRthirtyFullOverInitBnZero agrees with 1 (two seeds of the randomly initialized network; today 1.04 and 1.08); MlstMlpTopRthirtyFullOverInitBn agrees with 1 (today 1.00 +- 0.31)
 % CHECK: draws close to the kinematic-only model, one run (MlstLpTopRthirtyDrawOverZeroFull and MlstLpTopRthirtyKinOverFull both 3.9 at c0ce260); "about the same", not "the same": they agree on R30, less exactly on AUC and R50
@@ -43,7 +44,8 @@ table~\ref{tab:mlp}). With random draws of real particles in place of
 the zeros, the substitution chosen on validation, the linear probe on the \Kfull-class features gives
 \MlstLpTopRthirtyDrawOverZeroFullPr{} that it gives with zeros, and its difference from the linear probe on the
 \Kfull-class model with kinematic inputs only, which has no missing inputs, is not resolved (smallest resolvable
-difference at least \MlstPwTopDrawsKin{} of that model's value, which has one run; table~\ref{tab:tests}). Random
+difference at least \MlstPwTopDrawsKin{} of that model's value, which has one run; table~\ref{tab:tests}); for an MLP
+probe the same comparison is inconclusive, its $\sigma$ being a lower bound for the same reason. Random
 draws are not free of information, as they give each particle a species at the JetClass-II frequencies, a charge
 and the impact-parameter features of a real particle (appendix~\ref{sec:app-inputs}), so these tests do not separate the effect of the zero values from that
 of the missing information. After fine-tuning, the zeros cost no resolved $R_{30}$ against the model with kinematic

@@ -1193,6 +1193,49 @@ def load_mlp(data: pathlib.Path) -> dict:
     return mlp
 
 
+# the statistics agent's refit of the MLP probes (bs3, 2026-11-23; LEDGER DL-9, CS-5b): one CPU model per family, the
+# values its tab:tests rows were bootstrapped from (bootstrap/l3_bs3); pulled to data/v2/bs3_mlp/<family>/<model>.json
+BS3_MLP = "bs3_mlp"
+
+
+def load_bs3_mlp(data: pathlib.Path) -> dict:
+    """{family: {file stem: doc}} of the bs3 MLP refit (bench: top and quark/gluon with the linear probes'
+    substitution; bench0: with zeros; jc2bal: class-balanced JetClass-II; coarse: the 17 merged groups; kin: the
+    kinematic-inputs network on top); {} where not pulled."""
+    root = data / BS3_MLP
+    return {f.name: {g.stem: json.loads(g.read_text()) for g in sorted(f.glob("*.json"))}
+            for f in sorted(root.iterdir()) if f.is_dir()} if root.is_dir() else {}
+
+
+def _bs3_model(stem: str, ck: str) -> str:
+    """A refit file's network as mlst_results names its runs: init-s1.init_bn -> initbn-s1."""
+    m = stem.split(".", 1)[0]
+    return ("initbn" + m.removeprefix("init")) if ck == "init_bn" else m
+
+
+def overlay_bs3_mlp(mlp: dict, bs3: dict) -> dict:
+    """mlp with the bs3 refit in place of the earlier fits wherever the refit has the cell (CS-5b: Table 10 reads the
+    values its tested gaps were computed from): JetClass-II (jc2bal), top and quark/gluon with zeros (bench0), the
+    kinematic-inputs network on top (kin)."""
+    for fam, rename in (("jc2bal", {"jc2bal": "jc2_188"}), ("bench0", {}), ("kin", {})):
+        for stem, doc in bs3.get(fam, {}).items():
+            for ck, cells in doc.get("cells", {}).items():
+                model = _bs3_model(stem, ck)
+                have = mlp.setdefault(model, {"cells": {}})["cells"].setdefault(ck, {})
+                have.update({rename.get(k, k): c for k, c in cells.items() if isinstance(c, dict)})
+    return mlp
+
+
+def _bs3_val(bs3: dict, fam: str, model: str, ds: str, key: str):
+    """One refit run's value (R30 as _rej reads it), or None."""
+    for stem, doc in bs3.get(fam, {}).items():
+        for ck, cells in doc.get("cells", {}).items():
+            if _bs3_model(stem, ck) == model and ds in cells:
+                c = cells[ds]
+                return _rej(c, key) if key.startswith("r") else c.get(key)
+    return None
+
+
 def _mlp_val(mlp: dict, model: str, task: str, key: str | None = None):
     met = key or {t: m for t, _, m in MLP_TASKS}[task]
     c = mlp.get(model, {}).get("cells", {}).get(_ck(model), {}).get(task.removesuffix("_res").removesuffix("_qcd"))
@@ -2127,7 +2170,7 @@ COARSE_TARGETS = (("R42_Q1", r"43 groups"), ("R16_Q1", r"17 groups"), ("FLAV_F0"
 COARSE_PAPER = (("R16_Q1", r"17 groups"),)
 
 
-def table_coarse(co, runs, fmt_pm, rows, targets=COARSE_TARGETS) -> str:
+def table_coarse(co, runs, fmt_pm, rows, targets=COARSE_TARGETS, bs3: dict | None = None) -> str:
     """Should-add 5 (PI 2026-11-07): linear probes of every network on the coarse targets of class-balanced
     JetClass-II at 1e6 (probe_bal.py --coarse): the 43- and 17-group levels of the hierarchy and the 17-class
     partition with no flavor boundary (targets: the paper's COARSE_PAPER); accuracy and the macro AUC over the
@@ -2147,6 +2190,15 @@ def table_coarse(co, runs, fmt_pm, rows, targets=COARSE_TARGETS) -> str:
                  for t, _ in targets for k in ("accuracy", "macro_auc_ovr")]
         out += [r"\midrule"] * (arm == SOPHON) + [
             (LABEL[arm] if arm in (INIT, INIT_BN) else _row(arm, runs)) + " & " + " & ".join(cells) + r" \\"]
+    # LEDGER DL-9 (bs3): the MLP probe beside the linear-probe null on the 17 groups, the four label sets, in a block of
+    # its own under its mode's heading (the values its tab:tests rows were bootstrapped from)
+    if bs3 and bs3.get("coarse") and [t for t, _ in targets] == ["R16_Q1"]:
+        out.append(_full_row(1 + 2 * n, HEADING["mlp"], italic=True))
+        for arm in MAIN:
+            ms = runs[arm]
+            cells = [_cell([_bs3_val(bs3, "coarse", m, "jc2bal_coarse", k) for m in ms], len(ms), fmt_pm, frac=True)
+                     for k in ("accuracy", "macro_auc_ovr")]
+            out.append(_row(arm, runs) + " & " + " & ".join(cells) + r" \\")
     return "\n".join(out + [r"\bottomrule", r"\end{tabular}", ""])
 
 
@@ -4950,6 +5002,27 @@ _FT_TOP, _FT_QG = (r"top tagging, $R_{30}$, " + HEADING["ft"], r"quark/gluon tag
 # check the main text relies on (the ParT reproduction, the fill choice, the coarse-task null) or (c) it is a 3-sigma-
 # passing result about label granularity, or one waiting for its bootstrap that stays if it passes; the others left
 # (their values stay in the data release)
+# R5-17 (bs3): the 17-class level, which also merges electron and muon, beside the 43-class one
+_EE_17 = (("R16_Q1", "L188", ("file", "l3_bs3/probe_jc2bal_pairs_ee_vs_mm.r16q1.json", "r16q1-188", "auc")),)
+_XBX_SRC = lambda sig: ("xbx_analytic", sig) if XBX_ANALYTIC else None       # noqa: E731  SC-2 (#1), easy to revert
+_MLP_NETS = (("L162", "l162-188"), ("R42_Q1", "r42q1-188"), ("R16_Q1", "r16q1-188"), ("L162_MASS", "l162mass-188"),
+             ("R16_Q1_MASS", "r16q1mass-188"), ("FLAV_F0", "flavf0-188"), ("FLAV_F1", "flavf1-188"),
+             ("FLAV_F1R", "flavf1r-188"), (RAND_POOLED, "rand-188"))
+# CS-5b (bs3, bs3_cs5b_mlp0_gaps.tsv): the 24 zero-filled MLP gaps that pass 3 sigma, (task, metric heading, metric,
+# file, rows)
+_MLP0_PASS = (
+    ("top tagging", "AUC", "auc", "top_N1200000",
+     (("L162_MASS", "FLAV_F0", "l162mass-flavf0"), ("L162_MASS", INIT, "l162mass-init"),
+      ("FLAV_F0", "FLAV_F1", "flavf0-flavf1"), ("FLAV_F1", INIT, "flavf1-init"))),
+    ("top tagging", "$R_{30}$", "r30", "top_N1200000",
+     (("R16_Q1", "FLAV_F1", "r16q1-flavf1"), ("L162_MASS", "FLAV_F0", "l162mass-flavf0"), ("L162_MASS", INIT, "l162mass-init"),
+      ("FLAV_F0", "FLAV_F1", "flavf0-flavf1"), ("FLAV_F1", "FLAV_F1R", "flavf1-flavf1r"), ("FLAV_F1", INIT, "flavf1-init"))),
+    ("quark/gluon tagging (Pythia)", "AUC", "auc", "qg_N1600000",
+     tuple((a, b, f"{k}-{w}") for a, k in (("L162_MASS", "l162mass"), ("R16_Q1_MASS", "r16q1mass"), ("FLAV_F0", "flavf0"),
+                                          ("FLAV_F1", "flavf1")) for b, w in ((INIT, "init"), (INIT_BN, "initbn")))),
+    ("quark/gluon tagging (Herwig)", "$R_{30}$", "r30", "qg_herwig_N1600000",
+     tuple((a, INIT, f"{k}-init") for a, k in (("L162", "l162"), ("R42_Q1", "r42q1"), ("FLAV_F0", "flavf0"),
+                                              ("FLAV_F1", "flavf1"), ("FLAV_F1R", "flavf1r"), (RAND_POOLED, "rand")))))
 TESTS = (
     # Figs. 2 and 3, Table 1 (M005-M007, M040-M043, M149-M153, M157, M158, M163, M164, M166, M299, M300)
     # review of 5c40d69 (A7, B3): the accuracy falls most between 162 and 43 classes (17 - 43 and the step), the random
@@ -5029,10 +5102,11 @@ TESTS = (
     # side in tab:published, and the row left with its sentence (PI 2026-11-23, LEDGER SP-13 (a)); review of render
     # dfe5942 (A1): our from scratch against ParT's is no null (an AUC gap of 7 run SDs, no per-jet scores for ParT's),
     # its sentence and row removed
-    (_FT_TOP + ", published models", (("PART_OURS", "PART_PUB", None),)),
+    (_FT_TOP + ", published models", (("PART_OURS", "PART_PUB", ("part_published",)),)),     # A2 (bs3; SC-2)
     (_FT_QG + ", published models", (("L188", "PART_FT_PUB", None),)),
     # Figs. 5 and A3: the class pairs, AUC (M187, M190, M194, M200, M334, the placement's sentences)
-    *((rf"{_PAIR[k]}, AUC, " + HEADING["lp"], _pair_rows(k, rows) + _pair_rows(k, _FLAV188.get(k, ()), ".flav188"))
+    *((rf"{_PAIR[k]}, AUC, " + HEADING["lp"], _pair_rows(k, rows) + _pair_rows(k, _FLAV188.get(k, ()), ".flav188")
+       + (_EE_17 if k == "ee_vs_mm" else ()))
       for k, rows in (
         ("bb_vs_cc", (("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"), ("FLAV_F1", "R16_Q1", "flavf1-r16q1"))),
         ("bc_vs_bq_cs", _QCD_PAIR + (("FLAV_F1", "R16_Q1", "flavf1-r16q1"), ("FLAV_F1R", "R16_Q1", "flavf1r-r16q1"),
@@ -5043,7 +5117,24 @@ TESTS = (
         # PI SP-10 (b): the 3-sigma-passing lepton-flavor result of the 43-class labels
         ("ee_vs_mm", (("R42_Q1", "L188", "r42q1-188"), ("R42_Q1", INIT_BN, "r42q1-initbn"))))),
     # tab:mlp (M157, M302): the multilayer-perceptron probes beside the linear-probe nulls
-    (r"JetClass-II, AUC, " + HEADING["mlp"], tuple((a, b, None) for a, b, _ in _MASSES)),
+    # DL-3b (bs3): the MLP refit's bootstrap for the mass networks against their label sets
+    (r"JetClass-II, AUC, " + HEADING["mlp"], tuple((a, b, ("file", "l3_bs3/mlp_jc2bal_N1000000.mass.json", k, "macro"))
+                                                   for (a, b, _), k in zip(_MASSES, ("l162mass-l162", "r16q1mass-r16q1")))),
+    # DL-9 (bs3): the MLP beside the linear-probe nulls N1 (JetClass-II accuracy) and N3 (the 17 merged groups)
+    (r"JetClass-II, accuracy, " + HEADING["mlp"],
+     (("L162", "L188", ("file", "l3_bs3/mlp_jc2bal_N1000000.json", "l162-188", "accuracy")),)),
+    (r"JetClass-II, accuracy on the 17 merged groups, " + HEADING["mlp"],
+     tuple((a, "L188_17", ("file", "l3_bs3/mlp_jc2bal_R16_Q1_N1000000.json", d, "accuracy"))
+           for a, d in (("L162_17", "l162-188"), ("R42_Q1_17", "r42q1-188"), ("R16_Q1_17", "r16q1-188")))),
+    # DL-9 (bs3), N2: the MLP with the linear probes' substitutions, every network against 188 classes, as Fig. 2
+    *((rf"{h}, $R_{{30}}$, " + HEADING["mlp"] + ", missing inputs as for the linear probe",
+       tuple((a, "L188", ("file", f"l3_bs3/mlp_{f}.json", d, "r30")) for a, d in _MLP_NETS))
+      for h, f in (("top tagging", "top_N1200000"), ("quark/gluon tagging (Pythia)", "qg_N1600000"),
+                   ("quark/gluon tagging (Herwig)", "qg_herwig_N1600000"))),
+    # CS-5b (bs3): the gaps of Table 10's zero-filled columns that pass 3 sigma with the full sigma, each stated
+    *((rf"{h}, {met_h}, " + HEADING["mlp"] + ", missing inputs set to zero",
+       tuple((a, b, ("file", f"l3_bs3/mlp0_{f}.json", d, met)) for a, b, d in rows))
+      for h, met_h, met, f, rows in _MLP0_PASS),
     (r"JetClass-II, AUC over the resonant classes, " + HEADING["mlp"], (("L162", "L188", None),)),
     # review of 5c40d69 (B4, LEDGER CS-18): the multilayer-perceptron probe beside the linear-probe nulls where tab:mlp
     # holds it like for like, the partition with no flavor boundary against 17 classes on X->bc and the 188-class
@@ -5076,8 +5167,8 @@ TESTS = (
     # 188 classes wait for their bootstrap and stay if they pass (SP-13 (c)); against 17 classes they fail for certain
     # review of render dfe5942 (C): one name, the transfer head
     *((rf"{h}, signal efficiency (\%), " + XBX_HEAD,
-       (("R16_Q1", "L188", None),) + tuple((a, "L188", None) for a in FLAV)
-       + ((("L188", "SCRATCH", None),) if sig == "xbs" else ())) for sig, h in SUMMARY_XBX),
+       (("R16_Q1", "L188", _XBX_SRC(sig)),) + tuple((a, "L188", _XBX_SRC(sig)) for a in FLAV)
+       + ((("L188", "SCRATCH", _XBX_SRC(sig)),) if sig == "xbs" else ())) for sig, h in SUMMARY_XBX),
 )
 # the sculpting nulls (M284, M306, M336; F10b): every difference of the bootstrap file at each working point, in its order,
 # but those no sentence states (results_mass names no mass network and no random partition against 188 classes; PI
@@ -5146,8 +5237,8 @@ PR_ROWS = {
     "MlstCmpMlpCoarseMassOverCoarsePr": (_MASS_MLP, "R16_Q1_MASS", "R16_Q1", _same("resolution")),
     "MlstCmpMlpCoarseOverFullPr": (_MASS_MLP, "R16_Q1", "L188", _NULL),
     # MlstCmpJcTwoResMassOverResPrMax: its null now prints its PW-1 share (fourth review, B1/C5)
-    "MlstMlpCmpJcTwoResMassOverResPr": (_JC2_MLP, "L162_MASS", "L162", _NULL),
-    "MlstMlpCmpJcTwoCoarseMassOverCoarsePr": (_JC2_MLP, "R16_Q1_MASS", "R16_Q1", _NULL),
+    # MlstMlpCmpJcTwoResMassOverRes: its null now prints its PW-1 share (bs3, DL-3b rows wired)
+    # MlstMlpCmpJcTwoCoarseMassOverCoarse: its null now prints its PW-1 share (bs3, DL-3b rows wired)
 }
 
 
@@ -5180,13 +5271,20 @@ TESTS_GLUE_ROWS = 9         # a tab:tests block of at most this many lines (head
 INDEPENDENT = r"$^{\diamond}$"     # no other table carries it (SINGLE is the section sign)
 # a row with a side of one run, whose sigma lacks that side's run spread (a lower bound; review of 5c40d69, B3)
 SINGLE_SIDE = r"$^{\circ}$"
+# SC-2 (#1; bs3, 2026-11-23; the PI is asked to confirm the term): the transfer-head rows use an analytic test-sample
+# term, as their heads' per-jet scores were not kept; XBX_ANALYTIC = False puts them back to pending (no term)
+XBX_ANALYTIC = True
+XBX_EPS_B = 0.01
+ANALYTIC_MARK = r"$^{\dagger}$"
+LIT_BENCH = pathlib.Path(__file__).resolve().parent / "data" / "literature_benchmarks.json"
 # a row over several networks or bins, the one of least |Delta / sigma| (review of 5c40d69, B3)
 LEAST = r"$^{\ast}$"
 TESTS_HEAD = r" & $\Delta$ & $\sigma$ & $\Delta/\sigma$ \\"
 
 
 def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_doc=None, mass_doc=None,
-                rows_out: dict | None = None, co: dict | None = None, sides_out: dict | None = None) -> tuple:
+                rows_out: dict | None = None, co: dict | None = None, sides_out: dict | None = None,
+                mlp: dict | None = None, bs3: dict | None = None) -> tuple:
     r"""tab:tests (TESTS): (the table, the bootstrap replica counts read); rows_out, when given, takes each TESTS row's
     result, {(heading, first, second): None | "stale" | (delta, run SDs, bootstrap SD, sigma)}, for the ratio words
     (ratio_words). A row prints its stored difference Delta (an AUC row minus the stored 1 - AUC difference), sigma and
@@ -5207,6 +5305,8 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
     num = lambda v, place: (lambda t: (t[1:] if t.startswith("-") and not any(c in "123456789" for c in t) else t)  # noqa: E731
                             .replace("-", "$-$"))(f"{round(v, place):,.{max(place, 0)}f}".replace(",", "{,}"))
     replicas, independent, single = set(), set(), set()
+    analytic = set()    # SC-2 (#1): the rows whose test-sample term is analytic (xbx_row)
+    curhead = [None]    # the heading of the row being read
     cur = {}            # the sides of the row being read (sides_out)
 
     def l3_row(first, second, src):
@@ -5237,6 +5337,18 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
         under the side's substitution (the kinematic-inputs network's, which has nothing missing), or Table 1's
         fine-tuned R30 on the full top or quark/gluon set (Herwig over Pythia, run by run)."""
         task = "top" if "_top_" in path else "qg"
+        # the statistics agent's refit (bs3; LEDGER DL-9, CS-5b): the MLP values its rows were bootstrapped from, as
+        # Table 10 (zeros, JetClass-II; overlay_bs3_mlp), Table 14 (the 17 groups) and the refit with the linear probes'
+        # substitution (top and quark/gluon) read them
+        bs3_task = "qg_herwig" if "_qg_herwig_" in path else task
+        if path.startswith("l3_bs3/mlp0_"):
+            return lambda m: _mlp_val(mlp or {}, m, bs3_task, mkey if mkey in ("auc", "accuracy") else "r30")
+        if path.startswith("l3_bs3/mlp_jc2bal_R16_Q1_"):
+            return lambda m: _bs3_val(bs3 or {}, "coarse", m, "jc2bal_coarse", "accuracy")
+        if path.startswith("l3_bs3/mlp_jc2bal_"):
+            return lambda m: _bs3_val(bs3 or {}, "jc2bal", m, "jc2bal", "macro_auc_ovr" if mkey == "macro" else mkey)
+        if path.startswith("l3_bs3/mlp_"):
+            return lambda m: _bs3_val(bs3 or {}, "bench", m, bs3_task, mkey if mkey in ("auc", "accuracy") else "r30")
         if "_pairs_" in path:       # the pair of the file, also of a later copy (".flav188")
             return lambda m: _pair(fits, m, re.search(r"_pairs_([a-z_]+?)(?:\.\w+)?\.json$", path).group(1))
         if side == "KIN" and ".kin." in path:
@@ -5376,7 +5488,69 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
         cur["sides"] = ([float(x) for x in e["a"]], [float(x) for x in e["b"]])
         return _tests_side(e, first)
 
+    def xbx_side(signal, arm_):
+        """(per-network signal efficiencies in percent, their test SDs) of a side of a transfer-head row: each network
+        the mean over its head trainings, its test term the root of their mean binomial variance (signal jets, and
+        the QCD jets through the cut, the slope from the stored ROC at 1% QCD efficiency; tests/test_xbx_claims_l3.py);
+        from scratch one network a seed."""
+        def one(rec):
+            c = rec["curve"]
+            eb, s = np.array(c["eps_b"]), np.array(c["eps_s"])
+            i = int(np.argmin(abs(eb - XBX_EPS_B)))
+            slope = (s[i + 1] - s[i - 1]) / (eb[i + 1] - eb[i - 1])
+            e = rec["eps_s_at_star"]
+            return e, e * (1 - e) / rec["n_s"] + slope ** 2 * XBX_EPS_B * (1 - XBX_EPS_B) / rec["n_b"]
+        out = []
+        for m in (runs[arm_] if arm_ != "SCRATCH" else [f"s{k}" for k in range(1, 4)]):
+            f = (data / "xbx_scratch" / signal / f"{m}.json") if arm_ == "SCRATCH" else (data / "xbx" / signal / f"{m}.json")
+            if not f.exists():
+                return None
+            doc = json.loads(f.read_text())
+            heads = [doc] if arm_ == "SCRATCH" else doc["signals"][signal]["head"]
+            ev = [one(h) for h in heads]
+            out.append((100 * float(np.mean([e for e, _ in ev])), 100 * math.sqrt(float(np.mean([v for _, v in ev])))))
+        return out
+
+    def xbx_row(first, second, signal):
+        """SC-2 (#1; bs3, 2026-11-23): a transfer-head row with the analytic test-sample term in place of the paired
+        bootstrap, as the heads' per-jet scores were not kept; the two sides' terms added (marked ANALYTIC_MARK)."""
+        a, b = xbx_side(signal, first), xbx_side(signal, second)
+        if a is None or b is None:
+            return None
+        va, vb = [x for x, _ in a], [x for x, _ in b]
+        sa = statistics.stdev(va) if len(va) > 1 else 0.0
+        sb = statistics.stdev(vb) if len(vb) > 1 else 0.0
+        boot = math.hypot(float(np.mean([s for _, s in a])), float(np.mean([s for _, s in b])))
+        cur["sides"] = (va, vb)
+        analytic.add((curhead[0], first, second))
+        return _tests_side({"delta": statistics.fmean(va) - statistics.fmean(vb), "sd_a": sa, "sd_b": sb,
+                            "boot_sd": boot, "sigma": math.sqrt(sa ** 2 + sb ** 2 + boot ** 2)}, first)
+
+    def part_row(first, second):
+        """A2 (bs3, 2026-11-23; SC-2: a substitute term may confirm a null): ParT's script on our cluster, one run,
+        against ParT's published from-scratch R30, the published SD over its trainings and our run's counting term
+        (R30 over the root of its passing background jets) added; our side has no run spread (a lower bound)."""
+        ours = _load(data / "partrepro" / "part.json")
+        pub = next((r for r in _load(LIT_BENCH).get("top", []) if r.get("method") == "ParT" and r.get("kind") == "scratch"),
+                   None)
+        if not ours or not pub or not pub.get("r30"):
+            return None
+        mean, sd = (float(x.replace(",", "")) for x in pub["r30"].split("±"))
+        count = ours["r30"] / math.sqrt(ours["r30_n_bkg_pass"])
+        e = {"delta": ours["r30"] - mean, "sd_a": 0.0, "sd_b": sd, "boot_sd": count,
+             "sigma": math.sqrt(sd ** 2 + count ** 2)}
+        if abs(e["delta"]) > 3 * e["sigma"]:
+            raise SystemExit("FATAL: tab:tests, ParT's script - published: passes 3 sigma on a lower-bound sigma")
+        single.add((curhead[0], first, second))
+        cur["sides"] = ([ours["r30"]], [mean])
+        return _tests_side(e, first)
+
     def row(head, first, second, src):
+        curhead[0] = head
+        if src is not None and src[0] == "xbx_analytic":
+            return xbx_row(first, second, src[1])
+        if src is not None and src[0] == "part_published":
+            return part_row(first, second)
         return (None if src is None else "stale" if src == RERUN else l3_row(first, second, src) if src[0] == "l3"
                 else file_row(head, first, second, src) if src[0] == "file" else least(head, src[1]) if src[0] == "least"
                 else mass_row(first, second, src))
@@ -5414,6 +5588,8 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
                 lab += LEAST + (SINGLE_SIDE if v[5][1] else "")
             elif (head, first, second) in single:
                 lab += SINGLE_SIDE
+            if (head, first, second) in analytic:
+                lab += ANALYTIC_MARK
             if v is None or v == "stale":
                 block.append(lab + r" & \multicolumn{3}{c}{\pending{" + ("bootstrap" if v is None else "rerun bootstrap")
                              + r"}} \\")
@@ -5480,7 +5656,36 @@ PW_ROWS = {
     "MlstPwHerwigRatio": ((r"quark/gluon tagging (Herwig), $R_{30}$, " + HEADING["ft"],), ("L188_HERWIG",),
                           "SCRATCH_HERWIG"),
     "MlstPwHeadRes": (("jet mass, resolution, " + HEADING["head"],), ("R16_Q1_MASS_HEAD",), "L162_MASS_HEAD"),
+    # LEDGER DL-9 (bs3): the MLP beside the linear-probe nulls; DL-3b: the MLP mass rows; R5-17: X->ee at 17 classes
+    "MlstPwAccResMlp": (("JetClass-II, accuracy, " + HEADING["mlp"],), ("L162",), "L188"),
+    "MlstPwCoarseTaskMlp": (("JetClass-II, accuracy on the 17 merged groups, " + HEADING["mlp"],), ("L162_17", "R42_Q1_17"),
+                            "L188_17"),
+    "MlstPwMlpMassRes": (("JetClass-II, AUC, " + HEADING["mlp"],), ("L162_MASS",), "L162"),
+    "MlstPwMlpMassCoarse": (("JetClass-II, AUC, " + HEADING["mlp"],), ("R16_Q1_MASS",), "R16_Q1"),
+    "MlstPwEeCoarse": ((rf"{_PAIR['ee_vs_mm']}, AUC, " + HEADING["lp"],), ("R16_Q1",), "L188"),
+    "MlstPwPartRepro": ((_FT_TOP + ", published models",), ("PART_OURS",), "PART_PUB"),     # A2 (bs3), a lower bound
 }
+# LEDGER DL-9 (bs3): the MLP results the text states beside the linear-probe nulls, checked where tab:tests is read: on
+# the 17 merged groups the 17-class model falls below 188 classes; with the linear probes' substitutions only the
+# 17-class mass network differs from 188 classes in R30, above it on top tagging (the Fig. 2 caption)
+MLP_STATED = {("JetClass-II, accuracy on the 17 merged groups, " + HEADING["mlp"], "R16_Q1_17", "L188_17"): -1,
+              (r"top tagging, $R_{30}$, " + HEADING["mlp"] + ", missing inputs as for the linear probe", "R16_Q1_MASS",
+               "L188"): 1}
+MLP_N2 = tuple(rf"{h}, $R_{{30}}$, " + HEADING["mlp"] + ", missing inputs as for the linear probe"
+               for h in ("top tagging", "quark/gluon tagging (Pythia)", "quark/gluon tagging (Herwig)"))
+
+
+def mlp_claim_check(rows: dict) -> None:
+    """FATAL unless the MLP rows the text states read as it says (MLP_STATED: the sign of a pass), and no other N2 row
+    (MLP_N2) passes; a row still pending is let through (its sentence waits with it)."""
+    for key, sign in MLP_STATED.items():
+        v = rows.get(key)
+        if isinstance(v, tuple) and not (sign * v[0] > 3 * v[4]):
+            raise SystemExit(f"FATAL (DL-9): {key[1]} - {key[2]} under '{key[0]}' no longer passes 3 sigma as the text states")
+    extra = [k for k, v in rows.items() if k[0] in MLP_N2 and k not in MLP_STATED and isinstance(v, tuple)
+             and abs(v[0]) > 3 * v[4]]
+    if extra:
+        raise SystemExit(f"FATAL (DL-9): MLP rows the Fig. 2 caption states as nulls pass 3 sigma: {extra}")
 
 
 def pw_macros(em, rows: dict, sides: dict, src) -> None:
@@ -6972,7 +7177,10 @@ KEY_MARKS = {
               # review of 5c40d69 (B3): a side of one run (the kinematic-inputs network), and a row over several
               (r"^{\circ}", " $^{\\circ}$~marks a side of one run, whose missing run spread makes $\\sigma$ a lower "
                             "bound."),
-              (r"^{\ast}", " $^{\\ast}$~marks the least $|\\Delta|/\\sigma$ of several networks or bins.")),
+              (r"^{\ast}", " $^{\\ast}$~marks the least $|\\Delta|/\\sigma$ of several networks or bins."),
+              # SC-2 (#1): the transfer heads, whose per-jet scores were not kept
+              (r"^{\dagger}", " $^{\\dagger}$~marks a test-sample term that is the binomial variance of each network's "
+                               "signal efficiency, the QCD jets' carried through the cut, the two sides added.")),
     "qcdhf": ((r"\dagger", " $^\\dagger$~marks a value for which fewer than \\MlstMinBkgPass{} jets pass in a run."),),
     "jetclass_rej": ((r"\dagger", " $^\\dagger$~marks a value with fewer than \\MlstMinBkgPass{} QCD jets passing in a "
                                   "run."),),
@@ -7100,7 +7308,8 @@ CAPTION_SHORT = {
     "coarse": "Linear probes on the frozen features of " + PNETS + ", of the two mass networks, "
               "of the 17-class partitions and of the random network, trained on one million class-balanced "
               "JetClass-II jets whose 188 classes are merged into the 17 groups of the 17-class label set. Accuracy is "
-              "the fraction of test jets assigned their true group. "
+              "the fraction of test jets assigned their true group. The last block gives multilayer-perceptron probes "
+              "of the four label sets. "
               + AUC_OVR.replace("the classes", "the target's groups") + _runs("set", "flav", "mass", "rand", "init"),
     "coarse_full": "Linear probes of the networks of table~\\ref{tab:probesfull} on one million class-balanced "
                    "JetClass-II jets whose classes are merged into the 43 or 17 classes of the label sets or the 17 of "
@@ -8325,7 +8534,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
         # the random partitions pooled, kept in the supplement beside its full version (PI 2026-11-13: delete
         # nothing); cut between its targets as the full version is (the three side by side overran a turned page)
         out["tables/mlst_coarse.tex"] = _float("coarse", table_coarse(co_s, pooled_s, TAB,
-                                                                      _paper_rows(ALL_ROWS + (INIT,)), COARSE_PAPER), True)
+                                                                      _paper_rows(ALL_ROWS + (INIT,)), COARSE_PAPER,
+                                                                      bs3=load_bs3_mlp(data)), True)
         out["tables/mlst_coarse_full.tex"] = _float("coarse_full", table_coarse(co_s, runs_s, TAB,
                                                                                 ALL_ROWS + (INIT, INIT_BN, SOPHON)), True)
     else:
@@ -8406,6 +8616,8 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     em.macro("MlstProbeFits", str(len(cells)), index, "selected linear-probe fits of the reported checkpoints (count)")
     em.macro("MlstProbeEdgeC", str(len(edge)), index, "of these, fits whose selected C is the largest of the grid (count)")
     mlp = load_mlp(data)
+    bs3 = load_bs3_mlp(data)
+    overlay_bs3_mlp(mlp, bs3)
     if mlp:
         # PI 2026-11-23 (LEDGER SP-9): the paper's table with the random partitions pooled, each one in its copy; (LEDGER
         # CA-15, option a) the rho columns and the class-token against hidden-layer block in the copy only
@@ -8581,7 +8793,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     tested = {}         # each row's result, which the ratio words read (ratio_words, PI 2026-11-23, LEDGER SP-12 step 3)
     sided = {}          # and its two sides' printed run values, the ratio's (review of render dfe5942, A2, A3)
     body, reps = table_tests(data, runs, fits_s, fill, chosen, per if tag else {}, *tests_in, rows_out=tested, co=co,
-                             sides_out=sided)
+                             sides_out=sided, mlp=mlp, bs3=bs3)
     out["tables/mlst_tests.tex"] = _float("tests", body, True, whole="turned", colsep_pt=6, fill={
         "__REPLICAS__": fmt_int(reps.pop()) if len(reps) == 1 else "the stated number of"})
     gap_macros(em, fits, per if tag else {}, runs, index, fmt_pm)
@@ -8671,6 +8883,7 @@ def build(em, root: pathlib.Path, missing: list, fmt_pm, fmt_int, words) -> dict
     ratio_words(em, tested, text_ratio_words(root / "paper/journal"), index, sided)
     out["data_release/ratio_check.csv"] = ratio_check_csv(em)
     pw_macros(em, tested, sided, index)
+    mlp_claim_check(tested)
     sculpt_pw_macro(em, sculpt, tests_in[0], runs, index)
     for r in vars(em).get("ratio_check", []):       # LEDGER TX-3: printed in the build log, one line a quoted ratio
         print(f"TX-3 {'ok  ' if r[7] == r[8] else 'DIFF'} {r[0]}: full {r[5]:.6g} ({r[7]}), printed means {r[6]:.6g} "
