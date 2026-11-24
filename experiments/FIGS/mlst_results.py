@@ -7949,6 +7949,9 @@ def split_wide(tab: str, budget: float = TEXT_CM, label_cm: float = LABEL_CM) ->
         # rule, then the bottom rule)
         lines = [ln for i, ln in enumerate(lines) if not (ln.strip() == r"\midrule" and i + 1 < len(lines)
                                                           and lines[i + 1].lstrip().startswith((r"\midrule", r"\bottomrule")))]
+        # nor a partitions subheading whose rows a block leaves out (Table 1's last block: from scratch under it)
+        lines = [ln for i, ln in enumerate(lines) if not (PARTITIONS in ln and ln.lstrip().startswith(r"\multicolumn")
+                                                          and not (i + 1 < len(lines) and lines[i + 1].startswith(r"\quad")))]
         out.append("\n".join(lines + [r"\end{tabular}"]))
     return out
 
