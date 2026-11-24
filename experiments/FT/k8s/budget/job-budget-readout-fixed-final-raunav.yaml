@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # The paper's read-out of all 341 one-rule cells, each at its row's recorded rate (budget_metrics.py --expect-fixed at
+  # mtx-s3.82), into fixed_metrics.json, which mlst_results uses complete or not at all: to apply once
+  # ft-budget-fixed-rate-jc1e5b-raunav is 11/11. Refuses to start unless every cell has DONE, refuses a read-out short of
+  # a cell, never overwrites. Replaces job-budget-readout-fixed-raunav.yaml, whose tag (mtx-s3.14) predates the
+  # recorded-rate trees and would read the cells of ft_v2/fixed at the original rates. The four trees side by side,
+  # joined in tree order (the file a single run writes). CPU only.
+  name: budget-readout-fixed-final-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          for T in 1 2 3 4 5; do git clone --depth 1 --branch "mtx-s3.82" https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
+          cd /workspace/repo
+          git rev-parse HEAD
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          [ "${USED}" -le 90 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONUNBUFFERED=1
+          FIXED=/data/results/ft_v2/fixed
+          OUT=${FIXED}/fixed_metrics.json
+          if [ -e ${OUT} ]; then echo "skip ${OUT}: exists"; exit 0; fi
+          python3 -c "import importlib.util,pathlib,sys;s=importlib.util.spec_from_file_location('bm','experiments/FT/budget_metrics.py');b=importlib.util.module_from_spec(s);s.loader.exec_module(b);k=b.fixed_keys();miss=[x for x in sorted(k) if not (k[x]/'DONE').exists()];sys.exit(0 if len(k)==341 and not miss else 'FATAL: %d expected, %d not DONE: %s'%(len(k),len(miss),miss[:20]))"
+          W=/tmp/readout; mkdir -p ${W}
+          PIDS=()
+          for T in leg_top leg_qg leg2 leg_jc2b; do
+            python3 experiments/FT/budget_metrics.py --root ${FIXED} --expect-fixed --trees ${T} --out ${W}/${T}.json &
+            PIDS+=($!)
+          done
+          RC=0; for P in "${PIDS[@]}"; do wait ${P} || RC=1; done
+          [ ${RC} = 0 ] || { echo "FATAL: a tree's read-out failed"; exit 1; }
+          python3 - ${W} ${OUT}.new <<'PY'
+          import json, pathlib, sys
+          w, out = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+          docs = [json.loads((w / f"{t}.json").read_text()) for t in ("leg_top", "leg_qg", "leg2", "leg_jc2b")]
+          head = {k: docs[0][k] for k in ("script", "root", "script_sha256", "expected")}
+          if any({k: d[k] for k in head} != head for d in docs):
+              sys.exit("FATAL: the four read-outs differ in script, root or expected cells")
+          doc = {**head, "cells": {}, "missing": []}
+          for d in docs:
+              if set(d["cells"]) & set(doc["cells"]):
+                  sys.exit("FATAL: a cell in two trees")
+              doc["cells"].update(d["cells"])
+              doc["missing"] += d["missing"]
+          n, m = len(doc["cells"]), len(doc["missing"])
+          if doc["expected"] != 341 or n != 341 or m:
+              sys.exit("FATAL: %d cells + %d missing, expected %s" % (n, m, doc["expected"]))
+          out.write_text(json.dumps(doc, indent=1, sort_keys=True) + "\n")
+          print(n, "cells,", m, "missing:", doc["missing"])
+          PY
+          mv -n ${OUT}.new ${OUT}
+          sha256sum ${OUT}
+          echo "PEAK_BYTES $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || cat /sys/fs/cgroup/memory/memory.max_usage_in_bytes)"
+          echo "READOUT COMPLETE"
+        resources:
+          # four trees at once: the class-balanced JetClass-II cells (188 logits x 903,922 test jets, about 7 GB by the
+          # estimate of job-budget-readout-fixed) beside JetClass (2M jets x 10 classes) and the two binary trees; no
+          # measured peak exists for this script, so the pod prints its own (PEAK_BYTES; the part-A run of 24 Nov: see RUNS.csv)
+          requests: { memory: "24Gi", cpu: "4", ephemeral-storage: "5Gi" }
+          limits:   { memory: "24Gi", cpu: "4", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["node-2-3.sdsc.optiputer.net", "suncave-5"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
