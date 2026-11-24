@@ -1594,34 +1594,34 @@
 \newcommand{\AccSdLegTwoSophonPublicEFive}{0.00049}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N100000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
 \newcommand{\AccLegTwoSophonPublicESix}{0.84632}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_mean :: sha256 701c58c3240274bb :: wave 1, superseded; 3 fine-tuning seeds
 \newcommand{\AccSdLegTwoSophonPublicESix}{0.00031}  % experiments/FIGS/data/leg2_metrics.json :: summary.sophon-public.N1000000.accuracy_sd :: sha256 701c58c3240274bb :: wave 1, superseded
-\newcommand{\FtBudgetSteps}{20{,}000}  % scripts/build_ft_budget_jobs.py :: EPOCHS * STEPS :: sha256 8edc4aa11b416570 :: the largest number of optimizer steps below the full training set
-\newcommand{\FtLongSteps}{80{,}000}  % scripts/build_ft_budget_jobs.py :: LONG_EPOCHS * STEPS :: sha256 8edc4aa11b416570 :: the largest number of optimizer steps of the long budget at LONG_N jets (JetClass, JetClass-II)
+\newcommand{\FtBudgetSteps}{20{,}000}  % scripts/build_ft_budget_jobs.py :: EPOCHS * STEPS :: sha256 601f19f8d7dbbaa0 :: the largest number of optimizer steps below the full training set
+\newcommand{\FtLongSteps}{80{,}000}  % scripts/build_ft_budget_jobs.py :: LONG_EPOCHS * STEPS :: sha256 601f19f8d7dbbaa0 :: the largest number of optimizer steps of the long budget at LONG_N jets (JetClass, JetClass-II)
 \newcommand{\DesignNTrainSelected}{109{,}938{,}036}  % experiments/FIGS/data/v2/jc2_train/counts.json :: n_selected :: sha256 b0b5a8b63aa808c0 :: selected jets of the pretrain_train files (experiments/FT/count_jc2_train.py)
-\newcommand{\FtBudgetEval}{500}  % scripts/build_ft_budget_jobs.py :: STEPS :: sha256 8edc4aa11b416570 :: steps between validation passes at and above SMALL_N training jets
-\newcommand{\FtBudgetEvalSmall}{50}  % scripts/build_ft_budget_jobs.py :: SMALL_STEPS :: sha256 8edc4aa11b416570 :: steps between validation passes below SMALL_N training jets
-\newcommand{\FtBudgetEvalSmallBelow}{\ensuremath{10^{5}}}  % scripts/build_ft_budget_jobs.py :: SMALL_N :: sha256 8edc4aa11b416570 :: training jets below which the validation runs every SMALL_STEPS steps
-\newcommand{\FtBudgetPatience}{10}  % scripts/build_ft_budget_jobs.py :: PATIENCE :: sha256 8edc4aa11b416570 :: validation passes without improvement before training stops
-\newcommand{\FtStepsEThree}{20{,}000}  % scripts/build_ft_budget_jobs.py :: FIXED_STEPS[1000] :: sha256 8edc4aa11b416570 :: optimizer steps of every one-rule cell at that training size
-\newcommand{\FtCheckEThree}{50}  % scripts/build_ft_budget_jobs.py :: FIXED_CHECK[1000] :: sha256 8edc4aa11b416570 :: steps between validation checks at that training size
-\newcommand{\FtStepsEFour}{3{,}000}  % scripts/build_ft_budget_jobs.py :: FIXED_STEPS[10000] :: sha256 8edc4aa11b416570 :: optimizer steps of every one-rule cell at that training size
-\newcommand{\FtCheckEFour}{25}  % scripts/build_ft_budget_jobs.py :: FIXED_CHECK[10000] :: sha256 8edc4aa11b416570 :: steps between validation checks at that training size
-\newcommand{\FtStepsEFive}{20{,}000}  % scripts/build_ft_budget_jobs.py :: FIXED_STEPS[100000] :: sha256 8edc4aa11b416570 :: optimizer steps of every one-rule cell at that training size
-\newcommand{\FtCheckEFive}{50}  % scripts/build_ft_budget_jobs.py :: FIXED_CHECK[100000] :: sha256 8edc4aa11b416570 :: steps between validation checks at that training size
-\newcommand{\FtStepsESix}{80{,}000}  % scripts/build_ft_budget_jobs.py :: FIXED_STEPS[1000000] :: sha256 8edc4aa11b416570 :: optimizer steps of every one-rule cell at that training size
-\newcommand{\FtCheckESix}{500}  % scripts/build_ft_budget_jobs.py :: FIXED_CHECK[1000000] :: sha256 8edc4aa11b416570 :: steps between validation checks at that training size
-\newcommand{\FtValJetsFixed}{199{,}680}  % scripts/build_ft_budget_jobs.py :: FIXED_VAL :: sha256 8edc4aa11b416570 :: validation jets of every check
-\newcommand{\FtJcTwoNetsSmall}{16}  % scripts/build_ft_budget_jobs.py :: fixed_cells, task jc2b, pretrained, 1e4 and 1e5 :: sha256 8edc4aa11b416570 :: pretrained networks fine-tuned on JetClass-II below 1e6: the four label sets and the two mass networks
-\newcommand{\FtJcTwoNetsESix}{27}  % scripts/build_ft_budget_jobs.py :: fixed_cells, task jc2b, pretrained, 1e6 :: sha256 8edc4aa11b416570 :: pretrained networks fine-tuned on JetClass-II at 1e6: every paper run
-\newcommand{\FtSearchFloor}{\ensuremath{10^{-5}}}  % scripts/build_ft_budget_jobs.py :: FIXED_SEARCH_FLOOR :: sha256 8edc4aa11b416570 :: the lowest rate the search tries
-\newcommand{\FtHeadMult}{50}  % scripts/build_ft_budget_jobs.py :: HEAD_MULT :: sha256 8edc4aa11b416570 :: the head's learning-rate multiplier
-\newcommand{\FtHeadCap}{\ensuremath{5\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: HEAD_CAP :: sha256 8edc4aa11b416570 :: the head's largest learning rate
-\newcommand{\FtBudgetBatch}{512}  % scripts/build_ft_budget_jobs.py :: BATCH :: sha256 8edc4aa11b416570
-\newcommand{\FtBudgetWeightDecay}{0.01}  % scripts/build_ft_budget_jobs.py :: --optimizer-option weight_decay (every cell) :: sha256 8edc4aa11b416570
-\newcommand{\FtSweepPre}{\ensuremath{10^{-4}}, \ensuremath{3\times10^{-4}} and \ensuremath{10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_PRE :: sha256 8edc4aa11b416570 :: backbone rates of the sweep
-\newcommand{\FtSweepScratch}{\ensuremath{3\times10^{-4}}, \ensuremath{10^{-3}} and \ensuremath{3\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_SCRATCH :: sha256 8edc4aa11b416570 :: from-scratch rates of the sweep
-\newcommand{\FtSweepN}{10{,}000}  % scripts/build_ft_budget_jobs.py :: SWEEP_N :: sha256 8edc4aa11b416570 :: training jets of the sweep
-\newcommand{\FtValJets}{200{,}000}  % scripts/build_ft_budget_jobs.py :: VAL_N :: sha256 8edc4aa11b416570 :: the fixed validation set
-\newcommand{\FtValJetsBal}{20{,}480}  % scripts/build_ft_budget_jobs.py :: VAL_SIZE[jc2b] :: sha256 8edc4aa11b416570 :: the balanced JetClass-II validation set
+\newcommand{\FtBudgetEval}{500}  % scripts/build_ft_budget_jobs.py :: STEPS :: sha256 601f19f8d7dbbaa0 :: steps between validation passes at and above SMALL_N training jets
+\newcommand{\FtBudgetEvalSmall}{50}  % scripts/build_ft_budget_jobs.py :: SMALL_STEPS :: sha256 601f19f8d7dbbaa0 :: steps between validation passes below SMALL_N training jets
+\newcommand{\FtBudgetEvalSmallBelow}{\ensuremath{10^{5}}}  % scripts/build_ft_budget_jobs.py :: SMALL_N :: sha256 601f19f8d7dbbaa0 :: training jets below which the validation runs every SMALL_STEPS steps
+\newcommand{\FtBudgetPatience}{10}  % scripts/build_ft_budget_jobs.py :: PATIENCE :: sha256 601f19f8d7dbbaa0 :: validation passes without improvement before training stops
+\newcommand{\FtStepsEThree}{20{,}000}  % scripts/build_ft_budget_jobs.py :: FIXED_STEPS[1000] :: sha256 601f19f8d7dbbaa0 :: optimizer steps of every one-rule cell at that training size
+\newcommand{\FtCheckEThree}{50}  % scripts/build_ft_budget_jobs.py :: FIXED_CHECK[1000] :: sha256 601f19f8d7dbbaa0 :: steps between validation checks at that training size
+\newcommand{\FtStepsEFour}{3{,}000}  % scripts/build_ft_budget_jobs.py :: FIXED_STEPS[10000] :: sha256 601f19f8d7dbbaa0 :: optimizer steps of every one-rule cell at that training size
+\newcommand{\FtCheckEFour}{25}  % scripts/build_ft_budget_jobs.py :: FIXED_CHECK[10000] :: sha256 601f19f8d7dbbaa0 :: steps between validation checks at that training size
+\newcommand{\FtStepsEFive}{20{,}000}  % scripts/build_ft_budget_jobs.py :: FIXED_STEPS[100000] :: sha256 601f19f8d7dbbaa0 :: optimizer steps of every one-rule cell at that training size
+\newcommand{\FtCheckEFive}{50}  % scripts/build_ft_budget_jobs.py :: FIXED_CHECK[100000] :: sha256 601f19f8d7dbbaa0 :: steps between validation checks at that training size
+\newcommand{\FtStepsESix}{80{,}000}  % scripts/build_ft_budget_jobs.py :: FIXED_STEPS[1000000] :: sha256 601f19f8d7dbbaa0 :: optimizer steps of every one-rule cell at that training size
+\newcommand{\FtCheckESix}{500}  % scripts/build_ft_budget_jobs.py :: FIXED_CHECK[1000000] :: sha256 601f19f8d7dbbaa0 :: steps between validation checks at that training size
+\newcommand{\FtValJetsFixed}{199{,}680}  % scripts/build_ft_budget_jobs.py :: FIXED_VAL :: sha256 601f19f8d7dbbaa0 :: validation jets of every check
+\newcommand{\FtJcTwoNetsSmall}{16}  % scripts/build_ft_budget_jobs.py :: fixed_cells, task jc2b, pretrained, 1e4 and 1e5 :: sha256 601f19f8d7dbbaa0 :: pretrained networks fine-tuned on JetClass-II below 1e6: the four label sets and the two mass networks
+\newcommand{\FtJcTwoNetsESix}{27}  % scripts/build_ft_budget_jobs.py :: fixed_cells, task jc2b, pretrained, 1e6 :: sha256 601f19f8d7dbbaa0 :: pretrained networks fine-tuned on JetClass-II at 1e6: every paper run
+\newcommand{\FtSearchFloor}{\ensuremath{10^{-5}}}  % scripts/build_ft_budget_jobs.py :: FIXED_SEARCH_FLOOR :: sha256 601f19f8d7dbbaa0 :: the lowest rate the search tries
+\newcommand{\FtHeadMult}{50}  % scripts/build_ft_budget_jobs.py :: HEAD_MULT :: sha256 601f19f8d7dbbaa0 :: the head's learning-rate multiplier
+\newcommand{\FtHeadCap}{\ensuremath{5\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: HEAD_CAP :: sha256 601f19f8d7dbbaa0 :: the head's largest learning rate
+\newcommand{\FtBudgetBatch}{512}  % scripts/build_ft_budget_jobs.py :: BATCH :: sha256 601f19f8d7dbbaa0
+\newcommand{\FtBudgetWeightDecay}{0.01}  % scripts/build_ft_budget_jobs.py :: --optimizer-option weight_decay (every cell) :: sha256 601f19f8d7dbbaa0
+\newcommand{\FtSweepPre}{\ensuremath{10^{-4}}, \ensuremath{3\times10^{-4}} and \ensuremath{10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_PRE :: sha256 601f19f8d7dbbaa0 :: backbone rates of the sweep
+\newcommand{\FtSweepScratch}{\ensuremath{3\times10^{-4}}, \ensuremath{10^{-3}} and \ensuremath{3\times10^{-3}}}  % scripts/build_ft_budget_jobs.py :: SWEEP_SCRATCH :: sha256 601f19f8d7dbbaa0 :: from-scratch rates of the sweep
+\newcommand{\FtSweepN}{10{,}000}  % scripts/build_ft_budget_jobs.py :: SWEEP_N :: sha256 601f19f8d7dbbaa0 :: training jets of the sweep
+\newcommand{\FtValJets}{200{,}000}  % scripts/build_ft_budget_jobs.py :: VAL_N :: sha256 601f19f8d7dbbaa0 :: the fixed validation set
+\newcommand{\FtValJetsBal}{20{,}480}  % scripts/build_ft_budget_jobs.py :: VAL_SIZE[jc2b] :: sha256 601f19f8d7dbbaa0 :: the balanced JetClass-II validation set
 \newcommand{\LpVfourCMax}{\ensuremath{10^{4}}}  % experiments/EVAL/probe_bal.py :: C_GRID_V4 :: sha256 85a84e9e6cf3703e :: largest inverse regularisation of the v4 probes
 \newcommand{\LpVfiveCMin}{\ensuremath{10^{-6}}}  % experiments/EVAL/linear_probe_v2.py :: C_GRID_V5 :: sha256 58b0f78f4d6c6f7b :: smallest inverse regularisation, v5
 \newcommand{\LpVfiveCMax}{\ensuremath{10^{6}}}  % experiments/EVAL/linear_probe_v2.py :: C_GRID_V5 :: sha256 58b0f78f4d6c6f7b :: largest inverse regularisation, v5
@@ -1647,7 +1647,7 @@
 \newcommand{\MlstProbeRunsDone}{27}  % experiments/FIGS/data/v2/index.json :: runs with a linear-probe fit (count) :: sha256 0f97a5afe94d6279 :: of the paper's runs
 \newcommand{\MlstPaperRuns}{27}  % configs/arms/v2_paper_runs.txt :: runs (count) :: sha256 b04562b14ea8cbc7
 \newcommand{\MlstSdRelUnc}{50\%}  % configs/arms/v2_paper_runs.txt :: relative standard error of a standard deviation from the runs of a hierarchy level, 1/sqrt(2(n-1)) :: sha256 b04562b14ea8cbc7
-\newcommand{\MlstPairsNWord}{six}  % experiments/FIGS/mlst_results.py :: PAIRS_TABLE (count) :: sha256 65bf2f9170aff201 :: class pairs of tab:pairs
+\newcommand{\MlstPairsNWord}{six}  % experiments/FIGS/mlst_results.py :: PAIRS_TABLE (count) :: sha256 262d024cd7daa553 :: class pairs of tab:pairs
 \newcommand{\MlstCmpJcTwoResOverFull}{1.026\,\ensuremath{\pm}\,0.005}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of L162 over L188, run by run :: sha256 0f97a5afe94d6279
 \newcommand{\MlstCmpJcTwoMidOverFull}{1.227\,\ensuremath{\pm}\,0.009}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R42_Q1 over L188, run by run :: sha256 0f97a5afe94d6279
 \newcommand{\MlstCmpJcTwoCoarseOverFull}{1.557\,\ensuremath{\pm}\,0.019}  % experiments/FIGS/data/v2/index.json :: linear probe jc2_188 N=1000000: (1 - macro_auc_ovr) of R16_Q1 over L188, run by run :: sha256 0f97a5afe94d6279
@@ -2562,26 +2562,6 @@
 \newcommand{\MlstFtQgHerwigRthirtyCoarseMassOverCoarseEFour}{0.919 and 0.999}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=10000: R30 of R16_Q1_MASS over R16_Q1, run by run :: sha256 0f97a5afe94d6279
 \newcommand{\MlstFtQgHerwigRthirtyRandOverFullEFour}{1.20\,\ensuremath{\pm}\,0.32}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=10000: R30 of each random partition over the L188 run of its seed :: sha256 0f97a5afe94d6279
 \newcommand{\MlstFtQgHerwigRthirtyRandOverCoarseEFour}{0.85\,\ensuremath{\pm}\,0.10}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=10000: R30 of each random partition over the R16_Q1 run of its seed :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyScratchEFive}{37.6\,\ensuremath{\pm}\,0.6}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 from scratch, every seed :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyFullEFive}{35\,\ensuremath{\pm}\,5}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30, L188 :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyFullOverScratchEFive}{0.94\,\ensuremath{\pm}\,0.13}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of each L188 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyResEFive}{37.9\,\ensuremath{\pm}\,2.7}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30, L162 :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyResOverScratchEFive}{1.01\,\ensuremath{\pm}\,0.07}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of each L162 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyMidEFive}{37\,\ensuremath{\pm}\,4}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30, R42_Q1 :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyMidOverScratchEFive}{0.98\,\ensuremath{\pm}\,0.10}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of each R42_Q1 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyCoarseEFive}{37.6\,\ensuremath{\pm}\,2.2}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30, R16_Q1 :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyCoarseOverScratchEFive}{1.00\,\ensuremath{\pm}\,0.06}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of each R16_Q1 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyResMassEFive}{31 and 42}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30, L162_MASS :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyResMassOverScratchEFive}{0.83 and 1.11}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of each L162_MASS run over the from-scratch mean, SD over runs and standard error of that mean in quadrature :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyCoarseMassEFive}{33.0 and 35.6}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30, R16_Q1_MASS :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyCoarseMassOverScratchEFive}{0.877 and 0.948}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of each R16_Q1_MASS run over the from-scratch mean, SD over runs and standard error of that mean in quadrature :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyResOverFullEFive}{1.09\,\ensuremath{\pm}\,0.18}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of L162 over L188, run by run :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyMidOverFullEFive}{1.07\,\ensuremath{\pm}\,0.27}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of R42_Q1 over L188, run by run :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyCoarseOverFullEFive}{1.08\,\ensuremath{\pm}\,0.12}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of R16_Q1 over L188, run by run :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyResMassOverResEFive}{0.76 and 1.18}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of L162_MASS over L162, run by run :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyCoarseMassOverCoarseEFive}{0.83 and 0.96}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of R16_Q1_MASS over R16_Q1, run by run :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyRandOverFullEFive}{1.00\,\ensuremath{\pm}\,0.07}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of each random partition over the L188 run of its seed :: sha256 0f97a5afe94d6279
-\newcommand{\MlstFtQgHerwigRthirtyRandOverCoarseEFive}{0.99\,\ensuremath{\pm}\,0.04}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=100000: R30 of each random partition over the R16_Q1 run of its seed :: sha256 0f97a5afe94d6279
 \newcommand{\MlstFtQgHerwigRthirtyScratch}{35.5\,\ensuremath{\pm}\,1.2}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=1600000: R30 from scratch, every seed :: sha256 0f97a5afe94d6279
 \newcommand{\MlstFtQgHerwigRthirtyFull}{35.2\,\ensuremath{\pm}\,2.1}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=1600000: R30, L188 :: sha256 0f97a5afe94d6279
 \newcommand{\MlstFtQgHerwigRthirtyFullOverScratch}{0.99\,\ensuremath{\pm}\,0.06}  % experiments/FIGS/data/v2/index.json :: fine-tuning qg_herwig N=1600000: R30 of each L188 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature :: sha256 0f97a5afe94d6279
@@ -2621,6 +2601,12 @@
 \newcommand{\MlstFTwoInitBnAccJcOne}{0.48}  % experiments/FIGS/data/v2/index.json :: linear probes of the random network (INIT_BN), Table 1's cells, mean over its initializations :: sha256 0f97a5afe94d6279 :: figure F2's caption: the random network, not drawn
 \newcommand{\MlstFTwoInitBnRthirtyMin}{31}  % experiments/FIGS/data/v2/index.json :: linear probes of the random network (INIT_BN), Table 1's cells, mean over its initializations :: sha256 0f97a5afe94d6279 :: figure F2's caption: the random network, not drawn
 \newcommand{\MlstFTwoInitBnRthirtyMax}{52}  % experiments/FIGS/data/v2/index.json :: linear probes of the random network (INIT_BN), Table 1's cells, mean over its initializations :: sha256 0f97a5afe94d6279 :: figure F2's caption: the random network, not drawn
+\newcommand{\MlstATenInitAccJcTwoMin}{0.02}  % experiments/FIGS/data/v2/index.json :: linear probes of the random network (INIT), mean over its initializations at each training-set size, the min over the sizes :: sha256 0f97a5afe94d6279 :: figure A10's caption: the random network, not drawn
+\newcommand{\MlstATenInitAccJcTwoMax}{0.072}  % experiments/FIGS/data/v2/index.json :: linear probes of the random network (INIT), mean over its initializations at each training-set size, the max over the sizes :: sha256 0f97a5afe94d6279 :: figure A10's caption: the random network, not drawn
+\newcommand{\MlstATenInitAccJcOneMin}{0.31}  % experiments/FIGS/data/v2/index.json :: linear probes of the random network (INIT), mean over its initializations at each training-set size, the min over the sizes :: sha256 0f97a5afe94d6279 :: figure A10's caption: the random network, not drawn
+\newcommand{\MlstATenInitAccJcOneMax}{0.41}  % experiments/FIGS/data/v2/index.json :: linear probes of the random network (INIT), mean over its initializations at each training-set size, the max over the sizes :: sha256 0f97a5afe94d6279 :: figure A10's caption: the random network, not drawn
+\newcommand{\MlstATenInitRthirtyMin}{25}  % experiments/FIGS/data/v2/index.json :: linear probes of the random network (INIT), mean over its initializations at each training-set size, the min over the sizes :: sha256 0f97a5afe94d6279 :: figure A10's caption: the random network, not drawn
+\newcommand{\MlstATenInitRthirtyMax}{57}  % experiments/FIGS/data/v2/index.json :: linear probes of the random network (INIT), mean over its initializations at each training-set size, the max over the sizes :: sha256 0f97a5afe94d6279 :: figure A10's caption: the random network, not drawn
 \newcommand{\MlstLpJcOneGapFracEFour}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: jc1 N=10000: (probe - scratch) / (fine-tuned - scratch) accuracy, 188-class runs, per cent :: sha256 0f97a5afe94d6279
 \newcommand{\MlstLpJcOneGapFracEFive}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: jc1 N=100000: (probe - scratch) / (fine-tuned - scratch) accuracy, 188-class runs, per cent :: sha256 0f97a5afe94d6279
 \newcommand{\MlstLpJcTwoGapFracEFour}{\pending{no run yet}}  % experiments/FIGS/data/v2/index.json :: jc2_188 N=10000: (probe - scratch) / (fine-tuned - scratch) accuracy, 188-class runs, per cent :: sha256 0f97a5afe94d6279

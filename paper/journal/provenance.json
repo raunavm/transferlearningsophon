@@ -2365,67 +2365,67 @@
   },
   "FtBudgetBatch": {
     "json_path": "BATCH",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "512"
   },
   "FtBudgetEval": {
     "json_path": "STEPS",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "500"
   },
   "FtBudgetEvalSmall": {
     "json_path": "SMALL_STEPS",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "50"
   },
   "FtBudgetEvalSmallBelow": {
     "json_path": "SMALL_N",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "\\ensuremath{10^{5}}"
   },
   "FtBudgetPatience": {
     "json_path": "PATIENCE",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "10"
   },
   "FtBudgetSteps": {
     "json_path": "EPOCHS * STEPS",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "20{,}000"
   },
   "FtBudgetWeightDecay": {
     "json_path": "--optimizer-option weight_decay (every cell)",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "0.01"
   },
   "FtCheckEFive": {
     "json_path": "FIXED_CHECK[100000]",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "50"
   },
   "FtCheckEFour": {
     "json_path": "FIXED_CHECK[10000]",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "25"
   },
   "FtCheckESix": {
     "json_path": "FIXED_CHECK[1000000]",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "500"
   },
   "FtCheckEThree": {
     "json_path": "FIXED_CHECK[1000]",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "50"
   },
@@ -2473,31 +2473,31 @@
   },
   "FtHeadCap": {
     "json_path": "HEAD_CAP",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "\\ensuremath{5\\times10^{-3}}"
   },
   "FtHeadMult": {
     "json_path": "HEAD_MULT",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "50"
   },
   "FtJcTwoNetsESix": {
     "json_path": "fixed_cells, task jc2b, pretrained, 1e6",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "27"
   },
   "FtJcTwoNetsSmall": {
     "json_path": "fixed_cells, task jc2b, pretrained, 1e4 and 1e5",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "16"
   },
   "FtLongSteps": {
     "json_path": "LONG_EPOCHS * STEPS",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "80{,}000"
   },
@@ -3445,7 +3445,7 @@
   },
   "FtSearchFloor": {
     "json_path": "FIXED_SEARCH_FLOOR",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "\\ensuremath{10^{-5}}"
   },
@@ -3475,43 +3475,43 @@
   },
   "FtStepsEFive": {
     "json_path": "FIXED_STEPS[100000]",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "20{,}000"
   },
   "FtStepsEFour": {
     "json_path": "FIXED_STEPS[10000]",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "3{,}000"
   },
   "FtStepsESix": {
     "json_path": "FIXED_STEPS[1000000]",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "80{,}000"
   },
   "FtStepsEThree": {
     "json_path": "FIXED_STEPS[1000]",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "20{,}000"
   },
   "FtSweepN": {
     "json_path": "SWEEP_N",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "10{,}000"
   },
   "FtSweepPre": {
     "json_path": "SWEEP_PRE",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "\\ensuremath{10^{-4}}, \\ensuremath{3\\times10^{-4}} and \\ensuremath{10^{-3}}"
   },
   "FtSweepScratch": {
     "json_path": "SWEEP_SCRATCH",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "\\ensuremath{3\\times10^{-4}}, \\ensuremath{10^{-3}} and \\ensuremath{3\\times10^{-3}}"
   },
@@ -3523,19 +3523,19 @@
   },
   "FtValJets": {
     "json_path": "VAL_N",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "200{,}000"
   },
   "FtValJetsBal": {
     "json_path": "VAL_SIZE[jc2b]",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "20{,}480"
   },
   "FtValJetsFixed": {
     "json_path": "FIXED_VAL",
-    "sha256": "8edc4aa11b416570efd395824a2da273e896770e7016a5be2e38a2ea8b77b59f",
+    "sha256": "601f19f8d7dbbaa00278ed24e93391177f880a748b49bf9ccab6f98b871e75bd",
     "source_file": "scripts/build_ft_budget_jobs.py",
     "value": "199{,}680"
   },
@@ -4702,6 +4702,42 @@
     "sha256": "e03cde45ece9f38557db648c65c76e1b02bac8153e0d78c104e0456077b7d5ce",
     "source_file": "experiments/FIGS/data/mass_resolution/analysis_holm/s7_mass_resolution.json",
     "value": "0.2986"
+  },
+  "MlstATenInitAccJcOneMax": {
+    "json_path": "linear probes of the random network (INIT), mean over its initializations at each training-set size, the max over the sizes",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.41"
+  },
+  "MlstATenInitAccJcOneMin": {
+    "json_path": "linear probes of the random network (INIT), mean over its initializations at each training-set size, the min over the sizes",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.31"
+  },
+  "MlstATenInitAccJcTwoMax": {
+    "json_path": "linear probes of the random network (INIT), mean over its initializations at each training-set size, the max over the sizes",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.072"
+  },
+  "MlstATenInitAccJcTwoMin": {
+    "json_path": "linear probes of the random network (INIT), mean over its initializations at each training-set size, the min over the sizes",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "0.02"
+  },
+  "MlstATenInitRthirtyMax": {
+    "json_path": "linear probes of the random network (INIT), mean over its initializations at each training-set size, the max over the sizes",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "57"
+  },
+  "MlstATenInitRthirtyMin": {
+    "json_path": "linear probes of the random network (INIT), mean over its initializations at each training-set size, the min over the sizes",
+    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
+    "source_file": "experiments/FIGS/data/v2/index.json",
+    "value": "25"
   },
   "MlstBnMaxDev": {
     "json_path": "largest |r(best70_bn) / r(best70) - 1| of a JetClass-II ratio of 1 - AUC to the 188-class run, per cent",
@@ -6743,12 +6779,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "36.9\\,\\ensuremath{\\pm}\\,0.9"
   },
-  "MlstFtQgHerwigRthirtyCoarseEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30, R16_Q1",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "37.6\\,\\ensuremath{\\pm}\\,2.2"
-  },
   "MlstFtQgHerwigRthirtyCoarseEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30, R16_Q1",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -6760,12 +6790,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "37.7 and 32.9"
-  },
-  "MlstFtQgHerwigRthirtyCoarseMassEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30, R16_Q1_MASS",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "33.0 and 35.6"
   },
   "MlstFtQgHerwigRthirtyCoarseMassEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30, R16_Q1_MASS",
@@ -6779,12 +6803,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.01 and 0.88"
   },
-  "MlstFtQgHerwigRthirtyCoarseMassOverCoarseEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of R16_Q1_MASS over R16_Q1, run by run",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.83 and 0.96"
-  },
   "MlstFtQgHerwigRthirtyCoarseMassOverCoarseEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of R16_Q1_MASS over R16_Q1, run by run",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -6796,12 +6814,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.06 and 0.93"
-  },
-  "MlstFtQgHerwigRthirtyCoarseMassOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of each R16_Q1_MASS run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.877 and 0.948"
   },
   "MlstFtQgHerwigRthirtyCoarseMassOverScratchEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of each R16_Q1_MASS run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
@@ -6815,12 +6827,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.05\\,\\ensuremath{\\pm}\\,0.06"
   },
-  "MlstFtQgHerwigRthirtyCoarseOverFullEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of R16_Q1 over L188, run by run",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.08\\,\\ensuremath{\\pm}\\,0.12"
-  },
   "MlstFtQgHerwigRthirtyCoarseOverFullEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of R16_Q1 over L188, run by run",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -6832,12 +6838,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.040\\,\\ensuremath{\\pm}\\,0.033"
-  },
-  "MlstFtQgHerwigRthirtyCoarseOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of each R16_Q1 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.00\\,\\ensuremath{\\pm}\\,0.06"
   },
   "MlstFtQgHerwigRthirtyCoarseOverScratchEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of each R16_Q1 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
@@ -6851,12 +6851,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "35.2\\,\\ensuremath{\\pm}\\,2.1"
   },
-  "MlstFtQgHerwigRthirtyFullEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30, L188",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "35\\,\\ensuremath{\\pm}\\,5"
-  },
   "MlstFtQgHerwigRthirtyFullEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30, L188",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -6868,12 +6862,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.99\\,\\ensuremath{\\pm}\\,0.06"
-  },
-  "MlstFtQgHerwigRthirtyFullOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of each L188 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.94\\,\\ensuremath{\\pm}\\,0.13"
   },
   "MlstFtQgHerwigRthirtyFullOverScratchEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of each L188 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
@@ -6887,12 +6875,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "36.1\\,\\ensuremath{\\pm}\\,2.7"
   },
-  "MlstFtQgHerwigRthirtyMidEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30, R42_Q1",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "37\\,\\ensuremath{\\pm}\\,4"
-  },
   "MlstFtQgHerwigRthirtyMidEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30, R42_Q1",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -6904,12 +6886,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.03\\,\\ensuremath{\\pm}\\,0.05"
-  },
-  "MlstFtQgHerwigRthirtyMidOverFullEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of R42_Q1 over L188, run by run",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.07\\,\\ensuremath{\\pm}\\,0.27"
   },
   "MlstFtQgHerwigRthirtyMidOverFullEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of R42_Q1 over L188, run by run",
@@ -6923,12 +6899,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.02\\,\\ensuremath{\\pm}\\,0.08"
   },
-  "MlstFtQgHerwigRthirtyMidOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of each R42_Q1 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.98\\,\\ensuremath{\\pm}\\,0.10"
-  },
   "MlstFtQgHerwigRthirtyMidOverScratchEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of each R42_Q1 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -6940,12 +6910,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.94\\,\\ensuremath{\\pm}\\,0.04"
-  },
-  "MlstFtQgHerwigRthirtyRandOverCoarseEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of each random partition over the R16_Q1 run of its seed",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.99\\,\\ensuremath{\\pm}\\,0.04"
   },
   "MlstFtQgHerwigRthirtyRandOverCoarseEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of each random partition over the R16_Q1 run of its seed",
@@ -6959,12 +6923,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.98\\,\\ensuremath{\\pm}\\,0.04"
   },
-  "MlstFtQgHerwigRthirtyRandOverFullEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of each random partition over the L188 run of its seed",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.00\\,\\ensuremath{\\pm}\\,0.07"
-  },
   "MlstFtQgHerwigRthirtyRandOverFullEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of each random partition over the L188 run of its seed",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -6976,12 +6934,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "34.6\\,\\ensuremath{\\pm}\\,2.0"
-  },
-  "MlstFtQgHerwigRthirtyResEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30, L162",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "37.9\\,\\ensuremath{\\pm}\\,2.7"
   },
   "MlstFtQgHerwigRthirtyResEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30, L162",
@@ -6995,12 +6947,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "37.8 and 34.4"
   },
-  "MlstFtQgHerwigRthirtyResMassEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30, L162_MASS",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "31 and 42"
-  },
   "MlstFtQgHerwigRthirtyResMassEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30, L162_MASS",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -7012,12 +6958,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.14 and 0.93"
-  },
-  "MlstFtQgHerwigRthirtyResMassOverResEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of L162_MASS over L162, run by run",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.76 and 1.18"
   },
   "MlstFtQgHerwigRthirtyResMassOverResEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of L162_MASS over L162, run by run",
@@ -7031,12 +6971,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "1.065 and 0.970"
   },
-  "MlstFtQgHerwigRthirtyResMassOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of each L162_MASS run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "0.83 and 1.11"
-  },
   "MlstFtQgHerwigRthirtyResMassOverScratchEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of each L162_MASS run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -7048,12 +6982,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.9832\\,\\ensuremath{\\pm}\\,0.0022"
-  },
-  "MlstFtQgHerwigRthirtyResOverFullEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of L162 over L188, run by run",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.09\\,\\ensuremath{\\pm}\\,0.18"
   },
   "MlstFtQgHerwigRthirtyResOverFullEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of L162 over L188, run by run",
@@ -7067,12 +6995,6 @@
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "0.97\\,\\ensuremath{\\pm}\\,0.06"
   },
-  "MlstFtQgHerwigRthirtyResOverScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 of each L162 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "1.01\\,\\ensuremath{\\pm}\\,0.07"
-  },
   "MlstFtQgHerwigRthirtyResOverScratchEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 of each L162 run over the from-scratch mean, SD over runs and standard error of that mean in quadrature",
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
@@ -7084,12 +7006,6 @@
     "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
     "source_file": "experiments/FIGS/data/v2/index.json",
     "value": "35.5\\,\\ensuremath{\\pm}\\,1.2"
-  },
-  "MlstFtQgHerwigRthirtyScratchEFive": {
-    "json_path": "fine-tuning qg_herwig N=100000: R30 from scratch, every seed",
-    "sha256": "0f97a5afe94d6279559b576ec881844bf1e34aa80bfcc5694033d07228b68668",
-    "source_file": "experiments/FIGS/data/v2/index.json",
-    "value": "37.6\\,\\ensuremath{\\pm}\\,0.6"
   },
   "MlstFtQgHerwigRthirtyScratchEFour": {
     "json_path": "fine-tuning qg_herwig N=10000: R30 from scratch, every seed",
@@ -10237,7 +10153,7 @@
   },
   "MlstPairsNWord": {
     "json_path": "PAIRS_TABLE (count)",
-    "sha256": "65bf2f9170aff201442d19a91f98efee8c5f6d69662b1f65caf633f7e2bce0c1",
+    "sha256": "262d024cd7daa553065ba19844a6fa9d5a9f606a2eb588c709d6172829bfd7b0",
     "source_file": "experiments/FIGS/mlst_results.py",
     "value": "six"
   },
