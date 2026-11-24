@@ -231,5 +231,6 @@ def test_the_rerun_rows_read_each_cell_at_its_rows_recorded_rate():
     outs = [b.ftfix_out(name, n) for _pb, _t, name, n, _p in b.FTFIX_FILES + b.FTFIX_BENCH]
     assert len(set(outs)) == 14 and all(o.startswith("/data/results/bootstrap/l3_fixed/ft_") for o in outs)
     assert all(text.count(f"[ -e {o} ] ||") == 1 for o in outs)
-    assert "completions: 2\n" in smoke and "name: boot-ftfix-smoke-raunav\n" in smoke and b.SMOKE in smoke
+    assert "completions: 2\n" in smoke and "name: boot-ftfix-smoke-acc-raunav\n" in smoke and b.SMOKE in smoke
+    assert text.count("--headline-only ") == 5 and text.count("--headline ") == 9 and smoke.count("--headline-only ") == 2
     assert "/l3_fixed/" not in smoke

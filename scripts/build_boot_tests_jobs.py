@@ -420,6 +420,8 @@ def smoke_spec(tag: str, mem: str) -> str:
 # folder: the pull keeps bootstrap/<family>/ as it is, and BL.OUT_RERUN's files go to l3_rerun/ outside bootstrap/.
 # The partitions' cells below 1e6 are part B (results book only), so those files hold the label sets, the mass
 # networks and from scratch. Top and quark/gluon on the full sets keep ParT's recipe: their files stay in L3.
+# JetClass-II and JetClass: the accuracy the tables print, alone (--headline-only; the macro AUC's 200 resamples of 188
+# classes take about 20 minutes a network, 2026-11-24 smoke); top and quark/gluon: every printed metric (--headline).
 L3_FIXED = "/data/results/bootstrap/l3_fixed"
 FTFIX_SETS = ("l188", "l162", "r42q1", "r16q1", "l162mass", "r16q1mass")
 FTFIX_PARTS = ("flavf0", "flavf1", "flavf1r", "rand")
@@ -456,28 +458,34 @@ def ftfix_diffs(parts: bool) -> str:
     return " ".join(f"--diff {k}={side(a)}/{side(b)}" for k, (a, b) in named.items())
 
 
+def ftfix_flags(pb_task: str) -> str:
+    return "--headline-only" if pb_task in ("jc2b", "jc1_all") else "--headline"
+
+
 def ftfix_row(files) -> str:
     lines, done = [], []
     for pb_task, task, name, n, parts in files:
         cells = ftfix_cells(task, n, parts)
         done += [f"{c}/DONE" for c in cells.values()]
-        cmd = pb(ftfix_out(name, n), [f"--model {m}={c}" for m, c in cells.items()], "--headline " + ftfix_diffs(parts), pb_task)
+        cmd = pb(ftfix_out(name, n), [f"--model {m}={c}" for m, c in cells.items()],
+                 f"{ftfix_flags(pb_task)} {ftfix_diffs(parts)}", pb_task)
         lines.append(" || ".join((lambda a, b: (a, peak(b)))(*cmd.split(" || ", 1))))
     return "\n  ".join([check_inputs(done), f"mkdir -p {L3_FIXED}"] + lines)
 
 
 def ftfix_spec(tag: str, mem: str, smoke: bool = False) -> str:
     """boot-ftfix-raunav: one pod a JetClass-II or JetClass file and one for the nine top and quark/gluon files below
-    the full sets; its smoke (boot-ftfix-smoke-raunav): two networks of each 1e6 file into SMOKE, for peak and seconds."""
+    the full sets; its smoke (boot-ftfix-smoke-acc-raunav): two networks of each 1e6 file into SMOKE, for peak and
+    seconds (boot-ftfix-smoke-raunav, 2026-11-24 08:17, was the same with --headline: the macro AUC too)."""
     if smoke:
         rows = []
         for pb_task, task, name, n, _ in FTFIX_FILES[:2]:
             cells = {m: c for m, c in ftfix_cells(task, n, False).items() if m in FTFIX_SMOKE}
-            out = f"{SMOKE}/ftfix_{name}_N{n}.json"
-            cmd = pb(out, [f"--model {m}={c}" for m, c in cells.items()], "--headline", pb_task).split(" || ", 1)[1]
+            out = f"{SMOKE}/ftfix_acc_{name}_N{n}.json"
+            cmd = pb(out, [f"--model {m}={c}" for m, c in cells.items()], ftfix_flags(pb_task), pb_task).split(" || ", 1)[1]
             rows.append("\n  ".join([check_inputs(f"{c}/DONE" for c in cells.values()), f"mkdir -p {SMOKE}",
                                      f"[ -e {out} ] || " + peak(cmd)]))
-        return _spec(tag, "boot-ftfix-smoke-raunav", rows, 2, mem,
+        return _spec(tag, "boot-ftfix-smoke-acc-raunav", rows, 2, mem,
                      "fine-tuned rows after the reruns, smoke: two networks of each 1e6 file, peak memory and seconds")
     rows = [ftfix_row([f]) for f in FTFIX_FILES] + [ftfix_row(FTFIX_BENCH)]
     return _spec(tag, "boot-ftfix-raunav", rows, len(rows), mem,
@@ -502,7 +510,7 @@ def main(argv=None) -> int:
               | {k[12]: (k, v) for k, v in review_specs(a.tag, a.mem).items()}) if a.review else {}
     name, text = (("boot-review2-smoke-raunav" if a.review2 == "smoke" else "boot-review2-raunav",
                    review2_spec(a.tag, a.mem, a.review2 == "smoke")) if a.review2
-                  else ("boot-ftfix-smoke-raunav" if a.ftfix == "smoke" else "boot-ftfix-raunav",
+                  else ("boot-ftfix-smoke-acc-raunav" if a.ftfix == "smoke" else "boot-ftfix-raunav",
                         ftfix_spec(a.tag, a.mem, a.ftfix == "smoke")) if a.ftfix
                   else review[a.review] if a.review
                   else ("boot-tests-smoke-raunav", smoke_spec(a.tag, a.mem)) if a.smoke
