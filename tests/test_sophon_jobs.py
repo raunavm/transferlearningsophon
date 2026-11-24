@@ -46,3 +46,20 @@ def test_the_pair_pod_is_kept_near_the_volume():
     assert '"ucm-fiona01.ucmerced.edu"' in pr and pr.count("operator: In") >= 2 and "operator: NotIn" in pr
     assert '"ucm-fiona01.ucmerced.edu"' not in x
     assert not set(BS.NEAR) & {"node-2-3.sdsc.optiputer.net", "k8s-haosu-10.sdsc.optiputer.net", "ry-gpu-01.sdsc.optiputer.net"}
+
+
+def test_the_cpu_parts_run_on_their_familys_cpu_model_with_its_threads():
+    want = {"mass": "AMD EPYC 7742 64-Core Processor", "pairfit": "AMD EPYC 7742 64-Core Processor",
+            "recall": "AMD EPYC 7742 64-Core Processor", "mlp": "AMD EPYC 7402P 24-Core Processor",
+            "mlp2": "AMD EPYC 7402P 24-Core Processor"}
+    for part, cpu in want.items():
+        text = BS.cpu_spec("mtx-s9.99", part, BS.CPU_MEM[part])
+        assert f"name: bs3-sophon-{part}-raunav" in text and f'[ "${{CPU}}" = "{cpu}" ]' in text
+        assert "nvidia.com/gpu" not in text and "probe_sophon.py" in text and "-le 88 ]" in text
+    mass = BS.cpu_spec("mtx-s9.99", "mass", "8Gi")
+    assert "probe_sophon.py massview" in mass and "atlas_resolution.py --model sophon-released" in mass
+    assert "--grid v2 --centre global --mlp-max-epochs 200" in mass and "--mass-v3" not in mass and "--head" not in mass
+    assert mass.index("massview") < mass.index("atlas_resolution.py")
+    for part in ("mlp2", "pairfit"):
+        assert all(f in BS.cpu_spec("mtx-s9.99", part, "8Gi") for f in BS.PAIRS_DONE)
+    assert "--datasets jc1 top qg" in BS.cpu_spec("mtx-s9.99", "mlp", "7Gi")

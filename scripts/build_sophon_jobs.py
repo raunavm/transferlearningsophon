@@ -142,6 +142,48 @@ def smoke_spec(tag: str, mem: str) -> str:
                       gpu=True)
 
 
+# ------------------------------------------------------------------ the CPU probes (experiments/EVAL/probe_sophon.py)
+OUT = "/data/results/eval/bs3_sophon"
+MASS_VIEW = f"{OUT}/{MODEL}/jc2/test/{TAG}"                  # the TEST2M mass jets' features, v2 layout
+OBS_DIR = "/data/results/eval/v2_head/mtx-l188-s1/test/best70"   # build_head_jobs.OBS_MODEL's head outputs
+CPU_OF = {"mass": R5.FAMILY_CPU["atlas"], "pairfit": R5.FAMILY_CPU["linear"], "recall": R5.FAMILY_CPU["linear"],
+          "mlp": R5.FAMILY_CPU["mlp"], "mlp2": R5.FAMILY_CPU["mlp"]}
+THREADS = {"mass": "8", "pairfit": "8", "recall": "1", "mlp": "4", "mlp2": "4"}
+PAIRS_DONE = [f"{PAIRS_OUT}/{s}/{TAG}/manifest.json" for s in ("train", "test")]
+
+
+def cpu_steps(part: str) -> list[str]:
+    ps = "python3 experiments/EVAL/probe_sophon.py"
+    return {
+        # Table 4: the view, then atlas_resolution.py as R5.atlas_spec runs it (grid v2, global centre, 200 epochs), no
+        # mass output and no mass_v3.json (Sophon has neither, as the partitions)
+        "mass": [BT.peak(f"{ps} massview --out {MASS_VIEW}"),
+                 f"[ -f {OUT}/atlas_res_v3/{MODEL}.json ] || " + BT.peak(
+                     f"python3 experiments/EVAL/atlas_resolution.py --model {MODEL} --observers {OBS_DIR} "
+                     f"--features {MASS_VIEW} --arm {TAG} --out-dir {OUT}/atlas_res_v3 --grid v2 --centre global "
+                     f"--mlp-max-epochs {R5.MASS_MLP_EPOCHS}")],
+        "mlp": [BT.peak(f"{ps} mlp --datasets jc1 top qg --out {OUT}/fits_mlp_bench")],
+        "mlp2": [BT.check_inputs(PAIRS_DONE), BT.peak(f"{ps} mlp --datasets jc2bal --out {OUT}/fits_mlp_jc2bal")],
+        "recall": [BT.peak(f"{ps} recall --out {OUT}/perclass_recall")],
+        "pairfit": [BT.check_inputs(PAIRS_DONE),
+                  BT.peak(f"{ps} pairs --out {OUT}/fits_v5_pairs --probs-out {OUT}/fits_v5_pairs_probs")]}[part]
+
+
+def cpu_spec(tag: str, part: str, mem: str) -> str:
+    """bs3-sophon-<part>-raunav: one CPU pod on its fit family's CPU model (PF-1), its threads the family's."""
+    body = f"""set -euo pipefail
+{JB._start(tag)}
+{R5.threads(THREADS[part])}
+USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+[ "${{USED}}" -le {LINE} ] || {{ echo "FATAL: /data at ${{USED}}%"; exit 42; }}
+""" + "\n".join(cpu_steps(part)) + f'\necho "SOPHON {part.upper()} COMPLETE"\n'
+    text = R5.indexed(f"bs3-sophon-{part}-raunav", body, 1, 1, mem, THREADS[part] if part != "recall" else "2",
+                      f"the released Sophon checkpoint's CPU probes, {part} (SH-13)")
+    return R5.pin_cpu(text, CPU_OF[part])
+
+
+CPU_MEM = {"mass": "8Gi", "mlp": "7Gi", "mlp2": "12Gi", "recall": "4Gi", "pairfit": "8Gi"}
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
@@ -152,7 +194,8 @@ def main(argv=None) -> int:
     for name, text in (("bs3-sophon-x-smoke-raunav", smoke_spec(a.tag, a.smoke_mem)),
                        ("bs3-sophon-x-raunav", x_spec(a.tag, a.mem)),
                        ("bs3-sophon-xbx-raunav", x_spec(a.tag, a.mem, "xbx")),
-                       ("bs3-sophon-pairs-raunav", x_spec(a.tag, a.mem, "pairs"))):
+                       ("bs3-sophon-pairs-raunav", x_spec(a.tag, a.mem, "pairs")),
+                       *((f"bs3-sophon-{p}-raunav", cpu_spec(a.tag, p, CPU_MEM[p])) for p in ("mass", "mlp", "mlp2", "recall", "pairfit"))):
         p = OUT_DIR / f"job-{name}.yaml"
         p.write_text(text)
         print(f"wrote {p.relative_to(ROOT)}")
