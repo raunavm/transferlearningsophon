@@ -405,6 +405,65 @@ def draw_conf_mass(path) -> None:
     _draw_conf(path, MASS, False, "difference from the network's label set")
 
 
+# ------------------------------------------------------------------ the confusion test (CS-10, LEDGER DL-8b)
+SHARE = P.DATA / "stats" / "confusion_share.json"      # experiments/EVAL/confusion_share.py
+SHARE_ROWS = {"17 classes": "R16_Q1", "no flavor boundary": "FLAV_F0", "b-quark boundary": "FLAV_F1",
+              "random flavor boundary": "FLAV_F1R"}        # and "random partition 1" to 5: RAND
+SHARE_DOT, SHARE_BAR, SHARE_LEGEND_W = 5.0, 0.8, 4.6        # pt, pt; cm: the legend's column beside the panel
+
+
+def draw_conf_share(path) -> None:
+    """The pre-registered confusion test (CS-10; PI 2026-11-23, DL-8b: restored as an appendix figure): one point per
+    17-group label set, the share of the 188-class linear probe's confusions between resonant classes that it puts in
+    different groups (x, averaged over the three 188-class runs) against its JetClass-II linear-probe accuracy at the
+    largest training set (y, the mean over its runs with a +-1 SD bar). A single-run point (each random partition) open
+    and "one run" in the legend (FG-6). One panel the size of a single-panel figure's beside its legend, drawn at the
+    text width like VAL (FG-14, FG-19); no fitted line, the caption gives the Spearman correlation."""
+    if not SHARE.exists():
+        raise C.Absent(f"no confusion test ({SHARE.relative_to(P.DATA)}, experiments/EVAL/confusion_share.py)")
+    groups = json.loads(SHARE.read_text())["groupings"]
+    top, w = 0.5, S.SINGLE_W - 1.75
+    h = 0.85 * w
+    x0 = (S.PRINT_W - (1.75 + w + 0.4 + SHARE_LEGEND_W)) / 2 + 1.75
+    fig = S.figure_cm(S.PRINT_W, top + h + 1.45)
+    ax = S.axes_cm(fig, x0, top, w, h)
+    S.fine_grid(ax)
+    handles = {}
+    for name, g in groups.items():
+        key = SHARE_ROWS.get(name, "RAND" if name.startswith("random partition ") else None)
+        if key is None:
+            raise SystemExit(f"FATAL: {SHARE}: a grouping {name!r} that is not one of the nine 17-group label sets")
+        runs = list(g["accuracy_runs"].values())
+        mean = float(np.mean(runs))
+        if abs(mean - g["accuracy"]) > 1e-12:
+            raise SystemExit(f"FATAL: {SHARE}: {name}: the accuracy {g['accuracy']} is not the mean of its runs")
+        sd = float(np.std(runs, ddof=1)) if len(runs) > 1 else 0.0
+        one = len(runs) == 1
+        colour = S.SERIES[key]
+        if sd:
+            ax.errorbar(g["share_apart"], mean, yerr=sd, fmt="none", ecolor=colour, elinewidth=SHARE_BAR, capsize=0,
+                        zorder=2.4)
+        mark = dict(marker=S.MARKERS[key], markersize=SHARE_DOT * (S.STAR_SCALE if S.MARKERS[key] == "*" else 1),
+                    markeredgecolor=colour, markerfacecolor="white" if one else colour,
+                    markeredgewidth=1.0 if one else 0.5, linestyle="none")
+        ax.plot(g["share_apart"], mean, zorder=2.6, **mark)
+        label = "random partitions, one run each" if key == "RAND" else S.LEGEND[key]
+        handles.setdefault(label, Line2D([], [], color=colour, **mark))
+    xs = [g["share_apart"] for g in groups.values()]
+    pad = 0.08 * (max(xs) - min(xs))
+    ax.set_xlim(min(xs) - pad, max(xs) + pad)
+    S.data_ylim(ax)
+    for axis in (ax.xaxis, ax.yaxis):
+        axis.set_major_locator(ticker.MaxNLocator(4, steps=[1, 2, 2.5, 5, 10]))
+    S.labels(ax, "Share of the 188-class confusions\nbetween resonant classes kept apart", "Accuracy, JetClass-II")
+    bar = Line2D([], [], color="#000000", marker="o", markersize=SHARE_DOT, markeredgecolor="white",
+                 markeredgewidth=0.5, linewidth=SHARE_BAR)
+    labels = list(handles) + ["mean over runs, bar \u00b11\nstandard deviation"]
+    S.slot_legend(fig, list(handles.values()) + [bar], x0 + w + 0.4, top, SHARE_LEGEND_W, h,
+                  labels=[textwrap.fill(t, 24) if "\n" not in t else t for t in labels])
+    S.save(fig, path)
+
+
 # ------------------------------------------------------------------ the pages
 HEATMAPS = ["2604.09809/fig7.png", "2606.14813/fig12.png"]
 HEAT_LABEL = "None for this form; CMS Fig. 7 and JetParticle-JEPA Fig. 12 are the dropped heatmap's"
@@ -450,6 +509,12 @@ PAGES = [
           ["2604.09809/fig7.png"], "CMS JME-25-001 Fig. 7", CONF_DIFFERS, CONF_NOTE),
     _page("PC-conf-mass", "JetClass confusion matrices, mass networks against their label set", draw_conf_mass,
           ["2604.09809/fig7.png"], "CMS JME-25-001 Fig. 7", CONF_DIFFERS, CONF_NOTE),
+    _page("CONF-share", "The confusion test: kept-apart confusions against linear-probe accuracy", draw_conf_share, [],
+          "None: the pre-registered test (CS-10) of this paper",
+          "One point per 17-group label set (nine), its marker and colour as in every figure; single runs open (FG-6); "
+          "no fitted line, the Spearman correlation in the caption (DL-8b).",
+          "Three runs for 17 classes, two per flavor-boundary partition, one per random partition; the share from the "
+          "three 188-class runs."),
 ]
 
 # the supplement members' captions, filled like the paper's (gallery_captions holds the main-text and appendix ones)

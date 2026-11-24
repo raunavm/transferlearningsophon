@@ -26,7 +26,8 @@ MODULES = (gallery_physics, gallery_palette, gallery_labelset, gallery_perclass,
            gallery_compare)
 ORDER = ("INVENTORY",            # the one-page map first; then the paper's order (gallery_placement, PI 2026-11-23,
          # LEDGER SP-9): main text, appendix by family, the data release (supplement tier)
-         "F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11", "VAL", "A10", "F4-other", "F4-qcd", "F9b", "F4-mech-ft",
+         "F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11", "VAL", "A10", "F4-other", "F4-qcd", "CONF-share",
+         "F9b", "F4-mech-ft",
          "F4-other-ft", "F4-light-ft", "ROC-main", "ROC-main-ft", "PT", "A17-probe", "F10b", "F11-part", "UMAP-frozen",
          "UMAP-ft", "F2a", "F2b", "PC-jc1", "F6", "F6-ft", "PC-jc2-part", "PC-jc2-rand", "PC-jc1-part", "PC-jc1-rand",
          "PC-jc2-mass", "PC-jc1-mass", "PC-conf", "PC-conf-part", "PC-conf-mass", "F4-ee", "F4-rand", "F4-rand-qcd",
@@ -51,7 +52,8 @@ ORDER = ("INVENTORY",            # the one-page map first; then the paper's orde
 _LP, _FT = "Linear probe", "Fine-tuned"
 MODE_HEADINGS = {
     **dict.fromkeys(("F2", "ROC-main", "F2a", "F4-mech", "F4-other", "F4-qcd", "F4-ee", "F4-rand", "F4-rand-qcd", "A10",
-                     "A10-part", "F6", "F6-part", "FJ-app", "FJ-ctrl-app", "FJ-mass-app", "A3R", "F11-probe"), _LP),
+                     "A10-part", "F6", "F6-part", "FJ-app", "FJ-ctrl-app", "FJ-mass-app", "A3R", "F11-probe",
+                     "CONF-share"), _LP),
     **dict.fromkeys(("F2-ft", "ROC-main-ft", "F2b", "F4-mech-ft", "F4-other-ft", "F4-light-ft", "F4-rand-ft", "F4-rand-qcd-ft", "A8",
                      "A8-part", "F6-ft", "F6-part-ft", "FJ", "FJ-ctrl", "FJ-mass", "A3R-ft", "A3R-ctrl-ft",
                      "F10-ft", "F10-ft-part"), _FT),
@@ -78,7 +80,8 @@ PAPER = ("F1", "F2", "F2-ft", "ROC-main", "ROC-main-ft", "F2a", "F2b", "PC-jc2",
          "F8-auc", "A8", "A8-part", "A10", "A10-part", "F9a", "F9b", "A17-res", "A17-qcd", "A17-probe", "A17-ridge", "A17-probe-part", "A17-ridge-part",
          "F10a", "F10b", "F10b-flav", "F10c", "F10a-flav",
          "F10-ft", "F10-ft-part", "F10a-mass", "F11", "F11-part", "F11-probe", "A3R", "A3R-ft", "A3R-ctrl-ft", "A3R-s", "PT", "PT-part", "PT-bbcc", "PT-bbcc-part",
-         "VAL", "VAL-part")      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
+         "VAL", "VAL-part",      # F10b-flav, F10c, F10a-flav: the appendix's sculpting subsection (PI 2026-11-09)
+         "CONF-share")           # the confusion test (CS-10), back in the appendix (PI 2026-11-23, LEDGER DL-8b)
 
 
 def main() -> int:
