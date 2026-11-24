@@ -5830,14 +5830,18 @@ def pw_macros(em, rows: dict, sides: dict, src) -> None:
             ref = float(np.mean(sides[(h, a, b)][1]))
             ref = 1 - ref if "AUC" in h else ref
             shares.append(3 * v[4] if "abs" in opt else 100 * 3 * v[4] / ref)
-            # fifth review (A6; LEDGER TX-3, CS-6): the share from the printed sigma and reference, at the quoted digits;
-            # a row whose two differ gets one more digit of sigma in tab:tests (TESTS_EXTRA_DIGIT)
-            sig = round(v[4], _pdg_place(v[4]) + TESTS_EXTRA_DIGIT.get((h, a, b), 0))
+            # fifth review (A6; LEDGER TX-3, CS-6): the quoted share must be reachable from the printed sigma (any value
+            # that rounds to it) and the printed reference; a row where it is not gets one more digit of sigma in
+            # tab:tests (TESTS_EXTRA_DIGIT)
+            place = _pdg_place(v[4]) + TESTS_EXTRA_DIGIT.get((h, a, b), 0)
             pref = _printed_mean(sides[(h, a, b)][1])
             pref = 1 - pref if "AUC" in h else pref
-            psh = 3 * sig if "abs" in opt else 100 * 3 * sig / pref
-            print(f"PW-1 {'ok  ' if _sig2(psh) == _sig2(shares[-1]) else 'DIFF'} {name}: {a} - {b} under '{h}': "
-                  f"full precision {_sig2(shares[-1])}, printed values {_sig2(psh)}")
+            scale = 3 if "abs" in opt else 300 / pref
+            lo, hi = ((round(v[4], place) + s * 0.5 * 10 ** -place) * scale for s in (-1, 1))
+            q = float(_sig2(shares[-1]).replace(",", ""))
+            u = 10 ** (math.floor(math.log10(abs(q))) - 1) if q else 0
+            print(f"PW-1 {'ok  ' if q - u / 2 <= hi and q + u / 2 >= lo else 'DIFF'} {name}: {a} - {b} under '{h}': "
+                  f"quoted {_sig2(shares[-1])}, reachable from the printed values {lo:.3g}-{hi:.3g}")
             if name in PW_REF:          # fifth review (B4; LEDGER CS-6): the reference value no table prints
                 vals = sides[(h, a, b)][1]
                 place = _pdg_place(float(np.std(vals, ddof=1)))
