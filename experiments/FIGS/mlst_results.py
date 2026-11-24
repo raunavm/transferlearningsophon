@@ -5671,6 +5671,8 @@ PW_ROWS = {
     "MlstPwRthirtyFt": (_PW_R30["ft"], _PW_NETS, "L188"),
     "MlstPwRthirtyFtTop": ((r"top tagging, $R_{30}$, " + HEADING["ft"],), _PW_NETS, "L188"),
     "MlstPwRthirtyFtQg": ((r"quark/gluon tagging (Pythia), $R_{30}$, " + HEADING["ft"],), _PW_NETS, "L188"),
+    # PI 2026-11-24 (LEDGER SP-15): Fig. 3's Herwig null, now stated in section 4.4 with the figure gone
+    "MlstPwRthirtyFtHerwig": ((r"quark/gluon tagging (Herwig), $R_{30}$, " + HEADING["ft"],), _PW_NETS, "L188"),
     "MlstPwMassClsRes": (("JetClass-II, AUC, " + HEADING["lp"],), ("L162_MASS",), "L162"),
     "MlstPwMassClsCoarse": (("JetClass-II, AUC, " + HEADING["lp"],), ("R16_Q1_MASS",), "R16_Q1"),
     # fourth review (B1; PI's "wherever the results state a null"): every other null of sections 4.1-4.6
@@ -7540,13 +7542,15 @@ CAPTION_SHORT = {
     # PI 2026-11-23 (LEDGER SH-13): the dash clause, without a colon; the 135 words cut from content, not conventions:
     # "the top-tagging working point" for the same reason in fewer words, the transfer head named by the block heading
     # (B17) and the QCD efficiency by the column heading; the released Sophon checkpoint's transfer heads are pending
-    "summary": ("Accuracy on class-balanced JetClass-II and JetClass, $R_{30}$, one over the fraction of background "
-                "jets kept when the cut keeps 30\\% of signal jets, the top-tagging working point, "
+    # PI 2026-11-24 (LEDGER SP-15): Fig. 3's Sophon clause moves here with its figure's values; R30 defined by
+    # pointing to figure 2, the parallel figure (LEDGER CA-15), to stay within 135 words
+    "summary": ("Accuracy on class-balanced JetClass-II and JetClass, $R_{30}$ (figure~\\ref{fig:F2}) "
                 "for top-quark against QCD and quark against gluon jets, and the $X\\to b\\bar b$ and $X\\to bs$ "
                 "signal efficiency against QCD jets in the mass window \\XbxWindowLo--\\XbxWindowHi~GeV. Training "
                 "from scratch uses \\MlstXbxScratchTrainBb{} ($X\\to b\\bar b$) or "
                 "\\MlstXbxScratchTrainBs{} ($X\\to bs$) jets a class. Dashes mark where the random networks have "
-                "no pretrained head for a transfer head and resonance tagging fine-tunes no network."
+                "no pretrained head for a transfer head and resonance tagging fine-tunes no network. The released "
+                "Sophon checkpoint enters as a frozen-feature reference (figure~\\ref{fig:F2})."
                 + _runs("set", "flav", "mass", "rand")),
     "masseffect": ("The networks pretrained with 162 and 17 classes, without and with an added mass output, on every "
                   "task, metric and read-out (rows). Definitions, training sets and inputs are those of "

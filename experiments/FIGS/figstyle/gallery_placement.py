@@ -70,9 +70,10 @@ _FIGURES = (
     # same in the AUC (F2a, F2b) opens the appendix
     # PI 2026-11-21: no "no difference on top" while any printed metric passes 3 sigma; the top and quark/gluon clause
     # is written by hand in F2's caption, R30 only, and tested against the bootstrap (gallery_labelset.TOP_QG_PROBE_CLAIMS)
-    *((k, MAIN, "With linear probes, 43 and 17 classes and every 17-class partition are less accurate on JetClass-II "
-                "than 188 classes, and after fine-tuning 17 classes stay below 188 on JetClass-II and JetClass.")
-      for k in ("F2", "F2-ft")),
+    # PI 2026-11-24 (LEDGER SP-15): F2-ft leaves the paper for Table 2's fine-tuned block (R1, the same values twice);
+    # its page stays in the book, beside F2a and F2b
+    ("F2", MAIN, "With linear probes, 43 and 17 classes and every 17-class partition are less accurate on JetClass-II "
+                 "than 188 classes."),
     # PI 2026-11-13 (L10): the 17-class loss is broad, not uneven; PI 2026-11-14: the counts follow L3 (run SDs and the
     # per-class test-jet bootstrap where stored) and are computed with the figure (gallery_perclass.l3_counts, in its
     # caption), so the sentence holds no number; the class averages are Table 1's JetClass-II AUC
@@ -151,6 +152,8 @@ _FIGURES = (
     *((k, SUPPLEMENT, "In this UMAP projection, qualitatively, 188-class frozen features separate X→bb̄, cc̄ and qq̄ "
                     "more cleanly than 17-class ones, and after fine-tuning both separate them.")
       for k in ("UMAP-frozen", "UMAP-ft")),
+    ("F2-ft", SUPPLEMENT, "[[F2-ft]] draws the fine-tuned block of [[tab:summary]] in the form of [[F2]]: after "
+                          "fine-tuning 17 classes stay below 188 on JetClass-II and JetClass."),
     *((k, SUPPLEMENT, "[[F2a]] and [[F2b]] repeat [[F2]] and [[F2-ft]] in the area under the ROC curve.")
       for k in ("F2a", "F2b")),
     # PI 2026-11-20 (meeting): out of the paper, every point on the diagonal
@@ -202,7 +205,8 @@ _TABLES = (
     ("tab:sets", MAIN, "[[tab:sets]] lists the label sets and the controls: each one's classes, what it merges and its "
                        "runs."),
     # PI 2026-11-23 (LEDGER SP-9; merge 4): tab:xbx's two transfer-head columns at 1% QCD efficiency join Table 1
-    ("tab:summary", MAIN, "[[tab:summary]] gives every value of [[F2]] and [[F2-ft]], with the released Sophon "
+    ("tab:summary", MAIN, "[[tab:summary]] gives every value of [[F2]] and the fine-tuned headline metrics, with the "
+                          "released Sophon "
                           "checkpoint's, and the X→bb̄ and X→bs signal efficiencies of [[F11]] at 1% QCD efficiency."),
     # L3 (round 2, package 3), sigma^2 = our run SD^2 + the published run SD^2 + our test-jet bootstrap SD^2
     # (bootstrap/l3, per network): JetClass accuracy 0.8468 - 0.836, 17 sigma; R30 against ParT trained from scratch,
@@ -414,7 +418,7 @@ GROUPS = ("sets", "mass", "part")
 # network's own output used directly (F9b, F10b (a)) or read by a classifier on frozen features (F11, A17-probe).
 # F1 and the tables of inputs and of the published comparison's ParT reproduction show no group.
 SHOWS = {
-    "F2": ("Headline metrics", (LP,), GROUPS), "F2-ft": ("Headline metrics", (FT,), GROUPS),
+    "F2": ("Headline metrics", (LP,), GROUPS),      # F2-ft in the supplement (LEDGER SP-15); tab:summary holds its values
     "tab:summary": ("Headline metrics", (LP, FT), GROUPS), "tab:summaryauc": ("Headline metrics", (LP, FT), GROUPS),
     "tab:published": ("Headline metrics", (FT,), ("sets",)), "tab:mlp": ("Headline metrics", (LP,), GROUPS),
     "tab:coarse": ("Headline metrics", (LP,), GROUPS),

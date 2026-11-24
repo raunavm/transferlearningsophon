@@ -68,9 +68,10 @@ def test_the_gallery_order_is_the_placement_tier_by_tier():
 def test_the_main_text_is_the_pis_list_in_order():
     # PI 2026-11-23, LEDGER SP-9 (the structure approved as proposed, docs/STRUCTURE_PROPOSAL.md): the main text holds
     # F1, F2, F2-ft, PC-jc2, F4-mech, A8 and F11, in that order, and tab:sets, tab:summary (with tab:xbx's two columns),
-    # tab:published and tab:mass; the expectations below changed with that structure and for no other reason
+    # tab:published and tab:mass; the expectations below changed with that structure and for no other reason;
+    # PI 2026-11-24 (LEDGER SP-15): F2-ft leaves for Table 2's fine-tuned block, its page in the book
     main = [k for k, t, _ in G.FIGURES if t == G.MAIN]
-    assert main == ["F1", "F2", "F2-ft", "PC-jc2", "F4-mech", "A8", "F11"]
+    assert main == ["F1", "F2", "PC-jc2", "F4-mech", "A8", "F11"] and G.TIER["F2-ft"] == G.SUPPLEMENT
     assert [k for k, t, _ in G.TABLES if t == G.MAIN] == ["tab:sets", "tab:summary", "tab:published", "tab:mass"]
     # PI 2026-11-23, LEDGER SP-9: the appendix keeps the class map (tab:app-levels folded in), the reproduction tables
     # and the evidence for the claims the main text does not show, the tested-differences table among them
@@ -146,15 +147,16 @@ def test_the_dropped_pages_are_gone():
 
 def test_numbers_count_within_each_tier_and_kind():
     # PI 2026-11-23, LEDGER SP-9: the numbers of the approved structure (main text, appendix by family, the data release)
-    assert G.number("F1") == "Fig. 1" and G.number("F2-ft") == "Fig. 3" and G.number("PC-jc2") == "Fig. 4"
-    assert G.number("A8") == "Fig. 6" and G.number("F11") == "Fig. 7"
+    # PI 2026-11-24 (LEDGER SP-15): six main-text figures, F2-ft in the supplement after the frozen and fine-tuned UMAPs
+    assert G.number("F1") == "Fig. 1" and G.number("PC-jc2") == "Fig. 3" and G.number("F2-ft") == "Fig. S12"
+    assert G.number("A8") == "Fig. 5" and G.number("F11") == "Fig. 6"
     assert [G.number(k) for k in ("VAL", "A10", "F4-other", "F4-qcd", "CONF-share", "F9b")] == [   # F4-qcd: review of
         "Fig. A1", "Fig. A2", "Fig. A3", "Fig. A4", "Fig. A5", "Fig. A6"]        # dfe5942 (C); CONF-share: LEDGER DL-8b
     assert G.number("tab:sets") == "Table 1" and G.number("tab:summary") == "Table 2"
     assert [G.number(k) for k in ("tab:published", "tab:mass")] == ["Table 3", "Table 4"]
     assert [G.number(k) for k in ("tab:app-vocabulary", "tab:summaryauc", "tab:tests", "tab:jc1_class_auc")] == [
         "Table A1", "Table A8", "Table A9", "Table A12"]      # tab:pairauc is Table A11 (LEDGER DL-R #4)
-    assert G.place("F9b") == "Appendix, Fig. A6" and G.place("F11") == "Main text, Fig. 7"      # F4-qcd, CONF-share before it
+    assert G.place("F9b") == "Appendix, Fig. A6" and G.place("F11") == "Main text, Fig. 6"      # F4-qcd, CONF-share before it
     assert G.number("F4-mech-ft") == "Fig. S1" and G.number("tab:xbx") == "Table S1"
     assert "tab:ptbins" not in G.TIER and G.number("tab:computefull") == "Table S16"
     # the supplement's UMAP grids (the per-task grid of JetClass-II's hadronic decays first), then the pretraining
@@ -163,7 +165,7 @@ def test_numbers_count_within_each_tier_and_kind():
     assert sup[-13:] == ["UMAP-jc2-had", "UMAP-jc1", "UMAP-jc2-lep", "UMAP-top", "UMAP-qg", "UMAP-xbx",
                          "UMAP-mass-jc2-had", "UMAP-mass-jc1", "UMAP-mass-jc2-lep", "UMAP-mass-top", "UMAP-mass-qg",
                          "UMAP-mass-xbx", "VAL-part"]
-    assert G.number("UMAP-xbx") == "Fig. S70" and G.number("VAL-part") == "Fig. S77" and len(sup) == 77
+    assert G.number("UMAP-xbx") == "Fig. S71" and G.number("VAL-part") == "Fig. S78" and len(sup) == 78
 
 
 def test_the_coverage_map_has_a_row_a_family_and_no_blank_cell():

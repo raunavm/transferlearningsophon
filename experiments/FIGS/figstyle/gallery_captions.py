@@ -67,7 +67,7 @@ CAPTIONS = {
         "{counts} Each point is one JetClass-II class's recall, the share of its test jets assigned to it, for the "
         "row's network against 188 classes, as linear probes (left) or fine-tuned (right) on one million "
         "class-balanced jets; points below the diagonal are recalled less often. Their test-jet-weighted mean is the "
-        "accuracy of figures {fig:F2} and {fig:F2-ft}. Means over three pretraining runs with ±1 standard deviation "
+        "accuracy of figure {fig:F2} and table {tab:summary}. Means over three pretraining runs with ±1 standard deviation "
         "bars over runs and test jets; colors give what each row's labels merge the class with. Filled points are the "
         "classes the first sentence counts. Values are in the data release."
     ),

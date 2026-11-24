@@ -1,6 +1,6 @@
 % Results, first part: the protocol paragraph, JetClass-II (the pretraining classes) and JetClass
-% (new classes with every input present; fifth review A4). Items (approved structure, PI SP-9, 2026-11-23): figures F2, F2-ft,
-% PC-jc2, F4-mech; table tab:summary. Every number is a macro from results_generated.tex
+% (new classes with every input present; fifth review A4). Items (approved structure, PI SP-9, 2026-11-23): figures F2,
+% PC-jc2, F4-mech; table tab:summary, whose fine-tuned block replaces F2-ft (PI 2026-11-24, LEDGER SP-15). Every number is a macro from results_generated.tex
 % (experiments/FIGS/make_tables.py); "% CHECK:" marks a claim whose direction must be confirmed against
 % the macro values at generation.
 
@@ -62,25 +62,8 @@ has accuracies \MlstFTwoInitAccJcTwo{} and \MlstFTwoInitAccJcOne{} and $R_{30}$
 \end{figure}
 % CHECK: F2(a) random partitions above the 43-class accuracy (inventory 2026-11-02: 0.420-0.423 against 0.361).
 
-\begin{figure}[t]
-\centering
-\paperfig{\linewidth}{F2-ft}
-\caption{After fine-tuning, \pending{\Kcoarse{} classes are less accurate than \Kfull{} classes on JetClass-II and
-JetClass}, and no label set, mass network or partition differs from \Kfull{} classes in $R_{30}$ by more than three
-standard deviations (\MlstPwRthirtyFt{} of its value) in top-quark against QCD and quark against gluon jets. Accuracy
-and $R_{30}$ are defined as in figure~\ref{fig:F2}, after fine-tuning, missing inputs set to zero, on \FtSizeESix{}
-jets or the full top and quark/gluon training sets.
-% CHECK: panel (a) draws every network once the one-rule JetClass-II 1e6 rerun of all \FtJcTwoNetsESix{} pretrained networks reads out (ft-budget-fixed-rate-jc2b1e6*, RUNS.csv 2026-11-22T06:40)
-The same network trained from scratch replaces the random network, and the released Sophon checkpoint enters as a
-frozen-feature reference (figure~\ref{fig:F2}). Circles, bars and band are as in figure~\ref{fig:F2}, over
-\MlstNRunsWord{} runs per label set and from scratch, \MlstMassNRunsWord{} per mass network and flavor-boundary
-partition, and \RandVtwoRuns{} each for \RandVtwoNPartitions{} random partitions, whose bar is their spread
-(table~\ref{tab:summary}).}
-\label{fig:F2-ft}
-\end{figure}
-
 \input{tables/mlst_summary}
-% CHECK: F2-ft(c) every difference between label sets on top tagging within the run-to-run SD (gallery data_note: SD 56 to 151).
+% CHECK: Table 2's fine-tuned top column, every difference between label sets within the run-to-run SD (gallery data_note: SD 56 to 151).
 
 On the resonant classes the difference between the \Kres- and the \Kfull-class model is not resolved, under the
 linear probe (smallest resolvable difference \MlstPwResonantRes{} of the \Kfull-class model's errors) and under the
@@ -134,7 +117,7 @@ direction, and after fine-tuning \pending{table~\ref{tab:summary} after the reru
 class's recall, the fraction of its test jets assigned to it, for the \Kres-, \Kmid- or \Kcoarse-class model
 against the \Kfull-class model, from linear probes on frozen features (left) and after fine-tuning (right) on
 \FtSizeESix{} class-balanced jets; points below the diagonal are recalled less often. Their mean weighted by test
-jets is the accuracy of figures~\ref{fig:F2} and~\ref{fig:F2-ft}. Points are means over the \MlstNRunsWord{}
+jets is the accuracy of figure~\ref{fig:F2} and table~\ref{tab:summary}. Points are means over the \MlstNRunsWord{}
 pretraining runs with bars of one standard deviation over runs and test jets; colors give what each
 row's labels merge the class with. Filled points differ from the \Kfull-class recall by more than three
 standard deviations, both run spreads and the paired bootstrap over the class's test jets combined.}
@@ -208,8 +191,7 @@ ParticleNet and ParT, trained on more jets. After
 fine-tuning, the \Kcoarse-class model makes
 \pending{table~\ref{tab:summary} after the reruns} than the \Kfull-class model on JetClass; how the \Kres- and
 \Kmid-class models and the partitions compare with it is \pending{table~\ref{tab:summary} after the reruns}
-(table~\ref{tab:summary};
-figure~\ref{fig:F2-ft}(b)).
+(table~\ref{tab:summary}).
 % CHECK: the one-rule JetClass 1e6 rerun (jc1e6a100, jc1e6; docs/STATE.md) fills Table 1's fine-tuned JetClass column; the headline is recomputed from it and re-tested at 3 sigma (PI SP-11) before any number is written here, in the introduction or in the discussion
 % PI SP-9: kept, the comparison passes 3 sigma (scratchpad/part0/jc1_class_auc_check.md: 35 of 90 cells below 188, none above)
 With linear probes on the frozen features, the \Kcoarse-class model recalls $H\to b\bar b$ and $H\to c\bar c$

@@ -3371,11 +3371,13 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
     # PI 2026-11-19 (A): R30 in plain words with why 30%; PI 2026-11-22: the released checkpoint's top and quark/gluon
     # probes use the same substitutions (the same-fill refit), so no zero-filled note
     # PI 2026-11-23 (LEDGER SH-13): the dash clause fitted by the same reason in fewer words
-    assert ("$R_{30}$, one over the fraction of background jets kept when the cut keeps 30\\% of signal jets, the "
-            "top-tagging working point") in cap and "class pairs" not in cap
+    # PI 2026-11-24 (LEDGER SP-15): Fig. 3's Sophon clause moves here, and R30 points to figure 2, which defines it in
+    # plain words (LEDGER CA-15), to stay within 135 words
+    assert "$R_{30}$ (figure~\\ref{fig:F2})" in cap and "class pairs" not in cap
     assert ("Dashes mark where the random networks have no pretrained head for a transfer head and resonance tagging "
             "fine-tunes no network.") in cap and ":" not in cap.split("Dashes")[1].split(".")[0]
-    assert re.findall(r"\\ref\{([^}]*)\}", cap) == [] and "zero-filled" not in cap
+    assert "The released Sophon checkpoint enters as a frozen-feature reference (figure~\\ref{fig:F2})." in cap
+    assert re.findall(r"\\ref\{([^}]*)\}", cap) == ["fig:F2", "fig:F2"] and "zero-filled" not in cap
     assert M.PART_DEF not in cap
     # PI 2026-11-23, LEDGER SP-9 (merge 5): and on JetClass-II over the resonant and the QCD classes
     assert auc.count("averaged on JetClass-II and JetClass over the classes, each against the rest, and on JetClass-II "
