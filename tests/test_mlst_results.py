@@ -1016,6 +1016,7 @@ def test_the_gpu_type_bound_reads_the_one_run_on_its_own_gpu():
     assert em.m["MlstGpuTypeBound"].startswith(r"\pending") and em.m["MlstGpuOtherSeedsDiff"].startswith(r"\pending")
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old appendix table without the rescaling row the PI restored (DL-16c)")
 def test_the_part_reproduction_table_and_macros(tmp_path):
     d = tmp_path / "v2"
     (d / "partrepro").mkdir(parents=True)
@@ -2054,6 +2055,7 @@ def test_a_table_is_set_at_the_largest_size_it_fits_and_a_size_or_whole_fixes_it
     assert "#1{#2. }#3" in M.LT_SETUP and "#2: " not in M.LT_SETUP
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old tables' zero-fill Sophon row; v2's Table 2 prints Sophon from the build")
 def test_the_released_sophon_checkpoint_is_a_reference_row_below_a_rule():
     """PI 2026-11-08: the released checkpoint in the frozen-probe tables, last and below a rule, with no ratio to a
     188-class run; its top and quark/gluon probes keep the missing inputs zero where our runs use the chosen
@@ -2597,6 +2599,7 @@ def _blocks(page: str, ncol: int) -> dict:
     return {k: v[:-1] if v and v[-1] == r"\midrule" else v for k, v in out.items()}
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old comparison table's bold cells; v2's tables carry no bold (GO-6)")
 def test_the_comparison_with_published_models_has_a_block_a_task_and_our_two_rows_below_the_published_ones():
     """tab:published (PI 2026-11-12, in place of the JetClass, top and quark/gluon tables): blocks JetClass, top
     tagging, quark/gluon tagging; in each the published models, then our network from scratch, then fine-tuned from
@@ -2718,6 +2721,7 @@ def _ft_full(runs: dict, arms) -> dict:
     return per
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old label-set table's caption; v2's Table 3 replaces it")
 def test_the_label_set_table_holds_the_fine_tuned_rows_the_comparison_table_does_not():
     """tab:labelsets (PI 2026-11-13, plan "tables"): what Table 1 and tab:summaryauc lack of the fine-tuned top and
     quark/gluon networks, the accuracy and R50 (their R30 and AUC are there), read as Table 1 reads them (summary_ft,
@@ -2808,6 +2812,7 @@ def _probe_fits() -> tuple:
     return fits, runs
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old probe table's zero-fill Sophon row; v2's Table 2 prints Sophon from the build")
 def test_the_probe_table_of_the_paper_holds_what_table_one_lacks_of_top_and_quark_gluon():
     """tab:probes (PI 2026-11-13, plan "tables"): what Table 1 and tab:summaryauc lack of the linear probes, the
     accuracy and R50 on top and quark/gluon (Pythia, Herwig) at each task's largest training set, one column group a
@@ -2943,6 +2948,7 @@ def _caption_and_body(tex: str) -> tuple:
     return tex[m.end():i - 1], tex[:m.start()] + tex[i:]
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old paper's table list; the rewrite sets its own")
 def test_the_paper_has_twenty_tables_and_the_task_tables_are_placed_nowhere():
     tables = _paper_tables()
     # PI 2026-11-23, LEDGER SP-9: the approved structure's main-text and appendix tables (the class map apart, above)
@@ -2954,6 +2960,7 @@ def test_the_paper_has_twenty_tables_and_the_task_tables_are_placed_nowhere():
     assert all(k in M.CAPTION_SHORT for k, _ in tables.values())                   # each prints its short caption
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old tables' captions; the rewrite writes its own")
 def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_one_way():
     """PI 2026-11-12 (the caption brief), shortened 2026-11-13 (round 2, package 3): what the table compares, then
     definitions and run counts, in sentences: no colon-form, no semicolon chain; the networks by one name, never
@@ -3025,6 +3032,7 @@ def test_the_captions_of_the_paper_tables_are_sentences_that_name_the_networks_o
     assert "Sophon's output head" in M.printed_caption("partrepro") and "rescal" not in M.printed_caption("partrepro")
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; reads the old paper's generated tables (paper/journal/tables), which v2 replaces")
 def test_every_caption_is_short_and_free_of_the_banned_forms():
     """PI caption brief (2026-11-13, round 2; L16 the same day): the main and appendix captions as printed (mark and
     bold sentences and end notes included) at most 135 words (round 3: Tables 3 and A13 at 134); every supplement
@@ -3056,6 +3064,7 @@ def test_every_caption_is_short_and_free_of_the_banned_forms():
     assert {"per_run", "jetclass_nbkg"} <= set(M.CAPTION_SHORT)
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; reads the old paper's generated tables (paper/journal/tables), which v2 replaces")
 def test_the_generated_paper_tables_follow_the_table_rules():
     """The 20 tables as make_tables.py wrote them (paper/journal/tables, committed): every mark of a table has its
     sentence in the caption and no caption explains a mark the table lacks; never "<" or "+- 0"; no mode tag on a
@@ -3214,6 +3223,7 @@ def test_a_bold_value_is_in_the_bold_series_that_is_not_extended_and_its_mark_st
     assert _unbold("a & " + M._b(r"1{,}800\,$\pm$\,60") + M.AGREE + " & " + M._b("2")) == r"a & 1{,}800\,$\pm$\,60" + M.AGREE + " & 2"
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the within-3-sigma bold of the old tables; v2's tables carry no bold (GO-6)")
 def test_bold_marks_the_best_value_of_a_column_and_every_value_within_three_standard_deviations():
     """PI 2026-11-12 (the bold rule): in a column the best value is bold and so is every value with
     |mean - best| <= 3 sqrt(SD^2 + SD_best^2), from the unrounded values of the tokens; a single run has SD zero.
@@ -3254,6 +3264,7 @@ def test_bold_marks_the_best_value_of_a_column_and_every_value_within_three_stan
     assert _chosen_bold("probes", block) == {("b", 1)}
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the bold rule of the old tables; v2's tables carry no bold (GO-6)")
 def test_bold_takes_the_smallest_value_or_the_one_closest_to_one_in_the_columns_named_so():
     """PI 2026-11-12: higher is better for accuracy, AUC, rejections, signal efficiency; lower for the mass resolution
     and the Jensen-Shannon distance of the sculpting table; the median response is best where closest to 1, and the
@@ -3281,6 +3292,7 @@ def test_bold_takes_the_smallest_value_or_the_one_closest_to_one_in_the_columns_
     assert _chosen_bold("xbx", sculpt) == {("z", 1), ("y", 1), ("x", 2), ("z", 2)}
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the bold rule of the old tables; v2's tables carry no bold (GO-6)")
 def test_bold_is_decided_in_each_block_of_a_column_and_the_partitions_subheading_starts_no_block():
     """PI 2026-11-12: a block is the rows under one italic mode heading within one task block. The subheading
     "17-class partitions" does not start one; tab:jetclassrej is one block whatever its headings (its two published
@@ -3316,6 +3328,7 @@ def test_bold_is_decided_in_each_block_of_a_column_and_the_partitions_subheading
     assert not {"inputs", "partrepro", "lrsweep", "sculpt_boot"} & set(M.BOLD)
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the bold rule of the old tables; v2's tables carry no bold (GO-6)")
 def test_a_published_value_takes_part_in_bold_with_the_standard_deviation_it_prints_and_a_count_never():
     """PI 2026-11-12: published rows take part by their printed value; where a published cell prints a standard
     deviation that is its SD, where it prints none its SD is zero. The parameters and the training jets are
@@ -3389,6 +3402,7 @@ def test_the_caption_says_what_bold_marks_once_and_only_where_a_cell_is_bold():
     assert M.BOLD_ON not in other and "Bold marks" not in other and lab["L188"] + r" & 100.0\,$\pm$\,2.0 \\" in other
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old Table 1 (landscape); v2's Tables 2 and 3 replace it")
 def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the_auc():
     """tab:summary and tab:summaryauc (PI 2026-11-13, L1, L2): Table 1 is the main-text headline figure's table, the
     headline metric of five tasks (JetClass-II and JetClass accuracy, R30 on top tagging and on quark/gluon tagging
@@ -3456,6 +3470,7 @@ def test_table_one_holds_the_headline_metric_of_five_tasks_and_its_auc_table_the
                 assert M.BOLD_ON not in lines[-3] + lines[-5]
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; reads the old paper's generated tables and its bold rule, both replaced (GO-6: no bold)")
 def test_the_generated_tables_are_bold_where_the_rule_applies_and_say_so_once():
     """The 20 tables as make_tables.py wrote them (PI 2026-11-12): bold in the tables that compare networks and in no
     table of inputs, recipes or differences; the caption's sentence once, in the words for a table with blocks or
@@ -3543,6 +3558,7 @@ def test_the_mass_effect_table_has_a_row_per_task_metric_and_mode_and_the_four_n
                                                                        and "continued" not in ln]
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old mass-effect table's bold; v2's tables carry no bold (GO-6)")
 def test_the_mass_effect_table_prints_each_row_at_one_place_and_bolds_along_the_row():
     """table_masseffect builds the table transposed, so that one precision and the bold rule (D1, D19) apply to each
     row: the best value of a row by its direction and every value within three standard deviations of it."""
@@ -3605,6 +3621,7 @@ def test_one_source_for_the_fine_tuned_jetclass_accuracy_and_auc():
         assert float(printed) == round(float(np.mean(values)), len(printed.split(".")[1]))
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; its pattern matches the old tables' cells only")
 def test_every_table_prints_one_fine_tuned_jetclass_value_for_one_quantity():
     """L2 on the generated tables: the fine-tuned 188-class network and from scratch on JetClass print the same
     accuracy and AUC in Table 1, its AUC table, the comparison with published models and the supplement's JetClass
@@ -3844,6 +3861,7 @@ def test_the_jet_pt_values_are_a_csv_file_of_the_data_release():
         assert (r["sd"] == "") == (r["n_runs"] == "1") and 0 < float(r["mean"]) < 1, r
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; reads the old paper's generated tables (paper/journal/tables), which v2 replaces")
 def test_every_placed_table_is_set_at_the_body_size_and_the_per_run_table_names_its_modes_plainly():
     """D14 (round 2, package 2): every table the placement puts in the main text, the appendix or the supplement, as
     make_tables.py wrote it, carries no type-size command (tab:ftfull, tab:perrun, tab:probesnfull and tab:compute were
@@ -3970,6 +3988,7 @@ def test_the_mass_figure_claims_are_the_soft_drop_bootstrap_s():
                 raise AssertionError(f"a probe against the soft-drop mass in every bin: {s.strip()[:200]}")
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old results text's sentences (and an undefined HV_PANELS in the test); the rewrite replaces the text")
 def test_the_top_and_quark_gluon_sentences_are_the_every_metric_bootstrap():
     """PI 2026-11-21: Fig. 2's top and quark/gluon sentence is written by hand, R30 only, with a pointer to the tables,
     and the captions of the tables that print accuracy, R50 and AUC name the networks that differ; every claim is
@@ -4010,6 +4029,7 @@ def test_the_top_and_quark_gluon_sentences_are_the_every_metric_bootstrap():
         pytest.skip("no every-metric bootstrap pulled (bootstrap/l3_v5 waits for the v5 gate, bootstrap/l3/ft_*.all.json)")
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; a sculpting sentence of the old results text; the rewrite replaces the text (GO-9)")
 def test_no_sentence_claims_sculpting_at_a_working_point_within_three_sigma_of_the_floor():
     """PI 2026-11-21: no caption or sentence claims sculpting at a working point unless the distance passes 3 sigma above
     the random-selection floor (the run SD and the floor's SD combined, mlst_results.sculpt_above_floor). The audit's
@@ -4082,6 +4102,7 @@ def _l3_entry(delta, sd_a, sd_b, boot):
             "sigma": math.sqrt(sd_a ** 2 + sd_b ** 2 + boot ** 2)}
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; its list of row kinds is the old tab:tests' (no rescaling row, DL-16c); the rewrite's table of tests replaces it")
 def test_the_tested_differences_table_prints_each_stated_difference_with_sigma_of_runs_and_paired_bootstrap(tmp_path):
     """tab:tests (PI 2026-11-23, LEDGER SP-9, merge 6; PI SC-1 (1)): one row per stated difference, Delta, each side's run
     SD, the paired test-jet bootstrap SD and Delta/sigma with sigma^2 = sd_a^2 + sd_b^2 + boot^2, Delta at sigma's

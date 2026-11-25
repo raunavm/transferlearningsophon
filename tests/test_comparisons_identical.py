@@ -25,7 +25,9 @@ DATA = ROOT / "experiments/FIGS/data/v2"
 TRAINING_CODE = ("experiments/FT/ft_weaver.py", "experiments/E1/seed_weaver.py", "experiments/FT/early_stop.py",
                  "experiments/FT/fill_config.py")
 KIN = "l188kin-s1"
-SCRATCH_MAY_DIFFER = {"lr", "head_lr_mult", "lr_schedule", "patience_from"}     # ParT's from-scratch recipe
+# ParT's from-scratch recipe; ckpt_rule is the pretraining checkpoint's rule, which from scratch does not have
+# (PI 2026-11-25, ledger 31.4: differs by construction)
+SCRATCH_MAY_DIFFER = {"lr", "head_lr_mult", "lr_schedule", "patience_from", "ckpt_rule"}
 KIN_MAY_DIFFER = {"data_config", "code:data_config"}                            # kinematic inputs, by design
 # The one accepted change of training code within a comparison (PI 2026-11-21), by both git blobs and nothing else:
 # early_stop.py before (mtx-s3.10 to mtx-s3.17) and after the divergence rule (mtx-s3.18, commit 5e49098a), which adds
@@ -119,6 +121,8 @@ def test_below_the_full_sets_every_cell_follows_the_one_rule_and_no_best_checkpo
     nor in the last 10% of the schedule (PI 2026-11-15)."""
     bad = []
     for (task, n), cells in sorted(_below_full().items()):
+        if task == "qg_herwig":     # the quark/gluon cells re-scored on Herwig jets: no training, so no recipe of their
+            continue                # own (PI 2026-11-25, ledger 31.4: differs by construction)
         for cell, (rec, s) in cells.items():
             e = rec.get("early_stop") or {}
             ep, best = e.get("max_epochs"), e.get("best_epoch")

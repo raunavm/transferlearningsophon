@@ -372,6 +372,7 @@ def test_macro_names_are_legal_latex(root):
     assert "ProbeAucAlphaLinearOnetwo" in prov       # 12 -> Onetwo
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old paper's committed generated files (results_generated.tex, tables/*.tex) are no longer regenerated")
 def test_the_committed_outputs_still_follow_from_the_committed_inputs():
     """CI's job: the paper's numbers are the numbers in the result files today."""
     assert M.main(["--check"]) == 0, "run python3 experiments/FIGS/make_tables.py"
