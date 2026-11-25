@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Duplicate-run check of the rewrite's Tables 2 and 3 (PI 2026-11-25, LEDGER §28 1.2): experiments/EVAL/dup_check_v2.py,
+  # reads only, one new JSON. CPU only. at fe3895e.
+  name: dup-check-v2-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          for T in 1 2 3 4 5; do git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
+          cd /workspace/repo && git checkout -q fe3895edc47ba906d9fff6339c69550d4162748f && git rev-parse HEAD
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          [ "${USED}" -le 90 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          export OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONUNBUFFERED=1
+          OUT=/data/results/eval/dup_check/dup_check_v2_fe3895e.json
+          python3 experiments/EVAL/dup_check_v2.py --out ${OUT}
+          sha256sum ${OUT}
+          echo "DUP CHECK COMPLETE"
+        resources:
+          # largest step: one JetClass-II fine-tuned cell, 188 logits x 903,922 jets (680 MB float32) with its argmax copy
+          requests: { memory: "16Gi", cpu: "2", ephemeral-storage: "5Gi" }
+          limits:   { memory: "16Gi", cpu: "2", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["node-2-3.sdsc.optiputer.net", "suncave-5"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
