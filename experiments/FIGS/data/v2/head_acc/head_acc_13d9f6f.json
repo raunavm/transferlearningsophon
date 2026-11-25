@@ -1,0 +1,47 @@
+{
+ "majority": {
+  "accuracy": 0.005531450722518093,
+  "class": 0,
+  "n_classes_present": 188
+ },
+ "models": {
+  "mtx-l188-s1": {
+   "accuracy": 0.34574553999128244,
+   "checkpoint": "/data/results/mtx_v2/mtx-l188-s1/net_epoch-79_state.pt",
+   "checkpoint_sha256": "99595174e0300aac69e1f68889bd4f47f5f1aa902e14843572303526a45bac0f",
+   "features": "/data/results/eval/v2_linprobe_bal/mtx-l188-s1/jc2bal/test/best70",
+   "n_jets": 903922,
+   "n_out": 188,
+   "near_ties": 0.0009503032341286084
+  },
+  "mtx-l188-s2": {
+   "accuracy": 0.3455408763145493,
+   "checkpoint": "/data/results/mtx_v2/mtx-l188-s2/net_epoch-79_state.pt",
+   "checkpoint_sha256": "4f6e8d10b4135bf5c16b4680ae717e0b476cf4a378d5427036ca1a2385121fa0",
+   "features": "/data/results/eval/v2_linprobe_bal/mtx-l188-s2/jc2bal/test/best70",
+   "n_jets": 903922,
+   "n_out": 188,
+   "near_ties": 0.0009657912961516591
+  },
+  "mtx-l188-s3": {
+   "accuracy": 0.3454855618073241,
+   "checkpoint": "/data/results/mtx_v2/mtx-l188-s3/net_epoch-79_state.pt",
+   "checkpoint_sha256": "2bb4dfd1e53d6d1ab9e8fcfd5bd87f0d6972eb4dcead7bd529e0b02de3e7d22b",
+   "features": "/data/results/eval/v2_linprobe_bal/mtx-l188-s3/jc2bal/test/best70",
+   "n_jets": 903922,
+   "n_out": 188,
+   "near_ties": 0.0009093704987819745
+  },
+  "sophon-released": {
+   "accuracy": 0.34902237139930214,
+   "checkpoint": "/workspace/sophon_released.pt",
+   "checkpoint_sha256": "cc7c33b522e796b5bbf0aa9bb5b01361c964f4ef3acebdd9682d7519c095b824",
+   "features": "/data/results/eval/v2_linprobe_sophon/sophon-released/jc2bal/test/released",
+   "n_jets": 903922,
+   "n_out": 188,
+   "near_ties": 0.0009503032341286084
+  }
+ },
+ "script": "experiments/EVAL/head_accuracy.py",
+ "script_sha256": "d670a2760b8350fff8fa5a936284dc3cd31da944671d04bf94e5a1dbffee5fdf"
+}
