@@ -9,6 +9,7 @@ import sys
 import matplotlib
 
 matplotlib.use("Agg")
+import numpy as np  # noqa: E402
 import pytest  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -93,6 +94,12 @@ def test_fig2_rows_are_table_2s_pretrained_rows_in_four_panels(figures):
     assert V.G.MEAN_DOT == 4.6 and V.L.BAR == 0.8
     bars = [c for ax in panels for c in ax.collections if hasattr(c, "get_segments") and c.get_segments()]
     assert bars and all(abs(c.get_linewidth()[0] - V.FIG2_BAR) < 1e-9 for c in bars)
+    # PI 2026-11-25 (ledger 32.3): accuracy in percent, and each panel its own range: the JetClass gap visible
+    assert [ax.get_xlabel() for ax in panels[:2]] == ["Accuracy (%), JetClass-II", "Accuracy (%), JetClass"]
+    lo, hi = panels[1].get_xlim()
+    jc1 = [float(np.mean(v)) for v in ([V.G._hv_values(r, V._pct(V.G._probe_value("jc1", 1_000_000, "jc1", "accuracy")),
+                                                      ("jc1", 1_000_000, "jc1", "accuracy")) for r in ("L188", "R16_Q1")])]
+    assert 70 < lo < hi < 80 and (jc1[0] - jc1[1]) / (hi - lo) > 0.2      # the 188-17 gap a fifth of the axis or more
     assert [ax.get_xlabel() for ax in panels[2:]] == [r"$\mathrm{Rej}_{30\%}$, top tagging",
                                                       r"$\mathrm{Rej}_{30\%}$, quark/gluon"]
 
@@ -116,6 +123,8 @@ def test_fig4_is_fine_tuning_against_training_size_beside_from_scratch(figures):
     assert _legend(fig) == ["188 classes", "162 classes", "43 classes", "17 classes", "trained from scratch"]
     panels = _panels(fig)
     assert len(panels) == 4 and all(ax.get_xlabel() == "Number of training jets" for ax in panels)
+    assert [ax.get_ylabel() for ax in panels[:2]] == ["Accuracy (%)"] * 2
+    assert 40 < max(panels[0].lines[-1].get_ydata()) < 50       # 188 classes, JetClass-II, in percent
     assert all(len(ax.lines) == 5 and all(len(ln.get_xdata()) >= 3 for ln in ax.lines) for ax in panels)
 
 
@@ -137,7 +146,7 @@ def test_the_appendix_figures_keep_the_stems_the_appendix_includes(figures):
     assert re.findall(r"\\vfig(?:\[[^]]*\])?\{(figA\d)\}", appendix) == ["figA1", "figA2", "figA3", "figA4", "figA5"]
     a1 = _panels(figures["figA1"])       # GO-9: linear probes only, one panel a coarser label set
     assert [ax.get_title() for ax in a1] == ["(a) 162 classes", "(b) 43 classes", "(c) 17 classes"]
-    assert all(ax.get_xlabel() == "Recall, 188 classes" for ax in a1) and not figures["figA1"].texts
+    assert all(ax.get_xlabel() == "Recall (%), 188 classes" for ax in a1) and not figures["figA1"].texts
     assert len(_panels(figures["figA2"])) == 4 and set(_legend(figures["figA2"])) == set(_legend(figures["fig3_pairs"]))
     names = ["188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
              "162 classes + mass regression", "17 classes + mass regression"]
@@ -147,6 +156,11 @@ def test_the_appendix_figures_keep_the_stems_the_appendix_includes(figures):
                                               "17 classes + mass regression"}
     assert len(_panels(figures["figA4"])) == 4
     assert sorted(_legend(figures["figA5"])) == sorted(names)
+    # accuracy in percent on every accuracy axis, recall too (ledger 32.3)
+    assert all(ax.get_xlabel() == "Recall (%), 188 classes" for ax in a1)
+    assert [ax.get_ylabel() for ax in _panels(figures["figA3"])[:2]] == ["Accuracy (%)"] * 2
+    a5 = [ax for ax in figures["figA5"].axes if ax.lines][0]
+    assert a5.get_ylabel() == "Validation accuracy (%)" and max(max(ln.get_ydata()) for ln in a5.lines) > 50
 
 
 def test_the_render_mode_draws_them_and_stops_without_all_five():

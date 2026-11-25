@@ -63,7 +63,7 @@ SUMMARY_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "L162_MASS", "R16_Q1
 SUMMARY_REFS = (M.SOPHON,)
 SUMMARY_PANELS = tuple((key, n, ds, met, {"qg": "Quark/gluon"}.get(key, title)) for key, n, ds, met, title in G.HV_PANELS
                        if key != "qg_herwig")
-SUMMARY_X = {"jc2": "Accuracy, JetClass-II", "jc1": "Accuracy, JetClass", "top": f"{REJ30}, top tagging",
+SUMMARY_X = {"jc2": "Accuracy (%), JetClass-II", "jc1": "Accuracy (%), JetClass", "top": f"{REJ30}, top tagging",
              "qg": f"{REJ30}, quark/gluon"}
 # Fig. 3 (RW-8: two panels, at most six curves)
 PAIR_NETS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND_MERGED", "RAND_APART")
@@ -71,7 +71,25 @@ PAIR_NETS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND_MERGED", "RAND_APART")
 SIZE_NETS = ("L188", "L162", "R42_Q1", "R16_Q1", "SCRATCH")
 SIZE_PANELS = tuple((key, ds, met, {"qg": "Quark/gluon"}.get(key, title)) for key, ds, met, title in G.SIZE5
                     if key != "qg_herwig")
-SIZE_Y = {"accuracy": "Accuracy", "r30": f"Rejection ({REJ30})"}
+SIZE_Y = {"accuracy": "Accuracy (%)", "r30": f"Rejection ({REJ30})"}
+# PI 2026-11-25 (ledger 32.3): accuracy in percent in the tables and text, so on every accuracy axis (and recall,
+# a class's accuracy); the values are the build's, times 100 at the drawing
+PERCENT = 100.0
+
+
+def _pct(value):
+    """A value function of gallery_labelset (_hv_values' value(m)) in percent."""
+    return lambda m: None if (x := value(m)) is None else PERCENT * x
+
+
+def _pct_series(maker):
+    """A training-size series maker (gallery_labelset._tuned, _probe) with its accuracy panels in percent."""
+    def make(key, ds, met):
+        series, line, mark, label = maker(key, ds, met)
+        if met == "accuracy":
+            series = {n: [PERCENT * v for v in vals] for n, vals in series.items()}
+        return series, line, mark, label
+    return make
 # Fig. 5
 XBX_NETS = ("L188", "L162", "R42_Q1", "R16_Q1")
 X_EPS_B = r"Background efficiency ($\varepsilon_B$)"
@@ -122,17 +140,11 @@ def draw_fig2(path: pathlib.Path) -> None:
 
 def _draw_fig2(path: pathlib.Path) -> None:
     """gallery_labelset._draw_hv's dot plot (a row a network, its mean over runs and standard deviation; the 188-class
-    mean and band down the panel; one relative range about the 188-class mean for the panels of a metric, FG-2) for
-    SUMMARY_ROWS and Sophon (released) in SUMMARY_PANELS, two a row, the legend under them."""
+    mean and band down the panel) for SUMMARY_ROWS and Sophon (released) in SUMMARY_PANELS, two a row, the legend under
+    them. Each panel its own range (PI 2026-11-25, ledger 32.3, reversing FG-2); accuracy in percent."""
     cells = [(key, n, ds, met) for key, n, ds, met, _ in SUMMARY_PANELS]
-    gets = [G._probe_value(*cell) for cell in cells]
+    gets = [(_pct if cell[3] == "accuracy" else (lambda v: v))(G._probe_value(*cell)) for cell in cells]
     order = SUMMARY_ROWS + SUMMARY_REFS
-    devs = {}
-    for cell, get in zip(cells, gets):
-        m = float(np.mean(G._hv_values("L188", get, cell)))
-        devs.setdefault(cell[3], []).extend(v / m - 1 for r in order for vals in [G._hv_values(r, get, cell)] if vals
-                                            for v in vals + G._sd_ends(vals))
-    rel = {met: (min(d), max(d)) for met, d in devs.items()}
     probe = plt.figure()
     rend = probe.canvas.get_renderer()
     width = max(probe.text(0, 0, _row_name(r), fontsize=S.TICK_PT5).get_window_extent(rend).width for r in order)
@@ -154,7 +166,7 @@ def _draw_fig2(path: pathlib.Path) -> None:
         series = [(r, G._hv_values(r, get, cell), G._hv_colour(r), r in SUMMARY_REFS) for r in order]
         one = one or any(len(vals) == 1 for _, vals, _, _ in series)
         parts, main, bars, hidden = G._hv_panel(fig, x, y0, w, h, rows, dividers, series,
-                                                G._hv_values("L188", get, cell), met, rel[met])
+                                                G._hv_values("L188", get, cell), met, None)
         print(f"{path.name} ({'abcd'[k]}): {hidden} of {bars} standard-deviation bars shorter than the point")
         main.set_title(f"({'abcd'[k]}) {title}", fontsize=G.HV_TITLE_PT, pad=4.0)
         S.labels(main, SUMMARY_X[key], None)
@@ -232,7 +244,7 @@ def _size_figure(path: pathlib.Path, makers: list, nets: tuple, ncol: int) -> No
 
 def draw_fig4(path: pathlib.Path) -> None:
     """Fine-tuned (every point the fixed-schedule cell at its row's recorded rate, gallery_labelset._settled)."""
-    _size_figure(path, [G._tuned(r) for r in SIZE_NETS], SIZE_NETS, 3)
+    _size_figure(path, [_pct_series(G._tuned(r)) for r in SIZE_NETS], SIZE_NETS, 3)
 
 
 def draw_fig5(path: pathlib.Path) -> None:
@@ -287,7 +299,7 @@ def draw_figA1(path: pathlib.Path) -> None:
 
     def side(row):
         m, sd, bt = PC._mean(get, row), PC._sd(get, row), PC._boot_mean("jc2", 0, row)
-        return {c: (m[c], float(np.hypot(sd[c], bt.get(c, 0.0)))) for c in m}
+        return {c: (PERCENT * m[c], PERCENT * float(np.hypot(sd[c], bt.get(c, 0.0)))) for c in m}
     ref = {b: side(b) for b in {b for _, b in RECALL_ROWS}}
     pts = [[(ref[b][c][0], v[0], c, ref[b][c][1], v[1]) for c, v in side(a).items() if c in ref[b]] for a, b in RECALL_ROWS]
     vals = [v for panel in pts for x, y, _, ex, ey in panel for v in (x - ex, y - ey, x + ex, y + ey)]
@@ -317,7 +329,7 @@ def draw_figA1(path: pathlib.Path) -> None:
         for axis in (ax.xaxis, ax.yaxis):
             axis.set_major_locator(ticker.MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
         S.title(ax, f"({'abc'[k]}) {S.LEGEND[a]}")
-        S.labels(ax, xlabel=f"Recall, {S.LEGEND[b]}", ylabel=f"Recall, {S.LEGEND[a]}")
+        S.labels(ax, xlabel=f"Recall (%), {S.LEGEND[b]}", ylabel=f"Recall (%), {S.LEGEND[a]}")
     S.slot_legend(fig, handles, left + w + wgap, top + w + hgap, w, w)
     S.save(fig, path)
 
@@ -329,7 +341,7 @@ def draw_figA2(path: pathlib.Path) -> None:
 
 def draw_figA3(path: pathlib.Path) -> None:
     """Fig. 4's form for linear probes on the frozen features of Table 2's pretrained rows (the old A10)."""
-    _size_figure(path, [G._probe(r) for r in SUMMARY_ROWS], SUMMARY_ROWS, 2)
+    _size_figure(path, [_pct_series(G._probe(r)) for r in SUMMARY_ROWS], SUMMARY_ROWS, 2)
 
 
 def draw_figA4(path: pathlib.Path) -> None:
@@ -340,13 +352,28 @@ def draw_figA4(path: pathlib.Path) -> None:
 
 
 def draw_figA5(path: pathlib.Path) -> None:
-    """The old VAL (gallery_labelset._draw_val) for Table 2's pretrained rows: each model's validation accuracy on
-    its own label set against the pretraining epoch."""
-    width, G.VAL_LEGEND_W = G.VAL_LEGEND_W, VAL_LEGEND_W
-    try:
-        G._draw_val(path, SUMMARY_ROWS)
-    finally:
-        G.VAL_LEGEND_W = width
+    """The old VAL (gallery_labelset._draw_val's form and data, compute/) for Table 2's pretrained rows: each model's
+    validation accuracy (%) on its own label set against the pretraining epoch, the mean over runs and a band of their
+    standard deviation; the panel at a one-panel figure's size, the legend beside it."""
+    docs, runs = M._load(C.P.DATA / "compute"), M._pooled(C.RUNS)
+    top, w = 0.5, S.SINGLE_W - 1.5 - 0.25
+    x0 = (S.PRINT_W - (1.5 + w + 0.4 + VAL_LEGEND_W)) / 2 + 1.5
+    fig = S.figure_cm(S.PRINT_W, top + 0.85 * w + 1.0)
+    ax = S.axes_cm(fig, x0, top, w, 0.85 * w)
+    S.fine_grid(ax)
+    for row in SUMMARY_ROWS:
+        have = PERCENT * np.array([[e["val_acc"] for e in docs[m]["epochs"]] for m in runs[row]
+                                   if m in docs and "val_acc" in docs[m]["epochs"][0]])
+        if not len(have):
+            raise C.Absent(f"no validation accuracy per epoch for {row} (compute/)")
+        x, mean = np.arange(1, have.shape[1] + 1), have.mean(axis=0)
+        if len(have) > 1:
+            sd = have.std(axis=0, ddof=1)
+            ax.fill_between(x, mean - sd, mean + sd, color=S.SERIES[row], alpha=L.BAND, linewidth=0, zorder=1.0)
+        ax.plot(x, mean, **S.look(row), linewidth=S.LW_CURVE, label=S.LEGEND[row])
+    S.labels(ax, "Pretraining epoch", "Validation accuracy (%)")
+    S.slot_legend(fig, ax.get_legend_handles_labels()[0], x0 + w + 0.4, top, VAL_LEGEND_W, 0.85 * w)
+    S.save(fig, path)
 
 
 # (file stem, its drawing, printed width in cm, figcheck's least panel width in cm)
