@@ -49,12 +49,19 @@ def test_table1_rows():
     assert "two-parton" not in tex and "number of decay products" in tex  # caption reworded after the cold readers (parton, not "kind")
 
 
-def test_class_map_is_nested_and_complete():
+def test_class_map_has_every_class_once_with_its_coarser_classes():
+    """Table A1 (2026-11-25): 188 rows, unique names, each 162/43/17 number the map's, every row printed."""
+    rows = V.classmap_rows(MAPS)
+    assert len(rows) == 188 and len({r[1] for r in rows}) == 188 and sorted(r[0] for r in rows) == list(range(1, 189))
+    by_number = {int(MAPS["L188"][k]) + 1: k for k in MAPS["L188"]}
+    for n188, name, n162, n43, n17 in rows:
+        k = by_number[n188]
+        assert (n162, n43, n17) == tuple(int(MAPS[a][k]) + 1 for a in ("L162", "R42_Q1", "R16_Q1"))
+        assert name == V.class_name(k)
     tex = V.table_classmap(MAPS)
-    rows = [ln for ln in tex.splitlines() if re.match(r"^\d* & \d+ & ", ln) and "JetClass-II classes" not in ln]
-    assert len(rows) == 43 and sum(bool(re.match(r"^\d+ & ", ln)) for ln in rows) == 17
-    assert sum(ln.count("$") // 2 for ln in rows) == 188
-    assert V.class_tex("X_YY_bbtauhtaue") == r"$bb \tau_h \tau_e$"
+    assert all(" & ".join(str(x) for x in r) + r" \\" in tex for r in rows)
+    assert V.class_name("X_bb") == r"$X\to bb$" and V.class_name("QCD_bb") == "QCD $bb$"
+    assert V.class_name("X_YY_bbcc") == r"$X\to YY\to bbcc$"
 
 
 def test_strip_bold_keeps_the_cell():

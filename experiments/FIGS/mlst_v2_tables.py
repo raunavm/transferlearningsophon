@@ -629,30 +629,54 @@ def class_tex(k: str) -> str:
     return "$" + " ".join(TOKEN_TEX.get(t, t) for t in toks).replace(" ", "") .replace("\\", " \\").strip() + "$"
 
 
+def class_name(k: str) -> str:
+    """A JetClass-II class with its decay structure: X_bb -> $X\to bb$, X_YY_bbcc -> $X\to YY\to bbcc$, QCD_bb -> QCD $bb$."""
+    body = class_tex(k)
+    if k.startswith("QCD_"):
+        return "QCD light" if k == "QCD_light" else "QCD " + body
+    return "$X\\to " + ("YY\\to " if k.startswith("X_YY_") else "") + body[1:]
+
+
+CLASSMAP_ROWS = 60      # rows per column of Table A1 (two columns a page at 8 pt)
+
+
+def classmap_rows(maps: dict) -> list:
+    """Table A1's rows (PI's request, 2026-11-25): (number of the class among the 188, its name, its class number in
+    the 162-, 43- and 17-class sets), ordered so the nesting reads (by 17, then 43, then 162, then 188)."""
+    m188, m162, m43, m17 = (maps[a] for a in NESTED)
+    order = list(m188)
+    for fine, coarse, what in ((m162, m43, "162 in 43"), (m43, m17, "43 in 17"), (m188, m162, "188 in 162")):
+        for c in set(fine.values()):
+            if len({coarse[k] for k in order if fine[k] == c}) != 1:
+                raise SystemExit(f"FATAL: the label sets are not nested ({what})")
+    rows = [(int(m188[k]) + 1, class_name(k), int(m162[k]) + 1, int(m43[k]) + 1, int(m17[k]) + 1) for k in order]
+    rows.sort(key=lambda r: (r[4], r[3], r[2], r[0]))
+    if len({r[1] for r in rows}) != len(rows):
+        raise SystemExit("FATAL: two JetClass-II classes print the same name")
+    return rows
+
+
 def table_classmap(maps: dict) -> str:
-    """Appendix Table A1 (PI 2026-11-24, GO-6): the 17 groups as blocks, the 43 classes as rows, the 188 classes of
-    each in the last column; resonant decays by their final state, QCD jets by their quark content."""
-    m17, m43 = maps["R16_Q1"], maps["R42_Q1"]
-    order = list(maps["L188"])
-    out = [r"{\fontsize{8}{9.6}\selectfont\setlength{\tabcolsep}{4pt}",
-           r"\begin{longtable}{@{}cc>{\raggedright\arraybackslash}p{0.78\linewidth}@{}}",
-           r"\caption{The class map: each of the 17 classes of the coarsest label set as a block, the 43 classes it "
-           r"contains as rows, and the JetClass-II classes of each row, written by the decay products of the resonance "
-           r"or, for QCD jets, by their quark content.}\label{tab:classmap}\\", r"\toprule",
-           r"17 & 43 & JetClass-II classes \\", r"\midrule", r"\endfirsthead", r"\toprule",
-           r"17 & 43 & JetClass-II classes \\", r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot"]
-    g17 = sorted(set(m17.values()), key=int)
-    for g in g17:
-        rows = sorted({m43[k] for k in order if m17[k] == g}, key=int)
-        for j, c in enumerate(rows):
-            members = [k for k in order if m43[k] == c]
-            if {m17[k] for k in members} != {g}:
-                raise SystemExit("FATAL: the 43 classes are not nested in the 17")
-            kind = "QCD: " if members[0].startswith("QCD") else ""
-            out.append(f"{int(g) + 1 if j == 0 else ''} & {int(c) + 1} & {kind}" + ", ".join(class_tex(k) for k in members) + r" \\")
-        if g != g17[-1]:
-            out.append(r"\addlinespace")
-    return "\n".join(out + [r"\end{longtable}}", ""])
+    """Appendix Table A1: every JetClass-II class on its own row with its class in each coarser set, two columns of
+    rows a page at 8 pt; the second page continues the same float number."""
+    rows = classmap_rows(maps)
+    line = lambda r: " & ".join(str(x) for x in r)                                      # noqa: E731
+    head = [r"\begin{tabular}[t]{@{}r>{\raggedright\arraybackslash}p{3.0cm}rrr@{}}", r"\toprule",
+            r"\Kfull & Class & \Kres & \Kmid & \Kcoarse \\", r"\midrule"]
+    col = lambda rs: "\n".join(head + [line(r) + r" \\" for r in rs] + [r"\bottomrule", r"\end{tabular}"])  # noqa: E731
+    n = CLASSMAP_ROWS
+    pages = [rows[k:k + 2 * n] for k in range(0, len(rows), 2 * n)]
+    out = []
+    for p, chunk in enumerate(pages):
+        half = (len(chunk) + 1) // 2
+        cap = (r"\caption{Every JetClass-II class with its number among the \Kfull, ordered by its class in the "
+               r"\Kcoarse-, \Kmid- and \Kres-class sets, whose numbers the last three columns give. The \Kres-class "
+               r"set merges the \LitJetClassTwoNQcdClasses{} QCD classes into one. Resonant classes are named by "
+               r"their decay, QCD classes by their quark content.}\label{tab:classmap}" if p == 0
+               else r"\ContinuedFloat\caption{(continued)}")
+        out += [r"\begin{table}[p]", r"\centering", cap, r"\fontsize{8}{9.4}\selectfont\setlength{\tabcolsep}{3pt}",
+                col(chunk[:half]), r"\hspace{0.6cm}", col(chunk[half:]), r"\end{table}", ""]
+    return "\n".join(out)
 
 
 def strip_bold(t: str) -> str:
