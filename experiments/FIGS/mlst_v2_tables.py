@@ -698,14 +698,15 @@ def appendix_tables(got: dict, maps: dict) -> dict:
                    ("top AUC", probe("top", "auc")), ("quark/gluon AUC", probe("qg", "auc"))], pre + refs, auc_head),
               tab([("JetClass-II AUC", ft("jc2", "macro_auc_ovr")), ("JetClass AUC", ft("jc1", "macro_auc_ovr")),
                    ("top AUC", ft("top", "auc")), ("quark/gluon AUC", ft("qg", "auc"))], pre + scr, auc_head))
-    flav = [(f"{len(set(maps['R16_Q1'].values()))} classes, {w}", a, len(runs[a])) for a, w in
+    # short row names: with "17 classes, " before each the six columns were 82-98 pt wider than the text block
+    flav = [(w, a, len(runs[a])) for a, w in
             (("FLAV_F0", "no flavor boundary"), ("FLAV_F1", "$b$-quark boundary"), ("FLAV_F1R", "random flavor boundary"))]
-    keep = [x for x in pre if x[1] in ("R16_Q1", RAND)]
+    keep = [("random grouping" if x[1] == RAND else x[0], *x[1:]) for x in pre if x[1] in ("R16_Q1", RAND)]
     six = lambda f: [("JetClass-II accuracy", f("jc2_188" if f is probe else "jc2", "accuracy")),    # noqa: E731
                      ("JetClass accuracy", f("jc1", "accuracy")), ("top accuracy", f("top", "accuracy")),
                      ("top Rej30%", f("top", "r30")), ("quark/gluon accuracy", f("qg", "accuracy")),
                      ("quark/gluon Rej30%", f("qg", "r30"))]
-    flavor = two(r"The flavor-boundary groupings beside the 17-class model and the random grouping, in the columns of "
+    flavor = two(r"The flavor-boundary groupings, each with 17 classes, beside the 17-class model and the random grouping, in the columns of "
                  r"Tables~\ref{tab:probes} and~\ref{tab:finetuned}; mean $\pm$ standard deviation over runs.",
                  "tab:flavor", tab(six(probe), keep[:1] + flav + keep[1:], HEAD[:-1]), tab(six(ft), keep[:1] + flav + keep[1:], HEAD[:-1]))
     hw_head = [r" & Accuracy & Rej$_{50\%}$ & Rej$_{30\%}$ \\"]
