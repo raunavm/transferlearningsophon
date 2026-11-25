@@ -151,10 +151,12 @@ def test_the_appendix_figures_keep_the_stems_the_appendix_includes(figures):
     # ledger 33.2(b): X->gg vs X->qq as AUCs per model from the build's export, in the fifth panel
     e = _panels(figures["figA2"])[4]
     assert e.get_title().startswith("(e) $X\\to gg$ vs $q\\bar{q}$") and e.get_xlabel().startswith("AUC")
-    rows = V.gg_qq_values()
+    with V.names():                      # the rewrite's names, as the figure draws them
+        rows = V.gg_qq_values()
     assert [n for n, _, _ in rows] == ["188 classes", "162 classes", "43 classes", "17 classes",
                                        "17 classes, random grouping, pair merged", "17 classes, random grouping, pair apart"]
     assert [len(v) for _, _, v in rows] == [3, 3, 3, 3, 1, 4]
+    assert [t.get_text() for t in e.get_yticklabels()] == [n for n, _, _ in rows]
     means = sorted(float(ln.get_xdata()[0]) for ln in e.lines if ln.get_marker() == "o")
     assert np.allclose(means, sorted(float(np.mean(v)) for _, _, v in rows))
     names = ["188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
