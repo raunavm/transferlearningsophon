@@ -40,9 +40,10 @@ The four label sets are nested, so that each is obtained from the one before by 
 a named way (table~\ref{tab:sets} and figure~\ref{fig:design}; the full map is table~\ref{tab:classmap}).
 The \Kres-class set merges the QCD classes into one and keeps every resonant class.
 \input{tables/table1}
-\vfig{fig1_design}{Design of the study. Each nested label set merges classes of the set above it, shown for one group of
-decays. A pretrained network is then used in two ways: frozen, with a linear probe or transfer learning on its
-features, or fine-tuned with a new output layer.}{fig:design}
+\vfig[13cm]{fig1_design}{Design of the study. (a) The ten classes of one group of the \Kcoarse-class set, a resonance $X$
+decaying to two quarks or gluons, drawn as schematic jets, with the class each falls in under the four label sets;
+below, all \Kfull{} classes as cells, where a bar spanning several cells is one class of that label set. (b) One model
+is pretrained for each label set on the same jets and is then used with frozen features or fine-tuned.}{fig:design}
 The \Kmid-class set then labels a decay only by whether it contains a bottom quark, else a charm quark, else
 neither, and no longer separates strange from up and down quarks, gluons from these light quarks, or electrons
 from muons.

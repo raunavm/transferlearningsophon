@@ -128,6 +128,12 @@ TABLE1_CAPTION = ("The label sets, what each merges from the finer set above it,
                   "set keeps the number and kind of decay products.")
 
 
+def short(maps: dict, arm: str) -> str:
+    """A row's name in Tables 2 and 3 (PI 2026-11-24, GO-6: shorter row labels so that six columns fit); Table 1
+    gives the full names."""
+    return name(maps, arm).replace(", random grouping", ", random").replace(" + mass regression", " + mass")
+
+
 def table1(maps: dict, runs: dict) -> str:
     """Table 1 (PI 2026-11-24, GO-6: version B with its fixes). Below the rule the random groupings and the mass
     regression."""
@@ -161,7 +167,7 @@ def table1(maps: dict, runs: dict) -> str:
 def _float(caption: str, label: str, tabular: list, numbered: bool = True) -> str:
     """A portrait table float on one page: the caption above, the tabular at 9 pt, shrunk only if wider than the text."""
     cap = rf"\caption{{{caption}}}\label{{{label}}}" if numbered else rf"\caption*{{{caption}}}\label{{{label}}}"
-    return "\n".join([r"\begin{table}[tb]", r"\centering", cap, r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{4pt}",
+    return "\n".join([r"\begin{table}[tb]", r"\centering", cap, r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}",
                       r"\begin{adjustbox}{max width=\linewidth}", *tabular, r"\end{adjustbox}", r"\end{table}", ""])
 
 
@@ -265,7 +271,7 @@ def tables23(got: dict, maps: dict) -> tuple:
     R = got["R"]
     fits, fill, chosen, per, runs = got["summary"][:5]
     runs = R._pooled(runs)
-    pre = [(name(maps, a), a, len(runs[a])) for a in NESTED + (RAND,) + tuple(m for m, _ in MASS)]
+    pre = [(short(maps, a), a, len(runs[a])) for a in NESTED + (RAND,) + tuple(m for m, _ in MASS)]
 
     def probe(ds, met):
         g = R.summary_probe(fits, fill, chosen, ds, met)
@@ -702,13 +708,17 @@ def appendix_tables(got: dict, maps: dict) -> dict:
     flav = [(w, a, len(runs[a])) for a, w in
             (("FLAV_F0", "no flavor boundary"), ("FLAV_F1", "$b$-quark boundary"), ("FLAV_F1R", "random flavor boundary"))]
     keep = [("random grouping" if x[1] == RAND else x[0], *x[1:]) for x in pre if x[1] in ("R16_Q1", RAND)]
-    six = lambda f: [("JetClass-II accuracy", f("jc2_188" if f is probe else "jc2", "accuracy")),    # noqa: E731
-                     ("JetClass accuracy", f("jc1", "accuracy")), ("top accuracy", f("top", "accuracy")),
-                     ("top Rej30%", f("top", "r30")), ("quark/gluon accuracy", f("qg", "accuracy")),
-                     ("quark/gluon Rej30%", f("qg", "r30"))]
-    flavor = two(r"The flavor-boundary groupings, each with 17 classes, beside the 17-class model and the random grouping, in the columns of "
-                 r"Tables~\ref{tab:probes} and~\ref{tab:finetuned}; mean $\pm$ standard deviation over runs.",
-                 "tab:flavor", tab(six(probe), keep[:1] + flav + keep[1:], HEAD[:-1]), tab(six(ft), keep[:1] + flav + keep[1:], HEAD[:-1]))
+    # PI RW-4: a table too wide has too many columns. Six columns were 37-54 pt wider than the text block, so this
+    # table keeps the accuracy on the two multi-class tasks and the background rejection on the two binary ones
+    four = lambda f: [("JetClass-II accuracy", f("jc2_188" if f is probe else "jc2", "accuracy")),    # noqa: E731
+                      ("JetClass accuracy", f("jc1", "accuracy")), ("top Rej30%", f("top", "r30")),
+                      ("quark/gluon Rej30%", f("qg", "r30"))]
+    four_head = [r" & JetClass-II & JetClass & Top tagging & Quark/gluon \\",
+                 r" & Accuracy & Accuracy & Rej$_{30\%}$ & Rej$_{30\%}$ \\"]
+    flavor = two(r"The flavor-boundary groupings, each with 17 classes, beside the 17-class model and the random "
+                 r"grouping: accuracy and background rejection Rej$_{30\%}$; mean $\pm$ standard deviation over runs.",
+                 "tab:flavor", tab(four(probe), keep[:1] + flav + keep[1:], four_head),
+                 tab(four(ft), keep[:1] + flav + keep[1:], four_head))
     hw_head = [r" & Accuracy & Rej$_{50\%}$ & Rej$_{30\%}$ \\"]
     hw = lambda f: [("accuracy", f("qg_herwig", "accuracy")), ("Rej50%", f("qg_herwig", "r50")),     # noqa: E731
                     ("Rej30%", f("qg_herwig", "r30"))]
