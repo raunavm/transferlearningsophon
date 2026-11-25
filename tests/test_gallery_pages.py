@@ -119,6 +119,7 @@ def test_the_million_jet_block_formats_mean_and_sd_in_the_last_digit():
     assert not V._ft_rows({a: [[0.4, 0.41]] * 4 for a in V.FT_ARMS})[-1][1].count("pending")
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the gallery map's million-jet block against the read-outs before the one rule (budget_long, full_budget_long); the paper reads fixed_metrics.json")
 def test_the_million_jet_block_reads_the_tables_files():
     """ft_values against the pulled files themselves: JetClass from ft_curves' read-outs (tab:jetclass), the
     from-scratch cells from the full-schedule one; JetClass-II pretrained from the fine-tuning read-outs (tab:ft) and
@@ -293,6 +294,27 @@ def test_the_pair_legend_holds_only_the_curves_drawn(monkeypatch):
 
 
 def test_the_pair_figures_draw_the_random_partitions_that_merge_the_pair_apart_from_those_that_keep_it_apart():
+    """PI 2026-11-21 (LEDGER PS-5): "show the random partitions that merge the pair and those that keep it apart
+    separately, with the count of each": two curves in the partitions row, each over its groupings from the label maps
+    (merge_status), the captions printing the counts the build writes (MlstPairRand{Merged,Apart}<pair>N, in F4-mech's
+    caption as words, review of render 5f4e1b8); a grouping that merges only part of the pair is in neither, and the
+    caption leaves it out by its count in words (MlstPairRandPartly<pair>Word)."""
+    M = L.M
+    st = M.merge_status(ROOT)
+    assert R.PAIR_RAND == {"RAND_MERGED": "merged", "RAND_APART": "apart"} and R.PAIR_STATUS == st
+    partly = {}
+    for keys in (R.MECHANISM, R.OTHER[:1]):
+        for key in keys:
+            runs = {s: R._models({}, net, key) for net, s in R.PAIR_RAND.items()}
+            assert runs == {s: [m for a in M.RAND if st[a][key] == s for m in R.RUNS[a]] for s in ("merged", "apart")}
+            assert runs["merged"] and runs["apart"] and not set(runs["merged"]) & set(runs["apart"]), key
+            partly[key] = sum(st[a][key] == "partly" for a in M.RAND)
+    assert partly == {"bb_vs_cc": 0, "bc_vs_bq_cs": 1, "bbqq_vs_ccqq": 0}
+    assert to_hex(R.S.SERIES[R._style("RAND_APART")]) == to_hex(R.S.SERIES["RAND"]) != to_hex(R.S.SERIES["RAND_MERGED"])
+
+
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old results text's sentences and macros on the pair figures' random partitions (results_jc.tex, appendix.tex); the curves themselves stay tested above")
+def test_the_old_text_prints_the_counts_of_the_pair_figures_random_partitions():
     """PI 2026-11-21 (LEDGER PS-5): "show the random partitions that merge the pair and those that keep it apart
     separately, with the count of each": two curves in the partitions row, each over its groupings from the label maps
     (merge_status), the captions printing the counts the build writes (MlstPairRand{Merged,Apart}<pair>N, in F4-mech's
@@ -543,6 +565,7 @@ def test_the_per_class_grid_puts_every_panel_on_one_range_and_colours_classes_no
     matplotlib.pyplot.close(figs[0])
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old paper's figure captions, table numbers and placement (gallery_captions); the rewrite replaces them")
 def test_the_paper_captions_replace_the_page_captions_and_name_tables_that_are_placed():
     """gallery_captions (PI 2026-11-12): one caption for each figure of the main text and the appendix, set on the
     gallery's pages; a table is named by its label and printed with its number of the day, so every label must be a
@@ -606,6 +629,7 @@ def test_every_paper_caption_is_within_the_length_figcheck_allows():
     assert {pid: n for pid, n in words.items() if not 40 <= n <= 145} == {}
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old paper's figure captions and placement (gallery_captions); the rewrite's five figures have their own captions")
 def test_every_main_and_appendix_figure_caption_is_at_most_135_words():
     """L16 (PI 2026-11-13): the test limit is 135 words for every main-text and appendix figure caption as the book
     prints it (gallery_captions.text, the numbers of the day filled in); supplement captions are left as they are."""
@@ -629,6 +653,7 @@ def _unbold(tex: str) -> str:
     return out + tex
 
 
+@pytest.mark.skip(reason="PI 2026-11-25 (ledger 31.4): the old paper's cells are not printed cells; the old Table 1 (tab:summary) against the old headline figures; v2's Table 2 against its Fig. 2 is tests/test_v2_main_figures.py's")
 def test_table_one_and_its_auc_table_print_the_values_the_headline_figures_draw():
     """tab:summary and tab:summaryauc (PI 2026-11-13, L1, L2): Table 1 holds the headline metric of every row of the
     main headline figure (F2) on its five tasks, Herwig included, the released Sophon checkpoint's of its full version
