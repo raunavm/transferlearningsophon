@@ -47,9 +47,14 @@ def test_table1_rows():
     assert r"5 $\times$ 1" in tex and "also the number of $b$ and $c$ quarks" in tex
 
 
-def test_value_table_pending_and_bold():
-    cols = [("x", True, lambda a: {"p": [0.5, 0.6], "q": [0.7, 0.8], "s": [None, 0.1]}[a])]
-    body, missing = V.value_table(cols, [("P", "p", 2), ("Q", "q", 2), None, ("S", "s", 2)], ["p", "q"], False,
-                                  str, V.PENDING)
-    assert missing == [("S", "x")] and body[2] == r"\midrule" and body[3] == r"S & pending \\"
-    assert r"\textbf" in body[1] and r"\textbf" not in body[0]
+def test_value_table_pending_one_place_per_column_no_bold():
+    """GO-6 (PI 2026-11-24): mean +- SD, one number of decimals per column, the SD to the same decimals, no bold."""
+    vals = {"p": [0.4348, 0.4351, 0.4344], "q": [0.331, 0.312, 0.350], "r": [0.4215, 0.4230, 0.4200], "s": [None, 0.1],
+            "o": [0.4340]}
+    cols = [("x", lambda a: vals[a])]
+    body, missing = V.value_table(cols, [("P", "p", 3), ("Q", "q", 3), ("R", "r", 3), None, ("S", "s", 2), ("O", "o", 1)],
+                                  V.PENDING)
+    assert missing == [("S", "x")] and body[3] == r"\midrule" and body[4] == r"S & pending \\"
+    assert not any(r"\textbf" in b for b in body)
+    assert body[0] == r"P & 0.4348\,$\pm$\,0.0004 \\" and body[1] == r"Q & 0.3310\,$\pm$\,0.0190 \\"
+    assert body[5] == r"O & 0.4340 \\"

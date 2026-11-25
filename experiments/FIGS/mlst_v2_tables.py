@@ -198,40 +198,36 @@ def paren(pm: str) -> str:
     return f"{m['m']}({s})"
 
 
-def bold(cell: str) -> str:
-    m = PM.match(cell)
-    return rf"\textbf{{{m['m']}}}\,$\boldsymbol{{\pm}}$\,\textbf{{{m['s']}}}" if m else rf"\textbf{{{cell}}}"
+def _place(mean: float, sd: float) -> int | None:
+    """The decimals make_tables.fmt_pm prints a row at (PDG rounding of its SD); None for a lone or bounded value."""
+    m = PM.match(MT.fmt_pm(mean, sd))
+    return None if not m else len(m["m"].split(".")[1]) if "." in m["m"] else 0
 
 
-def cell(values: list, n: int, frac: bool, concise: bool, lone) -> tuple:
-    """(the printed cell, its mean) of a row's run values; (None, None) unless every one of its n runs has a value."""
-    v = [float(x) for x in values if x is not None]
-    if len(v) < n or not v:
-        return None, None
-    if len(v) == 1:
-        return (f"{v[0]:.4f}" if frac else lone(v[0])), v[0]
-    pm = MT.fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
-    return (paren(pm) if concise else pm), float(np.mean(v))
-
-
-def value_table(columns, rows, best_of, concise: bool, lone, empty: str) -> tuple:
-    """(the tabular's body rows, the cells with no value) of a model-per-row table. columns: (name, frac, f(arm) ->
-    its run values); rows: (name, arm, runs expected) or None for a rule; best_of: the arms bold is chosen among."""
-    cells, means, missing = {}, {}, []
+def value_table(columns, rows, empty: str) -> tuple:
+    """(the tabular's body rows, the cells with no value) of a model-per-row table. columns: (name, f(arm) -> its run
+    values); rows: (name, arm, runs expected) or None for a rule. PI 2026-11-24 (GO-6): mean +- SD, one number of
+    decimals per column (the most common PDG place of its rows, the larger on a tie), the SD to the same decimals; no
+    bold. A cell is printed only when every one of its runs has a value."""
+    stats, missing = {}, []
     for r in rows:
         if r is None:
             continue
-        for c, (cname, frac, get) in enumerate(columns):
-            cells[r[1], c], means[r[1], c] = cell(get(r[1]), r[2], frac, concise, lone)
-            if cells[r[1], c] is None:
+        for c, (cname, get) in enumerate(columns):
+            v = [float(x) for x in get(r[1]) if x is not None]
+            if len(v) < r[2] or not v:
                 missing.append((r[0], cname))
+                continue
+            stats[r[1], c] = (float(np.mean(v)), float(np.std(v, ddof=1)) if len(v) > 1 else None)
+    places = {}
     for c in range(len(columns)):
-        have = [a for a in best_of if means.get((a, c)) is not None]
-        if have:
-            top = max(have, key=lambda a: means[a, c])
-            cells[top, c] = bold(cells[top, c])
+        got = [_place(m, s) for (a, k), (m, s) in stats.items() if k == c and s]
+        got = [p for p in got if p is not None]
+        places[c] = max(set(got), key=lambda p: (got.count(p), p)) if got else 4
+    fx = lambda x, c: MT._fixed(x, places[c])  # noqa: E731
+    cells = {k: fx(m, k[1]) if s is None else f"{fx(m, k[1])}\\,$\\pm$\\,{fx(s, k[1])}" for k, (m, s) in stats.items()}
     body = [r"\midrule" if r is None else
-            r[0] + " & " + " & ".join(cells[r[1], c] or empty for c in range(len(columns))) + r" \\" for r in rows]
+            r[0] + " & " + " & ".join(cells.get((r[1], c)) or empty for c in range(len(columns))) + r" \\" for r in rows]
     return body, missing
 
 
@@ -270,11 +266,11 @@ def capture(root: pathlib.Path) -> dict:
     return got
 
 
-LP_HEAD = [r" & \multicolumn{2}{c}{JetClass-II} & \multicolumn{2}{c}{JetClass} & Top tagging & Quark/gluon \\",
-           r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}",
-           r" & Accuracy & AUC & Accuracy & AUC & Rej$_{30\%}$ & Rej$_{30\%}$ \\", r"\midrule"]
-FT_HEAD = [r" & JetClass-II & JetClass & Top tagging & Quark/gluon \\",
-           r" & Accuracy & Accuracy & Rej$_{30\%}$ & Rej$_{30\%}$ \\", r"\midrule"]
+# PI 2026-11-24 (GO-6) and 2026-11-25 (section 28, 1.3): the same six columns in Tables 2 and 3
+HEAD = [r" & JetClass-II & JetClass & \multicolumn{2}{c}{Top tagging} & \multicolumn{2}{c}{Quark/gluon} \\",
+        r"\cmidrule(lr){4-5}\cmidrule(lr){6-7}",
+        r" & Accuracy & Accuracy & Accuracy & Rej$_{30\%}$ & Accuracy & Rej$_{30\%}$ \\", r"\midrule"]
+LP_HEAD = FT_HEAD = HEAD
 
 
 def tables23(got: dict, maps: dict) -> tuple:
@@ -283,7 +279,6 @@ def tables23(got: dict, maps: dict) -> tuple:
     fits, fill, chosen, per, runs = got["summary"][:5]
     runs = R._pooled(runs)
     pre = [(name(maps, a), a, len(runs[a])) for a in NESTED + (RAND,) + tuple(m for m, _ in MASS)]
-    best = [a for _, a, _ in pre]
 
     def probe(ds, met):
         g = R.summary_probe(fits, fill, chosen, ds, met)
@@ -291,15 +286,15 @@ def tables23(got: dict, maps: dict) -> tuple:
         return lambda a: [] if g is None or (a == R.SOPHON and ds in R.SUMMARY_NO_SOPHON and R.SOPHON_MODEL not in fill) \
             else [g(m) for m in runs[a]]
 
-    lp_cols = [("JetClass-II accuracy", True, probe("jc2_188", "accuracy")), ("JetClass-II AUC", True, probe("jc2_188", "macro_auc_ovr")),
-               ("JetClass accuracy", True, probe("jc1", "accuracy")), ("JetClass AUC", True, probe("jc1", "macro_auc_ovr")),
-               ("top Rej30%", False, probe("top", "r30")), ("quark/gluon Rej30%", False, probe("qg", "r30"))]
+    lp_cols = [("JetClass-II accuracy", probe("jc2_188", "accuracy")), ("JetClass accuracy", probe("jc1", "accuracy")),
+               ("top accuracy", probe("top", "accuracy")), ("top Rej30%", probe("top", "r30")),
+               ("quark/gluon accuracy", probe("qg", "accuracy")), ("quark/gluon Rej30%", probe("qg", "r30"))]
     lp_rows = pre + [None, ("untrained network", R.INIT_BN, len(runs[R.INIT_BN])), ("Sophon (released)", R.SOPHON, 1)]
-    body, miss = value_table(lp_cols, lp_rows, best, True, R._tab1, "--")
+    body, miss = value_table(lp_cols, lp_rows, "--")
     if miss:
         raise SystemExit(f"FATAL: Table 2 has cells without a linear probe: {miss}")
-    t2 = _float(r"Linear probes on the frozen features: accuracy, AUC and background rejection at a signal efficiency of "
-                r"30\% (Rej$_{30\%}$). Bold: best pretrained model.", "tab:probes",
+    t2 = _float(r"Linear probes on the frozen features: accuracy and background rejection at a signal efficiency of "
+                r"30\% (Rej$_{30\%}$); mean $\pm$ standard deviation over runs.", "tab:probes",
                 [r"\begin{tabular}{@{}l" + "c" * len(lp_cols) + "@{}}", r"\toprule", *LP_HEAD, *body, r"\bottomrule",
                  r"\end{tabular}"])
 
@@ -310,12 +305,13 @@ def tables23(got: dict, maps: dict) -> tuple:
         g = R.summary_ft(per, key, n, met)
         return lambda a: R.summary_scratch(per, key, n, met) if a == scratch else [] if g is None else [g(m) for m in runs[a]]
 
-    ft_cols = [("JetClass-II accuracy", True, ft("jc2", "accuracy")), ("JetClass accuracy", True, ft("jc1", "accuracy")),
-               ("top Rej30%", False, ft("top", "r30")), ("quark/gluon Rej30%", False, ft("qg", "r30"))]
+    ft_cols = [("JetClass-II accuracy", ft("jc2", "accuracy")), ("JetClass accuracy", ft("jc1", "accuracy")),
+               ("top accuracy", ft("top", "accuracy")), ("top Rej30%", ft("top", "r30")),
+               ("quark/gluon accuracy", ft("qg", "accuracy")), ("quark/gluon Rej30%", ft("qg", "r30"))]
     ft_rows = pre + [None, (scratch, scratch, len(R.FT_SCRATCH_MODELS))]
-    body, pending = value_table(ft_cols, ft_rows, best, False, R._tab1, PENDING)
-    t3 = _float(r"Fine-tuned models: accuracy and background rejection at a signal efficiency of 30\% (Rej$_{30\%}$). "
-                "Bold: best pretrained model.", "tab:finetuned",
+    body, pending = value_table(ft_cols, ft_rows, PENDING)
+    t3 = _float(r"Fine-tuned models: accuracy and background rejection at a signal efficiency of 30\% (Rej$_{30\%}$); "
+                r"mean $\pm$ standard deviation over runs.", "tab:finetuned",
                 [r"\begin{tabular}{@{}l" + "c" * len(ft_cols) + "@{}}", r"\toprule", *FT_HEAD, *body, r"\bottomrule",
                  r"\end{tabular}"])
     return t2, t3, pending, lp_cols, ft_cols
@@ -385,9 +381,9 @@ def check_claims(R, tested: dict) -> tuple:
 def numbers(lp_cols, ft_cols, maps: dict, runs: dict) -> str:
     """The numbers of the abstract, the introduction and the outline: the class counts of the label sets, the run
     counts in words, and the JetClass-II linear-probe accuracy of the 17- and the 188-class model in percent."""
-    get = dict((n, g) for n, _, g in lp_cols)["JetClass-II accuracy"]
+    get = dict(lp_cols)["JetClass-II accuracy"]
     pct = lambda a: f"{100 * float(np.mean([float(x) for x in get(a)])):.0f}"      # noqa: E731
-    ftv = dict((n, g) for n, _, g in ft_cols)
+    ftv = dict(ft_cols)
 
     def ft_pct(col, arm):
         """A fine-tuned accuracy in percent to one decimal; a red bracket while a run of it is missing."""
