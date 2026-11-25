@@ -957,10 +957,12 @@ def appendix_tables(got: dict, maps: dict) -> dict:
     extra = {"RAND_MERGED": ex["rand_bb_cc"]["merged"]["runs"], "RAND_APART": ex["rand_bb_cc"]["apart"]["runs"],
              "OUT_L188": ex["xbb_output"]["L188"]["runs"], "OUT_L162": ex["xbb_output"]["L162"]["runs"]}
     only = lambda key, f: (lambda a: (extra[a] if a in key else []) if a in extra else f(a))     # noqa: E731
-    rand_rows = [None, ("17 classes, random, pair merged", "RAND_MERGED", len(extra["RAND_MERGED"])),
-                 ("17 classes, random, pair apart", "RAND_APART", len(extra["RAND_APART"]))]
+    rand_rows = [None, ("Random, merged", "RAND_MERGED", len(extra["RAND_MERGED"])),
+                 ("Random, apart", "RAND_APART", len(extra["RAND_APART"]))]
     split = one_tab(r"Linear probes on JetClass-II in more detail: AUC averaged over the resonant and over the QCD "
-                    r"classes, and AUC of binary probes on three pairs of classes; mean $\pm$ standard deviation over runs.",
+                    r"classes, and AUC of binary probes on three pairs of classes; mean $\pm$ standard deviation over runs. The "
+                    r"last two rows are the random 17-class groupings that merge $X\to b\bar b$ with $X\to c\bar c$ "
+                    r"and those that keep them apart.",
                     "tab:pairs", tab([("AUC resonant", only((), probe("jc2_188", "macro_auc_resonant"))),
                                       ("AUC QCD", only((), probe("jc2_188", "macro_auc_qcd"))),
                                       ("bb vs cc", only(("RAND_MERGED", "RAND_APART"), pair("bb_vs_cc"))),
@@ -968,7 +970,7 @@ def appendix_tables(got: dict, maps: dict) -> dict:
                                       ("bc vs bq, cs", only((), pair("bc_vs_bq_cs")))], four + rand_rows,
                                      [r" & \multicolumn{2}{c}{All classes, AUC} & \multicolumn{3}{c}{Pairs of classes, AUC} \\",
                                       r"\cmidrule(lr){2-3}\cmidrule(lr){4-6}",
-                                      r" & Resonant & QCD & $b\bar b$ / $c\bar c$ & $b\bar bqq$ / $c\bar cqq$ & $bc$ / $bq$, $cs$ \\"]))
+                                      r" & Resonant & QCD & $b\bar b$ / $c\bar c$ & $b\bar bqq$ / $c\bar cqq$ & $bc$ / $bq$, $cs$ \\"]), sep="3pt")
     small = sorted(n for n in R._sizes(per, "jc2") if n < sizes["jc2"] and all(
         R._ft(per, "jc2", m, n, "accuracy") is not None for a in NESTED for m in runs[a]))
     ftn = lambda n: (lambda a: (R.summary_scratch(per, "jc2", n, "accuracy") if a == S                # noqa: E731
@@ -994,9 +996,9 @@ def appendix_tables(got: dict, maps: dict) -> dict:
             "table_size.tex": size, "table_resonance.tex": res}
 
 
-def one_tab(caption: str, label: str, tabular: list) -> str:
+def one_tab(caption: str, label: str, tabular: list, sep: str = "4pt") -> str:
     return "\n".join([r"\begin{table}[htbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
-                      r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{4pt}", *tabular, r"\end{table}", ""])
+                      rf"\fontsize{{9}}{{11}}\selectfont\setlength{{\tabcolsep}}{{{sep}}}", *tabular, r"\end{table}", ""])
 
 
 def table_head(got: dict, runs: dict) -> str:

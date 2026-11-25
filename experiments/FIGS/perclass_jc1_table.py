@@ -52,10 +52,11 @@ def main() -> int:
         body.append(NAMES[c] + " & " + " & ".join(cells) + r" \\")
     tex = "\n".join([
         "% written by experiments/FIGS/perclass_jc1_table.py (ledger 33, 2(a)); values from experiments/FIGS/data/v2/perclass_recall",
-        r"\begin{table}[htbp]\centering\small",
+        r"\begin{table}[htbp]\centering",
         r"\caption{Recall of each JetClass class for the 188- and the 17-class models, with frozen features (linear probe) "
         r"and fine-tuned, both on $10^6$ training jets: mean $\pm$ standard deviation over three runs, and the difference "
         r"$17-188$ over its $\sigma$ (run spreads and the paired test-jet bootstrap).}\label{tab:perclass_jc1}",
+        r"\fontsize{8}{9.4}\selectfont\setlength{\tabcolsep}{3pt}",
         r"\begin{tabular}{@{}lcccccc@{}}", r"\toprule",
         r" & \multicolumn{3}{c}{frozen features} & \multicolumn{3}{c}{fine-tuned} \\",
         r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}",
