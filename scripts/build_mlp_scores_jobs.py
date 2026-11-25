@@ -312,6 +312,38 @@ def go7_spec(tag: str, mem: str) -> str:
                  "GO-7: full-set pairs among the label sets and the random grouping, frozen and fine-tuned; JetClass 1e5")
 
 
+# ------------------------------------------------------------------ PI 2026-11-25 (ledger 33): per-class JetClass, X->gg pair
+# index 0: perclass_recall.py on the fine-tuned JetClass cells at 1e6 (the one rule's, paper_cells; the frozen file
+# probe_jc1.json exists); index 1: the X->gg vs X->qq probe (probe_bal --gluon-pair) for the pair figure's networks, then
+# its paired bootstrap from the saved scores
+GG_ARMS = ("l188", "l162", "r42q1", "r16q1", "rand")
+GG_OUT, GG_PROBS = f"{R5.LP}/fits_v5_gg", f"{R5.LP}/fits_v5_gg_probs"
+GG_BOOT = f"{BOOT}/probe_jc2bal_pairs_gg_vs_qq.json"
+GG_DIFFS = (("l162", "l188"), ("r42q1", "l188"), ("r16q1", "l188"), ("rand", "l188"), ("r42q1", "l162"),
+            ("r16q1", "r42q1"), ("rand", "r16q1"))
+
+
+def go8_rows() -> list[str]:
+    recall = ("python3 experiments/EVAL/perclass_recall.py ft --task jc1 --n 1000000 --require-all "
+              "--out /data/results/eval/perclass_recall")
+    ms = [m for a in GG_ARMS for m in models(a)]
+    fits = "\n  ".join(f"[ -f {GG_OUT}/{m}.json ] || python3 experiments/EVAL/probe_bal.py --model {m} --checkpoints best70 "
+                       f"--gluon-pair --grid v5 --out {GG_OUT} --probs-out {GG_PROBS}" for m in ms)
+    npz = {m: f"{GG_PROBS}/{m}/best70/jc2bal_pairs_gg_vs_qq.npz" for m in ms}
+    boot = ("python3 experiments/STATS/paired_bootstrap.py --task npz " + " ".join(f"--model {m}={p}" for m, p in npz.items())
+            + f" --headline {BT.diffs(GG_DIFFS)} --b {B} --out {GG_BOOT}")
+    return ["\n  ".join([f"[ -e /data/results/eval/perclass_recall/ft_jc1_N1000000.json ] || " + BT.peak(recall)]),
+            "\n  ".join([fits, f"mkdir -p {BOOT}",
+                         f"[ -e {GG_BOOT} ] || " + BT.peak(boot)])]
+
+
+def go8_spec(tag: str, mem: str) -> str:
+    """bs3-go8-raunav: two CPU pods (ledger 33): fine-tuned JetClass per-class recall at 1e6; the X->gg vs X->qq probe."""
+    rows = go8_rows()
+    return _spec(tag, "bs3-go8-raunav", rows, len(rows), mem, "4",
+                 "ledger 33: per-class JetClass recall fine-tuned at 1e6; the X->gg vs X->qq pair probe and its bootstrap")
+
+
 # ------------------------------------------------------------------ RN1: JetClass linear-probe accuracy, partitions (stored)
 JC1_OUT = f"{BOOT}/probe_jc1_N1000000.parts.json"
 JC1_DIFFS = (("flavf0", "l188"), ("rand", "l188"), ("rand", "r16q1"))
@@ -370,7 +402,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic", "ee",
-                                                      "mass-helper", "boot-kin", "cs15b", "jc1parts", "go7"))
+                                                      "mass-helper", "boot-kin", "cs15b", "jc1parts", "go7", "go8"))
     ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
     ap.add_argument("--part", choices=tuple(BOOT_PARTS), help="with --what boot")
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
@@ -393,7 +425,8 @@ def main(argv=None) -> int:
                   "boot-kin": lambda: ("bs3-boot-kin-raunav", boot_kin_spec(a.tag, a.mem)),
                   "cs15b": lambda: ("bs3-boot-cs15b-raunav", cs15b_spec(a.tag, a.mem)),
                   "jc1parts": lambda: ("bs3-boot-jc1parts-raunav", jc1_parts_spec(a.tag, a.mem)),
-                  "go7": lambda: ("bs3-boot-go7-raunav", go7_spec(a.tag, a.mem))}[a.what]()
+                  "go7": lambda: ("bs3-boot-go7-raunav", go7_spec(a.tag, a.mem)),
+                  "go8": lambda: ("bs3-go8-raunav", go8_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)
     print(f"wrote {p.relative_to(ROOT)}")

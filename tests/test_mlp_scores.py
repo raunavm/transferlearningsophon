@@ -307,3 +307,13 @@ def test_go7_reads_the_inputs_of_the_tested_full_set_files():
     assert "--diff rand-scratch=" in rows[3] and "--task qg_herwig " in rows[5]
     assert "ft_jc1parts_N100000.json" in rows[6] and "--diff rand-r16q1=" in rows[6]
     assert "name: bs3-boot-go7-raunav" in BJ.go7_spec("mtx-s9.99", "10Gi")
+
+
+def test_go8_runs_the_fine_tuned_jetclass_recall_and_the_gluon_pair_for_the_pair_figures_networks():
+    rows = BJ.go8_rows()
+    assert len(rows) == 2
+    assert "perclass_recall.py ft --task jc1 --n 1000000 --require-all" in rows[0]
+    ms = [m for a in BJ.GG_ARMS for m in BJ.models(a)]
+    assert len(ms) == 17 and all(f"--model {m} --checkpoints best70 --gluon-pair --grid v5" in rows[1] for m in ms)
+    assert "--diff r16q1-188=" in rows[1] and "--diff rand-r16q1=" in rows[1] and BJ.GG_BOOT in rows[1]
+    assert "name: bs3-go8-raunav" in BJ.go8_spec("mtx-s9.99", "16Gi")

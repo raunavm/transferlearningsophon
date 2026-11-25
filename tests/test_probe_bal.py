@@ -198,3 +198,29 @@ def test_the_sibling_staging_and_extraction_jobs():
     assert "--data-test /data/finetune/jc2_sib/test.parquet --out ${OUT}" in a and "OUT=/data/results/eval/v2_linprobe_bal/${MODEL}/jc2sib/test" in a
     assert "--sibling-pairs --sibling-test" in a and f"--out {BJ.LP_BAL}/fits_v4_sib2 " in a and f"--probs-out {BJ.LP_BAL}/fits_v4_sib2_probs" in a
     assert '[ -f /data/finetune/jc2_sib/DONE ]' in a and '-le 85 ]' in a and "configmap" not in text.lower()
+
+
+def test_the_gluon_pair_is_the_sibling_protocol_on_the_balanced_sets(tmp_path, monkeypatch):
+    """PI 2026-11-25 (ledger 33): X->gg (signal) against X->qq, trained on the pair's balanced 1e6 jets and scored on the
+    balanced test set; the other classes are not used and the ee/mumu pair is untouched."""
+    probe = pb._load("probe", "experiments/EVAL/probe.py")
+    r = np.random.default_rng(6)
+    names = {3: "label_X_qq", 9: "label_X_gg", 10: "label_X_ee"}
+
+    def split(n):
+        y = r.choice([3, 9, 10], size=n)
+        x = r.normal(size=(n, 128)).astype(np.float32)
+        x[:, 0] += 6.0 * (y == 9) - 6.0 * (y == 3)
+        return x, y.astype(np.int64)
+    data = {"train_N1000000": split(900), "test": split(600)}
+    seen = []
+    monkeypatch.setattr(pb, "load", lambda model, ds, sp, ck, root=pb.NEW_ROOT: (seen.append((ds, sp)), (*data[sp], {}))[1])
+    save = pb.lp.saver(tmp_path, "m", "best70")
+    cells = pb.sibling_pair_cells("m", "best70", probe, save, names, pairs=pb.GLUON_PAIR)
+    assert list(cells) == ["gg_vs_qq"] and seen == [("jc2bal", "train_N1000000"), ("jc2bal", "test")]
+    cell, yte = cells["gg_vs_qq"], data["test"][1]
+    assert cell["auc"] == pytest.approx(1.0, abs=1e-12)
+    assert (cell["n_test_signal"], cell["n_test_background"]) == (int((yte == 9).sum()), int((yte == 3).sum()))
+    z = np.load(tmp_path / "m" / "best70" / "jc2bal_pairs_gg_vs_qq.npz")
+    assert np.array_equal(yte[z["rows"]], np.where(z["y"] == 1, 9, 3))
+    assert pb.SIBLING_PAIRS == {"ee_vs_mm": (("label_X_ee",), ("label_X_mm",))}

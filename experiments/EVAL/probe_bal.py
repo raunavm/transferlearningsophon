@@ -74,6 +74,9 @@ N_NATIVE = 188
 # balanced 1e6 training set (a tenth held out for C, as the pairs) and scored on its jets of the
 # balanced test set, signal = the first side
 SIBLING_PAIRS = {"ee_vs_mm": (("label_X_ee",), ("label_X_mm",))}
+# PI 2026-11-25 (ledger 33, 2(b)): X->gg against X->qq (light quarks), which the 43-class set merges; the sibling
+# protocol on the balanced sets (training jets of train_N1000000, test jets of the balanced test set), signal = X->gg
+GLUON_PAIR = {"gg_vs_qq": (("label_X_gg",), ("label_X_qq",))}
 SIBLING_TRAIN, SIBLING_TEST = "train_N1000000", "test"
 SIBLING_ALL = "jc2sib"      # every test jet of the pair (stage_jc2_siblings.py), --sibling-test
 # --coarse: label set -> the committed map holding it as a column (native jet_label -> group)
@@ -178,14 +181,15 @@ def pair_cells(model: str, ckpt: str, probe, save) -> dict:
     return cells
 
 
-def sibling_pair_cells(model: str, ckpt: str, probe, save, names: dict, test=("jc2bal", SIBLING_TEST)) -> dict:
+def sibling_pair_cells(model: str, ckpt: str, probe, save, names: dict, test=("jc2bal", SIBLING_TEST),
+                       pairs=None) -> dict:
     """SIBLING_PAIRS on the balanced sets, pair_cells' protocol; names: native label -> class name.
     test: the (dataset, split) scored, whose extraction the saved rows index."""
     label = {v: k for k, v in names.items()}
     xtr, ytr, _ = load(model, "jc2bal", SIBLING_TRAIN, ckpt)
     xte, yte_all, _ = load(model, *test, ckpt)
     cells = {}
-    for pair, (sig, bkg) in SIBLING_PAIRS.items():
+    for pair, (sig, bkg) in (pairs or SIBLING_PAIRS).items():
         s, b = [label[n] for n in sig], [label[n] for n in bkg]
         rs, rb = np.flatnonzero(np.isin(ytr, s)), np.flatnonzero(np.isin(ytr, b))
         rows = np.concatenate([rs, rb])
@@ -399,6 +403,8 @@ def main(argv=None) -> int:
     ap.add_argument("--sibling-pairs", action="store_true", help="SIBLING_PAIRS only (sibling_pair_cells)")
     ap.add_argument("--sibling-test", action="store_true",
                     help="with --sibling-pairs: score every test jet of the pair (dataset jc2sib)")
+    ap.add_argument("--gluon-pair", action="store_true",
+                    help="GLUON_PAIR only (X->gg vs X->qq, sibling_pair_cells on the balanced test set)")
     ap.add_argument("--coarse", nargs="+", choices=sorted(COARSE_MAPS), default=None,
                     help="only the balanced JetClass-II task on these coarser label sets (coarse_cells)")
     ap.add_argument("--out", required=True, type=pathlib.Path)
@@ -440,6 +446,10 @@ def main(argv=None) -> int:
             doc["probe"] = "linear, sibling pairs on the class-balanced sets" + \
                 (", every test jet of the pair" if a.sibling_test else "")
             doc["cells"][ckpt] = {"jc2bal_pairs": sibling_pair_cells(a.model, ckpt, probe, save, names, test)}
+            continue
+        if a.gluon_pair:
+            doc["probe"] = "linear, X->gg vs X->qq on the class-balanced sets"
+            doc["cells"][ckpt] = {"jc2bal_pairs": sibling_pair_cells(a.model, ckpt, probe, save, names, pairs=GLUON_PAIR)}
             continue
         if a.mlp:
             # the CPU model is part of an MLP's result (latent_scale_probe.py); probe.py pins its threads
