@@ -1,5 +1,7 @@
 \section{Label sets}\label{app:sets}
 Table~\ref{tab:classmap} gives the full class map.
+Class names list the decay products, with $q$ for an up or down quark, $g$ for a gluon, $\tau_h$ for a tau
+lepton that decays to hadrons and $\nu$ for a neutrino; a prong is one collimated decay product.
 Each JetClass-II class belongs to one class of every coarser label set, so the \Kmid{} classes are unions of
 JetClass-II classes and the \Kcoarse{} classes unions of the \Kmid.
 
@@ -24,6 +26,13 @@ the main text.
 \input{tables/table_flavor}
 
 \section{Training details}\label{app:training}
+The JetClass-II jets are clustered with the anti-$k_{\mathrm T}$ algorithm~\cite{antikt} from the particles of a
+simulated CMS-like detector, with \LitJetClassTwoPileupMean{} pileup collisions on average.
+We keep jets with a transverse momentum $p_{\mathrm T}$, the momentum component perpendicular to the beams,
+between \DesignPtMin{} and \DesignPtMax~GeV and a soft-drop mass between \DesignMsdMin{} and \DesignMsdMax~GeV.
+The quark--gluon jets are smaller, with a radius of \LitQgJetRadius, and have no detector simulation.
+Each model sees \DesignExamplesSeen{} training examples and is evaluated at the epoch of its highest validation
+accuracy among the last ten.
 Pretraining follows Sophon's settings: \DesignEpochs{} epochs of \DesignSamplesPerEpoch{} examples in batches of
 \DesignBatchSize, a learning rate of \DesignStartLr{} that is constant for the first \DesignLrFlatPercent{} of
 the epochs and then decays to \DesignLrEndPercent{} of its value, and the particle momenta of every jet rescaled
@@ -51,6 +60,9 @@ the per-jet scores were not kept.
 
 \section{Inputs and missing inputs}\label{app:inputs}
 Table~\ref{tab:inputs} lists the inputs and which of them the two binary benchmarks provide.
+For the linear probes an absent input is filled with zero, with the training mean or with random draws of real
+JetClass-II particles; the choice is made once per task on validation, for every model, and is
+\LpSubstitutionTop{} for top tagging and \LpSubstitutionQg{} for quark--gluon discrimination.
 \input{tables/table_inputs}
 
 \section{Further results}\label{app:results}
@@ -75,12 +87,13 @@ It changes two of them.
 When the \Kfull{} classes are merged into the \Kcoarse{} groups of the coarsest label set and the probe is asked
 only for the group, linear probes show no significant difference between the label sets, whereas the MLP probe
 finds the features of the \Kcoarse-class model significantly worse than those of the \Kfull-class model, on the
-task its own labels describe.
+task its own labels describe (table~\ref{tab:groups}).
 On top tagging the MLP probe separates one configuration that the linear probe does not, the \Kcoarse-class
 model with mass regression from the \Kfull-class model.
 The mass-regression nulls of the main text hold under the MLP probe.
 
 \input{tables/table_mlp}
+\input{tables/table_groups}
 
 \section{Comparison with published taggers}\label{app:published}
 Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three

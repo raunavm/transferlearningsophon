@@ -827,7 +827,8 @@ def main() -> int:
            "table_inputs.tex": reuse(built, "tables/mlst_inputs.tex", INPUTS_CAPTION, "tab:inputs"),
            "table_published.tex": reuse(built, "tables/mlst_published.tex", PUBLISHED_CAPTION, "tab:published",
                                         r"\fontsize{8}{10}\selectfont"),
-           "table_mlp.tex": reuse(built, "tables/mlst_mlp.tex", MLP_CAPTION, "tab:mlp", r"\fontsize{8}{10}\selectfont")}
+           "table_mlp.tex": reuse(built, "tables/mlst_mlp.tex", MLP_CAPTION, "tab:mlp", r"\fontsize{8}{10}\selectfont"),
+           "table_groups.tex": reuse(built, "tables/mlst_coarse.tex", GROUPS_CAPTION, "tab:groups")}
     for f, text in out.items():
         (d / f).write_text(text)
     print("V2 TABLES COMPLETE")
@@ -844,6 +845,8 @@ PUBLISHED_CAPTION = (r"Published models beside ours on JetClass, top tagging and
                      r"paper reports them; ours are the mean $\pm$ standard deviation over runs, rounded as in the "
                      r"build's own tables. On JetClass the published AUC averages over pairs of classes and ours over "
                      r"classes against the rest. The quark--gluon rows use the reduced particle-type inputs.")
+GROUPS_CAPTION = (r"Probes asked only for the group of the 17-class label set to which a jet belongs, on the frozen "
+                  r"features of each model; mean $\pm$ standard deviation over runs.")
 MLP_CAPTION = (r"MLP probes on the frozen features, on JetClass-II, the benchmarks and pairs of JetClass-II classes; "
                r"mean $\pm$ standard deviation over runs.")
 
