@@ -230,7 +230,8 @@ def draw_fig5(path: pathlib.Path) -> None:
     panels = [PH._xbx_series(XR, sig, XBX_NETS, PH.CLASSIFIER, True, True) for sig, _ in XR.SIGNALS]
     cols = [["L188", "L162"], ["R42_Q1", "R16_Q1", "SCRATCH"], [f"{n} direct" for n in XBX_NETS if XR.direct_ok(M, n)]]
     rows = max(len(c) for c in cols)
-    fig, grid, _ = S.grid_cm(1, 2, w=6.15, aspect=0.85, top=S.LEGEND_TOP + 0.45 * rows + 0.45, left=1.2, wgap=1.2,
+    # the gap holds the right panel's y label and its tick numbers ("0.05"), 1 mm clear of the left panel (figcheck)
+    fig, grid, _ = S.grid_cm(1, 2, w=6.1, aspect=0.85, top=S.LEGEND_TOP + 0.45 * rows + 0.45, left=1.25, wgap=1.45,
                              bottom=1.15)
     axes, handles, low, xs = list(grid[0]), {}, [], []
     for ax, series in zip(axes, panels):
