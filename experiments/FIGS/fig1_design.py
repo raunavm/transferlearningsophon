@@ -9,6 +9,10 @@ The jets are schematic drawings, not data.
     python3 experiments/FIGS/fig1_design.py [out.pdf]     (default figures/mlst/fig1_design.pdf, and a .png beside it)
 
 Drawn at 13 cm wide, in centimetres; all text 8 pt (panel titles 9 pt) in the paper's body font.
+
+build(nested=True) is the rewrite's Fig. 1 (PI 2026-11-24, LEDGER GO-6: "Fig. 1 shows the nesting for one example
+group"): in place of the six example jets, the ten classes of the first 17-class group (X to two quarks or gluons) as
+jets, with the class each falls in under the 162, 43 and 17 classes, read from the label maps.
 """
 import csv
 import pathlib
@@ -39,13 +43,23 @@ W, H = 13.0, 13.1
 FS, FS_T = 8, 9
 
 
-def build():
-    """The figure, at its printed size."""
+NESTED_EXTRA = 1.2      # cm: the nested example's two more rows of classes and their names
+FLAVOR_VERTEX = {"b": 0.27, "c": 0.17}       # a prong's displaced vertex, as a share of the jet's radius; light: none
+# the 43 classes of the example group, by the name the label maps give them
+NESTED_43 = {"2P_HAD_2PARTON|B": r"with a $b$ quark", "2P_HAD_2PARTON|C": r"with a $c$ quark, no $b$",
+             "2P_HAD_2PARTON|LG": "light quarks and gluons only"}
+NESTED_17 = {"2P_HAD_2PARTON": r"$X\!\to$ two quarks or gluons"}
+
+
+def build(nested: bool = False):
+    """The figure, at its printed size. nested: the rewrite's example (the module's docstring)."""
+    H = globals()["H"] + (NESTED_EXTRA if nested else 0)
     for f in sorted(FONTS.glob("lmroman10-*.otf")):          # the paper's body font
         font_manager.fontManager.addfont(str(f))
     plt.rcParams.update({"font.family": "Latin Modern Roman", "mathtext.fontset": "cm", "font.size": 8,
                          "pdf.fonttype": 42})
     fig = plt.figure(figsize=(W / 2.54, H / 2.54))
+    fig.height_cm = H
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
 
     def arrow(p, q, lw=0.9, ms=6, ls="-", z=3):
@@ -145,37 +159,76 @@ def build():
 
     # ------------------------------------------------------------------ (a) example: fine to coarse
     ax.text(0.2, H - 0.3, "(a) Label sets", fontsize=FS_T, va="center")
-    p2 = lambda dv: [(-0.19, 3, 0.03, dv), (0.19, 3, 0.03, dv)] if dv != 0.14 else [(-0.19, 3, 0.03, 0.17), (0.19, 3, 0.03, 0.17)]
-    p4 = lambda dvs: [(o, 2, 0.018, d) for o, d in zip((-0.39, -0.13, 0.13, 0.39), dvs)]
-    # (class name in the label map, label, x, prongs, wedge half-angle)
-    EX = [("label_X_bb", r"$X\!\to b\bar b$", 1.95, p2(0.27), 18),
-          ("label_X_cc", r"$X\!\to c\bar c$", 3.3, p2(0.14), 18),
-          ("label_X_qq", r"$X\!\to q\bar q$", 4.65, p2(0.0), 18),
-          ("label_X_YY_bbbb", r"$X\!\to YY\!\to bbbb$", 7.0, p4((0.3, 0.3, 0.3, 0.3)), 29),
-          ("label_X_YY_ccqq", r"$X\!\to YY\!\to ccqq$", 9.25, p4((0.17, 0.17, 0.0, 0.0)), 29),
-          ("label_X_YY_qqqq", r"$X\!\to YY\!\to qqqq$", 11.5, p4((0.0, 0.0, 0.0, 0.0)), 29)]
-    # j: any quark or gluon (the 17-class groups of two and of four quarks or gluons)
-    COARSE = {"label_X_bb": r"$X\!\to jj$", "label_X_YY_bbbb": r"$X\!\to YY\!\to jjjj$"}
-    ei = [names.index(e[0]) for e in EX]
-    gf = [g17[i] for i in ei]
-    assert len(set(ei)) == len(ei) and [k for _, k in runs(gf)] == [3, 3], "the examples must form two 17-class groups"
-    xs = [e[2] for e in EX]
-    yjet, ylab = H - 2.3, H - 2.56
-    yfine, ycoarse = H - 2.98, H - 3.68
     SQ = 0.15
-    for k, (_, lab, x, prongs, half) in enumerate(EX):
-        jet(x, yjet, 1.4, prongs, half=half, seed=20 + k, layers=3, lw=0.3)
-        ax.text(x, ylab, lab, ha="center", va="center", fontsize=FS)
-        ax.add_patch(Rectangle((x - SQ / 2, yfine - SQ / 2), SQ, SQ, fc=C[188], ec="none", zorder=3))
-    for s0, k in runs(gf):
-        xc = float(np.mean(xs[s0:s0 + k])); ymid = (yfine + ycoarse) / 2
-        for x in xs[s0:s0 + k]:
-            ax.plot([x, x, xc, xc], [yfine - SQ / 2, ymid, ymid, ycoarse + SQ / 2], color="#9AA3B5", lw=0.6,
-                    solid_joinstyle="miter", zorder=1)
+    if nested:
+        # the first 17-class group: its ten classes, the same ten under the 162 classes, three of the 43, one of the 17
+        n1 = runs(g17)[0][1]
+        flav = [names[i].removeprefix("label_X_") for i in range(n1)]
+        assert lm[0]["R16_Q1_name"] in NESTED_17 and all(len(f) == 2 for f in flav), flav
+        assert [k for _, k in runs(levels[162][:n1])] == [1] * n1, "the example's classes are single under 162 classes"
+        tex = lambda f: rf"$X\!\to {f[0]}\bar {f[1]}$" if f[0] == f[1] and f[0] != "g" else rf"$X\!\to {f}$"
+        xs = list(np.linspace(2.35, W - 0.75, n1))
+        yjet, ylab = H - 1.95, H - 2.2
+        y188, y162, y43 = H - 2.62, H - 3.12, H - 3.82
+        ycoarse = y43 - 1.05
+        for k, (f, x) in enumerate(zip(flav, xs)):
+            jet(x, yjet, 1.25, [(o, 3, 0.03, FLAVOR_VERTEX.get(q, 0.0)) for o, q in zip((-0.19, 0.19), f)], half=17,
+                seed=20 + k, layers=3, lw=0.3)
+            ax.text(x, ylab, tex(f), ha="center", va="center", fontsize=FS)
+            ax.plot([x, x], [y188, y162], color="#9AA3B5", lw=0.6, zorder=1)
+            for y, n in ((y188, 188), (y162, 162)):
+                ax.add_patch(Rectangle((x - SQ / 2, y - SQ / 2), SQ, SQ, fc=C[n], ec="none", zorder=3))
+
+        def merge(xa: list, ya: float, xc: float, yb: float) -> None:
+            ymid = (ya + yb) / 2
+            for x in xa:
+                ax.plot([x, x, xc, xc], [ya - SQ / 2, ymid, ymid, yb + SQ / 2], color="#9AA3B5", lw=0.6,
+                        solid_joinstyle="miter", zorder=1)
+
+        x43 = []
+        for s0, k in runs(levels[43][:n1]):
+            xc = float(np.mean(xs[s0:s0 + k]))
+            x43.append(xc)
+            merge(xs[s0:s0 + k], y162, xc, y43)
+            ax.add_patch(Rectangle((xc - SQ / 2, y43 - SQ / 2), SQ, SQ, fc=C[43], ec="none", zorder=3))
+            ax.text(xc, y43 - 0.3, NESTED_43[lm[s0]["R42_Q1_name"]], ha="center", va="center", fontsize=FS)
+        xc = float(np.mean(xs))
+        merge(x43, y43 - 0.42, xc, ycoarse)
         ax.add_patch(Rectangle((xc - SQ / 2, ycoarse - SQ / 2), SQ, SQ, fc=C[17], ec="none", zorder=3))
-        ax.text(xc, ycoarse - 0.3, COARSE[EX[s0][0]], ha="center", va="center", fontsize=FS)
-    ax.text(0.2, yfine, "Fine", ha="left", va="center", fontsize=FS)
-    ax.text(0.2, ycoarse, "Coarse", ha="left", va="center", fontsize=FS)
+        ax.text(xc, ycoarse - 0.3, NESTED_17[lm[0]["R16_Q1_name"]], ha="center", va="center", fontsize=FS)
+        for y, n in ((y188, 188), (y162, 162), (y43, 43), (ycoarse, 17)):
+            ax.text(0.2, y, f"{n} classes", ha="left", va="center", fontsize=FS)
+    else:
+        p2 = lambda dv: [(-0.19, 3, 0.03, dv), (0.19, 3, 0.03, dv)] if dv != 0.14 else [(-0.19, 3, 0.03, 0.17), (0.19, 3, 0.03, 0.17)]
+        p4 = lambda dvs: [(o, 2, 0.018, d) for o, d in zip((-0.39, -0.13, 0.13, 0.39), dvs)]
+        # (class name in the label map, label, x, prongs, wedge half-angle)
+        EX = [("label_X_bb", r"$X\!\to b\bar b$", 1.95, p2(0.27), 18),
+              ("label_X_cc", r"$X\!\to c\bar c$", 3.3, p2(0.14), 18),
+              ("label_X_qq", r"$X\!\to q\bar q$", 4.65, p2(0.0), 18),
+              ("label_X_YY_bbbb", r"$X\!\to YY\!\to bbbb$", 7.0, p4((0.3, 0.3, 0.3, 0.3)), 29),
+              ("label_X_YY_ccqq", r"$X\!\to YY\!\to ccqq$", 9.25, p4((0.17, 0.17, 0.0, 0.0)), 29),
+              ("label_X_YY_qqqq", r"$X\!\to YY\!\to qqqq$", 11.5, p4((0.0, 0.0, 0.0, 0.0)), 29)]
+        # j: any quark or gluon (the 17-class groups of two and of four quarks or gluons)
+        COARSE = {"label_X_bb": r"$X\!\to jj$", "label_X_YY_bbbb": r"$X\!\to YY\!\to jjjj$"}
+        ei = [names.index(e[0]) for e in EX]
+        gf = [g17[i] for i in ei]
+        assert len(set(ei)) == len(ei) and [k for _, k in runs(gf)] == [3, 3], "the examples must form two 17-class groups"
+        xs = [e[2] for e in EX]
+        yjet, ylab = H - 2.3, H - 2.56
+        yfine, ycoarse = H - 2.98, H - 3.68
+        for k, (_, lab, x, prongs, half) in enumerate(EX):
+            jet(x, yjet, 1.4, prongs, half=half, seed=20 + k, layers=3, lw=0.3)
+            ax.text(x, ylab, lab, ha="center", va="center", fontsize=FS)
+            ax.add_patch(Rectangle((x - SQ / 2, yfine - SQ / 2), SQ, SQ, fc=C[188], ec="none", zorder=3))
+        for s0, k in runs(gf):
+            xc = float(np.mean(xs[s0:s0 + k])); ymid = (yfine + ycoarse) / 2
+            for x in xs[s0:s0 + k]:
+                ax.plot([x, x, xc, xc], [yfine - SQ / 2, ymid, ymid, ycoarse + SQ / 2], color="#9AA3B5", lw=0.6,
+                        solid_joinstyle="miter", zorder=1)
+            ax.add_patch(Rectangle((xc - SQ / 2, ycoarse - SQ / 2), SQ, SQ, fc=C[17], ec="none", zorder=3))
+            ax.text(xc, ycoarse - 0.3, COARSE[EX[s0][0]], ha="center", va="center", fontsize=FS)
+        ax.text(0.2, yfine, "Fine", ha="left", va="center", fontsize=FS)
+        ax.text(0.2, ycoarse, "Coarse", ha="left", va="center", fontsize=FS)
 
     # ------------------------------------------------------------------ (a) all 188 classes
     rh, gap = 0.28, 0.11; ytop = ycoarse - 1.5
@@ -211,13 +264,14 @@ def build():
     ax.text(xf, y0 + 0.8, "Features", ha="center", va="center", fontsize=FS)
     arrow((xf + 0.22, y0), (xf + 0.92, y0))
     # the head: a shape of its own, tapering toward the outputs
-    xh, wh = xf + 0.97, 0.95
+    xh, wh = xf + 0.97, 1.15 if nested else 0.95       # "Output layer" on two lines needs the wider shape
     ax.add_patch(Polygon([(xh, y0 - 0.42), (xh + wh, y0 - 0.26), (xh + wh, y0 + 0.26), (xh, y0 + 0.42)], closed=True,
                          fc="white", ec=INK, lw=0.6, joinstyle="miter", zorder=2))
-    ax.text(xh + wh / 2, y0, "Head", ha="center", va="center", fontsize=FS, zorder=4)
+    ax.text(xh + wh / 2, y0, "Output\nlayer" if nested else "Head", ha="center", va="center", fontsize=FS, zorder=4,
+            linespacing=1.0)
     # one pretraining per label set: the head's output is ONE of the four rows (brace, not a fan of arrows)
-    xe = xf + 2.55
-    arrow((xf + 1.92, y0), (xe - 0.12, y0))
+    xe = xh + wh + 0.63
+    arrow((xh + wh, y0), (xe - 0.12, y0))
 
     def brace(x, ya, yb, w=0.16):
         ymid = (ya + yb) / 2; t = np.linspace(0, 1, 30)
@@ -279,13 +333,13 @@ def build():
     return fig
 
 
-def draw(path: pathlib.Path) -> None:
-    fig = build()
+def draw(path: pathlib.Path, nested: bool = False) -> None:
+    fig = build(nested)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path)
     fig.savefig(path.with_suffix(".png"), dpi=300)
     plt.close(fig)
-    print(f"wrote {path} and its .png ({W:g} x {H:g} cm)")
+    print(f"wrote {path} and its .png ({W:g} x {fig.height_cm:g} cm)")
 
 
 if __name__ == "__main__":
