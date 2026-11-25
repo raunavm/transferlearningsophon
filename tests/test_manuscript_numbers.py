@@ -195,7 +195,10 @@ DRAWINGS = {"fig_design.tex", "fig_f1.tex"}   # TikZ coordinates are not results
 # numbers and word budgets; its results are macros like every other file's
 PLANS = {"v2/outline.tex",
          # the PI's prose as received (LEDGER 29): the source the sections are installed from, never compiled into the paper
-         "v2/pi_prose_1125.tex"}
+         "v2/pi_prose_1125.tex",
+         # the figures agent's caption sheet for the PI's look at the five figures (2026-11-25): a review page, never
+         # compiled into the paper; its captions reach the paper through the sections, which are checked
+         "v2/figures_sheet.tex"}
 
 
 def manuscript_files() -> list[pathlib.Path]:
