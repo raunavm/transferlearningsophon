@@ -407,6 +407,7 @@ def claims(R, tested: dict) -> tuple:
                         (r.full(task, metric, mode), a, b, want))
     add("mass regression sharpens the mass resolution of the frozen representation",
         (r.mass, "L162_MASS", "L162", "below"), (r.mass, "R16_Q1_MASS", "R16_Q1", "below"),
+        (r.mass, "R16_Q1", "L188", "below"),
         ("jet mass, resolution, mass output of the pretraining head", "L162_MASS_HEAD", "SDMASS", "below"))
     add("mass regression: no significant cost in the accuracy of the frozen representation",
         *[(h, m, b, "null") for h in (r.acc, r.auc, r.mlp) for m, b in MASS])

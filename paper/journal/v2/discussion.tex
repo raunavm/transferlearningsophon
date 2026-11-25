@@ -8,12 +8,12 @@ Pairs of classes that a label set merges lose separation in the frozen features,
 some pairs that the labels still keep apart lose it as well.
 Random groupings of the same size as the coarsest set nevertheless retain most of the accuracy
 on the pretraining classes, so the number of classes alone does not determine the loss.
-That result should not be read as a recipe for label design, since on JetClass the random
-groupings offer no advantage over the \Kcoarse-class set
-and on top tagging their frozen features are significantly below those of the \Kcoarse-class set.
-For an analysis that reads a discriminant from frozen features, or sums class scores into one as
-in the resonance benchmark, the practical consequence is that the classes it must tell apart
-should be distinct in the pretraining labels.
+That result should not be read as a recipe for label design, since with frozen features the random groupings offer
+no advantage over the \Kcoarse-class set on JetClass and fall below it on top tagging.
+For an analysis that reads a discriminant from frozen features, or sums class scores into one as Sophon does
+on its resonance benchmark, the practical consequence is that the classes it must tell apart should be distinct in
+the pretraining labels, although, as the \Kmid-class pairs show, distinct labels alone do not keep their separation
+intact.
 
 These findings agree with relabeling experiments in image classification and extend them.
 There too, coarser labels cost more for frozen features than after fine-tuning \cite{hong},
@@ -28,17 +28,17 @@ stays \VDFtJcTwoCoarse{} points behind the \Kfull-class model on
 the pretraining classes and \VDFtJcOneCoarse{} points behind on JetClass, against gains from pretraining of
 \VDFtJcTwoGain{} and \VDFtJcOneGain{} points, so a coarse label set forfeits an appreciable share of what pretraining
 provides even when the whole network is adapted.
-On top tagging and quark--gluon discrimination no difference between the label sets is
-significant in accuracy or background rejection, with a run-to-run spread of \VFtTopRejSdLo{} to
-\VFtTopRejSdHi{} around \VFtTopRejFull{} and of \VFtQgRejSdLo{} to \VFtQgRejSdHi{} around \VFtQgRejFull{} in
-background rejection.
-Of the \VNBinaryCmp{} comparisons made there, one passes the threshold, a quark--gluon AUC lower by \VDQgAuc{}
-for the \Kcoarse-class than for the \Kres-class model after fine-tuning.
+On both multi-class tasks the gap is larger with frozen features than after fine-tuning: \VDLpJcTwoCoarse{} against
+\VDFtJcTwoCoarse{} points on the pretraining classes, and \VDLpJcOneCoarse{} against \VDFtJcOneCoarse{} on JetClass.
+On top tagging and quark--gluon discrimination the label set makes no measurable difference, but these benchmarks
+resolve only coarse differences in background rejection, with an uncertainty of \VFtTopRejSigLo{} to
+\VFtTopRejSigHi{} on a rejection of about \VFtTopRejFull{} for top tagging, and they lack the inputs that carry
+flavor.
 The mass regression acts on a different axis: it supplies a quantity that no label set contains
-and improves the mass resolution of the frozen features at no significant cost in their accuracy,
+and improves the mass resolution of the frozen features with no loss of accuracy that we can resolve,
 although after fine-tuning the models pretrained with it are slightly less accurate, by
-about half a percentage point on the pretraining classes at both label sets, a difference that is significant
-only at \Kcoarse{} classes.
+about half a percentage point on the pretraining classes at both label sets, a difference that stands out from the
+spread between runs only at \Kcoarse{} classes.
 
 These conclusions rest on one architecture, with \VParamsMillion~million parameters, and on one simulated
 dataset.

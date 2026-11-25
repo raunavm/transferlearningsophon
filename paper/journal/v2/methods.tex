@@ -33,7 +33,6 @@ blocks over the particles, \DesignClassBlocks{} blocks that pool them into one c
 \DesignEmbedDim{} numbers, and an output layer with one hidden layer of \DesignHeadHidden{} units.
 The class token, the input of the output layer, is what we call the frozen features.
 
-
 \subsection{Label sets}
 A label set maps the \Kfull{} classes onto fewer classes, whose labels a model pretrained with it learns.
 The four label sets are nested, so that each is obtained from the one before by merging classes that differ in
@@ -47,8 +46,8 @@ group drawn above. (b) One model is pretrained per label set, then used frozen o
 The \Kmid-class set then labels a decay only by whether it contains a bottom quark, else a charm quark, else
 neither, and no longer separates strange from up and down quarks, gluons from these light quarks, or electrons
 from muons.
-The \Kcoarse-class set removes the remaining flavor and keeps what every set keeps, the number of decay products
-and whether each is a parton (a quark or gluon), a light lepton, a tau lepton or a neutrino.
+The \Kcoarse-class set removes the remaining flavor and keeps what every set keeps: the number of decay products
+and which of four kinds each is, a quark or gluon, an electron or muon, a tau lepton, or a neutrino.
 Because the sampling groups do not depend on the label set, models pretrained with the same random seed see the
 same jets in the same order, and they start from the same weights in every layer except the last, whose width
 is the number of classes.
@@ -63,7 +62,6 @@ is the sum of the scores $g'_i$ that the \Kfull-class model gives the classes it
 so the output layer of a label set can supply such a sum, the discriminant on which a physics analysis selects
 jets, only for classes that are unions of its own classes~\cite{sophon}.
 
-
 \subsection{Random groupings and mass regression}
 The random groupings test whether the number of classes or their content matters.
 Each assigns the \LitJetClassTwoNResonantClasses{} resonant classes at random to \RandVtwoNResGroups{} groups
@@ -71,7 +69,6 @@ whose shares of the training jets match those of the \Kcoarse-class set to withi
 the QCD jets as one class.
 The groupings are not typical random draws: among draws that satisfy the share rule we selected those that
 merge the fewest pairs of classes that the \Kcoarse-class set also merges.
-
 
 The mass regression adds a target that no label set contains.
 The \Kres- and \Kcoarse-class models are pretrained a second time with one more output $\hat\theta$, trained
@@ -102,8 +99,6 @@ On JetClass-II and JetClass we fine-tune on \FtSizeESix{} approximately class-ba
 rate for all pretrained models, chosen on validation for each task and training size by the mean of the
 \Kfull- and \Kcoarse-class models, and on top tagging and quark--gluon discrimination
 on the full training sets with the published recipe of the Particle Transformer~\cite{part}.
-
-
 
 JetClass~\cite{part} has ten classes of jets from Higgs bosons, $W$ and $Z$ bosons, top quarks and QCD; it
 was simulated without pileup and in a narrower range of transverse momentum.
@@ -142,14 +137,10 @@ pretrained output layer, is trained on the frozen features (appendix~\ref{app:tr
 We use the transfer learning for both decays and every label set, since $X\to b\bar b$ is a class of its own
 only in the two finest, and compare it with the Sophon network trained from random weights on the same jets.
 
-\subsection{Uncertainties}
-Tables give the mean and standard deviation over independent pretraining runs, each followed by one probe or
-one fine-tuning (on the resonance benchmark, three seeds of the small network, averaged): \VRunsWord{} runs for each nested label set, \VMassRunsWord{} for each model with mass
-regression, and one for each of the \VRandWord{} random groupings, whose spread therefore mixes the difference
-between groupings with that between runs.
-A difference $\Delta$ between the means of two models is called significant when $|\Delta|$ exceeds three times
-$\sigma$, where $\sigma^2$ adds the squared standard deviations over runs of both models, not standard errors,
-and the variance of $\Delta$ over bootstrap resamples of the test jets, drawn once for both models.
-With so few runs this is a convention, not a Gaussian probability, and we make no correction for the number of
-comparisons.
-The tested differences, with each term of $\sigma$, are in the data release.
+Tables give the mean $\pm$ standard deviation over independent pretraining runs, each followed by one probe or one
+fine-tuning: \VRunsWord{} runs for each nested label set, \VMassRunsWord{} for each model with mass regression, and
+one for each of the \VRandWord{} random groupings, whose spread therefore mixes the difference between groupings with
+that between runs.
+On the resonance benchmark the small network of each run is trained with three seeds, which are averaged.
+We call a difference significant only when it is large against both the spread between runs and the uncertainty
+from the finite test sample (appendix~\ref{app:stats}).

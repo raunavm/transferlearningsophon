@@ -7,8 +7,8 @@ When the pretraining is supervised, the label set is itself a design choice: the
 be divided into few classes or many, and that division determines which distinctions the network
 is rewarded for learning.
 In image classification, relabeling a fixed set of images along a class hierarchy has shown that
-coarser labels give features that transfer less well~\cite{huh,hong}, and more so when the features are used
-frozen than after fine-tuning~\cite{hong}.
+coarser labels can give features that transfer less well~\cite{huh,hong}, most clearly when the features are used
+frozen rather than fine-tuned~\cite{hong}.
 Such hierarchies, however, are human taxonomies, and it is seldom clear what information a
 given merge removes from the labels.
 
@@ -34,12 +34,13 @@ Here we change the labels and nothing else.
 Since every JetClass-II jet records its full decay, the same jets can be relabeled at any
 granularity, and we pretrain the Sophon network on them with four nested label sets of \Kfull, \Kres,
 \Kmid{} and \Kcoarse{} classes (table~\ref{tab:sets}).
-Each coarser set merges classes that differ only in flavor, the type of quark or lepton produced:
+Each coarser set merges classes that differ only in the type of particle produced, such as bottom and charm quarks:
 in the coarsest, for example, a decay to two bottom quarks and a decay to two charm quarks both
 become a decay to two quarks or gluons.
-Random groupings of the classes into \Kcoarse{} then separate the effect of which classes are merged from
-that of how many remain, and an auxiliary regression of the jet mass adds a target that the labels
+Random groupings of the classes into \Kcoarse, chosen to share few merges with the \Kcoarse-class set, then
+separate the effect of which classes are merged from that of how many remain, and an auxiliary regression of the jet mass adds a target that the labels
 do not contain.
+Each label set is pretrained several times from different random seeds.
 
 We evaluate each pretrained model in the two ways a foundation model is used.
 With the network frozen, a linear classifier trained on its features (a linear probe) measures
@@ -51,9 +52,8 @@ binary benchmarks, the identification of jets from top quarks (top tagging)~\cit
 and the discrimination of quark jets from gluon jets~\cite{efn,qgpythia,qgherwig}.
 We also repeat the benchmark with which Sophon was introduced, the tagging of a hypothetical
 heavy particle $X$ that decays to $b\bar b$ or to $bs$:
-Sophon tags the first from its output scores and the second by transfer learning on its frozen features, and
-we use transfer learning for both.
-Repeated pretraining runs give every comparison an uncertainty.
+Sophon selects the first from its output scores and the second with a small network trained on its frozen
+features, which it calls transfer learning, and we use such a network for both.
 
 We find that the frozen representation loses part of what the labels no longer distinguish.
 A linear probe identifies the \Kfull{} classes with \VAccFullPct\% accuracy on the features of the \Kfull-class
@@ -64,9 +64,9 @@ The number of classes does not by itself set this loss, since random groupings i
 still reach \VAccRandPct\%.
 Fine-tuning on \FtSizeESix{} jets recovers part of the loss: the \Kcoarse-class model remains \VDFtJcTwoCoarse{}
 percentage points behind the \Kfull-class model on the pretraining classes and \VDFtJcOneCoarse{} points behind
-on JetClass, the \Kmid-class model is also significantly behind, and on the two binary benchmarks no
-difference between the label sets is significant in accuracy or background rejection.
-The mass regression, finally, sharpens the mass resolution of the frozen features at no
-significant cost in their accuracy.
-Fine labels thus matter most for tasks that rely on the distinctions they preserve, and when the
-pretrained model is used without fine-tuning.
+on JetClass, the \Kmid-class model is also behind on both, and on the two binary benchmarks the label set
+makes no measurable difference.
+Fine labels thus matter most for tasks that rely on the distinctions they preserve, and when the pretrained model is
+used without fine-tuning.
+The mass regression, finally, sharpens the mass resolution of the frozen features with no loss of accuracy that we
+can resolve.
