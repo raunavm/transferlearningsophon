@@ -3,10 +3,10 @@
 \subsection{The pretraining classes}
 \input{tables/table2}
 \vfig{fig2_frozen}{Linear probes on the frozen features: accuracy on (a) the \Kfull{} JetClass-II classes and (b)
-JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark--gluon discrimination. Points are the
-mean over pretraining runs and bars the standard deviation; the line and band repeat the \Kfull-class model across the
-rows. The two accuracy panels span the same range relative to the \Kfull-class value, as do the two rejection panels,
-so equal distances are equal relative changes.}{fig:summary}
+JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark--gluon discrimination. Points are
+means over pretraining runs and bars standard deviations; the vertical line and band give the \Kfull-class model's.
+Bars and bands narrower than a point are hidden by it. The two accuracy panels share one scale relative to the
+\Kfull-class model, as do the two rejection panels.}{fig:summary}
 Coarser labels leave the frozen features less able to tell the pretraining classes apart
 (table~\ref{tab:probes} and figure~\ref{fig:summary}).
 A linear probe on the features of the \Kfull-class model identifies the \Kfull{} classes with an accuracy of
@@ -44,10 +44,10 @@ did not test whether a typical random grouping does as well.
 
 \subsection{Pairs of classes}
 \vfig{fig3_pairs}{Background rejection against signal efficiency for two pairs of JetClass-II classes, from
-binary linear probes on the frozen features: (a) $X\to b\bar b$ against $X\to c\bar c$ and (b) $X\to bc$ against
-$X\to bq$ and $X\to cs$. Curves are means over runs and end where fewer than \MlstMinBkgPass{} background jets pass;
-the random groupings that merge the pair and those that keep it apart are averaged separately. Lower panels: ratio
-to the \Kfull-class model; bands are one standard deviation.}{fig:pairs}
+binary linear probes on the frozen features: (a) $X\to b\bar b$ against $X\to c\bar c$; (b) $X\to bc$ against
+$X\to bq$ and $X\to cs$. Curves end where fewer than \MlstMinBkgPass{} of \JcBalPairTestPerSide{} background jets
+pass, so the ratio to the \Kfull-class model (lower panels) starts where its curve does. Random groupings merging the
+pair and keeping it apart are averaged separately. Bands: one standard deviation.}{fig:pairs}
 Binary probes show that a merged distinction is the one that suffers (figure~\ref{fig:pairs} and
 table~\ref{tab:pairs}).
 The decays $X\to b\bar b$ and $X\to c\bar c$ differ only in the flavor of their two quarks, and they share a
