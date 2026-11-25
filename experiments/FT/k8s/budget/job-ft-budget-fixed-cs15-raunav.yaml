@@ -6,8 +6,8 @@ metadata:
   namespace: cms-ml
 spec:
   completionMode: Indexed
-  completions: 3
-  parallelism: 3
+  completions: 2
+  parallelism: 2
   backoffLimitPerIndex: 3
   podFailurePolicy:
     rules:
@@ -25,7 +25,7 @@ spec:
         command: ["/bin/bash", "-c"]
         env:
         - name: REPO_REF
-          value: "mtx-s3.84"
+          value: "mtx-s3.85"
         - name: NODE_NAME
           valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
         - name: POD_NAME
@@ -40,9 +40,8 @@ spec:
           HALT=42
           IDX=${JOB_COMPLETION_INDEX:?not a pod of an Indexed Job}
           case ${IDX} in
-            0) TASK=jc2bw; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=1000000; S=1; LR=1e-4; MULT=50.0; EP=160; SPE=256000; PAT=1000000; VAL=199680; PATFROM=0; VALF=; VALMEM=1; CELL=/data/results/ft_v2/cs15/leg_jc2b/l188-s1_reweight/N1000000/s1;;
+            0) TASK=jc2b; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=1000000; S=1; LR=1e-4; MULT=50.0; EP=160; SPE=256000; PAT=1000000; VAL=199680; PATFROM=0; VALF=; VALMEM=1; KEEPHEAD=1; CELL=/data/results/ft_v2/cs15/leg_jc2b/l188-s1_headkept/N1000000/s1;;
             1) TASK=jc2b; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=1000000; S=1; LR=1e-4; MULT=1.0; EP=160; SPE=256000; PAT=1000000; VAL=199680; PATFROM=0; VALF=; VALMEM=1; CELL=/data/results/ft_v2/cs15/leg_jc2b/l188-s1_head1x/N1000000/s1;;
-            2) TASK=jc2nat; INIT=l188-s1; RUN_DIR=/data/results/mtx_v2/mtx-l188-s1; N=1000000; S=1; LR=1e-4; MULT=50.0; EP=160; SPE=256000; PAT=1000000; VAL=199680; PATFROM=0; VALF=/data/finetune/jc2_bal/val_fixed.parquet; VALMEM=1; CELL=/data/results/ft_v2/cs15/leg_jc2b/l188-s1_natural/N1000000/s1;;
             *) echo "FATAL: no cell for index ${IDX}"; exit ${HALT};;
           esac
           [ -f ${CELL}/DONE ] && { echo "skip ${CELL} (DONE)"; exit 0; }
@@ -55,8 +54,6 @@ spec:
             qg) SUB=/data/finetune/qg_v2_sub; CFG=configs/finetune/EnergyFlowQG.yaml; TCFG=configs/finetune/EnergyFlowQG.yaml; K=2; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/qg_v2/qg_chunk18.parquet /data/finetune/qg_v2/qg_chunk19.parquet";;
             jc1) SUB=/data/finetune/jc1; CFG=configs/finetune/JetClassI_sophon_noweight.yaml; TCFG=configs/finetune/JetClassI_sophon_noweight.yaml; K=10; NET=experiments/E1/ParT_sophon_arch_10c.py; TEST=""; for C in HToBB HToCC HToGG HToWW2Q1L HToWW4Q TTBar TTBarLep WToQQ ZToQQ ZJetsToNuNu; do for f in $(ls /data/JetClass/Pythia/test_20M/${C}_*.root | sort | head -2); do TEST="${TEST} ${f}"; done; done; [ "$(echo ${TEST} | wc -w)" -eq 20 ] || { echo "FATAL: JetClass test files"; exit ${HALT}; };;
             jc2b) SUB=/data/finetune/jc2_bal; CFG=configs/finetune/JetClassII_L188_noweight.yaml; TCFG=configs/data/JetClassII_base.yaml; K=188; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/jc2_bal/test.parquet";;
-            jc2bw) SUB=/data/finetune/jc2_bal; CFG=configs/arms/L188.yaml; TCFG=configs/data/JetClassII_base.yaml; K=188; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/jc2_bal/test.parquet";;
-            jc2nat) SUB=/data/finetune/jc2_v2; CFG=configs/finetune/JetClassII_L188_noweight.yaml; TCFG=configs/data/JetClassII_base.yaml; K=188; NET=experiments/MTX/ParT_sophon_arch_mtx.py; TEST="/data/finetune/jc2_bal/test.parquet";;
             *) echo "FATAL: task ${TASK}"; exit ${HALT};;
           esac
           python3 experiments/FT/gpu_probe.py || exit 43
@@ -83,9 +80,10 @@ spec:
                 --src configs/finetune/TopReference.yaml --out ${CFG} || exit ${HALT}
               cp ${CFG} ${CELL}/
             fi
-            LOAD=(--load-model-weights /workspace/ckpt/${INIT}.pt --exclude-model-weights "mod\.fc\..*")
+            if [ "${KEEPHEAD:-0}" = 1 ]; then LOAD=(--load-model-weights /workspace/ckpt/${INIT}.pt); else LOAD=(--load-model-weights /workspace/ckpt/${INIT}.pt --exclude-model-weights "mod\.fc\..*"); fi
             MULTARG=(--optimizer-option lr_mult "(r'mod\.fc\..*', ${MULT})")
             SCHED=(--lr-scheduler none); RECIPE="head_lr_mult=${MULT} lr_schedule=constant ckpt_rule=best70"
+            [ "${KEEPHEAD:-0}" = 1 ] && RECIPE="${RECIPE} head=pretrained-kept"
           else
             LOAD=(); MULTARG=(); SCHED=(); RECIPE="head_lr_mult=1 lr_schedule=flat+decay recipe=part-from-scratch"
           fi
@@ -116,7 +114,7 @@ spec:
           [ "${ES}" -eq 0 ] || { echo "FATAL: ${CELL}: training did not finish (early_stop rc=${ES})"; tail -30 ${RUN}/stdout.log; exit 1; }
           grep -q "('steps_per_epoch', $((SPE / 512)))" ${RUN}/train.log || { echo "FATAL: weaver did not run $((SPE / 512)) steps per epoch"; exit 1; }
           if [ -n "${RUN_DIR}" ]; then
-            python3 experiments/FT/smoke_checks.py load-log --log ${RUN}/stdout.log
+            if [ "${KEEPHEAD:-0}" = 1 ]; then python3 -c "import sys; sys.path.insert(0, 'experiments/FT'); import smoke_checks as s; m, u = s.parse_load_log(open(sys.argv[1], errors='replace').read()); sys.exit(0 if not m and not u else 'FATAL: head kept, but missing %s, unexpected %s' % (m, u))" ${RUN}/stdout.log; else python3 experiments/FT/smoke_checks.py load-log --log ${RUN}/stdout.log; fi
             grep -q "Parameters with lr multiplied by" ${RUN}/stdout.log || { echo "FATAL: weaver did not apply the head lr multiplier"; exit 1; }
           fi
           BEST=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['best_epoch'])" ${CELL}/early_stop.json)
