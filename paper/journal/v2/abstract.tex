@@ -6,7 +6,8 @@ distinctions the network must learn, yet how fine they need to be remains an ope
 Jets, the collimated sprays of particles produced in high-energy collisions, offer a clean test,
 because each simulated jet carries an exact label that can be coarsened without changing the
 training data.
-We pretrain Sophon, a foundation model for jets, on the same simulated jets under four nested label sets,
+We pretrain the network of Sophon, a foundation model for jets, on the same simulated jets under four nested label
+sets,
 from \Kfull{} classes down to \Kcoarse, which successively merge classes that differ only in the type of particle
 produced, such as bottom and charm quarks.
 As the labels coarsen, the frozen representation retains less of what they no longer distinguish:

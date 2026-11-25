@@ -7,6 +7,8 @@ For a machine-learning model it is an unordered set of a few tens of reconstruct
 by \FillNFeatures{} numbers: its momentum relative to the jet, its electric charge and type and, for charged
 particles, the displacement of its track from the collision point, which reveals the decays of the long-lived
 hadrons that contain bottom or charm quarks.
+The flavor of a quark is its type: bottom ($b$), charm ($c$), strange ($s$), or the light up and down quarks, written
+together as $q$; light flavor means $q$ or $s$.
 The classes of JetClass-II name what the jet came from: either a resonance, a short-lived heavy particle labeled
 by the quarks, gluons and leptons into which it decayed, each visible one of which appears as a prong, a collimated part of the jet, or the
 ordinary production of quarks and gluons by the strong interaction
@@ -21,14 +23,18 @@ resonant classes and \LitJetClassTwoNQcdClasses{} QCD classes.
 A resonant jet contains the decay of a hypothetical particle $X$, either directly into two quarks, gluons or
 leptons or through two intermediate particles $Y$ into three or four of them, and a QCD class is defined by the
 number of bottom, charm and strange quarks in the jet.
-The jets are large, with a radius of \LitJetClassTwoJetRadius{} in rapidity and azimuth, and come from a simulated detector with pileup,
-the additional collisions that overlap each event; after Sophon's selection there are \DesignNTrainSelected{}
-training jets (appendix~\ref{app:training}).
-In pretraining the classes keep their frequencies in the dataset, the natural mix, and
-jets are drawn with Sophon's weights, which give each sampling group, a fixed set of classes drawn together, one distribution of mass and of
-transverse momentum $p_{\mathrm T}$, the momentum perpendicular to the beams.
+The collisions are simulated with the event generators MadGraph and Pythia~\cite{madgraph,pythia} and a detector
+simulation, including pileup, the additional collisions that overlap each event.
+The jets are large, with a radius of \LitJetClassTwoJetRadius{} in the angles around the jet axis, and after Sophon's
+selection there are \DesignNTrainSelected{} training jets (appendix~\ref{app:training}).
+A jet carries a resonant label when every decay product the label names lies within that radius of the jet axis, and
+a QCD jet is labeled by its numbers of bottom, charm and strange quarks within that radius, each counted as none, one or
+at least two, before hadronization~\cite[App.~A]{sophon}.
+In pretraining the classes keep their frequencies in the dataset, the natural mix.
+The classes are divided into fixed sampling groups, and jets are drawn with Sophon's weights, which give every group
+the same distribution of mass and of transverse momentum $p_{\mathrm T}$, the momentum perpendicular to the beams.
 
-The network is Sophon's~\cite{sophon}, a Particle Transformer~\cite{part} with \DesignParticleBlocks{} attention
+The network is the one of Sophon~\cite{sophon}, a Particle Transformer~\cite{part} with \DesignParticleBlocks{} attention
 blocks over the particles, \DesignClassBlocks{} blocks that pool them into one class token of
 \DesignEmbedDim{} numbers, and an output layer with one hidden layer of \DesignHeadHidden{} units.
 The class token, the input of the output layer, is what we call the frozen features.
@@ -135,7 +141,8 @@ Sophon selects $X\to b\bar b$ with a discriminant built from its output scores, 
 its classes, by what it calls transfer learning: a network with one hidden layer, started from that of the
 pretrained output layer, is trained on the frozen features (appendix~\ref{app:training}).
 We use the transfer learning for both decays and every label set, since $X\to b\bar b$ is a class of its own
-only in the two finest, and compare it with the Sophon network trained from random weights on the same jets.
+only in the two finest, and compare it with the same network trained from random weights on the same jets.
+The signal jets are separate simulated samples from the authors of Sophon, not part of JetClass-II.
 
 Tables give the mean $\pm$ standard deviation over independent pretraining runs, each followed by one probe or one
 fine-tuning: \VRunsWord{} runs for each nested label set, \VMassRunsWord{} for each model with mass regression, and

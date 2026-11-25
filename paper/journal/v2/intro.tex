@@ -32,7 +32,7 @@ jets~\cite{sophon,glopart,datacomp,superjepa}, and the two effects cannot be tol
 
 Here we change the labels and nothing else.
 Since every JetClass-II jet records its full decay, the same jets can be relabeled at any
-granularity, and we pretrain the Sophon network on them with four nested label sets of \Kfull, \Kres,
+granularity, and we pretrain Sophon's network on them with four nested label sets of \Kfull, \Kres,
 \Kmid{} and \Kcoarse{} classes (table~\ref{tab:sets}).
 Each coarser set merges classes that differ only in the type of particle produced, such as bottom and charm quarks:
 in the coarsest, for example, a decay to two bottom quarks and a decay to two charm quarks both
@@ -70,3 +70,7 @@ Fine labels thus matter most for tasks that rely on the distinctions they preser
 used without fine-tuning.
 The mass regression, finally, sharpens the mass resolution of the frozen features with no loss of accuracy that we
 can resolve.
+
+Our contributions are a comparison of label sets in supervised pretraining in which only the labels change, a
+measurement of what each merge removes from the frozen features, down to single pairs of classes, and a comparison
+of frozen and fine-tuned use on the pretraining task and on three other tasks.

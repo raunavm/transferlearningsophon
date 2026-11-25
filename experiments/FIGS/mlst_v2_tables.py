@@ -548,6 +548,11 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
     # cold readers (draft e6e3b22): the step from 43 to 17 classes; the full uncertainty (run spreads and test-sample
     # term) of a difference between two label sets in fine-tuned Rej30%; 188 classes against from scratch in Rej30%
     out["VDLpJcTwoStep"] = pts(r.acc, "R16_Q1", "R42_Q1")
+    out["VDLpJcTwoMidStep"] = pts(r.acc, "R42_Q1", "L162")
+    # the fine-tuned and linear-probe JetClass-II accuracies of the two finest label sets, to two decimals (LEDGER 33.1)
+    for w, arm in (("Full", "L188"), ("Res", "L162")):
+        out[f"VFtJcTwo{w}Two"] = pct(ft, J2, arm, 2)
+        out[f"VLpJcTwo{w}Two"] = pct(lp, J2, arm, 2)
     for w, task, nd in (("Top", "top tagging", 0), ("Qg", "quark/gluon tagging (Pythia)", 1)):
         h = r.full(task, "$R_{30}$", "ft")
         sig = [r.get(h, a, b)[4] for b, a in __import__("itertools").combinations(NESTED, 2)]
@@ -761,7 +766,81 @@ def percent_columns(tab: str) -> str:
     return "\n".join(lines)
 
 
-def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsize{9}{11}\selectfont") -> str:
+OURS = ("(this work)", "kinematic inputs only")
+CELL = re.compile(r"^\s*(?P<m>-?[\d{},]*\.?\d+)(?:\\,\$\\pm\$\\,(?P<s>[\d{},]*\.?\d+))?\s*$")
+
+
+def _decimals(cell: str) -> int | None:
+    m = CELL.match(cell)
+    if not m:
+        return None
+    t = m["m"].replace("{,}", "")
+    return len(t.split(".")[1]) if "." in t else 0
+
+
+def published_precision(tab: str, ovo: dict | None = None) -> str:
+    """PI 2026-11-25 (LEDGER 33.4): in the comparison with published taggers our rows follow the published precision
+    of each column of each block (the decimals of the published rows), and on JetClass our AUC is the one-versus-one
+    average of the published definition (stats/table_e1_ovo.json), at that precision."""
+    from decimal import Decimal, ROUND_HALF_EVEN
+    blocks, cur = [], []
+    for ln in tab.split("\n"):
+        if r"\toprule" in ln and cur:
+            blocks.append(cur)
+            cur = []
+        cur.append(ln)
+    blocks.append(cur)
+    out = []
+    for b in blocks:
+        head = next((ln for ln in b if "&" in ln and "AUC" in ln), "")
+        auc_col = [x.strip() for x in head.split("&")].index("AUC") if "AUC" in head else None
+        task = None
+        rows = []
+        for ln in b:
+            mc = re.match(r"\s*\\multicolumn\{\d+\}\{[^}]*\}\{(.*?)\}", ln)
+            if mc:
+                task = mc.group(1)
+            rows.append((task, ln))
+        data = [(t, ln) for t, ln in rows if "&" in ln and ln.rstrip().endswith("\\\\") and "multicolumn" not in ln]
+        places = {}
+        for t, ln in data:
+            if any(o in ln for o in OURS):
+                continue
+            for j, c in enumerate(ln.rstrip(" \\").split("&")[1:], 1):
+                d = _decimals(c)
+                if d is not None:
+                    places[(t, j)] = max(places.get((t, j), 0), d)
+        new = []
+        for t, ln in rows:
+            if (t, ln) in data and any(o in ln for o in OURS):
+                cells = ln.rstrip().removesuffix("\\\\").split("&")
+                for j in range(1, len(cells)):
+                    mark = re.search(r"\$\^\{?\\[A-Za-z]+\}?\$\s*$", cells[j])
+                    m = CELL.match(cells[j][:mark.start()] if mark else cells[j])
+                    if not m or (t, j) not in places:
+                        continue
+                    q = Decimal(1).scaleb(-places[(t, j)])
+                    val = Decimal(m["m"].replace("{,}", ""))
+                    if ovo and t == "JetClass" and j == auc_col:
+                        name = "trained from scratch" if "scratch" in cells[0] else "188 classes"
+                        val = Decimal(repr(ovo[name]["auc_ovo"]))
+                    mean = format(val.quantize(q, ROUND_HALF_EVEN), ",f").replace(",", "{,}")
+                    txt = mean
+                    if m["s"] and not (ovo and t == "JetClass" and j == auc_col):
+                        sd = Decimal(m["s"].replace("{,}", "")).quantize(q, ROUND_HALF_EVEN)
+                        txt += r"\,$\pm$\," + (format(sd, ",f").replace(",", "{,}") if sd else f"$<${format(q, 'f')}")
+                    elif ovo and t == "JetClass" and j == auc_col:
+                        sd = Decimal(repr(ovo[name]["auc_ovo_sd"])).quantize(q, ROUND_HALF_EVEN)
+                        txt += r"\,$\pm$\," + (format(sd, "f") if sd else f"$<${format(q, 'f')}")
+                    cells[j] = " " + txt + (mark.group(0).strip() if mark else "") + " "
+                ln = "&".join(cells) + "\\\\"
+            new.append(ln)
+        out.append("\n".join(new))
+    return "\n".join(out)
+
+
+def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsize{9}{11}\selectfont",
+          ovo: dict | None = None) -> str:
     """A table the paper's build writes (its tabulars as they are: every cell is the build's), under the rewrite's
     caption and row names, without bold and without the rows of the network the text does not use."""
     old = built.get(key)
@@ -772,7 +851,10 @@ def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsi
         raise SystemExit(f"FATAL: no tabular in {key}")
     body = []
     for t in tabs:
-        t = percent_columns(strip_bold(t))
+        t = strip_bold(t)
+        if ovo is not None:
+            t = published_precision(t, ovo)
+        t = percent_columns(t)
         for a, b in RENAME:
             t = t.replace(a, b)
         body.append("\n".join(ln for ln in t.split("\n") if not ln.lstrip().startswith(DROP_ROWS)))
@@ -925,7 +1007,7 @@ def main() -> int:
            "table_inputs.tex": reuse(built, "tables/mlst_inputs.tex", INPUTS_CAPTION, "tab:inputs"),
            # 7.5 pt: at 8 pt the four blocks overran the page number (draft da28a31, p. 25)
            "table_published.tex": reuse(built, "tables/mlst_published.tex", PUBLISHED_CAPTION, "tab:published",
-                                        r"\fontsize{7.5}{9}\selectfont"),
+                                        r"\fontsize{7.5}{9}\selectfont", ovo=load_ovo()),
            "table_mlp.tex": reuse(built, "tables/mlst_mlp.tex", MLP_CAPTION, "tab:mlp", r"\fontsize{8}{10}\selectfont"),
            "table_groups.tex": reuse(built, "tables/mlst_coarse.tex", GROUPS_CAPTION, "tab:groups")}
     for f, text in out.items():
@@ -942,9 +1024,15 @@ INPUTS_CAPTION = (r"The per-particle inputs, with a bullet where the top-tagging
                   r"and $\Delta R$ from the jet axis, charge and particle type, and the transverse and longitudinal "
                   r"displacements $d_0$, $d_z$ of a track with their uncertainties. The last column gives the value "
                   r"zero takes after the input normalization.")
+def load_ovo() -> dict:
+    doc = json.loads((REPO / "experiments/FIGS/data/v2/stats/table_e1_ovo.json").read_text())
+    return {r["row"]: r for r in doc["rows"]}
+
+
 PUBLISHED_CAPTION = (r"Published models beside ours on JetClass, top tagging and quark--gluon discrimination, as each "
-                     r"paper reports them; ours are the mean $\pm$ standard deviation over runs. On JetClass the published AUC averages over pairs of classes and ours over "
-                     r"classes against the rest. The quark--gluon rows use the reduced particle-type inputs.")
+                     r"paper reports them; ours are the mean $\pm$ standard deviation over runs, at the published precision. AUC on "
+                     r"JetClass averages over pairs of classes, as published; with equal class counts it equals the "
+                     r"average over classes against the rest. The quark--gluon rows use the reduced particle-type inputs.")
 GROUPS_CAPTION = (r"Probes asked only for the group of the 17-class label set to which a jet belongs, on the frozen "
                   r"features of each model; mean $\pm$ standard deviation over runs.")
 MLP_CAPTION = (r"MLP probes on the frozen features, on JetClass-II, the benchmarks and pairs of JetClass-II classes; "

@@ -16,12 +16,14 @@ The first assigns whole families of decays that differ only in flavor to groups 
 two flavors of one family; the second
 moves the four-quark decays that contain a bottom quark into another group; and the third moves as many
 four-quark decays chosen at random.
-We tested one ordering on the pretraining classes, set before the runs: the \Kcoarse-class model below the grouping
-without a flavor boundary, that grouping below the two with a boundary, and these below the random groupings.
-Every step of this ordering holds and is large against the spread between runs (table~\ref{tab:flavor}).
-The groupings with a boundary differ from the one without in more than that boundary, because other decays had
-to move to keep the class sizes, so this result cannot isolate the boundary and we draw no conclusion from it in
-the main text.
+We tested whether a linear probe on the pretraining classes orders them as follows: the \Kcoarse-class model below
+the grouping without a flavor boundary, that grouping below the two with a boundary, and these below the random
+groupings.
+The probe orders them this way, and every step is large against the spread between runs (table~\ref{tab:flavor}).
+The grouping without a flavor boundary already lies several points above the \Kcoarse-class model, so how whole
+families are grouped matters as well as flavor.
+The groupings with a boundary also differ from the one without in more than that boundary, because other decays had
+to move to keep the class sizes, so the step between them cannot be assigned to the boundary alone.
 
 \input{tables/table_flavor}
 
@@ -51,19 +53,19 @@ validation check; the learning rates of the other training sizes and of the netw
 were chosen on validation from a grid, and the full scan is in the data release.
 All pretraining runs together took \MlstComputeTotalGpuHours{} GPU hours.
 
-The binary probes on pairs of classes are tested on \JcBalPairTestPerSide{} jets of each class, and a curve of
+The binary probes on pairs of classes are tested on up to \JcBalPairTestPerSide{} jets on each side of a pair, drawn
+from the JetClass-II test files, which no pretraining run read, and a curve of
 figure~\ref{fig:pairs} is drawn only where at least \MlstMinBkgPass{} background jets pass.
 
 For the resonance benchmark the transfer network has a hidden layer of \DesignHeadHidden{} units and two outputs.
 Its hidden layer starts from that of the pretrained output layer and all of its weights are then trained, on
 \XbbNTrainPerClass{} jets per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$, with
 \MlstXbxHeadSeedsWord{} seeds per pretraining run, which are averaged.
-The network trained from scratch for each signal is the Sophon network on the same inputs and jets, with
+The network trained from scratch for each signal is the same network on the same inputs and jets, with
 \MlstXbxScratchSeedsWord{} seeds.
-The QCD jets come from files that no pretraining run read, and signal and background are counted in the same
-window of soft-drop mass.
-The significance of a difference on this benchmark uses a binomial estimate of the test-sample term, because
-the per-jet scores were not kept.
+The QCD jets come from files that no pretraining run read, the signal jets from separate samples, and signal and
+background are both counted in the soft-drop mass window.
+On this benchmark the test-sample uncertainty of a difference is a binomial estimate.
 Sophon's own benchmark selects jets in simulated collisions with every Standard Model background and reports a
 discovery significance; ours uses JetClass-II QCD jets alone and reports signal efficiency, so the two sets of numbers
 are not comparable.
@@ -79,7 +81,6 @@ JetClass-II particles; the choice is made once per task on validation, for every
 Tables~\ref{tab:auc} and~\ref{tab:herwig} give the AUC of every model of tables~\ref{tab:probes}
 and~\ref{tab:finetuned} and the quark--gluon results on jets from the Herwig generator~\cite{qgherwig}.
 
-Tables~\ref{tab:head} to~\ref{tab:resonance} hold the numbers that the main text quotes from no other table.
 The pretrained output layer of the \Kfull-class model already predicts the \Kfull{} classes, but on the
 class-balanced test jets it reaches only \VHeadAcc\%, below the linear probe, because it was trained on the natural
 mix of classes; refitting only its class biases on the balanced training jets raises it to \VHeadRefit\%, which
@@ -98,7 +99,7 @@ benchmark.
 \subsection{MLP probes}
 An MLP probe with one hidden layer of \LpMlpHidden{} units, trained on the same frozen features as the linear
 probes, tests whether a conclusion depends on the probe being linear (table~\ref{tab:mlp}).
-It changes two of them.
+In two places it does.
 When the \Kfull{} classes are merged into the \Kcoarse{} groups of the coarsest label set and the probe is asked
 only for the group, linear probes show no significant difference between the label sets, whereas the MLP probe
 finds the features of the \Kcoarse-class model significantly worse than those of the \Kfull-class model, on the task its own labels describe (table~\ref{tab:groups}).
