@@ -37,10 +37,11 @@
 \input{tables/numbers}
 
 % A figure by its name: figures/<name>.pdf when the figure code has drawn it, a labelled box until then.
-\NewDocumentCommand{\vfig}{O{\linewidth} m m m}{\begin{figure}[tb]\centering
-  \IfFileExists{figures/#2.pdf}{\includegraphics[width=#1]{figures/#2.pdf}}%
-    {\fbox{\parbox[c][4.5cm][c]{\dimexpr\linewidth-2cm\relax}{\centering\texttt{\detokenize{#2}}: figure being rebuilt}}}
-  \caption{#3}\label{#4}\end{figure}}
+\NewDocumentCommand{\vfig}{O{\linewidth} m}{%
+  \def\vfigbody{\IfFileExists{figures/#2.pdf}{\includegraphics[width=#1]{figures/#2.pdf}}%
+    {\fbox{\parbox[c][4.5cm][c]{\dimexpr\linewidth-2cm\relax}{\centering\texttt{\detokenize{#2}}: figure being rebuilt}}}}%
+  \vfigtail}
+\NewDocumentCommand{\vfigtail}{m m}{\begin{figure}[tb]\centering\vfigbody\caption{#1}\label{#2}\end{figure}}
 
 \title{Label granularity in supervised pretraining of jet foundation models}
 \author{\pending{author list and affiliations}}
