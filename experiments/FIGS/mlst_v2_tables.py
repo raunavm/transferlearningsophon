@@ -146,8 +146,9 @@ def table1(maps: dict, runs: dict) -> str:
     rand_counts = {counts(maps[c]) for c in rand}
     if len(rand_counts) != 1:
         raise SystemExit("FATAL: the random groupings differ in their resonant and QCD classes")
-    b = [r"\begin{tabular}{@{}ll>{\raggedright\arraybackslash}p{4.6cm}>{\raggedright\arraybackslash}p{3.3cm}"
-         r">{\raggedright\arraybackslash}p{1.9cm}@{}}",
+    # the label column wraps too: with it unwrapped the table was 17% wider than the text block and was set at 7.7 pt
+    b = [r"\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.0cm}l>{\raggedright\arraybackslash}p{4.3cm}"
+         r">{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{1.7cm}@{}}",
          r"\toprule", r"Label set & Classes & Merges & Class containing & Runs \\",
          r" & (resonant + QCD) & & $X\to b\bar b$ & \\", r"\midrule"]
     for arm in NESTED:
@@ -167,7 +168,7 @@ def table1(maps: dict, runs: dict) -> str:
 def _float(caption: str, label: str, tabular: list, numbered: bool = True) -> str:
     """A portrait table float on one page: the caption above, the tabular at 9 pt, shrunk only if wider than the text."""
     cap = rf"\caption{{{caption}}}\label{{{label}}}" if numbered else rf"\caption*{{{caption}}}\label{{{label}}}"
-    return "\n".join([r"\begin{table}[tb]", r"\centering", cap, r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}",
+    return "\n".join([r"\begin{table}[htbp]", r"\centering", cap, r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}",
                       r"\begin{adjustbox}{max width=\linewidth}", *tabular, r"\end{adjustbox}", r"\end{table}", ""])
 
 
@@ -511,8 +512,8 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
                 "VDFtJcTwoCoarse": pts(r.jc2, "R16_Q1", "L188"), "VDFtJcOneCoarse": pts(r.jc1, "R16_Q1", "L188"),
                 "VDFtJcTwoMid": pts(r.jc2, "R42_Q1", "L188"), "VDFtJcOneMid": pts(r.jc1, "R42_Q1", "L188"),
                 "VDFtJcTwoGain": pts(r.jc2_six, "L188", "SCRATCH"), "VDFtJcOneGain": pts(r.jc1_six, "L188", "SCRATCH"),
-                "VDFtJcOneMassRes": pts(r.jc1_six, "L162_MASS", "L162"),
-                "VDFtJcOneMassCoarse": pts(r.jc1_six, "R16_Q1_MASS", "R16_Q1"),
+                "VDFtJcOneMassRes": pts(r.jc1_six, "L162_MASS", "L162", 2),
+                "VDFtJcOneMassCoarse": pts(r.jc1_six, "R16_Q1_MASS", "R16_Q1", 2),
                 "VDFtJcTwoMassRes": pts(r.jc2_six, "L162_MASS", "L162", 2),
                 "VDFtJcTwoMassCoarse": pts(r.jc2_six, "R16_Q1_MASS", "R16_Q1", 2),
                 "VDFtJcOneRand": pts(r.jc1, RAND, "R16_Q1"),
@@ -645,7 +646,7 @@ RENAME = ((r" classes + mass ", " classes + mass regression "), ("released Sopho
           ("from scratch (this work)", "trained from scratch (this work)"), ("random partitions", "random grouping"),
           (r"\textit{17-class partitions}", r"\textit{17 classes, other groupings}"), ("17-class partitions", "17 classes, other groupings"),
           (r"$^{\S}$", ""), ("multilayer-perceptron probe", "MLP probe"), ("$R_{30}$", r"Rej$_{30\%}$"), ("$R_{50}$", r"Rej$_{50\%}$"))
-DROP_ROWS = ("random network", r"\quad BatchNorm recomputed")
+DROP_ROWS = ("random network", r"\quad BatchNorm recomputed", r"\Kfull{} classes, kinematic inputs only")
 
 
 def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsize{9}{11}\selectfont") -> str:
@@ -663,7 +664,7 @@ def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsi
         for a, b in RENAME:
             t = t.replace(a, b)
         body.append("\n".join(ln for ln in t.split("\n") if not ln.lstrip().startswith(DROP_ROWS)))
-    return "\n".join([r"\begin{table}[tbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}", size,
+    return "\n".join([r"\begin{table}[htbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}", size,
                       r"\setlength{\tabcolsep}{4pt}", "\n\\par\\medskip\n".join(body), r"\end{table}", ""])
 
 
@@ -694,7 +695,7 @@ def appendix_tables(got: dict, maps: dict) -> dict:
                 r"\end{tabular}"]
 
     def two(caption, label, a, b):
-        return "\n".join([r"\begin{table}[tbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
+        return "\n".join([r"\begin{table}[htbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
                           r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{4pt}", r"\textit{Linear probes}\par\smallskip",
                           *a, r"\par\medskip", r"\textit{Fine-tuned}\par\smallskip", *b, r"\end{table}", ""])
     auc_head = [r" & JetClass-II & JetClass & Top tagging & Quark/gluon \\"]
