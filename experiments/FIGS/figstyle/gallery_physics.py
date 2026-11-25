@@ -633,6 +633,7 @@ XBX_LABEL_SETS = ("L188", "L162", "L162_MASS", "R42_Q1", "R16_Q1", "R16_Q1_MASS"
 XBX_PARTITIONS = XBX_LABEL_SETS + ("FLAV_F0", "FLAV_F1", "FLAV_F1R", "RAND")
 CLASSIFIER, LINEAR = "head", "linear"       # xbx readouts: the frozen-feature classifier (the tables'), the linear probe
 DIRECT = "zero_shot_xbb"                    # the direct discriminant (Sophon Eq. 4), X->bb only, where X->bb is a class
+DIRECT_TAG = "(direct discriminant)"        # its legend tag; the rewrite's Fig. 5 says "(output scores)" (v2_main.py)
 
 
 def _xbx_runs(XR, signal: str, net: str, readout: str) -> list:
@@ -690,7 +691,7 @@ def _xbx_series(XR, signal: str, nets: tuple, readout: str, direct: bool, scratc
     if scratch and (scr := I["xbx_scratch"].get(signal, [])):
         out.append(("SCRATCH", S.LEGEND["SCRATCH"], S.look("SCRATCH"), scr))
     if direct and signal == "xbb":
-        out += [(f"{net} direct", f"{S.LEGEND[net]} (direct discriminant)", S.look(net, "direct"), rs) for net in nets
+        out += [(f"{net} direct", f"{S.LEGEND[net]} {DIRECT_TAG}", S.look(net, "direct"), rs) for net in nets
                 if XR.direct_ok(M, net) and (rs := _xbx_runs(XR, signal, net, DIRECT))]
     return out
 
