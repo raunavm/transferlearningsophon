@@ -74,6 +74,9 @@ GENERATED = {"results_generated.tex",
              # 2026-11-13 (PI, the final figures and tables): the AUC of the headline family, the mass-effect summary,
              # the supplement's whole training-size tables and the X->bs closest-class table
              "tables/mlst_summary_auc.tex", "tables/mlst_masseffect.tex", "tables/mlst_probes_n_full.tex",
+             # 2026-11-25: tables mlst_results writes (PLACEHOLDERS, LONGTABLES) that this list lacked; generated, not hand-typed
+             "tables/mlst_jc1_class_auc_full.tex", "tables/mlst_labelsets_full.tex", "tables/mlst_randparts.tex",
+             "tables/mlst_sculpt_full.tex", "tables/mlst_sets.tex", "tables/mlst_summary_auc_full.tex",
              "tables/mlst_ft_full.tex", "tables/mlst_xbx_node.tex",
              # 2026-11-13, round 2: every point of the jet-pT figures and the JetClass confusion percentages. Round 3
              # (L18): the jet-pT values are data_release/jet_pt_bins.csv and mlst_pt_bins.tex is no longer written;
