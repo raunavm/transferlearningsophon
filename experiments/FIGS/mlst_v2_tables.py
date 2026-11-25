@@ -970,7 +970,7 @@ def appendix_tables(got: dict, maps: dict) -> dict:
                                       ("bc vs bq, cs", only((), pair("bc_vs_bq_cs")))], four + rand_rows,
                                      [r" & \multicolumn{2}{c}{All classes, AUC} & \multicolumn{3}{c}{Pairs of classes, AUC} \\",
                                       r"\cmidrule(lr){2-3}\cmidrule(lr){4-6}",
-                                      r" & Resonant & QCD & $b\bar b$ / $c\bar c$ & $b\bar bqq$ / $c\bar cqq$ & $bc$ / $bq$, $cs$ \\"]), sep="3pt")
+                                      r" & Resonant & QCD & $b\bar b$ / $c\bar c$ & $b\bar bqq$ / $c\bar cqq$ & $bc$ / $bq$, $cs$ \\"]), sep="3pt", size="{8}{9.4}")
     small = sorted(n for n in R._sizes(per, "jc2") if n < sizes["jc2"] and all(
         R._ft(per, "jc2", m, n, "accuracy") is not None for a in NESTED for m in runs[a]))
     ftn = lambda n: (lambda a: (R.summary_scratch(per, "jc2", n, "accuracy") if a == S                # noqa: E731
@@ -996,9 +996,9 @@ def appendix_tables(got: dict, maps: dict) -> dict:
             "table_size.tex": size, "table_resonance.tex": res}
 
 
-def one_tab(caption: str, label: str, tabular: list, sep: str = "4pt") -> str:
+def one_tab(caption: str, label: str, tabular: list, sep: str = "4pt", size: str = "{9}{11}") -> str:
     return "\n".join([r"\begin{table}[htbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
-                      rf"\fontsize{{9}}{{11}}\selectfont\setlength{{\tabcolsep}}{{{sep}}}", *tabular, r"\end{table}", ""])
+                      rf"\fontsize{size}\selectfont\setlength{{\tabcolsep}}{{{sep}}}", *tabular, r"\end{table}", ""])
 
 
 def table_head(got: dict, runs: dict) -> str:
