@@ -5,7 +5,8 @@
 \vfig{fig2_frozen}{Linear probes on the frozen features: accuracy on (a) the \Kfull{} JetClass-II classes and (b)
 JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark--gluon discrimination. Points are the
 mean over pretraining runs and bars the standard deviation; the line and band repeat the \Kfull-class model across the
-rows. Panels of one metric share one relative range about the \Kfull-class mean.}{fig:summary}
+rows. The two accuracy panels span the same range relative to the \Kfull-class value, as do the two rejection panels,
+so equal distances are equal relative changes.}{fig:summary}
 Coarser labels leave the frozen features less able to tell the pretraining classes apart
 (table~\ref{tab:probes} and figure~\ref{fig:summary}).
 A linear probe on the features of the \Kfull-class model identifies the \Kfull{} classes with an accuracy of
@@ -43,11 +44,11 @@ This conclusion holds for groupings chosen, as ours were, to overlap little with
 did not test whether a typical random grouping does as well.
 
 \subsection{Pairs of classes}
-\vfig{fig3_pairs}{Background rejection against signal efficiency for two pairs of JetClass-II classes, from linear
-probes on the frozen features: (a) $X\to b\bar b$ against $X\to c\bar c$ and (b) $X\to bc$ against $X\to bq$ and
-$X\to cs$. Curves are means over runs; the random groupings are shown separately for those that merge the pair and
-those that keep it apart. Lower panels give the ratio to the \Kfull-class model, whose band is one standard
-deviation.}{fig:pairs}
+\vfig{fig3_pairs}{Background rejection against signal efficiency for two pairs of JetClass-II classes, from
+binary linear probes on the frozen features: (a) $X\to b\bar b$ against $X\to c\bar c$ and (b) $X\to bc$ against
+$X\to bq$ and $X\to cs$. Curves are means over runs and end where fewer than \MlstMinBkgPass{} background jets pass;
+the random groupings that merge the pair and those that keep it apart are averaged separately. Lower panels: ratio
+to the \Kfull-class model; bands are one standard deviation.}{fig:pairs}
 Binary probes show that a merged distinction is the one that suffers (figure~\ref{fig:pairs} and
 table~\ref{tab:pairs}).
 The decays $X\to b\bar b$ and $X\to c\bar c$ differ only in the flavor of their two quarks, and they share a
@@ -130,9 +131,13 @@ scratch.
 \subsection{Other tasks with frozen features}
 Away from the pretraining classes the frozen features depend much less on the label set
 (table~\ref{tab:probes}).
-On JetClass a linear probe reaches \VLpJcOneFull\% on the features of the \Kfull-class model and
-\VLpJcOneCoarse\% on those of the \Kcoarse-class model, a far smaller difference than on the pretraining
-classes, and on the two binary benchmarks, as stated above, none is significant.
+On JetClass a linear probe reaches \VLpJcOneFull\% on the features of the \Kfull-class
+model and \VLpJcOneCoarse\% on those of the \Kcoarse-class model, a far smaller difference than on the pretraining
+classes.
+It is not significant in accuracy (\VZLpJcOneCoarseAcc$\sigma$) and is significant in AUC
+(\VZLpJcOneCoarseAuc$\sigma$), and the \Kmid- and \Kres-class models do not differ significantly from the
+\Kfull-class model in either.
+On the two binary benchmarks, as stated above, no difference is significant.
 The frozen results on those two benchmarks are low in absolute terms,
 far below the fine-tuned ones of table~\ref{tab:finetuned}, since they are linear readouts of features computed
 from incomplete inputs.
@@ -178,11 +183,11 @@ significant (\VZFtJcTwoMassCoarse$\sigma$ on the pretraining classes), because t
 more.
 
 \subsection{Resonance benchmark}
-\vfig{fig5_resonance}{Sophon's $X\to b\bar b$ and $X\to bs$ benchmark: signal efficiency over the square root of the
-QCD efficiency, against the QCD efficiency in the mass window. Solid lines are transfer learning on the frozen features
-and, in grey, the same classifier trained from scratch. Dash-dotted lines in (a) use the output scores directly, where
-the label set keeps $X\to b\bar b$ as a class. Bands are the standard deviation over runs, for the \Kfull-class model
-and for training from scratch.}{fig:resonance}
+\vfig{fig5_resonance}{Sophon's $X\to b\bar b$ and $X\to bs$ benchmark: signal efficiency against the efficiency
+for QCD jets, for jets in the mass window of section~\ref{sec:methods}. Solid lines are transfer learning on the
+frozen features and, in grey, the same classifier trained from scratch. Dash-dotted lines in (a) are the discriminant
+formed directly from the output scores, where the label set keeps $X\to b\bar b$ as a class. Bands are the standard
+deviation over runs.}{fig:resonance}
 Sophon's own benchmark shows the cost of coarse labels for a use that keeps the pretrained network frozen
 (figure~\ref{fig:resonance}, which gives the same comparison at every background efficiency, and
 table~\ref{tab:resonance}).
@@ -190,6 +195,8 @@ At a background efficiency of \VXbxEpsB\%, transfer learning on the features of 
 $X\to b\bar b$ with a signal efficiency of \VXbbFull\% and $X\to bs$ with \VXbsFull\%.
 With the \Kcoarse-class model both fall, to \VXbbCoarse\% (\VZXbbCoarse$\sigma$) and to \VXbsCoarse\%
 (\VZXbsCoarse$\sigma$).
+The dash-dotted curves of the figure are Sophon's discriminant formed directly from the output scores, which
+exists only for the two finest label sets; we did not test it against the transfer learning.
 With the \Kmid-class model the efficiency for $X\to bs$ is significantly lower, at \VXbsMid\%, while that for
 $X\to b\bar b$, \VXbbMid\%, is not significantly different.
 The loss is larger for $X\to bs$, the decay that no label set contains.

@@ -410,6 +410,10 @@ def claims(R, tested: dict) -> tuple:
         (r.jc2_six, "L162_MASS", "L162", "null"), (r.jc1_six, "L162_MASS", "L162", "null"))
     add("random groupings offer no advantage over the 17-class set on frozen JetClass and are below 188 classes",
         (r.jc1_lp, RAND, "R16_Q1", "null"), (r.jc1_lp, RAND, "L188", "below"))
+    lpset = lambda m: f"JetClass, {m}, {R.HEADING['lp']}, label sets"                 # noqa: E731
+    add("frozen JetClass: 17 - 188 not significant in accuracy, significant in AUC; 43 and 162 nulls",
+        (lpset("accuracy"), "R16_Q1", "L188", "null"), (lpset("AUC"), "R16_Q1", "L188", "below"),
+        *[(lpset(m), a, "L188", "null") for m in ("accuracy", "AUC") for a in ("R42_Q1", "L162")])
     add("on top tagging the random groupings' frozen features are significantly below those of the 17-class set",
         *[(r.full("top tagging", m, "lp"), RAND, "R16_Q1", "below") for m, _ in METRICS])
     add("quark/gluon, frozen: random grouping not significantly different from 17 classes",
@@ -545,6 +549,9 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
     out["VFtQgAucCoarse"], out["VFtQgAucRes"] = auc5("R16_Q1"), auc5("L162")
     n_par = int(str(got["old"]["MlstNParamsJc"]).replace("{,}", ""))
     out["VParamsMillion"] = f"{n_par / 1e6:.1f}"
+    for w, m in (("Acc", "accuracy"), ("Auc", "AUC")):
+        head = f"JetClass, {m}, {R.HEADING['lp']}, label sets"
+        out[f"VZLpJcOneCoarse{w}"] = f"{abs(r.z(head, 'R16_Q1', 'L188')):.2f}"
     out["VDQgAuc"] = f"{abs(r.get(r.full(AUC_PASS[0], AUC_PASS[1], AUC_PASS[2]), AUC_PASS[3], AUC_PASS[4])[0]):.4f}"
     n_pairs = len(list(__import__("itertools").combinations(NESTED, 2)))
     out["VNBinaryCmp"] = str(n_pairs * len(BINARY) * len(METRICS) * 2)

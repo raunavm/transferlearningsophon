@@ -49,6 +49,9 @@ validation check; the learning rates of the other training sizes and of the netw
 were chosen on validation from a grid, and the full scan is in the data release.
 All pretraining runs together took \MlstComputeTotalGpuHours{} GPU hours.
 
+The binary probes on pairs of classes are tested on \JcBalPairTestPerSide{} jets of each class, and a curve of
+figure~\ref{fig:pairs} is drawn only where at least \MlstMinBkgPass{} background jets pass.
+
 For the resonance benchmark the transfer network has a hidden layer of \DesignHeadHidden{} units and two outputs.
 Its hidden layer starts from that of the pretrained output layer and all of its weights are then trained, on
 \XbbNTrainPerClass{} jets per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$, with
@@ -104,8 +107,25 @@ network trained from scratch and our fine-tuned one are below it.
 \input{tables/table_published}
 
 \section{Further figures}\label{app:figures}
-\vfig{figA1}{Recall of each JetClass-II class under a linear probe, for the four label sets.}{fig:recall}
-\vfig{figA2}{The class pairs not shown in figure~\ref{fig:pairs}, as there.}{fig:otherpairs}
-\vfig{figA3}{Linear probes against the number of training jets, for the four tasks.}{fig:probesize}
-\vfig{figA4}{Jet-mass resolution against jet $p_{\mathrm T}$ and against generator-level mass.}{fig:masspt}
-\vfig{figA5}{Validation accuracy of the pretraining runs against epoch.}{fig:validation}
+Figure~\ref{fig:recall} shows which classes lose recall under each coarser label set, figure~\ref{fig:otherpairs}
+the class pairs that figure~\ref{fig:pairs} omits, figure~\ref{fig:probesize} the linear probes at smaller training
+sets, figure~\ref{fig:masspt} the regressed mass against jet $p_{\mathrm T}$ and mass, and
+figure~\ref{fig:validation} the validation curves of pretraining.
+\vfig{figA1}{Recall of each JetClass-II class under a linear probe on the frozen features of the (a)
+\Kres-, (b) \Kmid- and (c) \Kcoarse-class model, against its recall for the \Kfull-class model. Points are means
+over runs, with bars combining run spread and test-sample uncertainty; colors and shapes give what the panel's label
+set merges the class with. Open points lie within three standard deviations of equal recall.}{fig:recall}
+\vfig{figA2}{As figure~\ref{fig:pairs}, for the four other class pairs: (a) $X\to YY\to b\bar bqq$ against
+$c\bar cqq$, and QCD jets (b) with $b\bar b$ against $c\bar c$, (c) with $b$ against light quarks and gluons only,
+(d) with $c$ and no $b$ against light quarks and gluons only. Every random grouping merges each QCD pair, so (b) to
+(d) have one random-grouping curve.}{fig:otherpairs}
+\vfig{figA3}{Linear probes on the frozen features against the number of training jets: accuracy on (a)
+JetClass-II and (b) JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark--gluon
+discrimination. Lines are the mean over runs and bands the standard deviation.}{fig:probesize}
+\vfig{figA4}{Jet mass estimated by the models pretrained with mass regression, beside the soft-drop mass:
+median response (a, b) and resolution (c, d) against jet $p_{\mathrm T}$ and against generator-level mass. Lower
+panels give the distance of the median from one and the ratio of the resolution to that of the soft-drop mass. Bars
+combine run spread and test-sample uncertainty.}{fig:masspt}
+\vfig{figA5}{Validation accuracy of the pretraining runs against epoch, each model on its own label set,
+so levels compare only between models with the same number of classes. Lines are the mean over runs and bands the
+standard deviation.}{fig:validation}
