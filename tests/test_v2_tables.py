@@ -51,7 +51,7 @@ def test_table1_rows():
 
 def test_class_map_is_nested_and_complete():
     tex = V.table_classmap(MAPS)
-    rows = [ln for ln in tex.splitlines() if re.match(r"^\d* & \d+ & ", ln)]
+    rows = [ln for ln in tex.splitlines() if re.match(r"^\d* & \d+ & ", ln) and "JetClass-II classes" not in ln]
     assert len(rows) == 43 and sum(bool(re.match(r"^\d+ & ", ln)) for ln in rows) == 17
     assert sum(ln.count("$") // 2 for ln in rows) == 188
     assert V.class_tex("X_YY_bbtauhtaue") == r"$bb \tau_h \tau_e$"
