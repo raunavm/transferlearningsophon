@@ -62,6 +62,33 @@ def head_accuracy(feats: np.ndarray, labels: np.ndarray, layers: list, chunk: in
     return {"accuracy": hit / n, "n_jets": n, "near_ties": ties / n, "n_out": int(layers[-1][0].shape[0])}
 
 
+def all_logits(feats: np.ndarray, layers: list, chunk: int = 50_000) -> np.ndarray:
+    return np.concatenate([logits(feats[i:i + chunk], layers) for i in range(0, feats.shape[0], chunk)])
+
+
+def refit_bias(z: np.ndarray, y: np.ndarray, max_iter: int = 500) -> tuple:
+    """(offsets d of the K class biases, record): the minimum of the mean cross-entropy of softmax(z + d) over the
+    training jets, every weight frozen (PI 2026-11-25, LEDGER §31 2). Convex in d; L-BFGS from d = 0; d is fixed to
+    mean zero (a common shift changes nothing)."""
+    from scipy.optimize import minimize
+    from scipy.special import logsumexp
+    n, k = z.shape
+    counts = np.bincount(y, minlength=k).astype(np.float64)
+
+    def f(d):
+        zz = z + d.astype(np.float32)
+        lse = logsumexp(zz, axis=1)
+        loss = float((lse - zz[np.arange(n), y]).mean())
+        p = np.exp(zz - lse[:, None]).sum(0, dtype=np.float64)
+        return loss, (p - counts) / n
+
+    res = minimize(f, np.zeros(k), jac=True, method="L-BFGS-B", options={"maxiter": max_iter, "gtol": 1e-7})
+    d = res.x - res.x.mean()
+    return d, {"train_cross_entropy_before": f(np.zeros(k))[0], "train_cross_entropy_after": float(res.fun),
+               "n_iter": int(res.nit), "converged": bool(res.success), "n_train": int(n),
+               "offset_min": float(d.min()), "offset_max": float(d.max())}
+
+
 def majority(labels: np.ndarray) -> dict:
     c = np.bincount(labels)
     return {"class": int(c.argmax()), "accuracy": float(c.max() / labels.size), "n_classes_present": int((c > 0).sum())}
@@ -72,6 +99,9 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", action="append", required=True, metavar="NAME=FEATURE_DIR[=CHECKPOINT]")
     ap.add_argument("--out", required=True, type=pathlib.Path)
+    ap.add_argument("--refit-bias", action="store_true",
+                    help="also refit the output layer's class biases on the balanced training jets (the feature folder's "
+                         "sibling ../../train_N1000000/<tag>), everything else frozen, and score the test jets again")
     a = ap.parse_args(argv)
     if a.out.exists():
         raise SystemExit(f"FATAL: {a.out} exists")
@@ -102,6 +132,18 @@ def main(argv=None) -> int:
         layers[-1] = (layers[-1][0][:man["num_classes"]], layers[-1][1][:man["num_classes"]], False)
         feats = np.load(fdir / "features.npy", mmap_mode="r")
         r = head_accuracy(feats, labels, layers)
+        if a.refit_bias:
+            tdir = fdir.parent.parent / "train_N1000000" / fdir.name
+            tman = json.loads((tdir / "manifest.json").read_text())
+            if tman["checkpoint_sha256"] != sha:
+                raise SystemExit(f"FATAL: {tdir} is not from the same checkpoint")
+            ytr = np.load(tdir / "label188.npy").astype(np.int64)
+            d, rec = refit_bias(all_logits(np.load(tdir / "features.npy", mmap_mode="r"), layers), ytr)
+            fitted = layers[:-1] + [(layers[-1][0], layers[-1][1] + d.astype(np.float32), False)]
+            rb = head_accuracy(feats, labels, fitted)
+            tc = np.bincount(ytr, minlength=layers[-1][0].shape[0])
+            r["bias_refit"] = {**rec, "accuracy": rb["accuracy"], "near_ties": rb["near_ties"], "train_features": str(tdir),
+                               "train_class_count_min": int(tc.min()), "train_class_count_max": int(tc.max())}
         doc["models"][name] = {**r, "features": str(fdir), "checkpoint": str(path), "checkpoint_sha256": sha}
         print(name, json.dumps(r), flush=True)
     a.out.parent.mkdir(parents=True, exist_ok=True)

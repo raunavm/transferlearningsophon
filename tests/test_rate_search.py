@@ -326,23 +326,24 @@ def test_a_rate_that_diverged_in_its_rerun_stays_failed_after_the_row_moves_on()
 
 
 def test_the_cs15_checks_change_one_thing_each_and_touch_no_paper_cell():
-    """PI 2026-11-24/25 (LEDGER CS-15, GO-8 option (b), §28 1.4): three checks on one 188-class run, each the paper's
-    JetClass-II 1e6 cell with one change, in their own tree; their tasks exist only in their own specs."""
+    """PI 2026-11-25 (LEDGER §31, amending CS-15 and GO-8): two checks on one 188-class run, each the paper's JetClass-II
+    1e6 cell with one change (the pretrained head kept; the new head at the backbone's rate), in their own tree; the
+    reweighting and class-balance checks are dropped. A kept head changes the cell script of its own job only."""
     b = B
     ref = next(c for c in b.paper_fixed_cells() if (c["task"], c["n"], c["init"]) == ("jc2b", 1_000_000, "l188-s1"))
-    tasks = dict(b.TASKS)
-    rw, head, nat = b.cs15_cells()
-    assert b.TASKS == tasks and not set(b.CS15_TASKS) & set(tasks)
+    kept, head = b.cs15_cells()
     same = lambda c, skip: {k: v for k, v in c.items() if k not in skip} == {k: v for k, v in ref.items() if k not in skip}  # noqa: E731
-    assert same(rw, {"task", "out"}) and same(head, {"mult", "out"}) and same(nat, {"task", "out", "valf"})
-    assert rw["task"] == "jc2bw" and b.CS15_TASKS["jc2bw"][1] == "configs/arms/L188.yaml"
-    assert head["task"] == "jc2b" and head["mult"] == "1.0" and ref["mult"] == "50.0"
-    assert nat["task"] == "jc2nat" and b.CS15_TASKS["jc2nat"][0] == "/data/finetune/jc2_v2" and nat["valf"].endswith("jc2_bal/val_fixed.parquet")
-    assert b.CS15_TASKS["jc2bw"][0] == b.CS15_TASKS["jc2nat"][6].rsplit("/", 1)[0] == tasks["jc2b"][0]
-    outs = [c["out"] for c in (rw, head, nat)]
-    assert len(set(outs)) == 3 and all(o.startswith(b.CS15_ROOT + "/leg_jc2b/l188-s1_") for o in outs)
-    assert not {o for o in outs} & {c["out"] for c in b.paper_fixed_cells()}
+    assert same(kept, {"keephead", "out"}) and kept["keephead"] == 1 and kept["mult"] == ref["mult"] == "50.0"
+    assert same(head, {"mult", "out"}) and head["mult"] == "1.0" and "keephead" not in head
+    outs = [kept["out"], head["out"]]
+    assert outs == [f"{b.CS15_ROOT}/leg_jc2b/l188-s1_{k}/N1000000/s1" for k in ("headkept", "head1x")]
+    assert not set(outs) & {c["out"] for c in b.paper_fixed_cells()}
     (smoke,) = b.cs15_cells(smoke=True)
-    assert smoke["out"].startswith(b.CS15_SMOKE_ROOT) and smoke["epochs"] == b.CS15_SMOKE_CHECKS == 4 and same(smoke, {"task", "out", "epochs"})
-    assert (ROOT / "configs/arms/L188.yaml").read_text().count("\nweights:") == 1
-    assert "\nweights:" not in (ROOT / "configs/finetune/JetClassII_L188_noweight.yaml").read_text()
+    assert smoke["out"].startswith(b.CS15_SMOKE_ROOT) and smoke["epochs"] == b.CS15_SMOKE_CHECKS == 4 and same(smoke, {"keephead", "out", "epochs"})
+    text = b.spec("ft-budget-fixed-cs15-raunav", [kept, head], "mtx-s9.99", 2, "48Gi")
+    assert text.count("KEEPHEAD=1; CELL=") == 1 and text.count('if [ "${KEEPHEAD:-0}" = 1 ]; then LOAD=(--load-model-weights /workspace/ckpt/${INIT}.pt); else') == 1
+    assert text.count("head=pretrained-kept") == 1 and text.count("FATAL: head kept, but missing") == 1
+    plain = b.spec("ft-budget-x-raunav", [head], "mtx-s9.99", 1, "48Gi")
+    assert "KEEPHEAD" not in plain and "smoke_checks.py load-log --log" in plain
+    import yaml
+    assert yaml.safe_load(text)["spec"]["completions"] == 2

@@ -652,43 +652,38 @@ def fixed_head_jc2b_cells() -> list:
     return [{**c, "mult": "1.0", "out": c["out"].replace("_lr1e-3/", "_lr1e-3_head1x/")}]
 
 
-# PI 2026-11-24/25 (LEDGER CS-15, §27 GO-8 option (b), §28 1.4): fine-tuned JetClass-II at 1e6 ends 3.8 sigma below the linear
-# probe for 188 classes, so three checks on ONE 188-class run (seed 1), each the paper's cell (the one rule, the row's
-# recorded rate 1e-4, the balanced test set) with one thing changed, into their own tree (never read by the paper):
-#   reweight  the pretraining's jet weights back on: the data config with its weights block (configs/arms/L188.yaml,
-#             of which JetClassII_L188_noweight.yaml is the copy without that block)
+# PI 2026-11-25 (LEDGER §31, amending CS-15 and GO-8): fine-tuned JetClass-II at 1e6 ends 3.8 sigma below the linear probe
+# for 188 classes. The two protocols use the same class-balanced jets and no weights, so the reweighting and
+# class-balance checks are dropped; they differ in the head and the schedule, so TWO checks on ONE 188-class run
+# (seed 1), each the paper's cell (the one rule, the row's recorded rate 1e-4) with one thing changed, into their own
+# tree (never read by the paper):
+#   headkept  the pretrained output layer left in place, not replaced by a new random one (KEEPHEAD)
 #   head1x    the new output layer at the backbone's rate (multiplier 1: 1e-4 in place of 5e-3)
-#   natural   trained on the natural class mix (jc2_v2/train_N1000000_s1.parquet) in place of the class-balanced set,
-#             validated on the same balanced validation jets
-# Their tasks exist only in these jobs' specs (main adds CS15_TASKS for the cs15 kinds), so no other spec changes.
 CS15_ROOT = "/data/results/ft_v2/cs15"
 CS15_SMOKE_ROOT = "/data/results/ft_v2/cs15_smoke"
-CS15_TASKS = {"jc2bw": ("/data/finetune/jc2_bal", "configs/arms/L188.yaml", 188, "experiments/MTX/ParT_sophon_arch_mtx.py",
-                        "leg_jc2b", (1_000_000,), "/data/finetune/jc2_bal/test.parquet", "64Gi"),
-              "jc2nat": ("/data/finetune/jc2_v2", "configs/finetune/JetClassII_L188_noweight.yaml", 188,
-                         "experiments/MTX/ParT_sophon_arch_mtx.py", "leg_jc2b", (1_000_000,),
-                         "/data/finetune/jc2_bal/test.parquet", "64Gi")}
-CS15_TEST_CFG = {"jc2bw": "configs/data/JetClassII_base.yaml", "jc2nat": "configs/data/JetClassII_base.yaml"}
-CS15_SMOKE_CHECKS = 4       # the smoke: the reweight cell for four checks (2,000 steps), then its scoring
+CS15_SMOKE_CHECKS = 4       # the smoke: the head-kept cell for four checks (2,000 steps), then its scoring
+# the cell script's two lines a kept head changes (spec applies KEEPHEAD_LINES only to a job with such a cell, so no
+# other job's spec text moves): the checkpoint loaded whole, and the load log required to miss nothing
+KEEPHEAD_LINES = (
+    ("""  LOAD=(--load-model-weights /workspace/ckpt/${INIT}.pt --exclude-model-weights "mod\\.fc\\..*")\n""",
+     """  if [ "${KEEPHEAD:-0}" = 1 ]; then LOAD=(--load-model-weights /workspace/ckpt/${INIT}.pt); else LOAD=(--load-model-weights /workspace/ckpt/${INIT}.pt --exclude-model-weights "mod\\.fc\\..*"); fi\n"""),
+    ("""  SCHED=(--lr-scheduler none); RECIPE="head_lr_mult=${MULT} lr_schedule=constant ckpt_rule=best70"\n""",
+     """  SCHED=(--lr-scheduler none); RECIPE="head_lr_mult=${MULT} lr_schedule=constant ckpt_rule=best70"\n"""
+     """  [ "${KEEPHEAD:-0}" = 1 ] && RECIPE="${RECIPE} head=pretrained-kept"\n"""),
+    ("""  python3 experiments/FT/smoke_checks.py load-log --log ${RUN}/stdout.log\n""",
+     """  if [ "${KEEPHEAD:-0}" = 1 ]; then python3 -c "import sys; sys.path.insert(0, 'experiments/FT'); import smoke_checks as s; m, u = s.parse_load_log(open(sys.argv[1], errors='replace').read()); sys.exit(0 if not m and not u else 'FATAL: head kept, but missing %s, unexpected %s' % (m, u))" ${RUN}/stdout.log; else python3 experiments/FT/smoke_checks.py load-log --log ${RUN}/stdout.log; fi\n"""))
 
 
 def cs15_cells(smoke: bool = False) -> list:
-    """The three checks' cells, in the order reweight, head1x, natural; smoke: the reweight cell alone, CS15_SMOKE_CHECKS
-    checks long, in CS15_SMOKE_ROOT."""
+    """The two checks' cells, in the order headkept, head1x; smoke: the head-kept cell alone, CS15_SMOKE_CHECKS checks
+    long, in CS15_SMOKE_ROOT."""
     init, n, lr = "l188-s1", 1_000_000, FIXED_ROW_RATE[("jc2b", 1_000_000)]
-    TASKS.update(CS15_TASKS)
-    try:
-        cells = {"reweight": fixed_cell("jc2bw", init, n, 1, lr, CS15_ROOT), "head1x": fixed_cell("jc2b", init, n, 1, lr, CS15_ROOT),
-                 "natural": fixed_cell("jc2nat", init, n, 1, lr, CS15_ROOT)}
-    finally:
-        for t in CS15_TASKS:
-            del TASKS[t]
-    cells["head1x"]["mult"] = "1.0"
-    cells["natural"]["valf"] = "/data/finetune/jc2_bal/val_fixed.parquet"
+    cells = {"headkept": {**fixed_cell("jc2b", init, n, 1, lr, CS15_ROOT), "keephead": 1},
+             "head1x": {**fixed_cell("jc2b", init, n, 1, lr, CS15_ROOT), "mult": "1.0"}}
     for k, c in cells.items():
         c["out"] = c["out"].replace(f"/{init}/", f"/{init}_{k}/")
     if smoke:
-        c = cells["reweight"]
+        c = cells["headkept"]
         return [{**c, "epochs": CS15_SMOKE_CHECKS, "out": c["out"].replace(CS15_ROOT, CS15_SMOKE_ROOT)}]
     return list(cells.values())
 
@@ -1036,7 +1031,7 @@ def cell_cases(cells: list) -> str:
     return "".join(f"  {i}) TASK={c['task']}; INIT={c['init']}; RUN_DIR={c['run_dir']}; N={c['n']}; S={c['s']}; "
                    f"LR={c['lr']}; MULT={c['mult']}; EP={c['epochs']}; SPE={c['spe']}; PAT={c['patience']}; "
                    f"VAL={c['val']}; PATFROM={c.get('patience_from', 0)}; VALF={c.get('valf', '')}; VALMEM={c.get('valmem', 0)}; "
-                   f"CELL={c['out']};;\n" for i, c in enumerate(cells))
+                   f"{'KEEPHEAD=1; ' if c.get('keephead') else ''}CELL={c['out']};;\n" for i, c in enumerate(cells))
 
 
 GPU_POOLS = ("gpu", "a100")     # nvidia.com/<pool>: NRP's A100s are their own resource (cms-ml quota 26, shared)
@@ -1049,6 +1044,11 @@ def spec(name: str, cells: list, tag: str, parallelism: int, memory: str, cpu: i
     launch = _launch()
     script = (CELL_SCRIPT.replace("__LINE__", str(storage_line.check(line))).replace("__CASES__", cell_cases(cells)).replace("__TASKS__", task_cases())
               .replace("__BATCH__", str(BATCH)).replace("__HERWIG__", " ".join(HERWIG_TEST)))
+    if any(c.get("keephead") for c in cells):
+        for old, new in KEEPHEAD_LINES:
+            if script.count(old) != 1:
+                raise SystemExit(f"FATAL: the cell script no longer holds the line a kept head changes: {old!r}")
+            script = script.replace(old, new)
     # a node's DNS can fail for minutes (cph-dgx-node4/5/8, 2026-11-03): six cells used up their three
     # attempts at the clone, in seconds, before reaching the training script
     script = ("set -euo pipefail\n"
@@ -1244,14 +1244,7 @@ def main(argv=None) -> int:
         if a.name_suffix:
             name = name.replace("-raunav", f"-{a.name_suffix}-raunav")
         p = OUT_DIR / f"job-{name}.yaml"
-        extra = CS15_TASKS if kind.startswith("fixed-cs15") else {}
-        TASKS.update(extra)
-        TEST_CFG.update(CS15_TEST_CFG if extra else {})
-        try:
-            p.write_text(spec(name, cells, a.tag, a.parallelism, mem, a.cpu, a.storage_line, a.gpu_pool, a.gpu_product))
-        finally:
-            for t in extra:
-                del TASKS[t], TEST_CFG[t]
+        p.write_text(spec(name, cells, a.tag, a.parallelism, mem, a.cpu, a.storage_line, a.gpu_pool, a.gpu_product))
         print(p, len(cells), "cells")
     return 0
 
