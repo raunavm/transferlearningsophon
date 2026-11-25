@@ -468,6 +468,10 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
     R, tested = got["R"], got["tested"]
     r = Rows(R, tested)
     lp, ft = dict(lp_cols), dict(ft_cols)
+    got["old"] = dict(re.findall(r"^\\newcommand\{\\([A-Za-z]+)\}\{(.*?)\}\s*(?:%.*)?$", got["built"]["results_generated.tex"], re.M))
+    _fits, _fill, _chosen, _per = got["summary"][:4]
+    _g = R.summary_ft(_per, "qg", {k: n for k, n, *_ in R.SUMMARY_PANELS}["qg"], "auc")
+    got["ft_auc_qg"] = lambda arm: [_g(m) for m in runs[arm]]
     data = REPO / "experiments/FIGS/data/v2"
 
     def vals(cols, col, arm):
@@ -529,6 +533,18 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
                 "VZQgAuc": zz(r.full(AUC_PASS[0], AUC_PASS[1], AUC_PASS[2]), AUC_PASS[3], AUC_PASS[4]),
                 "VZMassRes": zz(r.mass, "L162_MASS", "L162"), "VZMassCoarse": zz(r.mass, "R16_Q1_MASS", "R16_Q1"),
                 "VZXbsCoarse": zz(r.xbx["xbs"], "R16_Q1", "L188"), "VZXbbCoarse": zz(r.xbx["xbb"], "R16_Q1", "L188")})
+    # cold readers (draft e6e3b22): the step from 43 to 17 classes; the full uncertainty (run spreads and test-sample
+    # term) of a difference between two label sets in fine-tuned Rej30%; 188 classes against from scratch in Rej30%
+    out["VDLpJcTwoStep"] = pts(r.acc, "R16_Q1", "R42_Q1")
+    for w, task, nd in (("Top", "top tagging", 0), ("Qg", "quark/gluon tagging (Pythia)", 1)):
+        h = r.full(task, "$R_{30}$", "ft")
+        sig = [r.get(h, a, b)[4] for b, a in __import__("itertools").combinations(NESTED, 2)]
+        out[f"VFt{w}RejSigLo"], out[f"VFt{w}RejSigHi"] = f"{min(sig):.{nd}f}", f"{max(sig):.{nd}f}"
+        out[f"VZFt{w}RejScratch"] = zz(h, "L188", "SCRATCH")
+    auc5 = lambda arm: f"{float(np.mean([float(x) for x in got['ft_auc_qg'](arm)])):.5f}"      # noqa: E731
+    out["VFtQgAucCoarse"], out["VFtQgAucRes"] = auc5("R16_Q1"), auc5("L162")
+    n_par = int(str(got["old"]["MlstNParamsJc"]).replace("{,}", ""))
+    out["VParamsMillion"] = f"{n_par / 1e6:.1f}"
     out["VDQgAuc"] = f"{abs(r.get(r.full(AUC_PASS[0], AUC_PASS[1], AUC_PASS[2]), AUC_PASS[3], AUC_PASS[4])[0]):.4f}"
     n_pairs = len(list(__import__("itertools").combinations(NESTED, 2)))
     out["VNBinaryCmp"] = str(n_pairs * len(BINARY) * len(METRICS) * 2)
@@ -726,7 +742,63 @@ def appendix_tables(got: dict, maps: dict) -> dict:
     herwig = two(r"Quark--gluon discrimination scored on Herwig jets, for models trained on Pythia jets; mean $\pm$ "
                  r"standard deviation over runs.", "tab:herwig",
                  tab(hw(probe), pre + refs[:2], hw_head), tab(hw(ft), pre + scr, hw_head))
-    return {"table_auc.tex": auc, "table_flavor.tex": flavor, "table_herwig.tex": herwig}
+    # cold readers (draft e6e3b22): every number the text quotes is in a table. The linear probes' AUC over the
+    # resonant and the QCD classes and of the class pairs; fine-tuned JetClass-II below the largest training set; the
+    # resonance benchmark; the pretrained output layer
+    four = [(n, a, k) for n, a, k in pre if a in NESTED]
+    pair = lambda key: (lambda a: [R._pair(fits, m, key) for m in runs[a]])                           # noqa: E731
+    split = one_tab(r"Linear probes on JetClass-II in more detail: AUC averaged over the resonant and over the QCD "
+                    r"classes, and AUC of binary probes on three pairs of classes; mean $\pm$ standard deviation over runs.",
+                    "tab:pairs", tab([("AUC resonant", probe("jc2_188", "macro_auc_resonant")),
+                                      ("AUC QCD", probe("jc2_188", "macro_auc_qcd")), ("bb vs cc", pair("bb_vs_cc")),
+                                      ("bbqq vs ccqq", pair("bbqq_vs_ccqq")), ("bc vs bq, cs", pair("bc_vs_bq_cs"))], four,
+                                     [r" & \multicolumn{2}{c}{All classes, AUC} & \multicolumn{3}{c}{Pairs of classes, AUC} \\",
+                                      r"\cmidrule(lr){2-3}\cmidrule(lr){4-6}",
+                                      r" & Resonant & QCD & $b\bar b$ / $c\bar c$ & $b\bar bqq$ / $c\bar cqq$ & $bc$ / $bq$, $cs$ \\"]))
+    small = sorted(n for n in R._sizes(per, "jc2") if n < sizes["jc2"] and all(
+        R._ft(per, "jc2", m, n, "accuracy") is not None for a in NESTED for m in runs[a]))
+    ftn = lambda n: (lambda a: (R.summary_scratch(per, "jc2", n, "accuracy") if a == S                # noqa: E731
+                                else [R._ft(per, "jc2", m, n, "accuracy") for m in runs[a]]))
+    size = one_tab(r"Fine-tuned accuracy on JetClass-II against the number of training jets; mean $\pm$ standard "
+                   r"deviation over runs.", "tab:size",
+                   tab([(str(n), ftn(n)) for n in small + [sizes["jc2"]]], four + scr,
+                       [" & " + " & ".join(R._power(f"{n:e}") for n in small + [sizes["jc2"]]) + r" \\"]))
+    xbx = got["summary_kw"].get("xbx") or {}
+    XR, xfits, xscr = xbx.get("XR"), xbx.get("fits") or {}, xbx.get("scr") or {}
+    eff = lambda sig: (lambda a: ([100 * x["eps_s_at_star"] for x in xscr.get(sig, [])] if a == S else   # noqa: E731
+                                  [100 * rec["eps_s_at_star"] for m in runs[a]
+                                   if (rec := XR.readout(xfits.get(m, {}).get(sig, {}), "head"))]))
+    res = one_tab(r"The resonance benchmark: signal efficiency in percent at the background efficiency of the text, by "
+                  r"transfer learning on the frozen features and for the same network trained from scratch; mean "
+                  r"$\pm$ standard deviation over runs.", "tab:resonance",
+                  tab([("X->bb", eff("xbb")), ("X->bs", eff("xbs"))], four + scr, [r" & $X\to b\bar b$ & $X\to bs$ \\"]))
+    return {"table_auc.tex": auc, "table_flavor.tex": flavor, "table_herwig.tex": herwig, "table_pairs.tex": split,
+            "table_size.tex": size, "table_resonance.tex": res}
+
+
+def one_tab(caption: str, label: str, tabular: list) -> str:
+    return "\n".join([r"\begin{table}[htbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
+                      r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{4pt}", *tabular, r"\end{table}", ""])
+
+
+def table_head(got: dict, runs: dict) -> str:
+    """The pretrained output layer on the probes' test jets, as it is and with only its class biases refitted
+    (experiments/EVAL/head_accuracy.py), beside the linear probe: each run of the 188-class model and Sophon (released)."""
+    R = got["R"]
+    f = sorted((REPO / "experiments/FIGS/data/v2/head_acc").glob("head_acc_bias_*.json"))
+    doc = json.loads(f[0].read_text())["models"]
+    g = R.summary_probe(*got["summary"][:3], "jc2_188", "accuracy")
+    rows = [(f"188 classes, run {k}", m) for k, m in enumerate(runs["L188"], 1)] + [("Sophon (released)", R.SOPHON_MODEL)]
+    if any(m not in doc for _, m in rows):
+        raise SystemExit(f"FATAL: the output-layer file lacks {[m for _, m in rows if m not in doc]}")
+    body = [f"{n} & {doc[m]['accuracy']:.4f} & {doc[m]['bias_refit']['accuracy']:.4f} & {float(g(m)):.4f}" + r" \\"
+            for n, m in rows]
+    return one_tab("Accuracy on the class-balanced JetClass-II test jets of the pretrained output layer, of the same "
+                   "layer with only its class biases refitted on the balanced training jets, and of the linear probe.",
+                   "tab:head", [r"\begin{tabular}{@{}lccc@{}}", r"\toprule",
+                                r" & Output layer & Biases refitted & Linear probe \\", r"\midrule", *body,
+                                r"\bottomrule", r"\end{tabular}"])
+
 
 
 def main() -> int:
@@ -750,7 +822,7 @@ def main() -> int:
            "numbers.tex": numbers(got, lp_cols, ft_cols, maps, runs),
            "pending.txt": "".join(f"Table 3 | {r} | {c}\n" for r, c in pending),
            "results_generated.tex": built["results_generated.tex"],
-           "table_classmap.tex": table_classmap(maps), **appendix_tables(got, maps),
+           "table_classmap.tex": table_classmap(maps), **appendix_tables(got, maps), "table_head.tex": table_head(got, runs),
            "table4.tex": reuse(built, "tables/mlst_mass.tex", TABLE4_CAPTION, "tab:mass"),
            "table_inputs.tex": reuse(built, "tables/mlst_inputs.tex", INPUTS_CAPTION, "tab:inputs"),
            "table_published.tex": reuse(built, "tables/mlst_published.tex", PUBLISHED_CAPTION, "tab:published",
@@ -763,13 +835,15 @@ def main() -> int:
 
 
 TABLE4_CAPTION = (r"Jet-mass resolution and median response of the estimated mass over the generator-level mass, on "
-                  r"JetClass-II test jets; mean $\pm$ standard deviation over runs.")
+                  r"JetClass-II test jets with a generator-level match; mean $\pm$ standard deviation over runs and, for "
+                  r"the soft-drop mass, over bootstrap resamples of the test jets.")
 INPUTS_CAPTION = (r"The per-particle inputs, with a bullet where the top-tagging or quark--gluon data provide an input "
                   r"and a dash where they lack it. The last column gives, for an absent input, the value zero takes "
                   r"after the network's input normalization.")
-PUBLISHED_CAPTION = (r"Published models beside ours on JetClass, top tagging and quark--gluon discrimination: "
-                     r"parameters, training jets, accuracy, AUC and background rejection as each paper reports them; "
-                     r"ours are the mean $\pm$ standard deviation over runs.")
+PUBLISHED_CAPTION = (r"Published models beside ours on JetClass, top tagging and quark--gluon discrimination, as each "
+                     r"paper reports them; ours are the mean $\pm$ standard deviation over runs, rounded as in the "
+                     r"build's own tables. On JetClass the published AUC averages over pairs of classes and ours over "
+                     r"classes against the rest. The quark--gluon rows use the reduced particle-type inputs.")
 MLP_CAPTION = (r"MLP probes on the frozen features, on JetClass-II, the benchmarks and pairs of JetClass-II classes; "
                r"mean $\pm$ standard deviation over runs.")
 

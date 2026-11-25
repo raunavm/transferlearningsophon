@@ -9,12 +9,14 @@ JetClass-II classes and the \Kcoarse{} classes unions of the \Kmid.
 Three further groupings into \Kcoarse{} classes were pretrained with \RandFlavRuns{} runs each, to ask whether
 one boundary between flavors accounts for the difference between the \Kcoarse-class set and the random
 groupings.
-The first groups whole families of decays that differ only in flavor, so it has no flavor boundary; the second
+The first assigns whole families of decays that differ only in flavor to groups at random, so that, unlike the
+\Kcoarse-class set, its groups mix decays of different structure, and no boundary between two groups separates
+two flavors of one family; the second
 moves the four-quark decays that contain a bottom quark into another group; and the third moves as many
 four-quark decays chosen at random.
 On the pretraining classes a linear probe ranks them between the \Kcoarse-class model and the random groupings:
-the grouping without a flavor boundary lies above the \Kcoarse-class model, the two with a boundary above it,
-and the random groupings above all three, each step being significant (table~\ref{tab:flavor}).
+the grouping without a flavor boundary lies above the \Kcoarse-class model, the two with a boundary lie above
+that grouping, and the random groupings lie above all three, each step being significant (table~\ref{tab:flavor}).
 The groupings with a boundary differ from the one without in more than that boundary, because other decays had
 to move to keep the class sizes, so this result cannot isolate the boundary and we draw no conclusion from it in
 the main text.
@@ -27,12 +29,25 @@ Pretraining follows Sophon's settings: \DesignEpochs{} epochs of \DesignSamplesP
 the epochs and then decays to \DesignLrEndPercent{} of its value, and the particle momenta of every jet rescaled
 to a common jet $p_{\mathrm T}$.
 The fine-tuned network has \MlstNParamsJc{} parameters on JetClass.
+On JetClass-II the linear probes are trained on \VProbeNTrain{} jets, at most \VProbePerClassMax{} per class, and
+tested on \JcBalNTest, at most \JcBalTestPerClass{} per class, with the \JcBalNShort{} rarest classes contributing
+all the jets they have; on JetClass they are trained on \LpNTrainMaxJci{} jets and on the two binary benchmarks
+on the full training sets.
 Fine-tuning on JetClass-II and JetClass uses a learning rate of \MlstFtLr{} for the pretrained weights and one
 \MlstFtHeadMult{} times larger for the new output layer, a weight decay of \MlstFtWeightDecay{} and batches of
 \MlstFtBatch{} jets, for \FtStepsESix{} steps at \FtSizeESix{} jets, and keeps the weights of the best
 validation check; the learning rates of the other training sizes and of the network trained from scratch
 were chosen on validation from a grid, and the full scan is in the data release.
 All pretraining runs together took \MlstComputeTotalGpuHours{} GPU hours.
+
+For the resonance benchmark the transfer network has a hidden layer of \DesignHeadHidden{} units and two outputs.
+Its hidden layer starts from that of the pretrained output layer and all of its weights are then trained, on
+\XbbNTrainPerClass{} jets per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$, with
+\MlstXbxHeadSeedsWord{} seeds per pretraining run, which are averaged.
+The QCD jets come from files that no pretraining run read, and signal and background are counted in the same
+window of soft-drop mass.
+The significance of a difference on this benchmark uses a binomial estimate of the test-sample term, because
+the per-jet scores were not kept.
 
 \section{Inputs and missing inputs}\label{app:inputs}
 Table~\ref{tab:inputs} lists the inputs and which of them the two binary benchmarks provide.
@@ -42,8 +57,16 @@ Table~\ref{tab:inputs} lists the inputs and which of them the two binary benchma
 Tables~\ref{tab:auc} and~\ref{tab:herwig} give the AUC of every model of tables~\ref{tab:probes}
 and~\ref{tab:finetuned} and the quark--gluon results on jets from the Herwig generator~\cite{qgherwig}.
 
+Tables~\ref{tab:head} to~\ref{tab:resonance} hold the numbers that the main text quotes from no other table:
+the pretrained output layer, the linear probes' AUC by class group and for pairs of classes, the fine-tuned
+accuracy at smaller training sets, and the resonance benchmark.
+
 \input{tables/table_auc}
 \input{tables/table_herwig}
+\input{tables/table_head}
+\input{tables/table_pairs}
+\input{tables/table_size}
+\input{tables/table_resonance}
 
 \subsection{MLP probes}
 An MLP probe with one hidden layer of \LpMlpHidden{} units, trained on the same frozen features as the linear
@@ -62,8 +85,8 @@ The mass-regression nulls of the main text hold under the MLP probe.
 \section{Comparison with published taggers}\label{app:published}
 Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
 public tasks.
-Our numbers are not tuned for these benchmarks, and the comparison only shows that the networks whose label sets
-we compare are in the range of current taggers.
+On quark--gluon discrimination ours are close to the published Particle Transformer; on top tagging both our
+network trained from scratch and our fine-tuned one are below it.
 
 \input{tables/table_published}
 

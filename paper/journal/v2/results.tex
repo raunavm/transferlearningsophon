@@ -16,18 +16,19 @@ The accuracy then falls to \VLpJcTwoMid\% for the \Kmid-class model and to \VLpJ
 These values should be read against a chance level of \VChance\% on the class-balanced test jets: the same probe
 reaches \VLpJcTwoUntrained\% on an untrained network, and the model released with Sophon gives
 \VLpJcTwoSophon\%, in agreement with our retraining of it.
-The pretrained output layer of the \Kfull-class model is less accurate on these jets than the probe, at
+A last reference is the pretrained output layer of the \Kfull-class model, which already predicts these classes:
+it is less accurate on these jets than the probe, at
 \VHeadAcc\%, because it was trained on the natural mix of classes and not on a balanced one.
 Refitting only its \Kfull{} class biases on the balanced training jets raises it to \VHeadRefit\%, which closes
-\VHeadClosed\% of its distance to the probe.
+\VHeadClosed\% of its distance to the probe (table~\ref{tab:head}).
 
 The loss is concentrated where a label set merges classes.
-For the \Kres-class model this is visible in the AUC, which is unchanged when averaged over the resonant classes
-and lower when averaged over the QCD classes, the only ones its labels merge.
+For the \Kres-class model the AUC averaged over the resonant classes is unchanged and that over the QCD classes,
+the only ones its labels merge, is lower (table~\ref{tab:pairs}).
 At \Kmid{} classes the accuracy is \VDLpJcTwoMid{} percentage points below that of the \Kfull-class model; the
 step to this set merges the most classes, since it removes several kinds of flavor distinction at once.
-The last step, to \Kcoarse{} classes, removes only the distinction between bottom, charm and lighter quarks and
-brings the total loss to \VDLpJcTwoCoarse{} points (\VZLpJcTwoCoarse$\sigma$).
+The last step, to \Kcoarse{} classes, removes one further distinction, between bottom, charm and lighter quarks,
+and costs another \VDLpJcTwoStep{} points, which brings the total loss to \VDLpJcTwoCoarse{} points (\VZLpJcTwoCoarse$\sigma$).
 
 The number of classes does not by itself determine this loss.
 The random groupings have exactly as many classes as the \Kcoarse-class set, with classes of the same sizes, yet
@@ -47,10 +48,8 @@ probes on the frozen features: (a) $X\to b\bar b$ against $X\to c\bar c$ and (b)
 $X\to cs$. Curves are means over runs; the random groupings are shown separately for those that merge the pair and
 those that keep it apart. Lower panels give the ratio to the \Kfull-class model, whose band is one standard
 deviation.}{fig:pairs}
-Binary probes show that a merged distinction is the one that suffers (figure~\ref{fig:pairs}).
-Of the \VRandWord{} random groupings, \MlstPairRandMergedBbWord{} merge the first pair of the figure and
-\MlstPairRandApartBbWord{} keep it apart; for the second pair these are \MlstPairRandMergedBcWord{} and
-\MlstPairRandApartBcWord, the remaining grouping merging part of it.
+Binary probes show that a merged distinction is the one that suffers (figure~\ref{fig:pairs} and
+table~\ref{tab:pairs}).
 The decays $X\to b\bar b$ and $X\to c\bar c$ differ only in the flavor of their two quarks, and they share a
 class only in the \Kcoarse-class set.
 A linear probe separates them with an AUC of \VAucBbFull{} on the features of the \Kfull-class model and of
@@ -59,6 +58,10 @@ $X\to b\bar bqq$ and $X\to c\bar cqq$ repeat, with \VAucBbqqFull{} against \VAuc
 The same holds one level up: $X\to bc$ shares a class with $X\to bq$ from \Kmid{} classes on, and its separation
 from $X\to bq$ and $X\to cs$ falls from an AUC of \VAucBcFull{} to \VAucBcMid{} there and to \VAucBcCoarse{}
 at \Kcoarse{} classes.
+The figure also shows the random groupings, separately for those that merge a pair and those that keep it
+apart: of the \VRandWord, \MlstPairRandMergedBbWord{} merge the first pair and \MlstPairRandApartBbWord{} keep
+it apart, and for the second pair these are \MlstPairRandMergedBcWord{} and \MlstPairRandApartBcWord, the
+remaining grouping merging part of it.
 
 A distinction that the labels keep is not fully protected, however.
 At \Kmid{} classes $X\to b\bar b$ and $X\to c\bar c$ are still in different classes, yet their AUC,
@@ -66,7 +69,7 @@ At \Kmid{} classes $X\to b\bar b$ and $X\to c\bar c$ are still in different clas
 merge.
 The \Kmid-class set no longer counts the bottom and charm quarks in a decay, which may be why a pair of bottom
 quarks is told from a pair of charm quarks less well.
-For an analysis the consequence is direct, because a discriminant formed from two classes can only be as good
+For an analysis the loss of a pair's separation has a direct consequence, because a discriminant formed from two classes can only be as good
 as their separation in the features or, when it is summed from output scores as in
 equation~(\ref{eq:sum}), requires the two classes to exist in the label set.
 
@@ -93,30 +96,35 @@ The \Kmid-class model is again significantly lower, by \VDFtJcOneMid{} points, a
 JetClass contains classes, such as the decays of a Higgs boson to bottom and to charm quarks, that differ in a
 flavor the coarser label sets merge.
 
-With fewer labeled jets the label set matters more (figure~\ref{fig:size}).
+With fewer labeled jets the label set matters more (figure~\ref{fig:size} and table~\ref{tab:size}).
 On the pretraining classes the \Kcoarse-class model is \VDFtJcTwoCoarseSmallest{} points behind the \Kfull-class
 model when fine-tuned on \FtSizeEFour{} jets and \VDFtJcTwoCoarseSmaller{} points behind on \FtSizeEFive, both
 significant, before the difference reaches \VDFtJcTwoCoarse{} points at \FtSizeESix.
 
-The two binary benchmarks show no such dependence.
-On top tagging and on quark--gluon discrimination, at the full training sets, no difference among the four label
+On the two binary benchmarks we find no dependence on the label set at the full training sets.
+No difference among the four label
 sets is significant in accuracy or in background rejection, and this holds for the fine-tuned models, for the
-linear probes and for quark--gluon jets from a second generator (table~\ref{tab:herwig}).
-These nulls are bounded by the spread between pretraining runs, which for the fine-tuned
-$\mathrm{Rej}_{30\%}$ of the four label sets lies between \VFtTopRejSdLo{} and \VFtTopRejSdHi{} around
-\VFtTopRejFull{} on top tagging, and between \VFtQgRejSdLo{} and \VFtQgRejSdHi{} around \VFtQgRejFull{} on
+linear probes and for quark--gluon jets simulated with Herwig, a second event generator
+(table~\ref{tab:herwig}).
+How small a difference this excludes is set by $\sigma$ of section~\ref{sec:methods}: for the fine-tuned
+$\mathrm{Rej}_{30\%}$ it lies between \VFtTopRejSigLo{} and \VFtTopRejSigHi{} on top tagging, where the label
+sets reach about \VFtTopRejFull, and between \VFtQgRejSigLo{} and \VFtQgRejSigHi{} around \VFtQgRejFull{} on
 quark--gluon discrimination.
-Among the \VNBinaryCmp{} comparisons of two label sets on these benchmarks, one passes our threshold: the
-fine-tuned quark--gluon AUC of the \Kcoarse-class model is \VDQgAuc{} below that of the \Kres-class model
-(\VZQgAuc$\sigma$).
+The spread between runs alone, \VFtTopRejSdLo{} to \VFtTopRejSdHi{} and \VFtQgRejSdLo{} to \VFtQgRejSdHi, is
+only part of it.
+The comparisons number \VNBinaryCmp: six pairs of label sets, three test samples, probes and fine-tuning, and
+four metrics.
+One of them, in AUC, passes our threshold: the fine-tuned quark--gluon AUC of the \Kcoarse-class model,
+\VFtQgAucCoarse, is \VDQgAuc{} below the \VFtQgAucRes{} of the \Kres-class model (\VZQgAuc$\sigma$).
 
-Pretraining itself helps on both benchmarks, though less visibly in background rejection.
+Pretraining itself helps on both benchmarks, significantly in accuracy and AUC and not in background rejection.
 The fine-tuned \Kfull-class model reaches an accuracy of \VFtTopAccFull\% on top tagging, against
 \VFtTopAccScratch\% for the network trained from scratch, and \VFtQgAccFull\% against \VFtQgAccScratch\% on
 quark--gluon discrimination, and both differences are significant, as are those in AUC.
 In $\mathrm{Rej}_{30\%}$ the pretrained model is nominally ahead on both, \VFtTopRejFull{} against
-\VFtTopRejScratch{} and \VFtQgRejFull{} against \VFtQgRejScratch, but neither difference is significant, and on
-quark--gluon jets from the second generator no metric separates the pretrained model from the one trained from
+\VFtTopRejScratch{} and \VFtQgRejFull{} against \VFtQgRejScratch, but with the test-sample term in $\sigma$
+these differences are \VZFtTopRejScratch$\sigma$ and \VZFtQgRejScratch$\sigma$, below our threshold, and on
+quark--gluon jets from Herwig no metric separates the pretrained model from the one trained from
 scratch.
 
 \subsection{Other tasks with frozen features}
@@ -125,9 +133,9 @@ Away from the pretraining classes the frozen features depend much less on the la
 On JetClass a linear probe reaches \VLpJcOneFull\% on the features of the \Kfull-class model and
 \VLpJcOneCoarse\% on those of the \Kcoarse-class model, a far smaller difference than on the pretraining
 classes, and on the two binary benchmarks, as stated above, none is significant.
-The frozen results on those two benchmarks are low in absolute terms, since they are linear readouts of features
-computed from incomplete inputs, and the comparison with published taggers is in the appendix
-(table~\ref{tab:published}).
+The frozen results on those two benchmarks are low in absolute terms,
+far below the fine-tuned ones of table~\ref{tab:finetuned}, since they are linear readouts of features computed
+from incomplete inputs.
 
 The advantage of the random groupings does not carry over to these tasks.
 On JetClass their frozen features are \VDLpJcOneRand{} points below those of the \Kfull-class model, which is
@@ -138,8 +146,9 @@ difference is not significant.
 After fine-tuning the random groupings are again ahead of the \Kcoarse-class model on the pretraining classes,
 \VFtJcTwoRand\% against \VFtJcTwoCoarse\%, and on JetClass, where the difference of \VDFtJcOneRand{} points is
 significant.
-The gain of the random groupings is thus confined to the pretraining classes and to fine-tuning, and is not a
-general property of their frozen features.
+The random groupings thus gain on the pretraining classes, frozen and fine-tuned, and on JetClass after
+fine-tuning, while their frozen features are no better than those of the \Kcoarse-class model on any other
+task.
 
 \subsection{Jet mass}
 \input{tables/table4}
@@ -174,8 +183,9 @@ QCD efficiency, against the QCD efficiency in the mass window. Solid lines are t
 and, in grey, the same classifier trained from scratch. Dash-dotted lines in (a) use the output scores directly, where
 the label set keeps $X\to b\bar b$ as a class. Bands are the standard deviation over runs, for the \Kfull-class model
 and for training from scratch.}{fig:resonance}
-Sophon's own benchmark shows the cost of coarse labels for a use that reads only the frozen features
-(figure~\ref{fig:resonance}).
+Sophon's own benchmark shows the cost of coarse labels for a use that keeps the pretrained network frozen
+(figure~\ref{fig:resonance}, which gives the same comparison at every background efficiency, and
+table~\ref{tab:resonance}).
 At a background efficiency of \VXbxEpsB\%, transfer learning on the features of the \Kfull-class model selects
 $X\to b\bar b$ with a signal efficiency of \VXbbFull\% and $X\to bs$ with \VXbsFull\%.
 With the \Kcoarse-class model both fall, to \VXbbCoarse\% (\VZXbbCoarse$\sigma$) and to \VXbsCoarse\%
@@ -183,5 +193,5 @@ With the \Kcoarse-class model both fall, to \VXbbCoarse\% (\VZXbbCoarse$\sigma$)
 With the \Kmid-class model the efficiency for $X\to bs$ is significantly lower, at \VXbsMid\%, while that for
 $X\to b\bar b$, \VXbbMid\%, is not significantly different.
 The loss is larger for $X\to bs$, the decay that no label set contains.
-The transfer nevertheless remains far better than no pretraining: the same small network trained from scratch on
-$X\to bs$ reaches \VXbsScratch\%, significantly below the transfer from the \Kfull-class model.
+For the \Kfull-class model the transfer is far better than no pretraining: the same small network trained
+from scratch on $X\to bs$ reaches \VXbsScratch\%, significantly below it.
