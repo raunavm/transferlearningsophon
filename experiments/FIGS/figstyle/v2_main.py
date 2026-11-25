@@ -199,11 +199,11 @@ def draw_fig3(path: pathlib.Path) -> None:
     _pairs(path, [list(R.MECHANISM)])
 
 
-def _pairs(path: pathlib.Path, rows: list) -> None:
+def _pairs(path: pathlib.Path, rows: list, **kw) -> None:
     docs = R._family("pairs")
     R._roc_grid(path, [[None if k is None else (docs, k, PAIR_NETS, R.PAIR_TITLE[k]) for k in row] for row in rows], w=R.PAIR_W[2],
                 aspect=0.72, ratio_scale="log", own_y=True, wgap=R.PAIR_WGAP, left=R.PAIR_LEFT - 0.35, one_x=len(rows) > 1,
-                bands=PAIR_NETS)
+                bands=PAIR_NETS, **kw)
 
 
 def _size_figure(path: pathlib.Path, makers: list, nets: tuple, ncol: int) -> None:
@@ -360,30 +360,50 @@ def gg_qq_values() -> list:
     return out
 
 
+A2_RATIO = 0.3          # figA2's ratio panels, a little shorter than Fig. 3's (0.35), so the figure and its caption
+# fit the paper's page (PAPER_MAX_H_CM)
+
+
 def _gg_qq_panel(fig) -> None:
-    """The AUC panel in the empty slot of figA2's third row, right column: a row a network, the mean over runs a
-    filled point with a bar of their standard deviation, a single grouping an open point; the row names left of it."""
+    """The AUC panel in figA2's third row, right column, the legend in the left slot beside it in the same order and
+    colours (so no row names): a row a network, the mean over runs a filled point with a bar of their standard
+    deviation, a single grouping an open point. The third row, laid out for a pair panel with its ratio panel, is cut
+    to the AUC panel's height, every other part keeping its place from the top."""
+    W, H = fig.get_figwidth() / S.CM, fig.get_figheight() / S.CM
     named = {ax.get_title()[:3]: ax for ax in fig.axes}
     a, b, c = named["(a)"], named["(b)"], named["(c)"]
-    pa, pb, pc = a.get_position(), b.get_position(), c.get_position()
-    y1 = pc.y1 - (pa.y1 - pc.y1)                     # the third row's top, one row step under the second
-    ax = fig.add_axes((pb.x0, y1 - pb.height, pb.width, pb.height))
+    top = lambda ax: (1 - ax.get_position().y1) * H      # noqa: E731  cm from the figure's top
+    step = top(c) - top(a)
+    slot = top(c) + step                                 # the third row's top
+    w_cm = b.get_position().width * W
+    h_e = 0.72 * w_cm                                    # as the pair panels
+    cut = (H - slot - 1.0) - h_e                         # what the slot and its x labels took, less the panel
+    H2 = H - cut
+    for ax in fig.axes:
+        p_ = ax.get_position()
+        t, h_ = (1 - p_.y1) * H, p_.height * H
+        ax.set_position((p_.x0, 1 - (t + h_) / H2, p_.width, h_ / H2))
+    fig.set_size_inches(W * S.CM, H2 * S.CM)
+    for leg in fig.legends:                              # the legend in the left slot, centred beside the panel
+        x = c.get_position().x0 + c.get_position().width / 2
+        leg.set_bbox_to_anchor((x, 1 - (slot + h_e / 2) / H2), transform=fig.transFigure)
+    ax = fig.add_axes((b.get_position().x0, 1 - (slot + h_e) / H2, b.get_position().width, h_e / H2))
     rows = gg_qq_values()
+    ends = []
     for y, (_, colour, v) in enumerate(rows):
         m = float(np.mean(v))
-        if len(v) > 1:
-            sd = float(np.std(v, ddof=1))
+        sd = float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
+        if sd:
             ax.errorbar([m], [y], xerr=[[sd], [sd]], fmt="none", ecolor=colour, elinewidth=FIG2_BAR, capsize=0, zorder=2.5)
         one = len(v) == 1
-        ax.plot([m], [y], linestyle="none", marker="o", markersize=FIG2_DOT, markerfacecolor="white" if one else colour,
+        ax.plot([m], [y], linestyle="none", marker="o", markersize=FIG2_DOT + 1, markerfacecolor="white" if one else colour,
                 markeredgecolor=colour if one else "white", markeredgewidth=1.0 if one else 0.5, zorder=2.6)
-    ends = [x for _, _, v in rows for x in (min(v), max(v), float(np.mean(v)) - float(np.std(v, ddof=1) if len(v) > 1 else 0),
-                                             float(np.mean(v)) + float(np.std(v, ddof=1) if len(v) > 1 else 0))]
-    ax.set_xlim(*G._hv_limits(ends, pb.width * fig.get_figwidth() / S.CM))
+        ends += [m - sd, m + sd]
+    ax.set_xlim(*G._hv_limits(ends, w_cm))
     ax.set_ylim(len(rows) - 0.4, -0.6)
     ax.yaxis.set_major_locator(ticker.FixedLocator(range(len(rows))))
-    ax.yaxis.set_major_formatter(ticker.FixedFormatter([n for n, _, _ in rows]))
-    ax.tick_params(axis="y", which="both", length=0, labelsize=S.TICK_PT5)
+    ax.yaxis.set_major_formatter(ticker.NullFormatter())
+    ax.tick_params(axis="y", which="both", length=0)
     ax.yaxis.set_minor_locator(ticker.NullLocator())
     ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))
     S.fine_grid(ax)
@@ -401,7 +421,7 @@ def draw_figA2(path: pathlib.Path) -> None:
         return save(fig, out)
     S.save = with_panel
     try:
-        _pairs(path, [list(R.OTHER[:2]), list(R.OTHER[2:]), [None, None]])
+        _pairs(path, [list(R.OTHER[:2]), list(R.OTHER[2:]), [None, None]], legend_slot=(2, 0), ratio=A2_RATIO)
     finally:
         S.save = save
 
@@ -443,6 +463,10 @@ def draw_figA5(path: pathlib.Path) -> None:
     S.save(fig, path)
 
 
+# the tallest figure the paper's page holds at the text width with a caption of up to 80 words: A4 less 2.5 cm top and
+# bottom margins (24.7 cm), less five 12 pt caption lines and the caption skips (about 3.1 cm); figcheck sets a taller
+# figure at this height (as it does at the results book's 18.5 cm), so its text would print smaller
+PAPER_MAX_H_CM = 21.6
 # (file stem, its drawing, printed width in cm, figcheck's least panel width in cm)
 FIGURES = (("fig1_design", draw_fig1, 13.0, 6.1), ("fig2_frozen", draw_fig2, 15.0, 4.5),
            ("fig3_pairs", draw_fig3, 15.0, 6.1), ("fig4_training_size", draw_fig4, 15.0, 6.1),
@@ -461,6 +485,7 @@ def main() -> int:
         import figcheck
         import style_v3
         import style_v4
+        figcheck.BOOK_MAX_H_CM = PAPER_MAX_H_CM      # the paper's page, not the results book's
         spec = {stem: (cm, least) for stem, _, cm, least in FIGURES}
         original = style_v3.save
 

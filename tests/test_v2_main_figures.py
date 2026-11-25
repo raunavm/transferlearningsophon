@@ -156,7 +156,11 @@ def test_the_appendix_figures_keep_the_stems_the_appendix_includes(figures):
     assert [n for n, _, _ in rows] == ["188 classes", "162 classes", "43 classes", "17 classes",
                                        "17 classes, random grouping, pair merged", "17 classes, random grouping, pair apart"]
     assert [len(v) for _, _, v in rows] == [3, 3, 3, 3, 1, 4]
-    assert [t.get_text() for t in e.get_yticklabels()] == [n for n, _, _ in rows]
+    # rows by colour, in the legend's order beside it; the figure fits the paper's page with its caption
+    assert [ln.get_markeredgecolor() if ln.get_markerfacecolor() == "white" else ln.get_markerfacecolor()
+            for ln in e.lines if ln.get_marker() == "o"] == [c for _, c, _ in rows]
+    assert _legend(figures["figA2"])[-2:] == [n for n, _, _ in rows][-2:]
+    assert figures["figA2"].get_figheight() / V.S.CM <= V.PAPER_MAX_H_CM
     means = sorted(float(ln.get_xdata()[0]) for ln in e.lines if ln.get_marker() == "o")
     assert np.allclose(means, sorted(float(np.mean(v)) for _, _, v in rows))
     names = ["188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
