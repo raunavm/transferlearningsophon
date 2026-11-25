@@ -5031,6 +5031,14 @@ _JC2_ALL = "l3_v5/probe_jc2bal_N1000000.all.json"
 _JC2_REVIEW2 = "l3_v5/probe_jc2bal_N1000000.review2.json"
 
 
+# GO-7 (stats3, bs3-boot-go7): the pairs of the four label sets and the random grouping, coarser or random side first,
+# as the files name them; each against from scratch (fine-tuned)
+_GO7_ARMS = (("L188", "l188"), ("L162", "l162"), ("R42_Q1", "r42q1"), ("R16_Q1", "r16q1"), (RAND_POOLED, "rand"))
+_GO7_PAIRS = tuple((a, b, f"{x}-{'188' if y == 'l188' else y}")
+                   for i, (b, y) in enumerate(_GO7_ARMS) for a, x in _GO7_ARMS[i + 1:])
+_GO7_SCRATCH = tuple((a, x) for a, x in _GO7_ARMS)
+
+
 def _bench_block(task: str, mode: str, own: bool = False) -> tuple:
     """Table 1's R30 nulls on top or quark/gluon tagging (M009, M047, M232, M261, M303, M327): every network against
     188 classes (PI 2026-11-23, LEDGER CA-15: the mass networks too) and, own, each mass network against its own label
@@ -5178,6 +5186,26 @@ TESTS = (
      tuple((a, b, ("file", "l3/ft_qg_N1600000.herwig_pythia_unpaired.json", d, "r30"))
            for a, b, d in (("L188_HERWIG_JETS", "L188_PYTHIA_JETS", "herwig-pythia-188"),
                            ("SCRATCH_HERWIG_JETS", "SCRATCH_PYTHIA_JETS", "herwig-pythia-scratch")))),
+    # PI 2026-11-24/25 (GO-7, section 28 1.1): every pair among the four label sets and the random grouping on the full
+    # top and quark/gluon sets, frozen and fine-tuned, in every metric, and each against from scratch fine-tuned
+    # (stats3, bs3-boot-go7: l3_bs3/go7_*.json)
+    *((rf"{tw}, {mw}, {HEADING[mode]}, full training set, label sets and random grouping",
+       tuple((a, b, ("file", f"l3_bs3/go7_{'probe' if mode == 'lp' else 'ft'}_{f}.json", d, k)) for a, b, d in _GO7_PAIRS)
+       + (tuple((a, "SCRATCH", ("file", f"l3_bs3/go7_ft_{f}.json", f"{d}-scratch", k)) for a, d in _GO7_SCRATCH)
+          if mode == "ft" else ()))
+      for f, tw in (("top_N1200000", "top tagging"), ("qg_N1600000", "quark/gluon tagging (Pythia)"),
+                    ("qg_herwig_N1600000", "quark/gluon tagging (Herwig)"))
+      for mode in ("lp", "ft") for k, mw in (("accuracy", "accuracy"), ("auc", "AUC"), ("r50", "$R_{50}$"), ("r30", "$R_{30}$"))),
+    # PI 2026-11-25 (section 28 1.1 and 2): the fine-tuned mass-regression rows and 188 classes against from scratch at
+    # 1e6, JetClass-II and JetClass (stats3; the one rule's cells, l3_fixed)
+    *((rf"{w}, accuracy, {HEADING['ft']}, " + _power("1e+06") + " training jets, mass regression and from scratch",
+       tuple((a, b, ("file", f"{L3_FIXED}/ft_{f}_N1000000.json", d, "accuracy")) for a, b, d in _MASSES)
+       + (("L188", "SCRATCH", ("file", f"{L3_FIXED}/ft_{f}_N1000000.json", "188-scratch", "accuracy")),))
+      for f, w in (("jc2bal", "JetClass-II"), ("jc1", "JetClass"))),
+    # PI 2026-11-25 (section 28 1.1): the JetClass 1e5 fine-tuned random grouping (stats3, l3_fixed/ft_jc1parts_N100000.json)
+    (rf"JetClass, accuracy, {HEADING['ft']}, " + _power("1e+05") + " training jets, random grouping",
+     tuple((RAND_POOLED, b, ("file", f"{L3_FIXED}/ft_jc1parts_N100000.json", d, "accuracy"))
+           for b, d in (("L188", "rand-188"), ("R16_Q1", "rand-r16q1")))),
     # tab:fill (M246, M253, M328, M329)
     (r"top tagging, $R_{30}$, " + HEADING["lp"] + ", missing inputs",
      tuple((a, b, ("file", "l3_v5/probe_top_N1200000.fill.json", d, "r30"))
