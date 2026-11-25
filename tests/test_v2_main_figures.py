@@ -77,6 +77,8 @@ def test_fig1_nests_one_example_group_through_the_four_label_sets(figures):
     assert sum(bool(re.fullmatch(r"\$X\\!\\to [a-z]\S*( [a-z])?\$", t)) for t in texts) == 10      # its ten classes as jets
     assert r"$X\!\to$two quarks or gluons" in texts
     assert "Output\nlayer" in texts and "Head" not in texts and "Fine" not in texts
+    # round-2 cold readers: the strip says what a cell and a bar are, and outlines the group drawn above
+    assert "the group drawn above" in texts and any(t.startswith("Each cell is one of the 188 classes") for t in texts)
 
 
 def test_fig2_rows_are_table_2s_pretrained_rows_in_four_panels(figures):
@@ -87,6 +89,10 @@ def test_fig2_rows_are_table_2s_pretrained_rows_in_four_panels(figures):
         "188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
         "162 classes + mass regression", "17 classes + mass regression", "Sophon (released)"]
     assert _legend(fig)[0] == "mean \u00b1 s.d. over runs"
+    # round-2 cold readers: the mean's point smaller and its bar heavier than the gallery's, and the gallery unchanged
+    assert V.G.MEAN_DOT == 4.6 and V.L.BAR == 0.8
+    bars = [c for ax in panels for c in ax.collections if hasattr(c, "get_segments") and c.get_segments()]
+    assert bars and all(abs(c.get_linewidth()[0] - V.FIG2_BAR) < 1e-9 for c in bars)
     assert [ax.get_xlabel() for ax in panels[2:]] == [r"$\mathrm{Rej}_{30\%}$, top tagging",
                                                       r"$\mathrm{Rej}_{30\%}$, quark/gluon"]
 

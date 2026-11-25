@@ -106,7 +106,21 @@ def _row_name(row: str) -> str:
     return S.LEGEND[G.HV_KEY.get(row, row)]
 
 
+FIG2_DOT, FIG2_BAR = 3.4, 1.1     # pt: a smaller mean and a heavier bar, so short bars show beside the point (round 2)
+
+
 def draw_fig2(path: pathlib.Path) -> None:
+    """FIG2_DOT and FIG2_BAR for the length of the drawing (round-2 cold readers: "the error bars are invisible at this
+    size"); a bar shorter than the point stays hidden by it, and the caption says so."""
+    dot, bar = G.MEAN_DOT, L.BAR
+    G.MEAN_DOT, L.BAR = FIG2_DOT, FIG2_BAR
+    try:
+        _draw_fig2(path)
+    finally:
+        G.MEAN_DOT, L.BAR = dot, bar
+
+
+def _draw_fig2(path: pathlib.Path) -> None:
     """gallery_labelset._draw_hv's dot plot (a row a network, its mean over runs and standard deviation; the 188-class
     mean and band down the panel; one relative range about the 188-class mean for the panels of a metric, FG-2) for
     SUMMARY_ROWS and Sophon (released) in SUMMARY_PANELS, two a row, the legend under them."""
@@ -139,8 +153,9 @@ def draw_fig2(path: pathlib.Path) -> None:
         x, y0 = left + j * (w + G.HV_WGAP), top + i * (h + hgap)
         series = [(r, G._hv_values(r, get, cell), G._hv_colour(r), r in SUMMARY_REFS) for r in order]
         one = one or any(len(vals) == 1 for _, vals, _, _ in series)
-        parts, main, _, _ = G._hv_panel(fig, x, y0, w, h, rows, dividers, series, G._hv_values("L188", get, cell), met,
-                                        rel[met])
+        parts, main, bars, hidden = G._hv_panel(fig, x, y0, w, h, rows, dividers, series,
+                                                G._hv_values("L188", get, cell), met, rel[met])
+        print(f"{path.name} ({'abcd'[k]}): {hidden} of {bars} standard-deviation bars shorter than the point")
         main.set_title(f"({'abcd'[k]}) {title}", fontsize=G.HV_TITLE_PT, pad=4.0)
         S.labels(main, SUMMARY_X[key], None)
         if j == 0:

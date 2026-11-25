@@ -43,7 +43,10 @@ W, H = 13.0, 13.1
 FS, FS_T = 8, 9
 
 
-NESTED_EXTRA = 1.2      # cm: the nested example's two more rows of classes and their names
+NESTED_EXTRA = 2.5      # cm: the nested example's two more rows of classes and their names, its taller strip and key
+# the nested example's strip (round-2 cold readers: "the colored bars are too thin to count"): taller rows, wider gaps
+# between the cells of 188 and 162 classes, the example group outlined, and a key under the strip
+NESTED_STRIP = {"rh": 0.38, "gap": 0.13, "cell_gap": 0.014}
 FLAVOR_VERTEX = {"b": 0.27, "c": 0.17}       # a prong's displaced vertex, as a share of the jet's radius; light: none
 # the 43 classes of the example group, by the name the label maps give them
 NESTED_43 = {"2P_HAD_2PARTON|B": r"with a $b$ quark", "2P_HAD_2PARTON|C": r"with a $c$ quark, no $b$",
@@ -231,13 +234,14 @@ def build(nested: bool = False):
         ax.text(0.2, ycoarse, "Coarse", ha="left", va="center", fontsize=FS)
 
     # ------------------------------------------------------------------ (a) all 188 classes
-    rh, gap = 0.28, 0.11; ytop = ycoarse - 1.5
+    rh, gap = (NESTED_STRIP["rh"], NESTED_STRIP["gap"]) if nested else (0.28, 0.11)
+    ytop = ycoarse - 1.5
     rowy = [ytop - j * (rh + gap) for j in range(4)]
     x0, x1 = 1.0, 12.8; pitch = (x1 - x0) / 188
     for y, n in zip(rowy, LV):
         ax.add_patch(Rectangle((0.2, y + rh / 2 - 0.07), 0.14, 0.14, fc=C[n], ec="none"))
         ax.text(0.43, y + rh / 2 - 0.01, str(n), va="center", ha="left", fontsize=FS)
-        g = 0.009 if n >= 162 else 0.017
+        g = (NESTED_STRIP["cell_gap"] if nested else 0.009) if n >= 162 else 0.017
         for s0, k in runs(levels[n]):
             gg = 0.017 if (n == 162 and k > 1) else g
             ax.add_patch(Rectangle((x0 + s0 * pitch + gg, y), k * pitch - 2 * gg, rh, fc=C[n], ec="none", zorder=2))
@@ -246,6 +250,16 @@ def build(nested: bool = False):
         line([xa, xa, xb, xb], [yy - 0.06, yy, yy, yy - 0.06], lw=0.6)
         ax.text((xa + xb) / 2, yy + 0.22, name, ha="center", va="center", fontsize=FS)
     ybot = rowy[-1]
+    if nested:
+        # the group of the tree above, outlined across the four rows, and what a cell and a bar are
+        xa, xb = x0 + 0.004, x0 + n1 * pitch - 0.004
+        ax.add_patch(Rectangle((xa, ybot - 0.05), xb - xa, ytop + rh - ybot + 0.1, fc="none", ec=INK, lw=0.8,
+                               zorder=4))
+        line([(xa + xb) / 2] * 2, [ybot - 0.05, ybot - 0.22], lw=0.6)
+        ax.text(xa, ybot - 0.36, "the group drawn above", ha="left", va="center", fontsize=FS)
+        ax.text(x0, ybot - 0.74, "Each cell is one of the 188 classes; each bar is one class of that label set.",
+                ha="left", va="center", fontsize=FS)
+        ybot -= 0.85
 
     # ------------------------------------------------------------------ (b) pretraining
     yt = ybot - 0.85
