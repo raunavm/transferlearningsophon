@@ -5106,6 +5106,9 @@ LIT_BENCH = pathlib.Path(__file__).resolve().parent / "data" / "literature_bench
 # R5-17 (bs3): the 17-class level, which also merges electron and muon, beside the 43-class one
 _EE_17 = (("R16_Q1", "L188", ("file", "l3_bs3/probe_jc2bal_pairs_ee_vs_mm.r16q1.json", "r16q1-188", "auc")),)
 EE_MLP = "l3_bs3/mlp_jc2bal_pairs_ee_vs_mm.json"      # R5-17 / fifth review B2: the MLP probe's file (eemm_mlp_macros)
+# PI 2026-11-25 (ledger 33, 2(b)): X->gg vs X->qq, the sibling protocol on the balanced sets (probe_bal --gluon-pair);
+# its values are the file's own (linprobe/fits_v5_gg holds the same fits)
+GG_PAIR = "l3_bs3/probe_jc2bal_pairs_gg_vs_qq.json"
 _XBX_SRC = lambda sig: ("xbx_analytic", sig) if XBX_ANALYTIC else None       # noqa: E731  SC-2 (#1), easy to revert
 _MLP_NETS = (("L162", "l162-188"), ("R42_Q1", "r42q1-188"), ("R16_Q1", "r16q1-188"), ("L162_MASS", "l162mass-188"),
              ("R16_Q1_MASS", "r16q1mass-188"), ("FLAV_F0", "flavf0-188"), ("FLAV_F1", "flavf1-188"),
@@ -5146,6 +5149,12 @@ TESTS = (
     (r"JetClass, accuracy, " + HEADING["ft"], tuple((a, b, ("l3", "ft", "jc1", "accuracy", d, False)) for a, b, d in _LEVELS + _MASSES)
      + tuple((a, "R16_Q1", ("file", f"{L3_FIXED}/ft_jc1_N1000000.json", d.replace("-188", "-r16q1"), "accuracy"))
              for a, d in _PARTS_ALL)),
+    # PI 2026-11-25 (ledger 33, 2(b)): X->gg vs X->qq, the pair the 43-class set merges (stats3, bs3-go8)
+    (r"$X\to gg$ vs $X\to q\bar q$, AUC, " + HEADING["lp"] + ", class-balanced test jets",
+     tuple((a, b, ("file", GG_PAIR, d, "auc")) for a, b, d in (
+         ("L162", "L188", "l162-188"), ("R42_Q1", "L188", "r42q1-188"), ("R16_Q1", "L188", "r16q1-188"),
+         (RAND_POOLED, "L188", "rand-188"), ("R42_Q1", "L162", "r42q1-l162"), ("R16_Q1", "R42_Q1", "r16q1-r42q1"),
+         (RAND_POOLED, "R16_Q1", "rand-r16q1")))),
     # the writer's request of 2026-11-25 (the rewrite's Table 2 sentence on JetClass): the label sets against 188 classes
     # on the frozen JetClass probe, accuracy and AUC (stats3; l3_v5/probe_jc1_N1000000.json, Table 2's probes). Under
     # their own heading: the old text's three accuracy rows left tab:tests by SP-13 and stay out of that block
@@ -5483,6 +5492,9 @@ def table_tests(data: pathlib.Path, runs: dict, fits, fill, chosen, per, sculpt_
             return (lambda m: sc(m) if m.startswith(SCRATCH) else g(m) if g else None)
         if path.startswith("l3_bs3/go7_probe_"):    # GO-7 (stats3): Table 2's frozen probes on the full sets, every metric
             return summary_probe(fits, fill, chosen, bs3_task, mkey)
+        if path == GG_PAIR:         # ledger 33: no table holds it yet; the appendix pair figure draws the file's values
+            own = json.loads((data / "bootstrap" / path).read_text())["models"]
+            return lambda m: 1 - own[m][mkey]["one_minus_auc"]
         if path.startswith("l3_bs3/mlp_jc2bal_pairs_"):     # SC-2c: tab:mlp's pair AUC (fits_v5_mlp), refitted bit for bit
             pair = re.search(r"_pairs_([a-z_]+?)\.json$", path).group(1)
             if path == EE_MLP:      # no tab:mlp column: the text prints the file's own values (eemm_mlp_macros)

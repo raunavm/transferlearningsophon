@@ -189,6 +189,8 @@ CHECKPOINT = {"what": "rewrite checkpoint", "suffix": "-checkpoint", "texdir": "
           python3 experiments/FIGS/mlst_v2_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
           tail -n 60 ${OUT}/tables.txt
           grep -q "^V2 TABLES COMPLETE" ${OUT}/tables.txt || exit 3
+          # ledger 33, 2(a): the per-class JetClass appendix table (v2/tables/perclass_jc1.tex)
+          python3 experiments/FIGS/perclass_jc1_table.py >> ${OUT}/tables.txt 2>&1 || exit 3
           # the main figures as the figure code draws them now; one it does not draw prints a labelled box in the draft
           python3 experiments/FIGS/figstyle/v2_main.py > ${OUT}/figures.txt 2>&1; echo "figures rc=$?"
           tail -n 8 ${OUT}/figures.txt
