@@ -1,5 +1,5 @@
-"""The rewrite's five main figures (experiments/FIGS/figstyle/v2_main.py; PI 2026-11-24, LEDGER RW-3, RW-5, RW-8,
-GO-6): the list, the names, no flavor-boundary partition, the pair figure's two panels and six curves, the nesting of
+"""The rewrite's five main and five appendix figures (experiments/FIGS/figstyle/v2_main.py; PI 2026-11-24, LEDGER
+RW-3, RW-5, RW-8, GO-6, GO-9): the list, the names, no flavor-boundary partition, the pair figure's two panels and six curves, the nesting of
 one example group in Fig. 1, and the render mode that draws them. Draws the figures from the committed data."""
 import importlib.util
 import pathlib
@@ -50,8 +50,8 @@ def _panels(fig) -> list:
 
 def test_the_five_figures_of_the_list_and_no_flavor_boundary_partition():
     assert [stem for stem, *_ in V.FIGURES] == ["fig1_design", "fig2_frozen", "fig3_pairs", "fig4_training_size",
-                                                "fig5_resonance"]
-    nets = V.SUMMARY_ROWS + V.PAIR_NETS + V.SIZE_NETS + V.XBX_NETS
+                                                "fig5_resonance", "figA1", "figA2", "figA3", "figA4", "figA5"]
+    nets = V.SUMMARY_ROWS + V.PAIR_NETS + V.SIZE_NETS + V.XBX_NETS + tuple(a for a, _ in V.RECALL_ROWS)
     assert not [n for n in nets if n.startswith("FLAV")]
     assert [p[0] for p in V.SUMMARY_PANELS] == [p[0] for p in V.SIZE_PANELS] == ["jc2", "jc1", "top", "qg"]
 
@@ -100,6 +100,9 @@ def test_fig3_has_two_panels_and_six_curves(figures):
     colours = {S.SERIES[V.R._style(n)].lower() for n in V.PAIR_NETS}
     for ax in panels:
         assert len({ln.get_color().lower() for ln in ax.lines} & colours) == 6     # every curve drawn, none else
+    # every curve its band in the ratio panels (the cold readers of draft e6e3b22)
+    ratios = [ax for ax in fig.axes if ax.get_ylabel().startswith("Ratio")]
+    assert len(ratios) == 2 and all(len(ax.collections) == 6 for ax in ratios)
 
 
 def test_fig4_is_fine_tuning_against_training_size_beside_from_scratch(figures):
@@ -116,6 +119,28 @@ def test_fig5_is_the_resonance_benchmark_with_the_output_scores_for_xbb(figures)
     legend = _legend(fig)
     assert set(legend) == {"188 classes", "162 classes", "43 classes", "17 classes", "trained from scratch",
                            "188 classes (output scores)", "162 classes (output scores)"}
+    # the axes the text quotes: signal efficiency at a background efficiency, every curve with its band
+    for ax in _panels(fig):
+        assert ax.get_ylabel().startswith("Signal efficiency") and ax.get_xlabel().startswith("Background efficiency")
+        assert ax.get_yscale() == ax.get_xscale() == "log" and len(ax.collections) == len(ax.lines)
+        assert max(float(max(ln.get_ydata())) for ln in ax.lines) <= 1.0 + 1e-9
+
+
+def test_the_appendix_figures_keep_the_stems_the_appendix_includes(figures):
+    appendix = (ROOT / "paper/journal/v2/appendix.tex").read_text()
+    assert re.findall(r"\\vfig(?:\[[^]]*\])?\{(figA\d)\}", appendix) == ["figA1", "figA2", "figA3", "figA4", "figA5"]
+    a1 = _panels(figures["figA1"])       # GO-9: linear probes only, one panel a coarser label set
+    assert [ax.get_title() for ax in a1] == ["(a) 162 classes", "(b) 43 classes", "(c) 17 classes"]
+    assert all(ax.get_xlabel() == "Recall, 188 classes" for ax in a1) and not figures["figA1"].texts
+    assert len(_panels(figures["figA2"])) == 4 and set(_legend(figures["figA2"])) == set(_legend(figures["fig3_pairs"]))
+    names = ["188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
+             "162 classes + mass regression", "17 classes + mass regression"]
+    assert sorted(_legend(figures["figA3"])) == sorted(names) and len(_panels(figures["figA3"])) == 4
+    assert all(len(ax.lines) == 7 for ax in _panels(figures["figA3"]))
+    assert set(_legend(figures["figA4"])) == {"soft-drop mass", "162 classes + mass regression",
+                                              "17 classes + mass regression"}
+    assert len(_panels(figures["figA4"])) == 4
+    assert sorted(_legend(figures["figA5"])) == sorted(names)
 
 
 def test_the_render_mode_draws_them_and_stops_without_all_five():
