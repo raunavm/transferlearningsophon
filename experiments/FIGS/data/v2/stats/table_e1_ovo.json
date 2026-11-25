@@ -1,0 +1,150 @@
+{
+ "source": "experiments/FIGS/data/v2/budget/fixed_metrics.json",
+ "definition": "Table E1 (PI 2026-11-25, ledger 33 item 4): our fine-tuned JetClass rows in the published definition, the macro",
+ "rows": [
+  {
+   "row": "188 classes",
+   "runs": 3,
+   "cells": [
+    "leg2/l188-s1/N1000000/s1",
+    "leg2/l188-s2/N1000000/s1",
+    "leg2/l188-s3/N1000000/s1"
+   ],
+   "auc_ovo": 0.9859066138537963,
+   "auc_ovo_sd": 1.1682158269050319e-05,
+   "auc_ovr": 0.9859066126014815,
+   "accuracy": 0.8497404999999999,
+   "accuracy_sd": 0.0001800111107682337,
+   "printed": {
+    "acc": "0.850",
+    "auc_ovo": "0.9859"
+   }
+  },
+  {
+   "row": "162 classes",
+   "runs": 3,
+   "cells": [
+    "leg2/l162-s1/N1000000/s1",
+    "leg2/l162-s2/N1000000/s1",
+    "leg2/l162-s3/N1000000/s1"
+   ],
+   "auc_ovo": 0.9859463541361112,
+   "auc_ovo_sd": 4.420984845926097e-05,
+   "auc_ovr": 0.9859463532064815,
+   "accuracy": 0.8499483333333333,
+   "accuracy_sd": 0.0005255711972067536,
+   "printed": {
+    "acc": "0.850",
+    "auc_ovo": "0.9859"
+   }
+  },
+  {
+   "row": "43 classes",
+   "runs": 3,
+   "cells": [
+    "leg2/r42q1-s1/N1000000/s1",
+    "leg2/r42q1-s2/N1000000/s1",
+    "leg2/r42q1-s3/N1000000/s1"
+   ],
+   "auc_ovo": 0.9856559818388888,
+   "auc_ovo_sd": 2.7820468230934092e-05,
+   "auc_ovr": 0.9856559823412038,
+   "accuracy": 0.8483055,
+   "accuracy_sd": 9.509074613235184e-05,
+   "printed": {
+    "acc": "0.848",
+    "auc_ovo": "0.9857"
+   }
+  },
+  {
+   "row": "17 classes",
+   "runs": 3,
+   "cells": [
+    "leg2/r16q1-s1/N1000000/s1",
+    "leg2/r16q1-s2/N1000000/s1",
+    "leg2/r16q1-s3/N1000000/s1"
+   ],
+   "auc_ovo": 0.9850614641039814,
+   "auc_ovo_sd": 4.6603064585278844e-05,
+   "auc_ovr": 0.9850614638583334,
+   "accuracy": 0.8442741666666667,
+   "accuracy_sd": 0.0003158893529914161,
+   "printed": {
+    "acc": "0.844",
+    "auc_ovo": "0.9851"
+   }
+  },
+  {
+   "row": "17 classes, random grouping",
+   "runs": 5,
+   "cells": [
+    "leg2/rand2p1-s1/N1000000/s1",
+    "leg2/rand2p2-s2/N1000000/s1",
+    "leg2/rand2p3-s1/N1000000/s1",
+    "leg2/rand2p4-s2/N1000000/s1",
+    "leg2/rand2p5-s2/N1000000/s1"
+   ],
+   "auc_ovo": 0.9854932279179167,
+   "auc_ovo_sd": 0.00011966090636040627,
+   "auc_ovr": 0.9854932279868611,
+   "accuracy": 0.8470489000000001,
+   "accuracy_sd": 0.0007847467266577486,
+   "printed": {
+    "acc": "0.847",
+    "auc_ovo": "0.9855"
+   }
+  },
+  {
+   "row": "162 classes + mass regression",
+   "runs": 2,
+   "cells": [
+    "leg2/l162mass-s1/N1000000/s1",
+    "leg2/l162mass-s2/N1000000/s1"
+   ],
+   "auc_ovo": 0.9857778151133334,
+   "auc_ovo_sd": 5.846127446511046e-05,
+   "auc_ovr": 0.9857778154152084,
+   "accuracy": 0.848835,
+   "accuracy_sd": 0.000534572726577015,
+   "printed": {
+    "acc": "0.849",
+    "auc_ovo": "0.9858"
+   }
+  },
+  {
+   "row": "17 classes + mass regression",
+   "runs": 2,
+   "cells": [
+    "leg2/r16q1mass-s1/N1000000/s1",
+    "leg2/r16q1mass-s2/N1000000/s1"
+   ],
+   "auc_ovo": 0.9848350198420834,
+   "auc_ovo_sd": 2.289947967099176e-05,
+   "auc_ovr": 0.9848350199739582,
+   "accuracy": 0.84305325,
+   "accuracy_sd": 5.833630944787982e-05,
+   "printed": {
+    "acc": "0.843",
+    "auc_ovo": "0.9848"
+   }
+  },
+  {
+   "row": "trained from scratch",
+   "runs": 3,
+   "cells": [
+    "leg2/scratch/N1000000/s1",
+    "leg2/scratch/N1000000/s2",
+    "leg2/scratch/N1000000/s3"
+   ],
+   "auc_ovo": 0.9822200355947222,
+   "auc_ovo_sd": 0.00027545261653379513,
+   "auc_ovr": 0.9822200349908797,
+   "accuracy": 0.8284553333333333,
+   "accuracy_sd": 0.0013668678002401356,
+   "printed": {
+    "acc": "0.828",
+    "auc_ovo": "0.9822"
+   }
+  }
+ ]
+}
