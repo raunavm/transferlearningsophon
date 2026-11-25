@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # The pretrained 188-class output layer's own accuracy (PI 2026-11-25, LEDGER §28 1.2): experiments/EVAL/head_accuracy.py on
+  # the stored fc inputs of the probes' JetClass-II test jets, three 188-class runs and Sophon (released); reads only. CPU only. at 13d9f6f.
+  name: head-acc-raunav
+  namespace: cms-ml
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 21600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: gitlab-registry.nrp-nautilus.io/escheuller/transfer-learning:cu121
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -euo pipefail
+          for T in 1 2 3 4 5; do git clone -q https://github.com/raunavm/transferlearningsophon.git /workspace/repo && break; sleep 30; done
+          cd /workspace/repo && git checkout -q 13d9f6fec20b48956e3bc2291da88698e1aec562 && git rev-parse HEAD
+          USED=$(df --output=pcent /data | tail -1 | tr -dc 0-9)
+          [ "${USED}" -le 90 ] || { echo "FATAL: /data is ${USED}% full"; exit 42; }
+          export OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONUNBUFFERED=1
+          OUT=/data/results/eval/head_acc/head_acc_13d9f6f.json
+          CK=/workspace/sophon_released.pt
+          for T in 1 2 3 4 5; do python3 -c "import urllib.request; urllib.request.urlretrieve('https://huggingface.co/jet-universe/sophon/resolve/main/models/JetClassII_Sophon/model.pt', '${CK}')" && break; sleep 30; done
+          echo "cc7c33b522e796b5bbf0aa9bb5b01361c964f4ef3acebdd9682d7519c095b824  ${CK}" | sha256sum -c -
+          python3 experiments/EVAL/head_accuracy.py --model mtx-l188-s1=/data/results/eval/v2_linprobe_bal/mtx-l188-s1/jc2bal/test/best70 --model mtx-l188-s2=/data/results/eval/v2_linprobe_bal/mtx-l188-s2/jc2bal/test/best70 --model mtx-l188-s3=/data/results/eval/v2_linprobe_bal/mtx-l188-s3/jc2bal/test/best70 --model sophon-released=/data/results/eval/v2_linprobe_sophon/sophon-released/jc2bal/test/released=${CK} --out ${OUT}
+          sha256sum ${OUT}
+          echo "HEAD ACC COMPLETE"
+        resources:
+          # largest step: 903,922 x 128 float16 features memory-mapped (231 MB), 50,000-jet chunks of 512 + 188 floats
+          requests: { memory: "8Gi", cpu: "2", ephemeral-storage: "5Gi" }
+          limits:   { memory: "8Gi", cpu: "2", ephemeral-storage: "5Gi" }
+        volumeMounts:
+        - { name: data, mountPath: /data }
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/region
+                operator: In
+                values: ["us-west"]
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["node-2-3.sdsc.optiputer.net", "suncave-5"]
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: transfer-learning-vol
