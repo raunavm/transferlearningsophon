@@ -125,8 +125,8 @@ def name(maps: dict, arm: str) -> str:
 
 
 TABLE1_CAPTION = ("The label sets, what each merges from the finer set above it, and the number of pretraining runs; every "
-                  "set keeps the number of decay products and whether each is a parton, a light lepton, a tau lepton or "
-                  "a neutrino.")
+                  "set keeps the number of decay products and which of four kinds each is: a quark or gluon, an electron "
+                  "or muon, a tau lepton, or a neutrino.")
 
 
 def short(maps: dict, arm: str) -> str:
