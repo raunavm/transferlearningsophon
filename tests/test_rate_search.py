@@ -323,3 +323,26 @@ def test_a_rate_that_diverged_in_its_rerun_stays_failed_after_the_row_moves_on()
     cells = [c for c in B.fixed_rate_cells() if (c["task"], c["n"], c["init"]) == ("top", 1_000, "")]
     assert [c["lr"] for c in cells] == ["1e-2"] * 3 and all(c["out"].startswith(B.FIXED_RATE2_ROOT + "/") for c in cells)
     assert {c["out"] for c in cells} == {c["out"] for c in B.paper_fixed_cells() if (c["task"], c["n"], c["init"]) == ("top", 1_000, "")}
+
+
+def test_the_cs15_checks_change_one_thing_each_and_touch_no_paper_cell():
+    """PI 2026-11-24/25 (LEDGER CS-15, GO-8 option (b), §28 1.4): three checks on one 188-class run, each the paper's
+    JetClass-II 1e6 cell with one change, in their own tree; their tasks exist only in their own specs."""
+    b = B
+    ref = next(c for c in b.paper_fixed_cells() if (c["task"], c["n"], c["init"]) == ("jc2b", 1_000_000, "l188-s1"))
+    tasks = dict(b.TASKS)
+    rw, head, nat = b.cs15_cells()
+    assert b.TASKS == tasks and not set(b.CS15_TASKS) & set(tasks)
+    same = lambda c, skip: {k: v for k, v in c.items() if k not in skip} == {k: v for k, v in ref.items() if k not in skip}  # noqa: E731
+    assert same(rw, {"task", "out"}) and same(head, {"mult", "out"}) and same(nat, {"task", "out", "valf"})
+    assert rw["task"] == "jc2bw" and b.CS15_TASKS["jc2bw"][1] == "configs/arms/L188.yaml"
+    assert head["task"] == "jc2b" and head["mult"] == "1.0" and ref["mult"] == "50.0"
+    assert nat["task"] == "jc2nat" and b.CS15_TASKS["jc2nat"][0] == "/data/finetune/jc2_v2" and nat["valf"].endswith("jc2_bal/val_fixed.parquet")
+    assert b.CS15_TASKS["jc2bw"][0] == b.CS15_TASKS["jc2nat"][6].rsplit("/", 1)[0] == tasks["jc2b"][0]
+    outs = [c["out"] for c in (rw, head, nat)]
+    assert len(set(outs)) == 3 and all(o.startswith(b.CS15_ROOT + "/leg_jc2b/l188-s1_") for o in outs)
+    assert not {o for o in outs} & {c["out"] for c in b.paper_fixed_cells()}
+    (smoke,) = b.cs15_cells(smoke=True)
+    assert smoke["out"].startswith(b.CS15_SMOKE_ROOT) and smoke["epochs"] == b.CS15_SMOKE_CHECKS == 4 and same(smoke, {"task", "out", "epochs"})
+    assert (ROOT / "configs/arms/L188.yaml").read_text().count("\nweights:") == 1
+    assert "\nweights:" not in (ROOT / "configs/finetune/JetClassII_L188_noweight.yaml").read_text()

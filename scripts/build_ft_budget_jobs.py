@@ -652,6 +652,47 @@ def fixed_head_jc2b_cells() -> list:
     return [{**c, "mult": "1.0", "out": c["out"].replace("_lr1e-3/", "_lr1e-3_head1x/")}]
 
 
+# PI 2026-11-24/25 (LEDGER CS-15, §27 GO-8 option (b), §28 1.4): fine-tuned JetClass-II at 1e6 ends 3.8 sigma below the linear
+# probe for 188 classes, so three checks on ONE 188-class run (seed 1), each the paper's cell (the one rule, the row's
+# recorded rate 1e-4, the balanced test set) with one thing changed, into their own tree (never read by the paper):
+#   reweight  the pretraining's jet weights back on: the data config with its weights block (configs/arms/L188.yaml,
+#             of which JetClassII_L188_noweight.yaml is the copy without that block)
+#   head1x    the new output layer at the backbone's rate (multiplier 1: 1e-4 in place of 5e-3)
+#   natural   trained on the natural class mix (jc2_v2/train_N1000000_s1.parquet) in place of the class-balanced set,
+#             validated on the same balanced validation jets
+# Their tasks exist only in these jobs' specs (main adds CS15_TASKS for the cs15 kinds), so no other spec changes.
+CS15_ROOT = "/data/results/ft_v2/cs15"
+CS15_SMOKE_ROOT = "/data/results/ft_v2/cs15_smoke"
+CS15_TASKS = {"jc2bw": ("/data/finetune/jc2_bal", "configs/arms/L188.yaml", 188, "experiments/MTX/ParT_sophon_arch_mtx.py",
+                        "leg_jc2b", (1_000_000,), "/data/finetune/jc2_bal/test.parquet", "64Gi"),
+              "jc2nat": ("/data/finetune/jc2_v2", "configs/finetune/JetClassII_L188_noweight.yaml", 188,
+                         "experiments/MTX/ParT_sophon_arch_mtx.py", "leg_jc2b", (1_000_000,),
+                         "/data/finetune/jc2_bal/test.parquet", "64Gi")}
+CS15_TEST_CFG = {"jc2bw": "configs/data/JetClassII_base.yaml", "jc2nat": "configs/data/JetClassII_base.yaml"}
+CS15_SMOKE_CHECKS = 4       # the smoke: the reweight cell for four checks (2,000 steps), then its scoring
+
+
+def cs15_cells(smoke: bool = False) -> list:
+    """The three checks' cells, in the order reweight, head1x, natural; smoke: the reweight cell alone, CS15_SMOKE_CHECKS
+    checks long, in CS15_SMOKE_ROOT."""
+    init, n, lr = "l188-s1", 1_000_000, FIXED_ROW_RATE[("jc2b", 1_000_000)]
+    TASKS.update(CS15_TASKS)
+    try:
+        cells = {"reweight": fixed_cell("jc2bw", init, n, 1, lr, CS15_ROOT), "head1x": fixed_cell("jc2b", init, n, 1, lr, CS15_ROOT),
+                 "natural": fixed_cell("jc2nat", init, n, 1, lr, CS15_ROOT)}
+    finally:
+        for t in CS15_TASKS:
+            del TASKS[t]
+    cells["head1x"]["mult"] = "1.0"
+    cells["natural"]["valf"] = "/data/finetune/jc2_bal/val_fixed.parquet"
+    for k, c in cells.items():
+        c["out"] = c["out"].replace(f"/{init}/", f"/{init}_{k}/")
+    if smoke:
+        c = cells["reweight"]
+        return [{**c, "epochs": CS15_SMOKE_CHECKS, "out": c["out"].replace(CS15_ROOT, CS15_SMOKE_ROOT)}]
+    return list(cells.values())
+
+
 def fixed_sweep_jc2b_cells() -> list:
     return [c for r in ("l188-s1", "r16q1-s1")
             for c in fixed_sweep_cells(FIXED_SWEEP_JC2B, (), r, 1_000_000, ("jc2b",))]
@@ -1109,7 +1150,7 @@ def main(argv=None) -> int:
     ap.add_argument("kinds", nargs="+", choices=("lrsweep", "bench", "jc1", "jc2b", "kin", "fillcheck", "long-jc2b", "long-jc1", "long-jc2b-ctrl", "long-jc2b-rest",
                                                  "long-scratch-full", "scratch-full", "pre-full", "pre-full-rerun",
                                                  "readout-pre-full", "fixed-1e5", "fixed-1e6", "fixed-rest", "fixed-bench", "fixed-sweep",
-                                                 "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-sweep-all", "fixed-rate", "fixed-sweep-edge", "fixed-sweep-edge2",
+                                                 "fixed-sweep-ext", "fixed-sweep-jc2b", "fixed-sweep-rows", "fixed-head-jc2b", "fixed-cs15", "fixed-cs15-smoke", "fixed-sweep-all", "fixed-rate", "fixed-sweep-edge", "fixed-sweep-edge2",
                                                  "fixed-sweep-1e4", "fixed-sweep-edge3", "fixed-sweep-edge4", "fixed-sweep-edge5", "fixed-sweep-edge6", "fixed-sweep-edge7", "fixed-sweep-edge8", "fixed-sweep-edge9", "fixed-sweep-edge10", "fixed-sweep-edge11", "fixed-sweep-edge12", "fixed-sweep-edge13", "fixed-sweep-edge14", "fixed-sweep-edge15", "fixed-sweep-edge16", "fixed-sweep-edge17", "fixed-sweep-edge18", "fixed-sweep-edge19", "fixed-sweep-edge20", "fixed-smoke-diverge", "fixed-sweep-17", "fixed-smoke-1e3",
                                                  "fixed-1e4", "fixed-1e3"))
     a = ap.parse_args(argv)
@@ -1143,6 +1184,7 @@ def main(argv=None) -> int:
                      "fixed-sweep-jc2b": fixed_sweep_jc2b_cells,
                      "fixed-sweep-rows": fixed_sweep_rows_cells,
                      "fixed-head-jc2b": fixed_head_jc2b_cells,
+                     "fixed-cs15": cs15_cells, "fixed-cs15-smoke": lambda: cs15_cells(smoke=True),
                      "fixed-sweep-all": fixed_sweep_all_cells,
                      "fixed-rate": fixed_rate_cells,
                      "fixed-sweep-edge": fixed_sweep_edge_cells,
@@ -1202,7 +1244,14 @@ def main(argv=None) -> int:
         if a.name_suffix:
             name = name.replace("-raunav", f"-{a.name_suffix}-raunav")
         p = OUT_DIR / f"job-{name}.yaml"
-        p.write_text(spec(name, cells, a.tag, a.parallelism, mem, a.cpu, a.storage_line, a.gpu_pool, a.gpu_product))
+        extra = CS15_TASKS if kind.startswith("fixed-cs15") else {}
+        TASKS.update(extra)
+        TEST_CFG.update(CS15_TEST_CFG if extra else {})
+        try:
+            p.write_text(spec(name, cells, a.tag, a.parallelism, mem, a.cpu, a.storage_line, a.gpu_pool, a.gpu_product))
+        finally:
+            for t in extra:
+                del TASKS[t], TEST_CFG[t]
         print(p, len(cells), "cells")
     return 0
 
