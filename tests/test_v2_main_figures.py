@@ -147,7 +147,16 @@ def test_the_appendix_figures_keep_the_stems_the_appendix_includes(figures):
     a1 = _panels(figures["figA1"])       # GO-9: linear probes only, one panel a coarser label set
     assert [ax.get_title() for ax in a1] == ["(a) 162 classes", "(b) 43 classes", "(c) 17 classes"]
     assert all(ax.get_xlabel() == "Recall (%), 188 classes" for ax in a1) and not figures["figA1"].texts
-    assert len(_panels(figures["figA2"])) == 4 and set(_legend(figures["figA2"])) == set(_legend(figures["fig3_pairs"]))
+    assert len(_panels(figures["figA2"])) == 5 and set(_legend(figures["figA2"])) == set(_legend(figures["fig3_pairs"]))
+    # ledger 33.2(b): X->gg vs X->qq as AUCs per model from the build's export, in the fifth panel
+    e = _panels(figures["figA2"])[4]
+    assert e.get_title().startswith("(e) $X\\to gg$ vs $q\\bar{q}$") and e.get_xlabel().startswith("AUC")
+    rows = V.gg_qq_values()
+    assert [n for n, _, _ in rows] == ["188 classes", "162 classes", "43 classes", "17 classes",
+                                       "17 classes, random grouping, pair merged", "17 classes, random grouping, pair apart"]
+    assert [len(v) for _, _, v in rows] == [3, 3, 3, 3, 1, 4]
+    means = sorted(float(ln.get_xdata()[0]) for ln in e.lines if ln.get_marker() == "o")
+    assert np.allclose(means, sorted(float(np.mean(v)) for _, _, v in rows))
     names = ["188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
              "162 classes + mass regression", "17 classes + mass regression"]
     assert sorted(_legend(figures["figA3"])) == sorted(names) and len(_panels(figures["figA3"])) == 4

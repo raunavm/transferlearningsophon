@@ -201,7 +201,7 @@ def draw_fig3(path: pathlib.Path) -> None:
 
 def _pairs(path: pathlib.Path, rows: list) -> None:
     docs = R._family("pairs")
-    R._roc_grid(path, [[(docs, k, PAIR_NETS, R.PAIR_TITLE[k]) for k in row] for row in rows], w=R.PAIR_W[2],
+    R._roc_grid(path, [[None if k is None else (docs, k, PAIR_NETS, R.PAIR_TITLE[k]) for k in row] for row in rows], w=R.PAIR_W[2],
                 aspect=0.72, ratio_scale="log", own_y=True, wgap=R.PAIR_WGAP, left=R.PAIR_LEFT - 0.35, one_x=len(rows) > 1,
                 bands=PAIR_NETS)
 
@@ -334,9 +334,76 @@ def draw_figA1(path: pathlib.Path) -> None:
     S.save(fig, path)
 
 
+# PI 2026-11-25 (ledger 33.2(b)): X->gg against X->qq, a binary linear probe on the class-balanced test jets (5,000 a
+# class); the build exports its AUC per model and no curve (stats/ledger33_exports.json), so it is a panel of AUCs
+GG_QQ = C.P.DATA / "stats" / "ledger33_exports.json"
+GG_QQ_TITLE = r"$X\to gg$ vs $q\bar{q}$, AUC"
+# rows: (name key, colour key, the values' source in the export)
+GG_QQ_ROWS = (("L188", "L188", ("arms", "L188")), ("L162", "L162", ("arms", "L162")), ("R42_Q1", "R42_Q1", ("arms", "R42_Q1")),
+              ("R16_Q1", "R16_Q1", ("arms", "R16_Q1")), ("RAND_MERGED", "RAND_MERGED", ("random_merged",)),
+              ("RAND_APART", "RAND", ("random_apart",)))
+
+
+def gg_qq_values() -> list:
+    """[(row name, colour, AUCs of its runs)] from the export, each list checked against its per-model values."""
+    doc = json.loads(GG_QQ.read_text())["gg_vs_qq"]
+    per = set(doc["per_model"].values())
+    out = []
+    for name, colour, where in GG_QQ_ROWS:
+        node = doc
+        for k in where:
+            node = node[k]
+        runs = [float(v) for v in node["runs"]]
+        if not runs or not set(runs) <= per:
+            raise SystemExit(f"FATAL: {GG_QQ.name}: gg_vs_qq {'/'.join(where)} runs not among its per-model AUCs")
+        out.append((S.LEGEND[name], S.SERIES[colour], runs))
+    return out
+
+
+def _gg_qq_panel(fig) -> None:
+    """The AUC panel in the empty slot of figA2's third row, right column: a row a network, the mean over runs a
+    filled point with a bar of their standard deviation, a single grouping an open point; the row names left of it."""
+    named = {ax.get_title()[:3]: ax for ax in fig.axes}
+    a, b, c = named["(a)"], named["(b)"], named["(c)"]
+    pa, pb, pc = a.get_position(), b.get_position(), c.get_position()
+    y1 = pc.y1 - (pa.y1 - pc.y1)                     # the third row's top, one row step under the second
+    ax = fig.add_axes((pb.x0, y1 - pb.height, pb.width, pb.height))
+    rows = gg_qq_values()
+    for y, (_, colour, v) in enumerate(rows):
+        m = float(np.mean(v))
+        if len(v) > 1:
+            sd = float(np.std(v, ddof=1))
+            ax.errorbar([m], [y], xerr=[[sd], [sd]], fmt="none", ecolor=colour, elinewidth=FIG2_BAR, capsize=0, zorder=2.5)
+        one = len(v) == 1
+        ax.plot([m], [y], linestyle="none", marker="o", markersize=FIG2_DOT, markerfacecolor="white" if one else colour,
+                markeredgecolor=colour if one else "white", markeredgewidth=1.0 if one else 0.5, zorder=2.6)
+    ends = [x for _, _, v in rows for x in (min(v), max(v), float(np.mean(v)) - float(np.std(v, ddof=1) if len(v) > 1 else 0),
+                                             float(np.mean(v)) + float(np.std(v, ddof=1) if len(v) > 1 else 0))]
+    ax.set_xlim(*G._hv_limits(ends, pb.width * fig.get_figwidth() / S.CM))
+    ax.set_ylim(len(rows) - 0.4, -0.6)
+    ax.yaxis.set_major_locator(ticker.FixedLocator(range(len(rows))))
+    ax.yaxis.set_major_formatter(ticker.FixedFormatter([n for n, _, _ in rows]))
+    ax.tick_params(axis="y", which="both", length=0, labelsize=S.TICK_PT5)
+    ax.yaxis.set_minor_locator(ticker.NullLocator())
+    ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 5, 10]))
+    S.fine_grid(ax)
+    S.title(ax, f"(e) {GG_QQ_TITLE}")
+    S.labels(ax, xlabel="AUC (binary linear probe)")
+
+
 def draw_figA2(path: pathlib.Path) -> None:
-    """Fig. 3's form for the four other pairs (the old F4-other and F4-qcd), one x, y and ratio range."""
-    _pairs(path, [list(R.OTHER[:2]), list(R.OTHER[2:])])
+    """Fig. 3's form for the four other pairs (the old F4-other and F4-qcd), one x, y and ratio range; under them, in
+    a third row, X->gg against X->qq as AUCs (_gg_qq_panel), added to the figure before it is saved."""
+    save = S.save
+
+    def with_panel(fig, out):
+        _gg_qq_panel(fig)
+        return save(fig, out)
+    S.save = with_panel
+    try:
+        _pairs(path, [list(R.OTHER[:2]), list(R.OTHER[2:]), [None, None]])
+    finally:
+        S.save = save
 
 
 def draw_figA3(path: pathlib.Path) -> None:
