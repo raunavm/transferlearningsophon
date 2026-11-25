@@ -17,6 +17,8 @@ failure is read, not retried).
                                                    # paper/mockups/mockups.tex) into render/<commit>-mockups/
     python3 scripts/build_render_job.py --release  # the data release (experiments/FIGS/data_release.py) into
                                                    # render/<commit>-release/release/; may run from a pushed branch
+    python3 scripts/build_render_job.py --v2figs   # the rewrite's five main figures (experiments/FIGS/figstyle/
+                                                   # v2_main.py) and their sheet into render/<commit>-v2figs/
 """
 from __future__ import annotations
 
@@ -198,19 +200,37 @@ CHECKPOINT = {"what": "rewrite checkpoint", "suffix": "-checkpoint", "texdir": "
 """}
 
 
+# the rewrite's five main figures (PI 2026-11-24, LEDGER RW-3, GO-10): experiments/FIGS/figstyle/v2_main.py with
+# figcheck's measured findings, then paper/journal/v2/figures_sheet.tex, the five at their printed widths with their
+# draft captions; no table is built (the figures read the committed data through the gallery's loaders)
+V2FIGS = {"what": "rewrite's main figures", "suffix": "-v2figs", "texdir": "paper/journal/v2", "texfile": "figures_sheet",
+          "draw": """          pip install --no-cache-dir -q pymupdf==1.26.7 || exit 1
+          python3 experiments/FIGS/figstyle/v2_main.py --check > ${OUT}/figures.txt 2>&1; echo "figures rc=$?"
+          tail -n 25 ${OUT}/figures.txt
+          grep -q "^V2 FIGURES COMPLETE" ${OUT}/figures.txt || exit 3
+""",
+          "collect": """          mkdir -p ${OUT}/figures
+          cp -f paper/journal/v2/figures/* ${OUT}/figures/ 2>/dev/null
+          cp -f paper/journal/v2/figures_sheet.pdf ${OUT}/figures_sheet.pdf 2>/dev/null
+""",
+          "check": ""}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mockups", action="store_true", help="the figure mock-ups instead of the paper")
     ap.add_argument("--book", action="store_true", help="the results book (main text and appendix) instead of the paper")
     ap.add_argument("--release", action="store_true", help="the data release (experiments/FIGS/data_release.py)")
     ap.add_argument("--checkpoint", action="store_true", help="the rewrite's checkpoint PDF (paper/journal/v2/checkpoint.tex)")
+    ap.add_argument("--v2figs", action="store_true", help="the rewrite's five main figures (figstyle/v2_main.py) and their sheet")
     ap.add_argument("--preview", action="store_true", help="today's partial results (MLST_FT_PREVIEW=1), the book, the paper or the release")
     storage_line.add_argument(ap)
     a = ap.parse_args()
-    mode = MOCKUPS if a.mockups else BOOK if a.book else RELEASE if a.release else CHECKPOINT if a.checkpoint else PAPER
+    mode = (MOCKUPS if a.mockups else BOOK if a.book else RELEASE if a.release else CHECKPOINT if a.checkpoint
+            else V2FIGS if a.v2figs else PAPER)
     release = mode is RELEASE
     if a.preview:
-        if mode is MOCKUPS:
+        if mode is MOCKUPS or mode is V2FIGS:
             raise SystemExit("FATAL: --preview is for the book, the paper or the release")
         # PI 2026-11-22: the paper read end to end while the reruns run: its tables from the partial read-out
         mode = {**mode, "suffix": ("-bookpreview" if mode is BOOK else "-releasepreview" if release
