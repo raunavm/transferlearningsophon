@@ -1,24 +1,46 @@
-% The PI's checkpoint of the rewrite (PI 2026-11-24, LEDGER RW-10): the abstract and the introduction, Table 1 in
-% versions A and B, Tables 2 and 3, and the outline of the whole paper. Class and page layout as paper/journal/main.tex.
-% Every number is a macro of tables/numbers.tex or a cell of tables/table*.tex, written by
-% experiments/FIGS/mlst_v2_tables.py from the paper's build. Build: scripts/build_render_job.py --checkpoint --preview.
+% The rewritten paper, draft (PI 2026-11-24/25, LEDGER 26-31). Class and page layout as paper/journal/main.tex.
+% Every number is a macro of tables/numbers.tex or tables/results_generated.tex, or a cell of a table of tables/,
+% all written by experiments/FIGS/mlst_v2_tables.py from the paper's build, which stops when a clause of the text
+% has no passing tested row. Build: scripts/build_render_job.py --checkpoint. The five main figures are drawn by
+% the figure code into figures/; a figure not there yet prints a labelled box.
 \documentclass[12pt]{article}
 \usepackage[a4paper,textwidth=15cm,top=2.5cm,bottom=2.5cm]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
+\usepackage{longtable}
 \usepackage{adjustbox}
 \usepackage{array}
+\usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{placeins}
+\usepackage{capt-of}
+\usepackage{xparse}
 \usepackage[labelsep=period]{caption}
 \setlength{\belowcaptionskip}{6pt}
 \usepackage[hidelinks]{hyperref}
 
-% A result whose input is not in yet: a red bold bracket (as in main.tex).
+% Symbols the build's tables use (as in main.tex).
+\newcommand{\epsS}{\varepsilon_S}
+\newcommand{\epsB}{\varepsilon_B}
+\newcommand{\Nout}{N_{\mathrm{out}}}
+\newcommand{\Nlat}{N_{\mathrm{latent}}}
+\newcommand{\msd}{m_{\mathrm{SD}}}
+\newcommand{\mgen}{m^{\mathrm{gen}}_{\mathrm{SD}}}
+\newcommand{\AUC}{\mathrm{AUC}}
+\newcommand{\nmin}{n_{\min}}
+\newcommand{\dJS}{d_{\mathrm{JS}}}
+\newcommand{\Lcls}{L_{\mathrm{cls}}}
+\newcommand{\Lreg}{L_{\mathrm{reg}}}
+% A result whose input is not in yet: a red bold bracket.
 \newcommand{\pending}[1]{\textcolor{red}{\textbf{[#1]}}}
-% Wording that differs from the PI's RW-9 draft of the abstract (2026-11-24), for the PI to see: red.
-\newcommand{\changed}[1]{\textcolor{red}{#1}}
+\input{tables/results_generated}
 \input{tables/numbers}
+
+% A figure by its name: figures/<name>.pdf when the figure code has drawn it, a labelled box until then.
+\NewDocumentCommand{\vfig}{m m m}{\begin{figure}[tb]\centering
+  \IfFileExists{figures/#1.pdf}{\includegraphics[width=\linewidth]{figures/#1.pdf}}%
+    {\fbox{\parbox[c][4.5cm][c]{\dimexpr\linewidth-2cm\relax}{\centering\texttt{\detokenize{#1}}: figure being rebuilt}}}
+  \caption{#2}\label{#3}\end{figure}}
 
 \title{Label granularity in supervised pretraining of jet foundation models}
 \author{\pending{author list and affiliations}}
@@ -27,27 +49,24 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-\input{abstract}
-
-\medskip\noindent\changed{\footnotesize Not in the abstract, which is at its word limit as it stands. With its numbers,
-the JetClass clause reads ``the coarsest set remains worse on JetClass, \VtwoFtJcOneCoarsePct\% against
-\VtwoFtJcOneFullPct\%''. Closing sentence: ``Fine labels matter most for frozen features, less after fine-tuning.''}
+\noindent\input{abstract}
 \end{abstract}
 
 \input{intro}
+\input{related}
+\input{methods}
+\input{results}
+\input{discussion}
 
-\clearpage
-\input{tables/table1}
-\clearpage
-\setcounter{table}{1}
-\input{tables/table2}
-\clearpage
-\input{tables/table3}
-\clearpage
-\input{outline}
+\FloatBarrier
+\input{endmatter}
 
-\clearpage
-{\footnotesize
+\FloatBarrier
+\appendix
+\input{appendix}
+
+\FloatBarrier
+{\small
 \bibliographystyle{unsrt}
 \bibliography{../refs}
 }

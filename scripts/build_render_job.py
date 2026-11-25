@@ -189,6 +189,9 @@ CHECKPOINT = {"what": "rewrite checkpoint", "suffix": "-checkpoint", "texdir": "
           python3 experiments/FIGS/mlst_v2_tables.py > ${OUT}/tables.txt 2>&1; echo "tables rc=$?"
           tail -n 60 ${OUT}/tables.txt
           grep -q "^V2 TABLES COMPLETE" ${OUT}/tables.txt || exit 3
+          # the main figures as the figure code draws them now; one it does not draw prints a labelled box in the draft
+          python3 experiments/FIGS/figstyle/v2_main.py > ${OUT}/figures.txt 2>&1; echo "figures rc=$?"
+          tail -n 8 ${OUT}/figures.txt
 """,
               "collect": """          mkdir -p ${OUT}/paper/journal/v2
           cp -rf paper/journal/v2/tables ${OUT}/paper/journal/v2/ 2>/dev/null

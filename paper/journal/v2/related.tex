@@ -1,0 +1,34 @@
+\section{Related work}\label{sec:related}
+
+\textit{Label granularity in image classification.}
+The closest experiments to ours relabel a fixed set of images along a class hierarchy and measure transfer.
+Huh et al.\ merged the ImageNet classes along the WordNet tree and fine-tuned the resulting networks on detection
+and scene classification, where the coarser labels cost little~\cite{huh}.
+Hong et al.\ pretrained on levels of the class hierarchy of the full ImageNet dataset and transferred to its standard subset; their tables show a
+larger gap between the finest and the coarsest labels under a linear probe than after fine-tuning, and they
+explain the benefit of fine labels by the rarer features that fine classes force a network to learn~\cite{hong}.
+A related result concerns the training loss instead of the labels: losses that separate the training classes more
+strongly give frozen features that transfer worse, while the differences largely vanish after
+fine-tuning~\cite{kornblith}, which is the same asymmetry between frozen and adapted use.
+
+\textit{What a coarse label leaves in the representation.}
+Yang, Steinhardt and Hu trained networks on merged classes and asked whether the original classes can still be
+recovered from the last-layer features~\cite{yang}.
+They found that subclasses merged at random stay well separated, whereas subclasses merged into a natural
+superclass, which resemble one another, are distinguished less well.
+This is the nearest precedent for our comparison of nested label sets with random groupings.
+We add transfer to other tasks, the effect of fine-tuning, and merges that each remove a distinction with a
+physical meaning.
+
+\textit{Pretraining for jets.}
+Supervised classification of simulated jets is the pretraining objective of the Particle Transformer, which showed
+that pretraining on the ten classes of JetClass improves top tagging and quark--gluon discrimination after
+fine-tuning~\cite{part}, and of Sophon, which moved to the much finer classes of JetClass-II and to the direct
+use of output scores and frozen features~\cite{sophon}.
+Self-supervised alternatives exist; masked particle modeling, for example, is evaluated with a frozen and with
+a fine-tuned backbone as a function of the number of labeled jets, the two modes we also compare~\cite{mpm}.
+SuperJEPA combines a predictive self-supervised objective with classification and reports frozen-encoder and
+fine-tuned results on JetClass and top tagging~\cite{superjepa}.
+In these studies the classes of the supervised objective are fixed, or change together with the jets used for
+pretraining.
+Here the pretraining jets are fixed and only their labels change.

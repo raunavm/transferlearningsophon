@@ -1,17 +1,23 @@
-% The abstract (PI 2026-11-24, LEDGER RW-9: the PI's draft, at most 180 words). Each clause is tested in
-% experiments/FIGS/mlst_v2_tables.py (claims), which stops the build when a test is missing or fails. \changed marks
-% what differs from the draft: the JetClass clause and the closing sentence, which the draft left open, and the scope
-% of the mass clause (fine-tuned, the 17-class model with the mass regression is significantly less accurate).
-% The draft has 171 words outside its two brackets, so the text below is at the limit of 180 without the closing
-% sentence; checkpoint.tex prints that sentence and the clause with its two numbers under the abstract, uncounted.
-Jet foundation models are often pretrained to classify simulated jets into hundreds of fine classes. Whether such
-fine labels improve the pretrained model has not been tested in a controlled way, because published comparisons
-change the training jets together with the labels. We pretrain the Sophon model on the same JetClass-II jets with
-four nested label sets of \Kfull, \Kres, \Kmid{} and \Kcoarse{} classes, which progressively merge quark and lepton
-flavors while keeping the decay topology. With coarser labels, a linear classifier on the frozen features identifies
-the \Kfull{} classes less accurately, \VtwoAccCoarsePct\% against \VtwoAccFullPct\% for the coarsest and the finest
-set, and decays that differ only in a merged flavor become much harder to separate. Random groupings into \Kcoarse{}
-classes lose far less, so the loss depends on which classes are merged and not only on how many. After fine-tuning,
-\changed{the coarsest set remains slightly worse on JetClass} and no significant
-difference is seen on the top-tagging and quark--gluon benchmarks. An auxiliary jet-mass regression sharpens the mass
-resolution of the frozen features at no significant cost in \changed{frozen-feature} classification.
+% The abstract: the PI's text of 2026-11-25 (pi_prose_1125.tex, LEDGER 29), as written, with the ruling of LEDGER 30.1
+% on the binary clause. Every number is a macro of tables/numbers.tex; each clause is tested in
+% experiments/FIGS/mlst_v2_tables.py (claims), which stops the build when a row is missing or fails.
+When a foundation model is pretrained by supervised classification, its classes determine which
+distinctions the network must learn, yet how fine they need to be remains an open question.
+Jets, the collimated sprays of particles produced in high-energy collisions, offer a clean test,
+because each simulated jet carries an exact label that can be coarsened without changing the
+training data.
+We pretrain Sophon, a foundation model for jets, on the same simulated jets under four nested label sets,
+from \Kfull{} classes down to \Kcoarse, which successively merge decays differing only in the flavor of the
+particles produced.
+As the labels coarsen, the frozen representation retains less of what they no longer distinguish:
+a linear classifier trained on it identifies the \Kfull{} classes with \VAccFullPct\% accuracy for the
+finest labels but \VAccCoarsePct\% for the coarsest.
+Random groupings into \Kcoarse{} classes, however, still reach \VAccRandPct\%, so the loss depends on which
+classes are merged and not only on how many.
+Fine-tuning narrows the gap to about \VDFtJcTwoCoarseRound{} percentage points without closing it, and the
+coarsest labels also remain behind on a second multi-class task, while two binary tagging
+benchmarks show no significant difference in accuracy or background rejection.
+Beyond the labels, an auxiliary regression of the jet mass sharpens the mass resolution of the
+frozen representation at no significant cost in its accuracy.
+Fine labels therefore matter most for tasks that rely on the distinctions they preserve, and
+when the model is used without fine-tuning.

@@ -13,6 +13,7 @@ class maps (configs/labelmaps). Nothing is typed by hand.
 from __future__ import annotations
 
 import csv
+import json
 import pathlib
 import re
 import sys
@@ -86,14 +87,15 @@ def counts(m: dict) -> tuple:
 
 
 def bb_class(m: dict) -> str:
-    """The class of a map that contains X->bb, as Table 1 names it."""
+    """The class of a map that contains X->bb, in plain words (PI 2026-11-24, GO-6)."""
     with_bb = [k.removeprefix("X_") for k, v in m.items() if v == m["X_bb"]]
     if with_bb == ["bb"]:
-        return r"$X\to b\bar b$ only"
+        return r"$X\to b\bar b$ alone"
     if all(k in DECAY for k in with_bb):
-        return r"$X\to " + "$, $".join(DECAY[k] for k in with_bb) + "$"
+        d = [DECAY[k] for k in with_bb]
+        return "decays to $" + "$, $".join(d[:-1]) + "$ or $" + d[-1] + "$"
     if sorted(with_bb) == sorted(k.removeprefix("X_") for k in m if re.fullmatch(r"X_[bcsqg]{2}", k)):
-        return "all two-parton"
+        return "every decay to two quarks or gluons"
     raise SystemExit(f"FATAL: no name for the class of X->bb: {with_bb}")
 
 
@@ -122,64 +124,44 @@ def name(maps: dict, arm: str) -> str:
     return f"{len(set(maps[arm].values()))} classes"
 
 
+TABLE1_CAPTION = ("The label sets, what each merges from the finer set above it, and the number of pretraining runs; every "
+                  "set keeps the number and kind of decay products.")
+
+
 def table1(maps: dict, runs: dict) -> str:
-    """Versions A and B, one float each, for one page. Below the rule the random groupings and the mass regression."""
+    """Table 1 (PI 2026-11-24, GO-6: version B with its fixes). Below the rule the random groupings and the mass
+    regression."""
     rand = sorted(c for c in maps if c.startswith("RAND2_p"))
     n_runs = {a: str(len(runs[a])) for a in NESTED + tuple(m for m, _ in MASS)}
     if {len(runs[c]) for c in rand} != {1}:
         raise SystemExit("FATAL: a random grouping without exactly one run")
-    n_runs[RAND] = rf"{len(rand)} $\times$ 1"
+    n_runs[RAND] = f"{len(rand)} groupings, 1 each"
     cls = lambda m: "{} + {}".format(*counts(m))                    # noqa: E731
-    sym = lambda x: KEEPS if x else MERGES                          # noqa: E731
     rand_counts = {counts(maps[c]) for c in rand}
     if len(rand_counts) != 1:
         raise SystemExit("FATAL: the random groupings differ in their resonant and QCD classes")
-    rand_marks = [{mark(maps[c], pairs) for c in rand} for _, _, pairs in DISTINCTIONS]
-    nd = len(DISTINCTIONS)
-    # version A: the row names wrap (two lines below the rule) and the marks sit close, to keep the type size
-    a = [r"\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.7cm}l" + r"@{\hspace{6pt}}c" * nd + "lc@{}}", r"\toprule",
-         "Label set & Classes & " + " & ".join(h for (h, _), _, _ in DISTINCTIONS) + r" & Class with & Runs \\",
-         r" & res.\ + QCD & " + " & ".join(h for (_, h), _, _ in DISTINCTIONS) + r" & $X\to b\bar b$ & \\",
-         r"\midrule"]
-    b = [r"\begin{tabular}{@{}ll>{\raggedright\arraybackslash}p{5.6cm}>{\raggedright\arraybackslash}p{3.1cm}c@{}}",
-         r"\toprule", r"Label set & Classes & Merges & Class with & Runs \\",
-         r" & res.\ + QCD & & $X\to b\bar b$ & \\", r"\midrule"]
+    b = [r"\begin{tabular}{@{}ll>{\raggedright\arraybackslash}p{4.6cm}>{\raggedright\arraybackslash}p{3.3cm}"
+         r">{\raggedright\arraybackslash}p{1.9cm}@{}}",
+         r"\toprule", r"Label set & Classes & Merges & Class containing & Runs \\",
+         r" & (resonant + QCD) & & $X\to b\bar b$ & \\", r"\midrule"]
     for arm in NESTED:
         m = maps[arm]
-        a.append(f"{name(maps, arm)} & {cls(m)} & " + " & ".join(sym(x) for x in marks(maps, arm))
-                 + f" & {bb_class(m)} & {n_runs[arm]}" + r" \\")
         b.append(f"{name(maps, arm)} & {cls(m)} & {merged_words(maps, arm)} & {bb_class(m)} & {n_runs[arm]}" + r" \\")
-    a.append(r"\midrule")
     b.append(r"\midrule")
-    # a random grouping keeps some class pairs of a distinction and merges others, and the five differ: one note over
-    # the columns no single mark describes
-    clean = [next(iter(s)) if len(s) == 1 and None not in s else None for s in rand_marks]
-    first = next(i for i, x in enumerate(clean) if x is None)
-    if any(x is not None for x in clean[first:]):
-        raise SystemExit("FATAL: Table 1's note for the random groupings spans a column with a single mark")
     res, qcd = rand_counts.pop()
-    a.append(f"{name(maps, RAND)} & {res} + {qcd} & " + " & ".join(sym(x) for x in clean[:first])
-             + rf" & \multicolumn{{{nd - first}}}{{c}}{{mixed: kept for some class pairs only}} & varies & "
-             + n_runs[RAND] + r" \\")
     n_res = len([k for k in maps["L188"] if not k.startswith("QCD")])
     b.append(f"{name(maps, RAND)} & {res} + {qcd} & the {n_res} resonant classes into {res} random groups, "
-             f"QCD into one & varies & {n_runs[RAND]}" + r" \\")
+             f"the QCD classes into one & differs between groupings & {n_runs[RAND]}" + r" \\")
     for mass, base in MASS:
         m = maps[base]
-        a.append(f"{name(maps, mass)} & {cls(m)} & " + " & ".join(sym(x) for x in marks(maps, base))
-                 + f" & {bb_class(m)} & {n_runs[mass]}" + r" \\")
         b.append(f"{name(maps, mass)} & {cls(m)} & as {name(maps, base)} & {bb_class(m)} & {n_runs[mass]}" + r" \\")
-    end = [r"\bottomrule", r"\end{tabular}"]
-    return (_float("Table 1 (version A). The label sets, the distinctions between JetClass-II classes that each keeps "
-                   r"(\checkmark) or merges (--), and the pretraining runs.", "tab:setsA", a + end, numbered=False)
-            + "\n" + _float("Table 1 (version B). The label sets, what each merges, and the pretraining runs.",
-                            "tab:setsB", b + end, numbered=False))
+    return _float(TABLE1_CAPTION, "tab:sets", b + [r"\bottomrule", r"\end{tabular}"])
 
 
 def _float(caption: str, label: str, tabular: list, numbered: bool = True) -> str:
     """A portrait table float on one page: the caption above, the tabular at 9 pt, shrunk only if wider than the text."""
     cap = rf"\caption{{{caption}}}\label{{{label}}}" if numbered else rf"\caption*{{{caption}}}\label{{{label}}}"
-    return "\n".join([r"\begin{table}[tbp]", r"\centering", cap, r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{4pt}",
+    return "\n".join([r"\begin{table}[tb]", r"\centering", cap, r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{4pt}",
                       r"\begin{adjustbox}{max width=\linewidth}", *tabular, r"\end{adjustbox}", r"\end{table}", ""])
 
 
@@ -252,6 +234,7 @@ def capture(root: pathlib.Path) -> dict:
 
             def table_summary(*a, **k):
                 got.setdefault("summary", a)
+                got.setdefault("summary_kw", k)
                 return summary(*a, **k)
 
             def table_tests(*a, **k):
@@ -262,7 +245,7 @@ def capture(root: pathlib.Path) -> dict:
         return rel
     MT.data_release_module = release_module
     try:
-        MT.build(root)
+        got["built"] = MT.build(root)[0]
     finally:
         MT.data_release_module = load
     if {"R", "summary", "tested"} - set(got):
@@ -321,49 +304,133 @@ def tables23(got: dict, maps: dict) -> tuple:
     return t2, t3, pending, lp_cols, ft_cols
 
 
-# The clauses of the abstract, the introduction and the outline (LEDGER RW-9) and the tested differences each rests on:
-# (clause, heading of the build's table of tests, first network, second network, what must hold: "below" / "above"
-# (first minus second beyond 3 sigma) or "null" (within 3 sigma); "report": printed, never a stop (not stated)).
+# ------------------------------------------------------------------ the tested rows the text rests on
+# PI 2026-11-25 (LEDGER sections 28-31): the abstract and introduction of paper/journal/v2/pi_prose_1125.tex, and the
+# Methods, Results and Discussion written to them. Each clause names the tested differences it rests on: (clause,
+# heading of the build's table of tests, first network, second network, what must hold: "below" / "above" (first minus
+# second beyond 3 sigma) or "null" (within 3 sigma); "report": printed, never a stop). A missing or failing row stops
+# the build; it is reported to the PI, never worded around.
+BINARY = (("top tagging", "top"), ("quark/gluon tagging (Pythia)", "qg"), ("quark/gluon tagging (Herwig)", "qg_herwig"))
+METRICS = (("accuracy", "accuracy"), ("AUC", "auc"), ("$R_{50}$", "r50"), ("$R_{30}$", "r30"))
+AUC_PASS = ("quark/gluon tagging (Pythia)", "AUC", "ft", "R16_Q1", "L162")     # the one pass (LEDGER 30.1)
+
+
+class Rows:
+    """The headings of the build's table of tests, and its rows."""
+
+    def __init__(self, R, tested: dict):
+        self.R, self.tested = R, tested
+        lp, ft = R.HEADING["lp"], R.HEADING["ft"]
+        self.acc, self.auc = f"JetClass-II, accuracy, {lp}", f"JetClass-II, AUC, {lp}"
+        self.auc_qcd = f"JetClass-II, AUC over the QCD classes, {lp}"
+        self.auc_res = f"JetClass-II, AUC over the resonant classes, {lp}"
+        self.jc1_lp = f"JetClass, accuracy, {lp}"
+        self.jc1, self.jc2 = f"JetClass, accuracy, {ft}", f"JetClass-II, accuracy, {ft}"
+        six = R._power("1e+06") + " training jets, mass regression and from scratch"
+        self.jc1_six, self.jc2_six = f"{self.jc1}, {six}", f"{self.jc2}, {six}"
+        self.mass = "jet mass, resolution, multilayer-perceptron probe on the frozen features"
+        self.mlp = "JetClass-II, AUC, multilayer-perceptron probe on the frozen features"
+        self.xbx = {sig: rf"{h}, signal efficiency (\%), " + R.XBX_HEAD for sig, h in R.SUMMARY_XBX}
+
+    def pair(self, k):
+        return f"{self.R._PAIR[k]}, AUC, {self.R.HEADING['lp']}"
+
+    def full(self, task, metric, mode):
+        return rf"{task}, {metric}, {self.R.HEADING[mode]}, full training set, label sets and random grouping"
+
+    def sizes(self):
+        """The headings of fine-tuned JetClass-II below the largest training set."""
+        return sorted(h for h, a, b in self.tested if h.startswith(self.jc2 + ", ") and "training jets" in h
+                      and "mass regression" not in h and (a, b) == ("R16_Q1", "L188"))
+
+    def get(self, head, a, b):
+        v = self.tested.get((head, a, b))
+        if not isinstance(v, tuple):
+            raise SystemExit(f"FATAL: no tested difference {a} - {b} under '{head}' ({v})")
+        return v
+
+    def z(self, head, a, b):
+        v = self.get(head, a, b)
+        return v[0] / v[4]
+
+
 def claims(R, tested: dict) -> tuple:
-    lp, ft = R.HEADING["lp"], R.HEADING["ft"]
-    acc, auc = f"JetClass-II, accuracy, {lp}", f"JetClass-II, AUC, {lp}"
-    pair = lambda k: f"{R._PAIR[k]}, AUC, {lp}"                    # noqa: E731
-    top, qg = f"top tagging, $R_{{30}}$, {ft}", f"quark/gluon tagging (Pythia), $R_{{30}}$, {ft}"
-    jc1, jc2 = f"JetClass, accuracy, {ft}", f"JetClass-II, accuracy, {ft}"
-    sizes = sorted(h for h, a, b in tested if h.startswith(jc2 + ", ") and (a, b) == ("R16_Q1", "L188"))
-    if not sizes:
-        raise SystemExit("FATAL: no tested difference of fine-tuned JetClass-II below the largest training set")
-    mass = "jet mass, resolution, multilayer-perceptron probe on the frozen features"
-    mlp = "JetClass-II, AUC, multilayer-perceptron probe on the frozen features"
-    less = "coarser labels: the 188 classes identified less accurately"
-    pairs = "decays that differ only in a merged flavor are harder to separate"
-    rand = "random groupings into 17 classes lose far less"
-    jet = "after fine-tuning the coarsest set remains worse on JetClass"
-    out = "outline 4.3: JetClass significant at 43 and 17 classes, not at 162; JetClass-II likewise; every training size"
-    null = "no significant difference on top tagging and quark-gluon after fine-tuning"
-    sharp = "mass regression sharpens the mass resolution of the frozen features"
-    cost = "mass regression: no significant cost in frozen-feature classification"
-    ftcost = "outline 4.4: fine-tuned, the 17-class model with mass regression is less accurate on JetClass"
-    notsaid = "not stated (the RW-9 draft's unscoped 'no significant cost in classification')"
-    return ((less, acc, "L162", "L188", "report"), (less, auc, "L162", "L188", "below"), (less, acc, "R42_Q1", "L188", "below"),
-            (less, acc, "R16_Q1", "L188", "below"),
-            (pairs, pair("bb_vs_cc"), "R16_Q1", "L188", "below"), (pairs, pair("bbqq_vs_ccqq"), "R16_Q1", "L188", "below"),
-            (pairs, pair("bc_vs_bq_cs"), "R42_Q1", "L188", "below"),
-            (rand, acc, RAND, "R16_Q1", "above"), (rand, auc, RAND, "R16_Q1", "above"),
-            (jet, jc1, "R16_Q1", "L188", "below"), (jet, jc2, "R16_Q1", "L188", "below"),
-            (out, jc1, "R42_Q1", "L188", "below"), (out, jc1, "L162", "L188", "null"),
-            (out, jc2, "R42_Q1", "L188", "below"), (out, jc2, "L162", "L188", "null"),
-            *[(out, h, "R16_Q1", "L188", "below") for h in sizes],
-            *[(null, h, a, "L188", "null") for h in (top, qg) for a in ("L162", "R42_Q1", "R16_Q1")],
-            (sharp, mass, "L162_MASS", "L162", "below"), (sharp, mass, "R16_Q1_MASS", "R16_Q1", "below"),
-            *[(cost, h, m, b, "null") for h in (acc, auc, mlp) for m, b in MASS],
-            (ftcost, jc1, "R16_Q1_MASS", "R16_Q1", "below"), (notsaid, jc1, "L162_MASS", "L162", "report"),
-            *[(notsaid, top, m, b, "report") for m, b in MASS], *[(notsaid, qg, m, "L188", "report") for m, _ in MASS])
+    r = Rows(R, tested)
+    pairs = list(__import__("itertools").combinations(NESTED, 2))
+    out = []
+    add = lambda clause, *rows: out.extend((clause, *x) for x in rows)       # noqa: E731
+    add("frozen: the 188 classes are identified less accurately with coarser labels",
+        (r.acc, "R16_Q1", "L188", "below"), (r.acc, "R42_Q1", "L188", "below"), (r.acc, "L162", "L188", "null"),
+        (r.auc, "L162", "L188", "below"), (r.auc_qcd, "L162", "L188", "below"), (r.auc_res, "L162", "L188", "null"))
+    add("random groupings still reach 42%: the loss depends on which classes are merged",
+        (r.acc, RAND, "R16_Q1", "above"), (r.auc, RAND, "R16_Q1", "above"), (r.acc, RAND, "L188", "below"),
+        (r.acc, RAND, "R42_Q1", "above"))
+    add("pairs of classes that a label set merges are separated less well",
+        (r.pair("bb_vs_cc"), "R16_Q1", "L188", "below"), (r.pair("bbqq_vs_ccqq"), "R16_Q1", "L188", "below"),
+        (r.pair("bc_vs_bq_cs"), "R42_Q1", "L188", "below"))
+    add("at 43 classes some pairs the labels keep apart lose separation as well",
+        (r.pair("bb_vs_cc"), "R42_Q1", "L188", "below"), (r.pair("bbqq_vs_ccqq"), "R42_Q1", "L188", "below"))
+    add("with the 17-class model the resonance benchmark loses signal efficiency for both decays",
+        (r.xbx["xbb"], "R16_Q1", "L188", "below"), (r.xbx["xbs"], "R16_Q1", "L188", "below"))
+    add("43 classes on the resonance benchmark: X->bs lower, X->bb not significantly different",
+        (r.xbx["xbs"], "R42_Q1", "L188", "below"), (r.xbx["xbb"], "R42_Q1", "L188", "null"))
+    add("transfer learning on the frozen features against the same classifier trained from scratch, X->bs",
+        (r.xbx["xbs"], "L188", "SCRATCH", "above"))
+    add("fine-tuning narrows the gap without closing it; the 43-class model is also behind, the 162-class model not",
+        (r.jc2, "R16_Q1", "L188", "below"), (r.jc1, "R16_Q1", "L188", "below"), (r.jc2, "R42_Q1", "L188", "below"),
+        (r.jc1, "R42_Q1", "L188", "below"), (r.jc2, "L162", "L188", "null"), (r.jc1, "L162", "L188", "null"),
+        *[(h, "R16_Q1", "L188", "below") for h in r.sizes()])
+    add("gains from pretraining over training from scratch on JetClass-II and JetClass",
+        (r.jc2_six, "L188", "SCRATCH", "above"), (r.jc1_six, "L188", "SCRATCH", "above"))
+    # LEDGER 30.1: no difference among the four label sets in accuracy or background rejection at the full sets,
+    # frozen or fine-tuned; in AUC exactly one passes, which Results and Discussion state
+    for task, _ in BINARY:
+        for mode in ("lp", "ft"):
+            for metric, _ in METRICS:
+                for b, a in pairs:
+                    one = (task, metric, mode, a, b) == AUC_PASS
+                    want = "below" if one else "report" if metric == "AUC" else "null"
+                    add("the one AUC difference among the label sets" if one else
+                        "binary benchmarks: no significant difference in accuracy or background rejection",
+                        (r.full(task, metric, mode), a, b, want))
+    add("mass regression sharpens the mass resolution of the frozen representation",
+        (r.mass, "L162_MASS", "L162", "below"), (r.mass, "R16_Q1_MASS", "R16_Q1", "below"),
+        ("jet mass, resolution, mass output of the pretraining head", "L162_MASS_HEAD", "SDMASS", "below"))
+    add("mass regression: no significant cost in the accuracy of the frozen representation",
+        *[(h, m, b, "null") for h in (r.acc, r.auc, r.mlp) for m, b in MASS])
+    add("after fine-tuning: about equal cost at both label sets, significant only at 17 classes",
+        (r.jc2_six, "R16_Q1_MASS", "R16_Q1", "below"), (r.jc1_six, "R16_Q1_MASS", "R16_Q1", "below"),
+        (r.jc2_six, "L162_MASS", "L162", "null"), (r.jc1_six, "L162_MASS", "L162", "null"))
+    add("random groupings offer no advantage over the 17-class set on frozen JetClass and are below 188 classes",
+        (r.jc1_lp, RAND, "R16_Q1", "null"), (r.jc1_lp, RAND, "L188", "below"))
+    add("on top tagging the random groupings' frozen features are significantly below those of the 17-class set",
+        *[(r.full("top tagging", m, "lp"), RAND, "R16_Q1", "below") for m, _ in METRICS])
+    add("quark/gluon, frozen: random grouping not significantly different from 17 classes",
+        *[(r.full("quark/gluon tagging (Pythia)", m, "lp"), RAND, "R16_Q1", "null") for m, _ in METRICS])
+    add("fine-tuned on JetClass the random grouping is above the 17-class model", (r.jc1, RAND, "R16_Q1", "above"))
+    add("pretrained against from scratch: accuracy and AUC on top tagging and quark/gluon (Pythia)",
+        *[(r.full(t, m, "ft"), "L188", "SCRATCH", "above") for t in ("top tagging", "quark/gluon tagging (Pythia)")
+          for m in ("accuracy", "AUC")])
+    add("pretrained against from scratch: Rej30% passes on neither benchmark, nothing on Herwig",
+        *[(r.full(t, "$R_{30}$", "ft"), "L188", "SCRATCH", "null") for t in ("top tagging", "quark/gluon tagging (Pythia)")],
+        *[(r.full("quark/gluon tagging (Herwig)", m, "ft"), "L188", "SCRATCH", "null") for m, _ in METRICS])
+    add("appendix: the flavor-boundary groupings between the 17-class model and the random groupings",
+        (r.acc, "FLAV_F0", "R16_Q1", "above"), (r.acc, "FLAV_F1", "FLAV_F0", "above"), (r.acc, "FLAV_F1R", "FLAV_F0", "above"),
+        (r.acc, RAND, "FLAV_F1", "above"), (r.acc, RAND, "FLAV_F1R", "above"))
+    mlp_tail = "multilayer-perceptron probe on the frozen features"
+    groups = "JetClass-II, accuracy on the 17 merged groups, "
+    top_mlp = rf"top tagging, $R_{{30}}$, {mlp_tail}, missing inputs as for the linear probe"
+    add("appendix: where the MLP probe changes a conclusion",
+        (groups + mlp_tail, "R16_Q1_17", "L188_17", "below"),
+        *[(groups + R.HEADING["lp"], a, "L188_17", "null") for a in ("L162_17", "R42_Q1_17", "R16_Q1_17")],
+        (top_mlp, "R16_Q1_MASS", "L188", "above"),
+        (rf"top tagging, $R_{{30}}$, {R.HEADING['lp']}", "R16_Q1_MASS", "L188", "null"))
+    return tuple(out)
 
 
 def check_claims(R, tested: dict) -> tuple:
-    """(one line per tested difference, the lines whose test is missing or fails)."""
-    lines, bad = [], []
+    """(one line per tested difference, the lines whose test is missing or fails, AUC passes among the label sets)."""
+    lines, bad, auc_pass = [], [], []
     for clause, head, a, b, want in claims(R, tested):
         v = tested.get((head, a, b))
         if not isinstance(v, tuple):
@@ -374,60 +441,325 @@ def check_claims(R, tested: dict) -> tuple:
             verdict = "passes" if ok else "FAILS"
             if want == "report":
                 verdict = "significant" if abs(z) > SIGMA else "not significant"
+                if abs(z) > SIGMA:
+                    auc_pass.append(f"{head} | {a} - {b} | {z:+.2f}")
             nums = f"delta {v[0]:.5g}  sigma {v[4]:.5g}  delta/sigma {z:+.2f}  "
         line = f"{clause} | {head} | {a} - {b} | wants {want} | {nums}{verdict}"
         lines.append(line)
-        if verdict != "passes" and want != "report":
+        if verdict != "passes" and (want != "report" or verdict.startswith(("MISSING", "PENDING"))):
             bad.append(line)
+    # the text says one AUC difference passes: a second one is a failed sentence
+    bad += [f"a second AUC difference among the label sets passes | {x}" for x in auc_pass]
     return lines, bad
 
 
-def numbers(lp_cols, ft_cols, maps: dict, runs: dict) -> str:
-    """The numbers of the abstract, the introduction and the outline: the class counts of the label sets, the run
-    counts in words, and the JetClass-II linear-probe accuracy of the 17- and the 188-class model in percent."""
-    get = dict(lp_cols)["JetClass-II accuracy"]
-    pct = lambda a: f"{100 * float(np.mean([float(x) for x in get(a)])):.0f}"      # noqa: E731
-    ftv = dict(ft_cols)
+# ------------------------------------------------------------------ the numbers of the text
+def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
+    """Every number the v2 text prints that is not a macro of the build's results_generated.tex (which the draft also
+    inputs): class counts, accuracies in percent, differences in percentage points, |Delta/sigma| of the central
+    results, the output layer's accuracies, the resonance benchmark's efficiencies and the class-pair AUCs."""
+    R, tested = got["R"], got["tested"]
+    r = Rows(R, tested)
+    lp, ft = dict(lp_cols), dict(ft_cols)
+    data = REPO / "experiments/FIGS/data/v2"
 
-    def ft_pct(col, arm):
-        """A fine-tuned accuracy in percent to one decimal; a red bracket while a run of it is missing."""
-        v = [x for x in ftv[col](arm) if x is not None]
-        return f"{100 * float(np.mean([float(x) for x in v])):.1f}" if len(v) == len(runs[arm]) else r"\pending{pending}"
-    one = lambda xs: MT.words(xs.pop()) if len(xs) == 1 else None                  # noqa: E731
+    def vals(cols, col, arm):
+        v = [float(x) for x in cols[col](arm) if x is not None]
+        n = len(runs[arm]) if arm in runs else len(R.FT_SCRATCH_MODELS)
+        if len(v) != n:
+            raise SystemExit(f"FATAL: {col}, {arm}: {len(v)} of {n} runs")
+        return v
+    mean = lambda cols, col, arm: float(np.mean(vals(cols, col, arm)))                     # noqa: E731
+    pct = lambda cols, col, arm, nd=1: f"{100 * mean(cols, col, arm):.{nd}f}"              # noqa: E731
+    pts = lambda head, a, b, nd=1: f"{100 * abs(r.get(head, a, b)[0]):.{nd}f}"             # noqa: E731
+    zz = lambda head, a, b: f"{abs(r.z(head, a, b)):.1f}"                                  # noqa: E731
+    one = lambda xs: MT.words(xs.pop()) if len(xs) == 1 else None                          # noqa: E731
+    S = "trained from scratch"
+    J2, J1, TA, TR, QA, QR = ("JetClass-II accuracy", "JetClass accuracy", "top accuracy", "top Rej30%",
+                              "quark/gluon accuracy", "quark/gluon Rej30%")
+    arms = {"Full": "L188", "Res": "L162", "Mid": "R42_Q1", "Coarse": "R16_Q1", "Rand": RAND,
+            "ResMass": "L162_MASS", "CoarseMass": "R16_Q1_MASS"}
     out = {"Kfull": len(set(maps["L188"].values())), "Kres": len(set(maps["L162"].values())),
            "Kmid": len(set(maps["R42_Q1"].values())), "Kcoarse": len(set(maps["R16_Q1"].values())),
-           "VtwoAccCoarsePct": pct("R16_Q1"), "VtwoAccFullPct": pct("L188"),
-           "VtwoFtJcOneCoarsePct": ft_pct("JetClass accuracy", "R16_Q1"), "VtwoFtJcOneFullPct": ft_pct("JetClass accuracy", "L188"),
-           "VtwoFtJcTwoCoarsePct": ft_pct("JetClass-II accuracy", "R16_Q1"), "VtwoFtJcTwoFullPct": ft_pct("JetClass-II accuracy", "L188"),
-           "VtwoRunsWord": one({len(runs[a]) for a in NESTED}), "VtwoMassRunsWord": one({len(runs[m]) for m, _ in MASS}),
-           "VtwoRandWord": MT.words(len([c for c in maps if c.startswith("RAND2_p")]))}
+           "VRunsWord": one({len(runs[a]) for a in NESTED}), "VMassRunsWord": one({len(runs[m]) for m, _ in MASS}),
+           "VRandWord": MT.words(len([c for c in maps if c.startswith("RAND2_p")])),
+           "VScratchRunsWord": MT.words(len(R.FT_SCRATCH_MODELS)),
+           # the abstract's whole percents
+           "VAccFullPct": pct(lp, J2, "L188", 0), "VAccCoarsePct": pct(lp, J2, "R16_Q1", 0),
+           "VAccRandPct": pct(lp, J2, RAND, 0), "VDFtJcTwoCoarseRound": pts(r.jc2, "R16_Q1", "L188", 0)}
     if None in out.values():
         raise SystemExit(f"FATAL: label sets with different run counts: {out}")
+    for w, a in arms.items():
+        out[f"VLpJcTwo{w}"], out[f"VLpJcOne{w}"] = pct(lp, J2, a), pct(lp, J1, a)
+        out[f"VFtJcTwo{w}"], out[f"VFtJcOne{w}"] = pct(ft, J2, a), pct(ft, J1, a)
+        out[f"VLpTopRej{w}"] = MT.fmt_int(mean(lp, TR, a))
+    out.update({"VLpJcTwoUntrained": pct(lp, J2, R.INIT_BN), "VLpJcTwoSophon": pct(lp, J2, R.SOPHON),
+                "VFtJcTwoScratch": pct(ft, J2, S), "VFtJcOneScratch": pct(ft, J1, S),
+                "VFtTopAccFull": pct(ft, TA, "L188", 2), "VFtTopAccScratch": pct(ft, TA, S, 2),
+                "VFtQgAccFull": pct(ft, QA, "L188", 2), "VFtQgAccScratch": pct(ft, QA, S, 2)})
+    lo, hi = sorted(vals(lp, J2, "R16_Q1_MASS"))[0], sorted(vals(lp, J2, "R16_Q1_MASS"))[-1]
+    out.update({"VLpJcTwoCoarseMassLo": f"{100 * lo:.1f}", "VLpJcTwoCoarseMassHi": f"{100 * hi:.1f}"})
+    # differences in percentage points, from the tested rows
+    out.update({"VDLpJcTwoCoarse": pts(r.acc, "R16_Q1", "L188"), "VDLpJcTwoMid": pts(r.acc, "R42_Q1", "L188"),
+                "VDLpJcTwoRes": pts(r.acc, "L162", "L188"), "VDLpJcTwoRand": pts(r.acc, RAND, "L188"), "VDLpJcOneRand": pts(r.jc1_lp, RAND, "L188"),
+                "VDFtJcTwoCoarse": pts(r.jc2, "R16_Q1", "L188"), "VDFtJcOneCoarse": pts(r.jc1, "R16_Q1", "L188"),
+                "VDFtJcTwoMid": pts(r.jc2, "R42_Q1", "L188"), "VDFtJcOneMid": pts(r.jc1, "R42_Q1", "L188"),
+                "VDFtJcTwoGain": pts(r.jc2_six, "L188", "SCRATCH"), "VDFtJcOneGain": pts(r.jc1_six, "L188", "SCRATCH"),
+                "VDFtJcOneMassRes": pts(r.jc1_six, "L162_MASS", "L162"),
+                "VDFtJcOneMassCoarse": pts(r.jc1_six, "R16_Q1_MASS", "R16_Q1"),
+                "VDFtJcTwoMassRes": pts(r.jc2_six, "L162_MASS", "L162", 2),
+                "VDFtJcTwoMassCoarse": pts(r.jc2_six, "R16_Q1_MASS", "R16_Q1", 2),
+                "VDFtJcOneRand": pts(r.jc1, RAND, "R16_Q1"),
+                "VDFtTopAccGain": pts(r.full("top tagging", "accuracy", "ft"), "L188", "SCRATCH", 2),
+                "VDFtQgAccGain": pts(r.full("quark/gluon tagging (Pythia)", "accuracy", "ft"), "L188", "SCRATCH", 2)})
+    sizes = r.sizes()
+    out.update({"VDFtJcTwoCoarseSmallest": pts(sizes[0], "R16_Q1", "L188"),
+                "VDFtJcTwoCoarseSmaller": pts(sizes[-1], "R16_Q1", "L188"), "VFtSizesWord": MT.words(len(sizes))})
+    # |Delta / sigma| of the central results
+    out.update({"VZLpJcTwoCoarse": zz(r.acc, "R16_Q1", "L188"), "VZLpJcTwoRand": zz(r.acc, RAND, "R16_Q1"),
+                "VZFtJcTwoCoarse": zz(r.jc2, "R16_Q1", "L188"), "VZFtJcOneCoarse": zz(r.jc1, "R16_Q1", "L188"),
+                "VZFtJcTwoMassCoarse": zz(r.jc2_six, "R16_Q1_MASS", "R16_Q1"),
+                "VZQgAuc": zz(r.full(AUC_PASS[0], AUC_PASS[1], AUC_PASS[2]), AUC_PASS[3], AUC_PASS[4]),
+                "VZMassRes": zz(r.mass, "L162_MASS", "L162"), "VZMassCoarse": zz(r.mass, "R16_Q1_MASS", "R16_Q1"),
+                "VZXbsCoarse": zz(r.xbx["xbs"], "R16_Q1", "L188"), "VZXbbCoarse": zz(r.xbx["xbb"], "R16_Q1", "L188")})
+    out["VDQgAuc"] = f"{abs(r.get(r.full(AUC_PASS[0], AUC_PASS[1], AUC_PASS[2]), AUC_PASS[3], AUC_PASS[4])[0]):.4f}"
+    n_pairs = len(list(__import__("itertools").combinations(NESTED, 2)))
+    out["VNBinaryCmp"] = str(n_pairs * len(BINARY) * len(METRICS) * 2)
+    # the run-to-run spread of the fine-tuned background rejection among the four label sets
+    for w, col, nd in (("Top", TR, 0), ("Qg", QR, 1)):
+        sd = [float(np.std(vals(ft, col, a), ddof=1)) for a in NESTED]
+        out[f"VFt{w}RejSdLo"], out[f"VFt{w}RejSdHi"] = (f"{min(sd):.{nd}f}", f"{max(sd):.{nd}f}")
+        out[f"VFt{w}RejFull"] = MT.fmt_int(mean(ft, col, "L188")) if nd == 0 else f"{mean(ft, col, 'L188'):.1f}"
+        out[f"VFt{w}RejScratch"] = MT.fmt_int(mean(ft, col, S)) if nd == 0 else f"{mean(ft, col, S):.1f}"
+    # the pretrained output layer (experiments/EVAL/head_accuracy.py; LEDGER 28 1.2, 31.2)
+    f = sorted((data / "head_acc").glob("head_acc_bias_*.json"))
+    if len(f) != 1:
+        raise SystemExit(f"FATAL: {len(f)} output-layer files in {data / 'head_acc'}")
+    doc = json.loads(f[0].read_text())
+    ours = [doc["models"][m] for m in runs["L188"]]
+    before = float(np.mean([m["accuracy"] for m in ours]))
+    after = float(np.mean([m["bias_refit"]["accuracy"] for m in ours]))
+    probe = mean(lp, J2, "L188")
+    out.update({"VHeadAcc": f"{100 * before:.1f}", "VHeadRefit": f"{100 * after:.1f}",
+                "VHeadClosed": f"{100 * (after - before) / (probe - before):.0f}",
+                "VMajority": f"{100 * doc['majority']['accuracy']:.1f}", "VChance": f"{100 / out['Kfull']:.1f}",
+                "VProbeNTrain": MT.fmt_int(ours[0]["bias_refit"]["n_train"]),
+                "VProbePerClassMax": MT.fmt_int(ours[0]["bias_refit"]["train_class_count_max"]),
+                "VProbePerClassMin": MT.fmt_int(ours[0]["bias_refit"]["train_class_count_min"])})
+    # the resonance benchmark: signal efficiency in percent at the benchmark's background efficiency
+    xbx = got["summary_kw"].get("xbx") or {}
+    if not xbx.get("fits"):
+        raise SystemExit("FATAL: no X->bb / X->bs fits in the build")
+    XR, xfits, scr = xbx["XR"], xbx["fits"], xbx.get("scr") or {}
+    stars = set()
+    for sig, w in (("xbb", "Xbb"), ("xbs", "Xbs")):
+        for a, arm in (("Full", "L188"), ("Mid", "R42_Q1"), ("Coarse", "R16_Q1")):
+            recs = [XR.readout(xfits.get(m, {}).get(sig, {}), "head") for m in runs[arm]]
+            if not all(recs):
+                raise SystemExit(f"FATAL: {sig}, {arm}: a run without its fit")
+            stars |= {x["eps_b_star"] for x in recs}
+            out[f"V{w}{a}"] = f"{100 * float(np.mean([x['eps_s_at_star'] for x in recs])):.1f}"
+        v = [x["eps_s_at_star"] for x in scr.get(sig, [])]
+        if not v:
+            raise SystemExit(f"FATAL: {sig}: no classifier trained from scratch")
+        out[f"V{w}Scratch"] = f"{100 * float(np.mean(v)):.1f}"
+    out["VXbxEpsB"] = f"{100 * one_value(stars):g}"
+    # class pairs: the AUC of a binary linear probe
+    fits = got["summary"][0]
+    for k, w in (("bb_vs_cc", "Bb"), ("bbqq_vs_ccqq", "Bbqq"), ("bc_vs_bq_cs", "Bc")):
+        for a, arm in (("Full", "L188"), ("Mid", "R42_Q1"), ("Coarse", "R16_Q1")):
+            v = [R._pair(fits, m, k) for m in runs[arm]]
+            if None in v:
+                raise SystemExit(f"FATAL: class pair {k}, {arm}: a run without its probe")
+            out[f"VAuc{w}{a}"] = f"{float(np.mean(v)):.4f}"
     return "% written by experiments/FIGS/mlst_v2_tables.py\n" + "".join(rf"\newcommand{{\{k}}}{{{v}}}" + "\n" for k, v in out.items())
+
+
+def one_value(xs: set):
+    if len(xs) != 1:
+        raise SystemExit(f"FATAL: expected one value, found {sorted(xs)}")
+    return next(iter(xs))
+
+
+# ------------------------------------------------------------------ appendix tables
+TOKEN = re.compile(r"tauh|taue|taum|tau|light|[bcsqgemv]")
+TOKEN_TEX = {"tauh": r"\tau_h", "taue": r"\tau_e", "taum": r"\tau_\mu", "tau": r"\tau", "m": r"\mu", "v": r"\nu",
+             "light": r"\text{light}"}
+
+
+def class_tex(k: str) -> str:
+    """A JetClass-II class in Sophon's notation: X_YY_bbtauhtaue -> $bb\tau_h\tau_e$, QCD_bbc -> $bbc$."""
+    body = k.removeprefix("QCD_").removeprefix("X_YY_").removeprefix("X_")
+    toks = TOKEN.findall(body)
+    if "".join(toks) != body:
+        raise SystemExit(f"FATAL: class name {k} not read")
+    return "$" + " ".join(TOKEN_TEX.get(t, t) for t in toks).replace(" ", "") .replace("\\", " \\").strip() + "$"
+
+
+def table_classmap(maps: dict) -> str:
+    """Appendix Table A1 (PI 2026-11-24, GO-6): the 17 groups as blocks, the 43 classes as rows, the 188 classes of
+    each in the last column; resonant decays by their final state, QCD jets by their quark content."""
+    m17, m43 = maps["R16_Q1"], maps["R42_Q1"]
+    order = list(maps["L188"])
+    out = [r"{\fontsize{8}{9.6}\selectfont\setlength{\tabcolsep}{4pt}",
+           r"\begin{longtable}{@{}cc>{\raggedright\arraybackslash}p{0.78\linewidth}@{}}",
+           r"\caption{The class map: each of the 17 classes of the coarsest label set as a block, the 43 classes it "
+           r"contains as rows, and the JetClass-II classes of each row, written by the decay products of the resonance "
+           r"or, for QCD jets, by their quark content.}\label{tab:classmap}\\", r"\toprule",
+           r"17 & 43 & JetClass-II classes \\", r"\midrule", r"\endfirsthead", r"\toprule",
+           r"17 & 43 & JetClass-II classes \\", r"\midrule", r"\endhead", r"\bottomrule", r"\endlastfoot"]
+    g17 = sorted(set(m17.values()), key=int)
+    for g in g17:
+        rows = sorted({m43[k] for k in order if m17[k] == g}, key=int)
+        for j, c in enumerate(rows):
+            members = [k for k in order if m43[k] == c]
+            if {m17[k] for k in members} != {g}:
+                raise SystemExit("FATAL: the 43 classes are not nested in the 17")
+            kind = "QCD: " if members[0].startswith("QCD") else ""
+            out.append(f"{int(g) + 1 if j == 0 else ''} & {int(c) + 1} & {kind}" + ", ".join(class_tex(k) for k in members) + r" \\")
+        if g != g17[-1]:
+            out.append(r"\addlinespace")
+    return "\n".join(out + [r"\end{longtable}}", ""])
+
+
+def strip_bold(t: str) -> str:
+    """Old generated tabulars without their bold (PI 2026-11-24, GO-6: no bold where one model is compared under labels)."""
+    key = r"{\fontseries{b}\selectfont "
+    while key in t:
+        i = t.index(key)
+        depth, j = 1, i + len(key)
+        while depth:
+            depth += {"{": 1, "}": -1}.get(t[j], 0)
+            j += 1
+        t = t[:i] + t[i + len(key):j - 1] + t[j:]
+    return t
+
+
+RENAME = ((r" classes + mass ", " classes + mass regression "), ("released Sophon checkpoint", "Sophon (released)"),
+          ("from scratch (this work)", "trained from scratch (this work)"), ("random partitions", "random grouping"),
+          (r"\textit{17-class partitions}", r"\textit{17 classes, other groupings}"), ("17-class partitions", "17 classes, other groupings"),
+          (r"$^{\S}$", ""), ("multilayer-perceptron probe", "MLP probe"), ("$R_{30}$", r"Rej$_{30\%}$"), ("$R_{50}$", r"Rej$_{50\%}$"))
+DROP_ROWS = ("random network", r"\quad BatchNorm recomputed")
+
+
+def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsize{9}{11}\selectfont") -> str:
+    """A table the paper's build writes (its tabulars as they are: every cell is the build's), under the rewrite's
+    caption and row names, without bold and without the rows of the network the text does not use."""
+    old = built.get(key)
+    if old is None:
+        raise SystemExit(f"FATAL: the build wrote no {key}")
+    tabs = re.findall(r"\\begin\{tabular\*?\}.*?\\end\{tabular\*?\}", old, re.S)
+    if not tabs:
+        raise SystemExit(f"FATAL: no tabular in {key}")
+    body = []
+    for t in tabs:
+        t = strip_bold(t)
+        for a, b in RENAME:
+            t = t.replace(a, b)
+        body.append("\n".join(ln for ln in t.split("\n") if not ln.lstrip().startswith(DROP_ROWS)))
+    return "\n".join([r"\begin{table}[tbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}", size,
+                      r"\setlength{\tabcolsep}{4pt}", "\n\\par\\medskip\n".join(body), r"\end{table}", ""])
+
+
+def appendix_tables(got: dict, maps: dict) -> dict:
+    """The appendix's value tables in Tables 2 and 3's form: the AUC columns, the flavor-boundary groupings, Herwig."""
+    R = got["R"]
+    fits, fill, chosen, per, runs = got["summary"][:5]
+    runs = R._pooled(runs)
+    S = "trained from scratch"
+    pre = [(name(maps, a), a, len(runs[a])) for a in NESTED + (RAND,) + tuple(m for m, _ in MASS)]
+    refs = [None, ("untrained network", R.INIT_BN, len(runs[R.INIT_BN])), ("Sophon (released)", R.SOPHON, 1)]
+    scr = [None, (S, S, len(R.FT_SCRATCH_MODELS))]
+    sizes = {k: n for k, n, *_ in R.SUMMARY_PANELS}
+
+    def probe(ds, met):
+        g = R.summary_probe(fits, fill, chosen, ds, met)
+        return lambda a: [] if g is None or (a == R.SOPHON and ds in R.SUMMARY_NO_SOPHON and R.SOPHON_MODEL not in fill) \
+            else [g(m) for m in runs[a]]
+
+    def ft(key, met):
+        g = R.summary_ft(per, key, sizes[key], met)
+        return lambda a: (R.summary_scratch(per, key, sizes[key], met) if a == S else [] if g is None
+                          else [g(m) for m in runs[a]])
+
+    def tab(cols, rows, head):
+        body, _ = value_table(cols, rows, "--")
+        return [r"\begin{tabular}{@{}l" + "c" * len(cols) + "@{}}", r"\toprule", *head, r"\midrule", *body, r"\bottomrule",
+                r"\end{tabular}"]
+
+    def two(caption, label, a, b):
+        return "\n".join([r"\begin{table}[tbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
+                          r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{4pt}", r"\textit{Linear probes}\par\smallskip",
+                          *a, r"\par\medskip", r"\textit{Fine-tuned}\par\smallskip", *b, r"\end{table}", ""])
+    auc_head = [r" & JetClass-II & JetClass & Top tagging & Quark/gluon \\"]
+    auc = two(r"AUC of the models of Tables~\ref{tab:probes} and~\ref{tab:finetuned}, averaged over classes on "
+              r"JetClass-II and JetClass; mean $\pm$ standard deviation over runs.", "tab:auc",
+              tab([("JetClass-II AUC", probe("jc2_188", "macro_auc_ovr")), ("JetClass AUC", probe("jc1", "macro_auc_ovr")),
+                   ("top AUC", probe("top", "auc")), ("quark/gluon AUC", probe("qg", "auc"))], pre + refs, auc_head),
+              tab([("JetClass-II AUC", ft("jc2", "macro_auc_ovr")), ("JetClass AUC", ft("jc1", "macro_auc_ovr")),
+                   ("top AUC", ft("top", "auc")), ("quark/gluon AUC", ft("qg", "auc"))], pre + scr, auc_head))
+    flav = [(f"{len(set(maps['R16_Q1'].values()))} classes, {w}", a, len(runs[a])) for a, w in
+            (("FLAV_F0", "no flavor boundary"), ("FLAV_F1", "$b$-quark boundary"), ("FLAV_F1R", "random flavor boundary"))]
+    keep = [x for x in pre if x[1] in ("R16_Q1", RAND)]
+    six = lambda f: [("JetClass-II accuracy", f("jc2_188" if f is probe else "jc2", "accuracy")),    # noqa: E731
+                     ("JetClass accuracy", f("jc1", "accuracy")), ("top accuracy", f("top", "accuracy")),
+                     ("top Rej30%", f("top", "r30")), ("quark/gluon accuracy", f("qg", "accuracy")),
+                     ("quark/gluon Rej30%", f("qg", "r30"))]
+    flavor = two(r"The flavor-boundary groupings beside the 17-class model and the random grouping, in the columns of "
+                 r"Tables~\ref{tab:probes} and~\ref{tab:finetuned}; mean $\pm$ standard deviation over runs.",
+                 "tab:flavor", tab(six(probe), keep[:1] + flav + keep[1:], HEAD[:-1]), tab(six(ft), keep[:1] + flav + keep[1:], HEAD[:-1]))
+    hw_head = [r" & Accuracy & Rej$_{50\%}$ & Rej$_{30\%}$ \\"]
+    hw = lambda f: [("accuracy", f("qg_herwig", "accuracy")), ("Rej50%", f("qg_herwig", "r50")),     # noqa: E731
+                    ("Rej30%", f("qg_herwig", "r30"))]
+    herwig = two(r"Quark--gluon discrimination scored on Herwig jets, for models trained on Pythia jets; mean $\pm$ "
+                 r"standard deviation over runs.", "tab:herwig",
+                 tab(hw(probe), pre + refs[:2], hw_head), tab(hw(ft), pre + scr, hw_head))
+    return {"table_auc.tex": auc, "table_flavor.tex": flavor, "table_herwig.tex": herwig}
 
 
 def main() -> int:
     maps = class_maps(REPO)
     got = capture(REPO)
-    R = got["R"]
+    R, built = got["R"], got["built"]
     t2, t3, pending, lp_cols, ft_cols = tables23(got, maps)
     lines, bad = check_claims(R, got["tested"])
-    out = {"table1.tex": table1(maps, R._pooled(got["summary"][4])), "table2.tex": t2, "table3.tex": t3,
-           "numbers.tex": numbers(lp_cols, ft_cols, maps, R._pooled(got["summary"][4])), "claims.txt": "\n".join(lines) + "\n",
-           "pending.txt": "".join(f"Table 3 | {r} | {c}\n" for r, c in pending)}
     d = REPO / OUT
     d.mkdir(parents=True, exist_ok=True)
-    for f, text in out.items():
-        (d / f).write_text(text)
-    print("\n".join(lines))
+    (d / "claims.txt").write_text("\n".join(lines) + "\n")
+    print("\n".join(ln for ln in lines if "binary benchmarks: no significant" not in ln or "passes" not in ln))
     print(f"fine-tuning read-out: {R.ft_source(REPO / 'experiments/FIGS/data/v2')}")
     print(f"pending cells: {len(pending)}")
     for r, c in pending:
         print(f"  PENDING  Table 3 | {r} | {c}")
     if bad:      # STYLE section 4: the build stops when a sentence's test is missing or fails
-        raise SystemExit("FATAL: a clause of the abstract without a passing test:\n" + "\n".join(bad))
+        raise SystemExit("FATAL: a clause of the text without a passing test:\n" + "\n".join(bad))
+    runs = R._pooled(got["summary"][4])
+    out = {"table1.tex": table1(maps, runs), "table2.tex": t2, "table3.tex": t3,
+           "numbers.tex": numbers(got, lp_cols, ft_cols, maps, runs),
+           "pending.txt": "".join(f"Table 3 | {r} | {c}\n" for r, c in pending),
+           "results_generated.tex": built["results_generated.tex"],
+           "table_classmap.tex": table_classmap(maps), **appendix_tables(got, maps),
+           "table4.tex": reuse(built, "tables/mlst_mass.tex", TABLE4_CAPTION, "tab:mass"),
+           "table_inputs.tex": reuse(built, "tables/mlst_inputs.tex", INPUTS_CAPTION, "tab:inputs"),
+           "table_published.tex": reuse(built, "tables/mlst_published.tex", PUBLISHED_CAPTION, "tab:published",
+                                        r"\fontsize{8}{10}\selectfont"),
+           "table_mlp.tex": reuse(built, "tables/mlst_mlp.tex", MLP_CAPTION, "tab:mlp", r"\fontsize{8}{10}\selectfont")}
+    for f, text in out.items():
+        (d / f).write_text(text)
     print("V2 TABLES COMPLETE")
     return 0
+
+
+TABLE4_CAPTION = (r"Jet-mass resolution and median response of the estimated mass over the generator-level mass, on "
+                  r"JetClass-II test jets; mean $\pm$ standard deviation over runs.")
+INPUTS_CAPTION = (r"The per-particle inputs, with a bullet where the top-tagging or quark--gluon data provide an input "
+                  r"and a dash where they lack it. The last column gives, for an absent input, the value zero takes "
+                  r"after the network's input normalization.")
+PUBLISHED_CAPTION = (r"Published models beside ours on JetClass, top tagging and quark--gluon discrimination: "
+                     r"parameters, training jets, accuracy, AUC and background rejection as each paper reports them; "
+                     r"ours are the mean $\pm$ standard deviation over runs.")
+MLP_CAPTION = (r"MLP probes on the frozen features, on JetClass-II, the benchmarks and pairs of JetClass-II classes; "
+               r"mean $\pm$ standard deviation over runs.")
 
 
 if __name__ == "__main__":

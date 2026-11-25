@@ -145,6 +145,8 @@ NUMBER_WORD = re.compile(
 # with the reason it cannot change. Matched as PHRASES and removed before the
 # scan, so the allowance never extends to the bare word.
 ALLOWED_WORDS = [
+    (r"\babout\s+half\s+a\s+percentage\s+point\b",
+     "the PI's wording for the fine-tuned cost of the mass regression (2026-11-25, LEDGER 30.4)"),
     (r"\bhundreds\s+of\s+fine\s+classes\b",
      "the PI's abstract (2026-11-24, LEDGER RW-9): the order of magnitude of published label sets, not a result"),
     (r"\bfactors\s+of\s+about\s+three\b",
@@ -191,7 +193,9 @@ RATIO_OF_MEANS = re.compile(r"\\(\w*OmaRatio\w*|Rand(?:Sem)?CostFactor\w*|VcbFac
 DRAWINGS = {"fig_design.tex", "fig_f1.tex"}   # TikZ coordinates are not results
 # The checkpoint's outline page (PI 2026-11-24, LEDGER RW-10): a plan whose digits are section numbers, paragraph
 # numbers and word budgets; its results are macros like every other file's
-PLANS = {"v2/outline.tex"}
+PLANS = {"v2/outline.tex",
+         # the PI's prose as received (LEDGER 29): the source the sections are installed from, never compiled into the paper
+         "v2/pi_prose_1125.tex"}
 
 
 def manuscript_files() -> list[pathlib.Path]:

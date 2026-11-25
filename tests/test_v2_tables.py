@@ -1,5 +1,6 @@
 """Tables 1-3 of the rewritten paper (experiments/FIGS/mlst_v2_tables.py; PI 2026-11-24, LEDGER RW-4, RW-9)."""
 import pathlib
+import re
 import sys
 
 import pytest
@@ -29,22 +30,35 @@ def test_marks_of_the_nested_label_sets():
 
 def test_classes_and_the_class_of_xbb():
     assert [V.counts(MAPS[a]) for a in V.NESTED] == [(161, 27), (161, 1), (42, 1), (16, 1)]
-    assert V.bb_class(MAPS["L162"]) == r"$X\to b\bar b$ only"
-    assert V.bb_class(MAPS["R42_Q1"]) == r"$X\to b\bar b$, $bc$, $bq$"
-    assert V.bb_class(MAPS["R16_Q1"]) == "all two-parton"
+    assert V.bb_class(MAPS["L162"]) == r"$X\to b\bar b$ alone"
+    assert V.bb_class(MAPS["R42_Q1"]) == r"decays to $b\bar b$, $bc$ or $bq$"
+    assert V.bb_class(MAPS["R16_Q1"]) == "every decay to two quarks or gluons"
 
 
 def test_table1_rows():
+    """PI 2026-11-24 (GO-6): version B, one table, with its fixes."""
     runs = {**{a: ["a", "b", "c"] for a in V.NESTED}, **{m: ["a", "b"] for m, _ in V.MASS},
             **{c: ["a"] for c in MAPS if c.startswith("RAND2_p")}}
     tex = V.table1(MAPS, runs)
-    assert tex.count(r"\begin{table}") == 2 and "sideways" not in tex and "landscape" not in tex
-    for part in tex.split(r"\begin{table}")[1:]:
-        rows = [ln for ln in part.splitlines() if ln.endswith(r"\\") and "classes" in ln]
-        assert [ln.split(" & ")[0] for ln in rows] == [
-            "188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
-            "162 classes + mass regression", "17 classes + mass regression"]
-    assert r"5 $\times$ 1" in tex and "also the number of $b$ and $c$ quarks" in tex
+    assert tex.count(r"\begin{table}") == 1 and "sideways" not in tex and "landscape" not in tex
+    rows = [ln for ln in tex.splitlines() if ln.endswith(r"\\") and ln.split(" & ")[0].endswith(("classes", "grouping", "regression"))]
+    assert [ln.split(" & ")[0] for ln in rows] == [
+        "188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
+        "162 classes + mass regression", "17 classes + mass regression"]
+    assert "5 groupings, 1 each" in tex and "(resonant + QCD)" in tex and "Class containing" in tex
+    assert "two-parton" not in tex and "number and kind of decay products" in tex
+
+
+def test_class_map_is_nested_and_complete():
+    tex = V.table_classmap(MAPS)
+    rows = [ln for ln in tex.splitlines() if re.match(r"^\d* & \d+ & ", ln)]
+    assert len(rows) == 43 and sum(bool(re.match(r"^\d+ & ", ln)) for ln in rows) == 17
+    assert sum(ln.count("$") // 2 for ln in rows) == 188
+    assert V.class_tex("X_YY_bbtauhtaue") == r"$bb \tau_h \tau_e$"
+
+
+def test_strip_bold_keeps_the_cell():
+    assert V.strip_bold(r"a & {\fontseries{b}\selectfont 1{,}800\,$\pm$\,60} & b") == r"a & 1{,}800\,$\pm$\,60 & b"
 
 
 def test_value_table_pending_one_place_per_column_no_bold():

@@ -5291,7 +5291,9 @@ TESTS = (
     # 188 classes wait for their bootstrap and stay if they pass (SP-13 (c)); against 17 classes they fail for certain
     # review of render dfe5942 (C): one name, the transfer head
     *((rf"{h}, signal efficiency (\%), " + XBX_HEAD,
-       (("R16_Q1", "L188", _XBX_SRC(sig)),) + tuple((a, "L188", _XBX_SRC(sig)) for a in FLAV)
+       # PI 2026-11-25 (LEDGER 30.2): Results states the 43-class result as it is, so its row is tested
+       (("R16_Q1", "L188", _XBX_SRC(sig)), ("R42_Q1", "L188", _XBX_SRC(sig)))
+       + tuple((a, "L188", _XBX_SRC(sig)) for a in FLAV)
        + ((("L188", "SCRATCH", _XBX_SRC(sig)),) if sig == "xbs" else ())) for sig, h in SUMMARY_XBX),
 )
 # the sculpting nulls (M284, M306, M336; F10b): every difference of the bootstrap file at each working point, in its order,

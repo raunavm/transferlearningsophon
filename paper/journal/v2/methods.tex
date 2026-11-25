@@ -1,0 +1,153 @@
+\section{Methods}\label{sec:methods}
+
+\subsection{Jets, classes and benchmarks}
+A jet is the detector signature of an energetic quark or gluon, or of a heavy particle whose decay products are
+collimated by its momentum.
+For a machine-learning model it is an unordered set of a few tens of reconstructed particles, each described here
+by \FillNFeatures{} numbers: its momentum relative to the jet, its electric charge and type and, for charged
+particles, the displacement of its track from the collision point, which reveals the decays of the long-lived
+hadrons that contain bottom or charm quarks.
+The classes of JetClass-II name what the jet came from: either a heavy resonance, labeled by the quarks, gluons
+and leptons into which it decayed, or the ordinary production of quarks and gluons by the strong interaction
+(QCD jets), which is the background in most analyses.
+The two binary benchmarks are standard in the field: top tagging asks whether a jet contains the decay of a top
+quark, and quark--gluon discrimination whether it was initiated by a quark or by a gluon.
+
+\subsection{Data and model}
+We pretrain on JetClass-II~\cite{sophon,jetclasstwo}, the dataset of the Signature-Oriented Pre-training for
+Heavy-resonance ObservatioN (Sophon) model, whose \Kfull{} classes are \LitJetClassTwoNResonantClasses{}
+resonant classes and \LitJetClassTwoNQcdClasses{} QCD classes.
+A resonant jet contains the decay of a hypothetical particle $X$, either directly into two quarks, gluons or
+leptons or through two intermediate particles into three or four of them, and a QCD class is defined by the
+number of bottom, charm and strange quarks in the jet.
+We keep jets with a transverse momentum $p_{\mathrm T}$, the momentum component perpendicular to the beams, between
+\DesignPtMin{} and \DesignPtMax~GeV and a jet mass between \DesignMsdMin{} and \DesignMsdMax~GeV, where the
+jet mass is computed after soft, wide-angle particles are removed (the soft-drop mass~\cite{softdrop}).
+These requirements leave \DesignNTrainSelected{} training jets, sampled as in Sophon so that broad groups of
+classes share one distribution of $p_{\mathrm T}$ and mass.
+
+The network is Sophon's~\cite{sophon}, a Particle Transformer~\cite{part} with \DesignParticleBlocks{} attention
+blocks over the particles, \DesignClassBlocks{} blocks that pool them into one class token of
+\DesignEmbedDim{} numbers, and an output layer with one hidden layer of \DesignHeadHidden{} units.
+The class token is what we call the frozen features, the input of the output layer, which every probe reads.
+Each model sees \DesignExamplesSeen{} training examples and is evaluated at the epoch of its highest validation
+accuracy among the last ten, where the learning rate is lowest.
+
+\subsection{Label sets}
+A label set is a map from the \Kfull{} classes onto fewer classes, and a model pretrained with it learns to
+predict the merged class of each jet.
+The four label sets are nested, so that each is obtained from the one before by merging classes that differ in
+a named way (table~\ref{tab:sets} and figure~\ref{fig:design}; the full map is table~\ref{tab:classmap}).
+The \Kres-class set merges the QCD classes into one and keeps every resonant class.
+\input{tables/table1}
+\vfig{fig1_design}{Design of the study. Each nested label set merges classes of the set above it, shown for one group of
+decays. A pretrained network is then used in two ways: frozen, with a linear probe or transfer learning on its
+features, or fine-tuned with a new output layer.}{fig:design}
+The \Kmid-class set then labels a decay only by whether it contains a bottom quark, else a charm quark, else
+neither, and no longer separates strange from up and down quarks, gluons from these light quarks, or electrons
+from muons.
+The \Kcoarse-class set removes the remaining flavor and keeps what every set keeps, the number of decay products
+and whether each is a quark or gluon, an electron or muon, a tau lepton or a neutrino.
+
+Because the sampling groups are defined by the JetClass-II classes and not by the label set, models pretrained
+with the same random seed see the same jets in the same order, and they start from the same weights in every
+layer except the last, whose width is the number of classes.
+
+Merging classes also changes what the output layer can provide.
+For a classifier at the minimum of the cross-entropy, the score $g_c$ of a merged class $c$ is the sum of the
+scores $g'_i$ that the \Kfull-class model gives the classes it contains,
+\begin{equation}
+  g_c(x) = \sum_{i\,\in\, c} g'_i(x) ,
+  \label{eq:sum}
+\end{equation}
+so an analysis can form a discriminant by summing scores only if the classes it needs are unions of classes of
+the label set~\cite{sophon}.
+The decay $X\to b\bar b$, for example, is a class of its own only in the two finest sets.
+
+\subsection{Random groupings and mass regression}
+The random groupings test whether the number of classes or their content matters.
+Each assigns the \LitJetClassTwoNResonantClasses{} resonant classes at random to \RandVtwoNResGroups{} groups
+whose shares of the training jets match those of the \Kcoarse-class set to within \RandVtwoShareTol, and keeps
+the QCD jets as one class, so it has the class count and class sizes of the coarsest set without its physics.
+The groupings are not typical random draws: among draws that satisfy the share rule we selected those that
+merge the fewest pairs of classes that the \Kcoarse-class set also merges.
+We pretrain \VRandWord{} such groupings once each.
+
+The mass regression adds a target that no label set contains.
+The \Kres- and \Kcoarse-class models are pretrained a second time with one more output $\hat\theta$, trained
+to predict $\theta = \ln(m_{\mathrm{gen}}/m_{\mathrm{SD}})$, the logarithm of the ratio of the jet mass
+before detector effects to the reconstructed soft-drop mass, with the loss
+\begin{equation}
+  L = L_{\mathrm{cls}} + \lambda \log\cosh\bigl(\hat\theta(x) - \theta\bigr) ,
+  \label{eq:massloss}
+\end{equation}
+where $L_{\mathrm{cls}}$ is the cross-entropy and $\lambda = \MlstMassLambda$, the weight used by the CMS
+taggers that introduced this term~\cite{glopart}.
+
+\subsection{Evaluation}
+Linear probes measure what the frozen features hold.
+A probe is a multinomial logistic regression on the standardized features, with an L2 penalty whose strength is
+chosen on validation jets.
+On JetClass-II the probes are trained on \VProbeNTrain{} jets and tested on \JcBalNTest, both class-balanced,
+with at most \VProbePerClassMax{} training jets and \JcBalTestPerClass{} test jets per class, so that chance is
+\VChance\% and rare classes count as much as common ones.
+On the other tasks they are trained on \LpNTrainMaxJci{} JetClass jets and on the full training sets of the two
+binary benchmarks.
+Binary probes on pairs of JetClass-II classes ask whether a label set preserves one particular distinction, such
+as $X\to b\bar b$ against $X\to c\bar c$.
+Two references are probed in the same way: an untrained network, with the statistics of its input normalization
+computed on training jets, and the checkpoint released with Sophon~\cite{sophon}.
+
+Fine-tuning measures what survives when every weight adapts.
+The pretrained output layer is replaced by a new one with random weights, and the same network trained from
+random weights on the downstream task alone, with \VScratchRunsWord{} seeds, is the reference.
+On JetClass-II and JetClass we fine-tune on \FtSizeESix{} jets, with a learning rate chosen on validation for
+each task and training size, and on top tagging and quark--gluon discrimination on the full training sets with
+the published recipe of the Particle Transformer~\cite{part}.
+
+The tasks differ in how far they lie from pretraining.
+JetClass~\cite{part} has ten classes of jets from Higgs bosons, $W$ and $Z$ bosons, top quarks and QCD; it
+shares the inputs of JetClass-II but was simulated without pileup, the additional collisions that overlap each
+recorded one, and in a narrower range of $p_{\mathrm T}$.
+The top-tagging~\cite{toptag} and quark--gluon~\cite{efn,qgpythia} data lack inputs that the network was
+pretrained with: the first provides only the momenta of the particles, \FillTopNPresent{} of the
+\FillNFeatures{} inputs, and the second lacks the track displacements (table~\ref{tab:inputs}).
+In fine-tuning the absent inputs are set to zero.
+A linear probe cannot adapt to that, so for probes the absent inputs are filled with \LpSubstitutionTop{} of
+real JetClass-II particles for top tagging and with \LpSubstitutionQg{} for quark--gluon discrimination, a
+choice made once per task on validation.
+A frozen result on these two benchmarks is thus a linear readout of \DesignEmbedDim{} numbers computed from
+incomplete inputs, and it should not be compared with a tagger trained on the task.
+
+We report the accuracy, the area under the receiver operating characteristic curve (AUC), averaged over
+one-versus-rest problems when a task has more than two classes, and the background rejection
+$\mathrm{Rej}_{30\%}$, the inverse of the false-positive rate at a true-positive rate of $30\%$~\cite{part}.
+
+The mass resolution measures how well the jet mass can be recovered.
+For an estimate $m_{\mathrm{est}}$ and the response $r = m_{\mathrm{est}}/m_{\mathrm{gen}}$ we use
+\begin{equation}
+  \sigma_r = \frac{q_{84.1} - q_{15.9}}{2\,q_{50}} ,
+  \label{eq:resolution}
+\end{equation}
+with $q_p$ the $p$th percentile of $r$.
+We compare the reconstructed soft-drop mass, the regression output of the models trained with
+equation~(\ref{eq:massloss}), and a multilayer-perceptron (MLP) probe that predicts $\theta$ from the frozen
+features of any model.
+
+The resonance benchmark repeats the test with which Sophon was introduced~\cite{sophon}: a particle $X$ of mass
+\XbxMx~GeV decaying to $b\bar b$ or to $bs$ is to be separated from QCD jets with a mass between \XbxWindowLo{}
+and \XbxWindowHi~GeV, and we quote the signal efficiency at a background efficiency of \VXbxEpsB\%.
+Sophon selects $X\to b\bar b$ with a discriminant built from its output scores, and $X\to bs$, which is not among
+its classes, by transfer learning: a small network on the frozen features whose first layer is taken from the
+pretrained output layer.
+Since $X\to b\bar b$ is a class of its own only in our two finest label sets, we use the transfer learning for
+both decays and every label set, and compare it with the same small network trained from random weights.
+
+\subsection{Uncertainties}
+Tables give the mean and standard deviation over independent pretraining runs, each followed by one probe or
+one fine-tuning: \VRunsWord{} runs for each nested label set, \VMassRunsWord{} for each model with mass
+regression, and one for each of the \VRandWord{} random groupings, whose spread therefore mixes the difference
+between groupings with that between runs.
+A difference is called significant when it exceeds three standard deviations, combining the spreads of both
+models with the test-sample uncertainty from a bootstrap.
+The tested differences are in the data release.

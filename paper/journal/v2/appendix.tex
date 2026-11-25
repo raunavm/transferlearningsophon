@@ -1,0 +1,76 @@
+\section{Label sets}\label{app:sets}
+Table~\ref{tab:classmap} gives the full class map.
+Each JetClass-II class belongs to one class of every coarser label set, so the \Kmid{} classes are unions of
+JetClass-II classes and the \Kcoarse{} classes unions of the \Kmid.
+
+\input{tables/table_classmap}
+
+\subsection{Flavor-boundary groupings}
+Three further groupings into \Kcoarse{} classes were pretrained with \RandFlavRuns{} runs each, to ask whether
+one boundary between flavors accounts for the difference between the \Kcoarse-class set and the random
+groupings.
+The first groups whole families of decays that differ only in flavor, so it has no flavor boundary; the second
+moves the four-quark decays that contain a bottom quark into another group; and the third moves as many
+four-quark decays chosen at random.
+On the pretraining classes a linear probe ranks them between the \Kcoarse-class model and the random groupings:
+the grouping without a flavor boundary lies above the \Kcoarse-class model, the two with a boundary above it,
+and the random groupings above all three, each step being significant (table~\ref{tab:flavor}).
+The groupings with a boundary differ from the one without in more than that boundary, because other decays had
+to move to keep the class sizes, so this result cannot isolate the boundary and we draw no conclusion from it in
+the main text.
+
+\input{tables/table_flavor}
+
+\section{Training details}\label{app:training}
+Pretraining follows Sophon's settings: \DesignEpochs{} epochs of \DesignSamplesPerEpoch{} examples in batches of
+\DesignBatchSize, a learning rate of \DesignStartLr{} that is constant for the first \DesignLrFlatPercent{} of
+the epochs and then decays to \DesignLrEndPercent{} of its value, and the particle momenta of every jet rescaled
+to a common jet $p_{\mathrm T}$.
+The fine-tuned network has \MlstNParamsJc{} parameters on JetClass.
+Fine-tuning on JetClass-II and JetClass uses a learning rate of \MlstFtLr{} for the pretrained weights and one
+\MlstFtHeadMult{} times larger for the new output layer, a weight decay of \MlstFtWeightDecay{} and batches of
+\MlstFtBatch{} jets, for \FtStepsESix{} steps at \FtSizeESix{} jets, and keeps the weights of the best
+validation check; the learning rates of the other training sizes and of the network trained from scratch
+were chosen on validation from a grid, and the full scan is in the data release.
+All pretraining runs together took \MlstComputeTotalGpuHours{} GPU hours.
+
+\section{Inputs and missing inputs}\label{app:inputs}
+Table~\ref{tab:inputs} lists the inputs and which of them the two binary benchmarks provide.
+
+\input{tables/table_inputs}
+
+\section{Further results}\label{app:results}
+Tables~\ref{tab:auc} and~\ref{tab:herwig} give the AUC of every model of tables~\ref{tab:probes}
+and~\ref{tab:finetuned} and the quark--gluon results on jets from the Herwig generator~\cite{qgherwig}.
+
+\input{tables/table_auc}
+\input{tables/table_herwig}
+
+\subsection{MLP probes}
+An MLP probe with one hidden layer of \LpMlpHidden{} units, trained on the same frozen features as the linear
+probes, tests whether a conclusion depends on the probe being linear (table~\ref{tab:mlp}).
+It changes two of them.
+When the \Kfull{} classes are merged into the \Kcoarse{} groups of the coarsest label set and the probe is asked
+only for the group, linear probes show no significant difference between the label sets, whereas the MLP probe
+finds the features of the \Kcoarse-class model significantly worse than those of the \Kfull-class model, on the
+task its own labels describe.
+On top tagging the MLP probe separates one configuration that the linear probe does not, the \Kcoarse-class
+model with mass regression from the \Kfull-class model.
+The mass-regression nulls of the main text hold under the MLP probe.
+
+\input{tables/table_mlp}
+
+\section{Comparison with published taggers}\label{app:published}
+Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
+public tasks.
+Our numbers are not tuned for these benchmarks, and the comparison only shows that the networks whose label sets
+we compare are in the range of current taggers.
+
+\input{tables/table_published}
+
+\section{Further figures}\label{app:figures}
+\vfig{figA1}{Recall of each JetClass-II class under a linear probe, for the four label sets.}{fig:recall}
+\vfig{figA2}{The class pairs not shown in figure~\ref{fig:pairs}, as there.}{fig:otherpairs}
+\vfig{figA3}{Linear probes against the number of training jets, for the four tasks.}{fig:probesize}
+\vfig{figA4}{Jet-mass resolution against jet $p_{\mathrm T}$ and against generator-level mass.}{fig:masspt}
+\vfig{figA5}{Validation accuracy of the pretraining runs against epoch.}{fig:validation}

@@ -1,0 +1,51 @@
+\section{Discussion and conclusion}\label{sec:discussion}
+% The PI's draft of 2026-11-25 (pi_prose_1125.tex), completed with the rulings of LEDGER 30.1 and 30.4. The sentence
+% on fine-tuning against the linear probe (CS-15) is written last and is not here.
+
+The results describe a representation shaped by what its labels distinguish, and not simply by
+how many labels there are.
+Pairs of classes that a label set merges lose separation in the frozen features, and at \Kmid{} classes
+some pairs that the labels still keep apart lose it as well.
+Random groupings of the same size as the coarsest set nevertheless retain most of the accuracy
+on the pretraining classes, so the number of classes alone does not determine the loss.
+That result should not be read as a recipe for label design, since on JetClass the random
+groupings offer no advantage over the \Kcoarse-class set
+and on top tagging their frozen features are significantly below those of the \Kcoarse-class set.
+For an analysis that reads a discriminant from frozen features, or sums class scores into one as
+in the resonance benchmark, the practical consequence is that the classes it must tell apart
+should be distinct in the pretraining labels.
+
+These findings agree with relabeling experiments in image classification and extend them.
+There too, coarser labels cost more for frozen features than after fine-tuning \cite{hong},
+and classes merged along a semantic hierarchy remain more entangled than classes merged at
+random~\cite{yang}.
+What simulation adds is control: the labels are exact, the training examples and their order are identical for every label set,
+and each merge removes a distinction that can be named, so the loss can be traced to individual
+pairs of classes instead of being inferred from an average over a taxonomy.
+
+Fine-tuning reduces the loss without removing it: with \FtSizeESix{} labeled jets the \Kcoarse-class model
+stays \VDFtJcTwoCoarse{} points behind the \Kfull-class model on
+the pretraining classes and \VDFtJcOneCoarse{} points behind on JetClass, against gains from pretraining of
+\VDFtJcTwoGain{} and \VDFtJcOneGain{} points, so a coarse label set forfeits an appreciable share of what pretraining
+provides even when the whole network is adapted.
+On top tagging and quark--gluon discrimination no difference between the label sets is
+significant in accuracy or background rejection, with a run-to-run spread of \VFtTopRejSdLo{} to
+\VFtTopRejSdHi{} around \VFtTopRejFull{} and of \VFtQgRejSdLo{} to \VFtQgRejSdHi{} around \VFtQgRejFull{} in
+background rejection.
+Of the \VNBinaryCmp{} comparisons made there, one passes the threshold, a quark--gluon AUC lower by \VDQgAuc{}
+for the \Kcoarse-class than for the \Kres-class model after fine-tuning.
+The mass regression acts on a different axis: it supplies a quantity that no label set contains
+and improves the mass resolution of the frozen features at no significant cost in their accuracy,
+although after fine-tuning the models pretrained with it are slightly less accurate, by
+about half a percentage point on the pretraining classes at both label sets, a difference that is significant
+only at \Kcoarse{} classes.
+
+These conclusions rest on one architecture, with \LitSophonParamsMillion~million parameters, and on one simulated
+dataset.
+Each step of the hierarchy also removes several distinctions at once, so the cost of a single
+distinction is established only through pairs of classes, and on the two binary benchmarks several
+inputs used in pretraining are absent, which limits what the frozen features can show there.
+Within these limits, a label set built for transfer should keep apart the classes that later
+analyses will need to separate, and this matters most when the pretrained model is used without
+fine-tuning; a quantity that no labels carry, such as the jet mass, can be added as an auxiliary
+target.
