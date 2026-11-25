@@ -5146,6 +5146,11 @@ TESTS = (
     (r"JetClass, accuracy, " + HEADING["ft"], tuple((a, b, ("l3", "ft", "jc1", "accuracy", d, False)) for a, b, d in _LEVELS + _MASSES)
      + tuple((a, "R16_Q1", ("file", f"{L3_FIXED}/ft_jc1_N1000000.json", d.replace("-188", "-r16q1"), "accuracy"))
              for a, d in _PARTS_ALL)),
+    # the writer's request of 2026-11-25 (the rewrite's Table 2 sentence on JetClass): the label sets against 188 classes
+    # on the frozen JetClass probe, accuracy and AUC (stats3; l3_v5/probe_jc1_N1000000.json, Table 2's probes). Under
+    # their own heading: the old text's three accuracy rows left tab:tests by SP-13 and stay out of that block
+    *((rf"JetClass, {w}, {HEADING['lp']}, label sets", tuple((a, b, ("l3", "lp", "jc1", k, d, False)) for a, b, d in _LEVELS))
+      for k, w in (("accuracy", "accuracy"), ("macro_auc_ovr", "AUC"))),
     # PI 2026-11-24 (LEDGER TX-7, RN1): the JetClass linear-probe accuracy of the partitions, with the full sigma
     # (stats2, bs3-boot-jc1parts, the stored fits_v5 scores of Table 2's probes)
     (r"JetClass, accuracy, " + HEADING["lp"],
