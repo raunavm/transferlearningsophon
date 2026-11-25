@@ -198,13 +198,14 @@ def value_table(columns, rows, empty: str) -> tuple:
     """(the tabular's body rows, the cells with no value) of a model-per-row table. columns: (name, f(arm) -> its run
     values); rows: (name, arm, runs expected) or None for a rule. PI 2026-11-24 (GO-6): mean +- SD, one number of
     decimals per column (the most common PDG place of its rows, the larger on a tie), the SD to the same decimals; no
-    bold. A cell is printed only when every one of its runs has a value."""
+    bold. A cell is printed only when every one of its runs has a value. PI 2026-11-25 (LEDGER 32.3): a column whose
+    name contains "accuracy" is printed in percent, the values scaled before the decimals are chosen."""
     stats, missing = {}, []
     for r in rows:
         if r is None:
             continue
         for c, (cname, get) in enumerate(columns):
-            v = [float(x) for x in get(r[1]) if x is not None]
+            v = [float(x) * (100.0 if "accuracy" in cname.lower() else 1.0) for x in get(r[1]) if x is not None]
             if len(v) < r[2] or not v:
                 missing.append((r[0], cname))
                 continue
@@ -236,6 +237,9 @@ def capture(root: pathlib.Path) -> dict:
         install = rel.install_mlst
 
         def install_mlst(mlst, g):
+            # PI 2026-11-25 (LEDGER 32.3): one number of decimals per column in every table; every token at its
+            # column's place (uniform_columns), not at its own SD's place. Only this run of the build, for v2.
+            mlst._printed_place = lambda kind, v, place: place
             install(mlst, g)
             got["R"] = mlst
             summary, tests = mlst.table_summary, mlst.table_tests
@@ -264,7 +268,7 @@ def capture(root: pathlib.Path) -> dict:
 # PI 2026-11-24 (GO-6) and 2026-11-25 (section 28, 1.3): the same six columns in Tables 2 and 3
 HEAD = [r" & JetClass-II & JetClass & \multicolumn{2}{c}{Top tagging} & \multicolumn{2}{c}{Quark/gluon} \\",
         r"\cmidrule(lr){4-5}\cmidrule(lr){6-7}",
-        r" & Accuracy & Accuracy & Accuracy & Rej$_{30\%}$ & Accuracy & Rej$_{30\%}$ \\", r"\midrule"]
+        r" & Accuracy (\%) & Accuracy (\%) & Accuracy (\%) & Rej$_{30\%}$ & Accuracy (\%) & Rej$_{30\%}$ \\", r"\midrule"]
 LP_HEAD = FT_HEAD = HEAD
 
 
@@ -555,6 +559,24 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
     for w, m in (("Acc", "accuracy"), ("Auc", "AUC")):
         head = f"JetClass, {m}, {R.HEADING['lp']}, label sets"
         out[f"VZLpJcOneCoarse{w}"] = f"{abs(r.z(head, 'R16_Q1', 'L188')):.2f}"
+    # PI 2026-11-25 (LEDGER 32.2): frozen JetClass 17 - 188 in points; the top-tagging working point: background jets
+    # that pass at 30% signal efficiency (of the test set's), and the test-sample term of 188 - scratch in Rej30%
+    out["VDLpJcOneCoarse"] = pts(f"JetClass, accuracy, {R.HEADING['lp']}, label sets", "R16_Q1", "L188")
+    nkey = {k: n for k, n, *_ in R.SUMMARY_PANELS}["top"]
+    _pass = R.summary_ft(got["summary"][3], "top", nkey, "r30_n_bkg_pass")
+    _nb = R.summary_ft(got["summary"][3], "top", nkey, "n_background")
+    out["VFtTopBkgPassFull"] = MT.fmt_int(np.mean([_pass(m) for m in runs["L188"]]))
+    out["VFtTopBkgPassScratch"] = MT.fmt_int(np.mean(R.summary_scratch(got["summary"][3], "top", nkey, "r30_n_bkg_pass")))
+    out["VFtTopNBkg"] = MT.fmt_int(one_value({_nb(m) for m in runs["L188"]}))
+    out["VFtTopRejScratchBoot"] = MT.fmt_int(r.get(r.full("top tagging", "$R_{30}$", "ft"), "L188", "SCRATCH")[3])
+    # Fig. 3 (a): the random groupings that merge X->bb with X->cc and those that keep them apart (LEDGER 32.4)
+    _fits = got["summary"][0]
+    merged, apart = [], []
+    for m in runs[RAND]:
+        g = "RAND2_p" + re.search(r"rand2p(\d)", m).group(1)
+        (merged if maps[g]["X_bb"] == maps[g]["X_cc"] else apart).append(R._pair(_fits, m, "bb_vs_cc"))
+    out["VAucBbRandMerged"] = f"{float(np.mean(merged)):.4f}"
+    out["VAucBbRandApart"] = f"{float(np.mean(apart)):.4f}"
     out["VDQgAuc"] = f"{abs(r.get(r.full(AUC_PASS[0], AUC_PASS[1], AUC_PASS[2]), AUC_PASS[3], AUC_PASS[4])[0]):.4f}"
     n_pairs = len(list(__import__("itertools").combinations(NESTED, 2)))
     out["VNBinaryCmp"] = str(n_pairs * len(BINARY) * len(METRICS) * 2)
@@ -597,6 +619,15 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
             raise SystemExit(f"FATAL: {sig}: no classifier trained from scratch")
         out[f"V{w}Scratch"] = f"{100 * float(np.mean(v)):.1f}"
     out["VXbxEpsB"] = f"{100 * one_value(stars):g}"
+    # PI 2026-11-25 (LEDGER 32.3): the output-score discriminant of Fig. 5 (a) at the benchmark's background efficiency,
+    # Sophon's direct X->bb readout, for the two label sets that keep X->bb as a class
+    for a, arm in (("Full", "L188"), ("Res", "L162")):
+        recs = [XR.readout(xfits.get(m, {}).get("xbb", {}), "zero_shot_xbb") for m in runs[arm]]
+        if all(recs) and {x["eps_b_star"] for x in recs} <= stars:
+            v = [100 * x["eps_s_at_star"] for x in recs]
+            out[f"VXbbDirect{a}"] = MT.fmt_pm(float(np.mean(v)), float(np.std(v, ddof=1)))
+        else:
+            out[f"VXbbDirect{a}"] = r"\pending{no output-score value at this background efficiency in the build}"
     # class pairs: the AUC of a binary linear probe
     fits = got["summary"][0]
     for k, w in (("bb_vs_cc", "Bb"), ("bbqq_vs_ccqq", "Bbqq"), ("bc_vs_bq_cs", "Bc")):
@@ -699,6 +730,36 @@ RENAME = ((r" classes + mass ", " classes + mass regression "), ("released Sopho
 DROP_ROWS = ("random network", r"\quad BatchNorm recomputed")
 
 
+AGREE_MARK = r"$^{\P}$"
+NUM = re.compile(r"(?<![\w.$^{])(\d+\.\d+)")
+
+
+def pct(cell: str) -> str:
+    """Every decimal number of a cell times 100, exactly: the decimal point moves two places (0.71658 -> 71.658,
+    0.00022 -> 0.022, 0.940 -> 94.0), so no digit is added, dropped or rounded."""
+    from decimal import Decimal
+    return NUM.sub(lambda m: format(Decimal(m.group(1)).scaleb(2), "f"), cell)
+
+
+def percent_columns(tab: str) -> str:
+    """A rendered tabular with each column headed "accuracy" printed in percent (PI 2026-11-25, LEDGER 32.3): the
+    header gains "(%)" and every cell below it is scaled by pct."""
+    lines, col = tab.split("\n"), None
+    for i, ln in enumerate(lines):
+        if r"\toprule" in ln:          # a new block of the table: its own header decides
+            col = None
+        parts = [x.strip() for x in ln.rstrip(" \\").split("&")] if "&" in ln else None
+        if parts and any(x.lower() == "accuracy" for x in parts):
+            col = [j for j, x in enumerate(parts) if x.lower() == "accuracy"][0]
+            lines[i] = ln.replace("accuracy", r"accuracy (\%)", 1)
+            continue
+        if col is not None and parts and len(parts) > col and "multicolumn" not in ln:
+            cells = ln.split("&")
+            cells[col] = pct(cells[col])
+            lines[i] = "&".join(cells)
+    return "\n".join(lines)
+
+
 def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsize{9}{11}\selectfont") -> str:
     """A table the paper's build writes (its tabulars as they are: every cell is the build's), under the rewrite's
     caption and row names, without bold and without the rows of the network the text does not use."""
@@ -710,10 +771,12 @@ def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsi
         raise SystemExit(f"FATAL: no tabular in {key}")
     body = []
     for t in tabs:
-        t = strip_bold(t)
+        t = percent_columns(strip_bold(t))
         for a, b in RENAME:
             t = t.replace(a, b)
         body.append("\n".join(ln for ln in t.split("\n") if not ln.lstrip().startswith(DROP_ROWS)))
+    if AGREE_MARK in "".join(body):
+        caption += r" $^{\P}$ marks a run spread below the last digit shown."
     return "\n".join([r"\begin{table}[htbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}", size,
                       r"\setlength{\tabcolsep}{4pt}", "\n\\par\\medskip\n".join(body), r"\end{table}", ""])
 
@@ -765,12 +828,12 @@ def appendix_tables(got: dict, maps: dict) -> dict:
                       ("JetClass accuracy", f("jc1", "accuracy")), ("top Rej30%", f("top", "r30")),
                       ("quark/gluon Rej30%", f("qg", "r30"))]
     four_head = [r" & JetClass-II & JetClass & Top tagging & Quark/gluon \\",
-                 r" & Accuracy & Accuracy & Rej$_{30\%}$ & Rej$_{30\%}$ \\"]
+                 r" & Accuracy (\%) & Accuracy (\%) & Rej$_{30\%}$ & Rej$_{30\%}$ \\"]
     flavor = two(r"The flavor-boundary groupings, each with 17 classes, beside the 17-class model and the random "
                  r"grouping: accuracy and background rejection Rej$_{30\%}$; mean $\pm$ standard deviation over runs.",
                  "tab:flavor", tab(four(probe), keep[:1] + flav + keep[1:], four_head),
                  tab(four(ft), keep[:1] + flav + keep[1:], four_head))
-    hw_head = [r" & Accuracy & Rej$_{50\%}$ & Rej$_{30\%}$ \\"]
+    hw_head = [r" & Accuracy (\%) & Rej$_{50\%}$ & Rej$_{30\%}$ \\"]
     hw = lambda f: [("accuracy", f("qg_herwig", "accuracy")), ("Rej50%", f("qg_herwig", "r50")),     # noqa: E731
                     ("Rej30%", f("qg_herwig", "r30"))]
     herwig = two(r"Quark--gluon discrimination scored on Herwig jets, for models trained on Pythia jets; mean $\pm$ "
@@ -793,9 +856,9 @@ def appendix_tables(got: dict, maps: dict) -> dict:
         R._ft(per, "jc2", m, n, "accuracy") is not None for a in NESTED for m in runs[a]))
     ftn = lambda n: (lambda a: (R.summary_scratch(per, "jc2", n, "accuracy") if a == S                # noqa: E731
                                 else [R._ft(per, "jc2", m, n, "accuracy") for m in runs[a]]))
-    size = one_tab(r"Fine-tuned accuracy on JetClass-II against the number of training jets; mean $\pm$ standard "
-                   r"deviation over runs.", "tab:size",
-                   tab([(str(n), ftn(n)) for n in small + [sizes["jc2"]]], four + scr,
+    size = one_tab(r"Fine-tuned accuracy (\%) on JetClass-II against the number of training jets; mean $\pm$ "
+                   r"standard deviation over runs.", "tab:size",
+                   tab([(f"accuracy {n}", ftn(n)) for n in small + [sizes["jc2"]]], four + scr,
                        [" & " + " & ".join(R._power(f"{n:e}") for n in small + [sizes["jc2"]]) + r" \\"]))
     xbx = got["summary_kw"].get("xbx") or {}
     XR, xfits, xscr = xbx.get("XR"), xbx.get("fits") or {}, xbx.get("scr") or {}
@@ -825,9 +888,9 @@ def table_head(got: dict, runs: dict) -> str:
     rows = [(f"188 classes, run {k}", m) for k, m in enumerate(runs["L188"], 1)] + [("Sophon (released)", R.SOPHON_MODEL)]
     if any(m not in doc for _, m in rows):
         raise SystemExit(f"FATAL: the output-layer file lacks {[m for _, m in rows if m not in doc]}")
-    body = [f"{n} & {doc[m]['accuracy']:.4f} & {doc[m]['bias_refit']['accuracy']:.4f} & {float(g(m)):.4f}" + r" \\"
-            for n, m in rows]
-    return one_tab("Accuracy on the class-balanced JetClass-II test jets of the pretrained output layer, of the same "
+    body = [f"{n} & {100 * doc[m]['accuracy']:.2f} & {100 * doc[m]['bias_refit']['accuracy']:.2f} & "
+            f"{100 * float(g(m)):.2f}" + r" \\" for n, m in rows]
+    return one_tab("Accuracy (\\%) on the class-balanced JetClass-II test jets of the pretrained output layer, of the same "
                    "layer with only its class biases refitted on the balanced training jets, and of the linear probe.",
                    "tab:head", [r"\begin{tabular}{@{}lccc@{}}", r"\toprule",
                                 r" & Output layer & Biases refitted & Linear probe \\", r"\midrule", *body,

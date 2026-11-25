@@ -91,3 +91,16 @@ def test_a_spread_that_rounds_to_zero_is_printed_as_a_bound():
     assert body[0] == r"P & 0.8432\,$\pm$\,0.0004 \\"
     assert body[2] == r"Q & 0.8432\,$\pm$\,$<$0.0001 \\" and body[3] == r"R & 0.8425\,$\pm$\,$<$0.0001 \\"
     assert "0.0000" not in "".join(body)
+
+
+def test_accuracy_in_percent_one_place_per_column():
+    """PI 2026-11-25 (LEDGER 32.3): accuracy columns in percent, scaled before the decimals are chosen; a reused table's
+    accuracy column moves its decimal point exactly, and a new block's header resets the column."""
+    vals = {"p": [0.4348, 0.4351, 0.4344], "q": [0.331, 0.312, 0.350]}
+    body, _ = V.value_table([("JetClass-II accuracy", lambda a: vals[a])], [("P", "p", 3), ("Q", "q", 3)], V.PENDING)
+    assert body[0] == r"P & 43.48\,$\pm$\,0.04 \\" and body[1] == r"Q & 33.10\,$\pm$\,1.90 \\"
+    assert V.pct(r"0.71658\,$\pm$\,0.00022") == r"71.658\,$\pm$\,0.022" and V.pct("0.940") == "94.0"
+    tab = "\n".join([r"\toprule", r" & parameters & accuracy \\", r"\midrule", r"ParT & 2.14\,M & 0.836 \\",
+                      r"\toprule", r" & AUC & Rej \\", r"\midrule", r"ParT & 0.9858 & 0.5 \\"])
+    out = V.percent_columns(tab)
+    assert r"accuracy (\%)" in out and r"ParT & 2.14\,M & 83.6 \\" in out and r"ParT & 0.9858 & 0.5 \\" in out
