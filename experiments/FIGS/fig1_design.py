@@ -48,7 +48,7 @@ FLAVOR_VERTEX = {"b": 0.27, "c": 0.17}       # a prong's displaced vertex, as a 
 # the 43 classes of the example group, by the name the label maps give them
 NESTED_43 = {"2P_HAD_2PARTON|B": r"with a $b$ quark", "2P_HAD_2PARTON|C": r"with a $c$ quark, no $b$",
              "2P_HAD_2PARTON|LG": "light quarks and gluons only"}
-NESTED_17 = {"2P_HAD_2PARTON": r"$X\!\to$ two quarks or gluons"}
+NESTED_17 = {"2P_HAD_2PARTON": r"$X\!\to$two quarks or gluons"}
 
 
 def build(nested: bool = False):

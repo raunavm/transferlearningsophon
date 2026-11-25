@@ -75,7 +75,7 @@ def test_fig1_nests_one_example_group_through_the_four_label_sets(figures):
     texts = _texts(figures["fig1_design"])
     assert all(f"{n} classes" in texts for n in (188, 162, 43, 17))
     assert sum(bool(re.fullmatch(r"\$X\\!\\to [a-z]\S*( [a-z])?\$", t)) for t in texts) == 10      # its ten classes as jets
-    assert r"$X\!\to$ two quarks or gluons" in texts
+    assert r"$X\!\to$two quarks or gluons" in texts
     assert "Output\nlayer" in texts and "Head" not in texts and "Fine" not in texts
 
 
