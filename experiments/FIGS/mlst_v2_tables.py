@@ -125,7 +125,8 @@ def name(maps: dict, arm: str) -> str:
 
 
 TABLE1_CAPTION = ("The label sets, what each merges from the finer set above it, and the number of pretraining runs; every "
-                  "set keeps the number and kind of decay products.")
+                  "set keeps the number of decay products and whether each is a parton, a light lepton, a tau lepton or "
+                  "a neutrino.")
 
 
 def short(maps: dict, arm: str) -> str:
@@ -419,6 +420,8 @@ def claims(R, tested: dict) -> tuple:
     add("quark/gluon, frozen: random grouping not significantly different from 17 classes",
         *[(r.full("quark/gluon tagging (Pythia)", m, "lp"), RAND, "R16_Q1", "null") for m, _ in METRICS])
     add("fine-tuned on JetClass the random grouping is above the 17-class model", (r.jc1, RAND, "R16_Q1", "above"))
+    add("appendix E: kinematic-only pretraining reaches the same fine-tuned top Rej30% as zero-filled inputs",
+        (f"top tagging, $R_{{30}}$, {R.HEADING['ft']}", "KIN", "L188", "null"))
     add("pretrained against from scratch: accuracy and AUC on top tagging and quark/gluon (Pythia)",
         *[(r.full(t, m, "ft"), "L188", "SCRATCH", "above") for t in ("top tagging", "quark/gluon tagging (Pythia)")
           for m in ("accuracy", "AUC")])
@@ -669,7 +672,7 @@ RENAME = ((r" classes + mass ", " classes + mass regression "), ("released Sopho
           ("from scratch (this work)", "trained from scratch (this work)"), ("random partitions", "random grouping"),
           (r"\textit{17-class partitions}", r"\textit{17 classes, other groupings}"), ("17-class partitions", "17 classes, other groupings"),
           (r"$^{\S}$", ""), ("multilayer-perceptron probe", "MLP probe"), ("$R_{30}$", r"Rej$_{30\%}$"), ("$R_{50}$", r"Rej$_{50\%}$"))
-DROP_ROWS = ("random network", r"\quad BatchNorm recomputed", r"\Kfull{} classes, kinematic inputs only")
+DROP_ROWS = ("random network", r"\quad BatchNorm recomputed")
 
 
 def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsize{9}{11}\selectfont") -> str:
@@ -846,11 +849,12 @@ TABLE4_CAPTION = (r"Jet-mass resolution and median response of the estimated mas
                   r"JetClass-II test jets with a generator-level match; mean $\pm$ standard deviation over runs and, for "
                   r"the soft-drop mass, over bootstrap resamples of the test jets.")
 INPUTS_CAPTION = (r"The per-particle inputs, with a bullet where the top-tagging or quark--gluon data provide an input "
-                  r"and a dash where they lack it. The last column gives, for an absent input, the value zero takes "
-                  r"after the network's input normalization.")
+                  r"and a dash where they lack it: momenta and their logarithms, distances $\Delta\eta$, $\Delta\phi$ "
+                  r"and $\Delta R$ from the jet axis, charge and particle type, and the transverse and longitudinal "
+                  r"displacements $d_0$, $d_z$ of a track with their uncertainties. The last column gives the value "
+                  r"zero takes after the input normalization.")
 PUBLISHED_CAPTION = (r"Published models beside ours on JetClass, top tagging and quark--gluon discrimination, as each "
-                     r"paper reports them; ours are the mean $\pm$ standard deviation over runs, rounded as in the "
-                     r"build's own tables. On JetClass the published AUC averages over pairs of classes and ours over "
+                     r"paper reports them; ours are the mean $\pm$ standard deviation over runs. On JetClass the published AUC averages over pairs of classes and ours over "
                      r"classes against the rest. The quark--gluon rows use the reduced particle-type inputs.")
 GROUPS_CAPTION = (r"Probes asked only for the group of the 17-class label set to which a jet belongs, on the frozen "
                   r"features of each model; mean $\pm$ standard deviation over runs.")

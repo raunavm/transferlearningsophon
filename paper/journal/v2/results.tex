@@ -11,7 +11,7 @@ Coarser labels leave the frozen features less able to tell the pretraining class
 (table~\ref{tab:probes} and figure~\ref{fig:summary}).
 A linear probe on the features of the \Kfull-class model identifies the \Kfull{} classes with an accuracy of
 \VLpJcTwoFull\%, and the \Kres-class model, which differs only in treating all QCD jets as a single class, is
-not significantly different in accuracy; its AUC is lower, and only over the QCD classes it merges.
+not significantly different in accuracy; its AUC is lower, and only over the QCD classes it merges (table~\ref{tab:pairs}).
 The accuracy then falls to \VLpJcTwoMid\% for the \Kmid-class model and to \VLpJcTwoCoarse\% for the
 \Kcoarse-class model, the two sets that merge flavors within the resonance decays.
 These values should be read against a chance level of \VChance\% on the class-balanced test jets: the same probe
@@ -24,8 +24,7 @@ Refitting only its \Kfull{} class biases on the balanced training jets raises it
 \VHeadClosed\% of its distance to the probe (table~\ref{tab:head}).
 
 The loss is concentrated where a label set merges classes.
-For the \Kres-class model the AUC averaged over the resonant classes is unchanged and that over the QCD classes,
-the only ones its labels merge, is lower (table~\ref{tab:pairs}).
+
 At \Kmid{} classes the accuracy is \VDLpJcTwoMid{} percentage points below that of the \Kfull-class model; the
 step to this set merges the most classes, since it removes several kinds of flavor distinction at once.
 The last step, to \Kcoarse{} classes, removes one further distinction, between bottom, charm and lighter quarks,
@@ -70,7 +69,7 @@ At \Kmid{} classes $X\to b\bar b$ and $X\to c\bar c$ are still in different clas
 merge.
 The \Kmid-class set no longer counts the bottom and charm quarks in a decay, which may be why a pair of bottom
 quarks is told from a pair of charm quarks less well.
-For an analysis the loss of a pair's separation has a direct consequence, because a discriminant formed from two classes can only be as good
+Whatever its cause, the loss of a pair's separation matters directly to an analysis, because a discriminant formed from two classes can only be as good
 as their separation in the features or, when it is summed from output scores as in
 equation~(\ref{eq:sum}), requires the two classes to exist in the label set.
 
@@ -95,7 +94,7 @@ difference of \VDFtJcOneCoarse{} points (\VZFtJcOneCoarse$\sigma$) beside a gain
 \VDFtJcOneGain{} points over the \VFtJcOneScratch\% of the network trained from scratch.
 The \Kmid-class model is again significantly lower, by \VDFtJcOneMid{} points, and the \Kres-class model is not.
 JetClass contains classes, such as the decays of a Higgs boson to bottom and to charm quarks, that differ in a
-flavor the coarser label sets merge.
+flavor the coarser label sets merge; we did not test which of its classes carry the difference.
 
 With fewer labeled jets the label set matters more (figure~\ref{fig:size} and table~\ref{tab:size}).
 On the pretraining classes the \Kcoarse-class model is \VDFtJcTwoCoarseSmallest{} points behind the \Kfull-class
@@ -105,7 +104,7 @@ significant, before the difference reaches \VDFtJcTwoCoarse{} points at \FtSizeE
 On the two binary benchmarks we find no dependence on the label set at the full training sets.
 No difference among the four label
 sets is significant in accuracy or in background rejection, and this holds for the fine-tuned models, for the
-linear probes and for quark--gluon jets simulated with Herwig, a second event generator
+linear probes and for quark--gluon jets simulated with Herwig instead of Pythia, the event generator of the training jets
 (table~\ref{tab:herwig}).
 How small a difference this excludes is set by $\sigma$ of section~\ref{sec:methods}: for the fine-tuned
 $\mathrm{Rej}_{30\%}$ it lies between \VFtTopRejSigLo{} and \VFtTopRejSigHi{} on top tagging, where the label
@@ -113,8 +112,9 @@ sets reach about \VFtTopRejFull, and between \VFtQgRejSigLo{} and \VFtQgRejSigHi
 quark--gluon discrimination.
 The spread between runs alone, \VFtTopRejSdLo{} to \VFtTopRejSdHi{} and \VFtQgRejSdLo{} to \VFtQgRejSdHi, is
 only part of it.
-The comparisons number \VNBinaryCmp: six pairs of label sets, three test samples, probes and fine-tuning, and
-four metrics.
+Because the threshold is applied without a correction for multiplicity, the number of comparisons also matters:
+\VNBinaryCmp, from six pairs of label sets, three test samples, probes and fine-tuning, and four metrics, of which
+$\mathrm{Rej}_{50\%}$ is printed only for Herwig and is otherwise in the data release.
 One of them, in AUC, passes our threshold: the fine-tuned quark--gluon AUC of the \Kcoarse-class model,
 \VFtQgAucCoarse, is \VDQgAuc{} below the \VFtQgAucRes{} of the \Kres-class model (\VZQgAuc$\sigma$).
 
@@ -139,7 +139,7 @@ It is not significant in accuracy (\VZLpJcOneCoarseAcc$\sigma$) and is significa
 \Kfull-class model in either.
 On the two binary benchmarks, as stated above, no difference is significant.
 The frozen results on those two benchmarks are low in absolute terms,
-far below the fine-tuned ones of table~\ref{tab:finetuned}, since they are linear readouts of features computed
+far below the fine-tuned ones of table~\ref{tab:finetuned}, and they are linear readouts of features computed
 from incomplete inputs.
 
 The advantage of the random groupings does not carry over to these tasks.
@@ -185,7 +185,7 @@ more.
 \subsection{Resonance benchmark}
 \vfig{fig5_resonance}{Sophon's $X\to b\bar b$ and $X\to bs$ benchmark: signal efficiency against the efficiency
 for QCD jets, for jets in the mass window of section~\ref{sec:methods}. Solid lines are transfer learning on the
-frozen features and, in grey, the same classifier trained from scratch. Dash-dotted lines in (a) are the discriminant
+frozen features and, in grey, the Sophon network trained from scratch on the same jets. Dash-dotted lines in (a) are the discriminant
 formed directly from the output scores, where the label set keeps $X\to b\bar b$ as a class. Bands are the standard
 deviation over runs.}{fig:resonance}
 Sophon's own benchmark shows the cost of coarse labels for a use that keeps the pretrained network frozen
@@ -199,6 +199,6 @@ The dash-dotted curves of the figure are Sophon's discriminant formed directly f
 exists only for the two finest label sets; we did not test it against the transfer learning.
 With the \Kmid-class model the efficiency for $X\to bs$ is significantly lower, at \VXbsMid\%, while that for
 $X\to b\bar b$, \VXbbMid\%, is not significantly different.
-The loss is larger for $X\to bs$, the decay that no label set contains.
-For the \Kfull-class model the transfer is far better than no pretraining: the same small network trained
-from scratch on $X\to bs$ reaches \VXbsScratch\%, significantly below it.
+The loss is larger for $X\to bs$.
+For the \Kfull-class model the transfer is far better than no pretraining: the Sophon network trained from
+scratch on the same $X\to bs$ and QCD jets reaches \VXbsScratch\%, significantly below it.

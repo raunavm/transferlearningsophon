@@ -46,7 +46,7 @@ def test_table1_rows():
         "188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
         "162 classes + mass regression", "17 classes + mass regression"]
     assert "5 groupings, 1 each" in tex and "(resonant + QCD)" in tex and "Class containing" in tex
-    assert "two-parton" not in tex and "number and kind of decay products" in tex
+    assert "two-parton" not in tex and "number of decay products" in tex  # caption reworded after the cold readers (parton, not "kind")
 
 
 def test_class_map_is_nested_and_complete():

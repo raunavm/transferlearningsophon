@@ -1,7 +1,7 @@
 \section{Label sets}\label{app:sets}
 Table~\ref{tab:classmap} gives the full class map.
 Class names list the decay products, with $q$ for an up or down quark, $g$ for a gluon, $\tau_h$ for a tau
-lepton that decays to hadrons and $\nu$ for a neutrino; a prong is one collimated decay product.
+lepton that decays to hadrons and $\nu$ for a neutrino; a prong is one collimated visible decay product, so neutrinos leave none.
 Each JetClass-II class belongs to one class of every coarser label set, so the \Kmid{} classes are unions of
 JetClass-II classes and the \Kcoarse{} classes unions of the \Kmid.
 
@@ -28,8 +28,10 @@ the main text.
 \section{Training details}\label{app:training}
 The JetClass-II jets are clustered with the anti-$k_{\mathrm T}$ algorithm~\cite{antikt} from the particles of a
 simulated CMS-like detector, with \LitJetClassTwoPileupMean{} pileup collisions on average.
-We keep jets with a transverse momentum $p_{\mathrm T}$, the momentum component perpendicular to the beams,
-between \DesignPtMin{} and \DesignPtMax~GeV and a soft-drop mass between \DesignMsdMin{} and \DesignMsdMax~GeV.
+We keep jets with $p_{\mathrm T}$ between \DesignPtMin{} and \DesignPtMax~GeV and a soft-drop mass, computed at
+$z_{\mathrm{cut}} = \LitCmsSdZcut$ and $\beta = \LitCmsSdBeta$, between \DesignMsdMin{} and \DesignMsdMax~GeV.
+The generator-level mass $m_{\mathrm{gen}}$ is the soft-drop mass of the jet of generator-level particles matched
+to the reconstructed jet; jets without a match enter neither the regression term nor table~\ref{tab:mass}.
 The quark--gluon jets are smaller, with a radius of \LitQgJetRadius, and have no detector simulation.
 Each model sees \DesignExamplesSeen{} training examples and is evaluated at the epoch of its highest validation
 accuracy among the last ten.
@@ -56,6 +58,8 @@ For the resonance benchmark the transfer network has a hidden layer of \DesignHe
 Its hidden layer starts from that of the pretrained output layer and all of its weights are then trained, on
 \XbbNTrainPerClass{} jets per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$, with
 \MlstXbxHeadSeedsWord{} seeds per pretraining run, which are averaged.
+The network trained from scratch for each signal is the Sophon network on the same inputs and jets, with
+\MlstXbxScratchSeedsWord{} seeds.
 The QCD jets come from files that no pretraining run read, and signal and background are counted in the same
 window of soft-drop mass.
 The significance of a difference on this benchmark uses a binomial estimate of the test-sample term, because
@@ -101,8 +105,13 @@ The mass-regression nulls of the main text hold under the MLP probe.
 \section{Comparison with published taggers}\label{app:published}
 Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
 public tasks.
-On quark--gluon discrimination ours are close to the published Particle Transformer; on top tagging both our
-network trained from scratch and our fine-tuned one are below it.
+The linear energy-flow-polynomial (EFP) classifier is linear in a set of jet observables; PFN, ParticleNet,
+ParT, MIParT, L-GATr and OmniLearned are neural networks on the particles, the last four transformers.
+On quark--gluon discrimination ours are close to the published Particle Transformer.
+On top tagging our network trained from scratch is below the published one trained from scratch, and our
+fine-tuned network is above that and below the published Particle Transformer fine-tuned from JetClass.
+That one was pretrained on the kinematic inputs only; our \Kfull-class network pretrained that way, one run,
+reaches the same rejection after fine-tuning as with the absent inputs set to zero (last row of the table).
 
 \input{tables/table_published}
 
