@@ -859,8 +859,9 @@ def main() -> int:
            "table_classmap.tex": table_classmap(maps), **appendix_tables(got, maps), "table_head.tex": table_head(got, runs),
            "table4.tex": reuse(built, "tables/mlst_mass.tex", TABLE4_CAPTION, "tab:mass"),
            "table_inputs.tex": reuse(built, "tables/mlst_inputs.tex", INPUTS_CAPTION, "tab:inputs"),
+           # 7.5 pt: at 8 pt the four blocks overran the page number (draft da28a31, p. 25)
            "table_published.tex": reuse(built, "tables/mlst_published.tex", PUBLISHED_CAPTION, "tab:published",
-                                        r"\fontsize{8}{10}\selectfont"),
+                                        r"\fontsize{7.5}{9}\selectfont"),
            "table_mlp.tex": reuse(built, "tables/mlst_mlp.tex", MLP_CAPTION, "tab:mlp", r"\fontsize{8}{10}\selectfont"),
            "table_groups.tex": reuse(built, "tables/mlst_coarse.tex", GROUPS_CAPTION, "tab:groups")}
     for f, text in out.items():
