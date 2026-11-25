@@ -58,3 +58,15 @@ def test_value_table_pending_one_place_per_column_no_bold():
     assert not any(r"\textbf" in b for b in body)
     assert body[0] == r"P & 0.4348\,$\pm$\,0.0004 \\" and body[1] == r"Q & 0.3310\,$\pm$\,0.0190 \\"
     assert body[5] == r"O & 0.4340 \\"
+
+
+def test_a_spread_that_rounds_to_zero_is_printed_as_a_bound():
+    """PI 2026-11-25 (LEDGER §31 3): "< 0.0001" for the spread at the column's decimals, never "0.0000"."""
+    vals = {"p": [0.8432, 0.8436, 0.8429], "p2": [0.8402, 0.8406, 0.8399], "q": [0.843175, 0.843180, 0.843180],
+            "r": [0.8425, 0.8425]}
+    body, missing = V.value_table([("acc", lambda a: vals[a])], [("P", "p", 3), ("P2", "p2", 3), ("Q", "q", 3), ("R", "r", 2)],
+                                  V.PENDING)
+    assert not missing
+    assert body[0] == r"P & 0.8432\,$\pm$\,0.0004 \\"
+    assert body[2] == r"Q & 0.8432\,$\pm$\,$<$0.0001 \\" and body[3] == r"R & 0.8425\,$\pm$\,$<$0.0001 \\"
+    assert "0.0000" not in "".join(body)

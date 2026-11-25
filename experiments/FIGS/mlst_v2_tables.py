@@ -225,7 +225,11 @@ def value_table(columns, rows, empty: str) -> tuple:
         got = [p for p in got if p is not None]
         places[c] = max(set(got), key=lambda p: (got.count(p), p)) if got else 4
     fx = lambda x, c: MT._fixed(x, places[c])  # noqa: E731
-    cells = {k: fx(m, k[1]) if s is None else f"{fx(m, k[1])}\\,$\\pm$\\,{fx(s, k[1])}" for k, (m, s) in stats.items()}
+    # PI 2026-11-25 (LEDGER §31 3): a spread that rounds to zero at the column's decimals is printed as a bound,
+    # "< 0.0001", never "0.0000" (the runs behind such cells are distinct: experiments/EVAL/dup_check_v2.py)
+    sd = lambda s, c: (f"$<${MT._fixed(10.0 ** -places[c], places[c])}"  # noqa: E731
+                       if round(s, places[c]) == 0 else fx(s, c))
+    cells = {k: fx(m, k[1]) if s is None else f"{fx(m, k[1])}\\,$\\pm$\\,{sd(s, k[1])}" for k, (m, s) in stats.items()}
     body = [r"\midrule" if r is None else
             r[0] + " & " + " & ".join(cells.get((r[1], c)) or empty for c in range(len(columns))) + r" \\" for r in rows]
     return body, missing
