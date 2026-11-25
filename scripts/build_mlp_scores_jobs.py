@@ -271,6 +271,47 @@ def cs15b_spec(tag: str, mem: str) -> str:
     return _spec(tag, "bs3-boot-cs15b-raunav", [body], 1, mem, "1",
                  "CS-15b: JetClass-II 10^6 accuracy, fine-tuned against linear probe, per arm (SC-1)")
 
+# ------------------------------------------------------------------ GO-7 (PI 2026-11-24/25): the full-set pair table
+# Every pair among the four label sets and the random grouping, and each of them against from scratch (fine-tuned), on
+# the full top and quark/gluon sets (Pythia, Herwig): the frozen linear probes' stored scores (the fill chosen on
+# validation, the inputs of bootstrap/l3_v5/probe_*.all.json) and the fine-tuned cells of ParT's recipe (the inputs of
+# bootstrap/l3/ft_*.all.json and ft_top_N1200000.scratch.json); one more pod: the JetClass 1e5 fine-tuned accuracy
+# with the partitions (random grouping - 188 and - 17).
+GO7_ARMS = ("l188", "l162", "r42q1", "r16q1", "rand")
+GO7_PAIRS = tuple((b, a) for a, b in itertools.combinations(GO7_ARMS, 2))   # the coarser or random side first
+GO7_LP = {"top": ("itop4", "top_N1200000"), "qg": ("nqg", "qg_N1600000"), "qg_herwig": ("nqg", "qg_herwig_N1600000")}
+GO7_FT = {"top": ("leg_top", 1_200_000), "qg": ("leg_qg", 1_600_000), "qg_herwig": ("leg_qg", 1_600_000)}
+
+
+def go7_rows() -> list[str]:
+    rows = []
+    for t, (fill, name) in GO7_LP.items():
+        ins = {m: f"{R5.V5['fits_v5_fill_probs']}/{m}/best70.{fill}/{name}.npz" for a in GO7_ARMS for m in models(a)}
+        out = f"{BOOT}/go7_probe_{name}.json"
+        cmd = ("python3 experiments/STATS/paired_bootstrap.py --task npz " + " ".join(f"--model {m}={p}" for m, p in ins.items())
+               + f" --headline {BT.diffs(GO7_PAIRS)} --b {B} --out {out}")
+        rows.append("\n  ".join([BT.check_inputs(ins.values()), f"mkdir -p {BOOT}", f"[ -e {out} ] || " + BT.peak(cmd)]))
+    for t, (leg, n) in GO7_FT.items():
+        ins = {m: f"{BT.FT}/best70/{leg}/{m.removeprefix('mtx-')}/N{n}/s1" for a in GO7_ARMS for m in models(a)}
+        ins |= {m: f"{BT.FT}/ref_v100/bench/{leg}/scratch-v2/N{n}/{m.rsplit('-', 1)[1]}" for m in BT.SCRATCH}
+        d = BT.diffs(GO7_PAIRS) + " " + " ".join(f"--diff {BT.dname(a, 'scratch')}={','.join(models(a))}/{','.join(BT.SCRATCH)}"
+                                                  for a in GO7_ARMS)
+        out = f"{BOOT}/go7_ft_{t}_N{n}.json"
+        cmd = (f"python3 experiments/STATS/paired_bootstrap.py --task {t} " + " ".join(f"--model {m}={p}" for m, p in ins.items())
+               + f" --headline {d} --b {B} --out {out}")
+        rows.append("\n  ".join([BT.check_inputs(ins.values()), f"mkdir -p {BOOT}",   # the cells as BT.ft_inputs reads them
+                                 f"[ -e {out} ] || " + BT.peak(cmd)]))
+    rows.append(BT.ftfix_row([("jc1_all", "jc1", "jc1parts", 100_000, True)]))
+    return rows
+
+
+def go7_spec(tag: str, mem: str) -> str:
+    """bs3-boot-go7-raunav: one pod a file (frozen top, Pythia, Herwig; fine-tuned the same; JetClass 1e5 fine-tuned)."""
+    rows = go7_rows()
+    return _spec(tag, "bs3-boot-go7-raunav", rows, len(rows), mem, "1",
+                 "GO-7: full-set pairs among the label sets and the random grouping, frozen and fine-tuned; JetClass 1e5")
+
+
 # ------------------------------------------------------------------ RN1: JetClass linear-probe accuracy, partitions (stored)
 JC1_OUT = f"{BOOT}/probe_jc1_N1000000.parts.json"
 JC1_DIFFS = (("flavf0", "l188"), ("rand", "l188"), ("rand", "r16q1"))
@@ -329,7 +370,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic", "ee",
-                                                      "mass-helper", "boot-kin", "cs15b", "jc1parts"))
+                                                      "mass-helper", "boot-kin", "cs15b", "jc1parts", "go7"))
     ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
     ap.add_argument("--part", choices=tuple(BOOT_PARTS), help="with --what boot")
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
@@ -351,7 +392,8 @@ def main(argv=None) -> int:
                   "mass-helper": lambda: ("bs3-boot-jc2mass-helper-raunav", boot_mass_helper_spec(a.tag, a.mem)),
                   "boot-kin": lambda: ("bs3-boot-kin-raunav", boot_kin_spec(a.tag, a.mem)),
                   "cs15b": lambda: ("bs3-boot-cs15b-raunav", cs15b_spec(a.tag, a.mem)),
-                  "jc1parts": lambda: ("bs3-boot-jc1parts-raunav", jc1_parts_spec(a.tag, a.mem))}[a.what]()
+                  "jc1parts": lambda: ("bs3-boot-jc1parts-raunav", jc1_parts_spec(a.tag, a.mem)),
+                  "go7": lambda: ("bs3-boot-go7-raunav", go7_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)
     print(f"wrote {p.relative_to(ROOT)}")

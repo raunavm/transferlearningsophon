@@ -22,6 +22,7 @@ def _load(name, rel):
 
 MS = _load("mlp_scores", "experiments/EVAL/mlp_scores.py")
 BJ = _load("build_mlp_scores_jobs", "scripts/build_mlp_scores_jobs.py")
+BOOTDATA = pathlib.Path(__file__).resolve().parents[1] / "experiments/FIGS/data/v2/bootstrap"
 
 
 def _split(n, k, seed):
@@ -290,3 +291,19 @@ def test_ee_pair_and_jetclass_partition_rows():
     text = BJ.jc1_parts_spec("mtx-s9.99", "6Gi")
     assert "fits_v5_probs/mtx-rand2p5-s2/best70/jc1_N1000000.npz" in text and "--diff rand-r16q1=" in text
     assert "--diff flavf0-188=" in text and "--diff rand-188=" in text and "mlp_scores" not in text.split("GENERATED")[0]
+
+
+def test_go7_reads_the_inputs_of_the_tested_full_set_files():
+    rows = BJ.go7_rows()
+    assert len(rows) == 7 and len(BJ.GO7_PAIRS) == 10
+    lp, ft = json.loads((BOOTDATA / "l3_v5/probe_top_N1200000.itop4.all.json").read_text()), \
+        json.loads((BOOTDATA / "l3/ft_qg_N1600000.all.json").read_text())
+    for m in BJ.models("rand") + BJ.models("r16q1"):
+        assert f"--model {m}={lp['models'][m]['input']} " in rows[0]
+        assert f"--model {m}={ft['models'][m]['input']} " in rows[4]
+    sc = json.loads((BOOTDATA / "l3/ft_top_N1200000.scratch.json").read_text())
+    assert all(f"--model {m}={sc['models'][m]['input']} " in rows[3] for m in BJ.BT.SCRATCH)
+    assert "--diff rand-r16q1=" in rows[0] and "--diff r16q1-r42q1=" in rows[0] and "--diff l162-188=" in rows[0]
+    assert "--diff rand-scratch=" in rows[3] and "--task qg_herwig " in rows[5]
+    assert "ft_jc1parts_N100000.json" in rows[6] and "--diff rand-r16q1=" in rows[6]
+    assert "name: bs3-boot-go7-raunav" in BJ.go7_spec("mtx-s9.99", "10Gi")
