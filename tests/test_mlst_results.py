@@ -4243,7 +4243,9 @@ def test_the_tested_differences_table_keeps_the_stated_rows_and_reads_every_stor
     for k in stored:
         d, sd_a, sd_b, boot, sig = got[k]
         assert sig == pytest.approx(math.sqrt(sd_a ** 2 + sd_b ** 2 + boot ** 2), rel=1e-9), k
-    assert not [k for k, src in rows.items() if src == M.RERUN] and len([k for k, src in rows.items() if fixed(src)]) == 6
+    # PI 2026-11-25 (section 28; stats3): + the fine-tuned mass and from-scratch rows at 1e6 (6) and the JetClass 1e5
+    # random grouping (2)
+    assert not [k for k, src in rows.items() if src == M.RERUN] and len([k for k, src in rows.items() if fixed(src)]) == 14
     one_rule = M.ft_source(DATA).split()[0] in (M.FIXED, M.FIXED_PARTIAL)
     assert all(isinstance(got[k], tuple) if one_rule else got[k] == "stale" for k, src in rows.items() if fixed(src))
     marked = [ln.split(" & ")[0] for ln in body.splitlines() if M.INDEPENDENT in ln]
