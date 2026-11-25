@@ -49,6 +49,10 @@ show the same loss, \VAucBbqqFull{} against \VAucBbqqCoarse.
 The random groupings that put $X\to b\bar b$ and $X\to c\bar c$ in one class still separate them far better than the
 \Kcoarse-class model, with an AUC of \VAucBbRandMerged, close to the \VAucBbRandApart{} of the groupings that keep them
 apart; in the \Kcoarse-class set no class distinguishes bottom from charm at all.
+Gluons are merged with the light quarks from \Kmid{} classes on, and the pair $X\to gg$ against $X\to q\bar q$
+behaves the same way: its AUC falls from \VAucGgFull{} to \VAucGgCoarse{} at \Kcoarse{} classes, while the \Kres-class
+model and the random groupings are indistinguishable from the \Kfull-class one (figure~\ref{fig:otherpairs}; this pair
+is tested on \VGgTestPerClass{} jets per class, fewer than the others).
 One level up, $X\to bc$ shares a class with $X\to bq$ from \Kmid{} classes on, and its separation from $X\to bq$ and
 $X\to cs$ falls from an AUC of \VAucBcFull{} to \VAucBcMid{} there and to \VAucBcCoarse{} at \Kcoarse{} classes.
 
@@ -114,8 +118,10 @@ There the \Kfull-class model reaches \VFtJcOneFull\% and the \Kcoarse-class mode
 \VDFtJcOneCoarse{} points beside a gain from pretraining of \VDFtJcOneGain{} points over the \VFtJcOneScratch\% of the
 network trained from scratch; the run spreads are a few hundredths of a point.
 The \Kmid-class model is \VDFtJcOneMid{} points lower, and the \Kres-class model is level.
-JetClass contains classes, such as the decays of a Higgs boson to bottom and to charm quarks, that differ in a flavor
-the coarser label sets merge; we did not test which of its classes carry the difference.
+Per class, the frozen loss of the \Kcoarse-class model is spread over \VLpRecallNLower{} of the ten JetClass classes
+and is largest for the Higgs-boson decays to charm and to bottom quarks, \VDLpRecallHcc{} and \VDLpRecallHbb{} points
+of recall; after fine-tuning only the decay to bottom quarks stays lower, by \VDFtRecallHbb{} points
+(table~\ref{tab:perclass_jc1}).
 The random groupings are ahead of the \Kcoarse-class model after fine-tuning too, at \VFtJcTwoRand\% against
 \VFtJcTwoCoarse\% on the pretraining classes and by \VDFtJcOneRand{} points on JetClass.
 
@@ -139,8 +145,8 @@ The fine-tuned \Kfull-class model reaches an accuracy of \VFtTopAccFull\% on top
 for the network trained from scratch, and \VFtQgAccFull\% against \VFtQgAccScratch\% on quark--gluon discrimination.
 In $\mathrm{Rej}_{30\%}$ the gain looks large, \VFtTopRejScratch{} to \VFtTopRejFull{} on top tagging, but only about
 \VFtTopBkgPassFull{} of the \VFtTopNBkg{} background jets pass at that working point (\VFtTopBkgPassScratch{} for the
-network trained from scratch), so the gain carries a test-sample uncertainty of about \VFtTopRejScratchBoot{} beside
-the spread between runs; on quark--gluon discrimination the rejection rises from \VFtQgRejScratch{} to
+network trained from scratch), so the gain carries an uncertainty of about \VFtTopRejScratchSigma, mostly from the finite test sample
+(\VFtTopRejScratchBoot) and less from the spread between runs; on quark--gluon discrimination the rejection rises from \VFtQgRejScratch{} to
 \VFtQgRejFull, within the uncertainty.
 On quark--gluon jets from Herwig no metric separates the pretrained model from the one trained from scratch.
 

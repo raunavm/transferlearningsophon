@@ -433,6 +433,10 @@ def claims(R, tested: dict) -> tuple:
     add("pretrained against from scratch: Rej30% passes on neither benchmark, nothing on Herwig",
         *[(r.full(t, "$R_{30}$", "ft"), "L188", "SCRATCH", "null") for t in ("top tagging", "quark/gluon tagging (Pythia)")],
         *[(r.full("quark/gluon tagging (Herwig)", m, "ft"), "L188", "SCRATCH", "null") for m, _ in METRICS])
+    gg = f"$X\\to gg$ vs $X\\to q\\bar q$, AUC, {R.HEADING['lp']}, class-balanced test jets"
+    add("appendix: X->gg vs X->qq clearly lower at 17 classes, indistinguishable at 162 and for the random groupings",
+        (gg, "R16_Q1", "L188", "below"), (gg, "L162", "L188", "null"), (gg, RAND, "L188", "null"),
+        (gg, "R42_Q1", "L188", "report"))
     add("appendix: the flavor-boundary groupings between the 17-class model and the random groupings",
         (r.acc, "FLAV_F0", "R16_Q1", "above"), (r.acc, "FLAV_F1", "FLAV_F0", "above"), (r.acc, "FLAV_F1R", "FLAV_F0", "above"),
         (r.acc, RAND, "FLAV_F1", "above"), (r.acc, RAND, "FLAV_F1R", "above"))
@@ -549,6 +553,25 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
     # term) of a difference between two label sets in fine-tuned Rej30%; 188 classes against from scratch in Rej30%
     out["VDLpJcTwoStep"] = pts(r.acc, "R16_Q1", "R42_Q1")
     out["VDLpJcTwoMidStep"] = pts(r.acc, "R42_Q1", "L162")
+    # PI 2026-11-25 (ledger 33, 2(a)): the per-class JetClass recall differences, 17 - 188, in points
+    pc = REPO / "experiments/FIGS/data/v2/perclass_recall"
+    for w, f in (("Lp", "probe_jc1.json"), ("Ft", "ft_jc1_N1000000.json")):
+        d = json.loads((pc / f).read_text())
+        e, cls = d["diffs"]["R16_Q1-L188"], d["classes"]
+        out[f"V{w}RecallNLower"] = MT.words(len(e["lower"]))
+        for k, c in ((cls.index("label_Hcc"), "Hcc"), (cls.index("label_Hbb"), "Hbb")):
+            out[f"VD{w}Recall{c}"] = f"{100 * abs(e['delta'][k]):.1f}"
+        # the sentence of Results 4.5: frozen, the two largest losses are H->cc then H->bb; fine-tuned, only H->bb
+        lower = sorted(e["lower"], key=lambda k: e["delta"][k])
+        want = ["label_Hcc", "label_Hbb"] if w == "Lp" else ["label_Hbb"]
+        if [cls[k] for k in lower[:len(want)]] != want or (w == "Ft" and len(lower) != 1) or e.get("higher"):
+            raise SystemExit(f"FATAL: the per-class JetClass sentence no longer holds ({w}: {[cls[k] for k in lower]})")
+    # (b) X->gg vs X->qq: AUCs and its test size; the full sigma of the top-tagging gain (check 2)
+    ex = json.loads((REPO / "experiments/FIGS/data/v2/stats/ledger33_exports.json").read_text())
+    gg = ex["gg_vs_qq"]
+    out["VAucGgFull"], out["VAucGgCoarse"] = (f"{gg['arms'][a]['mean']:.4f}" for a in ("L188", "R16_Q1"))
+    out["VGgTestPerClass"] = MT.fmt_int(one_value(set(gg["test_jets"].values())))
+    out["VFtTopRejScratchSigma"] = MT.fmt_int(r.get(r.full("top tagging", "$R_{30}$", "ft"), "L188", "SCRATCH")[4])
     # the fine-tuned and linear-probe JetClass-II accuracies of the two finest label sets, to two decimals (LEDGER 33.1)
     for w, arm in (("Full", "L188"), ("Res", "L162")):
         out[f"VFtJcTwo{w}Two"] = pct(ft, J2, arm, 2)
@@ -927,11 +950,22 @@ def appendix_tables(got: dict, maps: dict) -> dict:
     # resonance benchmark; the pretrained output layer
     four = [(n, a, k) for n, a, k in pre if a in NESTED]
     pair = lambda key: (lambda a: [R._pair(fits, m, key) for m in runs[a]])                           # noqa: E731
+    # PI 2026-11-25 (ledger 33, check 3): every number the text quotes in a table. The random groupings that merge
+    # X->bb with X->cc and those that keep them apart (D4), and Sophon's output-score selection of X->bb (D6), from the
+    # statistics agent's export (stats/ledger33_exports.json)
+    ex = json.loads((REPO / "experiments/FIGS/data/v2/stats/ledger33_exports.json").read_text())
+    extra = {"RAND_MERGED": ex["rand_bb_cc"]["merged"]["runs"], "RAND_APART": ex["rand_bb_cc"]["apart"]["runs"],
+             "OUT_L188": ex["xbb_output"]["L188"]["runs"], "OUT_L162": ex["xbb_output"]["L162"]["runs"]}
+    only = lambda key, f: (lambda a: (extra[a] if a in key else []) if a in extra else f(a))     # noqa: E731
+    rand_rows = [None, ("17 classes, random, pair merged", "RAND_MERGED", len(extra["RAND_MERGED"])),
+                 ("17 classes, random, pair apart", "RAND_APART", len(extra["RAND_APART"]))]
     split = one_tab(r"Linear probes on JetClass-II in more detail: AUC averaged over the resonant and over the QCD "
                     r"classes, and AUC of binary probes on three pairs of classes; mean $\pm$ standard deviation over runs.",
-                    "tab:pairs", tab([("AUC resonant", probe("jc2_188", "macro_auc_resonant")),
-                                      ("AUC QCD", probe("jc2_188", "macro_auc_qcd")), ("bb vs cc", pair("bb_vs_cc")),
-                                      ("bbqq vs ccqq", pair("bbqq_vs_ccqq")), ("bc vs bq, cs", pair("bc_vs_bq_cs"))], four,
+                    "tab:pairs", tab([("AUC resonant", only((), probe("jc2_188", "macro_auc_resonant"))),
+                                      ("AUC QCD", only((), probe("jc2_188", "macro_auc_qcd"))),
+                                      ("bb vs cc", only(("RAND_MERGED", "RAND_APART"), pair("bb_vs_cc"))),
+                                      ("bbqq vs ccqq", only((), pair("bbqq_vs_ccqq"))),
+                                      ("bc vs bq, cs", only((), pair("bc_vs_bq_cs")))], four + rand_rows,
                                      [r" & \multicolumn{2}{c}{All classes, AUC} & \multicolumn{3}{c}{Pairs of classes, AUC} \\",
                                       r"\cmidrule(lr){2-3}\cmidrule(lr){4-6}",
                                       r" & Resonant & QCD & $b\bar b$ / $c\bar c$ & $b\bar bqq$ / $c\bar cqq$ & $bc$ / $bq$, $cs$ \\"]))
@@ -949,9 +983,13 @@ def appendix_tables(got: dict, maps: dict) -> dict:
                                   [100 * rec["eps_s_at_star"] for m in runs[a]
                                    if (rec := XR.readout(xfits.get(m, {}).get(sig, {}), "head"))]))
     res = one_tab(r"The resonance benchmark: signal efficiency in percent at the background efficiency of the text, by "
-                  r"transfer learning on the frozen features and for the same network trained from scratch; mean "
-                  r"$\pm$ standard deviation over runs.", "tab:resonance",
-                  tab([("X->bb", eff("xbb")), ("X->bs", eff("xbs"))], four + scr, [r" & $X\to b\bar b$ & $X\to bs$ \\"]))
+                  r"transfer learning on the frozen features, for the same network trained from scratch, and for "
+                  r"Sophon's selection from the output scores where $X\to b\bar b$ is a class; mean $\pm$ standard "
+                  r"deviation over runs.", "tab:resonance",
+                  tab([("X->bb", only(("OUT_L188", "OUT_L162"), eff("xbb"))), ("X->bs", only((), eff("xbs")))],
+                      four + scr + [None, ("188 classes, output scores", "OUT_L188", len(extra["OUT_L188"])),
+                                    ("162 classes, output scores", "OUT_L162", len(extra["OUT_L162"]))],
+                      [r" & $X\to b\bar b$ & $X\to bs$ \\"]))
     return {"table_auc.tex": auc, "table_flavor.tex": flavor, "table_herwig.tex": herwig, "table_pairs.tex": split,
             "table_size.tex": size, "table_resonance.tex": res}
 

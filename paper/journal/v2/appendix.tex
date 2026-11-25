@@ -86,8 +86,8 @@ class-balanced test jets it reaches only \VHeadAcc\%, below the linear probe, be
 mix of classes; refitting only its class biases on the balanced training jets raises it to \VHeadRefit\%, which
 closes \VHeadClosed\% of the distance (table~\ref{tab:head}).
 Table~\ref{tab:pairs} gives the linear probes' AUC by class group and for pairs of classes,
-table~\ref{tab:size} the fine-tuned accuracy at smaller training sets and table~\ref{tab:resonance} the resonance
-benchmark.
+table~\ref{tab:size} the fine-tuned accuracy at smaller training sets, table~\ref{tab:resonance} the resonance
+benchmark and table~\ref{tab:perclass_jc1} the recall of each JetClass class.
 
 \input{tables/table_auc}
 \input{tables/table_herwig}
@@ -95,6 +95,7 @@ benchmark.
 \input{tables/table_pairs}
 \input{tables/table_size}
 \input{tables/table_resonance}
+\input{tables/perclass_jc1}
 
 \subsection{MLP probes}
 An MLP probe with one hidden layer of \LpMlpHidden{} units, trained on the same frozen features as the linear
