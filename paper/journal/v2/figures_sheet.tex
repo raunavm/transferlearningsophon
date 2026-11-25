@@ -9,20 +9,19 @@
 \newcommand{\mainfig}[3]{\begin{figure}[p]\centering\includegraphics[width=#1]{figures/#2.pdf}\caption{#3}\end{figure}\clearpage}
 \begin{document}
 \mainfig{13cm}{fig1_design}{Design of the study. (a) The ten classes of one group of the 17-class set, a resonance $X$
-decaying to two quarks or gluons, drawn as schematic jets, with the class each falls in under the four label sets.
-Below, all 188 classes as cells; a bar spanning several cells is one class of that label set, and the outline marks
-the group drawn above. (b) One model is pretrained for each label set on the same jets and is then used with frozen
-features or fine-tuned.}
+decaying to two quarks or gluons, as schematic jets, with the class each falls in under the four label sets. Below,
+all 188 classes as cells; a bar spanning several cells is one class of that label set, and the outline marks the
+group drawn above. (b) One model is pretrained per label set, then used frozen or fine-tuned.}
 \mainfig{15cm}{fig2_frozen}{Linear probes on the frozen features: accuracy on (a) the 188 JetClass-II classes and (b)
 JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark/gluon discrimination. Points are
 means over pretraining runs and bars standard deviations; the vertical line and band give the 188-class model's.
 Bars and bands narrower than a point are hidden by it. The two accuracy panels share one scale relative to the
 188-class model, as do the two rejection panels.}
 \mainfig{15cm}{fig3_pairs}{Background rejection against signal efficiency for two pairs of JetClass-II classes, from
-binary linear probes on the frozen features: (a) $X\to b\bar b$ against $X\to c\bar c$ and (b) $X\to bc$ against
-$X\to bq$ and $X\to cs$. A curve ends where fewer than 20 of the 200,000 background jets pass, so the ratio to the
-188-class model (lower panels) starts where that model's curve does. Random groupings that merge the pair and those
-that keep it apart are averaged separately; bands are one standard deviation.}
+binary linear probes on the frozen features: (a) $X\to b\bar b$ against $X\to c\bar c$; (b) $X\to bc$ against
+$X\to bq$ and $X\to cs$. Curves end where fewer than 20 of 200,000 background jets pass, so the ratio to the
+188-class model (lower panels) starts where its curve does. Random groupings merging the pair and keeping it apart
+are averaged separately. Bands: one standard deviation.}
 \mainfig{15cm}{fig4_training_size}{Fine-tuned models against the number of training jets: accuracy on (a) JetClass-II
 and (b) JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark/gluon discrimination. Lines
 are the mean over runs and bands the standard deviation. The same network trained from scratch is shown in grey.}
