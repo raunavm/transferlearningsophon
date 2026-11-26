@@ -49,10 +49,10 @@ from $X\to bq$ and $X\to cs$ falls from an AUC of \VAucBcFullThree{} to \VAucBcM
 Gluons, merged with the light quarks from \Kmid{} classes on, follow the same pattern in the pair
 $X\to gg$ against $X\to q\bar q$.
 \vfig{fig3_classes}{(a, b) Recall of each JetClass-II class under a linear probe for the \Kmid- and \Kcoarse-class
-models against the \Kfull-class model, coloured by what the label set merges the class with; open points lie within
-three standard deviations of equal recall. (c) One minus the AUC of a binary linear probe for pairs of classes, for
-each label set and the random groupings; open markers where the labels put the pair in one class. Means and standard
-deviations over runs.}{fig:classes}
+models against the \Kfull-class model, coloured by what the label set merges the class with; faded points lie within
+three standard deviations of equal recall. (c) One minus the AUC of a binary linear probe for pairs of classes,
+relative to the \Kfull-class model, whose value is in brackets; open markers where the labels merge the pair,
+half-filled where they merge part of it.}{fig:classes}
 
 Two observations complete this picture.
 First, merging a pair is not by itself what removes its separation.
@@ -80,10 +80,10 @@ For $X\to b\bar b$ the two finest label sets also allow Sophon's own selection, 
 from the output scores, which reaches \VXbbDirectFullOne\% with the \Kfull-class model, close to the trained
 classifier.
 \vfig{fig5_resonance}{Sophon's $X\to b\bar b$ (a) and $X\to bs$ (b) benchmark: signal efficiency against QCD
-efficiency in the mass window, by a classifier trained on the frozen features of each label set, for Sophon's full network
-trained from scratch on the same jets and, dash-dotted, from the output scores where the label set keeps $X\to b\bar b$. Lower panels
-give the ratio to the \Kfull-class model; the dotted line marks \VXbxEpsB\% background efficiency. Bands are standard
-deviations over runs.}{fig:resonance}
+efficiency in the mass window, by transfer learning on the frozen features of each label set, for Sophon's full
+network trained from scratch on the same jets and, dash-dotted, from the output scores where the label set keeps
+$X\to b\bar b$. Lower panels give the ratio to the \Kfull-class model; the dotted line marks \VXbxEpsB\% background
+efficiency.}{fig:resonance}
 
 \subsection{Transfer of the frozen features}
 

@@ -50,8 +50,8 @@ All pretraining runs together took \MlstComputeTotalGpuHours{} GPU hours.
 
 The binary probes on pairs of classes are tested on up to \JcBalPairTestPerSide{} jets of each class of a pair,
 from the JetClass-II test files, and the pair $X\to gg$ against $X\to q\bar q$ on \VGgTestPerClass{} jets of each
-class; a rejection curve (figures~\ref{fig:otherpairs} and~\ref{fig:qcdpairs}) is drawn only where at least
-\MlstMinBkgPass{} background jets pass.
+class; a rejection curve (figures~\ref{fig:otherpairs} and~\ref{fig:qcdpairs}) is drawn where at least
+\MlstMinBkgPass{} background jets pass the \Kfull-class model.
 
 For the resonance benchmark the transfer network has a hidden layer of \DesignHeadHidden{} units and two outputs.
 Its hidden layer starts from that of the pretrained output layer and all of its weights are then trained, on
@@ -109,15 +109,16 @@ same rejection after fine-tuning, \VPubTopRejKin{} against \VPubTopRejOurs{} wit
 
 % no float barrier here, so the section does not open a short page (PI 2026-11-26, 34.3)
 {\let\FloatBarrier\relax \section{Further figures}\label{app:figures}}
-\vfig{figA1}{Recall of each JetClass-II class under a linear probe on the frozen features of the (a)
-\Kres-, (b) \Kmid- and (c) \Kcoarse-class model, against its recall for the \Kfull-class model. Points are means
-over runs, with bars combining run spread and test-sample uncertainty; color and shape show which flavor the panel's label
-set merges for that class. Open points lie within three standard deviations of equal recall.}{fig:recall}
+\vfig{figA1}{Recall of each JetClass-II class under a linear probe for the \Kres-class model against
+the \Kfull-class model, coloured by what the label set merges the class with; faded points lie within three standard
+deviations of equal recall. Points are means over runs with bars combining run spread and test-sample
+uncertainty.}{fig:recall}
 
-\vfig{figA2}{Background rejection against signal efficiency for three pairs of resonance classes, from binary
-linear probes on the frozen features, for the four label sets and the random groupings that merge the pair or keep it
-apart. Lower panels give the ratio to the \Kfull-class model;
-bands are standard deviations over runs.}{fig:otherpairs}
+\vfig{figA2}{Background rejection against signal efficiency for three pairs of resonance classes,
+from binary linear probes on the frozen features, for the four label sets and the random groupings that merge the
+pair or keep it apart. Every curve is drawn from the signal efficiency below which fewer than \MlstMinBkgPass{}
+background jets pass the \Kfull-class model. Lower panels give the ratio to the \Kfull-class model; bands are standard
+deviations over runs.}{fig:otherpairs}
 \vfig{figA6}{As figure~\ref{fig:otherpairs}, for three pairs of QCD classes. Every random grouping merges these
 pairs.}{fig:qcdpairs}
 \vfig{figA3}{Linear probes on the frozen features against the number of training jets: accuracy on JetClass-II
@@ -132,6 +133,7 @@ combine run spread and test-sample uncertainty.}{fig:masspt}
 \vfig{figA7}{As figure~\ref{fig:size}, for top tagging (a) and quark--gluon discrimination (b): background rejection
 Rej$_{30\%}$ of fine-tuned models against the number of training jets. Lower panels give the ratio to the
 \Kfull-class model.}{fig:binarysize}
-\vfig{figA5}{Validation accuracy of the pretraining runs against epoch, each model on its own label set,
-so levels compare only between models with the same number of classes. Lines are the mean over runs and bands the
-standard deviation.}{fig:validation}
+\vfig{figA5}{Validation accuracy of the pretraining runs against epoch, each model on its own label
+set, so levels compare only between models with the same number of classes. Lines are the mean over runs and bands
+the standard deviation; the shading marks the last ten epochs, among which each run's checkpoint is the one of highest
+validation accuracy (ticks).}{fig:validation}
