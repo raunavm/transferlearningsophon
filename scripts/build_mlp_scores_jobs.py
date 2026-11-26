@@ -344,6 +344,26 @@ def go8_spec(tag: str, mem: str) -> str:
                  "ledger 33: per-class JetClass recall fine-tuned at 1e6; the X->gg vs X->qq pair probe and its bootstrap")
 
 
+# ------------------------------------------------------------------ ledger 35 (audit A1, V7): confusion and the random pool
+REV35_OUT = "/data/results/stats/rev35"
+
+
+def rev35_rows() -> list[str]:
+    conf = f"python3 experiments/STATS/rev35_jobs.py confusion --out {REV35_OUT}"
+    pool = f"python3 experiments/STATS/rev35_jobs.py pool --out {REV35_OUT} --workers 4"
+    return [f"[ -e {REV35_OUT}/confusion_jc2bal_probe.json ] || " + BT.peak(conf),
+            "\n  ".join(["retry pip install --no-cache-dir -q numba==0.60.0 || exit 1",
+                         f"[ -e {REV35_OUT}/rand_pool_overlap.json ] || " + BT.peak(pool)])]
+
+
+def rev35_spec(tag: str, mem: str) -> str:
+    """bs3-rev35-raunav: index 0 the frozen JetClass-II probe confusion of the 188-class and untrained networks; index 1
+    the random-grouping pool's overlap with the 17-class merges (numba). CPU."""
+    rows = rev35_rows()
+    return _spec(tag, "bs3-rev35-raunav", rows, len(rows), mem, "4",
+                 "ledger 35: probe confusion on JetClass-II (A1) and the random-grouping pool (V7)")
+
+
 # ------------------------------------------------------------------ RN1: JetClass linear-probe accuracy, partitions (stored)
 JC1_OUT = f"{BOOT}/probe_jc1_N1000000.parts.json"
 JC1_DIFFS = (("flavf0", "l188"), ("rand", "l188"), ("rand", "r16q1"))
@@ -402,7 +422,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", required=True)
     ap.add_argument("--what", required=True, choices=("smoke", "smoke-bench", "fit", "boot", "analytic", "ee",
-                                                      "mass-helper", "boot-kin", "cs15b", "jc1parts", "go7", "go8"))
+                                                      "mass-helper", "boot-kin", "cs15b", "jc1parts", "go7", "go8", "rev35"))
     ap.add_argument("--family", choices=tuple(FAMILY_ARMS))
     ap.add_argument("--part", choices=tuple(BOOT_PARTS), help="with --what boot")
     ap.add_argument("--mem", required=True, help="the pods' memory, 1.5-2x the smoke's peak")
@@ -426,7 +446,8 @@ def main(argv=None) -> int:
                   "cs15b": lambda: ("bs3-boot-cs15b-raunav", cs15b_spec(a.tag, a.mem)),
                   "jc1parts": lambda: ("bs3-boot-jc1parts-raunav", jc1_parts_spec(a.tag, a.mem)),
                   "go7": lambda: ("bs3-boot-go7-raunav", go7_spec(a.tag, a.mem)),
-                  "go8": lambda: ("bs3-go8-raunav", go8_spec(a.tag, a.mem))}[a.what]()
+                  "go8": lambda: ("bs3-go8-raunav", go8_spec(a.tag, a.mem)),
+                  "rev35": lambda: ("bs3-rev35-raunav", rev35_spec(a.tag, a.mem))}[a.what]()
     p = OUT_DIR / f"job-{name}.yaml"
     p.write_text(text)
     print(f"wrote {p.relative_to(ROOT)}")
