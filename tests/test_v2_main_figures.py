@@ -198,7 +198,8 @@ def test_the_appendix_figures(figures):
     assert [ax.get_ylabel() for ax in _panels(figures["figA3"])[:2]] == ["Accuracy (%)"] * 2
     assert set(_legend(figures["figA4"])) == {"soft-drop mass", "162 classes + mass regression",
                                               "17 classes + mass regression"}
-    assert sorted(_legend(figures["figA5"])) == sorted(names)
+    assert sorted(_legend(figures["figA5"])[:-2]) == sorted(names)
+    assert _legend(figures["figA5"])[-2:] == [f"last {V.LAST} epochs", "epoch used, each run"]
     a5 = [ax for ax in figures["figA5"].axes if ax.lines][0]
     assert a5.get_ylabel() == "Validation accuracy (%)" and max(max(ln.get_ydata()) for ln in a5.lines) > 50
     # editor 8f085fe, items 22 and 91: the epoch each run is evaluated at, from the build's checkpoint record
