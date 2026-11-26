@@ -19,7 +19,9 @@ mlst_v2_tables.main, which writes its outputs beside Tables 1-3.
 """
 from __future__ import annotations
 
+import contextlib
 import csv
+import io
 import json
 import math
 import pathlib
@@ -145,8 +147,9 @@ def a1() -> dict | None:
     return out
 
 
-def write_csv(res: dict, path: pathlib.Path) -> None:
-    with path.open("w", newline="") as fh:
+def write_csv(res: dict, dest) -> None:
+    """dest: a path, or a text stream."""
+    with (dest.open("w", newline="") if isinstance(dest, pathlib.Path) else contextlib.nullcontext(dest)) as fh:
         w = csv.writer(fh)
         w.writerow(["label_set", "name", "family", "S", "S_untrained", "naive_separated_pairs", "accuracy", "accuracy_sd",
                     "n_runs"])
@@ -380,11 +383,9 @@ def build() -> tuple[dict, str]:
     files = {"table_differences.tex": table_v4(rows)}
     a = a1()
     if a:
-        csv_path = DATA / "stats/a1_separation.csv"
-        tmp = pathlib.Path(str(csv_path) + ".build")
-        write_csv(a, tmp)
-        files["a1_separation.csv"] = tmp.read_text()
-        tmp.unlink()
+        buf = io.StringIO()
+        write_csv(a, buf)
+        files["a1_separation.csv"] = buf.getvalue()
     mac = ["% written by experiments/FIGS/rev35_stats.py (ledger 35)"]
     if a:
         for key, w in (("S", "Sep"), ("S_untrained", "SepUntrained"), ("naive", "SepNaive")):
