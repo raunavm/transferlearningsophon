@@ -36,9 +36,13 @@ def cs15(data: pathlib.Path, ft_vals: list, lp_vals: list) -> tuple[dict, list]:
     m = {k: v["accuracy"]["value"] for k, v in doc["models"].items()}
     ft = [m[f"ft-mtx-l188-s{k}"] for k in (1, 2, 3)]
     lp = [m[f"lp-mtx-l188-s{k}"] for k in (1, 2, 3)]
-    for got, want, what in ((ft, ft_vals, "fine-tuned"), (lp, lp_vals, "linear probe")):
-        if not np.allclose(got, want, rtol=0, atol=1e-12):
-            raise SystemExit(f"FATAL: {CS15}: the 188-class {what} runs {got} are not Table's {want}")
+    # each run's value in the file within a quarter of its bootstrap SD of the one the table prints (the rule of the
+    # build's "file" rows; the probes' stored probabilities are float16, so their argmax can differ on a few jets)
+    for k, (what, want) in enumerate((("ft", ft_vals), ("lp", lp_vals))):
+        for i, w in enumerate(want, 1):
+            rec = doc["models"][f"{what}-mtx-l188-s{i}"]["accuracy"]
+            if abs(rec["value"] - w) > 0.25 * rec["sd"]:
+                raise SystemExit(f"FATAL: {CS15}: {what} run {i} is {rec['value']}, the table prints {w}")
     sft, slp = _sd(ft), _sd(lp)
     out, lines = {}, []
     for k, w in (("headkept", "HeadKept"), ("head1x", "HeadRate")):
