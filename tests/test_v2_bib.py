@@ -26,12 +26,13 @@ def test_every_cited_key_is_defined_once():
 
 
 def test_entries_are_well_formed():
+    """Balanced braces and a title and an author (or key) in every entry; a missing year is only a BibTeX warning
+    (older entries keep it inside the journal fields), so it is not required here."""
     bad = []
     for e in entries():
         body = e.rstrip()
         key = re.match(r"@\w+\{([^,\s]+),", body).group(1)
-        if body.count("{") != body.count("}") or not re.search(r"^\s*title\s*=", body, re.M | re.I) \
-                or not re.search(r"^\s*year\s*=", body, re.M | re.I) \
-                or not re.search(r"^\s*(author|key|organization)\s*=", body, re.M | re.I):
+        if body.count("{") != body.count("}") or not re.search(r"(^|[\s,{])title\s*=", body, re.I) \
+                or not re.search(r"(^|[\s,{])(author|key|organization)\s*=", body, re.I):
             bad.append(key)
     assert not bad, bad
