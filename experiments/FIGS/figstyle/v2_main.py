@@ -121,14 +121,15 @@ def _msd(v) -> tuple:
     return float(np.mean(v)), float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
 
 
-def _point(ax, x, y, v, colour, filled=True, marker="o", horizontal=False) -> None:
-    """A mean over runs with a bar of their standard deviation; a single run (or open=filled False) an open marker."""
+def _point(ax, x, y, v, colour, filled=True, marker="o", horizontal=False, single_open=True) -> None:
+    """A mean over runs with a bar of their standard deviation; filled False (or, with single_open, a single run) an open
+    marker."""
     m, sd = _msd(v)
     if sd:
         kw = {"xerr" if horizontal else "yerr": sd}
         ax.errorbar(x if not horizontal else m, y if horizontal else m, **kw, fmt="none", ecolor=colour,
                     elinewidth=BAR, capsize=0, zorder=2.5)
-    open_ = len(v) == 1 or not filled
+    open_ = (single_open and len(v) == 1) or not filled
     size = DOT * (S.STAR_SCALE if marker == "*" else 1.0)
     ax.plot([m if horizontal else x], [y if horizontal else m], linestyle="none", marker=marker, markersize=size,
             markerfacecolor="white" if open_ else colour, markeredgecolor=colour, markeredgewidth=0.9, zorder=2.7)
@@ -229,6 +230,7 @@ def draw_fig2(path: pathlib.Path) -> None:
             _ylim(upper, _acc_mode(upper, vals["ft"], "ft") + _scratch_line(upper, vals["scratch"]))
             _ylim(lower, _acc_mode(lower, vals["probe"], "probe"))
             _break_y(upper, lower)
+            upper.tick_params(axis="x", which="both", labelbottom=False)     # shared x: the labels on the lower part only
             parts, main = (upper, lower), upper
             upper.yaxis.set_label_coords(-0.14, -ACC_GAP / 2 / hp)
         else:
@@ -239,6 +241,8 @@ def draw_fig2(path: pathlib.Path) -> None:
         for ax in parts:
             S.fine_grid(ax)
             _acc_x(ax, ax is parts[-1])
+        for ax in parts[:-1]:
+            ax.tick_params(axis="x", which="both", labelbottom=False)
         S.title(main, f"({'ab'[k]}) {title}")
         S.labels(main, ylabel="Accuracy (%)")
         S.labels(parts[-1], xlabel="Pretraining label set (classes)")
@@ -336,6 +340,16 @@ def pair_errors() -> dict:
     return out
 
 
+def pair_merged(k: str, net: str) -> bool:
+    """Whether a network's labels put the pair's two sides in one class: the label maps (mlst_results.merge_status,
+    "merged"; "partly" is not), the export's status for X->gg vs X->qq, the random groupings by their curve."""
+    if net in ("RAND_MERGED", "RAND_APART"):
+        return net == "RAND_MERGED"
+    if k == "gg_vs_qq":
+        return json.loads(GG_QQ.read_text())["gg_vs_qq"]["status_of_label_sets"][net] == "merged"
+    return R.PAIR_STATUS[net][k] == "merged"
+
+
 def _pair_title(k: str) -> str:
     return GG_QQ_TITLE if k == "gg_vs_qq" else R.PAIR_TITLE[k]
 
@@ -352,7 +366,8 @@ def _pairs_panel(ax) -> list:
                 continue
             key = R._style(net)
             _point(ax, None, i + (j - (len(PAIR_NETS) - 1) / 2) * dodge, errs[k][net], S.SERIES[key],
-                   marker=S.MARKERS.get(net, S.MARKERS[key]), horizontal=True)
+                   marker=S.MARKERS.get(net, S.MARKERS[key]), horizontal=True, filled=not pair_merged(k, net),
+                   single_open=False)
             m, sd = _msd(errs[k][net])
             xs += [m - sd if m - sd > 0 else m, m + sd]
     ax.set_xscale("log")
@@ -370,7 +385,9 @@ def _pairs_panel(ax) -> list:
     S.labels(ax, xlabel=r"$1 - \mathrm{AUC}$ (binary linear probe)")
     return [Line2D([], [], linestyle="none", marker=S.MARKERS.get(net, S.MARKERS[R._style(net)]), markersize=DOT,
                    markerfacecolor=S.SERIES[R._style(net)], markeredgecolor=S.SERIES[R._style(net)],
-                   label=R._name(net)) for net in PAIR_NETS]
+                   label=R._name(net)) for net in PAIR_NETS] + [
+        Line2D([], [], linestyle="none", marker="o", markersize=DOT, markerfacecolor="white", markeredgecolor="#000000",
+               markeredgewidth=0.9, label="open: the labels merge the pair")]
 
 
 FIG3_ROWS = (("R42_Q1", "L188"), ("R16_Q1", "L188"))
@@ -393,7 +410,7 @@ def draw_fig3(path: pathlib.Path) -> None:
     ax = S.axes_cm(fig, xc, y_c, wc, hc)
     pair_handles = _pairs_panel(ax)
     S.title(ax, "(c) Pairs of classes")
-    fig.legend(handles=pair_handles, loc="upper center", bbox_to_anchor=(0.5, 1 - y_leg2 / H), ncol=3, frameon=False,
+    fig.legend(handles=pair_handles, loc="upper center", bbox_to_anchor=(0.5, 1 - y_leg2 / H), ncol=4, frameon=False,
                fontsize=S.LEGEND_PT5, borderpad=0.2, labelspacing=0.3, columnspacing=1.0, handletextpad=0.3)
     S.save(fig, path)
 
@@ -501,6 +518,7 @@ def draw_fig5(path: pathlib.Path) -> None:
         ax.set_ylim(min(v for v in low if v > 0) / 1.2, 1.25)
         S.log_axis(ax, "x")
         S.log_axis(ax, "y", fine=True)
+        S.clear_edge_labels(ax, low=True)            # its lowest label clear of the ratio panel under it
         S.title(ax, what)
         S.labels(ax, ylabel=S.X_EPS)
         S.labels(rx, xlabel=X_EPS_B, ylabel="Ratio")

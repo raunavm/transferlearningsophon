@@ -108,6 +108,8 @@ def test_fig2_is_accuracy_against_the_label_set_with_the_tables_values(figures):
     upper = panels[1]
     lower = [o for o in fig.axes if o.get_label() == "<break>"][0]
     assert upper.get_ylim()[0] > lower.get_ylim()[1]
+    fig.canvas.draw()                    # the x tick labels on the lower part only
+    assert not [t for t in upper.get_xticklabels() if t.get_visible() and t.get_text()]
 
 
 def test_fig3_shows_recall_and_the_pairs_of_classes(figures):
@@ -123,7 +125,14 @@ def test_fig3_shows_recall_and_the_pairs_of_classes(figures):
     n_points = sum(len(e) for e in errs.values())
     assert len([ln for ln in c.lines if ln.get_linestyle() == "None"]) == n_points
     with V.names():
-        assert _legend(fig)[-6:] == [V.R._name(n) for n in V.PAIR_NETS]
+        assert _legend(fig)[-7:-1] == [V.R._name(n) for n in V.PAIR_NETS]
+    assert _legend(fig)[-1] == "open: the labels merge the pair"
+    # open where the labels merge the pair: 17 classes on X->bb vs cc, 43 and 17 on X->gg vs qq, 162 on every QCD pair
+    assert V.pair_merged("bb_vs_cc", "R16_Q1") and not V.pair_merged("bb_vs_cc", "R42_Q1")
+    assert V.pair_merged("gg_vs_qq", "R42_Q1") and not V.pair_merged("gg_vs_qq", "L162")
+    assert all(V.pair_merged(k, "L162") for k in V.PAIRS_C if k.startswith("qcd_"))
+    opened = [ln for ln in c.lines if ln.get_linestyle() == "None" and ln.get_markerfacecolor() == "white"]
+    assert len(opened) == sum(V.pair_merged(k, n) for k in V.PAIRS_C for n in errs[k])
 
 
 def test_fig4_resonance_has_ratio_panels_and_the_working_point(figures):
