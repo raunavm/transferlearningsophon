@@ -88,8 +88,10 @@ def test_fig1_nests_one_example_group_and_shows_one_flow(figures):
     # ledger 34.3: one flow, network, features, then linear probe or fine-tuning, then the tasks; no row of squares
     assert {"Linear probe", "Fine-tuning", "Features"} <= set(texts) and "Frozen features" not in texts
     assert "Output\nlayer" not in texts and "JetClass-II\nJetClass\nTop tagging\nQuark/gluon" in texts
-    # editor 8f085fe, item 30: the resonance benchmark has its own use (transfer learning) and its own box
-    assert "Transfer learning" in texts and r"$X\!\to b\bar b$, $X\!\to bs$" in texts
+    # editor 8f085fe, item 30: the resonance benchmark has its own use and box, in the text's words (methods.tex: "a
+    # classifier trained on the frozen features")
+    assert "Classifier trained\non frozen features" in texts and r"$X\!\to b\bar b$, $X\!\to bs$" in texts
+    assert not [t for t in texts if "ransfer learning" in t]
 
 
 def test_fig2_is_accuracy_against_the_label_set_with_the_tables_values(figures):

@@ -69,7 +69,7 @@ X_EPS_B = r"Background efficiency ($\varepsilon_B$)"
 RECALL_ROWS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"))
 VAL_LEGEND_W = 5.6                        # cm: "162 classes + mass regression" and its key beside Fig. A5's panel
 FADED = 0.3            # a class within three standard deviations of equal recall: faded (editor 8f085fe, item 48)
-WITHIN_FADED = "faded: within three standard deviations"
+WITHIN_FADED = "faded: within three s.d."
 LOWER = 0.4                               # a lower panel's height over its panel's (relative to 188 classes)
 DOT, BAR = 4.0, 1.0                       # pt: a mean's point and its standard-deviation bar in the point plots
 

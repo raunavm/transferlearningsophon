@@ -11,7 +11,7 @@
 \mainfig{13cm}{fig1_design}{Design of the study. (a) The ten classes of one group of the 17-class set, a resonance $X$ decaying to
 two quarks or gluons, as schematic jets, with the class each falls in under the four label sets; below, all 188
 classes as cells, a bar being one class of a label set and the outline the group above. (b) A pretrained network is
-used through transfer learning or a linear probe on its frozen features, or fine-tuned.}
+used through a classifier trained on its frozen features, a linear probe of them, or fine-tuning.}
 \mainfig{15cm}{fig2_accuracy}{Accuracy on the 188 JetClass-II classes (a) and on JetClass (b) for each pretraining label set and
 for the random grouping into 17 classes. Open points are linear probes on the frozen features, filled points models
 fine-tuned on $10^6$ jets; the dashed line and band are the network trained from scratch. Points and bars are means
@@ -22,7 +22,7 @@ standard deviations of equal recall. (c) One minus the AUC of a binary linear pr
 188-class model, whose value is in brackets; open markers where the labels merge the pair, half-filled where they
 merge part of it.}
 \mainfig{15cm}{fig5_resonance}{Sophon's $X\to b\bar b$ (a) and $X\to bs$ (b) benchmark: signal efficiency against QCD
-efficiency in the mass window, by transfer learning on the frozen features of each label set, for Sophon's full
+efficiency in the mass window, from a classifier trained on the frozen features of each label set, for Sophon's full
 network trained from scratch on the same jets and, dash-dotted, from the output scores where the label set keeps
 $X\to b\bar b$. Lower panels give the ratio to the 188-class model; the dotted line marks 1\% background efficiency.}
 \mainfig{15cm}{fig4_training_size}{Accuracy of fine-tuned models on JetClass-II (a) and JetClass (b) against the number of

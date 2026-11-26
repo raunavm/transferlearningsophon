@@ -280,11 +280,13 @@ def build(nested: bool = False):
         for k in range(6):
             ax.add_patch(Circle((xf, y0 - 0.5 + 0.2 * k), 0.065, fc=SLATE_TINT, ec=SLATE, lw=0.8, zorder=3))
         ax.text(xf, y0 + 0.8, "Features", ha="center", va="center", fontsize=FS)
-        # three uses (editor 8f085fe, item 30): transfer learning on the frozen features for the resonance benchmark,
+        # three uses (editor 8f085fe, item 30): a classifier trained on the frozen features (Methods' words) for the
+        # resonance benchmark,
         # a linear probe on them and fine-tuning for the four tasks; one box of tasks for each
         xu, wu, hu = 6.4, 2.6, 0.5
-        ytl, yp, yft = y0 + 0.8, y0 + 0.05, y0 - 0.8
-        block(xu, ytl - hu / 2, wu, hu, "Transfer learning")
+        ytl, yp, yft = y0 + 0.88, y0 + 0.05, y0 - 0.8
+        htl = 0.72                                       # two lines
+        block(xu, ytl - htl / 2, wu, htl, "Classifier trained\non frozen features")
         block(xu, yp - hu / 2, wu, hu, "Linear probe")
         block(xu, yft - hu / 2, wu, hu, "Fine-tuning")
         arrow((xf + 0.15, y0 + 0.45), (xu - 0.05, ytl - 0.12))     # both frozen uses read the features
@@ -292,7 +294,7 @@ def build(nested: bool = False):
         arrow((xb0 + wb, yft), (xu - 0.05, yft))         # fine-tuning adapts the whole network
         xt, wt = 9.5, W - 9.5 - 0.15
         block(xt, y0 - 1.1, wt, 1.45, "JetClass-II\nJetClass\nTop tagging\nQuark/gluon")
-        block(xt, ytl - hu / 2, wt, hu, r"$X\!\to b\bar b$, $X\!\to bs$")
+        block(xt, ytl - htl / 2, wt, htl, r"$X\!\to b\bar b$, $X\!\to bs$")
         arrow((xu + wu + 0.05, ytl), (xt - 0.05, ytl))
         for yy in (yp, yft):
             arrow((xu + wu + 0.05, yy), (xt - 0.05, yy))
