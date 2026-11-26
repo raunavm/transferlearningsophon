@@ -22,7 +22,8 @@ to move to keep the class sizes, so the step between them cannot be assigned to 
 
 \input{tables/table_flavor}
 
-\section{Training details}\label{app:training}
+% no float barrier here either: the class map's float pages would leave A.1 on a short page (draft 6a83619)
+{\let\FloatBarrier\relax \section{Training details}\label{app:training}}
 The JetClass-II jets are clustered with the anti-$k_{\mathrm T}$ algorithm~\cite{antikt,fastjet} from the particles of the
 simulated detector, with \LitJetClassTwoPileupMean{} pileup collisions on average.
 We keep jets with $p_{\mathrm T}$ between \DesignPtMin{} and \DesignPtMax~GeV and a soft-drop mass, computed at
@@ -89,26 +90,6 @@ On top tagging it ranks the \Kcoarse-class model with mass regression first, wit
 
 \input{tables/table_mlp}
 
-
-% no float barrier here, so the section does not open a short page (PI 2026-11-26, 34.3)
-{\let\FloatBarrier\relax \section{Comparison with published taggers}\label{app:published}}
-Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
-public tasks.
-The linear energy-flow-polynomial (EFP) classifier~\cite{efp} is linear in a set of jet observables; PFN~\cite{efn},
-ParticleNet~\cite{particlenet}, ParT~\cite{part}, MIParT~\cite{mipart}, L-GATr~\cite{lgatr} and
-OmniLearned~\cite{omnilearned} are neural networks on the particles, the last four transformers.
-On quark--gluon discrimination our fine-tuned network matches the published Particle Transformer fine-tuned from
-JetClass: \VPubQgAccOurs\% against \VPubQgAccPart\% in accuracy, and an AUC of \VPubQgAucOurs{} against \VPubQgAucPart.
-On top tagging our network trained from scratch is below the published one trained from scratch, and our
-fine-tuned network is above that and below the published Particle Transformer fine-tuned from JetClass.
-That one was pretrained on the kinematic inputs only; a single \Kfull-class model pretrained that way reaches the
-same rejection after fine-tuning, \VPubTopRejKin{} against \VPubTopRejOurs{} with the absent inputs set to zero
-(last row of the table).
-
-\input{tables/table_published}
-
-% no float barrier here, so the section does not open a short page (PI 2026-11-26, 34.3)
-{\let\FloatBarrier\relax \section{Further figures}\label{app:figures}}
 \vfig{figA1}{Recall of each JetClass-II class under a linear probe for the \Kres-class model against
 the \Kfull-class model, coloured by what the label set merges the class with; faded points lie within three standard
 deviations of equal recall. Points are means over runs with bars combining run spread and test-sample
@@ -137,3 +118,21 @@ Rej$_{30\%}$ of fine-tuned models against the number of training jets. Lower pan
 set, so levels compare only between models with the same number of classes. Lines are the mean over runs and bands
 the standard deviation; the shading marks the last ten epochs, among which each run's checkpoint is the one of highest
 validation accuracy (ticks).}{fig:validation}
+
+
+% no float barrier here, so the section does not open a short page (PI 2026-11-26, 34.3)
+{\let\FloatBarrier\relax \section{Comparison with published taggers}\label{app:published}}
+Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
+public tasks.
+The linear energy-flow-polynomial (EFP) classifier~\cite{efp} is linear in a set of jet observables; PFN~\cite{efn},
+ParticleNet~\cite{particlenet}, ParT~\cite{part}, MIParT~\cite{mipart}, L-GATr~\cite{lgatr} and
+OmniLearned~\cite{omnilearned} are neural networks on the particles, the last four transformers.
+On quark--gluon discrimination our fine-tuned network matches the published Particle Transformer fine-tuned from
+JetClass: \VPubQgAccOurs\% against \VPubQgAccPart\% in accuracy, and an AUC of \VPubQgAucOurs{} against \VPubQgAucPart.
+On top tagging our network trained from scratch is below the published one trained from scratch, and our
+fine-tuned network is above that and below the published Particle Transformer fine-tuned from JetClass.
+That one was pretrained on the kinematic inputs only; a single \Kfull-class model pretrained that way reaches the
+same rejection after fine-tuning, \VPubTopRejKin{} against \VPubTopRejOurs{} with the absent inputs set to zero
+(last row of the table).
+
+\input{tables/table_published}
