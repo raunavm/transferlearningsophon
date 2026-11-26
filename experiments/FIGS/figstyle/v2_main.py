@@ -717,7 +717,7 @@ def draw_fig5(path: pathlib.Path) -> None:
     XR = C.P._xr()
     panels = [PH._xbx_series(XR, sig, XBX_NETS, PH.CLASSIFIER, True, True) for sig, _ in XR.SIGNALS]
     fig, grid, rgrid = S.grid_cm(1, 2, w=6.1, aspect=0.85, ratio=0.35, top=S.LEGEND_TOP + 0.5 * 2 + 0.5,
-                                 left=1.4, wgap=1.5, bottom=1.2)
+                                 left=1.35, wgap=1.45, bottom=1.2)
     axes, raxes, low, rlo = list(grid[0]), list(rgrid[0]), [], []
     eps = np.asarray(C.P.EPS_S_GRID, float)
     for ax, rx, series in zip(axes, raxes, panels):
