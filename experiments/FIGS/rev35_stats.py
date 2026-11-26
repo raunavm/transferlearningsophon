@@ -330,11 +330,15 @@ def table_v4(rows: list[dict]) -> str:
         body.append(f"{head} & {r['pair']} & {neg(d)} & {s} & {neg(f'{r[chr(122)]:.1f}')} & {r['n_first']}/{r['n_second']} \\\\")
     return "\n".join([
         "% written by experiments/FIGS/rev35_stats.py (ledger 35, audit V4)",
-        r"\begin{table}[htbp]\centering\small",
-        r"\caption{The differences the main text states: $\Delta$, its $\sigma$ (both sides' run standard deviations and "
-        r"the paired test-jet bootstrap; for the resonance benchmark the binomial term of the signal and background "
-        r"jets in place of the bootstrap), $\Delta/\sigma$, and the runs on each side.}\label{tab:differences}",
-        r"\begin{tabular}{@{}llccrc@{}}", r"\toprule",
+        r"\begin{table}[t]\centering",
+        r"\caption{Differences between models quoted in the text: $\Delta$, its combined uncertainty $\sigma$ (both "
+        r"sides' run standard deviations and the paired test-jet bootstrap; for the resonance benchmark the binomial "
+        r"term of the signal and background jets in place of the bootstrap), $\Delta/\sigma$, and the runs on each side. "
+        r"A difference is called resolved when $|\Delta/\sigma|>3$.}\label{tab:differences}",
+        # ledger 35: the two label columns wrap, so the table fits the text width (it was 84 pt too wide at 9 pt)
+        r"\small\setlength{\tabcolsep}{4pt}",
+        r"\begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}p{4.3cm}ccrc@{}}",
+        r"\toprule",
         r"Quantity & Difference & $\Delta$ & $\sigma$ & $\Delta/\sigma$ & Runs \\", r"\midrule",
         *body, r"\bottomrule", r"\end{tabular}", r"\end{table}", ""])
 
