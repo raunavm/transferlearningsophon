@@ -55,7 +55,7 @@ def test_a_bound_in_a_percent_column_is_scaled():
 
 
 def test_table_cell_reads_one_cell_or_stops():
-    tex = "\n".join([r"\begin{tabular}{lcc}", r"\multicolumn{3}{l}{top tagging} \\", r"ours & 1 & 2{,}799\,$\pm$\,56 \\",
+    tex = "\n".join([r"\begin{tabular}{lcc}", r"\toprule", r"\multicolumn{3}{l}{top tagging} \\", r"ours & 1 & 2{,}799\,$\pm$\,56 \\",
                      r"\multicolumn{3}{l}{quark/gluon tagging} \\", r"ours & 3 & 84.3\,$\pm$\,0.1 \\", r"\end{tabular}"])
     assert V.table_cell(tex, 0, "top tagging", "ours", 2) == r"2{,}799\,$\pm$\,56"
     assert V.table_cell(tex, 0, "quark/gluon tagging", "ours", 2, False) == "84.3"

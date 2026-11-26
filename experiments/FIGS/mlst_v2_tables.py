@@ -745,12 +745,12 @@ def mass_macros(vals: dict) -> str:
 
 
 def table_cell(tex: str, block: int, heading: str | None, label: str, col: int, whole: bool = True) -> str:
-    r"""One printed cell of a generated table: tabular number `block`, under the \multicolumn heading `heading` (None:
+    r"""One printed cell of a generated table: block number `block` (the blocks are opened by \toprule), under the \multicolumn heading `heading` (None:
     any), the row whose first cell is `label`, column `col`; whole=False keeps the mean only. The build stops when
     the cell is not found, so a number the text quotes is always the table's."""
-    tabs = re.findall(r"\\begin\{tabular\*?\}.*?\\end\{tabular\*?\}", tex, re.S)
+    blocks = tex.split(r"\toprule")[1:]        # a table's blocks, each opened by its own rule
     cur, hit = None, []
-    for ln in tabs[block].split("\n"):
+    for ln in blocks[block].split("\n"):
         mc = re.match(r"\s*\\multicolumn\{\d+\}\{[^}]*\}\{(.*?)\}", ln)
         if mc:
             cur = mc.group(1)
