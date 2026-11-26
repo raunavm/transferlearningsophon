@@ -46,9 +46,9 @@
   \def\vfigbody{\IfFileExists{figures/#2.pdf}{\includegraphics[width=#1]{figures/#2.pdf}}%
     {\fbox{\parbox[c][4.5cm][c]{\dimexpr\linewidth-2cm\relax}{\centering\texttt{\detokenize{#2}}: figure being rebuilt}}}}%
   \vfigtail}
-\NewDocumentCommand{\vfigtail}{m m}{\begin{figure}[htbp]\centering\vfigbody\caption{#1}\label{#2}\end{figure}}
+\NewDocumentCommand{\vfigtail}{m m}{\begin{figure}[tp]\centering\vfigbody\caption{#1}\label{#2}\end{figure}}
 
-\title{Label granularity in supervised pretraining of jet foundation models}
+\title{Label granularity in supervised pretraining for jet tagging}
 \author{\pending{author list and affiliations}}
 \date{}
 

@@ -1,52 +1,62 @@
-\section{Discussion and conclusion}\label{sec:discussion}
-% The PI's draft of 2026-11-25 (pi_prose_1125.tex), completed with the rulings of LEDGER 30.1 and 30.4. The sentence
-% on fine-tuning against the linear probe (CS-15) is written last and is not here.
+\section{Discussion}\label{sec:discussion}
+% The PI's text of 2026-11-26 (pi_prose_1126.tex, LEDGER 34), as written; numbers are build macros.
 
-The results describe a representation shaped by what its labels distinguish, and not simply by
-how many labels there are.
-Pairs of classes that a label set merges lose separation in the frozen features, and at \Kmid{} classes
-some pairs that the labels still keep apart lose it as well.
-Random groupings of the same size as the coarsest set nevertheless retain most of the accuracy
-on the pretraining classes, so the number of classes alone does not determine the loss.
-That result should not be read as a recipe for label design, since with frozen features the random groupings offer
-no advantage over the \Kcoarse-class set on JetClass and fall below it on top tagging.
-For an analysis that reads a discriminant from frozen features, or sums class scores into one as Sophon does
-on its resonance benchmark, the practical consequence is that the classes it must tell apart should be distinct in
-the pretraining labels, although, as the \Kmid-class pairs show, distinct labels alone do not keep their separation
-intact.
+Taken together, these results show a representation shaped by the distinctions its labels draw.
+When a label set stops separating bottom from charm quarks, or gluons from light quarks, the
+frozen features lose part of that separation, and the loss appears wherever the distinction is
+needed: in the accuracy on the pretraining classes, in the separation of single pairs, and in the
+efficiency of a resonance search.
+What matters is that the distinction is required somewhere, not that every pair of classes is kept
+apart.
+The random groupings merge some pairs of flavors and still separate them, whereas the \Kcoarse-class
+set separates them nowhere.
+This suggests that a network learns a distinction when any class boundary demands it, and then
+applies it to decays whose own labels do not.
 
-These findings agree with relabeling experiments in image classification and extend them.
-There too, coarser labels cost more for frozen features than after fine-tuning \cite{hong},
-and classes merged along a semantic hierarchy remain more entangled than classes merged at
-random~\cite{yang}.
-What simulation adds is control: the labels are exact, the training examples and their order are identical for every label set,
-and each merge removes a distinction that can be named, so the loss can be traced to individual
-pairs of classes instead of being inferred from an average over a taxonomy.
+The same pattern has been seen in image classification, where coarser labels cost more for frozen
+features than after fine-tuning~\cite{hong}, and classes merged along a semantic hierarchy remain more
+entangled than classes merged at random~\cite{yang}.
+What simulation adds is control: the labels are exact, the training examples and their order are
+identical for every label set, and each merge removes a distinction that can be named, so the loss
+can be traced to individual pairs of classes instead of being inferred from an average over a
+taxonomy.
 
-Fine-tuning reduces the loss without removing it: with \FtSizeESix{} labeled jets the \Kcoarse-class model
-stays \VDFtJcTwoCoarse{} points behind the \Kfull-class model on
-the pretraining classes and \VDFtJcOneCoarse{} points behind on JetClass, against gains from pretraining of
-\VDFtJcTwoGain{} and \VDFtJcOneGain{} points, so a coarse label set forfeits an appreciable share of what pretraining
-provides even when the whole network is adapted.
-On both multi-class tasks the gap is larger with frozen features than after fine-tuning: \VDLpJcTwoCoarse{} against
-\VDFtJcTwoCoarse{} points on the pretraining classes, and \VDLpJcOneCoarse{} against \VDFtJcOneCoarse{} on JetClass.
-On top tagging and quark--gluon discrimination the label set makes no measurable difference, but these benchmarks
-resolve only coarse differences in background rejection, with an uncertainty of \VFtTopRejSigLo{} to
-\VFtTopRejSigHi{} on a rejection of about \VFtTopRejFull{} for top tagging, and they lack the inputs that carry
-flavor.
-The mass regression acts on a different axis: it supplies a quantity that no label set contains
-and improves the mass resolution of the frozen features with no loss of accuracy that we can resolve,
-although after fine-tuning the models pretrained with it are slightly less accurate, by
-about half a percentage point on the pretraining classes at both label sets, a difference that stands out from the
-spread between runs only at \Kcoarse{} classes.
+For the use of a pretrained tagger, the consequence depends on how it is used.
+Read out from frozen features, or through class scores summed into a discriminant, the model can
+offer only the separations its labels asked for, and the classes an analysis will need to tell
+apart should be distinct in the pretraining labels.
+Fine-tuning relaxes this requirement without removing it: with a million labeled jets the
+coarsest labels still give up more than a third of what pretraining provides on the pretraining
+classes and a quarter on JetClass, and more when labeled jets are few.
+Tasks that do not draw on the merged distinctions are indifferent to them, as top tagging and
+quark--gluon discrimination show; in both, the inputs that carry flavor are largely absent.
+A grouping that preserves the pretraining classes is not thereby a good label set, however.
+The frozen features of the random groupings transfer less well than those of any nested set,
+which may reflect that their classes mix decays of different structure.
 
-These conclusions rest on one architecture, with \VParamsMillion~million parameters, and on one simulated
-dataset.
-The random groupings were selected rather than drawn as typical, with one run each, and each step of the hierarchy
-removes several distinctions at once, so the cost of a single distinction is established only through pairs of
-classes, and on the two binary benchmarks several
-inputs used in pretraining are absent, which limits what the frozen features can show there.
-Within these limits, a label set built for transfer should keep apart the classes that later
-analyses will need to separate, and this matters most when the pretrained model is used without
-fine-tuning; a quantity that no labels carry, such as the jet mass, can be added as an auxiliary
-target.
+The mass regression shows that what the labels lack can be supplied by other means: it improves
+the mass resolution of the frozen features by about a quarter and costs at most half a point of
+accuracy.
+Our study has limits: it rests on one network, with \VParamsMillion~million parameters, and on one
+simulated dataset.
+Each step of the hierarchy removes several distinctions at once, so the cost of a single one is
+established only through pairs of classes.
+The random groupings were chosen among random draws to overlap little with the hierarchy, and we
+have not studied typical draws.
+Our fine-tuning uses one recipe for all models, and on top tagging it stays below the best
+published results (appendix~\ref{app:published}), so the absolute performance on the benchmarks should not be read
+as the reach of the method.
+
+\section{Conclusion}\label{sec:conclusion}
+
+We have varied the labels of a supervised pretraining while keeping its data fixed, which
+simulation makes possible and which, for jets, had not been done.
+The representation retains what the labels distinguish.
+Merging flavors in the labels removes part of their separation from the frozen features, by ten
+percentage points of accuracy on the pretraining classes between the finest and the coarsest set,
+while a grouping of the same size that cuts across the hierarchy loses only about one.
+Fine-tuning recovers most of the difference on the pretraining classes but not all of it, and
+tasks that do not need the merged distinctions do not notice them.
+Pretraining labels should therefore keep apart the classes that later analyses will need to
+separate, above all when the model is to be used without fine-tuning, and quantities that no
+label carries, such as the jet mass, can be added as auxiliary targets.

@@ -665,7 +665,76 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
             if None in v:
                 raise SystemExit(f"FATAL: class pair {k}, {arm}: a run without its probe")
             out[f"VAuc{w}{a}"] = f"{float(np.mean(v)):.4f}"
+            out[f"VAuc{w}{a}Three"] = f"{float(np.mean(v)):.3f}"
+    out.update(pi_prose_1126(got, r, lp, ft, mean, vals, pct, pts, out, xfits, XR, runs))
     return "% written by experiments/FIGS/mlst_v2_tables.py\n" + "".join(rf"\newcommand{{\{k}}}{{{v}}}" + "\n" for k, v in out.items())
+
+
+def pi_prose_1126(got, r, lp, ft, mean, vals, pct, pts, out, xfits, XR, runs) -> dict:
+    """The numbers of the PI's text of 2026-11-26 (pi_prose_1126.tex, LEDGER 34) that no earlier macro gives, and the
+    words it uses for ratios ("fourfold", "more than a third", "a quarter", "about half a point"), checked here so
+    that the build stops when one no longer holds."""
+    J2, J1, TA, QA = "JetClass-II accuracy", "JetClass accuracy", "top accuracy", "quark/gluon accuracy"
+    o = {}
+    for w, a in (("Full", "L188"), ("Res", "L162"), ("Coarse", "R16_Q1"), ("ResMass", "L162_MASS"),
+                 ("CoarseMass", "R16_Q1_MASS")):
+        o[f"VLpTopAcc{w}"] = pct(lp, TA, a)
+    # fine-tuned accuracy on the binary benchmarks: the spread of the four nested means, in points
+    for w, col in (("Top", TA), ("Qg", QA)):
+        m = [100 * mean(ft, col, a) for a in NESTED]
+        o[f"VFt{w}AccRange"] = f"{max(m) - min(m):.2f}"
+    # frozen accuracy on the pretraining classes with and without the mass regression, in points (a fall)
+    for w, a, b in (("Res", "L162", "L162_MASS"), ("Coarse", "R16_Q1", "R16_Q1_MASS")):
+        d = 100 * (mean(lp, J2, a) - mean(lp, J2, b))
+        if d <= 0:
+            raise SystemExit(f"FATAL: the frozen accuracy does not fall with the mass regression at {a} ({d:+.2f})")
+        o[f"VDLpJcTwoMass{w}"] = f"{d:.1f}"
+        o[f"VDFtJcOneMass{w}One"] = f"{100 * (mean(ft, J1, a) - mean(ft, J1, b)):.1f}"
+        half = 100 * (mean(ft, J2, a) - mean(ft, J2, b))
+        if not 0.35 <= half < 0.65:
+            raise SystemExit(f"FATAL: 'about half a point' after fine-tuning does not hold at {a} ({half:.2f})")
+    if o["VDFtJcOneMassResOne"] != o["VDFtJcOneMassCoarseOne"]:
+        raise SystemExit("FATAL: 'by ... points on JetClass, at both label sets' needs one value: "
+                         f"{o['VDFtJcOneMassResOne']} and {o['VDFtJcOneMassCoarseOne']}")
+    # Sophon's output-score selection of X->bb at one decimal
+    recs = [XR.readout(xfits.get(m, {}).get("xbb", {}), "zero_shot_xbb") for m in runs["L188"]]
+    o["VXbbDirectFullOne"] = f"{100 * float(np.mean([x['eps_s_at_star'] for x in recs])):.1f}"
+    o["VNTrainMillion"] = f"{int(str(got['old']['DesignNTrainSelected']).replace('{,}', '').replace(',', '')) / 1e6:.0f}"
+    # the words
+    err = lambda a: 1 - float(out[f"VAucBb{a}"])                                                     # noqa: E731
+    if round(err("Coarse") / err("Full")) != 4:
+        raise SystemExit(f"FATAL: 'a fourfold increase in the error' does not hold ({err('Coarse') / err('Full'):.2f})")
+    two = 100 * (mean(ft, J2, "L188") - mean(ft, J2, "R16_Q1"))
+    gain2 = 100 * (mean(ft, J2, "L188") - float(np.mean(vals(ft, J2, "trained from scratch"))))
+    one = 100 * (mean(ft, J1, "L188") - mean(ft, J1, "R16_Q1"))
+    gain1 = 100 * (mean(ft, J1, "L188") - float(np.mean(vals(ft, J1, "trained from scratch"))))
+    if not (1 / 3 < two / gain2 < 1 / 2 and 0.2 <= one / gain1 < 0.3):
+        raise SystemExit(f"FATAL: 'more than a third' ({two / gain2:.2f}) or 'a quarter' ({one / gain1:.2f}) fails")
+    return o
+
+
+def mass_macros(table4: str) -> str:
+    """The mass resolutions of the PI's text (LEDGER 34, section 4.6), in percent, from Table 4's printed cells, so
+    the text and the table cannot differ; "about a quarter" (the Discussion) checked on the MLP probes."""
+    res, block = {}, None
+    for ln in table4.split("\n"):
+        if r"\multicolumn" in ln:
+            block = "mlp" if "MLP" in ln else "head"
+        elif "&" in ln and "resolution" not in ln:
+            c = [x.strip() for x in ln.rstrip(" \\").split("&")]
+            res[(block if c[0] != "soft-drop mass" else "sd", c[0])] = c[1].split(r"\,")[0]
+    want = {"VResMlpFull": ("mlp", "188 classes"), "VResMlpRes": ("mlp", "162 classes"),
+            "VResMlpResMass": ("mlp", "162 classes + mass regression"), "VResMlpCoarse": ("mlp", "17 classes"),
+            "VResMlpCoarseMass": ("mlp", "17 classes + mass regression"),
+            "VResHeadResMass": ("head", "162 classes + mass regression"), "VResSoftDrop": ("sd", "soft-drop mass")}
+    if any(k not in res for k in want.values()):
+        raise SystemExit(f"FATAL: table 4 rows not found: {sorted(set(want.values()) - set(res))}")
+    v = {m: res[k] for m, k in want.items()}
+    for a, b in (("VResMlpRes", "VResMlpResMass"), ("VResMlpCoarse", "VResMlpCoarseMass")):
+        gain = 1 - float(v[b]) / float(v[a])
+        if not 0.2 <= gain < 0.3:
+            raise SystemExit(f"FATAL: 'about a quarter' does not hold for {a} ({gain:.2f})")
+    return "".join(rf"\newcommand{{\{k}}}{{{x}}}" + "\n" for k, x in v.items())
 
 
 def one_value(xs: set):
@@ -1083,13 +1152,14 @@ def main() -> int:
            "pending.txt": "".join(f"Table 3 | {r} | {c}\n" for r, c in pending),
            "results_generated.tex": built["results_generated.tex"],
            "table_classmap.tex": table_classmap(maps), **appendix_tables(got, maps), "table_head.tex": table_head(got, runs),
-                      "table4.tex": mass_columns(reuse(built, "tables/mlst_mass.tex", TABLE4_CAPTION, "tab:mass")),
+           "table4.tex": (t4 := mass_columns(reuse(built, "tables/mlst_mass.tex", TABLE4_CAPTION, "tab:mass"))),
            "table_inputs.tex": reuse(built, "tables/mlst_inputs.tex", INPUTS_CAPTION, "tab:inputs"),
            # 7.5 pt: at 8 pt the four blocks overran the page number (draft da28a31, p. 25)
            "table_published.tex": reuse(built, "tables/mlst_published.tex", PUBLISHED_CAPTION, "tab:published",
                                         r"\fontsize{7.5}{9}\selectfont", ovo=load_ovo()),
            "table_mlp.tex": reuse(built, "tables/mlst_mlp.tex", MLP_CAPTION, "tab:mlp", r"\fontsize{8}{10}\selectfont"),
            "table_groups.tex": reuse(built, "tables/mlst_coarse.tex", GROUPS_CAPTION, "tab:groups")}
+    out["numbers.tex"] += mass_macros(t4)
     for f, text in out.items():
         (d / f).write_text(text)
     print("V2 TABLES COMPLETE")

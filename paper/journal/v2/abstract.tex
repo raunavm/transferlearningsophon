@@ -1,25 +1,21 @@
-% The abstract: the PI's text of 2026-11-25 (pi_prose_1125.tex, LEDGER 29), as written, with the ruling of LEDGER 30.1
-% on the binary clause. Every number is a macro of tables/numbers.tex; each clause is tested in
-% experiments/FIGS/mlst_v2_tables.py (claims), which stops the build when a row is missing or fails.
-When a foundation model is pretrained by supervised classification, its classes determine which
-distinctions the network must learn, yet how fine they need to be remains an open question.
+% The abstract: the PI's text of 2026-11-26 (pi_prose_1126.tex, LEDGER 34), as written; numbers are build macros.
+When a model is pretrained by supervised classification, its classes determine which distinctions
+the network must learn, yet how fine they need to be remains an open question.
 Jets, the collimated sprays of particles produced in high-energy collisions, offer a clean test,
 because each simulated jet carries an exact label that can be coarsened without changing the
 training data.
-We pretrain the network of Sophon, a foundation model for jets, on the same simulated jets under four nested label
-sets,
-from \Kfull{} classes down to \Kcoarse, which successively merge classes that differ only in the type of particle
+We pretrain the Sophon jet-tagging network on the same simulated jets under four nested label
+sets, from \Kfull{} classes down to \Kcoarse, each merging classes that differ only in the type of particle
 produced, such as bottom and charm quarks.
 As the labels coarsen, the frozen representation retains less of what they no longer distinguish:
 a linear classifier trained on it identifies the \Kfull{} classes with \VAccFullPct\% accuracy for the
 finest labels but \VAccCoarsePct\% for the coarsest.
-Randomly drawn groupings into \Kcoarse{} classes that cut across this hierarchy, however, still reach
-\VAccRandPct\%, so the loss depends on which
-classes are merged and not only on how many.
-Fine-tuning narrows the gap to about \VDFtJcTwoCoarseRound{} percentage points without closing it, and the
-coarsest labels also remain behind on a second multi-class task, while two binary tagging
-benchmarks show no measurable dependence on the label set.
-Fine labels therefore matter most for tasks that rely on the distinctions they preserve, and when the model is used
-without fine-tuning.
-A quantity that the labels do not carry can be added separately: an auxiliary regression of the jet mass sharpens the
-mass resolution of the frozen representation with no loss of accuracy that we can resolve.
+Groupings into \Kcoarse{} classes that cut across this hierarchy still reach \VAccRandPct\%, so the loss
+depends on which classes are merged and not only on how many.
+Fine-tuning narrows the gap to about \VDFtJcTwoCoarseRound{} percentage points without closing it, while two
+binary benchmarks whose inputs carry little flavor information show no dependence on the label
+set.
+Fine labels therefore matter most for tasks that rely on the distinctions they preserve, and when
+the pretrained model is used without fine-tuning.
+An auxiliary regression of the jet mass adds what no label carries, sharpening the mass
+resolution of the frozen representation at little cost in accuracy.

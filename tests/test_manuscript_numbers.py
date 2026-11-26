@@ -148,6 +148,16 @@ NUMBER_WORD = re.compile(
 # with the reason it cannot change. Matched as PHRASES and removed before the
 # scan, so the allowance never extends to the bare word.
 ALLOWED_WORDS = [
+    # the PI's words of 2026-11-26 (pi_prose_1126.tex, LEDGER 34) for ratios and round sizes; each is checked by the
+    # build (mlst_v2_tables.pi_prose_1126 and mass_macros), which stops when one no longer holds
+    (r"\bfourfold\b", "1 - AUC of X->bb vs cc, 17 against 188 classes (build check)"),
+    (r"\bmore\s+than\s+a\s+third\b", "share of the pretraining gain the coarsest labels give up (build check)"),
+    (r"\babout\s+a\s+quarter\b|\ba\s+quarter\b", "JetClass share and mass-resolution gain (build check)"),
+    (r"\b(?:about|at\s+most)\s+half\s+a\s+point\b", "fine-tuned cost of the mass regression (build check)"),
+    (r"\bten\s+percentage\s+points\b", "the frozen 188 - 17 loss rounded, the Conclusion"),
+    (r"\bloses\s+only\s+about\s+one\b", "the random groupings' frozen loss rounded, the Conclusion"),
+    (r"\ba\s+million\s+labeled\s+jets\b", "the fine-tuning set of 10^6 jets in words, the Discussion"),
+    (r"\babout\s+a\s+hundred\s+background\s+jets\b", "the passing background count rounded, Results 4.5"),
     (r"\babout\s+half\s+a\s+percentage\s+point\b",
      "the PI's wording for the fine-tuned cost of the mass regression (2026-11-25, LEDGER 30.4)"),
     (r"\bhundreds\s+of\s+fine\s+classes\b",
@@ -199,6 +209,8 @@ DRAWINGS = {"fig_design.tex", "fig_f1.tex"}   # TikZ coordinates are not results
 PLANS = {"v2/outline.tex",
          # the PI's prose as received (LEDGER 29): the source the sections are installed from, never compiled into the paper
          "v2/pi_prose_1125.tex",
+         # the PI's prose of 2026-11-26 (LEDGER 34), the same role
+         "v2/pi_prose_1126.tex",
          # the figures agent's caption sheet for the PI's look at the five figures (2026-11-25): a review page, never
          # compiled into the paper; its captions reach the paper through the sections, which are checked
          "v2/figures_sheet.tex"}
