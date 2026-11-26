@@ -19,7 +19,7 @@ import style_v5 as S  # noqa: E402
 import v2_main as V  # noqa: E402
 
 # names of the old paper and of the code that no label of the rewrite may show (RW-1, RW-5)
-INTERNAL = re.compile(r"partition|flavor boundary|random network|checkpoint|direct discriminant|transfer head|"
+INTERNAL = re.compile(r"partition|random network|checkpoint|direct discriminant|transfer head|"
                       r"\bL1\d\d\b|R16|R42|\+ mass$|^from scratch|\bSD\b|\$R_\{30\}\$")
 
 
@@ -72,6 +72,9 @@ def test_no_label_of_any_figure_is_an_internal_name(figures):
     assert set(figures) == set(STEMS)
     bad = {stem: hits for stem, fig in figures.items() if (hits := [t for t in _texts(fig) if INTERNAL.search(t)])}
     assert not bad
+    # ledger 35, section 4: the flavor-boundary groupings appear in the main text only in Figs. 2 and the separation one
+    flav = {stem for stem, fig in figures.items() if any("flavor boundary" in t for t in _texts(fig))}
+    assert {s_ for s_ in flav if not s_.startswith("figA")} == {"fig2_accuracy", "fig_separation"}
 
 
 def test_every_figure_fits_the_papers_page_and_prints_at_the_figure_font(figures):
