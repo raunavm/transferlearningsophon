@@ -782,7 +782,7 @@ def table_cell(tex: str, block: int, heading: str | None, label: str, col: int, 
     blocks = tex.split(r"\toprule")[1:]        # a table's blocks, each opened by its own rule
     cur, hit = None, []
     for ln in blocks[block].split("\n"):
-        mc = re.match(r"\s*\\multicolumn\{\d+\}\{(?:[^{}]|\{[^{}]*\})*\}\{(.*?)\}", ln)
+        mc = re.match(r"\s*\\multicolumn\{\d+\}\{(?:[^{}]|\{[^{}]*\})*\}\{((?:[^{}]|\{[^{}]*\})*)\}", ln)
         if mc:
             cur = mc.group(1)
             continue
