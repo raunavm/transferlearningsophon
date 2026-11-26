@@ -264,6 +264,38 @@ def build(nested: bool = False):
     # ------------------------------------------------------------------ (b) pretraining
     yt = ybot - 0.85
     ax.text(0.2, yt, "(b) Pretraining and use", fontsize=FS_T, va="center")
+    if nested:
+        # PI 2026-11-26 (ledger 34.3): one flow, jets, network, features, then linear probe or fine-tuning, then the
+        # tasks; the row of output squares and the task matrix go
+        y0 = yt - 1.75
+        jet(1.35, y0 - 1.0, 1.95, [(-0.23, 5, 0.045, 0.0), (0.23, 5, 0.045, 0.0)], half=27, seed=12, lw=0.3, cells=(3, 4))
+        ax.text(1.35, y0 + 1.13, "JetClass-II jets", ha="center", va="center", fontsize=FS)
+        arrow((2.65, y0), (3.3, y0))
+        xb0, wb = 3.35, 1.0
+        block(xb0, y0 - 1.0, wb, 2.0, "Particle\nTransformer", rot=90)
+        ax.text(xb0 + wb / 2, y0 + 1.25, "pretrained on\none label set", ha="center", va="center", fontsize=FS,
+                linespacing=1.0)
+        arrow((xb0 + wb + 0.15, y0), (5.3, y0))
+        xf = 5.52
+        for k in range(6):
+            ax.add_patch(Circle((xf, y0 - 0.5 + 0.2 * k), 0.065, fc=SLATE_TINT, ec=SLATE, lw=0.8, zorder=3))
+        ax.text(xf, y0 + 0.8, "Features", ha="center", va="center", fontsize=FS)
+        xu, wu, hu = 6.5, 2.3, 0.5                       # the two uses, one above the other
+        yp, yft = y0 + 0.4, y0 - 0.75
+        block(xu, yp - hu / 2, wu, hu, "Linear probe")
+        block(xu, yft - hu / 2, wu, hu, "Fine-tuning")
+        arrow((xf + 0.2, yp), (xu - 0.05, yp))           # the probe reads the frozen features
+        arrow((xb0 + wb, yft), (xu - 0.05, yft))         # fine-tuning adapts the whole network
+        xt, wt = 9.25, W - 9.25 - 0.15
+        block(xt, y0 - 1.05, wt, 2.1, "JetClass-II\nJetClass\nTop tagging\nQuark/gluon\n"
+              r"$X\!\to b\bar b$, $X\!\to bs$ (frozen)")
+        for yy in (yp, yft):
+            arrow((xu + wu + 0.05, yy), (xt - 0.05, yy))
+        bottom = y0 - 1.05 - 0.25                        # the figure ends under the flow
+        ax.set_ylim(bottom, H)
+        fig.set_size_inches(W / 2.54, (H - bottom) / 2.54)
+        fig.height_cm = H - bottom
+        return fig
     y0 = yt - 1.9
     # input: the particles of one jet (tracks and energy deposits; no detector hits)
     jet(1.35, y0 - 1.0, 1.95, [(-0.23, 5, 0.045, 0.0), (0.23, 5, 0.045, 0.0)], half=27, seed=12, lw=0.3, cells=(3, 4))

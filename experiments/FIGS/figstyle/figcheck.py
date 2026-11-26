@@ -222,12 +222,20 @@ def classify(fig, r) -> tuple[list, dict]:
 
 
 def broken_parts(ax, axes, r) -> list:
-    """The parts beyond an axis break (labelled "<break>") of ax's panel: same height, at most 3 mm beside it."""
+    """The parts beyond an axis break (labelled "<break>") of ax's panel: same height, at most 3 mm beside it (a broken
+    x axis), or same width, at most 3 mm above or below it (a broken y axis, PI 2026-11-26, ledger 34.3: Fig. 2)."""
     b = ax.get_window_extent(r)
     gap = 0.3 / 2.54 * ax.figure.dpi
-    return [o for o in axes if o is not ax and o.get_label() == "<break>" and abs(o.get_window_extent(r).y0 - b.y0) < 1
-            and abs(o.get_window_extent(r).y1 - b.y1) < 1
-            and (0 <= b.x0 - o.get_window_extent(r).x1 < gap or 0 <= o.get_window_extent(r).x0 - b.x1 < gap)]
+
+    def beside(o):
+        return (abs(o.y0 - b.y0) < 1 and abs(o.y1 - b.y1) < 1
+                and (0 <= b.x0 - o.x1 < gap or 0 <= o.x0 - b.x1 < gap))
+
+    def stacked(o):
+        return (abs(o.x0 - b.x0) < 1 and abs(o.x1 - b.x1) < 1
+                and (0 <= b.y0 - o.y1 < gap or 0 <= o.y0 - b.y1 < gap))
+    return [o for o in axes if o is not ax and o.get_label() == "<break>"
+            and (beside(o.get_window_extent(r)) or stacked(o.get_window_extent(r)))]
 
 
 def check(fig, name: str, print_cm: float, min_panel: float) -> dict:

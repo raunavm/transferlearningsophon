@@ -1,4 +1,4 @@
-% The rewrite's five main and five appendix figures at their printed widths, each with its draft caption (PI 2026-11-24, LEDGER RW-3,
+% The rewrite's main and appendix figures at their printed widths, each with its draft caption (PI 2026-11-24, LEDGER RW-3,
 % RW-8, GO-10), for looking at; the paper's text places them. The figures are drawn by
 % experiments/FIGS/figstyle/v2_main.py into figures/. Build: scripts/build_render_job.py --v2figs.
 \documentclass[12pt]{article}
@@ -8,37 +8,43 @@
 \usepackage[labelsep=period]{caption}
 \newcommand{\mainfig}[3]{\begin{figure}[p]\centering\includegraphics[width=#1]{figures/#2.pdf}\caption{#3}\end{figure}\clearpage}
 \begin{document}
-\mainfig{13cm}{fig1_design}{Design of the study. (a) The ten classes of one group of the 17-class set, a resonance $X$
-decaying to two quarks or gluons, as schematic jets, with the class each falls in under the four label sets. Below,
-all 188 classes as cells; a bar spanning several cells is one class of that label set, and the outline marks the
-group drawn above. (b) One model is pretrained per label set, then used frozen or fine-tuned.}
-\mainfig{15cm}{fig2_frozen}{Linear probes on the frozen features: accuracy on (a) the 188 JetClass-II classes and (b)
-JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark/gluon discrimination. Points are
-means over pretraining runs and bars standard deviations; the vertical line and band give the 188-class model's.
-Bars and bands narrower than a point are hidden by it.}
-\mainfig{15cm}{fig3_pairs}{Background rejection against signal efficiency for two pairs of JetClass-II classes, from
-binary linear probes on the frozen features: (a) $X\to b\bar b$ against $X\to c\bar c$; (b) $X\to bc$ against
-$X\to bq$ and $X\to cs$. Curves end where fewer than 20 of 200,000 background jets pass, so the ratio to the
-188-class model (lower panels) starts where its curve does. Random groupings merging the pair and keeping it apart
-are averaged separately. Bands: one standard deviation.}
-\mainfig{15cm}{fig4_training_size}{Fine-tuned models against the number of training jets: accuracy on (a) JetClass-II
-and (b) JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark/gluon discrimination. Lines
-are the mean over runs and bands the standard deviation. The same network trained from scratch is shown in grey.}
-\mainfig{15cm}{fig5_resonance}{Sophon's $X\to b\bar b$ and $X\to bs$ benchmark: signal efficiency against the
-efficiency for QCD jets, for jets in the mass window. Solid lines are transfer learning on the frozen features and, in
-grey, the same classifier trained from scratch. Dash-dotted lines in (a) are the discriminant formed directly from the
-output scores, where the label set keeps $X\to b\bar b$ as a class. Bands are the standard deviation over runs.}
+\mainfig{13cm}{fig1_design}{Design of the study. (a) The ten classes of one group of the 17-class set, a resonance $X$ decaying to
+two quarks or gluons, as schematic jets, with the class each falls in under the four label sets; below, all 188
+classes as cells, a bar being one class of a label set and the outline the group above. (b) A network pretrained on one
+label set is used through a linear probe on its frozen features or fine-tuned.}
+\mainfig{15cm}{fig2_accuracy}{Accuracy on the 188 JetClass-II classes (a) and on JetClass (b) for each pretraining label set and
+for the random grouping into 17 classes. Open points are linear probes on the frozen features, filled points models
+fine-tuned on $10^6$ jets; the dashed line and band are the network trained from scratch. Points and bars are means
+and standard deviations over runs; in (b) the axis is broken between the two uses.}
+\mainfig{15cm}{fig3_classes}{(a, b) Recall of each JetClass-II class under a linear probe for the 43- and 17-class models
+against the 188-class model, coloured by what the label set merges the class with; open points lie within three
+standard deviations of equal recall. (c) One minus the AUC of a binary linear probe for pairs of classes, for each label
+set and for the random groupings that merge the pair or keep it apart. Means and standard deviations over runs.}
+\mainfig{15cm}{fig5_resonance}{Sophon's $X\to b\bar b$ (a) and $X\to bs$ (b) benchmark: signal efficiency against QCD
+efficiency in the mass window, by transfer learning on the frozen features of each label set, for the same classifier
+trained from scratch and, dash-dotted, from the output scores where the label set keeps $X\to b\bar b$. Lower panels
+give the ratio to the 188-class model; the dotted line marks 1\% background efficiency. Bands are standard deviations
+over runs.}
+\mainfig{15cm}{fig4_training_size}{Accuracy of fine-tuned models on JetClass-II (a) and JetClass (b) against the number of
+training jets, for each label set and for the network trained from scratch. Lines and bands are means and standard
+deviations over runs. Lower panels give each label set's difference to the 188-class model in percentage points, with
+both run spreads combined.}
 \mainfig{15cm}{figA1}{Recall of each JetClass-II class under a linear probe on the frozen features of the (a) 162-, (b)
 43- and (c) 17-class model, against its recall for the 188-class model. Points are means over runs, with bars
 combining run spread and test-sample uncertainty; colors and shapes give what the panel's label set merges the class
 with. Open points lie within three standard deviations of equal recall.}
-\mainfig{15cm}{figA2}{As figure 3, for five other class pairs: (a) $X\to YY\to b\bar bqq$ against $c\bar cqq$; QCD jets (b) with
-$b\bar b$ against $c\bar c$, (c) with $b$, and (d) with $c$ and no $b$, against light quarks and gluons only, a pair
-every random grouping merges. (e) $X\to gg$ against $X\to q\bar q$, on 5,000 test jets per class, as AUC only:
-means and standard deviations over runs; open, the one grouping that merges it.}
-\mainfig{15cm}{figA3}{Linear probes on the frozen features against the number of training jets: accuracy on (a)
-JetClass-II and (b) JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark/gluon
-discrimination. Lines are the mean over runs and bands the standard deviation.}
+\mainfig{15cm}{figA2}{Background rejection against signal efficiency for three pairs of resonance classes, from binary
+linear probes on the frozen features, for the four label sets and the random groupings that merge the pair or keep it
+apart. Each panel starts where the 188-class curve does. Lower panels give the ratio to the 188-class model; bands are
+standard deviations over runs.}
+\mainfig{15cm}{figA6}{As figure A2, for three pairs of QCD classes. Every random grouping merges these pairs.}
+\mainfig{15cm}{figA3}{Linear probes on the frozen features against the number of training jets: accuracy on JetClass-II
+(a) and JetClass (b), background rejection Rej$_{30\%}$ on top tagging (c) and quark/gluon discrimination (d). Lower
+panels give the difference to the 188-class model in percentage points (a, b) or the ratio to it (c, d). Lines and
+bands are means and standard deviations over runs.}
+\mainfig{15cm}{figA7}{As figure 5, for top tagging (a) and quark/gluon discrimination (b): background rejection
+Rej$_{30\%}$ of fine-tuned models against the number of training jets. Lower panels give the ratio to the 188-class
+model.}
 \mainfig{15cm}{figA4}{Jet mass estimated by the models pretrained with mass regression, beside the soft-drop mass:
 median response (a, b) and resolution (c, d) against jet $p_{\mathrm T}$ and against generator-level mass. Lower
 panels give the distance of the median from one and the ratio of the resolution to that of the soft-drop mass. Bars
