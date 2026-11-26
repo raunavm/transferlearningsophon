@@ -152,7 +152,8 @@ ALLOWED_WORDS = [
     # build (mlst_v2_tables.pi_prose_1126 and mass_macros), which stops when one no longer holds
     (r"\bfourfold\b", "1 - AUC of X->bb vs cc, 17 against 188 classes (build check)"),
     (r"\bmore\s+than\s+a\s+third\b", "share of the pretraining gain the coarsest labels give up (build check)"),
-    (r"\babout\s+a\s+quarter\b|\ba\s+quarter\b", "JetClass share and mass-resolution gain (build check)"),
+    (r"\ba\s+quarter\s+on\s+JetClass\b|\bby\s+about\s+a\s+quarter\b",
+     "JetClass share of the pretraining gain and mass-resolution gain (build check)"),
     (r"\b(?:about|at\s+most)\s+half\s+a\s+point\b", "fine-tuned cost of the mass regression (build check)"),
     (r"\bten\s+percentage\s+points\b", "the frozen 188 - 17 loss rounded, the Conclusion"),
     (r"\bloses\s+only\s+about\s+one\b", "the random groupings' frozen loss rounded, the Conclusion"),

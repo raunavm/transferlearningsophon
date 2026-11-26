@@ -2753,3 +2753,5 @@ render-v2figs-ec71245-raunav,2026-11-26T01:39:15Z,launched,"The twelve figures a
 render-v2figs-ec71245-raunav,2026-11-26T01:42:00Z,complete,figcheck 0 findings in all twelve; Fig. 3 legend fits (19.5 cm); the other eleven byte-identical to acf40e4. No change.,experiments/FIGS/k8s/job-render-v2figs-ec71245-raunav.yaml
 pull-host-raunav,2026-11-26T01:45:54Z,launched,"Figures agent: pull host for the ec71245 v2figs outputs (CPU, reads only).",experiments/FIGS/k8s/job-pull-host-raunav.yaml
 pull-host-raunav,2026-11-26T01:46:27Z,deleted,Figures agent's pull host (created 01:45:54Z) deleted by name after the copies.,experiments/FIGS/k8s/job-pull-host-raunav.yaml
+mtx2-tests-w12gate-443ec5f-raunav,2026-11-26T02:20:18Z,launched,"Writer (GT-8 gate) at 443ec5f0: the PI prose of 26 Nov installed (ledger 34). CPU only.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-w12gate-443ec5f-raunav.yaml
+mtx2-tests-w12gate-443ec5f-raunav,2026-11-26T02:22:27Z,failed,"Writer gate: 1 failed (my allowed-words pattern for 'a quarter' was too broad and blanked the guard's own test); narrowed.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-w12gate-443ec5f-raunav.yaml
