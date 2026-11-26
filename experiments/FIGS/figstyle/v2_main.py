@@ -268,9 +268,10 @@ ACC_COLS = (("L188", 0.0), ("L162", 1.0), ("R42_Q1", 2.0), ("R16_Q1", 3.0), ("RA
 ACC_TICKS = ("188", "162", "43", "17", "", "none", "$b$", "random")       # the boundary of each flavor-boundary grouping
 ACC_FAMILIES = (("nested", 0.0, 3.0), ("random\ngrouping", 4.5, 4.5), ("flavor\nboundary", 6.0, 8.4))
 ACC_SEP = (3.75, 5.25)
+ACC_XLIM = (-0.55, 8.4 + 0.95)      # the last tick's label inside the text width
 ACC_PANELS = (("jc2", 1_000_000, "jc2_188", "JetClass-II"), ("jc1", 1_000_000, "jc1", "JetClass"))
 ACC_MODES = (("probe", "Linear probe (%)", False), ("ft", "Fine-tuned (%)", True))
-ACC_W, ACC_LEFT, ACC_WGAP, ACC_SUB, ACC_GAP = 6.1, 1.4, 1.45, 2.85, 0.25     # cm; ACC_GAP between frozen and fine-tuned
+ACC_W, ACC_LEFT, ACC_WGAP, ACC_SUB, ACC_GAP = 6.1, 1.35, 1.4, 2.85, 0.25     # cm; ACC_GAP between frozen and fine-tuned
 RUN_DOT, RUN_ALPHA, MEAN_DOT = 2.4, 0.45, 5.0
 
 
@@ -329,7 +330,7 @@ def draw_fig2(path: pathlib.Path) -> None:
             d = 0.1 * (hi - lo)
             ax.set_ylim(lo - d, hi + d)
             ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10]))
-            ax.set_xlim(-0.55, ACC_COLS[-1][1] + 0.6)
+            ax.set_xlim(*ACC_XLIM)
             ax.xaxis.set_major_locator(ticker.FixedLocator([c for _, c in ACC_COLS]))
             ax.xaxis.set_minor_locator(ticker.NullLocator())
             for xsep in ACC_SEP:
@@ -343,7 +344,7 @@ def draw_fig2(path: pathlib.Path) -> None:
         S.title(parts[0], f"({'ab'[k]}) {title}")
         yfam = top + 2 * ACC_SUB + ACC_GAP + 0.95
         for name, a, b in ACC_FAMILIES:
-            xc = x + ACC_W * ((a + b) / 2 + 0.55) / (ACC_COLS[-1][1] + 1.15)
+            xc = x + ACC_W * ((a + b) / 2 - ACC_XLIM[0]) / (ACC_XLIM[1] - ACC_XLIM[0])
             fig.text(xc / S.PRINT_W, 1 - yfam / H, name, ha="center", va="top", fontsize=FONT, linespacing=1.1)
     handles = [Line2D([], [], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor="white",
                       markeredgecolor="#000000", markeredgewidth=1.0),
@@ -683,8 +684,9 @@ def _start_at_188(fig) -> None:
         step = 0.1 if 1 - lo > 0.35 else 0.05
         ax.xaxis.set_major_locator(ticker.MultipleLocator(step))
         ax.xaxis.set_minor_locator(ticker.MultipleLocator(step / 2))
+        right = ax.get_position().x0 > 0.5             # the right column: its "1.0" would run past the text width
         ax.xaxis.set_major_formatter(ticker.FuncFormatter(
-            lambda t, _, d=1 if step == 0.1 else 2: f"{t:.{d}f}" if t <= 1 + 1e-9 else ""))
+            lambda t, _, d=1 if step == 0.1 else 2, r=right: f"{t:.{d}f}" if t <= (0.99 if r else 1 + 1e-9) else ""))
 
 
 def _pair_figure(path: pathlib.Path, keys: tuple) -> None:
