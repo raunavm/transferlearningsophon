@@ -87,7 +87,9 @@ def test_fig1_nests_one_example_group_and_shows_one_flow(figures):
     assert "the group drawn above" in texts and any(t.startswith("Each cell is one of the 188 classes") for t in texts)
     # ledger 34.3: one flow, network, features, then linear probe or fine-tuning, then the tasks; no row of squares
     assert {"Linear probe", "Fine-tuning", "Features"} <= set(texts) and "Frozen features" not in texts
-    assert "Output\nlayer" not in texts and any(t.startswith("JetClass-II\nJetClass\nTop tagging") for t in texts)
+    assert "Output\nlayer" not in texts and "JetClass-II\nJetClass\nTop tagging\nQuark/gluon" in texts
+    # editor 8f085fe, item 30: the resonance benchmark has its own use (transfer learning) and its own box
+    assert "Transfer learning" in texts and r"$X\!\to b\bar b$, $X\!\to bs$" in texts
 
 
 def test_fig2_is_accuracy_against_the_label_set_with_the_tables_values(figures):
@@ -117,16 +119,28 @@ def test_fig3_shows_recall_and_the_pairs_of_classes(figures):
     panels = _panels(fig)
     assert [ax.get_title() for ax in panels] == ["(a) 43 classes", "(b) 17 classes", "(c) Pairs of classes"]
     c = panels[2]
-    assert c.get_xscale() == "log" and c.get_xlabel().startswith(r"$1 - \mathrm{AUC}$")
-    assert list(c.yaxis.get_major_formatter().seq) == [V._pair_title(k) for k in V.PAIRS_C]
+    assert c.get_xscale() == "log" and c.get_xlabel() == r"$1 - \mathrm{AUC}$, relative to 188 classes"
     errs = V.pair_errors()
+    assert list(c.yaxis.get_major_formatter().seq) == [f"{V._pair_title(k)} ({np.mean(errs[k]['L188']):.2g})"
+                                                       for k in V.PAIRS_C]
     assert "gg_vs_qq" in errs and set(errs["gg_vs_qq"]) == set(V.PAIR_NETS)        # ledger 33.2(b)'s pair included
     assert all("RAND_APART" not in errs[k] for k in V.PAIRS_C if k.startswith("qcd_"))   # every grouping merges them
     n_points = sum(len(e) for e in errs.values())
     assert len([ln for ln in c.lines if ln.get_linestyle() == "None"]) == n_points
     with V.names():
-        assert _legend(fig)[-7:-1] == [V.R._name(n) for n in V.PAIR_NETS]
-    assert _legend(fig)[-1] == "open: the labels merge the pair"
+        assert _legend(fig)[-8:-2] == [V.R._name(n) for n in V.PAIR_NETS]
+    assert _legend(fig)[-2:] == ["open: the labels merge the pair", "half: they merge part of it"]
+    # editor 8f085fe, item 48: (a, b) mark classes within three standard deviations by fading, not by open points
+    assert V.WITHIN_FADED in _legend(fig)
+    assert not [ln for ax in panels[:2] for ln in ax.lines if ln.get_marker() not in ("None", None)
+                and ln.get_markerfacecolor() == "white"]
+    # item 49: X->bc vs X->bq, cs is partly merged at 43 classes, half-filled
+    assert V.pair_status("bc_vs_bq_cs", "R42_Q1") == "partly"
+    assert len([ln for ln in c.lines if ln.get_fillstyle() == "left"]) == sum(
+        V.pair_status(k, n) == "partly" for k in V.PAIRS_C for n in errs[k])
+    # item 44: relative to 188 classes, X->gg vs qq reads: 17 classes about 1.14 against 1
+    rel = V.pair_relative(errs)["gg_vs_qq"]
+    assert 1.08 < np.mean(rel["R16_Q1"]) < 1.2 and abs(np.mean(rel["L188"]) - 1) < 1e-9
     # open where the labels merge the pair: 17 classes on X->bb vs cc, 43 and 17 on X->gg vs qq, 162 on every QCD pair
     assert V.pair_merged("bb_vs_cc", "R16_Q1") and not V.pair_merged("bb_vs_cc", "R42_Q1")
     assert V.pair_merged("gg_vs_qq", "R42_Q1") and not V.pair_merged("gg_vs_qq", "L162")
@@ -163,8 +177,8 @@ def test_fig5_is_fine_tuning_on_the_two_multiclass_tasks_with_the_difference_to_
 
 
 def test_the_appendix_figures(figures):
-    a1 = _panels(figures["figA1"])       # GO-9: linear probes only, one panel a coarser label set
-    assert [ax.get_title() for ax in a1] == ["(a) 162 classes", "(b) 43 classes", "(c) 17 classes"]
+    a1 = _panels(figures["figA1"])       # GO-9: linear probes only; editor 8f085fe item 50: the 162-class panel only
+    assert [ax.get_title() for ax in a1] == ["(a) 162 classes"]
     assert all(ax.get_xlabel() == "Recall (%), 188 classes" for ax in a1) and not figures["figA1"].texts
     # ledger 34.3: the pair curves of the old Fig. 3 join G2 (figA2, resonance pairs; figA6, QCD pairs), taller ratio
     # panels, each x range starting where the 188-class curve does
@@ -176,7 +190,8 @@ def test_the_appendix_figures(figures):
         for ax in panels:
             start = min(float(np.min(ln.get_xdata())) for ln in ax.lines if ln.get_color().lower() == ref)
             assert ax.get_xlim()[0] <= start < ax.get_xlim()[0] + 0.08
-            assert all(float(np.min(ln.get_xdata())) >= ax.get_xlim()[0] for ln in ax.lines if len(ln.get_xdata()))
+            # editor 8f085fe, item 90: one rule, every curve from where the 188-class curve starts
+            assert all(float(np.min(ln.get_xdata())) >= start - 1e-9 for ln in ax.lines if len(ln.get_xdata()) > 1)
     names = ["188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
              "162 classes + mass regression", "17 classes + mass regression"]
     assert sorted(_legend(figures["figA3"])) == sorted(names) and len(_panels(figures["figA3"])) == 4
@@ -186,6 +201,13 @@ def test_the_appendix_figures(figures):
     assert sorted(_legend(figures["figA5"])) == sorted(names)
     a5 = [ax for ax in figures["figA5"].axes if ax.lines][0]
     assert a5.get_ylabel() == "Validation accuracy (%)" and max(max(ln.get_ydata()) for ln in a5.lines) > 50
+    # editor 8f085fe, items 22 and 91: the epoch each run is evaluated at, from the build's checkpoint record
+    chosen = V.chosen_epochs()
+    ticks = [ln for ln in a5.lines if ln.get_marker() == "|"]
+    runs = V.M._pooled(V.C.RUNS)
+    assert len(ticks) == sum(len(runs[r]) for r in V.SUMMARY_ROWS)
+    assert sorted(int(ln.get_xdata()[0]) for ln in ticks) == sorted(chosen[m] + 1 for r in V.SUMMARY_ROWS for m in runs[r])
+    assert all(71 <= int(ln.get_xdata()[0]) <= 80 for ln in ticks)
 
 
 def test_the_render_mode_draws_them_all():

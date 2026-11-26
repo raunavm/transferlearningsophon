@@ -280,18 +280,23 @@ def build(nested: bool = False):
         for k in range(6):
             ax.add_patch(Circle((xf, y0 - 0.5 + 0.2 * k), 0.065, fc=SLATE_TINT, ec=SLATE, lw=0.8, zorder=3))
         ax.text(xf, y0 + 0.8, "Features", ha="center", va="center", fontsize=FS)
-        xu, wu, hu = 6.5, 2.3, 0.5                       # the two uses, one above the other
-        yp, yft = y0 + 0.4, y0 - 0.75
+        # three uses (editor 8f085fe, item 30): transfer learning on the frozen features for the resonance benchmark,
+        # a linear probe on them and fine-tuning for the four tasks; one box of tasks for each
+        xu, wu, hu = 6.4, 2.6, 0.5
+        ytl, yp, yft = y0 + 0.8, y0 + 0.05, y0 - 0.8
+        block(xu, ytl - hu / 2, wu, hu, "Transfer learning")
         block(xu, yp - hu / 2, wu, hu, "Linear probe")
         block(xu, yft - hu / 2, wu, hu, "Fine-tuning")
-        arrow((xf + 0.2, yp), (xu - 0.05, yp))           # the probe reads the frozen features
+        arrow((xf + 0.15, y0 + 0.45), (xu - 0.05, ytl - 0.12))     # both frozen uses read the features
+        arrow((xf + 0.2, yp), (xu - 0.05, yp))
         arrow((xb0 + wb, yft), (xu - 0.05, yft))         # fine-tuning adapts the whole network
-        xt, wt = 9.25, W - 9.25 - 0.15
-        block(xt, y0 - 1.05, wt, 2.1, "JetClass-II\nJetClass\nTop tagging\nQuark/gluon\n"
-              r"$X\!\to b\bar b$, $X\!\to bs$ (frozen)")
+        xt, wt = 9.5, W - 9.5 - 0.15
+        block(xt, y0 - 1.1, wt, 1.45, "JetClass-II\nJetClass\nTop tagging\nQuark/gluon")
+        block(xt, ytl - hu / 2, wt, hu, r"$X\!\to b\bar b$, $X\!\to bs$")
+        arrow((xu + wu + 0.05, ytl), (xt - 0.05, ytl))
         for yy in (yp, yft):
             arrow((xu + wu + 0.05, yy), (xt - 0.05, yy))
-        bottom = y0 - 1.05 - 0.25                        # the figure ends under the flow
+        bottom = y0 - 1.1 - 0.25                         # the figure ends under the flow
         ax.set_ylim(bottom, H)
         fig.set_size_inches(W / 2.54, (H - bottom) / 2.54)
         fig.height_cm = H - bottom

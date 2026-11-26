@@ -68,6 +68,8 @@ XBX_NETS = ("L188", "L162", "R42_Q1", "R16_Q1")
 X_EPS_B = r"Background efficiency ($\varepsilon_B$)"
 RECALL_ROWS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"))
 VAL_LEGEND_W = 5.6                        # cm: "162 classes + mass regression" and its key beside Fig. A5's panel
+FADED = 0.3            # a class within three standard deviations of equal recall: faded (editor 8f085fe, item 48)
+WITHIN_FADED = "faded: within three standard deviations"
 LOWER = 0.4                               # a lower panel's height over its panel's (relative to 188 classes)
 DOT, BAR = 4.0, 1.0                       # pt: a mean's point and its standard-deviation bar in the point plots
 
@@ -121,9 +123,9 @@ def _msd(v) -> tuple:
     return float(np.mean(v)), float(np.std(v, ddof=1)) if len(v) > 1 else 0.0
 
 
-def _point(ax, x, y, v, colour, filled=True, marker="o", horizontal=False, single_open=True) -> None:
+def _point(ax, x, y, v, colour, filled=True, marker="o", horizontal=False, single_open=True, half=False) -> None:
     """A mean over runs with a bar of their standard deviation; filled False (or, with single_open, a single run) an open
-    marker."""
+    marker; half a marker filled on its left half only."""
     m, sd = _msd(v)
     if sd:
         kw = {"xerr" if horizontal else "yerr": sd}
@@ -131,8 +133,10 @@ def _point(ax, x, y, v, colour, filled=True, marker="o", horizontal=False, singl
                     elinewidth=BAR, capsize=0, zorder=2.5)
     open_ = (single_open and len(v) == 1) or not filled
     size = DOT * (S.STAR_SCALE if marker == "*" else 1.0)
+    style = ({"fillstyle": "left", "markerfacecolor": colour, "markerfacecoloralt": "white"} if half and not open_
+             else {"markerfacecolor": "white" if open_ else colour})
     ax.plot([m if horizontal else x], [y if horizontal else m], linestyle="none", marker=marker, markersize=size,
-            markerfacecolor="white" if open_ else colour, markeredgecolor=colour, markeredgewidth=0.9, zorder=2.7)
+            markeredgecolor=colour, markeredgewidth=0.9, zorder=2.7, **style)
 
 
 # ------------------------------------------------------------------ Fig. 1
@@ -286,7 +290,7 @@ def _recall(fig, slots: list, rows: tuple) -> list:
                         alpha=0.6, zorder=z - 0.1)
             within = marked is not None and c not in marked
             ax.plot(x, y, color=colour, marker=marker, markersize=PC.DOT[2], linestyle="none", zorder=z,
-                    markerfacecolor="white" if within else colour, markeredgewidth=0.5 if within else 0)
+                    markerfacecolor=colour, markeredgewidth=0, alpha=FADED if within else 1.0)
         ax.set_xlim(lim)
         ax.set_ylim(lim)
         for axis in (ax.xaxis, ax.yaxis):
@@ -294,8 +298,8 @@ def _recall(fig, slots: list, rows: tuple) -> list:
         S.title(ax, f"({'abcdefg'[k]}) {S.LEGEND[a]}")
         S.labels(ax, xlabel=f"Recall (%), {S.LEGEND[b]}", ylabel=f"Recall (%), {S.LEGEND[a]}")
     handles = PC._handles("jc2", set().union(*(kinds for _, kinds in looks)))
-    return handles + [Line2D([], [], color="#777777", marker="o", markersize=3, markerfacecolor="white",
-                             markeredgewidth=0.5, linestyle="none", label=PC.WITHIN),
+    return handles + [Line2D([], [], color="#777777", marker="o", markersize=3, markeredgewidth=0, alpha=FADED,
+                             linestyle="none", label=WITHIN_FADED),
                       Line2D([], [], **S.REFERENCE, label="equal recall")]
 
 
@@ -340,54 +344,72 @@ def pair_errors() -> dict:
     return out
 
 
-def pair_merged(k: str, net: str) -> bool:
-    """Whether a network's labels put the pair's two sides in one class: the label maps (mlst_results.merge_status,
-    "merged"; "partly" is not), the export's status for X->gg vs X->qq, the random groupings by their curve."""
+def pair_status(k: str, net: str) -> str:
+    """"merged", "partly" or "apart": whether a network's labels put every class of the pair's two sides in one class,
+    some of them, or none (the label maps, mlst_results.merge_status; the export's status for X->gg vs X->qq; the random
+    groupings by their curve, a grouping that merges part of the pair being in neither)."""
     if net in ("RAND_MERGED", "RAND_APART"):
-        return net == "RAND_MERGED"
+        return "merged" if net == "RAND_MERGED" else "apart"
     if k == "gg_vs_qq":
-        return json.loads(GG_QQ.read_text())["gg_vs_qq"]["status_of_label_sets"][net] == "merged"
-    return R.PAIR_STATUS[net][k] == "merged"
+        return json.loads(GG_QQ.read_text())["gg_vs_qq"]["status_of_label_sets"][net]
+    return R.PAIR_STATUS[net][k]
+
+
+def pair_merged(k: str, net: str) -> bool:
+    return pair_status(k, net) == "merged"
 
 
 def _pair_title(k: str) -> str:
     return GG_QQ_TITLE if k == "gg_vs_qq" else R.PAIR_TITLE[k]
 
 
+def pair_relative(errs: dict) -> dict:
+    """{pair: {network: each run's 1 - AUC over the 188-class model's mean}}."""
+    return {k: {net: [x / _msd(e["L188"])[0] for x in v] for net, v in e.items()} for k, e in errs.items()}
+
+
 def _pairs_panel(ax) -> list:
-    """Fig. 3(c): one row a pair, 1 - AUC on a log axis, one marker a network (its shape and colour), dodged within the
-    row; the mean over runs with its standard deviation, a single grouping open. Returns the legend's handles."""
+    """Fig. 3(c): one row a pair, 1 - AUC relative to the 188-class model on a log axis (editor 8f085fe, item 44: a
+    change of a seventh, as on X->gg vs X->qq, reads where the absolute values span two decades), the 188-class value in
+    the row name; one marker a network (its shape and colour), dodged within the row, the mean over runs with its
+    standard deviation; open where the labels merge the pair, half-filled where they merge part of it. Returns the
+    legend's handles."""
     errs = pair_errors()
+    rel = pair_relative(errs)
     dodge = 0.13
     xs = []
     for i, k in enumerate(PAIRS_C):
         for j, net in enumerate(PAIR_NETS):
-            if net not in errs[k]:
+            if net not in rel[k]:
                 continue
-            key = R._style(net)
-            _point(ax, None, i + (j - (len(PAIR_NETS) - 1) / 2) * dodge, errs[k][net], S.SERIES[key],
-                   marker=S.MARKERS.get(net, S.MARKERS[key]), horizontal=True, filled=not pair_merged(k, net),
-                   single_open=False)
-            m, sd = _msd(errs[k][net])
-            xs += [m - sd if m - sd > 0 else m, m + sd]
+            key, status = R._style(net), pair_status(k, net)
+            _point(ax, None, i + (j - (len(PAIR_NETS) - 1) / 2) * dodge, rel[k][net], S.SERIES[key],
+                   marker=S.MARKERS.get(net, S.MARKERS[key]), horizontal=True, filled=status != "merged",
+                   single_open=False, half=status == "partly")
+            m, sd = _msd(rel[k][net])
+            xs += [m - sd, m + sd]
+    ax.axvline(1.0, **S.REFERENCE, zorder=1.5)
     ax.set_xscale("log")
-    ax.set_xlim(min(xs) / 1.4, max(xs) * 1.4)
-    S.log_axis(ax, "x", force=True)
+    ax.set_xlim(min(xs) / 1.15, max(xs) * 1.15)
+    S.log_axis(ax, "x", force=True, fine=True)
     ax.set_ylim(len(PAIRS_C) - 0.5, -0.5)
     ax.yaxis.set_major_locator(ticker.FixedLocator(range(len(PAIRS_C))))
-    ax.yaxis.set_major_formatter(ticker.FixedFormatter([_pair_title(k) for k in PAIRS_C]))
+    ax.yaxis.set_major_formatter(ticker.FixedFormatter(
+        [f"{_pair_title(k)} ({_msd(errs[k]['L188'])[0]:.2g})" for k in PAIRS_C]))
     ax.tick_params(axis="y", which="both", length=0, labelsize=S.TICK_PT5)
     ax.yaxis.set_minor_locator(ticker.NullLocator())
     for y in np.arange(0.5, len(PAIRS_C) - 0.5):
         ax.axhline(y, color=S.GREY_LIGHT, linewidth=S.LW_THIN, zorder=0.5)
     ax.xaxis.grid(True, which="major", linestyle="-", linewidth=0.35, color="#b0b0b0", alpha=0.3)
     ax.set_axisbelow(True)
-    S.labels(ax, xlabel=r"$1 - \mathrm{AUC}$ (binary linear probe)")
+    S.labels(ax, xlabel=r"$1 - \mathrm{AUC}$, relative to 188 classes")
+    mark = {"marker": "o", "markersize": DOT, "markeredgecolor": "#000000", "markeredgewidth": 0.9, "linestyle": "none"}
     return [Line2D([], [], linestyle="none", marker=S.MARKERS.get(net, S.MARKERS[R._style(net)]), markersize=DOT,
                    markerfacecolor=S.SERIES[R._style(net)], markeredgecolor=S.SERIES[R._style(net)],
                    label=R._name(net)) for net in PAIR_NETS] + [
-        Line2D([], [], linestyle="none", marker="o", markersize=DOT, markerfacecolor="white", markeredgecolor="#000000",
-               markeredgewidth=0.9, label="open: the labels merge the pair")]
+        Line2D([], [], markerfacecolor="white", label="open: the labels merge the pair", **mark),
+        Line2D([], [], fillstyle="left", markerfacecolor="#000000", markerfacecoloralt="white",
+               label="half: they merge part of it", **mark)]
 
 
 FIG3_ROWS = (("R42_Q1", "L188"), ("R16_Q1", "L188"))
@@ -400,8 +422,8 @@ def draw_fig3(path: pathlib.Path) -> None:
     top_leg = S.LEGEND_TOP + 0.45 * 3
     y_ab = top_leg + 0.6
     y_leg2 = y_ab + w + 1.05
-    y_c = y_leg2 + 0.45 * 3 + 0.75                     # the network legend: seven entries in three rows
-    xc, wc = 5.1, S.PRINT_W - 5.1 - 0.15
+    y_c = y_leg2 + 0.45 * 3 + 0.75                     # the network legend: eight entries in three rows
+    xc, wc = 5.9, S.PRINT_W - 5.9 - 0.15               # the row names carry the 188-class value
     hc = 0.72 * wc
     H = y_c + hc + 1.05
     fig = S.figure_cm(S.PRINT_W, H)
@@ -416,12 +438,13 @@ def draw_fig3(path: pathlib.Path) -> None:
 
 
 def draw_figA1(path: pathlib.Path) -> None:
-    """Three square recall panels (162, 43, 17 against 188 classes), two a row, the legend in the fourth slot."""
-    w, left, wgap, top, hgap = 6.15, 1.25, 1.3, 0.6, 1.5
-    fig = S.figure_cm(S.PRINT_W, top + 2 * w + hgap + 0.95)
-    slots = [(left + j * (w + wgap), top + i * (w + hgap), w) for i, j in ((0, 0), (0, 1), (1, 0))]
-    handles = _recall(fig, slots, RECALL_ROWS)
-    S.slot_legend(fig, handles, left + w + wgap, top + w + hgap, w, w)
+    """The 162-class panel of the recall family (Fig. 3(a, b) holds the 43- and 17-class ones; editor 8f085fe, item
+    50), one square panel, the legend beside it."""
+    w, left, top = 6.15, 1.25, 0.6
+    fig = S.figure_cm(S.PRINT_W, top + w + 0.95)
+    handles = _recall(fig, [(left, top, w)], RECALL_ROWS[:1])
+    x = left + w + 0.5
+    S.slot_legend(fig, handles, x, top, S.PRINT_W - x - 0.1, w)
     S.save(fig, path)
 
 
@@ -439,14 +462,15 @@ def _start_at_188(fig) -> None:
               if ln.get_color().lower() == ref and ln.get_transform() == ax.transData and len(ln.get_xdata())]
         if not xs:
             continue
-        lo = math.floor(min(xs) * 20 + 1e-9) / 20
+        start = min(xs)                          # where fewer than 20 background jets pass the 188-class model
+        lo = math.floor(start * 20 + 1e-9) / 20      # the first tick at or below it
         pad = 0.02 * (1 - lo)
         group = [o for o in fig.axes if o is ax or ax.get_shared_x_axes().joined(ax, o)]
         for o in group:
             for ln in o.lines:
                 if ln.get_transform() == o.transData and len(ln.get_xdata()) > 1:
                     x, y = np.asarray(ln.get_xdata(), float), np.asarray(ln.get_ydata(), float)
-                    keep = x >= lo - pad
+                    keep = x >= start - 1e-9             # every curve from the same efficiency
                     ln.set_data(x[keep], y[keep])
         ax.set_xlim(lo - pad, 1 + pad)
         step = 0.1 if 1 - lo > 0.35 else 0.05
@@ -629,6 +653,26 @@ def draw_figA4(path: pathlib.Path) -> None:
     PH._binned_2x2(path, "all", series, 2, cols=[[PH.GROOMED], [label for *_, label in series]])
 
 
+LAST = 10                  # the checkpoint is the best of the last ten epochs (Methods)
+CKPT = C.P.DATA / "ckpt_identity" / "identity.json"
+
+
+def chosen_epochs() -> dict:
+    """{run: the 0-based epoch of its checkpoint}, from the build's record of the checkpoint each run is evaluated at,
+    each the epoch of the highest validation accuracy among the last LAST (the build stops otherwise)."""
+    runs = json.loads(CKPT.read_text())["runs"]
+    docs = M._load(C.P.DATA / "compute")
+    out = {}
+    for m, r in runs.items():
+        e = int(re.search(r"epoch-(\d+)", r["best70"]).group(1))
+        if m in docs:
+            va = [x["val_acc"] for x in docs[m]["epochs"]]
+            if e != max(range(len(va) - LAST, len(va)), key=lambda k: va[k]):
+                raise SystemExit(f"FATAL: {m}: checkpoint epoch {e} is not the best of the last {LAST}")
+        out[m] = e
+    return out
+
+
 def draw_figA5(path: pathlib.Path) -> None:
     """The old VAL (gallery_labelset._draw_val's form and data, compute/) for Table 2's pretrained rows: each model's
     validation accuracy (%) on its own label set against the pretraining epoch, the mean over runs and a band of their
@@ -649,8 +693,23 @@ def draw_figA5(path: pathlib.Path) -> None:
             sd = have.std(axis=0, ddof=1)
             ax.fill_between(x, mean - sd, mean + sd, color=S.SERIES[row], alpha=L.BAND, linewidth=0, zorder=1.0)
         ax.plot(x, mean, **S.look(row), linewidth=S.LW_CURVE, label=S.LEGEND[row])
+    # the checkpoint each run is evaluated at: the build's choice (ckpt_identity, "best70": the best validation
+    # accuracy of the last ten epochs), checked against these curves; epochs counted from one
+    chosen = chosen_epochs()
+    n_ep = len(next(iter(docs.values()))["epochs"])
+    ax.axvspan(n_ep - LAST + 0.5, n_ep + 0.5, color=S.GREY_LIGHT, alpha=0.5, linewidth=0, zorder=0.6)
+    for row in SUMMARY_ROWS:
+        for m in runs[row]:
+            e = chosen[m]
+            ax.plot([e + 1], [PERCENT * docs[m]["epochs"][e]["val_acc"]], linestyle="none", marker="|", markersize=6,
+                    markeredgewidth=1.0, color=S.SERIES[row], zorder=2.8)
+    ax.set_xlim(0, n_ep + 1)
     S.labels(ax, "Pretraining epoch", "Validation accuracy (%)")
-    S.slot_legend(fig, ax.get_legend_handles_labels()[0], x0 + w + 0.4, top, VAL_LEGEND_W, 0.85 * w)
+    handles = ax.get_legend_handles_labels()[0][:len(SUMMARY_ROWS)] + [
+        Patch(facecolor=S.GREY_LIGHT, alpha=0.5, linewidth=0, label=f"last {LAST} epochs"),
+        Line2D([], [], linestyle="none", marker="|", markersize=6, markeredgewidth=1.0, color="#000000",
+               label="epoch used, each run")]
+    S.slot_legend(fig, handles, x0 + w + 0.4, top, VAL_LEGEND_W, 0.85 * w)
     S.save(fig, path)
 
 
