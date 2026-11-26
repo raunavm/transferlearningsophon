@@ -400,7 +400,7 @@ def draw_fig3(path: pathlib.Path) -> None:
     top_leg = S.LEGEND_TOP + 0.45 * 3
     y_ab = top_leg + 0.6
     y_leg2 = y_ab + w + 1.05
-    y_c = y_leg2 + 0.45 * 2 + 0.75
+    y_c = y_leg2 + 0.45 * 3 + 0.75                     # the network legend: seven entries in three rows
     xc, wc = 5.1, S.PRINT_W - 5.1 - 0.15
     hc = 0.72 * wc
     H = y_c + hc + 1.05
@@ -410,7 +410,7 @@ def draw_fig3(path: pathlib.Path) -> None:
     ax = S.axes_cm(fig, xc, y_c, wc, hc)
     pair_handles = _pairs_panel(ax)
     S.title(ax, "(c) Pairs of classes")
-    fig.legend(handles=pair_handles, loc="upper center", bbox_to_anchor=(0.5, 1 - y_leg2 / H), ncol=4, frameon=False,
+    fig.legend(handles=pair_handles, loc="upper center", bbox_to_anchor=(0.5, 1 - y_leg2 / H), ncol=3, frameon=False,
                fontsize=S.LEGEND_PT5, borderpad=0.2, labelspacing=0.3, columnspacing=1.0, handletextpad=0.3)
     S.save(fig, path)
 
