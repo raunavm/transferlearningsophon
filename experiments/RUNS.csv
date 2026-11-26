@@ -2736,3 +2736,5 @@ render-checkpoint-4839dea-raunav,2026-11-25T23:45:09Z,launched,"Writer: the draf
 pull-host-raunav,2026-11-25T23:52:17Z,launched,"Writer: the pull host again (the figures agent deleted the first) to copy render 4839dea; deleted by name after the copy.",experiments/FIGS/k8s/job-pull-host-raunav.yaml
 render-checkpoint-4839dea-raunav,2026-11-25T23:54:24Z,complete,"Writer: the final draft for the PI; no float over 10 pt; pulled, sha256 e5806c41 matches /data; copied to paper/journal/v2/draft_4839dea.pdf (local).",experiments/FIGS/k8s/
 pull-host-raunav,2026-11-25T23:54:24Z,deleted,"Writer: deleted by name after the copy of 4839dea.",experiments/FIGS/k8s/job-pull-host-raunav.yaml
+mtx2-tests-w34gate-964d663-raunav,2026-11-26T01:17:36Z,launched,"Writer (GT-8) at 964d6633: ledger 34.4 table 4 rounding, tables at the top, appendix cut. CPU only. No render (waits for pi_prose_1126).",experiments/MTX/k8s/v2/tests/job-mtx2-tests-w34gate-964d663-raunav.yaml
+mtx2-tests-w34gate-964d663-raunav,2026-11-26T01:19:12Z,complete,"Writer GT-8 at 964d6633: 117 passed.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-w34gate-964d663-raunav.yaml
