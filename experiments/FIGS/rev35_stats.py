@@ -369,12 +369,20 @@ def v7() -> dict | None:
     ov = {s: r["overlap"] for s, r in d["draws"].items()}
     rule3 = [str(s) for s in sel["rule3_seeds"]]
     acc = [str(s) for s in sel["accepted_seeds"]]
+    # the QCD classes form one group in the 17-class set and in every draw (the resonant pool): their pairs are merged
+    # by both always, so the overlap is also given over the resonant classes alone
+    qcd = sum(1 for r in csv.DictReader((REPO / "configs/labelmaps/rung_label_maps.v1.csv").open())
+              if r["class_name"].startswith("label_QCD"))
+    qp = qcd * (qcd - 1) // 2
+    res = {s: (r["merged_both"] - qp) / (r["merged_17"] - qp) for s, r in d["draws"].items()}
     q = lambda v: {"n": len(v), "min": min(v), "median": statistics.median(v), "max": max(v), "mean": statistics.fmean(v)}  # noqa: E731
-    pool = list(ov.values())
-    return {"pool": q(pool), "rule3": q([ov[s] for s in rule3]), "accepted": {s: ov[s] for s in acc},
-            "accepted_percentile_in_pool": {s: sum(v <= ov[s] for v in pool) / len(pool) for s in acc},
-            "samples_drawn": sel["samples_drawn"], "valid_subsets": len(sel["valid_subsets"]),
-            "merged_17": next(iter(d["draws"].values()))["merged_17"]}
+    out = {"pool_draws": len(ov), "rule3_draws": len(rule3), "merged_17": next(iter(d["draws"].values()))["merged_17"],
+           "qcd_pairs": qp, "samples_drawn": sel["samples_drawn"], "valid_subsets": len(sel["valid_subsets"])}
+    for key, o in (("all", ov), ("resonant", res)):
+        pool = list(o.values())
+        out[key] = {"pool": q(pool), "rule3": q([o[s] for s in rule3]), "accepted": {s: o[s] for s in acc},
+                    "accepted_percentile_in_pool": {s: sum(v <= o[s] for v in pool) / len(pool) for s in acc}}
+    return out
 
 
 def build() -> tuple[dict, str]:
@@ -387,6 +395,24 @@ def build() -> tuple[dict, str]:
         write_csv(a, buf)
         files["a1_separation.csv"] = buf.getvalue()
     mac = ["% written by experiments/FIGS/rev35_stats.py (ledger 35)"]
+    pct = lambda x: f"{100 * x:.0f}"  # noqa: E731
+    for key, v in v6().items():           # V6: the 3-sigma reach of the nested label sets on the benchmarks
+        task, mode, met = key.split("|")
+        w = ("Top" if task == "top" else "Qg") + ("Lp" if mode == "frozen" else "Ft") + ("Acc" if met == "accuracy" else "Rthirty")
+        share = (lambda x: pct(x)) if met == "r30" else (lambda x: f"{100 * x:.2f}")
+        mac += [rf"\newcommand{{\RevReach{w}Lo}}{{{share(v['min_3sigma_share'])}}}",
+                rf"\newcommand{{\RevReach{w}Hi}}{{{share(v['max_3sigma_share'])}}}"]
+        if met == "accuracy":
+            mac.append(rf"\newcommand{{\RevSpread{w}Pts}}{{{100 * v['spread']:.2f}}}")
+    p7 = v7()
+    if p7:
+        mac += [rf"\newcommand{{\RevPoolDraws}}{{{MT._fixed(p7['pool_draws'], 0)}}}",
+                rf"\newcommand{{\RevPoolRuleThree}}{{{p7['rule3_draws']}}}",
+                rf"\newcommand{{\RevPoolOverlapMedianPct}}{{{pct(p7['resonant']['pool']['median'])}}}",
+                rf"\newcommand{{\RevPoolOverlapLoPct}}{{{pct(min(p7['resonant']['accepted'].values()))}}}",
+                rf"\newcommand{{\RevPoolOverlapHiPct}}{{{pct(max(p7['resonant']['accepted'].values()))}}}",
+                rf"\newcommand{{\RevPoolPctileLo}}{{{pct(min(p7['resonant']['accepted_percentile_in_pool'].values()))}}}",
+                rf"\newcommand{{\RevPoolPctileHi}}{{{pct(max(p7['resonant']['accepted_percentile_in_pool'].values()))}}}"]
     if a:
         for key, w in (("S", "Sep"), ("S_untrained", "SepUntrained"), ("naive", "SepNaive")):
             mac.append(rf"\newcommand{{\Rev{w}Rho}}{{{a[key]['rho']:.2f}}}")
