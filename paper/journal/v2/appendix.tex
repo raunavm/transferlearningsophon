@@ -110,7 +110,8 @@ compare only between models with the same number of classes. Lines are the mean 
 deviation; the shading marks the last ten epochs, among which each run's checkpoint is the one of highest validation
 accuracy (ticks).}{fig:validation}
 
-\section{Comparison with published taggers}\label{app:published}
+% no float barrier: appendix floats may cross into the next section, so no section opens a short page
+{\let\FloatBarrier\relax \section{Comparison with published taggers}\label{app:published}}
 Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
 public tasks.
 The linear energy-flow-polynomial (EFP) classifier~\cite{efp} is linear in a set of jet observables; PFN~\cite{efn},
