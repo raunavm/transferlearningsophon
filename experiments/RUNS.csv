@@ -2857,3 +2857,5 @@ render-checkpoint-06c7340-raunav,2026-11-26T20:33:24Z,complete,"Writer: first fu
 mtx2-tests-w35-4c045c9-raunav,2026-11-26T20:33:26Z,launched,"Writer (GT-8 gate) at 4c045c99. CPU only.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-w35-4c045c9-raunav.yaml
 render-checkpoint-4c045c9-raunav,2026-11-26T20:36:19Z,launched,"Writer: the draft for the PI at 4c045c99 (third cold read, statistics fold-in, figA2). CPU only. GT-8: mtx2-tests-w35-4c045c9 passed.",experiments/FIGS/k8s/job-render-checkpoint-4c045c9-raunav.yaml
 render-checkpoint-4c045c9-raunav,2026-11-26T20:41:26Z,complete,"Writer: revision-35 rewrite, 38 pages, nothing undefined; appendix C heading had no text before D (barrier restored at D).",experiments/FIGS/k8s/
+mtx2-tests-w35-948416a-raunav,2026-11-26T20:41:29Z,launched,"Writer (GT-8 gate) at 948416a0. CPU only.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-w35-948416a-raunav.yaml
+render-checkpoint-948416a-raunav,2026-11-26T20:44:21Z,launched,"Writer: the draft for the PI at 948416a0 (third cold read, statistics fold-in, figA2). CPU only. GT-8: mtx2-tests-w35-948416a passed.",experiments/FIGS/k8s/job-render-checkpoint-948416a-raunav.yaml
