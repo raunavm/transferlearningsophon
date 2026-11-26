@@ -23,11 +23,11 @@ the network trained from scratch.}{fig:accuracy}
 \input{tables/table2}
 
 The loss falls on the classes that a label set merges (figure~\ref{fig:classes}(a) and figure~\ref{fig:recall}).
-At \Kmid{} classes the mean recall changes by \VRecallMidLepton{} points for classes merged with a decay of another
-lepton flavor, by \VRecallMidBoth{} for classes merged across both quark and lepton flavor, by \VRecallMidQuark{} for
-classes merged only across quark flavor and by \VRecallMidNeither{} for classes the set leaves unmerged.
-At \Kcoarse{} classes, where the remaining quark flavor is merged as well, the changes are \VRecallCoarseQuark{} (quark
-flavor), \VRecallCoarseLepton{} (lepton flavor) and \VRecallCoarseBoth{} (both).
+At \Kmid{} classes the mean recall changes by $\VRecallMidLepton$ points for classes merged with a decay of another
+lepton flavor, by $\VRecallMidBoth$ for classes merged across both quark and lepton flavor, by $\VRecallMidQuark$ for
+classes merged only across quark flavor and by $\VRecallMidNeither$ for classes the set leaves unmerged.
+At \Kcoarse{} classes, where the remaining quark flavor is merged as well, the changes are $\VRecallCoarseQuark$ (quark
+flavor), $\VRecallCoarseLepton$ (lepton flavor) and $\VRecallCoarseBoth$ (both).
 
 A probe of the \Kfull{} classes might seem to favor fine labels by construction.
 The reverse test does not favor coarse ones: a linear probe asked only for the \Kcoarse{} groups of the coarsest set is
@@ -101,8 +101,9 @@ With the \Kcoarse-class model these fall to \VXbbCoarse\% and \VXbsCoarse\%, bot
 The loss is larger for $X\to bs$, which is a class in none of the label sets.
 For $X\to b\bar b$ the two finest label sets also allow Sophon's own selection, a discriminant summed from the output
 scores, which reaches \VXbbDirectFullOne\% with the \Kfull-class model against \VXbbFull\% for the trained classifier.
-Sophon's network trained from scratch on the same jets reaches \VXbbScratchPm\% and \VXbsScratchPm\%; its runs differ
-strongly at low background efficiency, so its comparison with the \Kcoarse-class features is not resolved.
+Sophon's network trained from scratch on the same jets reaches \VXbbScratchPm\% for $X\to b\bar b$ and
+\VXbsScratchPm\% for $X\to bs$; its runs differ strongly at low background efficiency, so its comparison with the
+\Kcoarse-class features is not resolved.
 \vfig{fig5_resonance}{Sophon's resonance benchmark for $X\to b\bar b$ (a) and $X\to bs$ (b): QCD rejection against
 signal efficiency in the mass window. Solid lines are a classifier trained on the frozen features of each label set
 and, in grey, Sophon's network trained from scratch on the same jets; dash-dotted lines use the output scores where
