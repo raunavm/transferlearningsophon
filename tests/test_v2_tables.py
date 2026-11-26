@@ -123,11 +123,11 @@ def test_accuracy_in_percent_one_place_per_column():
 def test_our_rows_follow_the_published_precision():
     """PI 2026-11-25 (LEDGER 33.4): our rows at the published rows' decimals; JetClass AUC one-versus-one."""
     tab = "\n".join([r"\toprule", r" & AUC & Rej \\", r"\midrule", r"\multicolumn{3}{@{}l}{JetClass} \\",
-                      r"ParT & 0.9834 & -- \\", r"fine-tuned from 188 classes (this work) & 0.985907\,$\pm$\,0.000012 & -- \\",
+                      r"ParT & 0.9834 & -- \\", r"fine-tuned from 188 classes (this work) & 0.981234\,$\pm$\,0.000012 & -- \\",
                       r"\multicolumn{3}{@{}l}{top tagging} \\", r"ParT & 0.9858 & 413\,$\pm$\,16 \\",
                       r"trained from scratch (this work) & 0.98524\,$\pm$\,0.00008 & 358.4\,$\pm$\,11.2 \\"])
     ovo = {"188 classes": {"auc_ovo": 0.98590661, "auc_ovo_sd": 1.2e-05}, "trained from scratch": {"auc_ovo": 0.9822, "auc_ovo_sd": 0.0003}}
-    out = V.published_precision(tab, ovo)
+    out = V.published_precision(tab, ovo)     # the one-versus-one value replaces the printed one (a heading with {@{}l})
     assert r"(this work) & 0.9859\,$\pm$\,$<$0.0001 & --" in out
     assert r"(this work) & 0.9852\,$\pm$\,0.0001 & 358\,$\pm$\,11" in out
 
