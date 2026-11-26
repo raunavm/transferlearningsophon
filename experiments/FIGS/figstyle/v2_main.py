@@ -233,20 +233,20 @@ def draw_fig1(path: pathlib.Path) -> None:
     def arrow(p, q):
         ax.add_patch(matplotlib.patches.FancyArrowPatch(p, q, arrowstyle="-|>", mutation_scale=7, lw=0.8,
                                                         color=BOX_EDGE, shrinkA=0, shrinkB=0, zorder=2))
-    box(0.1, 2.2, yb_, hb, "JetClass-II jets")
-    arrow((2.3, yb_), (2.75, yb_))
-    box(2.8, 2.65, yb_, 1.5, "Particle\nTransformer\n(one label set)", face="#F2F2F2")
-    arrow((5.45, yb_ + 0.45), (5.9, yb_ + 0.45))
-    box(5.95, 1.5, yb_ + 0.45, hb, "Features")
+    box(0.1, 2.75, yb_, hb, "JetClass-II jets")
+    arrow((2.85, yb_), (3.25, yb_))
+    box(3.3, 2.5, yb_, 1.5, "Particle\nTransformer\n(one label set)", face="#F2F2F2")
+    arrow((5.8, yb_ + 0.45), (6.15, yb_ + 0.45))
+    box(6.2, 1.5, yb_ + 0.45, hb, "Features")
     up, dn = yb_ + 0.45, yb_ - 0.6                  # y grows downward: the classifier below fine-tuning
-    box(8.0, 2.55, up, 0.95, "Frozen-feature\nclassifier")
-    box(8.0, 2.55, dn, hb, "Fine-tuning")
-    arrow((7.45, up), (7.95, up))
-    arrow((5.45, dn), (7.95, dn))
-    xt = 11.15
+    box(8.15, 2.45, up, 0.95, "Frozen-feature\nclassifier")
+    box(8.15, 2.45, dn, hb, "Fine-tuning")
+    arrow((7.7, up), (8.1, up))
+    arrow((5.8, dn), (8.1, dn))
+    xt = 11.1
     box(xt, S.PRINT_W - xt - 0.1, yb_ - 0.08, 2.15, "\n".join(FIG1_TASKS))
-    arrow((10.55, up), (xt - 0.05, up))
-    arrow((10.55, dn), (xt - 0.05, dn))
+    arrow((10.6, up), (xt - 0.05, up))
+    arrow((10.6, dn), (xt - 0.05, dn))
     fig.exact_size = True
     S.save(fig, path)
 
@@ -264,9 +264,9 @@ def fig1_words() -> int:
 # ledger 35, section 4: the label sets are categories (they can be built many ways), so no line joins them; families
 # apart (nested; the random groupings, each draw a point beside their mean; the flavor-boundary groupings)
 ACC_COLS = (("L188", 0.0), ("L162", 1.0), ("R42_Q1", 2.0), ("R16_Q1", 3.0), ("RAND", 4.5), ("FLAV_F0", 6.0),
-            ("FLAV_F1", 7.0), ("FLAV_F1R", 8.0))
-ACC_TICKS = ("188", "162", "43", "17", "random", "no\nflavor", "$b$\nquark", "random\nflavor")
-ACC_FAMILIES = (("nested", 0.0, 3.0), ("flavor boundary", 6.0, 8.0))
+            ("FLAV_F1", 7.2), ("FLAV_F1R", 8.4))
+ACC_TICKS = ("188", "162", "43", "17", "", "none", "$b$", "random")       # the boundary of each flavor-boundary grouping
+ACC_FAMILIES = (("nested", 0.0, 3.0), ("random\ngrouping", 4.5, 4.5), ("flavor\nboundary", 6.0, 8.4))
 ACC_SEP = (3.75, 5.25)
 ACC_PANELS = (("jc2", 1_000_000, "jc2_188", "JetClass-II"), ("jc1", 1_000_000, "jc1", "JetClass"))
 ACC_MODES = (("probe", "Linear probe (%)", False), ("ft", "Fine-tuned (%)", True))
@@ -341,10 +341,10 @@ def draw_fig2(path: pathlib.Path) -> None:
         S.clear_edge_labels(parts[0], low=True)
         S.clear_edge_labels(parts[1], high=True)
         S.title(parts[0], f"({'ab'[k]}) {title}")
-        yfam = top + 2 * ACC_SUB + ACC_GAP + 1.2
+        yfam = top + 2 * ACC_SUB + ACC_GAP + 0.95
         for name, a, b in ACC_FAMILIES:
             xc = x + ACC_W * ((a + b) / 2 + 0.55) / (ACC_COLS[-1][1] + 1.15)
-            fig.text(xc / S.PRINT_W, 1 - yfam / H, name, ha="center", va="center", fontsize=FONT)
+            fig.text(xc / S.PRINT_W, 1 - yfam / H, name, ha="center", va="top", fontsize=FONT, linespacing=1.1)
     handles = [Line2D([], [], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor="white",
                       markeredgecolor="#000000", markeredgewidth=1.0),
                Line2D([], [], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor="#000000",
@@ -551,7 +551,7 @@ def _pairs_panel(ax) -> list:
     return [Line2D([], [], linestyle="none", marker=S.MARKERS.get(net, S.MARKERS[R._style(net)]), markersize=DOT,
                    markerfacecolor=S.SERIES[R._style(net)], markeredgecolor=S.SERIES[R._style(net)],
                    label=R._name(net)) for net in PAIR_NETS] + [
-        Line2D([], [], markerfacecolor="white", label="open: the labels merge the pair", **mark),
+        Line2D([], [], markerfacecolor="white", label="open: labels merge the pair", **mark),
         Line2D([], [], fillstyle="left", markerfacecolor="#000000", markerfacecoloralt="white",
                label="half: they merge part of it", **mark)]
 
@@ -640,7 +640,7 @@ def draw_fig3(path: pathlib.Path) -> None:
     import textwrap
     x = left + wa + 0.5
     S.slot_legend(fig, handles, x, top_a, S.PRINT_W - x - 0.1, ha,
-                  labels=[textwrap.fill(h.get_label(), 26) for h in handles])
+                  labels=[textwrap.fill(h.get_label().replace("\n", " "), 30) for h in handles])
     S.save(fig, path)
 
 
@@ -694,8 +694,8 @@ def _pair_figure(path: pathlib.Path, keys: tuple) -> None:
     grid = [[(docs, k, PAIR_NETS, R.PAIR_TITLE[k]) for k in keys[:2]], [(docs, keys[2], PAIR_NETS, R.PAIR_TITLE[keys[2]]),
                                                                         None]]
     with before_save(_start_at_188):
-        R._roc_grid(path, grid, w=R.PAIR_W[2], aspect=0.72, ratio_scale="log", own_y=True, wgap=R.PAIR_WGAP,
-                    left=R.PAIR_LEFT - 0.35, legend_slot=(1, 1), bands=PAIR_NETS, ratio=A2_RATIO)
+        R._roc_grid(path, grid, w=R.PAIR_W[2], aspect=0.72, ratio_scale="log", own_y=True, wgap=1.35,
+                    left=1.45, legend_slot=(1, 1), bands=PAIR_NETS, ratio=A2_RATIO)
 
 
 def draw_figA2(path: pathlib.Path) -> None:
@@ -755,6 +755,8 @@ def draw_fig5(path: pathlib.Path) -> None:
         S.labels(ax, ylabel=r"Rejection ($1/\varepsilon_B$)")
         S.labels(rx, xlabel=S.X_EPS, ylabel="Ratio")
         rx.xaxis.set_major_locator(ticker.MultipleLocator(0.2))
+        if rx is raxes[-1]:                       # its "1.0" would run past the text width
+            rx.xaxis.set_major_formatter(ticker.FuncFormatter(lambda t, _: "" if t > 0.99 else f"{t:.1f}"))
     v = np.array([x for x in rlo if np.isfinite(x)] + [1.0])
     d = 0.08 * (v.max() - v.min())
     for rx in raxes:
@@ -782,19 +784,22 @@ def _relative(series: dict, ref: dict, met: str) -> tuple:
     return ns, r, r * np.hypot(a[:, 1] / a[:, 0], b[:, 1] / b[:, 0])
 
 
+SIZE_LEFT, SIZE_WGAP, SIZE_W = 1.3, 1.45, 6.1      # cm: a 10 pt y label and its ticks in the gap
+
+
 def _size_figure(path: pathlib.Path, makers: list, nets: tuple, panels: tuple, ncol: int) -> None:
     """gallery_labelset._draw_size's panels (the mean over runs against the number of training jets, a band its
     standard deviation) for the series of makers in panels, two a row, the legend of nets above in ncol columns; under
     each panel the label sets relative to 188 classes (_relative), trained from scratch left out of it."""
     rows = -(-len(nets) // ncol)
-    w, h = G.SIZE_W, G.SIZE_ASPECT * G.SIZE_W
+    w, h = SIZE_W, G.SIZE_ASPECT * SIZE_W
     lh, nr = LOWER * h, -(-len(panels) // 2)
     top, hgap = S.LEGEND_TOP + 0.45 * rows + 0.6, G.SIZE_HGAP + G.SIZE_XLABEL
     fig = S.figure_cm(S.PRINT_W, top + nr * (h + 0.1 + lh) + (nr - 1) * hgap + 1.0)
     axes, handles = [], {}
     for k, (key, ds, met, title) in enumerate(panels):
         i, j = divmod(k, 2)
-        x, y = G.SIZE_LEFT + j * (w + G.SIZE_WGAP), top + i * (h + 0.1 + lh + hgap)
+        x, y = SIZE_LEFT + j * (w + SIZE_WGAP), top + i * (h + 0.1 + lh + hgap)
         ax = S.axes_cm(fig, x, y, w, h)
         rx = S.axes_cm(fig, x, y + h + 0.1, w, lh, sharex=ax)
         ax.tick_params(labelbottom=False)
@@ -851,7 +856,7 @@ def draw_figA7(path: pathlib.Path) -> None:
 
 def draw_figA3(path: pathlib.Path) -> None:
     """Fig. 5's form for linear probes on the frozen features of Table 2's pretrained rows, the four tasks."""
-    _size_figure(path, [_pct_series(G._probe(r)) for r in SUMMARY_ROWS], SUMMARY_ROWS, SIZE_PANELS, 3)
+    _size_figure(path, [_pct_series(G._probe(r)) for r in SUMMARY_ROWS], SUMMARY_ROWS, SIZE_PANELS, 2)
 
 
 # ------------------------------------------------------------------ Figs. A4 and A5
@@ -859,7 +864,15 @@ def draw_figA4(path: pathlib.Path) -> None:
     """The old F9b (gallery_physics._binned_2x2): the mass output of the two models with mass regression beside the
     soft-drop mass, median response and resolution against jet pT and generator-level mass."""
     series = PH._mass_series()
-    PH._binned_2x2(path, "all", series, 2, cols=[[PH.GROOMED], [label for *_, label in series]])
+    grid = S.grid_cm
+
+    def wider(*a, **kw):                          # the 10 pt y label of the right column clear of the left panel
+        return grid(*a, **{**kw, "left": 1.4, "wgap": 1.45})
+    S.grid_cm = wider
+    try:
+        PH._binned_2x2(path, "all", series, 2, cols=[[PH.GROOMED], [label for *_, label in series]])
+    finally:
+        S.grid_cm = grid
 
 
 LAST = 10                  # the checkpoint is the best of the last ten epochs (Methods)
