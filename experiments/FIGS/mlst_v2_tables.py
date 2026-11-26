@@ -972,9 +972,10 @@ def mass_values(R, runs: dict) -> dict:
     out = {}
     for block, est, arms in (("head", "regressed", R.MASS), ("mlp", "mlp", R.MASS_ROWS)):
         for arm in arms:
-            name = R.LABEL[arm]
+            name = R.LABEL[arm] + " "          # as in a table row, where " &" follows the label (RENAME's " + mass ")
             for x, y in RENAME:
                 name = name.replace(x, y)
+            name = name.strip()
             if name.startswith(DROP_ROWS):
                 continue
             cell = []
