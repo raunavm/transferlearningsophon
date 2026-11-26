@@ -1,0 +1,13 @@
+label_set,name,family,S,S_untrained,naive_separated_pairs,accuracy,accuracy_sd,n_runs
+L188,188 classes,nested,1.000000,1.000000,1.000000,0.434762,0.000345,3
+L162,162 classes,nested,0.887832,0.950930,0.980032,0.432794,0.000842,3
+R42_Q1,43 classes,nested,0.613572,0.850962,0.957902,0.360930,0.004601,3
+R16_Q1,17 classes,nested,0.500217,0.710501,0.911992,0.334138,0.006716,3
+RAND2_p1,"17 classes, random grouping 1",random grouping,0.768959,0.863203,0.922858,0.419963,,1
+RAND2_p2,"17 classes, random grouping 2",random grouping,0.782663,0.869287,0.924679,0.421348,,1
+RAND2_p3,"17 classes, random grouping 3",random grouping,0.774440,0.867496,0.924906,0.423112,,1
+RAND2_p4,"17 classes, random grouping 4",random grouping,0.759285,0.848973,0.914723,0.422780,,1
+RAND2_p5,"17 classes, random grouping 5",random grouping,0.778158,0.868230,0.926783,0.420427,,1
+FLAV_F0,"17 classes, no flavor boundary",flavor-boundary grouping,0.596905,0.783095,0.905336,0.374601,0.003287,2
+FLAV_F1,"17 classes, b-quark boundary",flavor-boundary grouping,0.599300,0.777852,0.907384,0.395370,0.001274,2
+FLAV_F1R,"17 classes, random flavor boundary",flavor-boundary grouping,0.627449,0.782869,0.907384,0.408000,0.001270,2

@@ -2040,6 +2040,8 @@
  "perf_vs_pt_v5/jc2/mtx-rand2p3-s1.json": "be2f9097ebd7fe999fd41f2c43b405dda4b9f7a066d82e7352c1fb89b2619417",
  "perf_vs_pt_v5/jc2/mtx-rand2p4-s2.json": "3b83ccccf7de677df73716081656e786d33e78ecb56816c8d6e4844cedf462f7",
  "perf_vs_pt_v5/jc2/mtx-rand2p5-s2.json": "ef3942a3735ff7b8a9459ee3019c9cb3f696dc2d58e70924b40270b727595cf3",
+ "stats/a1_separation.csv": "72f5e3c67b136ea87fca3f54f57d81f4989ced77a16ef8c7c37fe0b99aee8737",
+ "stats/confusion_jc2bal_probe.json": "3402dd68216e6875a1184d69be487bb7534411a6725560a4b837dfef09ed46c6",
  "stats/confusion_share.json": "8f7a87d3a9eff79bf3e40769a9b45bd75b919246754b71e997b7b8d0146e418c",
  "stats/ledger33_exports.json": "61d594f736d0c16dc69b3861d5310b371135ae58f4db53103b5e308756882e98",
  "stats/table_e1_ovo.json": "679bbf7a4c3aa8321adf43a7caf064ffb4916bfcaba82b0e7876c1f881e5138b",
