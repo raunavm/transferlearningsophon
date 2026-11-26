@@ -1,41 +1,36 @@
 \section{Label sets}\label{app:sets}
 Table~\ref{tab:classmap} gives the full class map.
-Class names list the decay products, with $q$ for an up or down quark, $g$ for a gluon, $\tau_h$ for a tau
-lepton that decays to hadrons and $\nu$ for a neutrino; a prong is one collimated visible decay product, so neutrinos leave none.
-It lists every JetClass-II class with the class it belongs to in each coarser label set; since the sets are
-nested, each \Kmid{} class is a union of \Kres{} classes and each \Kcoarse{} class a union of \Kmid{} classes.
+Class names list the decay products, with $g$ for a gluon, $\tau_h$ for a tau lepton that decays to hadrons and
+$\nu$ for a neutrino; a prong is one collimated visible decay product, so neutrinos leave none.
 
 \input{tables/table_classmap}
 
-\subsection{Flavor-boundary groupings}
-Three further groupings into \Kcoarse{} classes were pretrained with \RandFlavRuns{} runs each, to ask whether
-one boundary between flavors accounts for the difference between the \Kcoarse-class set and the random
-groupings.
-The first assigns whole families of decays that differ only in flavor to groups at random, so that, unlike the
-\Kcoarse-class set, its groups mix decays of different structure, and no boundary between two groups separates
-two flavors of one family; the second
-moves the four-quark decays that contain a bottom quark into another group; and the third moves as many
-four-quark decays chosen at random.
-A linear probe on the pretraining classes places the \Kcoarse-class model below the grouping without a flavor
+\subsection{Flavor-boundary groupings}\label{app:flavor}
+Three further \Kcoarse-class groupings (\RandFlavRuns{} runs each, table~\ref{tab:sets}) isolate the role of a single
+flavor boundary.
+The grouping with no flavor boundary assigns whole families of decays that differ only in flavor to groups at random,
+so that, unlike the \Kcoarse-class set, its groups mix decays of different structure and no group boundary separates
+two flavors of one family.
+The $b$-quark boundary grouping moves the four-quark decays that contain a bottom quark out of their family's group,
+and the random flavor boundary grouping moves as many four-quark decays chosen at random.
+A linear probe on the pretraining classes places the \Kcoarse-class model below the grouping with no flavor
 boundary, that grouping below the two with a boundary, and these below the random groupings (table~\ref{tab:flavor}).
-The grouping without a flavor boundary already lies several points above the \Kcoarse-class model, so how whole
-families are grouped matters as well as flavor.
+The grouping with no flavor boundary lies \VDLpJcTwoFlavZero{} points above the \Kcoarse-class model
+(\VLpJcTwoFlavZero\% against \VLpJcTwoCoarse\%), so how whole families are grouped matters as well as flavor.
 The groupings with a boundary also differ from the one without in more than that boundary, because other decays had
 to move to keep the class sizes, so the step between them cannot be assigned to the boundary alone.
 
 \input{tables/table_flavor}
 
 \section{Training details}\label{app:training}
-The JetClass-II jets are clustered with the anti-$k_{\mathrm T}$ algorithm~\cite{antikt,fastjet} from the particles of a
-simulated CMS-like detector~\cite{delphes}, weighted by PUPPI~\cite{puppi}, with \LitJetClassTwoPileupMean{} pileup collisions on average.
+The JetClass-II jets are clustered with the anti-$k_{\mathrm T}$ algorithm~\cite{antikt,fastjet} from the particles of the
+simulated detector, with \LitJetClassTwoPileupMean{} pileup collisions on average.
 We keep jets with $p_{\mathrm T}$ between \DesignPtMin{} and \DesignPtMax~GeV and a soft-drop mass, computed at
 $z_{\mathrm{cut}} = \LitCmsSdZcut$ and $\beta = \LitCmsSdBeta$~\cite{softdrop,mmdt,cmsmlid}, between \DesignMsdMin{} and \DesignMsdMax~GeV.
 The generator-level mass $m_{\mathrm{gen}}$ is the soft-drop mass of the jet of generator-level particles matched
 to the reconstructed jet; jets without a match enter neither the regression term nor table~\ref{tab:mass}.
 The quark--gluon jets are smaller, with a radius of \LitQgJetRadius, and have no detector simulation.
 After Sophon's selection there are \DesignNTrainSelected{} training jets.
-Each model sees \DesignExamplesSeen{} training examples and is evaluated at the epoch of its highest validation
-accuracy among the last ten.
 Pretraining follows Sophon's settings, with the Ranger optimizer~\cite{radam,lookahead}: \DesignEpochs{} epochs of \DesignSamplesPerEpoch{} examples in batches of
 \DesignBatchSize, a learning rate of \DesignStartLr{} that is constant for the first \DesignLrFlatPercent{} of
 the epochs and then decays to \DesignLrEndPercent{} of its value, and the particle momenta of every jet rescaled
@@ -47,29 +42,27 @@ all the jets they have; on JetClass they are trained on \LpNTrainMaxJci{} jets a
 on the full training sets.
 Fine-tuning on JetClass-II and JetClass uses a learning rate of \MlstFtLr{} for the pretrained weights and one
 \MlstFtHeadMult{} times larger for the new output layer, a weight decay of \MlstFtWeightDecay{} and batches of
-\MlstFtBatch{} jets, for \FtStepsESix{} steps at \FtSizeESix{} jets, and keeps the weights of the best
-validation check; the learning rates of the other training sizes and of the network trained from scratch
-were chosen on validation from a grid, and the full scan is in the data release.
+\MlstFtBatch{} jets, for \FtStepsESix{} steps at \FtSizeESix{} jets, and keeps the weights with the best
+validation accuracy; one learning rate serves all pretrained models, chosen for each task and training size by the
+mean validation accuracy of the \Kfull- and \Kcoarse-class models, and the learning rates of the other training sizes
+and of the network trained from scratch were chosen on validation from a grid; the full scan is in the data release.
 All pretraining runs together took \MlstComputeTotalGpuHours{} GPU hours.
 
-A rejection curve of a pair of classes (figures~\ref{fig:otherpairs} and~\ref{fig:qcdpairs}) is drawn only where at
-least \MlstMinBkgPass{} background jets pass.
+The binary probes on pairs of classes are tested on up to \JcBalPairTestPerSide{} jets of each class of a pair,
+from the JetClass-II test files, and the pair $X\to gg$ against $X\to q\bar q$ on \VGgTestPerClass{} jets of each
+class; a rejection curve (figures~\ref{fig:otherpairs} and~\ref{fig:qcdpairs}) is drawn only where at least
+\MlstMinBkgPass{} background jets pass.
 
 For the resonance benchmark the transfer network has a hidden layer of \DesignHeadHidden{} units and two outputs.
 Its hidden layer starts from that of the pretrained output layer and all of its weights are then trained, on
-\XbbNTrainPerClass{} jets per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$, with
-\MlstXbxHeadSeedsWord{} seeds per pretraining run, which are averaged.
-The network trained without pretraining for each signal is Sophon's whole network with an output layer of the same
-shape, trained on the particles of the same jets with \MlstXbxScratchSeedsWord{} seeds.
-The QCD jets come from files that no pretraining run read, the signal jets from separate samples, and signal and
-background are both counted in the soft-drop mass window.
+\XbbNTrainPerClass{} jets per class for $X\to b\bar b$ and \XbsNTrainPerClass{} for $X\to bs$.
+The network without pretraining is trained with \MlstXbxScratchSeedsWord{} seeds.
+The QCD jets are held out from pretraining, and signal and background are both counted in the soft-drop mass
+window.
 
 
 \section{Inputs and missing inputs}\label{app:inputs}
 Table~\ref{tab:inputs} lists the inputs and which of them the two binary benchmarks provide.
-For the linear probes an absent input is filled with zero, with the training mean or with random draws of real
-JetClass-II particles; the choice is made once per task on validation, for every model, and is
-\LpSubstitutionTop{} for top tagging and \LpSubstitutionQg{} for quark--gluon discrimination.
 \input{tables/table_inputs}
 
 \section{Further results}\label{app:results}
@@ -77,12 +70,6 @@ The pretrained output layer of the \Kfull-class model already predicts the \Kful
 class-balanced test jets it reaches only \VHeadAcc\%, below the linear probe, because it was trained on the natural
 mix of classes; refitting only its class biases on the balanced training jets raises it to \VHeadRefit\%, which
 closes \VHeadClosed\% of the distance.
-Tables~\ref{tab:auc} and~\ref{tab:herwig} give the AUC of every model of tables~\ref{tab:probes}
-and~\ref{tab:finetuned} and the quark--gluon results on jets from the Herwig generator~\cite{herwigsevenone,qgherwig},
-table~\ref{tab:pairs} the linear probes' AUC by class group and for pairs of classes, table~\ref{tab:size} the
-fine-tuned accuracy at smaller training sets, table~\ref{tab:resonance} the resonance benchmark,
-table~\ref{tab:perclass_jc1} the recall of each JetClass class, and table~\ref{tab:groups} probes asked only for the
-\Kcoarse{} groups of the coarsest label set.
 
 \input{tables/table_auc}
 \input{tables/table_herwig}
@@ -97,8 +84,8 @@ An MLP probe with one hidden layer of \LpMlpHidden{} units, trained on the same 
 probes, shows where a conclusion depends on the probe being linear (table~\ref{tab:mlp}).
 Asked only for the \Kcoarse{} groups of the coarsest label set, it does better on the features of the \Kfull-class
 model than on those of the \Kcoarse-class model itself, where the linear probe finds them equal (table~\ref{tab:groups}).
-On top tagging it places the \Kcoarse-class model with mass regression above the \Kfull-class model.
-The results on the mass regression are the same under the MLP probe.
+On top tagging it ranks the \Kcoarse-class model with mass regression first, with a $\mathrm{Rej}_{30\%}$ of
+\VMlpTopRejCoarseMass{} against \VMlpTopRejFull{} for the \Kfull-class model.
 
 \input{tables/table_mlp}
 
@@ -110,29 +97,26 @@ public tasks.
 The linear energy-flow-polynomial (EFP) classifier~\cite{efp} is linear in a set of jet observables; PFN~\cite{efn},
 ParticleNet~\cite{particlenet}, ParT~\cite{part}, MIParT~\cite{mipart}, L-GATr~\cite{lgatr} and
 OmniLearned~\cite{omnilearned} are neural networks on the particles, the last four transformers.
-On quark--gluon discrimination ours are close to the published Particle Transformer.
+On quark--gluon discrimination our fine-tuned network matches the published Particle Transformer fine-tuned from
+JetClass: \VPubQgAccOurs\% against \VPubQgAccPart\% in accuracy, and an AUC of \VPubQgAucOurs{} against \VPubQgAucPart.
 On top tagging our network trained from scratch is below the published one trained from scratch, and our
 fine-tuned network is above that and below the published Particle Transformer fine-tuned from JetClass.
-That one was pretrained on the kinematic inputs only; our \Kfull-class network pretrained that way, one run,
-reaches the same rejection after fine-tuning as with the absent inputs set to zero (last row of the table).
+That one was pretrained on the kinematic inputs only; a single \Kfull-class model pretrained that way reaches the
+same rejection after fine-tuning, \VPubTopRejKin{} against \VPubTopRejOurs{} with the absent inputs set to zero
+(last row of the table).
 
 \input{tables/table_published}
 
 % no float barrier here, so the section does not open a short page (PI 2026-11-26, 34.3)
 {\let\FloatBarrier\relax \section{Further figures}\label{app:figures}}
-Figure~\ref{fig:recall} shows the recall of every JetClass-II class under each coarser label set,
-figures~\ref{fig:otherpairs} and~\ref{fig:qcdpairs} the rejection curves of the pairs of classes,
-figure~\ref{fig:probesize} the linear probes at smaller training sets, figure~\ref{fig:masspt} the regressed mass
-against jet $p_{\mathrm T}$ and mass, figure~\ref{fig:binarysize} the fine-tuned binary benchmarks at smaller training
-sets, and figure~\ref{fig:validation} the validation accuracy during pretraining.
 \vfig{figA1}{Recall of each JetClass-II class under a linear probe on the frozen features of the (a)
 \Kres-, (b) \Kmid- and (c) \Kcoarse-class model, against its recall for the \Kfull-class model. Points are means
-over runs, with bars combining run spread and test-sample uncertainty; colors and shapes give what the panel's label
-set merges the class with. Open points lie within three standard deviations of equal recall.}{fig:recall}
+over runs, with bars combining run spread and test-sample uncertainty; color and shape show which flavor the panel's label
+set merges for that class. Open points lie within three standard deviations of equal recall.}{fig:recall}
 
 \vfig{figA2}{Background rejection against signal efficiency for three pairs of resonance classes, from binary
 linear probes on the frozen features, for the four label sets and the random groupings that merge the pair or keep it
-apart. Each panel starts where the \Kfull-class curve does. Lower panels give the ratio to the \Kfull-class model;
+apart. Lower panels give the ratio to the \Kfull-class model;
 bands are standard deviations over runs.}{fig:otherpairs}
 \vfig{figA6}{As figure~\ref{fig:otherpairs}, for three pairs of QCD classes. Every random grouping merges these
 pairs.}{fig:qcdpairs}

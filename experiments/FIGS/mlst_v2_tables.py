@@ -26,6 +26,7 @@ import make_tables as MT  # noqa: E402
 
 OUT = "paper/journal/v2/tables"
 MAPS, RAND_MAPS = "configs/labelmaps/rung_label_maps.v1.csv", "configs/labelmaps/rand_label_map.v2.csv"
+FLAV_MAPS, FLAV = "configs/labelmaps/flavour_pair_map.v2.csv", ("FLAV_F0", "FLAV_F1", "FLAV_F1R")
 NESTED = ("L188", "L162", "R42_Q1", "R16_Q1")
 RAND, MASS = "RAND", (("L162_MASS", "L162"), ("R16_Q1_MASS", "R16_Q1"))
 PENDING = "pending"
@@ -55,7 +56,7 @@ def class_maps(root: pathlib.Path) -> dict:
     """{label set: {JetClass-II class: its class in the label set}}, the four nested sets and the five random
     groupings; class names without their "label_" prefix."""
     out: dict = {}
-    for f, cols in ((MAPS, NESTED), (RAND_MAPS, None)):
+    for f, cols in ((MAPS, NESTED), (RAND_MAPS, None), (FLAV_MAPS, FLAV)):
         rows = list(csv.DictReader((root / f).open()))
         for c in cols or [c for c in rows[0] if re.fullmatch(r"RAND2_p\d", c)]:
             out[c] = {r["class_name"].removeprefix("label_"): r[c] for r in rows}
@@ -124,9 +125,7 @@ def name(maps: dict, arm: str) -> str:
     return f"{len(set(maps[arm].values()))} classes"
 
 
-TABLE1_CAPTION = ("The label sets, what each merges from the finer set above it, and the number of pretraining runs; every "
-                  "set keeps the number of decay products and which of four kinds each is: a quark or gluon, an electron "
-                  "or muon, a tau lepton, or a neutrino.")
+TABLE1_CAPTION = "The label sets, what each merges from the finer set above it, and the number of pretraining runs."
 
 
 def short(maps: dict, arm: str) -> str:
@@ -160,6 +159,16 @@ def table1(maps: dict, runs: dict) -> str:
     n_res = len([k for k in maps["L188"] if not k.startswith("QCD")])
     b.append(f"{name(maps, RAND)} & {res} + {qcd} & the {n_res} resonant classes into {res} random groups, "
              f"the QCD classes into one & differs between groupings & {n_runs[RAND]}" + r" \\")
+    # LEDGER 34 (editor, mark 77): the flavor-boundary groupings of appendix A.1
+    flav = {counts(maps[c]) for c in FLAV}
+    n_flav = {len(runs[c]) for c in FLAV}
+    if len(flav) != 1 or len(n_flav) != 1:
+        raise SystemExit(f"FATAL: the flavor-boundary groupings differ in classes {flav} or runs {n_flav}")
+    fr, fq = flav.pop()
+    b.append(f"{fr + fq} classes, flavor-boundary groupings & {fr} + {fq} & the resonant classes into {fr} groups that "
+             f"keep or break one flavor boundary (appendix~\\ref{{app:flavor}}) & differs between groupings & "
+             f"{len(FLAV)} groupings, "
+             f"{n_flav.pop()} each" + r" \\")
     for mass, base in MASS:
         m = maps[base]
         b.append(f"{name(maps, mass)} & {cls(m)} & as {name(maps, base)} & {bb_class(m)} & {n_runs[mass]}" + r" \\")
@@ -696,6 +705,8 @@ def pi_prose_1126(got, r, lp, ft, mean, vals, pct, pts, out, xfits, XR, runs) ->
     if o["VDFtJcOneMassResOne"] != o["VDFtJcOneMassCoarseOne"]:
         raise SystemExit("FATAL: 'by ... points on JetClass, at both label sets' needs one value: "
                          f"{o['VDFtJcOneMassResOne']} and {o['VDFtJcOneMassCoarseOne']}")
+    o["VLpJcTwoFlavZero"] = pct(lp, J2, "FLAV_F0")
+    o["VDLpJcTwoFlavZero"] = f"{100 * (mean(lp, J2, 'FLAV_F0') - mean(lp, J2, 'R16_Q1')):.1f}"
     # Sophon's output-score selection of X->bb at one decimal
     recs = [XR.readout(xfits.get(m, {}).get("xbb", {}), "zero_shot_xbb") for m in runs["L188"]]
     o["VXbbDirectFullOne"] = f"{100 * float(np.mean([x['eps_s_at_star'] for x in recs])):.1f}"
@@ -731,6 +742,40 @@ def mass_macros(vals: dict) -> str:
         if not 0.2 <= gain < 0.3:
             raise SystemExit(f"FATAL: 'about a quarter' does not hold for {a} ({gain:.2f})")
     return "".join(rf"\newcommand{{\{k}}}{{{100 * x:.1f}}}" + "\n" for k, x in v.items())
+
+
+def table_cell(tex: str, block: int, heading: str | None, label: str, col: int, whole: bool = True) -> str:
+    r"""One printed cell of a generated table: tabular number `block`, under the \multicolumn heading `heading` (None:
+    any), the row whose first cell is `label`, column `col`; whole=False keeps the mean only. The build stops when
+    the cell is not found, so a number the text quotes is always the table's."""
+    tabs = re.findall(r"\\begin\{tabular\*?\}.*?\\end\{tabular\*?\}", tex, re.S)
+    cur, hit = None, []
+    for ln in tabs[block].split("\n"):
+        mc = re.match(r"\s*\\multicolumn\{\d+\}\{[^}]*\}\{(.*?)\}", ln)
+        if mc:
+            cur = mc.group(1)
+            continue
+        cells = [c.strip() for c in ln.rstrip().removesuffix("\\\\").split("&")]
+        if len(cells) > col and cells[0] == label and (heading is None or cur == heading):
+            hit.append(cells[col])
+    if len(hit) != 1:
+        raise SystemExit(f"FATAL: cell {label!r} / {heading!r} / column {col}: {len(hit)} matches")
+    return hit[0] if whole else hit[0].split(r"\,")[0]
+
+
+def cell_macros(out: dict) -> str:
+    """The numbers the appendix text quotes from Tables D8 and E1 (editor's marks 85, 87, 88 on draft 8f085fe)."""
+    mlp, pub = out["table_mlp.tex"], out["table_published.tex"]
+    ours, part = r"fine-tuned from \Kfull{} classes (this work)", r"ParT, fine-tuned~\cite{part}"
+    v = {"VMlpTopRejCoarseMass": table_cell(mlp, 0, None, r"\Kcoarse{} classes + mass regression", 3),
+         "VMlpTopRejFull": table_cell(mlp, 0, None, r"\Kfull{} classes", 3),
+         "VPubQgAccOurs": table_cell(pub, 2, "quark/gluon tagging", ours, 3, False),
+         "VPubQgAccPart": table_cell(pub, 2, "quark/gluon tagging", part, 3, False),
+         "VPubQgAucOurs": table_cell(pub, 3, "quark/gluon tagging", ours, 1, False),
+         "VPubQgAucPart": table_cell(pub, 3, "quark/gluon tagging", part, 1, False),
+         "VPubTopRejKin": table_cell(pub, 1, "top tagging", r"\Kfull{} classes, kinematic inputs only", 3),
+         "VPubTopRejOurs": table_cell(pub, 1, "top tagging", ours, 3)}
+    return "".join(rf"\newcommand{{\{k}}}{{{x}}}" + "\n" for k, x in v.items())
 
 
 def one_value(xs: set):
@@ -832,6 +877,7 @@ def pct(cell: str) -> str:
     """Every decimal number of a cell times 100, exactly: the decimal point moves two places (0.71658 -> 71.658,
     0.00022 -> 0.022, 0.940 -> 94.0), so no digit is added, dropped or rounded."""
     from decimal import Decimal
+    cell = re.sub(r"(\$<\$)(\d+\.\d+)", lambda m: m.group(1) + format(Decimal(m.group(2)).scaleb(2), "f"), cell)
     return NUM.sub(lambda m: format(Decimal(m.group(1)).scaleb(2), "f"), cell)
 
 
@@ -1180,7 +1226,7 @@ def main() -> int:
                                         r"\fontsize{7.5}{9}\selectfont", ovo=load_ovo()),
            "table_mlp.tex": reuse(built, "tables/mlst_mlp.tex", MLP_CAPTION, "tab:mlp", r"\fontsize{8}{10}\selectfont"),
            "table_groups.tex": reuse(built, "tables/mlst_coarse.tex", GROUPS_CAPTION, "tab:groups")}
-    out["numbers.tex"] += mass_macros(mv)
+    out["numbers.tex"] += mass_macros(mv) + cell_macros(out)
     for f, text in out.items():
         (d / f).write_text(text)
     print("V2 TABLES COMPLETE")

@@ -80,8 +80,8 @@ For $X\to b\bar b$ the two finest label sets also allow Sophon's own selection, 
 from the output scores, which reaches \VXbbDirectFullOne\% with the \Kfull-class model, close to the trained
 classifier.
 \vfig{fig5_resonance}{Sophon's $X\to b\bar b$ (a) and $X\to bs$ (b) benchmark: signal efficiency against QCD
-efficiency in the mass window, by a classifier trained on the frozen features of each label set, for the same classifier
-trained from scratch and, dash-dotted, from the output scores where the label set keeps $X\to b\bar b$. Lower panels
+efficiency in the mass window, by a classifier trained on the frozen features of each label set, for Sophon's full network
+trained from scratch on the same jets and, dash-dotted, from the output scores where the label set keeps $X\to b\bar b$. Lower panels
 give the ratio to the \Kfull-class model; the dotted line marks \VXbxEpsB\% background efficiency. Bands are standard
 deviations over runs.}{fig:resonance}
 
@@ -153,7 +153,7 @@ An MLP probe on the features of the \Kres-class model estimates the mass with a 
 \VResMlpRes\%, against \VResSoftDrop\% for the reconstructed soft-drop mass itself; with the regression
 in pretraining the same probe reaches \VResMlpResMass\%, and the regression output of the network
 \VResHeadResMass\%.
-The gain is the same at \Kcoarse{} classes, from \VResMlpCoarse\% to \VResMlpCoarseMass\%.
+At \Kcoarse{} classes the probe improves from \VResMlpCoarse\% to \VResMlpCoarseMass\%.
 Without the regression, the coarser labels already give a slightly better mass resolution than
 the finer ones, \VResMlpCoarse\% for the \Kcoarse-class model against \VResMlpFull\% for the \Kfull-class model.
 \input{tables/table4}

@@ -6,9 +6,8 @@ Foundation models are pretrained once on broad data and then adapted to many tas
 When the pretraining is supervised, the label set is itself a design choice: the same examples can
 be divided into few classes or many, and that division determines which distinctions the network
 is rewarded for learning~\cite{mahajan}.
-In image classification, relabeling a fixed set of images along a class hierarchy has shown that
-coarser labels can give features that transfer less well~\cite{huh,hong}, most clearly when the features are used
-frozen rather than fine-tuned~\cite{hong}.
+In image classification, coarser labels along a class hierarchy can give features that transfer less
+well~\cite{huh,hong}.
 Such hierarchies, however, are human taxonomies, and it is seldom clear what information a
 given merge removes from the labels.
 
@@ -31,15 +30,12 @@ model trained on fewer classes has also seen fewer kinds of
 jets~\cite{sophon,glopartdp,datacomp,superjepa}, and the two effects cannot be told apart.
 
 Here we change the labels and nothing else.
-Since every JetClass-II jet records its full decay, the same jets can be relabeled at any
-granularity, and we pretrain Sophon's network on them with four nested label sets of \Kfull, \Kres,
-\Kmid{} and \Kcoarse{} classes (table~\ref{tab:sets}).
-Each coarser set merges classes that differ only in the type of particle produced, such as bottom and charm quarks:
-in the coarsest, for example, a decay to two bottom quarks and a decay to two charm quarks both
-become a decay to two quarks or gluons.
-Groupings of the classes into \Kcoarse{} that cut across this hierarchy then separate the effect of which classes are merged from that of how many remain, and an auxiliary regression of the jet mass adds a target that the labels
-do not contain.
-Each label set is pretrained several times from different random seeds.
+We pretrain Sophon's network on the same JetClass-II jets with four nested label sets of \Kfull, \Kres,
+\Kmid{} and \Kcoarse{} classes (table~\ref{tab:sets}); in the coarsest, for example, a decay to two bottom quarks and
+a decay to two charm quarks both become a decay to two quarks or gluons.
+We also pretrain on random groupings into \Kcoarse{} classes of the same sizes, which cut across this hierarchy, and
+with an auxiliary regression of the jet mass.
+Each nested label set is pretrained \VRunsWord{} times from different seeds (table~\ref{tab:sets}).
 
 We evaluate each pretrained model in the two ways such a model is used.
 With the network frozen, a linear classifier trained on its features (a linear probe)~\cite{alain} measures

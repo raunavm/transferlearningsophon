@@ -24,9 +24,8 @@ Yang, Steinhardt and Hu trained networks on merged classes and asked whether the
 recovered from the last-layer features~\cite{yang}.
 They found that subclasses merged at random stay well separated, whereas subclasses merged into a natural
 superclass, which resemble one another, are distinguished less well.
-This is the nearest precedent for our comparison of nested label sets with random groupings.
-Beyond that precedent, we follow the features to other tasks and through fine-tuning, with merges that each remove a
-physically defined distinction.
+Our random groupings follow theirs; we add transfer to other tasks, fine-tuning, and merges that each remove a
+named physical distinction.
 
 In jet physics, supervised classification of simulated jets is the pretraining objective of the Particle
 Transformer, which showed that pretraining on the ten classes of JetClass improves top tagging and quark--gluon
@@ -35,9 +34,9 @@ to the direct use of output scores and frozen features~\cite{sophon}.
 CMS trains its taggers on many classes of decays~\cite{cmspart,glopartdp}.
 Supervised classification has been compared with masked-particle and generative pretraining on the same jets, with
 the classes fixed~\cite{objectives}.
-Self-supervised alternatives exist~\cite{jetclr,rs3l,mpmtok,rieck,jbot,rino}; masked particle modeling, for example, is evaluated with a frozen and with a
-fine-tuned backbone as a function of the number of labeled jets, the two modes we also compare~\cite{mpm}.
+Self-supervised objectives~\cite{jetclr,rs3l,mpmtok,rieck,jbot,rino} such as masked particle modeling are evaluated
+with a frozen and with a fine-tuned backbone as a function of the number of labeled jets, the two modes we also compare~\cite{mpm}.
 SuperJEPA combines a predictive self-supervised objective with classification and reports frozen-encoder and
 fine-tuned results on JetClass and top tagging~\cite{superjepa}.
 In these studies the classes of the supervised objective are fixed, or change together with the jets used for
-pretraining; here the pretraining jets are fixed and only their labels change.
+pretraining.

@@ -38,15 +38,29 @@ def test_classes_and_the_class_of_xbb():
 def test_table1_rows():
     """PI 2026-11-24 (GO-6): version B, one table, with its fixes."""
     runs = {**{a: ["a", "b", "c"] for a in V.NESTED}, **{m: ["a", "b"] for m, _ in V.MASS},
-            **{c: ["a"] for c in MAPS if c.startswith("RAND2_p")}}
+            **{c: ["a"] for c in MAPS if c.startswith("RAND2_p")}, **{c: ["a", "b"] for c in V.FLAV}}
     tex = V.table1(MAPS, runs)
     assert tex.count(r"\begin{table}") == 1 and "sideways" not in tex and "landscape" not in tex
-    rows = [ln for ln in tex.splitlines() if ln.endswith(r"\\") and ln.split(" & ")[0].endswith(("classes", "grouping", "regression"))]
+    rows = [ln for ln in tex.splitlines() if ln.endswith(r"\\") and ln.split(" & ")[0].endswith(("classes", "grouping", "groupings", "regression"))]
     assert [ln.split(" & ")[0] for ln in rows] == [
         "188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
-        "162 classes + mass regression", "17 classes + mass regression"]
-    assert "5 groupings, 1 each" in tex and "(resonant + QCD)" in tex and "Class containing" in tex
-    assert "two-parton" not in tex and "number of decay products" in tex  # caption reworded after the cold readers (parton, not "kind")
+        "17 classes, flavor-boundary groupings", "162 classes + mass regression", "17 classes + mass regression"]
+    assert "5 groupings, 1 each" in tex and "3 groupings, 2 each" in tex and "(resonant + QCD)" in tex
+    assert "Class containing" in tex and "two-parton" not in tex   # the caption no longer repeats section 3.3 (editor, 25)
+
+
+def test_a_bound_in_a_percent_column_is_scaled():
+    """A spread printed as a bound (below 0.001 of a fraction) is in percent too (draft 8f085fe, Table E1)."""
+    assert V.pct(r"0.843\,$\pm$\,$<$0.001") == r"84.3\,$\pm$\,$<$0.1"
+
+
+def test_table_cell_reads_one_cell_or_stops():
+    tex = "\n".join([r"\begin{tabular}{lcc}", r"\multicolumn{3}{l}{top tagging} \\", r"ours & 1 & 2{,}799\,$\pm$\,56 \\",
+                     r"\multicolumn{3}{l}{quark/gluon tagging} \\", r"ours & 3 & 84.3\,$\pm$\,0.1 \\", r"\end{tabular}"])
+    assert V.table_cell(tex, 0, "top tagging", "ours", 2) == r"2{,}799\,$\pm$\,56"
+    assert V.table_cell(tex, 0, "quark/gluon tagging", "ours", 2, False) == "84.3"
+    with pytest.raises(SystemExit):
+        V.table_cell(tex, 0, None, "ours", 2)
 
 
 def test_class_map_has_every_class_once_with_its_coarser_classes():

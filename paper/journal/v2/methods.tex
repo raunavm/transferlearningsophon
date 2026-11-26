@@ -23,8 +23,7 @@ We pretrain on JetClass-II~\cite{sophon,jetclasstwo}, the dataset of the Signatu
 Heavy-resonance ObservatioN (Sophon) model, whose \Kfull{} classes are \LitJetClassTwoNResonantClasses{}
 resonant classes and \LitJetClassTwoNQcdClasses{} QCD classes.
 A resonant jet contains the decay of a hypothetical particle $X$, either directly into two quarks, gluons or
-leptons or through two intermediate particles $Y$ into three or four of them, and a QCD class is defined by the
-number of bottom, charm and strange quarks in the jet.
+leptons or through two intermediate particles $Y$ into three or four of them.
 The collisions are simulated with the event generators MadGraph and Pythia~\cite{madgraph,pythia} and a detector
 simulation~\cite{delphes}, including pileup, the additional collisions that overlap each event, which is removed with
 the PUPPI algorithm~\cite{puppi,cmspu}.
@@ -41,12 +40,13 @@ The network is the one of Sophon~\cite{sophon}, a Particle Transformer~\cite{par
 blocks over the particles, \DesignClassBlocks{} blocks that pool them into one class token of
 \DesignEmbedDim{} numbers, and an output layer with one hidden layer of \DesignHeadHidden{} units.
 The class token, the input of the output layer, is what we call the frozen features.
-Each model is evaluated at the epoch of its highest validation accuracy (figure~\ref{fig:validation}).
+Each model is evaluated at the epoch of its highest validation accuracy among the last ten (validation curves in
+figure~\ref{fig:validation}).
 
 \subsection{Label sets}
-A label set maps the \Kfull{} classes onto fewer classes, whose labels a model pretrained with it learns.
+A label set maps the \Kfull{} classes onto fewer classes; a model pretrained with it learns only those.
 The four label sets are nested, so that each is obtained from the one before by merging classes that differ in
-a named way (table~\ref{tab:sets} and figure~\ref{fig:design}; the full map is table~\ref{tab:classmap}).
+one stated respect (table~\ref{tab:sets} and figure~\ref{fig:design}; the full map is table~\ref{tab:classmap}).
 The \Kres-class set merges the QCD classes into one and keeps every resonant class.
 \input{tables/table1}%
 \vfig[13cm]{fig1_design}{Design of the study. (a) The ten classes of one group of the \Kcoarse-class set, a
@@ -70,17 +70,16 @@ is the sum of the scores $g'_i$ that the \Kfull-class model gives the classes it
   g_c(x) = \sum_{i\,\in\, c} g'_i(x) ,
   \label{eq:sum}
 \end{equation}
-so the output layer of a label set can supply such a sum, the discriminant on which a physics analysis selects
-jets, only for classes that are unions of its own classes~\cite{sophon}.
+A physics analysis selects jets on such a sum, and a label set's output layer can provide it only for unions of
+that set's own classes~\cite{sophon}.
 
 \subsection{Random groupings and mass regression}
 Each random grouping assigns the \LitJetClassTwoNResonantClasses{} resonant classes at random to \RandVtwoNResGroups{}
 classes whose shares of the training jets match those of the \Kcoarse-class set, and keeps the QCD jets as one class.
-Among such draws we chose the \VRandWord{} that share the fewest merges with the \Kcoarse-class set, so that they test
-whether the number of classes or their content sets what the features retain.
+We use the \VRandWord{} draws that share the fewest merges with the \Kcoarse-class set.
 
-The mass regression adds a target that no label set contains, a regression that in CMS improves the jet mass
-scale and resolution over the soft-drop mass~\cite{cmsmassreg,glopartdp}.
+The mass regression is a regression that in CMS improves the jet mass scale and resolution over the soft-drop
+mass~\cite{cmsmassreg,glopartdp}.
 The \Kres- and \Kcoarse-class models are pretrained a second time with one more output $\hat\theta$, trained
 to predict $\theta = \ln(m_{\mathrm{gen}}/m_{\mathrm{SD}})$, where $m_{\mathrm{SD}}$ is the reconstructed jet mass, computed after soft, wide-angle particles are removed
 (the soft-drop mass~\cite{softdrop,mmdt}), and $m_{\mathrm{gen}}$ the same mass of the matched jet before detector
@@ -94,24 +93,22 @@ CMS Global Particle Transformer~\cite{glopartdp}; the CMS Particle Transformer t
 term~\cite{cmspart}.
 
 \subsection{Probes and fine-tuning}
-Linear probes measure what the frozen features hold~\cite{alain}.
-A probe is a multinomial logistic regression on the standardized features, its L2 penalty chosen on validation~\cite{kornblithtransfer,simclr}.
-On JetClass-II the probes are trained and tested on approximately class-balanced sets of jets that no
-pretraining run read, so that chance is $1/\Kfull$, or \VChance\%.
-Binary probes on pairs of classes, such as $X\to b\bar b$ against $X\to c\bar c$, test single distinctions; they are
-tested on up to \JcBalPairTestPerSide{} jets of each class of a pair, drawn from the JetClass-II test files, and the
-pair $X\to gg$ against $X\to q\bar q$ on \VGgTestPerClass{} jets of each class; the rejection curves of the pairs are in
-figures~\ref{fig:otherpairs} and~\ref{fig:qcdpairs}.
-Two references are probed alike: an untrained network, with its input normalization computed on training jets,
+A linear probe~\cite{alain} is a multinomial logistic regression on the standardized frozen features, its L2 penalty
+chosen on validation~\cite{kornblithtransfer,simclr}.
+On JetClass-II the probes are trained and tested on held-out, approximately class-balanced jets not used in
+pretraining, so that chance is $1/\Kfull$, or \VChance\%.
+Binary probes on pairs of classes, such as $X\to b\bar b$ against $X\to c\bar c$, test single distinctions
+(rejection curves in figures~\ref{fig:otherpairs} and~\ref{fig:qcdpairs}; test sets in appendix~\ref{app:training}).
+We also probe two references: an untrained network, with its input normalization computed on training jets,
 and the checkpoint released with Sophon~\cite{sophon}.
 
-Fine-tuning measures what survives when every weight adapts.
-The pretrained output layer is replaced by a new one of the same shape with random weights.
+In fine-tuning every weight adapts, and the pretrained output layer is replaced by a new one of the same shape with random weights.
 The reference is the same network trained from random weights on the downstream task alone, with
 \VScratchRunsWord{} seeds.
-On JetClass-II and JetClass we fine-tune on \FtSizeESix{} approximately class-balanced jets, and on smaller sets
-for figure~\ref{fig:size}, with one learning rate for all pretrained models, chosen on validation for each task and
-training size by the mean of the \Kfull- and \Kcoarse-class models; on top tagging and quark--gluon discrimination
+On JetClass-II and JetClass we fine-tune on \FtSizeESix{} approximately class-balanced jets, and on
+\FtSizeEFour{} and \FtSizeEFive{} jets for the scaling study; all pretrained models share one learning rate per task
+and training size, chosen on validation (appendix~\ref{app:training}).
+On top tagging and quark--gluon discrimination
 we fine-tune on the full training sets with the published recipe of the Particle Transformer~\cite{part}, and on
 smaller sets with one fixed schedule (figure~\ref{fig:binarysize}).
 
@@ -122,18 +119,17 @@ The top-tagging~\cite{toptag,topdata} and quark--gluon~\cite{efn,qgpythia} data 
 inputs that the network was pretrained with: the first provides only the momenta of the particles,
 \FillTopNPresent{} of the \FillNFeatures{} inputs, and the second lacks the track displacements
 (appendix~\ref{app:inputs}).
-In fine-tuning the absent inputs are set to zero; for the probes, which cannot adapt, they are filled in one way
-per task, the same for every model, chosen on validation.
-A frozen result on these two benchmarks is thus a linear readout of \DesignEmbedDim{} numbers computed from
-incomplete inputs.
+In fine-tuning the absent inputs are set to zero; for the probes, which cannot adapt, they are filled the same way
+for every model, chosen on validation among zero, the training mean and random draws of JetClass-II particles:
+\LpSubstitutionTop{} for top tagging and \LpSubstitutionQg{} for quark--gluon discrimination.
 
 We report the accuracy, the area under the receiver operating characteristic curve (AUC), averaged over
 one-versus-rest problems when a task has more than two classes, and the background rejection
 $\mathrm{Rej}_{30\%}$, the inverse of the false-positive rate at a true-positive rate of $30\%$~\cite{part};
 $\mathrm{Rej}_{50\%}$ is the same at $50\%$.
 
-The mass resolution measures how well the jet mass can be recovered.
-For an estimate $m_{\mathrm{est}}$ and the response $r = m_{\mathrm{est}}/m_{\mathrm{gen}}$ we use
+For an estimate $m_{\mathrm{est}}$ of the jet mass, with response $r = m_{\mathrm{est}}/m_{\mathrm{gen}}$, we quote
+the resolution
 \begin{equation}
   \sigma_r = \frac{q_{84.1} - q_{15.9}}{2\,q_{50}} ,
   \label{eq:resolution}
@@ -151,8 +147,8 @@ The signal jets are separate simulated samples from the authors of Sophon, not p
 Sophon selects $X\to b\bar b$ with a discriminant built from its output scores, and $X\to bs$, which is not among
 its classes, with a classifier trained on the frozen features: a network with one hidden layer, started from that of
 the pretrained output layer.
-We use such a classifier for both decays and every label set, since $X\to b\bar b$ is a class of its own only in the
-two finest, trained with three seeds per model, which are averaged (appendix~\ref{app:training}).
+Because $X\to b\bar b$ is its own class only in the two finest sets, we use this classifier for both decays and all
+label sets, averaging \MlstXbxHeadSeedsWord{} seeds per model (appendix~\ref{app:training}).
 The reference without pretraining is Sophon's whole network, with an output layer of the same shape, trained from
 random weights on the particles of the same signal and QCD jets.
 Our protocol differs from Sophon's, which measures discovery significance against all simulated Standard Model
