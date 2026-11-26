@@ -713,28 +713,24 @@ def pi_prose_1126(got, r, lp, ft, mean, vals, pct, pts, out, xfits, XR, runs) ->
     return o
 
 
-def mass_macros(table4: str) -> str:
-    """The mass resolutions of the PI's text (LEDGER 34, section 4.6), in percent, from Table 4's printed cells, so
-    the text and the table cannot differ; "about a quarter" (the Discussion) checked on the MLP probes."""
-    res, block = {}, None
-    for ln in table4.split("\n"):
-        if r"\multicolumn" in ln:
-            block = "mlp" if "MLP" in ln else "head"
-        elif "&" in ln and "resolution" not in ln:
-            c = [x.strip() for x in ln.rstrip(" \\").split("&")]
-            res[(block if c[0] != "soft-drop mass" else "sd", c[0])] = c[1].split(r"\,")[0]
-    want = {"VResMlpFull": ("mlp", "188 classes"), "VResMlpRes": ("mlp", "162 classes"),
-            "VResMlpResMass": ("mlp", "162 classes + mass regression"), "VResMlpCoarse": ("mlp", "17 classes"),
-            "VResMlpCoarseMass": ("mlp", "17 classes + mass regression"),
-            "VResHeadResMass": ("head", "162 classes + mass regression"), "VResSoftDrop": ("sd", "soft-drop mass")}
-    if any(k not in res for k in want.values()):
-        raise SystemExit(f"FATAL: table 4 rows not found: {sorted(set(want.values()) - set(res))}")
-    v = {m: res[k] for m, k in want.items()}
+def mass_macros(vals: dict) -> str:
+    """The mass resolutions of the PI's text (LEDGER 34, section 4.6), in percent at Table 4's precision, from the
+    same values; "about a quarter" (the Discussion) checked on the MLP probes."""
+    def res(block, label):
+        hit = [v for (b, n), v in vals.items() if b == block and n.endswith(label)]
+        if len(hit) != 1:
+            raise SystemExit(f"FATAL: table 4 row {block}, {label}: {len(hit)} matches")
+        return hit[0][0]
+    want = {"VResMlpFull": ("mlp", r"\Kfull{} classes"), "VResMlpRes": ("mlp", r"\Kres{} classes"),
+            "VResMlpResMass": ("mlp", r"\Kres{} classes + mass regression"), "VResMlpCoarse": ("mlp", r"\Kcoarse{} classes"),
+            "VResMlpCoarseMass": ("mlp", r"\Kcoarse{} classes + mass regression"),
+            "VResHeadResMass": ("head", r"\Kres{} classes + mass regression"), "VResSoftDrop": ("sd", "soft-drop mass")}
+    v = {m: res(*k) for m, k in want.items()}
     for a, b in (("VResMlpRes", "VResMlpResMass"), ("VResMlpCoarse", "VResMlpCoarseMass")):
-        gain = 1 - float(v[b]) / float(v[a])
+        gain = 1 - v[b] / v[a]
         if not 0.2 <= gain < 0.3:
             raise SystemExit(f"FATAL: 'about a quarter' does not hold for {a} ({gain:.2f})")
-    return "".join(rf"\newcommand{{\{k}}}{{{x}}}" + "\n" for k, x in v.items())
+    return "".join(rf"\newcommand{{\{k}}}{{{100 * x:.1f}}}" + "\n" for k, x in v.items())
 
 
 def one_value(xs: set):
@@ -956,43 +952,66 @@ def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsi
                       r"\setlength{\tabcolsep}{4pt}", "\n\\par\\medskip\n".join(body), r"\end{table}", ""])
 
 
-def round_cell(cell: str, shift: int, places: int) -> str:
-    """A printed cell (mean, or mean \\pm spread) with its decimal point moved `shift` places and rounded to `places`
-    decimals; a spread that rounds to zero prints as a bound. A printed digit string that sits exactly half-way
-    cannot be rounded without the unrounded value, so the build stops there (PI 2026-11-26, LEDGER 34.4)."""
-    from decimal import Decimal, ROUND_HALF_EVEN
-    m = CELL.match(cell)
-    if not m:
-        raise SystemExit(f"FATAL: table 4 cell not a number: {cell!r}")
-    q = Decimal(1).scaleb(-places)
-
-    def r(x: str) -> Decimal:
-        d = Decimal(x.replace("{,}", "").replace(",", "")).scaleb(shift)
-        out = d.quantize(q, ROUND_HALF_EVEN)
-        if abs(d - out) == q / 2:
-            raise SystemExit(f"FATAL: table 4 cell {cell!r} is a tie at {places} decimals")
-        return out
-    mean = r(m["m"])
-    if m["s"] is None:
-        return f"{mean}"
-    s = r(m["s"])
-    return rf"{mean}\,$\pm$\,{'$<$' + str(q) if s == 0 else s}"
+def mass_cell(mean: float, sd: float | None, scale: float, places: int) -> str:
+    """One Table 4 cell from the build's unrounded values: mean (and SD) times `scale`, at `places` decimals; a spread
+    that rounds to zero prints as a bound (PI 2026-11-26, LEDGER 34.4)."""
+    m = f"{scale * mean:.{places}f}"
+    if sd is None:
+        return m
+    q = f"{10 ** -places:.{places}f}"
+    s = f"{scale * sd:.{places}f}"
+    return rf"{m}\,$\pm$\," + (rf"$<${q}" if float(s) == 0 else s)
 
 
-def mass_columns(tex: str) -> str:
-    """Table 4 (PI 2026-11-26, LEDGER 34.4): the resolution in percent with one decimal, the response with three."""
-    out = []
+def mass_values(R, runs: dict) -> dict:
+    """{(block, row label as Table 4 prints it): (resolution mean, SD, response mean, SD)} from the build's mass file
+    (the values mlst_results.table_mass prints), blocks "head" and "mlp", and ("sd", "soft-drop mass") with its
+    bootstrap SD."""
+    atlas = R._load(REPO / "experiments/FIGS/data/v2" / R.MASS_RES)
+    g = R.MASS_GROUPS[0][0]
+    out = {}
+    for block, est, arms in (("head", "regressed", R.MASS), ("mlp", "mlp", R.MASS_ROWS)):
+        for arm in arms:
+            name = R.LABEL[arm]
+            for x, y in RENAME:
+                name = name.replace(x, y)
+            if name.startswith(DROP_ROWS):
+                continue
+            cell = []
+            for k in ("resolution", "median"):
+                v = [R._ares(atlas, m, est, g, k) for m in runs[arm]]
+                if not v or None in v:
+                    raise SystemExit(f"FATAL: table 4, {arm} {est} {k}: a run without its value")
+                cell += [float(np.mean(v)), float(np.std(v, ddof=1)) if len(v) > 1 else None]
+            out[(block, name)] = tuple(cell)
+    cell = []
+    for k in ("resolution", "median"):
+        v, sd = R._groomed(atlas, g, k), R._groomed(atlas, g, f"{k}_sd")
+        cell += [float(v), None if sd is None else float(sd)]
+    out[("sd", "soft-drop mass")] = tuple(cell)
+    return out
+
+
+def mass_columns(tex: str, vals: dict) -> str:
+    """Table 4 (PI 2026-11-26, LEDGER 34.4): the resolution in percent with one decimal, the response with three,
+    every cell from the unrounded values (vals: mass_values), matched to its row by block and label."""
+    out, block, seen = [], None, set()
     for ln in tex.split("\n"):
         if ln.strip() == r"& resolution & median response \\":
             ln = r" & resolution (\%) & median response \\"
-        elif "&" in ln and r"\multicolumn" not in ln and ln.rstrip().endswith(r"\\"):
-            c = [x.strip() for x in ln.rstrip()[:-2].split("&")]
-            if len(c) != 3:
-                raise SystemExit(f"FATAL: table 4 row without three cells: {ln!r}")
-            ln = f"{c[0]} & {round_cell(c[1], 2, 1)} & {round_cell(c[2], 0, 3)} " + "\\\\"
+        elif r"\multicolumn" in ln:
+            block = "mlp" if "MLP" in ln else "head"
+        elif "&" in ln and ln.rstrip().endswith(r"\\"):
+            name = ln.split("&")[0].strip()
+            key = ("sd", name) if name == "soft-drop mass" else (block, name)
+            if key not in vals:
+                raise SystemExit(f"FATAL: table 4 row {key} has no value")
+            rm, rs, mm, ms = vals[key]
+            ln = f"{name} & {mass_cell(rm, rs, 100, 1)} & {mass_cell(mm, ms, 1, 3)} " + "\\\\"
+            seen.add(key)
         out.append(ln)
-    if r"resolution (\%)" not in "\n".join(out):
-        raise SystemExit("FATAL: table 4 header not found")
+    if r"resolution (\%)" not in "\n".join(out) or not seen:
+        raise SystemExit("FATAL: table 4 header or rows not found")
     return "\n".join(out)
 
 
@@ -1152,14 +1171,15 @@ def main() -> int:
            "pending.txt": "".join(f"Table 3 | {r} | {c}\n" for r, c in pending),
            "results_generated.tex": built["results_generated.tex"],
            "table_classmap.tex": table_classmap(maps), **appendix_tables(got, maps), "table_head.tex": table_head(got, runs),
-           "table4.tex": (t4 := mass_columns(reuse(built, "tables/mlst_mass.tex", TABLE4_CAPTION, "tab:mass"))),
+           "table4.tex": mass_columns(reuse(built, "tables/mlst_mass.tex", TABLE4_CAPTION, "tab:mass"),
+                                       mv := mass_values(R, runs)),
            "table_inputs.tex": reuse(built, "tables/mlst_inputs.tex", INPUTS_CAPTION, "tab:inputs"),
            # 7.5 pt: at 8 pt the four blocks overran the page number (draft da28a31, p. 25)
            "table_published.tex": reuse(built, "tables/mlst_published.tex", PUBLISHED_CAPTION, "tab:published",
                                         r"\fontsize{7.5}{9}\selectfont", ovo=load_ovo()),
            "table_mlp.tex": reuse(built, "tables/mlst_mlp.tex", MLP_CAPTION, "tab:mlp", r"\fontsize{8}{10}\selectfont"),
            "table_groups.tex": reuse(built, "tables/mlst_coarse.tex", GROUPS_CAPTION, "tab:groups")}
-    out["numbers.tex"] += mass_macros(t4)
+    out["numbers.tex"] += mass_macros(mv)
     for f, text in out.items():
         (d / f).write_text(text)
     print("V2 TABLES COMPLETE")

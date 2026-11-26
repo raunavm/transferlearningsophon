@@ -119,21 +119,24 @@ def test_our_rows_follow_the_published_precision():
 
 
 def test_table4_resolution_in_percent_one_decimal_response_three():
-    """PI 2026-11-26 (LEDGER 34.4): resolution in percent with one decimal, response with three; a spread that rounds
-    to zero is a bound; a printed half-way digit string stops the build."""
+    """PI 2026-11-26 (LEDGER 34.4): resolution in percent with one decimal, response with three, from the unrounded
+    values (a printed 0.0055 cannot be rounded to three decimals); a spread that rounds to zero is a bound."""
     tex = "\n".join([r"\begin{tabular}{lcc}", r"\toprule", r" & resolution & median response \\", r"\midrule",
                      r"\multicolumn{3}{l}{\textit{MLP probe on the frozen features}} \\",
-                     r"188 classes & 0.21806\,$\pm$\,0.00189 & 0.9919\,$\pm$\,0.0021 \\",
-                     r"162 classes + mass regression & 0.15726\,$\pm$\,0.00003 & 1.0052\,$\pm$\,0.0002 \\",
+                     r"\Kfull{} classes & 0.21806\,$\pm$\,0.00189 & 0.9919\,$\pm$\,0.0021 \\",
+                     r"\Kres{} classes + mass regression & 0.15726\,$\pm$\,0.00003 & 0.9992\,$\pm$\,0.0055 \\",
                      r"soft-drop mass & 0.24485\,$\pm$\,0.00062 & 0.9294\,$\pm$\,0.0004 \\", r"\bottomrule"])
-    out = V.mass_columns(tex).split("\n")
+    vals = {("mlp", r"\Kfull{} classes"): (0.218061, 0.001891, 0.99191, 0.00209),
+            ("mlp", r"\Kres{} classes + mass regression"): (0.157263, 0.000031, 0.999204, 0.005549),
+            ("sd", "soft-drop mass"): (0.244851, 0.000622, 0.929402, 0.000398)}
+    out = V.mass_columns(tex, vals).split("\n")
     assert out[2] == r" & resolution (\%) & median response \\"
     assert out[4].startswith(r"\multicolumn")
-    assert out[5] == r"188 classes & 21.8\,$\pm$\,0.2 & 0.992\,$\pm$\,0.002 \\"
-    assert out[6] == r"162 classes + mass regression & 15.7\,$\pm$\,$<$0.1 & 1.005\,$\pm$\,$<$0.001 \\"
+    assert out[5] == r"\Kfull{} classes & 21.8\,$\pm$\,0.2 & 0.992\,$\pm$\,0.002 \\"
+    assert out[6] == r"\Kres{} classes + mass regression & 15.7\,$\pm$\,$<$0.1 & 0.999\,$\pm$\,0.006 \\"
     assert out[7] == r"soft-drop mass & 24.5\,$\pm$\,0.1 & 0.929\,$\pm$\,$<$0.001 \\"
     with pytest.raises(SystemExit):
-        V.round_cell(r"0.14650\,$\pm$\,0.00100", 2, 1)
+        V.mass_columns(tex, {})
 
 
 def test_generated_tables_float_to_the_top():
