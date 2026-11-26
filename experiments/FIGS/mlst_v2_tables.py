@@ -719,6 +719,24 @@ def pi_prose_1126(got, r, lp, ft, mean, vals, pct, pts, out, xfits, XR, runs) ->
         raise SystemExit("FATAL: 'by ... points on JetClass, at both label sets' needs one value: "
                          f"{o['VDFtJcOneMassResOne']} and {o['VDFtJcOneMassCoarseOne']}")
     o["VLpJcTwoFlavZero"] = pct(lp, J2, "FLAV_F0")
+    o["VLpJcTwoFlavOne"], o["VLpJcTwoFlavOneR"] = pct(lp, J2, "FLAV_F1"), pct(lp, J2, "FLAV_F1R")
+    # ledger 35 (one framing of the recovered share): fine-tuning recovers "about three quarters" of the frozen gap
+    gap_lp = mean(lp, J2, "L188") - mean(lp, J2, "R16_Q1")
+    gap_ft = mean(ft, J2, "L188") - mean(ft, J2, "R16_Q1")
+    if not 0.7 <= 1 - gap_ft / gap_lp < 0.8:
+        raise SystemExit(f"FATAL: 'about three quarters of the frozen gap' does not hold ({1 - gap_ft / gap_lp:.2f})")
+    # ledger 35, S(L): the separations the text quotes, and the residual it names (the 43-class set keeps more
+    # weighted separation than the flavor-boundary groupings yet scores lower)
+    sep = {r["label_set"]: r for r in csv.DictReader((REPO / "experiments/FIGS/data/v2/stats/a1_separation.csv").open())}
+    S = lambda a: float(sep[a]["S"])                                                          # noqa: E731
+    for w, a in (("Res", "L162"), ("Mid", "R42_Q1"), ("Coarse", "R16_Q1"), ("FlavZero", "FLAV_F0"),
+                 ("FlavOne", "FLAV_F1"), ("FlavOneR", "FLAV_F1R")):
+        o[f"VSep{w}"] = f"{S(a):.2f}"
+    rs = [S(a) for a in sep if a.startswith("RAND2_p")]
+    o["VSepRandLo"], o["VSepRandHi"] = f"{min(rs):.2f}", f"{max(rs):.2f}"
+    o["VSepNWord"] = MT.words(len(sep))
+    if not (S("R42_Q1") > max(S("FLAV_F0"), S("FLAV_F1")) and mean(lp, J2, "R42_Q1") < min(mean(lp, J2, "FLAV_F0"), mean(lp, J2, "FLAV_F1"))):
+        raise SystemExit("FATAL: the S(L) residual the text names (43 classes above the flavor-boundary groupings in S, below in accuracy) no longer holds")
     o["VDLpJcTwoFlavZero"] = f"{100 * (mean(lp, J2, 'FLAV_F0') - mean(lp, J2, 'R16_Q1')):.1f}"
     # Sophon's output-score selection of X->bb at one decimal
     recs = [XR.readout(xfits.get(m, {}).get("xbb", {}), "zero_shot_xbb") for m in runs["L188"]]
@@ -787,7 +805,14 @@ def cell_macros(out: dict) -> str:
          "VPubQgAucOurs": table_cell(pub, 3, "quark/gluon tagging", ours, 1, False),
          "VPubQgAucPart": table_cell(pub, 3, "quark/gluon tagging", part, 1, False),
          "VPubTopRejKin": table_cell(pub, 1, "top tagging", r"\Kfull{} classes, kinematic inputs only", 3),
-         "VPubTopRejOurs": table_cell(pub, 1, "top tagging", ours, 3)}
+         "VPubTopRejOurs": table_cell(pub, 1, "top tagging", ours, 3),
+         "VMlpTopRejCoarse": table_cell(mlp, 0, None, r"\Kcoarse{} classes", 3),
+         "VMlpTopRejRes": table_cell(mlp, 0, None, r"\Kres{} classes", 3),
+         "VMlpTopRejResMass": table_cell(mlp, 0, None, r"\Kres{} classes + mass regression", 3)}
+    grp = out["table_groups.tex"]
+    for w, head in (("Lp", r"\textit{linear probe on the frozen features}"), ("Mlp", r"\textit{MLP probe on the frozen features}")):
+        for a, lab in (("Full", r"\Kfull{} classes"), ("Coarse", r"\Kcoarse{} classes")):
+            v[f"VGroups{w}{a}"] = table_cell(grp, 0, head, lab, 1, False)
     return "".join(rf"\newcommand{{\{k}}}{{{x}}}" + "\n" for k, x in v.items())
 
 

@@ -1,168 +1,205 @@
 \section{Results}\label{sec:results}
-% The PI's text of 2026-11-26 (pi_prose_1126.tex, LEDGER 34), as written: numbers are build macros, references labels.
-% Not printed: the red clause on per-class recall (it fails at 43 classes, sent to the PI) and the sentence on
-% fine-tuning against the linear probe (written when the two checks end).
 
-\subsection{The pretraining classes}
+\subsection{Frozen features on the pretraining classes}\label{sec:frozen}
 
-Coarser labels leave the frozen features less able to tell the pretraining classes apart
-(table~\ref{tab:probes} and figure~\ref{fig:accuracy}).
-A linear probe on the features of the \Kfull-class model identifies the \Kfull{} classes with an accuracy
-of \VLpJcTwoFull\%, where chance is \VChance\% and an untrained network gives \VLpJcTwoUntrained\%; the
-checkpoint released with Sophon gives \VLpJcTwoSophon\%, so our retraining reproduces it.
-Merging the QCD classes changes little: the \Kres-class model reaches \VLpJcTwoRes\%, and what it loses
-is confined to the QCD classes themselves (table~\ref{tab:pairs}).
-The accuracy then falls to \VLpJcTwoMid\% for the \Kmid-class model and to \VLpJcTwoCoarse\% for the \Kcoarse-class
-model, the two sets that merge flavors within the resonance decays, a loss of \VDLpJcTwoCoarse{}
-percentage points in all.
-\vfig{fig2_accuracy}{Accuracy on the \Kfull{} JetClass-II classes (a) and on JetClass (b) for each pretraining label
-set and for the random grouping into \Kcoarse{} classes. Open points are linear probes on the frozen features, filled
-points models fine-tuned on \FtSizeESix{} jets; the dashed line and band are the network trained from scratch. Points
-and bars are means and standard deviations over runs; in (b) the axis is broken between the two uses.}{fig:accuracy}
+Coarser labels leave the frozen features less able to tell the pretraining classes apart (table~\ref{tab:probes} and
+figure~\ref{fig:accuracy}).
+A linear probe on the features of the \Kfull-class model identifies the \Kfull{} classes with an accuracy of
+\VLpJcTwoFull\%, as does the checkpoint released with Sophon (\VLpJcTwoSophon\%); chance is \VChance\% and an untrained
+network gives \VLpJcTwoUntrained\%.
+Merging the QCD classes changes little: the \Kres-class model reaches \VLpJcTwoRes\%, and its AUC is lower only over the
+QCD classes it merges (table~\ref{tab:pairs}).
+The \Kmid- and \Kcoarse-class sets, which merge flavors within the resonance decays, fall to \VLpJcTwoMid\% and
+\VLpJcTwoCoarse\%, a loss of \VDLpJcTwoCoarse{} percentage points in all.
+These accuracies are far above what the coarse labels alone allow.
+A classifier that knows the \Kcoarse-class label of a jet and picks uniformly among the classes it contains would reach
+\VLabelOnlyCoarse\%, and one that knows the \Kmid-class label \VLabelOnlyMid\%, so the coarse features keep much of the
+fine information that their labels discard.
+\vfig{fig2_accuracy}{Accuracy of every pretrained label set on the \Kfull{} JetClass-II classes (a) and on JetClass
+(b). The upper parts give linear probes on the frozen features (open markers), the lower parts models fine-tuned on
+\FtSizeESix{} jets (filled), each part with its own range. Markers and bars are means and standard deviations over
+runs, faint dots the single runs and, for the random groupings, the \VRandWord{} draws. The dashed line and band are
+the network trained from scratch.}{fig:accuracy}
 \input{tables/table2}
 
-The loss is not spread evenly over the classes (figure~\ref{fig:classes}(a,b)).
+The loss falls on the classes that a label set merges (figure~\ref{fig:classes}(a) and figure~\ref{fig:recall}).
+At \Kmid{} classes the mean recall changes by \VRecallMidLepton{} points for classes merged with a decay of another
+lepton flavor, by \VRecallMidBoth{} for classes merged across both quark and lepton flavor, by \VRecallMidQuark{} for
+classes merged only across quark flavor and by \VRecallMidNeither{} for classes the set leaves unmerged.
+At \Kcoarse{} classes, where the remaining quark flavor is merged as well, the changes are \VRecallCoarseQuark{} (quark
+flavor), \VRecallCoarseLepton{} (lepton flavor) and \VRecallCoarseBoth{} (both).
 
-The number of classes does not by itself determine the loss.
-The random groupings have as many classes as the \Kcoarse-class set, of the same sizes, yet a linear
-probe on their features reaches \VLpJcTwoRand\%, above the \Kmid-class model and only \VDLpJcTwoRand{} points
-below the \Kfull-class model.
-Their classes cut across the hierarchy, so that nearly every distinction the nested sets remove
-still separates some of their classes.
-In the other direction the fine labels cost nothing:
-a probe for the \Kcoarse{} classes is as accurate on the features of the \Kfull-class model as on those
-of the \Kcoarse-class model itself (table~\ref{tab:groups}).
+A probe of the \Kfull{} classes might seem to favor fine labels by construction.
+The reverse test does not favor coarse ones: a linear probe asked only for the \Kcoarse{} groups of the coarsest set is
+as accurate on the features of the \Kfull-class model (\VGroupsLpFull\%) as on those of the \Kcoarse-class model itself
+(\VGroupsLpCoarse\%), and an MLP probe reaches \VGroupsMlpFull\% against \VGroupsMlpCoarse\% (table~\ref{tab:groups}).
 
-\subsection{Pairs of classes}
+\subsection{Pairs of classes}\label{sec:pairs}
 
-Probes for single pairs of classes show the loss most directly (figure~\ref{fig:classes}(c) and
-table~\ref{tab:pairs}).
-The decays $X\to b\bar b$ and $X\to c\bar c$ differ only in the flavor of their quarks and share a class
-only in the \Kcoarse-class set.
-A linear probe separates them with an AUC of \VAucBbFull{} on the features of the \Kfull-class model
-and \VAucBbCoarse{} on those of the \Kcoarse-class model, a fourfold increase in the error $1-\mathrm{AUC}$,
-and the four-quark decays $X\to b\bar bqq$ and $X\to c\bar cqq$ behave alike, with \VAucBbqqFull{} against
-\VAucBbqqCoarse.
-One level up, $X\to bc$ joins $X\to bq$ in a single class from \Kmid{} classes on, and its separation
-from $X\to bq$ and $X\to cs$ falls from an AUC of \VAucBcFullThree{} to \VAucBcMidThree{} there and to
-\VAucBcCoarseThree{} at \Kcoarse{} classes.
-Gluons, merged with the light quarks from \Kmid{} classes on, follow the same pattern in the pair
-$X\to gg$ against $X\to q\bar q$.
-\vfig{fig3_classes}{(a, b) Recall of each JetClass-II class under a linear probe for the \Kmid- and \Kcoarse-class
-models against the \Kfull-class model, coloured by what the label set merges the class with; faded points lie within
-three standard deviations of equal recall. (c) One minus the AUC of a binary linear probe for pairs of classes,
-relative to the \Kfull-class model, whose value is in brackets; open markers where the labels merge the pair,
-half-filled where they merge part of it.}{fig:classes}
+Probes for single pairs of classes show the loss directly (figure~\ref{fig:classes}(b), table~\ref{tab:pairs}, and
+the rejection curves in figures~\ref{fig:otherpairs} and~\ref{fig:qcdpairs}).
+The decays $X\to b\bar b$ and $X\to c\bar c$ differ only in the flavor of their quarks and share a class only in the
+\Kcoarse-class set.
+A linear probe separates them with an AUC of \VAucBbFull{} on the features of the \Kfull-class model and
+\VAucBbCoarse{} on those of the \Kcoarse-class model, a fourfold increase in the error $1-\mathrm{AUC}$, and the
+four-quark decays $X\to b\bar bqq$ and $X\to c\bar cqq$ behave alike, with \VAucBbqqFull{} against \VAucBbqqCoarse.
+The decay $X\to bc$ shares a class with $X\to bq$ from \Kmid{} classes on, and its separation from $X\to bq$ and
+$X\to cs$ falls from \VAucBcFullThree{} at \Kfull{} classes to \VAucBcMidThree{} at \Kmid{} and \VAucBcCoarseThree{} at
+\Kcoarse.
+For $X\to gg$ against $X\to q\bar q$, merged from \Kmid{} classes on, the change is smaller: \VAucGgFull{} at \Kfull{}
+classes and \VAucGgCoarse{} at \Kcoarse.
+\vfig{fig3_classes}{Where the frozen-feature accuracy is lost. (a) Mean change of per-class recall under a linear probe
+against the \Kfull-class model, by what the label set merges a class with; bars are standard deviations over runs.
+(b) One minus the AUC of a binary linear probe for pairs of classes, relative to the \Kfull-class model (value in
+brackets); open where the labels merge the pair, half-filled where they merge part of it. The pair $X\to gg$ against
+$X\to q\bar q$ is tested on \VGgTestPerClass{} jets per class, the others on up to \JcBalPairTestPerSide.}{fig:classes}
 
-Two observations complete this picture.
-First, merging a pair is not by itself what removes its separation.
-The random groupings that happen to place $X\to b\bar b$ and $X\to c\bar c$ in one class still separate
-them with an AUC of \VAucBbRandMerged, almost as well as the groupings that keep them apart
-(\VAucBbRandApart) and far better than the \Kcoarse-class model, in whose labels no class distinguishes
-bottom from charm at all.
-Second, a distinction that the labels keep is not fully protected: at \Kmid{} classes $X\to b\bar b$ and
-$X\to c\bar c$ are still separate classes, yet their AUC is already slightly lower than with the
-\Kfull-class model.
+A distinction that the labels keep is not fully protected.
+At \Kmid{} classes $X\to b\bar b$ and $X\to c\bar c$ are still separate classes, yet their AUC is lower than with the
+\Kfull-class model, \VAucBbMid{} against \VAucBbFull, and the same holds for $X\to b\bar bqq$ against $X\to c\bar cqq$
+(\VAucBbqqMid{} against \VAucBbqqFull).
 
-\subsection{Resonance benchmark}
+\subsection{Which classes are merged}\label{sec:which}
 
-The benchmark with which Sophon was introduced shows what this means for a search (figure~\ref{fig:resonance} and
-table~\ref{tab:resonance}).
-At a background efficiency of \VXbxEpsB\%, a classifier trained on the frozen features of the \Kfull-class
-model selects $X\to b\bar b$ with a signal efficiency of \VXbbFull\% and $X\to bs$ with \VXbsFull\%.
-With the \Kcoarse-class model these fall to \VXbbCoarse\% and \VXbsCoarse\%, and the \Kmid-class model lies in
-between, at \VXbbMid\% and \VXbsMid\%.
-The loss is larger for $X\to bs$, which is a class in none of the label sets and has to be built
-entirely from the features.
-Even the coarsest labels leave features that are better than none:
-the same classifier without pretraining reaches \VXbsScratch\% for $X\to bs$.
-For $X\to b\bar b$ the two finest label sets also allow Sophon's own selection, a discriminant summed
-from the output scores, which reaches \VXbbDirectFullOne\% with the \Kfull-class model, close to the trained
-classifier.
-\vfig{fig5_resonance}{Sophon's $X\to b\bar b$ (a) and $X\to bs$ (b) benchmark: signal efficiency against QCD
-efficiency in the mass window, from a classifier trained on the frozen features of each label set, for Sophon's full
-network trained from scratch on the same jets and, dash-dotted, from the output scores where the label set keeps
-$X\to b\bar b$. Lower panels give the ratio to the \Kfull-class model; the dotted line marks \VXbxEpsB\% background
-efficiency.}{fig:resonance}
+Label sets of the same size differ widely.
+The random groupings have as many classes as the \Kcoarse-class set, of the same sizes, yet a linear probe on their
+features reaches \VLpJcTwoRand\%, above the \Kmid-class model and \VDLpJcTwoRand{} points below the \Kfull-class model
+(figure~\ref{fig:accuracy}).
+Merging a pair inside a random grouping hardly affects it: the groupings that place $X\to b\bar b$ and $X\to c\bar c$ in
+one class separate them with an AUC of \VAucBbRandMerged, against \VAucBbRandApart{} for the groupings that keep them
+apart and \VAucBbCoarse{} for the \Kcoarse-class model.
+The flavor-boundary groupings lie in between (table~\ref{tab:flavor}).
+The grouping with no flavor boundary reaches \VLpJcTwoFlavZero\%, \VDLpJcTwoFlavZero{} points above the \Kcoarse-class
+set, and moving one set of four-quark decays gives \VLpJcTwoFlavOne\% for the $b$-quark boundary and \VLpJcTwoFlavOneR\%
+for a random flavor boundary.
 
-\subsection{Transfer of the frozen features}
+The separation $S$ of equation~(\ref{eq:separation}) orders all \VSepNWord{} label sets (figure~\ref{fig:separation}).
+It rises from \VSepCoarse{} for the \Kcoarse-class set through \VSepFlavZero--\VSepFlavOneR{} for the flavor-boundary
+groupings and \VSepRandLo--\VSepRandHi{} for the random groupings to \VSepRes{} at \Kres{} classes, and the frozen
+accuracy follows it with a Spearman correlation of \RevSepRho{} ($p=\RevSepP$).
+Weighting the class pairs by the confusion of an untrained network, which shares no pretraining with any label set,
+gives a correlation of \RevSepUntrainedRho, and counting separated pairs without weights gives \RevSepNaiveRho.
+The random groupings cut across flavor families, so they keep apart most of the confusable pairs that the
+\Kcoarse-class set merges.
+The measure leaves a residual: the \Kmid-class set keeps more of the weighted separation (\VSepMid) than the groupings
+with no flavor boundary and with a $b$-quark boundary (\VSepFlavZero{} and \VSepFlavOne), yet its accuracy is lower
+(\VLpJcTwoMid\% against \VLpJcTwoFlavZero\% and \VLpJcTwoFlavOne\%), and among the random groupings, pretrained once
+each, the accuracy does not follow the spread in $S$.
+\vfig{fig_separation}{Frozen-feature accuracy rises with the separation a label set keeps between confusable classes.
+Each point is a pretrained label set: its separation $S$ (equation~(\ref{eq:separation})) against the linear-probe
+accuracy on the \Kfull{} JetClass-II classes, the mean and standard deviation over runs. Over the \VSepNWord{} label
+sets the Spearman correlation is $\rho=\RevSepRho$ ($p=\RevSepP$); weighting by the confusion of an untrained network
+instead gives $\rho=\RevSepUntrainedRho$.}{fig:separation}
 
-On tasks other than the pretraining classes the frozen features depend much less on the label set
-(table~\ref{tab:probes} and figure~\ref{fig:accuracy}).
-On JetClass a linear probe reaches \VLpJcOneFull\% with the \Kfull- and \Kres-class models, \VLpJcOneMid\%
-with the \Kmid-class model and \VLpJcOneCoarse\% with the \Kcoarse-class model.
-The loss of one point comes mainly from the decays of the Higgs boson to charm and to bottom
-quarks, whose recall falls by \VDLpRecallHcc{} and \VDLpRecallHbb{} points (table~\ref{tab:perclass_jc1}); these are
-the JetClass classes that differ in a flavor the \Kcoarse-class set has merged.
-The random groupings, which kept most of the accuracy on the pretraining classes, do not keep it
-here: at \VLpJcOneRand\% they lie below every nested set.
+\subsection{A resonance search}\label{sec:resonance}
 
-On the two binary benchmarks the label sets cannot be told apart, and on top tagging the small
-differences run the other way: the \Kcoarse-class model has the highest accuracy of the nested sets,
-\VLpTopAccCoarse\% against \VLpTopAccFull\% for the \Kfull-class model.
-These frozen results are a linear readout of features computed from incomplete inputs
-(section~\ref{sec:methods}) and lie far below the fine-tuned ones.
+The loss carries over to a search (figure~\ref{fig:resonance} and table~\ref{tab:resonance}).
+At a background efficiency of \VXbxEpsB\%, a classifier trained on the frozen features of the \Kfull-class model
+selects $X\to b\bar b$ with a signal efficiency of \VXbbFull\% and $X\to bs$ with \VXbsFull\%.
+With the \Kcoarse-class model these fall to \VXbbCoarse\% and \VXbsCoarse\%, both resolved losses, and the
+\Kmid-class model lies in between, at \VXbbMid\% and \VXbsMid\%.
+The loss is larger for $X\to bs$, which is a class in none of the label sets.
+For $X\to b\bar b$ the two finest label sets also allow Sophon's own selection, a discriminant summed from the output
+scores, which reaches \VXbbDirectFullOne\% with the \Kfull-class model against \VXbbFull\% for the trained classifier.
+Sophon's network trained from scratch on the same jets reaches \VXbbScratchPm\% and \VXbsScratchPm\%; its runs differ
+strongly at low background efficiency, so its comparison with the \Kcoarse-class features is not resolved.
+\vfig{fig5_resonance}{Sophon's resonance benchmark for $X\to b\bar b$ (a) and $X\to bs$ (b): QCD rejection against
+signal efficiency in the mass window. Solid lines are a classifier trained on the frozen features of each label set
+and, in grey, Sophon's network trained from scratch on the same jets; dash-dotted lines use the output scores where
+the label set keeps $X\to b\bar b$. Bands are standard deviations over runs; the dotted line marks \VXbxEpsB\%
+background efficiency. Lower panels give the ratio to the \Kfull-class model.}{fig:resonance}
 
-\subsection{Fine-tuning}
+\subsection{Fine-tuning}\label{sec:finetune}
 
-Fine-tuning narrows the gap between the label sets without closing it (table~\ref{tab:finetuned} and
-figure~\ref{fig:accuracy}).
-When the whole network is trained on \FtSizeESix{} labeled jets of the pretraining classes, the \Kcoarse-class
-model reaches \VFtJcTwoCoarse\% and the \Kfull-class model \VFtJcTwoFull\%, so the \VDLpJcTwoCoarse{} points that
-separated their frozen features shrink to \VDFtJcTwoCoarse.
-The \Kmid-class model recovers to within \VDFtJcTwoMid{} points and the \Kres-class model fully.
-All of them remain far above the same network trained from scratch on these jets, at
-\VFtJcTwoScratch\%: of the \VDFtJcTwoGain{} points that pretraining provides, the coarsest labels give up more
-than a third.
-\input{tables/table3}
+Fine-tuning tests how close coarse pretraining plus a small labeled sample comes to the fine labels (table~\ref{tab:finetuned}
+and figure~\ref{fig:accuracy}).
+On JetClass-II the frozen \Kfull-class features are the natural ceiling, since they were trained on these very labels.
+After fine-tuning on \FtSizeESix{} jets the \Kcoarse-class model reaches \VFtJcTwoCoarse\%, the \Kmid-class model
+\VFtJcTwoMid\% and the \Kres-class model \VFtJcTwoRes\%, against \VFtJcTwoFull\% for the \Kfull-class model and
+\VFtJcTwoScratch\% for the same network trained from scratch.
+Fine-tuning thus recovers about three quarters of the frozen gap of section~\ref{sec:frozen}, but of the
+\VDFtJcTwoGain{} points that pretraining provides the coarsest labels still give up more than a third.
+With our recipe, which replaces the output layer with a new one trained at \MlstFtHeadMult{} times the backbone's
+learning rate, the fine-tuned \Kfull-class model ends slightly below its own linear probe (\VFtJcTwoFullTwo\% against
+\VLpJcTwoFullTwo\%).
+In one run, keeping the pretrained output layer or training the new one at the backbone's rate raises it to
+\VCsHeadKeptAcc\% and \VCsHeadRateAcc\%, just above that run's probe (\VCsLpOneAcc\%); the comparisons between label
+sets all use the one recipe.
 
-The ordering is the same on JetClass, whose classes the pretraining never saw.
-The \Kfull-class model reaches \VFtJcOneFull\% and the \Kcoarse-class model \VFtJcOneCoarse\%, a difference of
-\VDFtJcOneCoarse{} points where pretraining gains \VDFtJcOneGain{} over the network trained from scratch.
-After fine-tuning the loss is confined to the decay of the Higgs boson to bottom quarks
-(table~\ref{tab:perclass_jc1}).
-The random groupings end level with the \Kmid-class set on the pretraining classes, at \VFtJcTwoRand\%,
-and between the \Kmid- and \Kcoarse-class sets on JetClass, at \VFtJcOneRand\%.
+On JetClass, whose ten classes are not pretraining labels and which was simulated without pileup, the differences are
+smaller.
+With frozen features the \Kfull-class model reaches \VLpJcOneFull\% and the \Kcoarse-class model \VLpJcOneCoarse\%, a
+difference of \VDLpJcOneCoarse{} point that is not resolved; after fine-tuning they reach \VFtJcOneFull\% and
+\VFtJcOneCoarse\%, a resolved difference of \VDFtJcOneCoarse{} points where pretraining gains \VDFtJcOneGain.
+Per class, the frozen loss is largest for the decays of the Higgs boson to charm and to bottom quarks, \VDLpRecallHcc{}
+and \VDLpRecallHbb{} points of recall, the two JetClass classes separated only by quark flavor.
+After fine-tuning the loss is smaller and spread over several classes, and only the decay to bottom quarks, at
+\VDFtRecallHbb{} points, is resolved on its own (table~\ref{tab:perclass_jc1}).
+The random groupings, which kept most of the accuracy on the pretraining classes, reach \VLpJcOneRand\% on JetClass
+with frozen features, \VDLpJcOneRand{} points below the \Kfull-class model and level with the \Kcoarse-class model.
+After fine-tuning they reach \VFtJcTwoRand\% on JetClass-II, level with the \Kmid-class set, and \VFtJcOneRand\% on
+JetClass, between the \Kmid- and \Kcoarse-class sets.
 
 The label set matters more when labeled jets are scarce (figure~\ref{fig:size}).
-On the pretraining classes the \Kcoarse-class model trails the \Kfull-class model by \VDFtJcTwoCoarseSmallest{} points when
-fine-tuned on \FtSizeEFour{} jets and by \VDFtJcTwoCoarseSmaller{} points on \FtSizeEFive, before the difference reaches
-\VDFtJcTwoCoarse{} points at \FtSizeESix.
-\vfig{fig4_training_size}{Accuracy of fine-tuned models on JetClass-II (a) and JetClass (b) against the number of
-training jets, for each label set and for the network trained from scratch. Lines and bands are means and standard
-deviations over runs. Lower panels give each label set's difference to the \Kfull-class model in percentage points,
-with both run spreads combined.}{fig:size}
+On JetClass-II the \Kcoarse-class model trails the \Kfull-class model by \VDFtJcTwoCoarseSmallest{} points at
+\FtSizeEFour{} training jets, \VDFtJcTwoCoarseSmaller{} at \FtSizeEFive{} and \VDFtJcTwoCoarse{} at \FtSizeESix, and
+linear probes trained on fewer jets keep the frozen ordering (figure~\ref{fig:probesize}).
+\vfig{fig4_training_size}{Fine-tuned accuracy on JetClass-II (a) and JetClass (b) against the number of training jets,
+for each label set and for the network trained from scratch. Lines and bands are means and standard deviations over
+runs (values in table~\ref{tab:size}). Lower panels give each label set's difference to the \Kfull-class model in
+percentage points, with both run spreads combined.}{fig:size}
+\input{tables/table3}
 
-Top tagging and quark--gluon discrimination show no dependence on the label set.
-After fine-tuning on the full training sets the four nested sets agree to within \VFtTopAccRange{} points
-in top-tagging accuracy and \VFtQgAccRange{} points in quark--gluon accuracy, and their background
-rejections agree within the uncertainties (table~\ref{tab:finetuned}); the same holds for quark--gluon jets
-simulated with Herwig~\cite{herwigsevenone} instead of Pythia~\cite{pythia} (table~\ref{tab:herwig}).
-Pretraining itself does help: the fine-tuned \Kfull-class model reaches \VFtTopAccFull\% on top tagging
-against \VFtTopAccScratch\% for the network trained from scratch, and \VFtQgAccFull\% against \VFtQgAccScratch\%
-on quark--gluon discrimination.
-The corresponding rise in top-tagging rejection, from \VFtTopRejScratch{} to \VFtTopRejFull, is less certain
-than the spread between models suggests, because only about a hundred background jets pass this
-working point, which adds a statistical uncertainty of about \VFtTopRejScratchBoot.
+\subsection{Binary benchmarks}\label{sec:binary}
 
-\subsection{Jet mass}
+Top tagging and quark--gluon discrimination do not depend on the label set (tables~\ref{tab:probes}
+and~\ref{tab:finetuned}).
+After fine-tuning on the full training sets the four nested sets agree to within \VFtTopAccRange{} points in
+top-tagging accuracy and \VFtQgAccRange{} points in quark--gluon accuracy, where differences above
+\RevReachTopFtAccLo--\RevReachTopFtAccHi\% and \RevReachQgFtAccLo--\RevReachQgFtAccHi\% of the accuracy would be
+resolved.
+The background rejection is far less sensitive: a difference between label sets in fine-tuned $\mathrm{Rej}_{30\%}$
+would be resolved only above \RevReachTopFtRthirtyLo--\RevReachTopFtRthirtyHi\% of its value on top tagging and
+\RevReachQgFtRthirtyLo--\RevReachQgFtRthirtyHi\% on quark--gluon discrimination.
+With frozen features the nested sets agree to within \RevSpreadTopLpAccPts{} points in top-tagging accuracy and
+\RevSpreadQgLpAccPts{} points in quark--gluon accuracy, and on top tagging the random groupings lie below every nested
+set, a difference resolved against the \Kcoarse-class set.
+Neither data set carries the inputs that identify heavy flavor: top tagging provides only the momenta of the particles,
+and the quark--gluon data lack the track displacements (section~\ref{sec:methods}).
+Quark--gluon discrimination does draw on a distinction that the coarser sets merge, gluons against light quarks, and
+still shows no dependence, also on jets simulated with Herwig~\cite{herwigsevenone} instead of Pythia~\cite{pythia}
+(table~\ref{tab:herwig}).
+Fine-tuned rejection against training size gives the same picture (figure~\ref{fig:ftbinary}).
 
-The auxiliary regression makes the jet mass much easier to recover from the frozen features
-(table~\ref{tab:mass}).
-An MLP probe on the features of the \Kres-class model estimates the mass with a resolution of
-\VResMlpRes\%, against \VResSoftDrop\% for the reconstructed soft-drop mass itself; with the regression
-in pretraining the same probe reaches \VResMlpResMass\%, and the regression output of the network
-\VResHeadResMass\%.
-At \Kcoarse{} classes the probe improves from \VResMlpCoarse\% to \VResMlpCoarseMass\%.
-Without the regression, the coarser labels already give a slightly better mass resolution than
-the finer ones, \VResMlpCoarse\% for the \Kcoarse-class model against \VResMlpFull\% for the \Kfull-class model.
+Pretraining itself helps on both benchmarks.
+The fine-tuned \Kfull-class model reaches an accuracy of \VFtTopAccFull\% on top tagging against \VFtTopAccScratch\% for
+the network trained from scratch, and \VFtQgAccFull\% against \VFtQgAccScratch\% on quark--gluon discrimination, both
+resolved.
+The top-tagging rejection rises from \VFtTopRejScratch{} to \VFtTopRejFull, but only about a hundred background jets
+pass at this working point, and with a test-sample uncertainty of about \VFtTopRejScratchBoot{} the rise is not
+resolved.
+
+\subsection{Jet mass}\label{sec:mass}
+
+The auxiliary regression makes the jet mass much easier to recover from the frozen features (table~\ref{tab:mass}).
+An MLP probe on the features of the \Kres-class model estimates the mass with a resolution of \VResMlpRes\%, against
+\VResSoftDrop\% for the reconstructed soft-drop mass; with the regression in pretraining the same probe reaches
+\VResMlpResMass\%, and the regression output of the network \VResHeadResMass\%.
+At \Kcoarse{} classes the probe improves from \VResMlpCoarse\% to \VResMlpCoarseMass\%, and the regression output is
+sharper than the soft-drop mass over the whole range of jet $p_{\mathrm T}$ and mass (figure~\ref{fig:masspt}).
+Without the regression the \Kcoarse-class model already gives a better resolution than the \Kfull-class model,
+\VResMlpCoarse\% against \VResMlpFull\%, which suggests that labels organized by decay structure reward features tied
+to the jet mass.
 \input{tables/table4}
 
 The price in classification is small.
-With frozen features the accuracy on the pretraining classes falls by \VDLpJcTwoMassRes{} points at \Kres{}
-classes and by \VDLpJcTwoMassCoarse{} points at \Kcoarse, within the variation between models.
-After fine-tuning, the models pretrained with the regression are lower by about half a point on
-the pretraining classes and by \VDFtJcOneMassResOne{} points on JetClass, at both label sets.
-On top tagging the regression helps the frozen features: the accuracy of the linear probe rises
-from \VLpTopAccRes\% to \VLpTopAccResMass\% at \Kres{} classes and from \VLpTopAccCoarse\% to \VLpTopAccCoarseMass\% at
-\Kcoarse{} (table~\ref{tab:probes}).
+With frozen features the \Kres-class model with the regression is \VDLpJcTwoMassRes{} points lower on the pretraining
+classes, a difference that is not resolved; the two \Kcoarse-class runs with the regression give
+\VLpJcTwoCoarseMassSOne\% and \VLpJcTwoCoarseMassSTwo\%, too far apart to measure a cost, although their pretraining
+validation accuracies agree.
+After fine-tuning the models with the regression are about half a point lower on JetClass-II at both label sets
+(\VDFtJcTwoMassRes{} and \VDFtJcTwoMassCoarse{} points at \Kres{} and \Kcoarse{} classes) and \VDFtJcOneMassResOne{}
+points lower on JetClass, a difference resolved at \Kcoarse{} classes only.
+On top tagging the regression raises the background rejection of an MLP probe on the frozen features, from
+\VMlpTopRejCoarse{} to \VMlpTopRejCoarseMass{} at \Kcoarse{} classes and from \VMlpTopRejRes{} to \VMlpTopRejResMass{}
+at \Kres{} (table~\ref{tab:mlp}).

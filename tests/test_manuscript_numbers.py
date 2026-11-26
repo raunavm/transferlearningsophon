@@ -151,6 +151,7 @@ ALLOWED_WORDS = [
     # the PI's words of 2026-11-26 (pi_prose_1126.tex, LEDGER 34) for ratios and round sizes; each is checked by the
     # build (mlst_v2_tables.pi_prose_1126 and mass_macros), which stops when one no longer holds
     (r"\bhalf-filled\b", "a marker style in the caption of Fig. 3 (figures agent, 2026-11-26), not a number"),
+    (r"\babout\s+three\s+quarters\b", "share of the frozen gap fine-tuning recovers (build check, ledger 35)"),
     (r"\bfourfold\b", "1 - AUC of X->bb vs cc, 17 against 188 classes (build check)"),
     (r"\bmore\s+than\s+a\s+third\b", "share of the pretraining gain the coarsest labels give up (build check)"),
     (r"\ba\s+quarter\s+on\s+JetClass\b|\bby\s+about\s+a\s+quarter\b",
