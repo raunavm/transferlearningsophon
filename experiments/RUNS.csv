@@ -2830,3 +2830,4 @@ mtx2-tests-rev35c-e8cbc1d-raunav,2026-11-26T19:17:56Z,complete,37 passed.,experi
 mtx2-tests-rev35d-5be014c-raunav,2026-11-26T19:45:51Z,launched,Tests of experiments/FIGS/rev35_stats.py and its callers at 5be014c. CPU only.,experiments/MTX/k8s/v2/tests/job-mtx2-tests-rev35d-5be014c-raunav.yaml
 mtx2-tests-rev35d-5be014c-raunav,2026-11-26T19:49:16Z,complete,"1 failed, 164 passed, 21 skipped: the index test lacked the kind xbx_scratch_training (added at 08218acf); fixed in 4f3c286.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-rev35d-5be014c-raunav.yaml
 mtx2-tests-rev35e-4f3c286-raunav,2026-11-26T19:49:57Z,launched,"tests/test_mlst_results.py, test_rev35_stats.py, test_v2_tables.py at 4f3c286. CPU only.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-rev35e-4f3c286-raunav.yaml
+mtx2-tests-rev35e-4f3c286-raunav,2026-11-26T19:51:36Z,complete,"155 passed, 21 skipped, 0 failed.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-rev35e-4f3c286-raunav.yaml
