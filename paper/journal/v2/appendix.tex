@@ -103,7 +103,8 @@ The results on the mass regression are the same under the MLP probe.
 \input{tables/table_mlp}
 
 
-\section{Comparison with published taggers}\label{app:published}
+% no float barrier here, so the section does not open a short page (PI 2026-11-26, 34.3)
+{\let\FloatBarrier\relax \section{Comparison with published taggers}\label{app:published}}
 Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
 public tasks.
 The linear energy-flow-polynomial (EFP) classifier~\cite{efp} is linear in a set of jet observables; PFN~\cite{efn},
@@ -117,7 +118,8 @@ reaches the same rejection after fine-tuning as with the absent inputs set to ze
 
 \input{tables/table_published}
 
-\section{Further figures}\label{app:figures}
+% no float barrier here, so the section does not open a short page (PI 2026-11-26, 34.3)
+{\let\FloatBarrier\relax \section{Further figures}\label{app:figures}}
 Figure~\ref{fig:recall} shows the recall of every JetClass-II class under each coarser label set,
 figures~\ref{fig:otherpairs} and~\ref{fig:qcdpairs} the rejection curves of the pairs of classes,
 figure~\ref{fig:probesize} the linear probes at smaller training sets, figure~\ref{fig:masspt} the regressed mass
