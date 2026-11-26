@@ -23,6 +23,7 @@ import numpy as np
 REPO = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import make_tables as MT  # noqa: E402
+import rev35_stats as RV  # noqa: E402
 
 OUT = "paper/journal/v2/tables"
 MAPS, RAND_MAPS = "configs/labelmaps/rung_label_maps.v1.csv", "configs/labelmaps/rand_label_map.v2.csv"
@@ -676,6 +677,18 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
             out[f"VAuc{w}{a}"] = f"{float(np.mean(v)):.4f}"
             out[f"VAuc{w}{a}Three"] = f"{float(np.mean(v)):.3f}"
     out.update(pi_prose_1126(got, r, lp, ft, mean, vals, pct, pts, out, xfits, XR, runs))
+    # the revision checks of 2026-11-26 (experiments/FIGS/v2_rev35.py), and the mass-regression rows they report
+    import v2_rev35
+    o, got["rev35"] = v2_rev35.macros(got, maps, runs, lambda col, a: vals(lp, col, a), lambda col, a: vals(ft, col, a), REPO)
+    out.update(o)
+    for head, w in ((r.acc, "LpJcTwo"), (r.jc2_six, "FtJcTwo"), (r.jc1_six, "FtJcOne")):
+        for a, b, aw in (("L162_MASS", "L162", "Res"), ("R16_Q1_MASS", "R16_Q1", "Coarse")):
+            v = r.get(head, a, b)
+            d, sig = v[0], v[4]
+            out[f"VDMass{w}{aw}"], out[f"VSigMass{w}{aw}"] = f"{100 * d:+.2f}", f"{100 * sig:.2f}"
+            out[f"VZMass{w}{aw}"] = f"{d / sig:+.1f}"
+            got["rev35"].append(f"mass row {head} | {a} - {b}: delta {100 * d:+.3f} pts, sigma {100 * sig:.3f}, "
+                                f"delta/sigma {d / sig:+.2f}")
     return "% written by experiments/FIGS/mlst_v2_tables.py\n" + "".join(rf"\newcommand{{\{k}}}{{{v}}}" + "\n" for k, v in out.items())
 
 
@@ -1227,6 +1240,11 @@ def main() -> int:
            "table_mlp.tex": reuse(built, "tables/mlst_mlp.tex", MLP_CAPTION, "tab:mlp", r"\fontsize{8}{10}\selectfont"),
            "table_groups.tex": reuse(built, "tables/mlst_coarse.tex", GROUPS_CAPTION, "tab:groups")}
     out["numbers.tex"] += mass_macros(mv) + cell_macros(out)
+    # ledger 35 (audit V4, A1): the table of the stated differences, the A1 separation CSV and its macros
+    rv_files, rv_macros = RV.build()
+    out.update(rv_files)
+    out["numbers.tex"] += rv_macros
+    out["rev35.txt"] = "\n".join(got["rev35"]) + "\n"
     for f, text in out.items():
         (d / f).write_text(text)
     print("V2 TABLES COMPLETE")
