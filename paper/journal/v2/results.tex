@@ -1,7 +1,6 @@
 \section{Results}\label{sec:results}
 
 \subsection{The pretraining classes}
-\input{tables/table2}
 \vfig{fig2_frozen}{Linear probes on the frozen features: accuracy on (a) the \Kfull{} JetClass-II classes and (b)
 JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark--gluon discrimination. Points are
 means over pretraining runs and bars standard deviations; the vertical line and band give the \Kfull-class model's.
@@ -16,6 +15,7 @@ accuracy within the spread between runs; its AUC is lower, and only over the QCD
 (table~\ref{tab:pairs}).
 The accuracy then falls to \VLpJcTwoMid\% for the \Kmid-class model and to \VLpJcTwoCoarse\% for the \Kcoarse-class
 model, the two sets that merge flavors within the resonance decays.
+\input{tables/table2}
 
 The loss grows with each step that merges classes within the resonance decays.
 The step from \Kres{} to \Kmid{} classes merges the most classes, since it removes several kinds of distinction at
@@ -99,7 +99,6 @@ $\mathrm{Rej}_{30\%}$ of \VLpTopRejRand{} against \VLpTopRejCoarse; on quark--gl
 differ.
 
 \subsection{Fine-tuning}
-\input{tables/table3}
 \vfig{fig4_training_size}{Fine-tuned models against the number of training jets: accuracy on (a) JetClass-II and
 (b) JetClass, and background rejection Rej$_{30\%}$ on (c) top tagging and (d) quark--gluon discrimination. Lines are
 the mean over runs and bands the standard deviation. The same network trained from scratch is shown in grey.}{fig:size}
@@ -112,6 +111,7 @@ The fall comes from the coarser models: the \Kfull-class model reaches \VFtJcTwo
 The \Kmid-class model is \VDFtJcTwoMid{} points behind, and the \Kres-class model is level with the \Kfull-class one.
 The same network trained from scratch on these jets reaches \VFtJcTwoScratch\%, so pretraining gains
 \VDFtJcTwoGain{} points and the coarsest labels give up an appreciable share of that gain.
+\input{tables/table3}
 
 The same ordering appears on JetClass, a task with classes that the pretraining never saw.
 There the \Kfull-class model reaches \VFtJcOneFull\% and the \Kcoarse-class model \VFtJcOneCoarse\%, a difference of
@@ -151,7 +151,6 @@ network trained from scratch), so the gain carries an uncertainty of about \VFtT
 On quark--gluon jets from Herwig no metric separates the pretrained model from the one trained from scratch.
 
 \subsection{Jet mass}
-\input{tables/table4}
 The auxiliary regression makes the jet mass much easier to obtain from the frozen features (table~\ref{tab:mass}).
 With the regression, an MLP probe on the frozen features reaches \MlstCmpMlpResMassOverResPr{} of the \Kres-class
 model without it, and \MlstCmpMlpCoarseMassOverCoarsePr{} of the \Kcoarse-class model, and the regression output
@@ -159,6 +158,7 @@ itself is sharper still than the reconstructed soft-drop mass.
 Without the regression, the \Kcoarse-class features give a slightly better resolution than the \Kfull-class ones.
 The regression also changes top tagging from frozen features: under the MLP probe the \Kcoarse-class model with mass
 regression reaches the highest rejection, clearly above the \Kfull-class model (table~\ref{tab:mlp}).
+\input{tables/table4}
 
 With frozen features the regression costs no accuracy that we can resolve.
 Neither model pretrained with it differs from its counterpart beyond the spread in the accuracy or the AUC of the

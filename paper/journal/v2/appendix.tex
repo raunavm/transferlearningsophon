@@ -78,20 +78,19 @@ JetClass-II particles; the choice is made once per task on validation, for every
 \input{tables/table_inputs}
 
 \section{Further results}\label{app:results}
-Tables~\ref{tab:auc} and~\ref{tab:herwig} give the AUC of every model of tables~\ref{tab:probes}
-and~\ref{tab:finetuned} and the quark--gluon results on jets from the Herwig generator~\cite{qgherwig}.
+Table~\ref{tab:herwig} gives the quark--gluon results on jets from the Herwig generator~\cite{qgherwig}.
 
 The pretrained output layer of the \Kfull-class model already predicts the \Kfull{} classes, but on the
 class-balanced test jets it reaches only \VHeadAcc\%, below the linear probe, because it was trained on the natural
 mix of classes; refitting only its class biases on the balanced training jets raises it to \VHeadRefit\%, which
-closes \VHeadClosed\% of the distance (table~\ref{tab:head}).
+closes \VHeadClosed\% of the distance.
 Table~\ref{tab:pairs} gives the linear probes' AUC by class group and for pairs of classes,
 table~\ref{tab:size} the fine-tuned accuracy at smaller training sets, table~\ref{tab:resonance} the resonance
 benchmark and table~\ref{tab:perclass_jc1} the recall of each JetClass class.
 
-\input{tables/table_auc}
 \input{tables/table_herwig}
-\input{tables/table_head}
+
+
 \input{tables/table_pairs}
 \input{tables/table_size}
 \input{tables/table_resonance}
@@ -100,40 +99,12 @@ benchmark and table~\ref{tab:perclass_jc1} the recall of each JetClass class.
 \subsection{MLP probes}
 An MLP probe with one hidden layer of \LpMlpHidden{} units, trained on the same frozen features as the linear
 probes, tests whether a conclusion depends on the probe being linear (table~\ref{tab:mlp}).
-In two places it does.
-When the \Kfull{} classes are merged into the \Kcoarse{} groups of the coarsest label set and the probe is asked
-only for the group, linear probes show no significant difference between the label sets, whereas the MLP probe
-finds the features of the \Kcoarse-class model significantly worse than those of the \Kfull-class model, on the task its own labels describe (table~\ref{tab:groups}).
-On this \Kcoarse-group task the \Kfull-class features are thus as good as the \Kcoarse-class ones under a linear probe and
-better under an MLP probe.
 On top tagging the MLP probe separates one configuration that the linear probe does not, the \Kcoarse-class
 model with mass regression from the \Kfull-class model.
 The mass-regression nulls of the main text hold under the MLP probe.
 
 \input{tables/table_mlp}
-\input{tables/table_groups}
 
-\section{Uncertainties}\label{app:stats}
-For each difference $\Delta$ between the means of two models that the text describes, we form $\sigma^2$ as the sum
-of the squared standard deviations over runs of both models, not standard errors, and the variance of $\Delta$ over
-bootstrap resamples of the test jets, drawn once for both models.
-We call a difference significant when $|\Delta|$ exceeds three times $\sigma$.
-With two or three runs this is a convention, not a Gaussian probability, and we make no correction for the number of
-differences examined.
-Every tested difference, with each term of $\sigma$ and $\Delta/\sigma$, is in the data release.
-
-\section{Comparison with published taggers}\label{app:published}
-Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
-public tasks.
-The linear energy-flow-polynomial (EFP) classifier is linear in a set of jet observables; PFN, ParticleNet,
-ParT, MIParT, L-GATr and OmniLearned are neural networks on the particles, the last four transformers.
-On quark--gluon discrimination ours are close to the published Particle Transformer.
-On top tagging our network trained from scratch is below the published one trained from scratch, and our
-fine-tuned network is above that and below the published Particle Transformer fine-tuned from JetClass.
-That one was pretrained on the kinematic inputs only; our \Kfull-class network pretrained that way, one run,
-reaches the same rejection after fine-tuning as with the absent inputs set to zero (last row of the table).
-
-\input{tables/table_published}
 
 \section{Further figures}\label{app:figures}
 Figure~\ref{fig:recall} shows which classes lose recall under each coarser label set, figure~\ref{fig:otherpairs}

@@ -169,7 +169,7 @@ def table1(maps: dict, runs: dict) -> str:
 def _float(caption: str, label: str, tabular: list, numbered: bool = True) -> str:
     """A portrait table float on one page: the caption above, the tabular at 9 pt, shrunk only if wider than the text."""
     cap = rf"\caption{{{caption}}}\label{{{label}}}" if numbered else rf"\caption*{{{caption}}}\label{{{label}}}"
-    return "\n".join([r"\begin{table}[htbp]", r"\centering", cap, r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}",
+    return "\n".join([r"\begin{table}[t]", r"\centering", cap, r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}",
                       r"\begin{adjustbox}{max width=\linewidth}", *tabular, r"\end{adjustbox}", r"\end{table}", ""])
 
 
@@ -883,8 +883,48 @@ def reuse(built: dict, key: str, caption: str, label: str, size: str = r"\fontsi
         body.append("\n".join(ln for ln in t.split("\n") if not ln.lstrip().startswith(DROP_ROWS)))
     if AGREE_MARK in "".join(body):
         caption += r" $^{\P}$ marks a run spread below the last digit shown."
-    return "\n".join([r"\begin{table}[htbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}", size,
+    return "\n".join([r"\begin{table}[t]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}", size,
                       r"\setlength{\tabcolsep}{4pt}", "\n\\par\\medskip\n".join(body), r"\end{table}", ""])
+
+
+def round_cell(cell: str, shift: int, places: int) -> str:
+    """A printed cell (mean, or mean \\pm spread) with its decimal point moved `shift` places and rounded to `places`
+    decimals; a spread that rounds to zero prints as a bound. A printed digit string that sits exactly half-way
+    cannot be rounded without the unrounded value, so the build stops there (PI 2026-11-26, LEDGER 34.4)."""
+    from decimal import Decimal, ROUND_HALF_EVEN
+    m = CELL.match(cell)
+    if not m:
+        raise SystemExit(f"FATAL: table 4 cell not a number: {cell!r}")
+    q = Decimal(1).scaleb(-places)
+
+    def r(x: str) -> Decimal:
+        d = Decimal(x.replace("{,}", "").replace(",", "")).scaleb(shift)
+        out = d.quantize(q, ROUND_HALF_EVEN)
+        if abs(d - out) == q / 2:
+            raise SystemExit(f"FATAL: table 4 cell {cell!r} is a tie at {places} decimals")
+        return out
+    mean = r(m["m"])
+    if m["s"] is None:
+        return f"{mean}"
+    s = r(m["s"])
+    return rf"{mean}\,$\pm$\,{'$<$' + str(q) if s == 0 else s}"
+
+
+def mass_columns(tex: str) -> str:
+    """Table 4 (PI 2026-11-26, LEDGER 34.4): the resolution in percent with one decimal, the response with three."""
+    out = []
+    for ln in tex.split("\n"):
+        if ln.strip() == r"& resolution & median response \\":
+            ln = r" & resolution (\%) & median response \\"
+        elif "&" in ln and r"\multicolumn" not in ln and ln.rstrip().endswith(r"\\"):
+            c = [x.strip() for x in ln.rstrip()[:-2].split("&")]
+            if len(c) != 3:
+                raise SystemExit(f"FATAL: table 4 row without three cells: {ln!r}")
+            ln = f"{c[0]} & {round_cell(c[1], 2, 1)} & {round_cell(c[2], 0, 3)} " + "\\\\"
+        out.append(ln)
+    if r"resolution (\%)" not in "\n".join(out):
+        raise SystemExit("FATAL: table 4 header not found")
+    return "\n".join(out)
 
 
 def appendix_tables(got: dict, maps: dict) -> dict:
@@ -914,7 +954,7 @@ def appendix_tables(got: dict, maps: dict) -> dict:
                 r"\end{tabular}"]
 
     def two(caption, label, a, b):
-        return "\n".join([r"\begin{table}[htbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
+        return "\n".join([r"\begin{table}[t]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
                           r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{4pt}", r"\textit{Linear probes}\par\smallskip",
                           *a, r"\par\medskip", r"\textit{Fine-tuned}\par\smallskip", *b, r"\end{table}", ""])
     auc_head = [r" & JetClass-II & JetClass & Top tagging & Quark/gluon \\"]
@@ -997,7 +1037,7 @@ def appendix_tables(got: dict, maps: dict) -> dict:
 
 
 def one_tab(caption: str, label: str, tabular: list, sep: str = "4pt", size: str = "{9}{11}") -> str:
-    return "\n".join([r"\begin{table}[htbp]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
+    return "\n".join([r"\begin{table}[t]", r"\centering", rf"\caption{{{caption}}}\label{{{label}}}",
                       rf"\fontsize{size}\selectfont\setlength{{\tabcolsep}}{{{sep}}}", *tabular, r"\end{table}", ""])
 
 
@@ -1043,7 +1083,7 @@ def main() -> int:
            "pending.txt": "".join(f"Table 3 | {r} | {c}\n" for r, c in pending),
            "results_generated.tex": built["results_generated.tex"],
            "table_classmap.tex": table_classmap(maps), **appendix_tables(got, maps), "table_head.tex": table_head(got, runs),
-           "table4.tex": reuse(built, "tables/mlst_mass.tex", TABLE4_CAPTION, "tab:mass"),
+                      "table4.tex": mass_columns(reuse(built, "tables/mlst_mass.tex", TABLE4_CAPTION, "tab:mass")),
            "table_inputs.tex": reuse(built, "tables/mlst_inputs.tex", INPUTS_CAPTION, "tab:inputs"),
            # 7.5 pt: at 8 pt the four blocks overran the page number (draft da28a31, p. 25)
            "table_published.tex": reuse(built, "tables/mlst_published.tex", PUBLISHED_CAPTION, "tab:published",
