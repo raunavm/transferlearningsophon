@@ -26,17 +26,17 @@ to move to keep the class sizes, so the step between them cannot be assigned to 
 \input{tables/table_flavor}
 
 \section{Training details}\label{app:training}
-The JetClass-II jets are clustered with the anti-$k_{\mathrm T}$ algorithm~\cite{antikt} from the particles of a
-simulated CMS-like detector, with \LitJetClassTwoPileupMean{} pileup collisions on average.
+The JetClass-II jets are clustered with the anti-$k_{\mathrm T}$ algorithm~\cite{antikt,fastjet} from the particles of a
+simulated CMS-like detector~\cite{delphes}, weighted by PUPPI~\cite{puppi}, with \LitJetClassTwoPileupMean{} pileup collisions on average.
 We keep jets with $p_{\mathrm T}$ between \DesignPtMin{} and \DesignPtMax~GeV and a soft-drop mass, computed at
-$z_{\mathrm{cut}} = \LitCmsSdZcut$ and $\beta = \LitCmsSdBeta$, between \DesignMsdMin{} and \DesignMsdMax~GeV.
+$z_{\mathrm{cut}} = \LitCmsSdZcut$ and $\beta = \LitCmsSdBeta$~\cite{softdrop,mmdt,cmsmlid}, between \DesignMsdMin{} and \DesignMsdMax~GeV.
 The generator-level mass $m_{\mathrm{gen}}$ is the soft-drop mass of the jet of generator-level particles matched
 to the reconstructed jet; jets without a match enter neither the regression term nor table~\ref{tab:mass}.
 The quark--gluon jets are smaller, with a radius of \LitQgJetRadius, and have no detector simulation.
 After Sophon's selection there are \DesignNTrainSelected{} training jets.
 Each model sees \DesignExamplesSeen{} training examples and is evaluated at the epoch of its highest validation
 accuracy among the last ten.
-Pretraining follows Sophon's settings: \DesignEpochs{} epochs of \DesignSamplesPerEpoch{} examples in batches of
+Pretraining follows Sophon's settings, with the Ranger optimizer~\cite{radam,lookahead}: \DesignEpochs{} epochs of \DesignSamplesPerEpoch{} examples in batches of
 \DesignBatchSize, a learning rate of \DesignStartLr{} that is constant for the first \DesignLrFlatPercent{} of
 the epochs and then decays to \DesignLrEndPercent{} of its value, and the particle momenta of every jet rescaled
 to a common jet $p_{\mathrm T}$.
@@ -78,7 +78,7 @@ class-balanced test jets it reaches only \VHeadAcc\%, below the linear probe, be
 mix of classes; refitting only its class biases on the balanced training jets raises it to \VHeadRefit\%, which
 closes \VHeadClosed\% of the distance.
 Tables~\ref{tab:auc} and~\ref{tab:herwig} give the AUC of every model of tables~\ref{tab:probes}
-and~\ref{tab:finetuned} and the quark--gluon results on jets from the Herwig generator~\cite{qgherwig},
+and~\ref{tab:finetuned} and the quark--gluon results on jets from the Herwig generator~\cite{herwigsevenone,qgherwig},
 table~\ref{tab:pairs} the linear probes' AUC by class group and for pairs of classes, table~\ref{tab:size} the
 fine-tuned accuracy at smaller training sets, table~\ref{tab:resonance} the resonance benchmark,
 table~\ref{tab:perclass_jc1} the recall of each JetClass class, and table~\ref{tab:groups} probes asked only for the
@@ -106,8 +106,9 @@ The results on the mass regression are the same under the MLP probe.
 \section{Comparison with published taggers}\label{app:published}
 Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
 public tasks.
-The linear energy-flow-polynomial (EFP) classifier is linear in a set of jet observables; PFN, ParticleNet,
-ParT, MIParT, L-GATr and OmniLearned are neural networks on the particles, the last four transformers.
+The linear energy-flow-polynomial (EFP) classifier~\cite{efp} is linear in a set of jet observables; PFN~\cite{efn},
+ParticleNet~\cite{particlenet}, ParT~\cite{part}, MIParT~\cite{mipart}, L-GATr~\cite{lgatr} and
+OmniLearned~\cite{omnilearned} are neural networks on the particles, the last four transformers.
 On quark--gluon discrimination ours are close to the published Particle Transformer.
 On top tagging our network trained from scratch is below the published one trained from scratch, and our
 fine-tuned network is above that and below the published Particle Transformer fine-tuned from JetClass.

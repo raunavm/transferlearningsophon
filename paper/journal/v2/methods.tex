@@ -7,7 +7,7 @@ products are collimated by its momentum.
 For a machine-learning model it is an unordered set of a few tens of reconstructed particles, each
 described here by \FillNFeatures{} numbers: its momentum relative to the jet, its electric charge and type and,
 for charged particles, the displacement of its track from the collision point, which reveals the
-decays of the long-lived hadrons that contain bottom or charm quarks.
+decays of the long-lived hadrons that contain bottom or charm quarks~\cite{cmsbtag,deepjet,gntwo,hfreview}.
 Quarks come in several types, or flavors: bottom ($b$), charm ($c$), strange ($s$), and the light
 up and down quarks, written together as $q$.
 The classes of JetClass-II name what a jet came from.
@@ -15,8 +15,8 @@ A resonant class is the decay of a heavy particle into a given set of quarks, gl
 each of which appears as one collimated prong of the jet; a QCD class is the ordinary production
 of quarks and gluons by the strong interaction, the background in most analyses.
 The two binary benchmarks are standard in the field: top tagging asks whether a jet contains the
-decay of a top quark, and quark--gluon discrimination whether it was initiated by a quark or by a
-gluon.
+decay of a top quark~\cite{toptag,deeptop}, and quark--gluon discrimination whether it was initiated by a quark or by a
+gluon~\cite{gallicchio,qgcolor,gras}.
 
 \subsection{Data and model}
 We pretrain on JetClass-II~\cite{sophon,jetclasstwo}, the dataset of the Signature-Oriented Pre-training for
@@ -26,7 +26,8 @@ A resonant jet contains the decay of a hypothetical particle $X$, either directl
 leptons or through two intermediate particles $Y$ into three or four of them, and a QCD class is defined by the
 number of bottom, charm and strange quarks in the jet.
 The collisions are simulated with the event generators MadGraph and Pythia~\cite{madgraph,pythia} and a detector
-simulation, including pileup, the additional collisions that overlap each event.
+simulation~\cite{delphes}, including pileup, the additional collisions that overlap each event, which is removed with
+the PUPPI algorithm~\cite{puppi,cmspu}.
 The jets are large, with a radius of \LitJetClassTwoJetRadius{} in the angles around the jet axis, and after Sophon's
 selection there are about \VNTrainMillion{} million training jets (appendix~\ref{app:training}).
 A jet carries a resonant label when every decay product the label names lies within that radius of the jet axis, and
@@ -63,7 +64,7 @@ same jets in the same order, and they start from the same weights in every layer
 is the number of classes.
 
 A label set also limits what the output layer can provide.
-For a classifier at the minimum of the cross-entropy, the score $g_c$ of a merged class $c$, its softmax output,
+For a classifier at the minimum of the cross-entropy~\cite{richard}, the score $g_c$ of a merged class $c$, its softmax output,
 is the sum of the scores $g'_i$ that the \Kfull-class model gives the classes it contains,
 \begin{equation}
   g_c(x) = \sum_{i\,\in\, c} g'_i(x) ,
@@ -78,21 +79,23 @@ classes whose shares of the training jets match those of the \Kcoarse-class set,
 Among such draws we chose the \VRandWord{} that share the fewest merges with the \Kcoarse-class set, so that they test
 whether the number of classes or their content sets what the features retain.
 
-The mass regression adds a target that no label set contains.
+The mass regression adds a target that no label set contains, a regression that in CMS improves the jet mass
+scale and resolution over the soft-drop mass~\cite{cmsmassreg,glopartdp}.
 The \Kres- and \Kcoarse-class models are pretrained a second time with one more output $\hat\theta$, trained
 to predict $\theta = \ln(m_{\mathrm{gen}}/m_{\mathrm{SD}})$, where $m_{\mathrm{SD}}$ is the reconstructed jet mass, computed after soft, wide-angle particles are removed
-(the soft-drop mass~\cite{softdrop}), and $m_{\mathrm{gen}}$ the same mass of the matched jet before detector
+(the soft-drop mass~\cite{softdrop,mmdt}), and $m_{\mathrm{gen}}$ the same mass of the matched jet before detector
 effects, with the loss
 \begin{equation}
   L = L_{\mathrm{cls}} + \lambda \log\cosh\bigl(\hat\theta(x) - \theta\bigr) ,
   \label{eq:massloss}
 \end{equation}
-where $L_{\mathrm{cls}}$ is the cross-entropy and $\lambda = \MlstMassLambda$, the weight used by the CMS
-taggers that introduced this term~\cite{glopart}.
+where $L_{\mathrm{cls}}$ is the cross-entropy and $\lambda = \MlstMassLambda$, the weight of the mass-ratio term in the
+CMS Global Particle Transformer~\cite{glopartdp}; the CMS Particle Transformer tagger introduced the
+term~\cite{cmspart}.
 
 \subsection{Probes and fine-tuning}
-Linear probes measure what the frozen features hold.
-A probe is a multinomial logistic regression on the standardized features, its L2 penalty chosen on validation.
+Linear probes measure what the frozen features hold~\cite{alain}.
+A probe is a multinomial logistic regression on the standardized features, its L2 penalty chosen on validation~\cite{kornblithtransfer,simclr}.
 On JetClass-II the probes are trained and tested on approximately class-balanced sets of jets that no
 pretraining run read, so that chance is $1/\Kfull$, or \VChance\%.
 Binary probes on pairs of classes, such as $X\to b\bar b$ against $X\to c\bar c$, test single distinctions; they are
@@ -160,4 +163,4 @@ Uncertainties are the standard deviation over independently pretrained models, e
 one probe or one fine-tuning: \VRunsWord{} models for each nested label set, \VMassRunsWord{} for each model with
 mass regression, and one for each of \VRandWord{} random groupings.
 For quantities that rest on few test jets, such as the background rejection, we also quote the
-statistical uncertainty of the test sample, estimated by bootstrap.
+statistical uncertainty of the test sample, estimated by bootstrap~\cite{efron}.

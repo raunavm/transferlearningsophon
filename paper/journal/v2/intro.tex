@@ -5,7 +5,7 @@
 Foundation models are pretrained once on broad data and then adapted to many tasks~\cite{bommasani}.
 When the pretraining is supervised, the label set is itself a design choice: the same examples can
 be divided into few classes or many, and that division determines which distinctions the network
-is rewarded for learning.
+is rewarded for learning~\cite{mahajan}.
 In image classification, relabeling a fixed set of images along a class hierarchy has shown that
 coarser labels can give features that transfer less well~\cite{huh,hong}, most clearly when the features are used
 frozen rather than fine-tuned~\cite{hong}.
@@ -17,18 +17,18 @@ simulation.
 At the Large Hadron Collider, quarks, gluons and the decay products of heavy particles reach the
 detector as jets, collimated sprays of tens of particles, and identifying what produced a jet,
 known as jet tagging, is one of the most developed uses of machine learning in the
-field~\cite{larkoski,kogler,toptag,particlenet,part}.
+field~\cite{guest,feickert,plehn,larkoski,kogler,jetimages,deeptop,qgcolor,toptag,particlenet,lorentznet,pelican,part}.
 Each simulated jet comes with an exact record of the process that produced it, so its label can
 be made as fine as the simulated physics allows.
 Sophon~\cite{sophon}, one of several networks pretrained on large sets of jets for reuse in other
-tasks~\cite{omnilearn,omnilearned,mpm,omnijet,hepjepa}, is built on the Particle Transformer~\cite{part} and uses this freedom: it is pretrained to sort the jets of the JetClass-II
+tasks~\cite{jetclr,rs3l,mpm,mpmtok,rieck,jbot,rino,omnijet,omnilearn,omnilearned,hepjepa,mlpf_fm}, is built on the Particle Transformer~\cite{part} and uses this freedom: it is pretrained to sort the jets of the JetClass-II
 dataset~\cite{jetclasstwo} into \Kfull{} classes, which specify the particle that decayed and what it decayed
 into.
 
 Whether such fine labels make the pretrained model better has not been tested in a controlled way.
 In the comparisons published so far the training jets change together with the labels, so that a
 model trained on fewer classes has also seen fewer kinds of
-jets~\cite{sophon,glopart,datacomp,superjepa}, and the two effects cannot be told apart.
+jets~\cite{sophon,glopartdp,datacomp,superjepa}, and the two effects cannot be told apart.
 
 Here we change the labels and nothing else.
 Since every JetClass-II jet records its full decay, the same jets can be relabeled at any
@@ -42,7 +42,7 @@ do not contain.
 Each label set is pretrained several times from different random seeds.
 
 We evaluate each pretrained model in the two ways such a model is used.
-With the network frozen, a linear classifier trained on its features (a linear probe) measures
+With the network frozen, a linear classifier trained on its features (a linear probe)~\cite{alain} measures
 what the representation holds, both for the \Kfull{} pretraining classes and for pairs of classes that
 differ in a single flavor.
 With the network fine-tuned, we measure what survives adaptation: on the pretraining classes, on

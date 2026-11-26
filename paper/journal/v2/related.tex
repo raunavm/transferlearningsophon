@@ -3,15 +3,23 @@
 The closest experiments to ours relabel a fixed set of images along a class hierarchy and measure transfer.
 Huh et al.\ merged the ImageNet classes along the WordNet tree and fine-tuned the resulting networks on detection
 and scene classification, where the coarser labels cost little~\cite{huh}.
+In weakly supervised pretraining, the hashtag vocabulary that best matches the target classes transfers best,
+though there the images change with the vocabulary~\cite{mahajan}.
 Hong et al.\ pretrained on levels of the class hierarchy of the full ImageNet dataset and transferred to its standard
 subset; their tables show a larger gap between the finest and the coarsest labels under a linear probe than after
 fine-tuning, and they explain the benefit of fine labels by the rarer features that fine classes force a network to
 learn~\cite{hong}.
 A related result concerns the training loss instead of the labels: losses that separate the training classes more
 strongly give frozen features that transfer worse, while the differences largely vanish after
-fine-tuning~\cite{kornblith}, the same asymmetry between frozen and adapted use.
+fine-tuning~\cite{kornblith,kornblithtransfer}, the same asymmetry between frozen and adapted use.
+Fine-tuning changes the features it starts from, so frozen and fine-tuned use can rank representations
+differently~\cite{kumar}.
+Training on finer labels can also raise accuracy on the coarse classes themselves~\cite{chen}, though not in every
+dataset~\cite{pirovano}.
 
 What a coarse label leaves in the representation has been studied directly.
+Late in training, the last-layer features of each class contract to the class mean (neural
+collapse)~\cite{papyan}, a geometry argued both to help~\cite{galanti} and to hurt~\cite{hui} transfer.
 Yang, Steinhardt and Hu trained networks on merged classes and asked whether the original classes can still be
 recovered from the last-layer features~\cite{yang}.
 They found that subclasses merged at random stay well separated, whereas subclasses merged into a natural
@@ -24,7 +32,10 @@ In jet physics, supervised classification of simulated jets is the pretraining o
 Transformer, which showed that pretraining on the ten classes of JetClass improves top tagging and quark--gluon
 discrimination after fine-tuning~\cite{part}, and of Sophon, which moved to the much finer classes of JetClass-II and
 to the direct use of output scores and frozen features~\cite{sophon}.
-Self-supervised alternatives exist; masked particle modeling, for example, is evaluated with a frozen and with a
+CMS trains its taggers on many classes of decays~\cite{cmspart,glopartdp}.
+Supervised classification has been compared with masked-particle and generative pretraining on the same jets, with
+the classes fixed~\cite{objectives}.
+Self-supervised alternatives exist~\cite{jetclr,rs3l,mpmtok,rieck,jbot,rino}; masked particle modeling, for example, is evaluated with a frozen and with a
 fine-tuned backbone as a function of the number of labeled jets, the two modes we also compare~\cite{mpm}.
 SuperJEPA combines a predictive self-supervised objective with classification and reports frozen-encoder and
 fine-tuned results on JetClass and top tagging~\cite{superjepa}.

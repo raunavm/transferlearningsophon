@@ -24,7 +24,7 @@ taxonomy.
 For the use of a pretrained tagger, the consequence depends on how it is used.
 Read out from frozen features, or through class scores summed into a discriminant, the model can
 offer only the separations its labels asked for, and the classes an analysis will need to tell
-apart should be distinct in the pretraining labels.
+apart should be distinct in the pretraining labels~\cite{mahajan}.
 Fine-tuning relaxes this requirement without removing it: with a million labeled jets the
 coarsest labels still give up more than a third of what pretraining provides on the pretraining
 classes and a quarter on JetClass, and more when labeled jets are few.

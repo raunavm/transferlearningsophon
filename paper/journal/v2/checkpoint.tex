@@ -74,9 +74,13 @@
 \counterwithin{figure}{section}
 \renewcommand{\thetable}{\Alph{section}\arabic{table}}
 \renewcommand{\thefigure}{\Alph{section}\arabic{figure}}
+% In the appendix floats may cross a section boundary, so that no section ends on a short page (PI 2026-11-26, 34.3:
+% no float alone on a half-empty page); every float is out before the references.
+\let\SectionFloatBarrier\FloatBarrier
+\let\FloatBarrier\relax
 \input{appendix}
 
-\FloatBarrier
+\SectionFloatBarrier
 {\small
 \bibliographystyle{unsrt}
 \bibliography{../refs}
