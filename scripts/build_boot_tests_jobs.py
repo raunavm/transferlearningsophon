@@ -496,6 +496,43 @@ def ftfix_spec(tag: str, mem: str, smoke: bool = False, bench: bool = False) -> 
                  "paired test-jet bootstraps of the fine-tuned rows on the fixed-schedule rerun cells (2026-11-24)")
 
 
+# ------------------------------------------------------------------ CS-15 read-out (PI 2026-11-25, LEDGER 31; 2026-11-26 revision)
+# The two checks on the 188-class run 1 (build_ft_budget_jobs.cs15_cells: head kept; new head at 1e-4) against the same
+# run's fine-tuned cell and linear probe, on the 903,922 balanced JetClass-II test jets, accuracy as Table 3 prints it;
+# the three runs' fine-tuned and probe cells beside them so that each side's run SD is in the same file.
+CS15_OUT = f"{L3_FIXED}/cs15_jc2bal_N1000000.json"
+
+
+def cs15_inputs() -> dict[str, str]:
+    fb = _load("build_ft_budget_jobs", "scripts/build_ft_budget_jobs.py")
+    kept, head1x = (c["out"] for c in fb.cs15_cells())
+    ft = ftfix_cells("jc2b", 1_000_000, False)
+    return {"cs15-headkept": kept, "cs15-head1x": head1x,
+            **{f"ft-{m}": ft[m] for m in models("l188")},
+            **{f"lp-{m}": f"{R5.V5['fits_v5_probs']}/{m}/best70/jc2bal_N1000000.npz" for m in models("l188")}}
+
+
+def cs15_diffs() -> str:
+    ft, lp = (",".join(f"{k}-{m}" for m in models("l188")) for k in ("ft", "lp"))
+    one = {"headkept": "cs15-headkept", "head1x": "cs15-head1x"}
+    d = {**{f"{k}-ft1": f"{v}/ft-mtx-l188-s1" for k, v in one.items()},
+         **{f"{k}-lp1": f"{v}/lp-mtx-l188-s1" for k, v in one.items()},
+         **{f"{k}-lp": f"{v}/{lp}" for k, v in one.items()},
+         "ft1-lp1": "ft-mtx-l188-s1/lp-mtx-l188-s1", "ft-lp": f"{ft}/{lp}"}
+    return " ".join(f"--diff {k}={v}" for k, v in d.items())
+
+
+def cs15_spec(tag: str, mem: str) -> str:
+    """boot-cs15-raunav: one pod, paired_bootstrap --task jc2b --headline-only (B = 200) of the two CS-15 cells, the three
+    188-class fine-tuned cells and their linear probes, into CS15_OUT."""
+    ins = cs15_inputs()
+    done = [f"{p}/DONE" for k, p in ins.items() if not k.startswith("lp-")] + [p for k, p in ins.items() if k.startswith("lp-")]
+    cmd = pb(CS15_OUT, [f"--model {k}={p}" for k, p in ins.items()], f"--headline-only {cs15_diffs()}", "jc2b")
+    row = "\n  ".join([check_inputs(done), f"mkdir -p {L3_FIXED}", " || ".join((lambda a, b: (a, peak(b)))(*cmd.split(" || ", 1)))])
+    return _spec(tag, "boot-cs15-raunav", [row], 1, mem,
+                 "CS-15 read-out: the two checks against run 1's fine-tuned cell and probe, JetClass-II 1e6 accuracy")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--tag", required=True, help="the pushed tag the pods clone")
@@ -505,6 +542,7 @@ def main(argv=None) -> int:
     ap.add_argument("--node", help="one node of CPU_MODEL's (R5.CPU_NODES) instead of all of them")
     ap.add_argument("--review", choices=("smoke", "a", "b"), help="the review rows: the smoke, or job a or b")
     ap.add_argument("--review2", choices=("smoke", "job"), help="the second review's rows from the cache")
+    ap.add_argument("--cs15", action="store_true", help="boot-cs15-raunav, the CS-15 read-out")
     ap.add_argument("--ftfix", choices=("smoke", "job", "bench"), help="the fine-tuned rows on the fixed-schedule rerun cells")
     ap.add_argument("--mem", default="16Gi", help="memory request and limit of every pod")
     a = ap.parse_args(argv)
@@ -514,6 +552,7 @@ def main(argv=None) -> int:
               | {k[12]: (k, v) for k, v in review_specs(a.tag, a.mem).items()}) if a.review else {}
     name, text = (("boot-review2-smoke-raunav" if a.review2 == "smoke" else "boot-review2-raunav",
                    review2_spec(a.tag, a.mem, a.review2 == "smoke")) if a.review2
+                  else ("boot-cs15-raunav", cs15_spec(a.tag, a.mem)) if a.cs15
                   else ({"smoke": "boot-ftfix-smoke-acc-raunav", "job": "boot-ftfix-raunav",
                          "bench": "boot-ftfix-bench-raunav"}[a.ftfix],
                         ftfix_spec(a.tag, a.mem, a.ftfix == "smoke", a.ftfix == "bench")) if a.ftfix

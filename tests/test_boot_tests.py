@@ -237,3 +237,20 @@ def test_the_rerun_rows_read_each_cell_at_its_rows_recorded_rate():
     assert "completions: 2\n" in smoke and "name: boot-ftfix-smoke-acc-raunav\n" in smoke and b.SMOKE in smoke
     assert text.count("--headline-only ") == 5 and text.count("--headline ") == 9 and smoke.count("--headline-only ") == 2
     assert "/l3_fixed/" not in smoke
+
+
+def test_the_cs15_readout_pairs_the_two_checks_with_run_one_and_the_probes():
+    """2026-11-26 revision (LEDGER 31): the two CS-15 cells against run 1's fine-tuned cell and probe, the three runs'
+    cells beside them, one new file in l3_fixed."""
+    b = _load("build_boot_tests_jobs_t", "scripts/build_boot_tests_jobs.py")
+    ins = b.cs15_inputs()
+    assert len(ins) == 8 and ins["cs15-headkept"].endswith("/cs15/leg_jc2b/l188-s1_headkept/N1000000/s1")
+    assert ins["cs15-head1x"].endswith("/cs15/leg_jc2b/l188-s1_head1x/N1000000/s1")
+    assert ins["ft-mtx-l188-s1"].endswith("/fixed_rate/leg_jc2b/l188-s1/N1000000/s1")
+    assert ins["lp-mtx-l188-s1"].endswith("/mtx-l188-s1/best70/jc2bal_N1000000.npz")
+    d = dict(x.split("=", 1) for x in b.cs15_diffs().replace("--diff ", "").split())
+    assert d["headkept-ft1"] == "cs15-headkept/ft-mtx-l188-s1" and d["head1x-lp1"] == "cs15-head1x/lp-mtx-l188-s1"
+    assert d["ft-lp"].count("ft-mtx-l188-s") == 3 and d["ft-lp"].count("lp-mtx-l188-s") == 3
+    text = b.cs15_spec("mtx-s9.99", "8Gi")
+    assert "name: boot-cs15-raunav\n" in text and f"[ -e {b.CS15_OUT} ] ||" in text and "--headline-only" in text
+    assert "nvidia.com/gpu" not in text and "completions: 1\n" in text
