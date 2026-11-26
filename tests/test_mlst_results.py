@@ -188,7 +188,9 @@ def test_the_index_covers_every_kind_of_pulled_file():
         "linprobe/fits_v5_nat", "linprobe/fits_v5_qcdhf", "linprobe/fits_v5_sib2", "linprobe/sophon_v5",
         "linprobe/sophon_v5_fill", "xbx_v5", "perclass_recall", "stats",
         # 2026-11-25 (PI section 28 1.2, commit 294f4c34): the pretrained output layer's accuracy on the probes' test jets
-        "head_acc"}
+        "head_acc",
+        # 2026-11-26 (ledger 35, commit 08218acf): the resonance from-scratch training records
+        "xbx_scratch_training"}
 
 
 def _ft_tree(d, inits, n_seeds_scratch=3, bound=False, budget=True):
