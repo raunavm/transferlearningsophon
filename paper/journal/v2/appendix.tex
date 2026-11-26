@@ -66,7 +66,8 @@ window.
 Table~\ref{tab:inputs} lists the inputs and which of them the two binary benchmarks provide.
 \input{tables/table_inputs}
 
-\section{Further results}\label{app:results}
+% no float barrier: section C is one line and its table, which would leave a short page (draft 98a90f7)
+{\let\FloatBarrier\relax \section{Further results}\label{app:results}}
 The pretrained output layer of the \Kfull-class model already predicts the \Kfull{} classes, but on the
 class-balanced test jets it reaches only \VHeadAcc\%, below the linear probe, because it was trained on the natural
 mix of classes; refitting only its class biases on the balanced training jets raises it to \VHeadRefit\%, which
