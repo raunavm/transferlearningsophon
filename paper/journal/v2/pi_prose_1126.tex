@@ -1,0 +1,350 @@
+% pi_prose_1126.tex -- PI text of 2026-11-26 for paper/journal/v2. It replaces pi_prose_1125.tex.
+%
+% HOW TO USE (Claude Code)
+%   \bn{...}  a number from the build; the value shown is the one printed in draft 4839dea. Replace with its macro.
+%   \ct{...}  a citation, by the number it has in draft 4839dea.
+%   \chk{...} a clause to check against the build or a source. If it does not hold, send me the clause; do not patch it
+%             with a qualifier.
+%   Title, abstract, sections 1 (last two paragraphs), 4, 5 and 6 are installed as written. Section 3 takes the two
+%   paragraphs given here; the rest of Methods follows the notes at the end.
+%   Figure numbers refer to the NEW figure list (see my message): 2 = accuracy against label set, frozen and
+%   fine-tuned; 3 = per-class recall (a, b) and pairs of classes (c); 4 = resonance benchmark; 5 = fine-tuning against
+%   training size.
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=3.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{microtype}
+\newcommand{\bn}[1]{\textcolor{blue!70!black}{#1}}
+\newcommand{\ct}[1]{\textcolor{black!55}{[#1]}}
+\newcommand{\chk}[1]{\textcolor{red!70!black}{#1}}
+\newcommand{\bb}{b\bar{b}}
+\newcommand{\cc}{c\bar{c}}
+\newcommand{\qq}{q\bar{q}}
+\title{\Large Label granularity in supervised pretraining for jet tagging\\[4pt]
+\normalsize Prose preview, 26 November 2026}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+\noindent{\small Blue: a number the build supplies. Grey: a citation. Red: a clause to check.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BEGIN ABSTRACT
+\begin{abstract}
+\noindent
+When a model is pretrained by supervised classification, its classes determine which distinctions
+the network must learn, yet how fine they need to be remains an open question.
+Jets, the collimated sprays of particles produced in high-energy collisions, offer a clean test,
+because each simulated jet carries an exact label that can be coarsened without changing the
+training data.
+We pretrain the Sophon jet-tagging network on the same simulated jets under four nested label
+sets, from 188 classes down to 17, each merging classes that differ only in the type of particle
+produced, such as bottom and charm quarks.
+As the labels coarsen, the frozen representation retains less of what they no longer distinguish:
+a linear classifier trained on it identifies the 188 classes with \bn{43\%} accuracy for the
+finest labels but \bn{33\%} for the coarsest.
+Groupings into 17 classes that cut across this hierarchy still reach \bn{42\%}, so the loss
+depends on which classes are merged and not only on how many.
+Fine-tuning narrows the gap to about \bn{2} percentage points without closing it, while two
+binary benchmarks whose inputs carry little flavor information show no dependence on the label
+set.
+Fine labels therefore matter most for tasks that rely on the distinctions they preserve, and when
+the pretrained model is used without fine-tuning.
+An auxiliary regression of the jet mass adds what no label carries, sharpening the mass
+resolution of the frozen representation at little cost in accuracy.
+\end{abstract}
+% END ABSTRACT
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction (last two paragraphs; the first four stay as in draft 4839dea)}
+% BEGIN INTRODUCTION TAIL
+We evaluate each pretrained model in the two ways such a model is used.
+With the network frozen, a linear classifier trained on its features (a linear probe) measures
+what the representation holds, both for the 188 pretraining classes and for pairs of classes that
+differ in a single flavor.
+With the network fine-tuned, we measure what survives adaptation: on the pretraining classes, on
+the ten classes of JetClass \ct{8}, which come from a different simulation, and on two public
+binary benchmarks, the identification of jets from top quarks (top tagging) \ct{6} and the
+discrimination of quark jets from gluon jets \ct{19--21}.
+We also repeat the benchmark with which Sophon was introduced, the tagging of a hypothetical heavy
+particle $X$ that decays to $\bb$ or to $bs$, with a small classifier trained on the frozen
+features.
+
+We find that the frozen representation loses part of what the labels no longer distinguish: the
+188 classes are identified less accurately, pairs of classes that a label set merges are separated
+less well, and the resonance benchmark loses signal efficiency.
+The number of classes does not by itself set this loss, since groupings of the same size that cut
+across the hierarchy retain most of the accuracy.
+Fine-tuning recovers part of the loss but not all of it, on the pretraining classes and on
+JetClass, while the two binary benchmarks, whose inputs carry little flavor information, show no
+dependence on the label set.
+The mass regression, finally, improves the mass resolution of the frozen features at a small cost
+in accuracy.
+% END INTRODUCTION TAIL  (no contributions sentence, no numbers here)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Methods (two paragraphs given; see the notes at the end for the rest)}
+% BEGIN METHODS 3.1
+A jet is the detector signature of an energetic quark or gluon, or of a heavy particle whose decay
+products are collimated by its momentum.
+For a machine-learning model it is an unordered set of a few tens of reconstructed particles, each
+described here by 17 numbers: its momentum relative to the jet, its electric charge and type and,
+for charged particles, the displacement of its track from the collision point, which reveals the
+decays of the long-lived hadrons that contain bottom or charm quarks.
+Quarks come in several types, or flavors: bottom ($b$), charm ($c$), strange ($s$), and the light
+up and down quarks, written together as $q$.
+The classes of JetClass-II name what a jet came from.
+A resonant class is the decay of a heavy particle into a given set of quarks, gluons and leptons,
+each of which appears as one collimated prong of the jet; a QCD class is the ordinary production
+of quarks and gluons by the strong interaction, the background in most analyses.
+The two binary benchmarks are standard in the field: top tagging asks whether a jet contains the
+decay of a top quark, and quark--gluon discrimination whether it was initiated by a quark or by a
+gluon.
+% END METHODS 3.1
+
+% BEGIN METHODS UNCERTAINTIES (last paragraph of the evaluation subsection; there is no appendix on uncertainties)
+Uncertainties are the standard deviation over independently pretrained models, each followed by
+one probe or one fine-tuning: three models for each nested label set, two for each model with
+mass regression, and one for each of five random groupings.
+For quantities that rest on few test jets, such as the background rejection, we also quote the
+statistical uncertainty of the test sample, estimated by bootstrap.
+% END METHODS UNCERTAINTIES
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BEGIN RESULTS
+\section{Results}
+
+\subsection{The pretraining classes}
+
+Coarser labels leave the frozen features less able to tell the pretraining classes apart
+(table~2 and figure~2).
+A linear probe on the features of the 188-class model identifies the 188 classes with an accuracy
+of \bn{43.5\%}, where chance is \bn{0.5\%} and an untrained network gives \bn{10.2\%}; the
+checkpoint released with Sophon gives \bn{43.4\%}, so our retraining reproduces it.
+Merging the QCD classes changes little: the 162-class model reaches \bn{43.3\%}, and what it loses
+is confined to the QCD classes themselves (table~D4).
+The accuracy then falls to \bn{36.1\%} for the 43-class model and to \bn{33.4\%} for the 17-class
+model, the two sets that merge flavors within the resonance decays, a loss of \bn{10.1}
+percentage points in all.
+
+The loss is not spread evenly over the classes (figure~3(a,b)).
+\chk{Classes that a label set leaves untouched are recognized as well as before, while those it
+merges with a class of another flavor lose recall, most of all when both their quark and their
+lepton flavors are merged.}
+
+The number of classes does not by itself determine the loss.
+The random groupings have as many classes as the 17-class set, of the same sizes, yet a linear
+probe on their features reaches \bn{42.2\%}, above the 43-class model and only \bn{1.3} points
+below the 188-class model.
+Their classes cut across the hierarchy, so that nearly every distinction the nested sets remove
+still separates some of their classes.
+In the other direction the fine labels cost nothing:
+\chk{a probe for the 17 classes is as accurate on the features of the 188-class model as on those
+of the 17-class model itself (table~D9).}
+
+\subsection{Pairs of classes}
+
+Probes for single pairs of classes show the loss most directly (figure~3(c) and table~D4).
+The decays $X\to\bb$ and $X\to\cc$ differ only in the flavor of their quarks and share a class
+only in the 17-class set.
+A linear probe separates them with an AUC of \bn{0.9977} on the features of the 188-class model
+and \bn{0.9902} on those of the 17-class model, a fourfold increase in the error $1-\mathrm{AUC}$,
+and the four-quark decays $X\to\bb qq$ and $X\to\cc qq$ behave alike, with \bn{0.9939} against
+\bn{0.9716}.
+One level up, $X\to bc$ joins $X\to bq$ in a single class from 43 classes on, and its separation
+from $X\to bq$ and $X\to cs$ falls from an AUC of \bn{0.941} to \bn{0.932} there and to
+\bn{0.885} at 17 classes.
+Gluons, merged with the light quarks from 43 classes on, follow the same pattern in the pair
+$X\to gg$ against $X\to\qq$.
+
+Two observations complete this picture.
+First, merging a pair is not by itself what removes its separation.
+The random groupings that happen to place $X\to\bb$ and $X\to\cc$ in one class still separate
+them with an AUC of \bn{0.9963}, almost as well as the groupings that keep them apart
+(\bn{0.9966}) and far better than the 17-class model, in whose labels no class distinguishes
+bottom from charm at all.
+Second, a distinction that the labels keep is not fully protected: at 43 classes $X\to\bb$ and
+$X\to\cc$ are still separate classes, yet their AUC is already slightly lower than with the
+188-class model.
+
+\subsection{Resonance benchmark}
+
+The benchmark with which Sophon was introduced shows what this means for a search (figure~4 and
+table~D6).
+At a background efficiency of 1\%, a classifier trained on the frozen features of the 188-class
+model selects $X\to\bb$ with a signal efficiency of \bn{71.8\%} and $X\to bs$ with \bn{69.2\%}.
+With the 17-class model these fall to \bn{65.9\%} and \bn{59.4\%}, and the 43-class model lies in
+between, at \bn{70.8\%} and \bn{67.1\%}.
+The loss is larger for $X\to bs$, which is a class in none of the label sets and has to be built
+entirely from the features.
+Even the coarsest labels leave features that are better than none:
+\chk{the same classifier without pretraining reaches \bn{55.4\%} for $X\to bs$ [state in Methods
+exactly what this reference is]}.
+For $X\to\bb$ the two finest label sets also allow Sophon's own selection, a discriminant summed
+from the output scores, which reaches \bn{69.8\%} with the 188-class model, close to the trained
+classifier.
+
+\subsection{Transfer of the frozen features}
+
+On tasks other than the pretraining classes the frozen features depend much less on the label set
+(table~2 and figure~2).
+On JetClass a linear probe reaches \bn{77.1\%} with the 188- and 162-class models, \bn{77.0\%}
+with the 43-class model and \bn{76.1\%} with the 17-class model.
+The loss of one point comes mainly from the decays of the Higgs boson to charm and to bottom
+quarks, whose recall falls by \bn{5.0} and \bn{2.9} points (table~D7); these are the JetClass
+classes that differ in a flavor the 17-class set has merged.
+The random groupings, which kept most of the accuracy on the pretraining classes, do not keep it
+here: at \bn{75.4\%} they lie below every nested set.
+
+On the two binary benchmarks the label sets cannot be told apart, and on top tagging the small
+differences run the other way: the 17-class model has the highest accuracy of the nested sets,
+\bn{91.5\%} against \bn{91.1\%} for the 188-class model.
+These frozen results are a linear readout of features computed from incomplete inputs
+(section~3) and lie far below the fine-tuned ones.
+
+\subsection{Fine-tuning}
+
+Fine-tuning narrows the gap between the label sets without closing it (table~3 and figure~2).
+When the whole network is trained on $10^6$ labeled jets of the pretraining classes, the 17-class
+model reaches \bn{41.0\%} and the 188-class model \bn{43.3\%}, so the \bn{10.1} points that
+separated their frozen features shrink to \bn{2.3}.
+The 43-class model recovers to within \bn{1.0} points and the 162-class model fully.
+All of them remain far above the same network trained from scratch on these jets, at
+\bn{37.3\%}: of the \bn{6.0} points that pretraining provides, the coarsest labels give up more
+than a third.
+\chk{[One sentence on the two finest sets ending slightly below their own linear probes,
+\bn{43.3\%} against \bn{43.5\%} for the 188-class model, written when the two checks end.]}
+
+The ordering is the same on JetClass, whose classes the pretraining never saw.
+The 188-class model reaches \bn{85.0\%} and the 17-class model \bn{84.4\%}, a difference of
+\bn{0.5} points where pretraining gains \bn{2.1} over the network trained from scratch.
+After fine-tuning the loss is confined to the decay of the Higgs boson to bottom quarks
+(table~D7).
+The random groupings end level with the 43-class set on the pretraining classes, at \bn{42.3\%},
+and between the 43- and 17-class sets on JetClass, at \bn{84.7\%}.
+
+The label set matters more when labeled jets are scarce (figure~5).
+On the pretraining classes the 17-class model trails the 188-class model by \bn{7.0} points when
+fine-tuned on $10^4$ jets and by \bn{4.0} points on $10^5$, before the difference reaches
+\bn{2.3} points at $10^6$.
+
+Top tagging and quark--gluon discrimination show no dependence on the label set.
+After fine-tuning on the full training sets the four nested sets agree to within \bn{0.04} points
+in top-tagging accuracy and \bn{0.06} points in quark--gluon accuracy, and their background
+rejections agree within the uncertainties (table~3); the same holds for quark--gluon jets
+simulated with Herwig instead of Pythia (table~D2).
+Pretraining itself does help: the fine-tuned 188-class model reaches \bn{94.00\%} on top tagging
+against \bn{93.87\%} for the network trained from scratch, and \bn{84.33\%} against \bn{83.97\%}
+on quark--gluon discrimination.
+The corresponding rise in top-tagging rejection, from \bn{1,412} to \bn{1,799}, is less certain
+than the spread between models suggests, because only about a hundred background jets pass this
+working point, which adds a statistical uncertainty of about \bn{120}.
+
+\subsection{Jet mass}
+
+The auxiliary regression makes the jet mass much easier to recover from the frozen features
+(table~4).
+An MLP probe on the features of the 162-class model estimates the mass with a resolution of
+\bn{21.7\%}, against \bn{24.5\%} for the reconstructed soft-drop mass itself; with the regression
+in pretraining the same probe reaches \bn{15.7\%}, and the regression output of the network
+\bn{14.7\%}.
+The gain is the same at 17 classes, from \bn{20.8\%} to \bn{15.6\%}.
+Without the regression, the coarser labels already give a slightly better mass resolution than
+the finer ones, \bn{20.8\%} for the 17-class model against \bn{21.8\%} for the 188-class model.
+
+The price in classification is small.
+With frozen features the accuracy on the pretraining classes falls by \bn{0.4} points at 162
+classes and by \bn{0.3} points at 17, within the variation between models.
+After fine-tuning, the models pretrained with the regression are lower by about half a point on
+the pretraining classes and by \bn{0.1} points on JetClass, at both label sets.
+On top tagging the regression helps the frozen features: the accuracy of the linear probe rises
+from \bn{91.0\%} to \bn{91.5\%} at 162 classes and from \bn{91.5\%} to \bn{92.0\%} at 17
+(table~2).
+% END RESULTS
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BEGIN DISCUSSION
+\section{Discussion}
+
+Taken together, these results show a representation shaped by the distinctions its labels draw.
+When a label set stops separating bottom from charm quarks, or gluons from light quarks, the
+frozen features lose part of that separation, and the loss appears wherever the distinction is
+needed: in the accuracy on the pretraining classes, in the separation of single pairs, and in the
+efficiency of a resonance search.
+What matters is that the distinction is required somewhere, not that every pair of classes is kept
+apart.
+The random groupings merge some pairs of flavors and still separate them, whereas the 17-class
+set separates them nowhere.
+This suggests that a network learns a distinction when any class boundary demands it, and then
+applies it to decays whose own labels do not.
+
+The same pattern has been seen in image classification, where coarser labels cost more for frozen
+features than after fine-tuning \ct{3}, and classes merged along a semantic hierarchy remain more
+entangled than classes merged at random \ct{23}.
+What simulation adds is control: the labels are exact, the training examples and their order are
+identical for every label set, and each merge removes a distinction that can be named, so the loss
+can be traced to individual pairs of classes instead of being inferred from an average over a
+taxonomy.
+
+For the use of a pretrained tagger, the consequence depends on how it is used.
+Read out from frozen features, or through class scores summed into a discriminant, the model can
+offer only the separations its labels asked for, and the classes an analysis will need to tell
+apart should be distinct in the pretraining labels.
+Fine-tuning relaxes this requirement without removing it: with a million labeled jets the
+coarsest labels still give up more than a third of what pretraining provides on the pretraining
+classes and a quarter on JetClass, and more when labeled jets are few.
+Tasks that do not draw on the merged distinctions are indifferent to them, as top tagging and
+quark--gluon discrimination show; in both, the inputs that carry flavor are largely absent.
+A grouping that preserves the pretraining classes is not thereby a good label set, however.
+The frozen features of the random groupings transfer less well than those of any nested set,
+which may reflect that their classes mix decays of different structure.
+
+The mass regression shows that what the labels lack can be supplied by other means: it improves
+the mass resolution of the frozen features by about a quarter and costs at most half a point of
+accuracy.
+Our study has limits: it rests on one network, with \bn{2.2}~million parameters, and on one
+simulated dataset.
+Each step of the hierarchy removes several distinctions at once, so the cost of a single one is
+established only through pairs of classes.
+The random groupings were chosen among random draws to overlap little with the hierarchy, and we
+have not studied typical draws.
+Our fine-tuning uses one recipe for all models, and on top tagging it stays below the best
+published results (appendix~F), so the absolute performance on the benchmarks should not be read
+as the reach of the method.
+% END DISCUSSION
+
+% BEGIN CONCLUSION
+\section{Conclusion}
+
+We have varied the labels of a supervised pretraining while keeping its data fixed, which
+simulation makes possible and which, for jets, had not been done.
+The representation retains what the labels distinguish.
+Merging flavors in the labels removes part of their separation from the frozen features, by ten
+percentage points of accuracy on the pretraining classes between the finest and the coarsest set,
+while a grouping of the same size that cuts across the hierarchy loses only about one.
+Fine-tuning recovers most of the difference on the pretraining classes but not all of it, and
+tasks that do not need the merged distinctions do not notice them.
+Pretraining labels should therefore keep apart the classes that later analyses will need to
+separate, above all when the model is to be used without fine-tuning, and quantities that no
+label carries, such as the jet mass, can be added as auxiliary targets.
+% END CONCLUSION
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Notes for the rest of Methods}
+\begin{itemize}\itemsep2pt
+\item Subsections: Jets and classes; Data and model; Label sets; Random groupings and mass
+regression; Probes and fine-tuning; Downstream tasks and metrics. The evaluation text is now one
+block of seven paragraphs; split it in two at the paragraph on JetClass.
+\item ``109,938,036 training jets'' becomes ``about 110 million''. Exact counts go to the appendix.
+\item The random groupings are described once, here, in two sentences: random assignments matched
+in size to the 17-class set and chosen, among such draws, to share few merges with it. No other
+section repeats how they were chosen, except the one sentence in the Discussion.
+\item The resonance paragraph says once what ``trained from scratch'' is on that benchmark, and
+that our protocol differs from Sophon's. Results does not repeat either.
+\item The sentence on the output layer and its bias refit goes to the appendix.
+\end{itemize}
+
+\end{document}
