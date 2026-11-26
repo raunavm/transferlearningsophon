@@ -33,6 +33,7 @@ import pathlib
 import re
 
 import matplotlib
+import matplotlib.patches
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402,F401
 import numpy as np  # noqa: E402
@@ -51,8 +52,8 @@ import style_v5 as S  # noqa: E402
 M = C.M
 OUT = C.P.REPO / "paper/journal/v2/figures"
 # RW-5: one name each; the random groupings of a class pair by whether they merge it (LEDGER PS-5)
-NAMES = {"RAND": "17 classes, random grouping", "RAND_MERGED": "17 classes, random grouping, pair merged",
-         "RAND_APART": "17 classes, random grouping, pair apart", "L162_MASS": "162 classes + mass regression",
+NAMES = {"RAND": "17 classes, random grouping", "RAND_MERGED": "17 classes, random grouping,\npair merged",
+         "RAND_APART": "17 classes, random grouping,\npair apart", "L162_MASS": "162 classes + mass regression",
          "R16_Q1_MASS": "17 classes + mass regression", "SCRATCH": "trained from scratch", "SOPHON": "Sophon (released)",
          "INIT_BN": "untrained network"}
 OUTPUT_SCORES = "(output scores)"        # Sophon's X->bb discriminant, summed from the network's output scores
@@ -74,18 +75,34 @@ LOWER = 0.4                               # a lower panel's height over its pane
 DOT, BAR = 4.0, 1.0                       # pt: a mean's point and its standard-deviation bar in the point plots
 
 
+# ledger 35, section 4: figure text at the caption's size or one step smaller; the captions are set \small (10.95 pt
+# in the 12 pt class), the figures at \footnotesize, 10 pt, every label, tick, title and legend
+FONT = 10.0
+FONT_KEYS = ("LABEL_PT5", "TICK_PT5", "TITLE_PT5", "LEGEND_PT5")
+
+
 @contextlib.contextmanager
 def names():
-    """The rewrite's names in every legend the gallery's parts draw, for the length of a drawing."""
+    """The rewrite's names in every legend the gallery's parts draw, and its font size, for the length of a drawing."""
     legend, tag = dict(S.LEGEND), PH.DIRECT_TAG
+    fonts = {k: getattr(S, k) for k in FONT_KEYS}
     S.LEGEND.update(NAMES)
     PH.DIRECT_TAG = OUTPUT_SCORES
+    for k in FONT_KEYS:
+        setattr(S, k, FONT)
     try:
         yield
     finally:
         S.LEGEND.clear()
         S.LEGEND.update(legend)
         PH.DIRECT_TAG = tag
+        for k, v in fonts.items():
+            setattr(S, k, v)
+
+
+def v2_style() -> None:
+    """style_v5's paper style at FONT (call inside names(), which sets the size constants it reads)."""
+    S.use_style5(simplify=True)
 
 
 @contextlib.contextmanager
@@ -139,124 +156,251 @@ def _point(ax, x, y, v, colour, filled=True, marker="o", horizontal=False, singl
             markeredgecolor=colour, markeredgewidth=0.9, zorder=2.7, **style)
 
 
-# ------------------------------------------------------------------ Fig. 1
+# ------------------------------------------------------------------ Fig. 1: the label sets and the pipeline
+FIG1_H = 7.9                # cm: about a third of the text height (ledger 35, section 4: "about 40% of a page")
+GREY_LINE, BOX_EDGE = "#9AA3B5", "#4A4A4A"
+FIG1_GROUP_NAME = {"2P_HAD_2PARTON|B": r"$b$ quark", "2P_HAD_2PARTON|C": r"$c$ quark", "2P_HAD_2PARTON|LG": "light"}
+FIG1_TASKS = ("JetClass-II", "JetClass", "Top tagging", "Quark/gluon", r"$X\to b\bar b$, $X\to bs$")
+
+
+def fig1_classes() -> list:
+    """The ten classes of the first 17-class group (a resonance decaying to two quarks or gluons) in the label maps'
+    order, each with its group under the 162, 43 and 17 classes: [(class name, {label set: group})]."""
+    import csv
+    rows = list(csv.DictReader((C.P.REPO / "configs/labelmaps/rung_label_maps.v1.csv").open()))
+    group = [r for r in rows if r["R16_Q1_name"] == "2P_HAD_2PARTON"]
+    group.sort(key=lambda r: (int(r["R42_Q1"]), int(r["L188"])))
+    if len(group) != 10 or {r["R42_Q1_name"] for r in group} != set(FIG1_GROUP_NAME):
+        raise SystemExit(f"FATAL: the example group has {len(group)} classes, not the ten of Fig. 1")
+    return [(r["class_name"], {k: r[k] for k in ("L188", "L162", "R42_Q1", "R16_Q1", "R42_Q1_name")}) for r in group]
+
+
+def _class_tex(name: str) -> str:
+    f = name.removeprefix("label_X_")
+    return rf"${f[0]}\bar{{{f[1]}}}$" if f[0] == f[1] and f[0] != "g" else rf"${f}$"
+
+
 def draw_fig1(path: pathlib.Path) -> None:
-    import fig1_design
-    fig = fig1_design.build(nested=True)
+    """(a) A four-level tree for one group of decays: the ten classes as text along the top, a node per class of each
+    label set (in its colour) joined to its parent by thin lines, the three 43-class groups named; (b) one row,
+    jets -> network -> features -> frozen-feature classifier | fine-tuning -> the five tasks. Under 60 words."""
+    fig = S.figure_cm(S.PRINT_W, FIG1_H)
+    ax = S.axes_cm(fig, 0, 0, S.PRINT_W, FIG1_H)
+    ax.set_xlim(0, S.PRINT_W)
+    ax.set_ylim(FIG1_H, 0)                         # y in cm from the top
+    ax.axis("off")
+    txt = {"fontsize": FONT, "va": "center"}
+    classes = fig1_classes()
+    x0, x1 = 3.4, 14.4
+    xs = list(np.linspace(x0, x1, len(classes)))
+    y_cls, rows = 0.95, {"L188": 1.55, "L162": 2.15, "R42_Q1": 2.95, "R16_Q1": 4.2}
+    name = {"L188": "188 classes", "L162": "162 classes", "R42_Q1": "43 classes", "R16_Q1": "17 classes"}
+    ax.text(0.1, 0.3, "(a) Label sets", fontsize=FONT, va="center")
+    ax.text(x0 - 0.55, y_cls, r"$X\to$", ha="right", **txt)
+    for x, (c, _) in zip(xs, classes):
+        ax.text(x, y_cls, _class_tex(c), ha="center", **txt)
+    sq = 0.17
+    pos = {}
+    for key, y in rows.items():
+        ax.text(0.1, y, name[key], ha="left", **txt)
+        groups = {}
+        for x, (_, g) in zip(xs, classes):
+            groups.setdefault(g[key], []).append(x)
+        pos[key] = {gid: float(np.mean(v)) for gid, v in groups.items()}
+        for gid, x in pos[key].items():
+            ax.add_patch(matplotlib.patches.Rectangle((x - sq / 2, y - sq / 2), sq, sq, fc=S.SERIES[key], ec="none",
+                                                      zorder=3))
+    order = list(rows)
+    for upper, lower in zip(order, order[1:]):    # each node joined to its parent once
+        ya, yb = rows[upper] + sq / 2, rows[lower] - sq / 2
+        ymid = (ya + yb) / 2 + (0.15 if lower == "R16_Q1" else 0)
+        for gid, xa in pos[upper].items():
+            g = next(g for _, g in classes if g[upper] == gid)
+            xb = pos[lower][g[lower]]
+            ax.plot([xa, xa, xb, xb], [ya, ymid, ymid, yb], color=GREY_LINE, linewidth=0.7, zorder=1,
+                    solid_joinstyle="miter")
+    for gid, x in pos["R42_Q1"].items():          # the 43-class groups named beside their nodes
+        nm = next(g["R42_Q1_name"] for _, g in classes if g["R42_Q1"] == gid)
+        ax.text(x + 0.2, rows["R42_Q1"] + 0.36, FIG1_GROUP_NAME[nm], ha="left", **txt)
+    # (b) the pipeline, one row
+    yb_, hb = 6.45, 0.75
+    ax.text(0.1, 5.15, "(b) Pretraining and use", fontsize=FONT, va="center")
+
+    def box(x, w, y, h, text, face="white"):
+        ax.add_patch(matplotlib.patches.Rectangle((x, y - h / 2), w, h, fc=face, ec=BOX_EDGE, lw=0.7, zorder=2))
+        ax.text(x + w / 2, y, text, ha="center", va="center", fontsize=FONT, linespacing=1.15, zorder=3)
+
+    def arrow(p, q):
+        ax.add_patch(matplotlib.patches.FancyArrowPatch(p, q, arrowstyle="-|>", mutation_scale=7, lw=0.8,
+                                                        color=BOX_EDGE, shrinkA=0, shrinkB=0, zorder=2))
+    box(0.1, 2.2, yb_, hb, "JetClass-II jets")
+    arrow((2.3, yb_), (2.75, yb_))
+    box(2.8, 2.65, yb_, 1.5, "Particle\nTransformer\n(one label set)", face="#F2F2F2")
+    arrow((5.45, yb_ + 0.45), (5.9, yb_ + 0.45))
+    box(5.95, 1.5, yb_ + 0.45, hb, "Features")
+    up, dn = yb_ + 0.45, yb_ - 0.6                  # y grows downward: the classifier below fine-tuning
+    box(8.0, 2.55, up, 0.95, "Frozen-feature\nclassifier")
+    box(8.0, 2.55, dn, hb, "Fine-tuning")
+    arrow((7.45, up), (7.95, up))
+    arrow((5.45, dn), (7.95, dn))
+    xt = 11.15
+    box(xt, S.PRINT_W - xt - 0.1, yb_ - 0.08, 2.15, "\n".join(FIG1_TASKS))
+    arrow((10.55, up), (xt - 0.05, up))
+    arrow((10.55, dn), (xt - 0.05, dn))
     fig.exact_size = True
     S.save(fig, path)
 
 
-# ------------------------------------------------------------------ Fig. 2: accuracy against the label set
-ACC_ROWS = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND")
-ACC_X = (0.0, 1.0, 2.0, 3.0, 4.4)
-ACC_TICKS = ("188", "162", "43", "17", "17,\nrandom")
+def fig1_words() -> int:
+    """The words Fig. 1 prints (ledger 35, section 4: under 60)."""
+    words = ["(a)", "Label", "sets", "X"] + [""] * 10 + "188 classes 162 classes 43 classes 17 classes".split()
+    words += ["b", "quark", "c", "quark", "light", "(b)", "Pretraining", "and", "use", "JetClass-II", "jets",
+              "Particle", "Transformer", "(one", "label", "set)", "Features", "Frozen-feature", "classifier",
+              "Fine-tuning"] + " ".join(FIG1_TASKS).split()
+    return len(words)
+
+
+# ------------------------------------------------------------------ Fig. 2: accuracy for every label set, a dot plot
+# ledger 35, section 4: the label sets are categories (they can be built many ways), so no line joins them; families
+# apart (nested; the random groupings, each draw a point beside their mean; the flavor-boundary groupings)
+ACC_COLS = (("L188", 0.0), ("L162", 1.0), ("R42_Q1", 2.0), ("R16_Q1", 3.0), ("RAND", 4.5), ("FLAV_F0", 6.0),
+            ("FLAV_F1", 7.0), ("FLAV_F1R", 8.0))
+ACC_TICKS = ("188", "162", "43", "17", "random", "no\nflavor", "$b$\nquark", "random\nflavor")
+ACC_FAMILIES = (("nested", 0.0, 3.0), ("flavor boundary", 6.0, 8.0))
+ACC_SEP = (3.75, 5.25)
 ACC_PANELS = (("jc2", 1_000_000, "jc2_188", "JetClass-II"), ("jc1", 1_000_000, "jc1", "JetClass"))
-ACC_STACKED = ("jc1",)      # the linear probe and the fine-tuned models far apart: two stacked parts, the axis broken
-ACC_MODES = {"ft": ("fine-tuned", "#000000", True), "probe": ("linear probe", "#888888", False)}
-ACC_W, ACC_LEFT, ACC_WGAP, ACC_GAP = 6.1, 1.35, 1.45, 0.25     # cm; ACC_GAP between the parts of a broken axis
+ACC_MODES = (("probe", "Linear probe (%)", False), ("ft", "Fine-tuned (%)", True))
+ACC_W, ACC_LEFT, ACC_WGAP, ACC_SUB, ACC_GAP = 6.1, 1.4, 1.45, 2.85, 0.25     # cm; ACC_GAP between frozen and fine-tuned
+RUN_DOT, RUN_ALPHA, MEAN_DOT = 2.4, 0.45, 5.0
 
 
 def accuracy_values(key: str, n: int, ds: str) -> dict:
-    """{"probe": {row: runs}, "ft": {row: runs}, "scratch": runs}, in percent: Table 2's linear probes and Table 3's
-    fine-tuned cells (at n jets) and the network trained from scratch, through the tables' value functions."""
+    """{"probe": {label set: runs}, "ft": {label set: runs}, "scratch": runs}, in percent: Table 2's linear probes and the
+    fine-tuned cells at n jets (Table 3, the appendix's full table for the flavor-boundary groupings), and the network
+    trained from scratch, through the tables' value functions."""
     cell = (key, n, ds, "accuracy")
-    out = {mode: {r: G._hv_values(r, _pct(fn(*cell)), cell) for r in ACC_ROWS}
+    out = {mode: {r: G._hv_values(r, _pct(fn(*cell)), cell) for r, _ in ACC_COLS}
            for mode, fn in (("probe", G._probe_value), ("ft", G._ft_value))}
     out["scratch"] = [PERCENT * v for v in G._scratch_value(*cell)]
-    if not all(out["scratch"]) or not all(v for d in (out["probe"], out["ft"]) for v in d.values()):
-        raise C.Absent(f"accuracy against the label set, {key}: a cell without runs")
+    if not out["scratch"] or not all(v for d in (out["probe"], out["ft"]) for v in d.values()):
+        raise C.Absent(f"accuracy for every label set, {key}: a cell without runs")
     return out
 
 
-def _acc_mode(ax, vals: dict, mode: str) -> list:
-    """One mode's points (filled fine-tuned, open linear probe) in each label set's colour, the nested sets joined by a
-    thin line; returns the values that set the axis range."""
-    _, line, filled = ACC_MODES[mode]
-    means = [_msd(vals[r])[0] for r in ACC_ROWS]
-    ax.plot(ACC_X[:4], means[:4], color=line, linewidth=0.8, zorder=2.0)
-    ends = []
-    for x, r in zip(ACC_X, ACC_ROWS):
-        _point(ax, x, None, vals[r], S.SERIES[r], filled=filled)
-        m, sd = _msd(vals[r])
-        ends += [m - sd, m + sd]
-    return ends
-
-
-def _scratch_line(ax, v: list) -> list:
+def _acc_column(ax, x: float, v: list, colour: str, filled: bool) -> list:
+    """One label set: each run (or random draw) a faint dot, the mean a larger marker with its SD bar."""
+    k = len(v)
+    offs = np.linspace(-0.16, 0.16, k) if k > 1 else [0.0]
+    ax.plot(x + np.asarray(offs) + 0.22, v, linestyle="none", marker="o", markersize=RUN_DOT, markeredgewidth=0,
+            color=colour, alpha=RUN_ALPHA, zorder=2.2)
     m, sd = _msd(v)
-    ax.axhspan(m - sd, m + sd, color=S.SERIES["SCRATCH"], alpha=L.BAND, linewidth=0, zorder=0.9)
-    ax.axhline(m, color=S.SERIES["SCRATCH"], linestyle="--", linewidth=S.LW_CURVE, zorder=1.0)
-    return [m - sd, m + sd]
-
-
-def _ylim(ax, vals: list, pad: float = 0.12) -> None:
-    lo, hi = min(vals), max(vals)
-    d = (hi - lo or 1.0) * pad
-    ax.set_ylim(lo - d, hi + d)
-    ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10]))
-
-
-def _acc_x(ax, labels: bool) -> None:
-    ax.set_xlim(-0.5, ACC_X[-1] + 0.5)
-    ax.xaxis.set_major_locator(ticker.FixedLocator(ACC_X))
-    ax.xaxis.set_major_formatter(ticker.FixedFormatter(ACC_TICKS) if labels else ticker.NullFormatter())
-    ax.xaxis.set_minor_locator(ticker.NullLocator())
-    ax.axvline((ACC_X[3] + ACC_X[4]) / 2, color=S.GREY_MID, linewidth=S.LW_THIN, zorder=0.5)
-
-
-def _break_y(upper, lower) -> None:
-    """The two slashes of a broken y axis on each side, at the upper part's bottom and the lower part's top."""
-    upper.spines["bottom"].set_visible(False)
-    lower.spines["top"].set_visible(False)
-    upper.tick_params(axis="x", which="both", bottom=False)
-    lower.tick_params(axis="x", which="both", top=False)
-    for ax, y in ((upper, 0.0), (lower, 1.0)):
-        ax.plot([0, 1], [y, y], transform=ax.transAxes, marker=[(-1, -0.6), (1, 0.6)], markersize=4.0,
-                linestyle="none", color="#000000", markeredgewidth=S.LW_THIN, clip_on=False, zorder=5)
+    if sd:
+        ax.errorbar([x], [m], yerr=sd, fmt="none", ecolor=colour, elinewidth=BAR, capsize=0, zorder=2.5)
+    ax.plot([x], [m], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor=colour if filled else "white",
+            markeredgecolor=colour, markeredgewidth=1.0, zorder=2.7)
+    return [min(v), max(v), m - sd, m + sd]
 
 
 def draw_fig2(path: pathlib.Path) -> None:
-    """Accuracy (%) against the label set, 188, 162, 43, 17 classes and the random grouping, for the linear probe on the
-    frozen features and the fine-tuned models (10^6 jets), the network trained from scratch a dashed line with its
-    band; JetClass-II one axis, JetClass two stacked parts, the axis broken between the two modes."""
-    h = 0.72 * ACC_W
-    top = S.LEGEND_TOP + 0.45 + 0.6
-    fig = S.figure_cm(S.PRINT_W, top + h + 1.55)
+    """Accuracy (%) for every label set on JetClass-II (a) and JetClass (b): the linear probe on the frozen features
+    (open, upper part) and the models fine-tuned on 10^6 jets (filled, lower part), each part its own range; the
+    network trained from scratch a dashed line with its band in the fine-tuned part."""
+    top = S.LEGEND_TOP + 0.5 * 2 + 0.55
+    H = top + 2 * ACC_SUB + ACC_GAP + 1.75
+    fig = S.figure_cm(S.PRINT_W, H)
     for k, (key, n, ds, title) in enumerate(ACC_PANELS):
         vals = accuracy_values(key, n, ds)
         x = ACC_LEFT + k * (ACC_W + ACC_WGAP)
-        if key in ACC_STACKED:
-            hp = (h - ACC_GAP) / 2
-            upper = S.axes_cm(fig, x, top, ACC_W, hp)
-            lower = S.axes_cm(fig, x, top + hp + ACC_GAP, ACC_W, hp, sharex=upper)
-            lower.set_label("<break>")                  # figcheck: a part of its panel, beyond the break
-            _ylim(upper, _acc_mode(upper, vals["ft"], "ft") + _scratch_line(upper, vals["scratch"]))
-            _ylim(lower, _acc_mode(lower, vals["probe"], "probe"))
-            _break_y(upper, lower)
-            upper.tick_params(axis="x", which="both", labelbottom=False)     # shared x: the labels on the lower part only
-            parts, main = (upper, lower), upper
-            upper.yaxis.set_label_coords(-0.14, -ACC_GAP / 2 / hp)
-        else:
-            main = S.axes_cm(fig, x, top, ACC_W, h)
-            _ylim(main, _acc_mode(main, vals["ft"], "ft") + _acc_mode(main, vals["probe"], "probe")
-                  + _scratch_line(main, vals["scratch"]))
-            parts = (main,)
-        for ax in parts:
+        parts = []
+        for i, (mode, ylabel, filled) in enumerate(ACC_MODES):
+            ax = S.axes_cm(fig, x, top + i * (ACC_SUB + ACC_GAP), ACC_W, ACC_SUB, **({"sharex": parts[0]} if parts else {}))
+            if parts:
+                ax.set_label("<break>")             # figcheck: one panel in two parts
+            parts.append(ax)
+            ends = []
+            for key_, xc in ACC_COLS:
+                ends += _acc_column(ax, xc, vals[mode][key_], S.SERIES[key_], filled)
+            if mode == "ft":
+                m, sd = _msd(vals["scratch"])
+                ax.axhspan(m - sd, m + sd, color=S.SERIES["SCRATCH"], alpha=L.BAND, linewidth=0, zorder=0.9)
+                ax.axhline(m, color=S.SERIES["SCRATCH"], linestyle="--", linewidth=S.LW_CURVE, zorder=1.0)
+                ends += [m - sd, m + sd]
+            lo, hi = min(ends), max(ends)
+            d = 0.1 * (hi - lo)
+            ax.set_ylim(lo - d, hi + d)
+            ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10]))
+            ax.set_xlim(-0.55, ACC_COLS[-1][1] + 0.6)
+            ax.xaxis.set_major_locator(ticker.FixedLocator([c for _, c in ACC_COLS]))
+            ax.xaxis.set_minor_locator(ticker.NullLocator())
+            for xsep in ACC_SEP:
+                ax.axvline(xsep, color=S.GREY_MID, linewidth=S.LW_THIN, zorder=0.5)
             S.fine_grid(ax)
-            _acc_x(ax, ax is parts[-1])
-        for ax in parts[:-1]:
-            ax.tick_params(axis="x", which="both", labelbottom=False)
-        S.title(main, f"({'ab'[k]}) {title}")
-        S.labels(main, ylabel="Accuracy (%)")
-        S.labels(parts[-1], xlabel="Pretraining label set (classes)")
-    handles = [Line2D([], [], color=ACC_MODES[m][1], linewidth=0.8, marker="o", markersize=DOT,
-                      markerfacecolor="#000000" if ACC_MODES[m][2] else "white", markeredgecolor="#000000",
-                      markeredgewidth=0.9) for m in ("ft", "probe")]
-    handles.append((Patch(facecolor=S.SERIES["SCRATCH"], alpha=L.BAND, linewidth=0),
-                    Line2D([], [], color=S.SERIES["SCRATCH"], linestyle="--", linewidth=S.LW_CURVE)))
-    S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=3,
-                 labels=[ACC_MODES["ft"][0], ACC_MODES["probe"][0], S.LEGEND["SCRATCH"]])
+            S.labels(ax, ylabel=ylabel)
+        parts[0].tick_params(axis="x", which="both", labelbottom=False)
+        parts[1].xaxis.set_major_formatter(ticker.FixedFormatter(ACC_TICKS))
+        S.clear_edge_labels(parts[0], low=True)
+        S.clear_edge_labels(parts[1], high=True)
+        S.title(parts[0], f"({'ab'[k]}) {title}")
+        yfam = top + 2 * ACC_SUB + ACC_GAP + 1.2
+        for name, a, b in ACC_FAMILIES:
+            xc = x + ACC_W * ((a + b) / 2 + 0.55) / (ACC_COLS[-1][1] + 1.15)
+            fig.text(xc / S.PRINT_W, 1 - yfam / H, name, ha="center", va="center", fontsize=FONT)
+    handles = [Line2D([], [], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor="white",
+                      markeredgecolor="#000000", markeredgewidth=1.0),
+               Line2D([], [], linestyle="none", marker="o", markersize=MEAN_DOT, markerfacecolor="#000000",
+                      markeredgecolor="#000000"),
+               Line2D([], [], linestyle="none", marker="o", markersize=RUN_DOT, markeredgewidth=0, color="#000000",
+                      alpha=RUN_ALPHA),
+               (Patch(facecolor=S.SERIES["SCRATCH"], alpha=L.BAND, linewidth=0),
+                Line2D([], [], color=S.SERIES["SCRATCH"], linestyle="--", linewidth=S.LW_CURVE))]
+    S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=2,
+                 labels=["linear probe, mean ± s.d.", "fine-tuned, mean ± s.d.", "single run or draw",
+                         S.LEGEND["SCRATCH"]])
+    S.save(fig, path)
+
+
+# ------------------------------------------------------------------ the separation figure: accuracy against S(L)
+SEP_CSV = C.P.DATA / "stats" / "a1_separation.csv"
+SEP_KEY = {"RAND2_p1": "RAND", "RAND2_p2": "RAND", "RAND2_p3": "RAND", "RAND2_p4": "RAND", "RAND2_p5": "RAND"}
+SEP_ORDER = ("L188", "L162", "R42_Q1", "R16_Q1", "RAND", "FLAV_F0", "FLAV_F1", "FLAV_F1R")
+
+
+def separation_rows() -> list:
+    """[(label set, its colour key, S, accuracy %, SD %)] of the build's file stats/a1_separation.csv (twelve label
+    sets: nested, five random groupings, three flavor-boundary groupings)."""
+    import csv
+    rows = list(csv.DictReader(SEP_CSV.open()))
+    if len(rows) != 12:
+        raise SystemExit(f"FATAL: {SEP_CSV.name} has {len(rows)} label sets, not 12")
+    return [(r["label_set"], SEP_KEY.get(r["label_set"], r["label_set"]), float(r["S"]), PERCENT * float(r["accuracy"]),
+             PERCENT * float(r["accuracy_sd"]) if r["accuracy_sd"] else 0.0) for r in rows]
+
+
+def draw_fig_separation(path: pathlib.Path) -> None:
+    """Frozen 188-class linear-probe accuracy on JetClass-II against the confusion-weighted separation S of each label
+    set, every pretrained label set a point in its colour and marker with its SD bar; the legend beside the panel."""
+    w, h, left, top = 7.4, 0.72 * 7.4, 1.5, 0.35
+    fig = S.figure_cm(S.PRINT_W, top + h + 1.15)
+    ax = S.axes_cm(fig, left, top, w, h)
+    S.fine_grid(ax)
+    xs, ys = [], []
+    for _, key, s, acc, sd in separation_rows():
+        if sd:
+            ax.errorbar([s], [acc], yerr=sd, fmt="none", ecolor=S.SERIES[key], elinewidth=BAR, capsize=0, zorder=2.5)
+        ax.plot([s], [acc], linestyle="none", marker=S.MARKERS[key], markersize=MEAN_DOT * (S.STAR_SCALE if S.MARKERS[key] == "*" else 1),
+                markerfacecolor=S.SERIES[key], markeredgecolor=S.SERIES[key], zorder=2.7)
+        xs += [s]
+        ys += [acc - sd, acc + sd]
+    ax.set_xlim(min(xs) - 0.04, max(xs) + 0.04)
+    d = 0.08 * (max(ys) - min(ys))
+    ax.set_ylim(min(ys) - d, max(ys) + d)
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]))
+    S.labels(ax, xlabel=r"Confusion-weighted separation $S$", ylabel="Linear probe, JetClass-II (%)")
+    handles = [Line2D([], [], linestyle="none", marker=S.MARKERS[k], markersize=MEAN_DOT, color=S.SERIES[k],
+                      label=S.LEGEND[k]) for k in SEP_ORDER]
+    x = left + w + 0.5
+    S.slot_legend(fig, handles, x, top, S.PRINT_W - x - 0.1, h)
     S.save(fig, path)
 
 
@@ -412,39 +556,102 @@ def _pairs_panel(ax) -> list:
                label="half: they merge part of it", **mark)]
 
 
-FIG3_ROWS = (("R42_Q1", "L188"), ("R16_Q1", "L188"))
+# ------------------------------------------------------------------ Fig. 3: recall by merge kind, and pairs of classes
+MERGE_KINDS = (("Qcd", "QCD"), ("Quark", "quark\nflavor"), ("Lepton", "lepton\nflavor"), ("Both", "both"),
+               ("Neither", "neither"))
+MERGE_ARMS = (("R42_Q1", -0.12), ("R16_Q1", 0.12))
+
+
+def recall_by_merge() -> dict:
+    """{arm: {kind: (mean recall change in points, its standard deviation over runs, classes)}}, frozen JetClass-II,
+    the 43- and 17-class models against the 188-class one, by what the label set merges a class with: the read-out's
+    classification (experiments/FIGS/v2_rev35.recall_by_merge, the build's VRecall macros) with, per run, the mean over
+    the kind's classes of the run's recall minus the 188-class mean; the SD over runs combines that spread with the
+    188-class runs' spread of the same mean."""
+    import csv
+    R, root = M, C.P.REPO
+    q, lep = R._orbits(root)
+    groups = R._groups(root)
+    names = {int(r["jet_label"]): r["class_name"] for r in csv.DictReader((root / "configs/labelmaps/rung_label_maps.v1.csv").open())}
+    docs = {"lp": json.loads((C.P.DATA / "perclass_recall/probe_jc2.json").read_text())}
+    ref = R.per_class_recall(docs, C.RUNS, "L188", "lp")
+    out = {}
+    for arm, _ in MERGE_ARMS:
+        g = groups[arm]
+        rec = R.per_class_recall(docs, C.RUNS, arm, "lp")
+
+        def merged(c, key_of):
+            n = names[c]
+            return n in key_of and any(b != n and key_of[b] == key_of[n] and g[b] == g[n] for b in key_of)
+        kinds = {k: [] for k, _ in MERGE_KINDS}
+        for c in rec:
+            if names[c].startswith("label_QCD"):
+                kinds["Qcd"].append(c)
+                continue
+            mq, ml = merged(c, q), merged(c, lep)
+            kinds["Both" if mq and ml else "Quark" if mq else "Lepton" if ml else "Neither"].append(c)
+        out[arm] = {}
+        for k, cs in kinds.items():
+            ref_mean = {c: float(np.mean(ref[c])) for c in cs}
+            per_run = [np.mean([100 * (rec[c][i] - ref_mean[c]) for c in cs]) for i in range(len(rec[cs[0]]))]
+            ref_run = [np.mean([100 * ref[c][i] for c in cs]) for i in range(len(ref[cs[0]]))]
+            sd = float(np.hypot(np.std(per_run, ddof=1), np.std(ref_run, ddof=1)))
+            out[arm][k] = (float(np.mean(per_run)), sd, len(cs))
+    return out
+
+
+def _merge_panel(ax) -> None:
+    """Fig. 3(a): the mean recall change by merge kind, the 43- and 17-class models side by side in their colours and
+    markers, a bar their standard deviation over runs; a dotted line at no change."""
+    data = recall_by_merge()
+    for arm, dx in MERGE_ARMS:
+        for i, (k, _) in enumerate(MERGE_KINDS):
+            m, sd, _ = data[arm][k]
+            ax.errorbar([i + dx], [m], yerr=sd, fmt="none", ecolor=S.SERIES[arm], elinewidth=BAR, capsize=0, zorder=2.5)
+            ax.plot([i + dx], [m], linestyle="none", marker=S.MARKERS[arm], markersize=MEAN_DOT,
+                    color=S.SERIES[arm], zorder=2.7)
+    ax.axhline(0.0, **S.REFERENCE, zorder=1.5)
+    ax.set_xlim(-0.5, len(MERGE_KINDS) - 0.5)
+    ax.xaxis.set_major_locator(ticker.FixedLocator(range(len(MERGE_KINDS))))
+    ax.xaxis.set_major_formatter(ticker.FixedFormatter([t for _, t in MERGE_KINDS]))
+    ax.xaxis.set_minor_locator(ticker.NullLocator())
+    S.data_ylim(ax, pad=0.12)
+    ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]))
+    S.fine_grid(ax)
+    S.labels(ax, xlabel="Merged with", ylabel="Recall change (points)")
 
 
 def draw_fig3(path: pathlib.Path) -> None:
-    """(a, b) Fig. A1's recall panels for the 43- and 17-class models; (c) the pairs of classes (_pairs_panel), the row
-    names left of it; the colour legend of (a, b) above them, the network legend of (c) between the rows."""
-    w, left, wgap = 6.1, 1.35, 1.45
-    top_leg = S.LEGEND_TOP + 0.45 * 3
-    y_ab = top_leg + 0.6
-    y_leg2 = y_ab + w + 1.05
-    y_c = y_leg2 + 0.45 * 3 + 0.75                     # the network legend: eight entries in three rows
-    xc, wc = 5.9, S.PRINT_W - 5.9 - 0.15               # the row names carry the 188-class value
-    hc = 0.72 * wc
-    H = y_c + hc + 1.05
+    """(a) the mean change of per-class recall by merge kind (_merge_panel); (b) the pairs of classes (_pairs_panel),
+    the row names left of it. One legend beside (a): the label sets of both panels and the marker fills of (b)."""
+    wa, ha = 6.1, 0.72 * 6.1
+    top_a, left = 0.6, 1.5
+    y_b = top_a + ha + 1.75
+    xb, wb = 6.4, S.PRINT_W - 6.4 - 0.15
+    hb = 0.72 * wb
+    H = y_b + hb + 1.0
     fig = S.figure_cm(S.PRINT_W, H)
-    handles = _recall(fig, [(left, y_ab, w), (left + w + wgap, y_ab, w)], FIG3_ROWS)
-    S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=3, columnspacing=0.8, handletextpad=0.4)
-    ax = S.axes_cm(fig, xc, y_c, wc, hc)
-    pair_handles = _pairs_panel(ax)
-    S.title(ax, "(c) Pairs of classes")
-    fig.legend(handles=pair_handles, loc="upper center", bbox_to_anchor=(0.5, 1 - y_leg2 / H), ncol=3, frameon=False,
-               fontsize=S.LEGEND_PT5, borderpad=0.2, labelspacing=0.3, columnspacing=1.0, handletextpad=0.3)
+    a = S.axes_cm(fig, left, top_a, wa, ha)
+    _merge_panel(a)
+    S.title(a, "(a) Per-class recall")
+    b = S.axes_cm(fig, xb, y_b, wb, hb)
+    handles = _pairs_panel(b)
+    S.title(b, "(b) Pairs of classes")
+    import textwrap
+    x = left + wa + 0.5
+    S.slot_legend(fig, handles, x, top_a, S.PRINT_W - x - 0.1, ha,
+                  labels=[textwrap.fill(h.get_label(), 26) for h in handles])
     S.save(fig, path)
 
 
 def draw_figA1(path: pathlib.Path) -> None:
-    """The 162-class panel of the recall family (Fig. 3(a, b) holds the 43- and 17-class ones; editor 8f085fe, item
-    50), one square panel, the legend beside it."""
-    w, left, top = 6.15, 1.25, 0.6
-    fig = S.figure_cm(S.PRINT_W, top + w + 0.95)
-    handles = _recall(fig, [(left, top, w)], RECALL_ROWS[:1])
-    x = left + w + 0.5
-    S.slot_legend(fig, handles, x, top, S.PRINT_W - x - 0.1, w)
+    """The per-class recall scatters (162, 43, 17 against 188 classes; moved from Fig. 3, ledger 35), two a row, the
+    legend in the fourth slot."""
+    w, left, wgap, top, hgap = 6.15, 1.25, 1.3, 0.6, 1.5
+    fig = S.figure_cm(S.PRINT_W, top + 2 * w + hgap + 0.95)
+    slots = [(left + j * (w + wgap), top + i * (w + hgap), w) for i, j in ((0, 0), (0, 1), (1, 0))]
+    handles = _recall(fig, slots, RECALL_ROWS)
+    S.slot_legend(fig, handles, left + w + wgap, top + w + hgap, w, w)
     S.save(fig, path)
 
 
@@ -501,62 +708,64 @@ def draw_figA6(path: pathlib.Path) -> None:
 
 # ------------------------------------------------------------------ Fig. 4: the resonance benchmark
 def draw_fig5(path: pathlib.Path) -> None:
-    """Signal efficiency against background efficiency (both logarithmic) of X->bb and X->bs, from the curves of
-    gallery_physics._xbx_series: the classifier on the frozen features for XBX_NETS, the same classifier trained from
-    scratch, and for X->bb the output scores of the label sets that keep it as a class; every curve its band. Under each
-    panel the ratio to the 188-class transfer learning on a linear scale; a dotted line at 1% background efficiency."""
+    """Background rejection 1/eps_B (log) against signal efficiency for X->bb and X->bs (ParT's and Sophon's axes),
+    from the curves of gallery_physics._xbx_series: a classifier trained on the frozen features of each label set,
+    Sophon's network trained from scratch, and for X->bb the output scores of the label sets that keep it as a class
+    (dash-dot); every curve the mean over runs with its standard-deviation band (the from-scratch band as is: the
+    read-out found no run a rule removes, ledger 35 V2). Under each panel the ratio to the 188-class model; a dotted
+    line at 1/eps_B = 100, the 1% background efficiency of the text."""
     XR = C.P._xr()
     panels = [PH._xbx_series(XR, sig, XBX_NETS, PH.CLASSIFIER, True, True) for sig, _ in XR.SIGNALS]
-    cols = [["L188", "L162"], ["R42_Q1", "R16_Q1", "SCRATCH"], [f"{n} direct" for n in XBX_NETS if XR.direct_ok(M, n)]]
-    rows = max(len(c) for c in cols)
-    fig, grid, rgrid = S.grid_cm(1, 2, w=6.1, aspect=0.85, ratio=0.35, top=S.LEGEND_TOP + 0.45 * rows + 0.45,
-                                 left=1.25, wgap=1.45, bottom=1.15)
-    axes, raxes, handles, low, xs, rlo = list(grid[0]), list(rgrid[0]), {}, [], [], []
+    fig, grid, rgrid = S.grid_cm(1, 2, w=6.1, aspect=0.85, ratio=0.35, top=S.LEGEND_TOP + 0.5 * 2 + 0.5,
+                                 left=1.4, wgap=1.5, bottom=1.2)
+    axes, raxes, low, rlo = list(grid[0]), list(rgrid[0]), [], []
+    eps = np.asarray(C.P.EPS_S_GRID, float)
     for ax, rx, series in zip(axes, raxes, panels):
         curves = {}
         for key, label, style, rs in series:
-            x, y, _ = C.P.xbx_curves(M, rs)
-            eff = y * np.sqrt(x)
-            curves[key] = (x, eff.mean(axis=0), eff.std(axis=0, ddof=1) if len(eff) > 1 else np.zeros(eff.shape[1]))
-            handles.setdefault(key, (Line2D([], [], **{**style, "linewidth": S.LW_CURVE}), label))
-        rx_, rm, _ = curves["L188"]
+            _, _, rej = C.P.xbx_curves(M, rs)
+            ok = np.isfinite(rej).all(axis=0)
+            mean = rej.mean(axis=0)
+            sd = rej.std(axis=0, ddof=1) if len(rej) > 1 else np.zeros_like(mean)
+            curves[key] = (eps[ok], mean[ok], sd[ok], style)
+        ref = dict(zip(np.round(curves["L188"][0], 9), curves["L188"][1]))
         for key, label, style, _ in reversed(series):
-            x, mean, sd = curves[key]
-            ax.fill_between(x, mean - sd, mean + sd, color=style["color"], alpha=L.BAND, linewidth=0, zorder=1.0)
-            ax.plot(x, mean, **{**style, "linewidth": S.LW_CURVE})
-            low.append(float(np.min(mean - sd)))
-            xs += [float(np.min(x)), float(np.max(x))]
-            common, i, j = np.intersect1d(np.round(x, 12), np.round(rx_, 12), return_indices=True)
-            r, rs_ = mean[i] / rm[j], sd[i] / rm[j]
-            rx.fill_between(common, r - rs_, r + rs_, color=style["color"], alpha=L.BAND, linewidth=0, zorder=1.0)
-            rx.plot(common, r, **{**style, "linewidth": S.LW_CURVE})
+            x, mean, sd, st = curves[key]
+            ax.fill_between(x, mean - sd, mean + sd, color=st["color"], alpha=L.BAND, linewidth=0, zorder=1.0)
+            ax.plot(x, mean, **{**st, "linewidth": S.LW_CURVE})
+            low += [v for v in mean - sd if v > 0]
+            keep = [i for i, xx in enumerate(np.round(x, 9)) if xx in ref]
+            r = np.array([mean[i] / ref[np.round(x[i], 9)] for i in keep])
+            rs_ = np.array([sd[i] / ref[np.round(x[i], 9)] for i in keep])
+            xr = x[keep]
+            rx.fill_between(xr, r - rs_, r + rs_, color=st["color"], alpha=L.BAND, linewidth=0, zorder=1.0)
+            rx.plot(xr, r, **{**st, "linewidth": S.LW_CURVE})
             rlo += list(r - rs_) + list(r + rs_)
-        for a in (ax, rx):
-            a.axvline(1e-2, **S.REFERENCE, zorder=1.5)
+        ax.axhline(100.0, **S.REFERENCE, zorder=1.5)
         rx.axhline(1.0, color="#000000", linewidth=S.LW_THIN, zorder=1.4)
     for ax, rx, what in zip(axes, raxes, (r"$X\rightarrow b\bar{b}$", r"$X\rightarrow bs$")):
         S.fine_grid(ax)
         S.fine_grid(rx)
-        ax.set_xlim(min(xs) / 1.3, max(xs) * 1.3)
+        ax.set_xlim(eps.min() - 0.02, 1.02)
         ax.set_yscale("log")
-        ax.set_ylim(min(v for v in low if v > 0) / 1.2, 1.25)
-        S.log_axis(ax, "x")
-        S.log_axis(ax, "y", fine=True)
-        S.clear_edge_labels(ax, low=True)            # its lowest label clear of the ratio panel under it
+        ax.set_ylim(min(low) / 1.3, max(v for a_ in axes for ln in a_.lines for v in ln.get_ydata()) * 1.3)
+        S.log_axis(ax, "y", force=True)
+        S.clear_edge_labels(ax, low=True)
         S.title(ax, what)
-        S.labels(ax, ylabel=S.X_EPS)
-        S.labels(rx, xlabel=X_EPS_B, ylabel="Ratio")
-        rx.tick_params(labelbottom=True)
+        S.labels(ax, ylabel=r"Rejection ($1/\varepsilon_B$)")
+        S.labels(rx, xlabel=S.X_EPS, ylabel="Ratio")
+        rx.xaxis.set_major_locator(ticker.MultipleLocator(0.2))
     v = np.array([x for x in rlo if np.isfinite(x)] + [1.0])
     d = 0.08 * (v.max() - v.min())
     for rx in raxes:
-        rx.set_ylim(v.min() - d, v.max() + d)
+        rx.set_ylim(max(v.min() - d, 0.0), v.max() + d)
         rx.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, steps=[1, 2, 2.5, 5, 10]))
         S.clear_edge_labels(rx, high=True)
     S.letter_panels(axes)
-    blank = (Line2D([], [], linestyle="none", marker="none"), "")
-    items = [handles.get(k, blank) if k else blank for c in cols for k in c + [None] * (rows - len(c))]
-    S.fig_legend(fig, [h for h, _ in items], top_cm=S.LEGEND_TOP, ncol=len(cols), labels=[t for _, t in items])
+    nets = [k for k in ("L188", "L162", "R42_Q1", "R16_Q1", "SCRATCH")]
+    handles = [Line2D([], [], **{**S.look(k), "linewidth": S.LW_CURVE}) for k in nets]
+    handles.append(Line2D([], [], color="#000000", linestyle=S.MODE_LINE["direct"], linewidth=S.LW_CURVE))
+    S.fig_legend(fig, handles, top_cm=S.LEGEND_TOP, ncol=3, labels=[S.LEGEND[k] for k in nets] + ["output scores"])
     S.save(fig, path)
 
 
@@ -642,7 +851,7 @@ def draw_figA7(path: pathlib.Path) -> None:
 
 def draw_figA3(path: pathlib.Path) -> None:
     """Fig. 5's form for linear probes on the frozen features of Table 2's pretrained rows, the four tasks."""
-    _size_figure(path, [_pct_series(G._probe(r)) for r in SUMMARY_ROWS], SUMMARY_ROWS, SIZE_PANELS, 2)
+    _size_figure(path, [_pct_series(G._probe(r)) for r in SUMMARY_ROWS], SUMMARY_ROWS, SIZE_PANELS, 3)
 
 
 # ------------------------------------------------------------------ Figs. A4 and A5
@@ -718,12 +927,17 @@ def draw_figA5(path: pathlib.Path) -> None:
 # figure at this height (as it does at the results book's 18.5 cm), so its text would print smaller
 PAPER_MAX_H_CM = 21.6
 # (file stem, its drawing, printed width in cm, figcheck's least panel width in cm), in the paper's order
-FIGURES = (("fig1_design", draw_fig1, 13.0, 6.1), ("fig2_accuracy", draw_fig2, 15.0, 6.1),
-           ("fig3_classes", draw_fig3, 15.0, 6.1), ("fig5_resonance", draw_fig5, 15.0, 6.1),
-           ("fig4_training_size", draw_fig4, 15.0, 6.1),
+FIGURES = (("fig1_design", draw_fig1, 15.0, 6.1), ("fig2_accuracy", draw_fig2, 15.0, 6.1),
+           ("fig_separation", draw_fig_separation, 15.0, 6.1), ("fig3_classes", draw_fig3, 15.0, 6.1),
+           ("fig5_resonance", draw_fig5, 15.0, 6.1), ("fig4_training_size", draw_fig4, 15.0, 6.1),
            ("figA1", draw_figA1, 15.0, 4.5), ("figA2", draw_figA2, 15.0, 6.1), ("figA6", draw_figA6, 15.0, 6.1),
            ("figA3", draw_figA3, 15.0, 6.1), ("figA7", draw_figA7, 15.0, 6.1), ("figA4", draw_figA4, 15.0, 6.05),
            ("figA5", draw_figA5, 15.0, 6.1))
+# the figure names for the text: \vfig{<stem>} with these labels (the writer's \label), in the paper's order
+FIGURE_NAMES = {"fig1_design": "fig:design", "fig2_accuracy": "fig:accuracy", "fig_separation": "fig:separation",
+                "fig3_classes": "fig:classes", "fig5_resonance": "fig:resonance", "fig4_training_size": "fig:size",
+                "figA1": "fig:recall", "figA2": "fig:otherpairs", "figA6": "fig:qcdpairs", "figA3": "fig:probesize",
+                "figA7": "fig:ftbinary", "figA4": "fig:masspt", "figA5": "fig:validation"}
 
 
 def main() -> int:
@@ -753,7 +967,7 @@ def main() -> int:
             mod.save = save
     with names():
         for stem, draw, _, _ in FIGURES:
-            S.use_style5(simplify=True)
+            v2_style()
             draw(a.outdir / stem)
             print(f"{stem}: drawn")
     print("V2 FIGURES COMPLETE")

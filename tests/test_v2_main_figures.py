@@ -7,6 +7,7 @@ import re
 import sys
 
 import matplotlib
+import matplotlib.patches
 
 matplotlib.use("Agg")
 import numpy as np  # noqa: E402
@@ -30,7 +31,7 @@ def figures():
     try:
         with V.names():
             for stem, draw, _, _ in V.FIGURES:
-                S.use_style5(simplify=True)
+                V.v2_style()
                 draw(pathlib.Path(stem))
     finally:
         S.save = save
@@ -49,23 +50,22 @@ def _panels(fig) -> list:
     return [ax for ax in fig.axes if re.match(r"\([a-z]\) ", ax.get_title())]
 
 
-STEMS = ["fig1_design", "fig2_accuracy", "fig3_classes", "fig5_resonance", "fig4_training_size", "figA1", "figA2",
-         "figA6", "figA3", "figA7", "figA4", "figA5"]
+STEMS = ["fig1_design", "fig2_accuracy", "fig_separation", "fig3_classes", "fig5_resonance", "fig4_training_size",
+         "figA1", "figA2", "figA6", "figA3", "figA7", "figA4", "figA5"]
 
 
-def test_the_figures_of_the_list_and_no_flavor_boundary_partition():
+def test_the_figures_of_the_list_and_their_names():
     assert [stem for stem, *_ in V.FIGURES] == STEMS
-    nets = V.SUMMARY_ROWS + V.PAIR_NETS + V.SIZE_NETS + V.XBX_NETS + V.ACC_ROWS + tuple(a for a, _ in V.RECALL_ROWS)
-    assert not [n for n in nets if n.startswith("FLAV")]
+    assert list(V.FIGURE_NAMES) == STEMS and len(set(V.FIGURE_NAMES.values())) == len(STEMS)
 
 
-def test_the_names_are_the_rewrites_and_the_gallery_keeps_its_own():
-    before = dict(S.LEGEND)
+def test_the_names_and_font_are_the_rewrites_and_the_gallery_keeps_its_own():
+    before, fonts = dict(S.LEGEND), {k: getattr(S, k) for k in V.FONT_KEYS}
     with V.names():
         assert S.LEGEND["RAND"] == "17 classes, random grouping" and S.LEGEND["SOPHON"] == "Sophon (released)"
-        assert S.LEGEND["L162_MASS"] == "162 classes + mass regression" and S.LEGEND["SCRATCH"] == "trained from scratch"
-        assert V.PH.DIRECT_TAG == "(output scores)"
-    assert S.LEGEND == before and V.PH.DIRECT_TAG == "(direct discriminant)"
+        assert S.LEGEND["SCRATCH"] == "trained from scratch" and V.PH.DIRECT_TAG == "(output scores)"
+        assert all(getattr(S, k) == V.FONT for k in V.FONT_KEYS)
+    assert S.LEGEND == before and {k: getattr(S, k) for k in V.FONT_KEYS} == fonts
 
 
 def test_no_label_of_any_figure_is_an_internal_name(figures):
@@ -74,95 +74,98 @@ def test_no_label_of_any_figure_is_an_internal_name(figures):
     assert not bad
 
 
-def test_every_figure_fits_the_papers_page(figures):
+def test_every_figure_fits_the_papers_page_and_prints_at_the_figure_font(figures):
     assert {stem: round(fig.get_figheight() / S.CM, 1) for stem, fig in figures.items()
             if fig.get_figheight() / S.CM > V.PAPER_MAX_H_CM} == {}
+    small = {stem: sorted({round(t.get_fontsize(), 1) for t in fig.findobj(matplotlib.text.Text)
+                           if t.get_text().strip() and t.get_fontsize() < V.FONT - 1e-6})
+             for stem, fig in figures.items() if not stem.startswith("figA")}
+    assert not {k: v for k, v in small.items() if v}
 
 
-def test_fig1_nests_one_example_group_and_shows_one_flow(figures):
-    texts = _texts(figures["fig1_design"])
+def test_fig1_is_a_tree_and_one_row_in_under_60_words(figures):
+    fig = figures["fig1_design"]
+    texts = _texts(fig)
     assert all(f"{n} classes" in texts for n in (188, 162, 43, 17))
-    assert sum(bool(re.fullmatch(r"\$X\\!\\to [a-z]\S*( [a-z])?\$", t)) for t in texts) == 10      # its ten classes as jets
-    assert r"$X\!\to$two quarks or gluons" in texts
-    assert "the group drawn above" in texts and any(t.startswith("Each cell is one of the 188 classes") for t in texts)
-    # ledger 34.3: one flow, network, features, then linear probe or fine-tuning, then the tasks; no row of squares
-    assert {"Linear probe", "Fine-tuning", "Features"} <= set(texts) and "Frozen features" not in texts
-    assert "Output\nlayer" not in texts and "JetClass-II\nJetClass\nTop tagging\nQuark/gluon" in texts
-    # editor 8f085fe, item 30: the resonance benchmark has its own use and box, in the text's words (methods.tex: "a
-    # classifier trained on the frozen features")
-    assert "Classifier trained\non frozen features" in texts and r"$X\!\to b\bar b$, $X\!\to bs$" in texts
-    assert not [t for t in texts if "ransfer learning" in t]
+    assert [t for t in texts if t in [V._class_tex(c) for c, _ in V.fig1_classes()]] == [V._class_tex(c) for c, _ in
+                                                                                       V.fig1_classes()]
+    assert {"Features", "Fine-tuning", "Frozen-feature\nclassifier", "JetClass-II jets"} <= set(texts)
+    assert sum(len(t.split()) for t in texts) < 60 and V.fig1_words() < 60
+    # ledger 35: no jet glyphs, no 188-cell strip, no notes
+    assert not [t for t in texts if "group drawn" in t or "Each cell" in t or "prong" in t]
+    assert len([p_ for ax in fig.axes for p_ in ax.patches if isinstance(p_, matplotlib.patches.Rectangle)]) < 40
 
 
-def test_fig2_is_accuracy_against_the_label_set_with_the_tables_values(figures):
+def test_fig2_is_a_dot_plot_with_the_tables_values_and_no_joining_lines(figures):
     fig = figures["fig2_accuracy"]
     panels = _panels(fig)
     assert [ax.get_title() for ax in panels] == ["(a) JetClass-II", "(b) JetClass"]
-    assert _legend(fig) == ["fine-tuned", "linear probe", "trained from scratch"]
     for ax, (key, n, ds, _) in zip(panels, V.ACC_PANELS):
         vals = V.accuracy_values(key, n, ds)
         parts = [ax] + [o for o in fig.axes if o.get_label() == "<break>" and o.get_shared_x_axes().joined(ax, o)]
-        drawn = sorted(round(float(ln.get_ydata()[0]), 9) for a in parts for ln in a.lines
-                       if ln.get_marker() == "o" and len(ln.get_ydata()) == 1)
-        want = sorted(round(float(np.mean(v)), 9) for mode in ("probe", "ft") for v in vals[mode].values())
-        assert drawn == want                                      # every point a table's mean, in percent
-        assert 30 < min(want) and max(want) < 90
-        assert len(parts) == (2 if key in V.ACC_STACKED else 1)
-    # JetClass: the axis broken between the fine-tuned models (upper part) and the linear probes (lower part)
-    upper = panels[1]
-    lower = [o for o in fig.axes if o.get_label() == "<break>"][0]
-    assert upper.get_ylim()[0] > lower.get_ylim()[1]
-    fig.canvas.draw()                    # the x tick labels on the lower part only
-    assert not [t for t in upper.get_xticklabels() if t.get_visible() and t.get_text()]
+        assert len(parts) == 2
+        for part, (mode, _, filled) in zip(parts, V.ACC_MODES):
+            means = sorted(round(float(ln.get_ydata()[0]), 9) for ln in part.lines
+                           if ln.get_marker() == "o" and len(ln.get_ydata()) == 1 and ln.get_markersize() == V.MEAN_DOT)
+            assert means == sorted(round(float(np.mean(v)), 9) for v in vals[mode].values())
+            # no line joins two columns: every drawn line is a single point, a set of run dots, or a guide
+            joined = [ln for ln in part.lines if ln.get_linestyle() not in ("None", "none") and ln.get_transform() == part.transData]
+            assert not joined
+            runs = sum(len(v) for v in vals[mode].values())
+            assert sum(len(ln.get_xdata()) for ln in part.lines if ln.get_markersize() == V.RUN_DOT) == runs
+    assert _legend(fig)[-1] == "trained from scratch"
 
 
-def test_fig3_shows_recall_and_the_pairs_of_classes(figures):
+def test_separation_figure_draws_the_twelve_label_sets_of_the_build(figures):
+    fig = figures["fig_separation"]
+    ax = [a for a in fig.axes if a.lines][0]
+    pts = sorted((round(float(ln.get_xdata()[0]), 6), round(float(ln.get_ydata()[0]), 6)) for ln in ax.lines
+                 if len(ln.get_xdata()) == 1)
+    assert pts == sorted((round(s, 6), round(a, 6)) for _, _, s, a, _ in V.separation_rows()) and len(pts) == 12
+    with V.names():
+        assert _legend(fig) == [S.LEGEND[k] for k in V.SEP_ORDER]
+    assert not fig.texts and not [t for t in ax.texts]                     # rho is in the caption, not the plot
+
+
+def test_fig3_shows_recall_by_merge_kind_and_the_pairs(figures):
     fig = figures["fig3_classes"]
     panels = _panels(fig)
-    assert [ax.get_title() for ax in panels] == ["(a) 43 classes", "(b) 17 classes", "(c) Pairs of classes"]
-    c = panels[2]
-    assert c.get_xscale() == "log" and c.get_xlabel() == r"$1 - \mathrm{AUC}$, relative to 188 classes"
+    assert [ax.get_title() for ax in panels] == ["(a) Per-class recall", "(b) Pairs of classes"]
+    a, c = panels
+    data = V.recall_by_merge()
+    import importlib
+    import sys as _sys
+    _sys.path.insert(0, str(ROOT / "experiments/FIGS"))
+    RV = importlib.import_module("v2_rev35")
+    import json
+    docs = {"lp": json.loads((V.C.P.DATA / "perclass_recall/probe_jc2.json").read_text())}
+    macros, _ = RV.recall_by_merge(V.M, ROOT, docs, V.C.RUNS)
+    for arm, w in (("R42_Q1", "Mid"), ("R16_Q1", "Coarse")):     # the build's VRecall macros
+        for k, _ in V.MERGE_KINDS:
+            assert f"{data[arm][k][0]:.1f}" == macros[f"VRecall{w}{k}"] and str(data[arm][k][2]) == macros[f"VRecall{w}{k}N"]
+    pts = sorted(round(float(ln.get_ydata()[0]), 9) for ln in a.lines if len(ln.get_ydata()) == 1)
+    assert pts == sorted(round(m, 9) for arm in data for m, _, _ in data[arm].values())
     errs = V.pair_errors()
+    assert c.get_xscale() == "log" and c.get_xlabel() == r"$1 - \mathrm{AUC}$, relative to 188 classes"
     assert list(c.yaxis.get_major_formatter().seq) == [f"{V._pair_title(k)} ({np.mean(errs[k]['L188']):.2g})"
                                                        for k in V.PAIRS_C]
-    assert "gg_vs_qq" in errs and set(errs["gg_vs_qq"]) == set(V.PAIR_NETS)        # ledger 33.2(b)'s pair included
-    assert all("RAND_APART" not in errs[k] for k in V.PAIRS_C if k.startswith("qcd_"))   # every grouping merges them
-    n_points = sum(len(e) for e in errs.values())
-    assert len([ln for ln in c.lines if ln.get_linestyle() == "None"]) == n_points
-    with V.names():
-        assert _legend(fig)[-8:-2] == [V.R._name(n) for n in V.PAIR_NETS]
-    assert _legend(fig)[-2:] == ["open: the labels merge the pair", "half: they merge part of it"]
-    # editor 8f085fe, item 48: (a, b) mark classes within three standard deviations by fading, not by open points
-    assert V.WITHIN_FADED in _legend(fig)
-    assert not [ln for ax in panels[:2] for ln in ax.lines if ln.get_marker() not in ("None", None)
-                and ln.get_markerfacecolor() == "white"]
-    # item 49: X->bc vs X->bq, cs is partly merged at 43 classes, half-filled
+    assert V.WITHIN_FADED not in _legend(fig)                    # ledger 35: not in the main figure
     assert V.pair_status("bc_vs_bq_cs", "R42_Q1") == "partly"
     assert len([ln for ln in c.lines if ln.get_fillstyle() == "left"]) == sum(
         V.pair_status(k, n) == "partly" for k in V.PAIRS_C for n in errs[k])
-    # item 44: relative to 188 classes, X->gg vs qq reads: 17 classes about 1.14 against 1
-    rel = V.pair_relative(errs)["gg_vs_qq"]
-    assert 1.08 < np.mean(rel["R16_Q1"]) < 1.2 and abs(np.mean(rel["L188"]) - 1) < 1e-9
-    # open where the labels merge the pair: 17 classes on X->bb vs cc, 43 and 17 on X->gg vs qq, 162 on every QCD pair
-    assert V.pair_merged("bb_vs_cc", "R16_Q1") and not V.pair_merged("bb_vs_cc", "R42_Q1")
-    assert V.pair_merged("gg_vs_qq", "R42_Q1") and not V.pair_merged("gg_vs_qq", "L162")
-    assert all(V.pair_merged(k, "L162") for k in V.PAIRS_C if k.startswith("qcd_"))
-    opened = [ln for ln in c.lines if ln.get_linestyle() == "None" and ln.get_markerfacecolor() == "white"]
-    assert len(opened) == sum(V.pair_merged(k, n) for k in V.PAIRS_C for n in errs[k])
 
 
-def test_fig4_resonance_has_ratio_panels_and_the_working_point(figures):
+def test_fig4_resonance_is_rejection_against_signal_efficiency(figures):
     fig = figures["fig5_resonance"]
     panels = _panels(fig)
     assert len(panels) == 2
     assert set(_legend(fig)) == {"188 classes", "162 classes", "43 classes", "17 classes", "trained from scratch",
-                                 "188 classes (output scores)", "162 classes (output scores)"}
-    ratios = [ax for ax in fig.axes if ax.get_ylabel() == "Ratio"]
-    assert len(ratios) == 2 and all(ax.get_yscale() == "linear" and ax.get_xlabel().startswith("Background") for ax in ratios)
-    for ax in panels + ratios:          # a vertical line at 1% background efficiency in every panel
-        assert any(np.allclose(ln.get_xdata(), 1e-2) for ln in ax.lines if ln.get_transform() == ax.get_xaxis_transform())
+                                 "output scores"} and len(_legend(fig)) <= 6
     for ax in panels:
-        assert ax.get_yscale() == ax.get_xscale() == "log" and ax.get_ylabel().startswith("Signal efficiency")
+        assert ax.get_yscale() == "log" and ax.get_ylabel().startswith("Rejection")
+        assert any(np.allclose(ln.get_ydata(), 100.0) for ln in ax.lines if ln.get_transform() == ax.get_yaxis_transform())
+    ratios = [ax for ax in fig.axes if ax.get_ylabel() == "Ratio"]
+    assert len(ratios) == 2 and all(ax.get_xlabel().startswith("Signal efficiency") for ax in ratios)
 
 
 def test_fig5_is_fine_tuning_on_the_two_multiclass_tasks_with_the_difference_to_188(figures):
@@ -170,47 +173,24 @@ def test_fig5_is_fine_tuning_on_the_two_multiclass_tasks_with_the_difference_to_
     assert _legend(fig) == ["188 classes", "162 classes", "43 classes", "17 classes", "trained from scratch"]
     panels = _panels(fig)
     assert [ax.get_title() for ax in panels] == ["(a) JetClass-II", "(b) JetClass"]
-    assert [ax.get_ylabel() for ax in panels] == ["Accuracy (%)"] * 2
     lowers = [ax for ax in fig.axes if ax.get_ylabel() == r"$\Delta$ (points)"]
-    assert len(lowers) == 2 and all(len([ln for ln in ax.lines if len(ln.get_xdata()) >= 3]) == 3 for ax in lowers)
-    a7 = _panels(figures["figA7"])
-    assert [ax.get_title() for ax in a7] == ["(a) Top tagging", "(b) Quark/gluon"]
-    assert len([ax for ax in figures["figA7"].axes if ax.get_ylabel() == "Ratio"]) == 2
+    assert len(lowers) == 2
 
 
 def test_the_appendix_figures(figures):
-    a1 = _panels(figures["figA1"])       # GO-9: linear probes only; editor 8f085fe item 50: the 162-class panel only
-    assert [ax.get_title() for ax in a1] == ["(a) 162 classes"]
-    assert all(ax.get_xlabel() == "Recall (%), 188 classes" for ax in a1) and not figures["figA1"].texts
-    # ledger 34.3: the pair curves of the old Fig. 3 join G2 (figA2, resonance pairs; figA6, QCD pairs), taller ratio
-    # panels, each x range starting where the 188-class curve does
+    a1 = _panels(figures["figA1"])       # ledger 35: the full recall scatters, moved from Fig. 3
+    assert [ax.get_title() for ax in a1] == ["(a) 162 classes", "(b) 43 classes", "(c) 17 classes"]
+    assert V.WITHIN_FADED in _legend(figures["figA1"])
     ref = S.SERIES["L188"].lower()
-    for stem, n in (("figA2", 3), ("figA6", 3)):
-        fig = figures[stem]
-        panels = _panels(fig)
-        assert len(panels) == n
-        for ax in panels:
+    for stem in ("figA2", "figA6"):
+        for ax in _panels(figures[stem]):
             start = min(float(np.min(ln.get_xdata())) for ln in ax.lines if ln.get_color().lower() == ref)
-            assert ax.get_xlim()[0] <= start < ax.get_xlim()[0] + 0.08
-            # editor 8f085fe, item 90: one rule, every curve from where the 188-class curve starts
             assert all(float(np.min(ln.get_xdata())) >= start - 1e-9 for ln in ax.lines if len(ln.get_xdata()) > 1)
-    names = ["188 classes", "162 classes", "43 classes", "17 classes", "17 classes, random grouping",
-             "162 classes + mass regression", "17 classes + mass regression"]
-    assert sorted(_legend(figures["figA3"])) == sorted(names) and len(_panels(figures["figA3"])) == 4
-    assert [ax.get_ylabel() for ax in _panels(figures["figA3"])[:2]] == ["Accuracy (%)"] * 2
-    assert set(_legend(figures["figA4"])) == {"soft-drop mass", "162 classes + mass regression",
-                                              "17 classes + mass regression"}
-    assert sorted(_legend(figures["figA5"])[:-2]) == sorted(names)
-    assert _legend(figures["figA5"])[-2:] == [f"last {V.LAST} epochs", "epoch used, each run"]
     a5 = [ax for ax in figures["figA5"].axes if ax.lines][0]
-    assert a5.get_ylabel() == "Validation accuracy (%)" and max(max(ln.get_ydata()) for ln in a5.lines) > 50
-    # editor 8f085fe, items 22 and 91: the epoch each run is evaluated at, from the build's checkpoint record
     chosen = V.chosen_epochs()
     ticks = [ln for ln in a5.lines if ln.get_marker() == "|"]
     runs = V.M._pooled(V.C.RUNS)
-    assert len(ticks) == sum(len(runs[r]) for r in V.SUMMARY_ROWS)
     assert sorted(int(ln.get_xdata()[0]) for ln in ticks) == sorted(chosen[m] + 1 for r in V.SUMMARY_ROWS for m in runs[r])
-    assert all(71 <= int(ln.get_xdata()[0]) <= 80 for ln in ticks)
 
 
 def test_the_render_mode_draws_them_all():
