@@ -73,7 +73,7 @@ def test_no_label_of_any_figure_is_an_internal_name(figures):
     bad = {stem: hits for stem, fig in figures.items() if (hits := [t for t in _texts(fig) if INTERNAL.search(t)])}
     assert not bad
     # ledger 35, section 4: the flavor-boundary groupings appear in the main text only in Figs. 2 and the separation one
-    flav = {stem for stem, fig in figures.items() if any("flavor boundary" in t for t in _texts(fig))}
+    flav = {stem for stem, fig in figures.items() if any("flavor boundary" in " ".join(t.split()) for t in _texts(fig))}
     assert {s_ for s_ in flav if not s_.startswith("figA")} == {"fig2_accuracy", "fig_separation"}
 
 
