@@ -43,3 +43,9 @@ def test_a_network_is_the_mean_of_its_head_trainings(tmp_path):
     (tmp_path / "xbx" / "xbb" / "m.json").write_text(json.dumps({"signals": {"xbb": {"head": heads}}}))
     e, var = V.head_side(tmp_path, "xbb", "m", 0.01)
     assert e == pytest.approx(0.6) and var == pytest.approx((V.eps_at(heads[0], 0.01)[1] + V.eps_at(heads[1], 0.01)[1]) / 2)
+
+
+def test_macro_names_are_letters_only():
+    assert V.check_names({"VXbbScratchSOne": 1}) and V.WORD[3] == "Three"
+    with pytest.raises(SystemExit):
+        V.check_names({"VXbbScratchS1": 1})

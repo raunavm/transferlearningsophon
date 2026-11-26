@@ -21,6 +21,7 @@ import numpy as np
 CS15 = "bootstrap/l3_fixed/cs15_jc2bal_N1000000.json"
 CURVES = "xbx_scratch_training/curves.json"
 SIGMA = 3.0
+WORD = {1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five"}     # TeX macro names take no digits
 
 
 def _sd(v):
@@ -109,8 +110,8 @@ def scratch(data: pathlib.Path, XR, xfits: dict, scr: dict, coarse_runs: list) -
             # the failed-run rules of the one fine-tuning rule: no best check first or in the last 10% (FT-3), no
             # non-finite loss (FT-10); a run that breaks one is named here, never averaged in silently
             fail = best < 1 or best >= 0.9 * n
-            out[f"V{w}ScratchS{k}"] = f"{100 * eps_at(r, 0.01)[0]:.1f}"
-            out[f"V{w}ScratchS{k}Milli"] = f"{100 * eps_at(r, 0.001)[0]:.1f}"
+            out[f"V{w}ScratchS{WORD[k]}"] = f"{100 * eps_at(r, 0.01)[0]:.1f}"
+            out[f"V{w}ScratchS{WORD[k]}Milli"] = f"{100 * eps_at(r, 0.001)[0]:.1f}"
             lines.append(f"{sig} from scratch s{k} (seed {k}): eps_S {100 * eps_at(r, 0.01)[0]:.2f}% at 1%, "
                          f"{100 * eps_at(r, 0.001)[0]:.2f}% at 0.1%; AUC {r['auc']:.4f}; best epoch {best} of {n}, "
                          f"best validation {cv['best_epoch']['metric']:.4f}, last {cv['val_metric'][-1]:.4f}; final "
@@ -152,8 +153,8 @@ def mass(data: pathlib.Path, lp_runs: dict) -> tuple[dict, list]:
                          ("L162_MASS", "ResMass", lp_runs["L162_MASS"]), ("L162", "Res", lp_runs["L162"])):
         for k, (m, v) in enumerate(runs, 1):
             pv, last, e = pretraining_val(data, m)
-            out[f"VLpJcTwo{w}S{k}"] = f"{100 * v:.1f}"
-            out[f"VPreVal{w}S{k}"] = f"{100 * pv:.2f}"
+            out[f"VLpJcTwo{w}S{WORD[k]}"] = f"{100 * v:.1f}"
+            out[f"VPreVal{w}S{WORD[k]}"] = f"{100 * pv:.2f}"
             lines.append(f"{arm} {m}: frozen JetClass-II accuracy {100 * v:.2f}%; pretraining validation accuracy "
                          f"{100 * pv:.3f}% at epoch {e} (the checkpoint), {100 * last:.3f}% at the last epoch")
     return out, lines
@@ -201,7 +202,7 @@ def label_only(root: pathlib.Path, maps: dict, counts: list) -> tuple[dict, list
              for r in csv.DictReader((root / "configs/labelmaps/rung_label_maps.v1.csv").open())}
     n = np.asarray(counts, dtype=float)
     out, lines = {}, []
-    sets = [("L162", "Res"), ("R42_Q1", "Mid"), ("R16_Q1", "Coarse")] + [(c, f"RandP{c[-1]}") for c in sorted(maps)
+    sets = [("L162", "Res"), ("R42_Q1", "Mid"), ("R16_Q1", "Coarse")] + [(c, f"RandP{WORD[int(c[-1])]}") for c in sorted(maps)
                                                                        if c.startswith("RAND2_p")]
     rand = []
     for arm, w in sets:
@@ -217,6 +218,14 @@ def label_only(root: pathlib.Path, maps: dict, counts: list) -> tuple[dict, list
     out["VLabelOnlyRand"] = f"{100 * float(np.mean(rand)):.1f}"
     lines.append(f"random groupings: mean {100 * float(np.mean(rand)):.2f}%, range {100 * min(rand):.2f}-{100 * max(rand):.2f}%")
     return out, lines
+
+
+def check_names(out: dict) -> dict:
+    """Every macro name a TeX command name: letters only."""
+    bad = [k for k in out if not k.isalpha()]
+    if bad:
+        raise SystemExit(f"FATAL: macro names with other than letters: {bad}")
+    return out
 
 
 def macros(got: dict, maps: dict, runs: dict, lp_vals, ft_vals, root: pathlib.Path) -> tuple[dict, list]:
@@ -238,4 +247,4 @@ def macros(got: dict, maps: dict, runs: dict, lp_vals, ft_vals, root: pathlib.Pa
     out.update(o); lines += ["## per-class recall by merge"] + ln
     o, ln = label_only(root, maps, docs["lp"]["class_counts"])
     out.update(o); lines += ["## label-only reference"] + ln
-    return out, lines
+    return check_names(out), lines
