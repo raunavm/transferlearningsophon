@@ -81,6 +81,15 @@ def eps_at(rec: dict, eps_b: float) -> tuple[float, float]:
     return e, e * (1 - e) / rec["n_s"] + slope ** 2 * eb[i] * (1 - eb[i]) / rec["n_b"]
 
 
+def head_side(data: pathlib.Path, sig: str, model: str, eps_b: float) -> tuple[float, float]:
+    """(a pretrained network's transfer-head signal efficiency at eps_b, its analytic variance): the mean over the
+    network's head trainings and the mean of their variances, as mlst_results.table_tests' xbx_side
+    (xbx/<signal>/<model>.json, signals.<signal>.head)."""
+    heads = json.loads((data / "xbx" / sig / f"{model}.json").read_text())["signals"][sig]["head"]
+    ev = [eps_at(h, eps_b) for h in heads]
+    return float(np.mean([e for e, _ in ev])), float(np.mean([v for _, v in ev]))
+
+
 def scratch(data: pathlib.Path, XR, xfits: dict, scr: dict, coarse_runs: list) -> tuple[dict, list]:
     """The from-scratch resonance classifier run by run (seed, signal efficiency at 1% and 0.1% background, AUC,
     best epoch, its training record) and the 17-class transfer head minus it, sigma^2 = the two sides' run SD^2 plus
@@ -107,9 +116,8 @@ def scratch(data: pathlib.Path, XR, xfits: dict, scr: dict, coarse_runs: list) -
                          f"best validation {cv['best_epoch']['metric']:.4f}, last {cv['val_metric'][-1]:.4f}; final "
                          f"train loss {cv['train_loss'][-1]:.4f}; GPU {cv['manifest']['gpu_device_name']}; "
                          f"{'FAILS the edge rule' if fail else 'passes the edge and divergence rules'}")
-        heads = [XR.readout(xfits.get(m, {}).get(sig, {}), "head") for m in coarse_runs]
         for eb, ew in ((0.01, ""), (0.001, "Milli")):
-            a = [eps_at(h, eb) for h in heads]
+            a = [head_side(data, sig, m, eb) for m in coarse_runs]
             b = [eps_at(r, eb) for r in recs]
             va, vb = [x for x, _ in a], [x for x, _ in b]
             boot = math.hypot(math.sqrt(float(np.mean([v for _, v in a]))), math.sqrt(float(np.mean([v for _, v in b]))))
