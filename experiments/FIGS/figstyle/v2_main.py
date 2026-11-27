@@ -70,7 +70,7 @@ X_EPS_B = r"Background efficiency ($\varepsilon_B$)"
 RECALL_ROWS = (("L162", "L188"), ("R42_Q1", "L188"), ("R16_Q1", "L188"))
 VAL_LEGEND_W = 5.6                        # cm: "162 classes + mass regression" and its key beside Fig. A5's panel
 FADED = 0.3            # a class within three standard deviations of equal recall: faded (editor 8f085fe, item 48)
-WITHIN_FADED = "faded: within three s.d."
+WITHIN_FADED = "faded: difference not resolved"     # within three standard deviations (review of 4c045c9, F43)
 LOWER = 0.4                               # a lower panel's height over its panel's (relative to 188 classes)
 DOT, BAR = 4.0, 1.0                       # pt: a mean's point and its standard-deviation bar in the point plots
 
@@ -265,8 +265,9 @@ def fig1_words() -> int:
 # apart (nested; the random groupings, each draw a point beside their mean; the flavor-boundary groupings)
 ACC_COLS = (("L188", 0.0), ("L162", 1.0), ("R42_Q1", 2.0), ("R16_Q1", 3.0), ("RAND", 4.5), ("FLAV_F0", 6.0),
             ("FLAV_F1", 7.2), ("FLAV_F1R", 8.4))
-ACC_TICKS = ("188", "162", "43", "17", "", "none", "$b$", "random")       # the boundary of each flavor-boundary grouping
-ACC_FAMILIES = (("nested", 0.0, 3.0), ("random\ngrouping", 4.5, 4.5), ("flavor\nboundary", 6.0, 8.4))
+ACC_TICKS = ("188", "162", "43", "17", "random\ngrouping", "no boundary", "$b$ boundary", "random boundary")
+ACC_UPRIGHT = 90          # the flavor-boundary groupings named in full, upright (review of 4c045c9, F33)
+ACC_FAMILIES = (("nested", 0.0, 3.0),)
 ACC_SEP = (3.75, 5.25)
 ACC_XLIM = (-0.55, 8.4 + 0.95)      # the last tick's label inside the text width
 ACC_PANELS = (("jc2", 1_000_000, "jc2_188", "JetClass-II"), ("jc1", 1_000_000, "jc1", "JetClass"))
@@ -307,7 +308,7 @@ def draw_fig2(path: pathlib.Path) -> None:
     (open, upper part) and the models fine-tuned on 10^6 jets (filled, lower part), each part its own range; the
     network trained from scratch a dashed line with its band in the fine-tuned part."""
     top = S.LEGEND_TOP + 0.5 * 2 + 0.55
-    H = top + 2 * ACC_SUB + ACC_GAP + 1.75
+    H = top + 2 * ACC_SUB + ACC_GAP + 3.25
     fig = S.figure_cm(S.PRINT_W, H)
     for k, (key, n, ds, title) in enumerate(ACC_PANELS):
         vals = accuracy_values(key, n, ds)
@@ -339,6 +340,9 @@ def draw_fig2(path: pathlib.Path) -> None:
             S.labels(ax, ylabel=ylabel)
         parts[0].tick_params(axis="x", which="both", labelbottom=False)
         parts[1].xaxis.set_major_formatter(ticker.FixedFormatter(ACC_TICKS))
+        for t, tick in zip(parts[1].get_xticklabels(), ACC_TICKS):
+            if "boundary" in tick:
+                t.set_rotation(ACC_UPRIGHT)
         S.clear_edge_labels(parts[0], low=True)
         S.clear_edge_labels(parts[1], high=True)
         S.title(parts[0], f"({'ab'[k]}) {title}")
@@ -399,7 +403,7 @@ def draw_fig_separation(path: pathlib.Path) -> None:
     ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]))
     S.labels(ax, xlabel=r"Confusion-weighted separation $S$", ylabel="Linear probe, JetClass-II (%)")
     handles = [Line2D([], [], linestyle="none", marker=S.MARKERS[k], markersize=MEAN_DOT, color=S.SERIES[k],
-                      label=S.LEGEND[k]) for k in SEP_ORDER]
+                      label=S.LEGEND[k] + (",\none run each" if k == "RAND" else "")) for k in SEP_ORDER]
     x = left + w + 0.5
     S.slot_legend(fig, handles, x, top, S.PRINT_W - x - 0.1, h)
     S.save(fig, path)
@@ -409,7 +413,7 @@ def draw_fig_separation(path: pathlib.Path) -> None:
 def _recall(fig, slots: list, rows: tuple) -> list:
     """gallery_perclass._draw_grid's panel for linear probes only (GO-9), one per (compared, reference) of rows at
     slots [(x, top, w)] cm: each class's recall (%) against its recall under the reference, means over runs with bars of
-    the run spread and the bootstrap over test jets, coloured by what the panel's labels merge the class with; a class
+    the run spread and the bootstrap over test jets, colored by what the panel's labels merge the class with; a class
     within three standard deviations of the reference is open. One range for every panel. Returns the legend's handles."""
     get = PC.SOURCES["jc2"][0]
     if not PC._mean(get, "L188"):
@@ -622,12 +626,18 @@ def _merge_panel(ax) -> None:
     S.labels(ax, xlabel="Merged with", ylabel="Recall change (points)")
 
 
+FIG3_LEG_B = 2.35          # cm: the legend of (b), three columns, between (a) and (b)
+
+
 def draw_fig3(path: pathlib.Path) -> None:
-    """(a) the mean change of per-class recall by merge kind (_merge_panel); (b) the pairs of classes (_pairs_panel),
-    the row names left of it. One legend beside (a): the label sets of both panels and the marker fills of (b)."""
+    """(a) the mean change of per-class recall by merge kind (_merge_panel), its legend (the 43- and 17-class markers)
+    beside it; (b) the pairs of classes (_pairs_panel), the row names left of it, its legend above it (review of
+    4c045c9, F09: each panel's legend lists only what the panel draws)."""
+    import textwrap
     wa, ha = 6.1, 0.72 * 6.1
     top_a, left = 0.6, 1.5
-    y_b = top_a + ha + 1.75
+    y_leg = top_a + ha + 1.4
+    y_b = y_leg + FIG3_LEG_B + 0.6
     xb, wb = 6.4, S.PRINT_W - 6.4 - 0.15
     hb = 0.72 * wb
     H = y_b + hb + 1.0
@@ -635,13 +645,16 @@ def draw_fig3(path: pathlib.Path) -> None:
     a = S.axes_cm(fig, left, top_a, wa, ha)
     _merge_panel(a)
     S.title(a, "(a) Per-class recall")
-    b = S.axes_cm(fig, xb, y_b, wb, hb)
-    handles = _pairs_panel(b)
-    S.title(b, "(b) Pairs of classes")
-    import textwrap
+    hand_a = [Line2D([], [], linestyle="none", marker=S.MARKERS[k], markersize=MEAN_DOT, color=S.SERIES[k],
+                     label=S.LEGEND[k]) for k, _ in MERGE_ARMS]
     x = left + wa + 0.5
-    S.slot_legend(fig, handles, x, top_a, S.PRINT_W - x - 0.1, ha,
-                  labels=[textwrap.fill(h.get_label().replace("\n", " "), 30) for h in handles])
+    S.slot_legend(fig, hand_a, x, top_a, S.PRINT_W - x - 0.1, ha)
+    b = S.axes_cm(fig, xb, y_b, wb, hb)
+    hand_b = _pairs_panel(b)
+    S.title(b, "(b) Pairs of classes")
+    fig.legend(handles=hand_b, labels=[textwrap.fill(h.get_label().replace("\n", " "), 28) for h in hand_b],
+               loc="upper center", bbox_to_anchor=(0.5, 1 - y_leg / H), ncol=3, frameon=False, fontsize=S.LEGEND_PT5,
+               borderpad=0.2, labelspacing=0.3, columnspacing=1.0, handletextpad=0.4)
     S.save(fig, path)
 
 

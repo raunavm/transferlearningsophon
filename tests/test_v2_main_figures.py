@@ -117,6 +117,9 @@ def test_fig2_is_a_dot_plot_with_the_tables_values_and_no_joining_lines(figures)
             runs = sum(len(v) for v in vals[mode].values())
             assert sum(len(ln.get_xdata()) for ln in part.lines if ln.get_markersize() == V.RUN_DOT) == runs
     assert _legend(fig)[-1] == "trained from scratch"
+    # review of 4c045c9, F33: the flavor-boundary groupings named on their ticks
+    ticks = [t.get_text() for t in [o for o in fig.axes if o.get_label() == "<break>"][0].get_xticklabels()]
+    assert {"no boundary", "$b$ boundary", "random boundary"} <= set(ticks)
 
 
 def test_separation_figure_draws_the_twelve_label_sets_of_the_build(figures):
@@ -126,7 +129,8 @@ def test_separation_figure_draws_the_twelve_label_sets_of_the_build(figures):
                  if len(ln.get_xdata()) == 1)
     assert pts == sorted((round(s, 6), round(a, 6)) for _, _, s, a, _ in V.separation_rows()) and len(pts) == 12
     with V.names():
-        assert _legend(fig) == [S.LEGEND[k] for k in V.SEP_ORDER]
+        assert [t.split(",\n")[0] for t in _legend(fig)] == [S.LEGEND[k] for k in V.SEP_ORDER]
+        assert _legend(fig)[V.SEP_ORDER.index("RAND")].endswith("one run each")       # review of 4c045c9
     assert not fig.texts and not [t for t in ax.texts]                     # rho is in the caption, not the plot
 
 
@@ -153,6 +157,9 @@ def test_fig3_shows_recall_by_merge_kind_and_the_pairs(figures):
     assert list(c.yaxis.get_major_formatter().seq) == [f"{V._pair_title(k)} ({np.mean(errs[k]['L188']):.2g})"
                                                        for k in V.PAIRS_C]
     assert V.WITHIN_FADED not in _legend(fig)                    # ledger 35: not in the main figure
+    # review of 4c045c9, F09: (a)'s legend lists only the 43- and 17-class markers, (b)'s the pair markers
+    with V.names():
+        assert _legend(fig)[:2] == [S.LEGEND["R42_Q1"], S.LEGEND["R16_Q1"]] and len(fig.legends) == 2
     assert V.pair_status("bc_vs_bq_cs", "R42_Q1") == "partly"
     assert len([ln for ln in c.lines if ln.get_fillstyle() == "left"]) == sum(
         V.pair_status(k, n) == "partly" for k in V.PAIRS_C for n in errs[k])
