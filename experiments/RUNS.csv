@@ -2875,3 +2875,5 @@ pull-host-raunav,2026-11-27T03:26:16Z,deleted,Figures agent's pull host (created
 render-checkpoint-8989449-raunav,2026-11-27T03:26:46Z,complete,"Writer: review fixes built (42 pages, nothing undefined); appendix layout (short pages, C heading alone, Table B2 into the page foot) fixed in the next.",experiments/FIGS/k8s/
 mtx2-tests-w35-ae57367-raunav,2026-11-27T03:26:49Z,launched,"Writer (GT-8 gate) at ae573675. CPU only.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-w35-ae57367-raunav.yaml
 render-checkpoint-ae57367-raunav,2026-11-27T03:29:38Z,launched,"Writer: the draft for the PI at ae573675 (third cold read, statistics fold-in, figA2). CPU only. GT-8: mtx2-tests-w35-ae57367 passed.",experiments/FIGS/k8s/job-render-checkpoint-ae57367-raunav.yaml
+pull-host-raunav,2026-11-27T03:35:27Z,launched,"Writer (review fixes): the pull host to copy render ae57367; deleted by name after.",experiments/FIGS/k8s/job-pull-host-raunav.yaml
+render-checkpoint-ae57367-raunav,2026-11-27T03:36:30Z,complete,"Writer: appendix D text interleaved with C floats and a half-empty B page; D barrier restored, Table B2 first, frozen top-rejection mass rows added.",experiments/FIGS/k8s/

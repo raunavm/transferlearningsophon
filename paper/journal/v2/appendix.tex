@@ -74,8 +74,8 @@ Table~\ref{tab:inputs} lists the per-particle inputs and which of them the two b
 table~\ref{tab:differences} the differences between models that the text quotes, with the combined uncertainty of
 section~\ref{sec:uncertainties}.
 
-\input{tables/table_inputs}
 \input{tables/table_differences}
+\input{tables/table_inputs}
 
 \section{Additional results}\label{app:results}
 The tables and figures of this appendix follow the order in which they are cited.
@@ -115,8 +115,7 @@ compare only between models with the same number of classes. Lines are the mean 
 deviation; the shading marks the last ten epochs, among which each run's checkpoint is the one of highest validation
 accuracy (ticks).}{fig:validation}
 
-% no float barrier here: the preceding section's floats may follow this heading
-{\let\FloatBarrier\relax \section{Comparison with published taggers}\label{app:published}}
+\section{Comparison with published taggers}\label{app:published}
 \input{tables/table_published}
 Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
 public tasks.
