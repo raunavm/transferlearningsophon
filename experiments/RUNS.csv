@@ -2879,3 +2879,5 @@ pull-host-raunav,2026-11-27T03:35:27Z,launched,"Writer (review fixes): the pull 
 render-checkpoint-ae57367-raunav,2026-11-27T03:36:30Z,complete,"Writer: appendix D text interleaved with C floats and a half-empty B page; D barrier restored, Table B2 first, frozen top-rejection mass rows added.",experiments/FIGS/k8s/
 mtx2-tests-w35-2ab77ad-raunav,2026-11-27T03:36:33Z,launched,"Writer (GT-8 gate) at 2ab77ad6. CPU only.",experiments/MTX/k8s/v2/tests/job-mtx2-tests-w35-2ab77ad-raunav.yaml
 render-checkpoint-2ab77ad-raunav,2026-11-27T03:40:11Z,launched,"Writer: the draft for the PI at 2ab77ad6 (third cold read, statistics fold-in, figA2). CPU only. GT-8: mtx2-tests-w35-2ab77ad passed.",experiments/FIGS/k8s/job-render-checkpoint-2ab77ad-raunav.yaml
+render-checkpoint-2ab77ad-raunav,2026-11-27T03:46:52Z,complete,"Writer: the 64 review findings applied; 40 pages, 75 references, nothing undefined, no float over 10 pt; copied to paper/journal/v2/draft_2ab77ad.pdf (local).",experiments/FIGS/k8s/
+pull-host-raunav,2026-11-27T03:46:52Z,deleted,"Writer: deleted by name after the copy of 2ab77ad.",experiments/FIGS/k8s/job-pull-host-raunav.yaml
