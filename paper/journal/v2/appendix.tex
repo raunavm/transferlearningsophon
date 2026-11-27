@@ -8,18 +8,18 @@ The random groupings come from a pool of \RevPoolDraws{} seeded draws, each assi
 \RandVtwoNResGroups{} groups whose nominal shares of the training jets are those of the \Kcoarse-class set's groups.
 Only \RevPoolRuleThree{} of the draws give every group a realized share within \RandVtwoShareTol{} of its target.
 From these, sets of \VRandWord{} were drawn at random until each of seven probe pairs of classes was merged in two or
-three of the \VRandWord{} and no two pairs had the same or complementary pattern of merges; the rule was fixed before
-any draw.
+three of the \VRandWord{} and no two pairs had the same or complementary pattern of merges.
 Counting the pairs of resonant classes that the \Kcoarse-class set merges, the \VRandWord{} groupings merge
 \RevPoolOverlapLoPct--\RevPoolOverlapHiPct\% of them as well, between the \RevPoolPctileLo th and the
-\RevPoolPctileHi th percentile of the pool, whose median is \RevPoolOverlapMedianPct\%.
-The flavor-boundary groupings are described in section~\ref{sec:labelsets}; their probes and fine-tuned results are in
-table~\ref{tab:flavor}.
+\RevPoolPctileHi nd percentile of the pool, whose median is \RevPoolOverlapMedianPct\%.
+The flavor-boundary groupings are described in section~\ref{sec:labelsets}, and their probes and fine-tuned results
+are in table~\ref{tab:flavor}.
+The definition of the separation $S$ (equation~(\ref{eq:separation})) was fixed before it was computed for any label
+set.
 
 \input{tables/table_classmap}
 
-% no float barrier: appendix floats may cross into the next section, so no section opens a short page
-{\let\FloatBarrier\relax \section{Data, training and evaluation}\label{app:training}}
+\section{Data, training and evaluation}\label{app:training}
 The JetClass-II jets are clustered with the anti-$k_{\mathrm T}$ algorithm~\cite{antikt,fastjet} from the particles of the
 simulated detector, with \LitJetClassTwoPileupMean{} pileup collisions on average.
 We keep jets with $p_{\mathrm T}$ between \DesignPtMin{} and \DesignPtMax~GeV and a soft-drop mass, computed at
@@ -59,6 +59,11 @@ The network without pretraining is trained with \MlstXbxScratchSeedsWord{} seeds
 The QCD jets are held out from pretraining, and signal and background are both counted in the soft-drop mass
 window.
 
+Fine-tuning on JetClass-II comes close to the frozen \Kfull-class ceiling but, with our recipe, not past it.
+In one run of the \Kfull-class model, which reaches \VCsFtOneAcc\% fine-tuned against \VCsLpOneAcc\% for its probe,
+keeping the pretrained output layer or training the new one at the backbone's learning rate gives \VCsHeadKeptAcc\%
+and \VCsHeadRateAcc\%.
+
 The pretrained output layer of the \Kfull-class model already predicts the \Kfull{} classes, but on the
 class-balanced test jets it reaches only \VHeadAcc\%, below the linear probe, because it was trained on the natural
 mix of classes; refitting only its class biases on the balanced training jets raises it to \VHeadRefit\%, which
@@ -71,15 +76,14 @@ section~\ref{sec:uncertainties}.
 \input{tables/table_inputs}
 \input{tables/table_differences}
 
-% no float barrier: appendix floats may cross into the next section, so no section opens a short page
-{\let\FloatBarrier\relax \section{Additional results}\label{app:results}}
-The tables and figures of this appendix follow the order of section~\ref{sec:results}.
+\section{Additional results}\label{app:results}
+The tables and figures of this appendix follow the order in which they are cited.
 
 \input{tables/table_pairs}
 \input{tables/table_groups}
 \vfig{figA1}{Recall of each JetClass-II class under a linear probe on the frozen features of the (a) \Kres-, (b)
-\Kmid- and (c) \Kcoarse-class model, against its recall for the \Kfull-class model, coloured by what the label set
-merges the class with; faded points lie within three times the combined uncertainty of equal recall. Points are means
+\Kmid- and (c) \Kcoarse-class model, against its recall for the \Kfull-class model, colored by what the label set
+merges the class with; faded points differ from equal recall by less than three times the combined uncertainty. Points are means
 over runs with bars combining run spread and test-sample uncertainty.}{fig:recall}
 \vfig{figA2}{Background rejection against signal efficiency for three pairs of resonance classes, from binary linear
 probes on the frozen features, for the four label sets and the random groupings that merge the pair or keep it apart.
@@ -110,23 +114,23 @@ compare only between models with the same number of classes. Lines are the mean 
 deviation; the shading marks the last ten epochs, among which each run's checkpoint is the one of highest validation
 accuracy (ticks).}{fig:validation}
 
-% no float barrier: appendix floats may cross into the next section, so no section opens a short page
-{\let\FloatBarrier\relax \section{Comparison with published taggers}\label{app:published}}
+\section{Comparison with published taggers}\label{app:published}
+\input{tables/table_published}
 Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
 public tasks.
 The linear energy-flow-polynomial (EFP) classifier~\cite{efp} is linear in a set of jet observables; PFN~\cite{efn},
 ParticleNet~\cite{particlenet}, ParT~\cite{part}, MIParT~\cite{mipart}, L-GATr~\cite{lgatr} and
 OmniLearned~\cite{omnilearned} are neural networks on the particles, the last four transformers.
 On quark--gluon discrimination our fine-tuned network matches the published Particle Transformer fine-tuned from
-JetClass: \VPubQgAccOurs\% against \VPubQgAccPart\% in accuracy, and an AUC of \VPubQgAucOurs{} against \VPubQgAucPart.
+JetClass, with \VPubQgAccOurs\% accuracy for both and an AUC of \VPubQgAucOurs{} against \VPubQgAucPart.
 On top tagging our network trained from scratch is below the published one trained from scratch, and our fine-tuned
 network is above that and below the published Particle Transformer fine-tuned from JetClass.
-That one was pretrained on the kinematic inputs only; a single \Kfull-class model pretrained that way reaches the same
-rejection after fine-tuning, \VPubTopRejKin{} against \VPubTopRejOurs{} with the absent inputs set to zero (last row of
-the table).
-The Particle Transformer's own top-tagging script, run unchanged on our cluster, reaches a $\mathrm{Rej}_{30\%}$ of
-\MlstPartreproRthirtyPart{} when trained from scratch, and \MlstPartreproRthirtyRescale{} when the particle momenta are
-rescaled to a common jet $p_{\mathrm T}$ as in Sophon and all our networks (one run each), which suggests that part of
-the gap to the published rejections comes from this preprocessing.
+That network was pretrained on the kinematic inputs only.
+A \Kfull-class model pretrained on those inputs alone reaches \VPubTopRejKin{} after fine-tuning, the same as our model
+with the absent inputs set to zero (\VPubTopRejOurs), so zero-filling is not the cause of the gap.
+Trained with the published Particle Transformer script, the network reaches a $\mathrm{Rej}_{30\%}$ of
+\MlstPartreproRthirtyPart{} from scratch and \MlstPartreproRthirtyRescale{} when the particle momenta are rescaled to a
+common jet $p_{\mathrm T}$ as in Sophon and all our networks, which suggests that part of the gap comes from this
+preprocessing.
 
-\input{tables/table_published}
+

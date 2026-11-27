@@ -2,18 +2,16 @@
 
 The frozen features keep the distinctions that some class boundary demanded in pretraining and lose part of the rest.
 The separation $S$ makes this quantitative: label sets that keep apart the classes the \Kfull-class probe confuses keep
-the accuracy, whatever their size, and one ordering covers the nested sets, the random groupings and the
-flavor-boundary groupings.
+the accuracy, whatever their size, and one trend (Spearman $\rho=\RevSepRho$) runs through the nested sets, the random
+groupings and the flavor-boundary groupings.
 A random grouping that merges $X\to b\bar b$ with $X\to c\bar c$ still separates them almost as well as one that keeps
 them apart, while the \Kcoarse-class set, which merges bottom with charm in every family, does not.
 This suggests that a network learns a flavor distinction wherever any class boundary requires it and then applies it
 to decays whose own labels do not.
-The residual of section~\ref{sec:which} shows that this is not the whole story: how the classes are grouped matters
-beyond the separation the grouping keeps, since the \Kmid-class set falls below groupings with less separation.
+How the classes are grouped matters beyond the separation the grouping keeps: the \Kmid-class set falls below
+groupings with less separation, and why it does is open.
 
-The same pattern has been seen in image classification, where coarser labels cost more for frozen features than after
-fine-tuning~\cite{hong}, and classes merged along a semantic hierarchy remain more entangled than classes merged at
-random~\cite{yang}.
+Our results agree with the image-classification findings of section~\ref{sec:related}~\cite{hong,yang}.
 What simulation adds is control: the labels are exact, the training examples and their order are identical for every
 label set, and each merge removes a distinction that can be named, so the loss can be traced to individual pairs of
 classes instead of being inferred from an average over a taxonomy.
@@ -22,16 +20,15 @@ For an analysis that reads a pretrained tagger out from its frozen features, or 
 discriminant, the classes it will need to tell apart should be distinct somewhere in the pretraining
 labels~\cite{mahajan}.
 Fine-tuning relaxes this requirement without removing it, and less so when labeled jets are few.
-Tasks whose inputs lack the flavor information show no dependence on the label set, even where, as for quark--gluon
-discrimination, they draw on a distinction that the coarse labels merge.
-Random groupings are not a recipe for label design, however: their frozen features transfer to top tagging less well
-than those of any nested set and no better to JetClass, which may reflect that their classes mix decays of different
-structure.
+After fine-tuning, tasks whose inputs lack the flavor information show no dependence on the label set, even where, as
+for quark--gluon discrimination, they draw on a distinction that the coarse labels merge.
+Random groupings are not a recipe for label design, however: their frozen features score below every nested set on top
+tagging and on JetClass, though resolved only against the \Kcoarse-class set on top tagging, which may reflect that
+their classes mix decays of different structure.
 The mass regression shows that what the labels lack can be supplied by an auxiliary target, at a small cost in
 fine-tuned accuracy.
 
-Our study has limits.
-It rests on one network, with \VParamsMillion~million parameters, and on one simulated dataset.
+The study rests on one network, with \VParamsMillion~million parameters, and on one simulated dataset.
 Each step of the hierarchy removes several distinctions at once, so the cost of a single distinction is established
 only through pairs of classes and the flavor-boundary groupings, and each random grouping was pretrained once.
 All fine-tuned comparisons use one recipe, which leaves the \Kfull-class model slightly below its own linear probe on
@@ -42,11 +39,11 @@ absolute performance on the benchmarks should not be read as the reach of the me
 
 \section{Conclusion}\label{sec:conclusion}
 
-Varying only the labels of a supervised pretraining shows that the representation is shaped by which distinctions the
-labels require, and much less by how many classes there are.
-A label set that separates the classes later analyses need, anywhere in its structure, keeps them separable in the
-frozen features, and one that merges them loses part of that separation, which fine-tuning on limited labeled data
-recovers only in part.
+Varying only the labels of a supervised pretraining shows that the representation is shaped more by which distinctions
+the labels require than by how many classes there are.
+A label set that separates the classes later analyses need, anywhere in its structure, keeps most of their
+separability in the frozen features, and one that merges them loses part of it; fine-tuning on limited labeled data
+recovers only part of that loss.
 For jet tagging, where simulation makes fine labels cheap, pretraining labels should keep apart the flavors and decay
 products that analyses will select on, above all when the model is to be used frozen, and quantities that no label
 carries, such as the jet mass, can be added as auxiliary targets.

@@ -26,6 +26,8 @@ Whether such fine labels make the pretrained model better has not been tested fo
 In the comparisons published so far the training jets change together with the labels, so that a model trained on
 fewer classes has also seen fewer kinds of jets~\cite{sophon,glopartdp,datacomp,superjepa}, and the two effects cannot
 be told apart.
+The answer decides how much generator-level detail future pretraining datasets must record as labels, and whether
+analyses can read signals that are not among the classes from frozen features.
 
 We pretrain Sophon's network on the same JetClass-II jets with four nested label sets of \Kfull, \Kres, \Kmid{} and
 \Kcoarse{} classes (table~\ref{tab:sets}).
@@ -48,8 +50,8 @@ jets~\cite{efn,qgpythia,qgherwig}.
 
 The frozen features lose much of what the labels merge: classes that share a coarse label are identified less
 accurately, pairs of such classes are separated less well, and a resonance search loses signal efficiency.
-How much is lost depends on which classes are merged and not on how many, and a single measure of the confusable
-classes a label set keeps apart orders the label sets we study.
+How much is lost depends more on which classes are merged than on how many, and a single measure of the confusable
+classes a label set keeps apart tracks the accuracy of the label sets we study.
 Fine-tuning on a limited labeled sample recovers most of the loss but not all of it.
-The binary benchmarks, whose inputs carry little flavor information, show no dependence on the label set, and the
-mass regression sharpens the mass resolution of the frozen features at a small cost in fine-tuned accuracy.
+After fine-tuning, the binary benchmarks, whose inputs carry little flavor information, show no dependence on the
+label set, and the mass regression sharpens the mass resolution of the frozen features at a small cost in fine-tuned accuracy.

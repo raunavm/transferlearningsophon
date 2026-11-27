@@ -303,7 +303,8 @@ def tables23(got: dict, maps: dict) -> tuple:
     if miss:
         raise SystemExit(f"FATAL: Table 2 has cells without a linear probe: {miss}")
     t2 = _float(r"Linear probes on the frozen features: accuracy and background rejection at a signal efficiency of "
-                r"30\% (Rej$_{30\%}$); mean $\pm$ standard deviation over runs.", "tab:probes",
+                r"30\% (Rej$_{30\%}$); mean $\pm$ standard deviation over runs, for the random grouping over the five "
+                r"groupings, one run each.", "tab:probes",
                 [r"\begin{tabular}{@{}l" + "c" * len(lp_cols) + "@{}}", r"\toprule", *LP_HEAD, *body, r"\bottomrule",
                  r"\end{tabular}"])
 
@@ -320,7 +321,8 @@ def tables23(got: dict, maps: dict) -> tuple:
     ft_rows = pre + [None, (scratch, scratch, len(R.FT_SCRATCH_MODELS))]
     body, pending = value_table(ft_cols, ft_rows, PENDING)
     t3 = _float(r"Fine-tuned models: accuracy and background rejection at a signal efficiency of 30\% (Rej$_{30\%}$); "
-                r"mean $\pm$ standard deviation over runs.", "tab:finetuned",
+                r"mean $\pm$ standard deviation over runs, for the random grouping over the five groupings, one run each.",
+                "tab:finetuned",
                 [r"\begin{tabular}{@{}l" + "c" * len(ft_cols) + "@{}}", r"\toprule", *FT_HEAD, *body, r"\bottomrule",
                  r"\end{tabular}"])
     return t2, t3, pending, lp_cols, ft_cols
@@ -580,6 +582,7 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
     ex = json.loads((REPO / "experiments/FIGS/data/v2/stats/ledger33_exports.json").read_text())
     gg = ex["gg_vs_qq"]
     out["VAucGgFull"], out["VAucGgCoarse"] = (f"{gg['arms'][a]['mean']:.4f}" for a in ("L188", "R16_Q1"))
+    out["VErrGgCoarsePct"] = f"{100 * ((1 - gg['arms']['R16_Q1']['mean']) / (1 - gg['arms']['L188']['mean']) - 1):.0f}"
     out["VGgTestPerClass"] = MT.fmt_int(one_value(set(gg["test_jets"].values())))
     out["VFtTopRejScratchSigma"] = MT.fmt_int(r.get(r.full("top tagging", "$R_{30}$", "ft"), "L188", "SCRATCH")[4])
     # the fine-tuned and linear-probe JetClass-II accuracies of the two finest label sets, to two decimals (LEDGER 33.1)
@@ -676,6 +679,10 @@ def numbers(got: dict, lp_cols, ft_cols, maps: dict, runs: dict) -> str:
                 raise SystemExit(f"FATAL: class pair {k}, {arm}: a run without its probe")
             out[f"VAuc{w}{a}"] = f"{float(np.mean(v)):.4f}"
             out[f"VAuc{w}{a}Three"] = f"{float(np.mean(v)):.3f}"
+            out[f"VErr{w}{a}"] = f"{1 - float(np.mean(v)):.4f}"
+        # ledger 35, second pass (editor F32): the relative rise of the error 1 - AUC at 43 classes, on figure 3's scale
+        e = {a: 1 - float(np.mean([R._pair(fits, m, k) for m in runs[arm]])) for a, arm in (("Full", "L188"), ("Mid", "R42_Q1"))}
+        out[f"VErr{w}MidPct"] = f"{100 * (e['Mid'] / e['Full'] - 1):.0f}"
     out.update(pi_prose_1126(got, r, lp, ft, mean, vals, pct, pts, out, xfits, XR, runs))
     # the revision checks of 2026-11-26 (experiments/FIGS/v2_rev35.py), and the mass-regression rows they report
     import v2_rev35
@@ -720,6 +727,8 @@ def pi_prose_1126(got, r, lp, ft, mean, vals, pct, pts, out, xfits, XR, runs) ->
                          f"{o['VDFtJcOneMassResOne']} and {o['VDFtJcOneMassCoarseOne']}")
     o["VLpJcTwoFlavZero"] = pct(lp, J2, "FLAV_F0")
     o["VLpJcTwoFlavOne"], o["VLpJcTwoFlavOneR"] = pct(lp, J2, "FLAV_F1"), pct(lp, J2, "FLAV_F1R")
+    # ledger 35, second pass (editor F04): how far the fine-tuned 188-class model ends below its own probe
+    o["VDCsLpGap"] = f"{100 * (mean(lp, J2, 'L188') - mean(ft, J2, 'L188')):.1f}"
     # ledger 35 (one framing of the recovered share): fine-tuning recovers "about three quarters" of the frozen gap
     gap_lp = mean(lp, J2, "L188") - mean(lp, J2, "R16_Q1")
     gap_ft = mean(ft, J2, "L188") - mean(ft, J2, "R16_Q1")
@@ -812,7 +821,7 @@ def cell_macros(out: dict) -> str:
     grp = out["table_groups.tex"]
     for w, head in (("Lp", r"\textit{linear probe on the frozen features}"), ("Mlp", r"\textit{MLP probe on the frozen features}")):
         for a, lab in (("Full", r"\Kfull{} classes"), ("Coarse", r"\Kcoarse{} classes")):
-            v[f"VGroups{w}{a}"] = table_cell(grp, 0, head, lab, 1, False)
+            v[f"VGroups{w}{a}"] = f"{float(table_cell(grp, 0, head, lab, 1, False)):.1f}"
     return "".join(rf"\newcommand{{\{k}}}{{{x}}}" + "\n" for k, x in v.items())
 
 
@@ -1186,12 +1195,20 @@ def appendix_tables(got: dict, maps: dict) -> dict:
                                       r" & Resonant & QCD & $b\bar b$ / $c\bar c$ & $b\bar bqq$ / $c\bar cqq$ & $bc$ / $bq$, $cs$ \\"]), sep="3pt", size="{8}{9.4}")
     small = sorted(n for n in R._sizes(per, "jc2") if n < sizes["jc2"] and all(
         R._ft(per, "jc2", m, n, "accuracy") is not None for a in NESTED for m in runs[a]))
-    ftn = lambda n: (lambda a: (R.summary_scratch(per, "jc2", n, "accuracy") if a == S                # noqa: E731
-                                else [R._ft(per, "jc2", m, n, "accuracy") for m in runs[a]]))
-    size = one_tab(r"Fine-tuned accuracy (\%) on JetClass-II against the number of training jets; mean $\pm$ "
-                   r"standard deviation over runs.", "tab:size",
-                   tab([(f"accuracy {n}", ftn(n)) for n in small + [sizes["jc2"]]], four + scr,
-                       [" & " + " & ".join(R._power(f"{n:e}") for n in small + [sizes["jc2"]]) + r" \\"]))
+    ftn = lambda n, k="jc2": (lambda a: (R.summary_scratch(per, k, n, "accuracy") if a == S         # noqa: E731
+                                         else [R._ft(per, k, m, n, "accuracy") for m in runs[a]]))
+    # ledger 35, second pass (editor F10): JetClass beside JetClass-II, the two panels of the training-size figure
+    small1 = sorted(n for n in R._sizes(per, "jc1") if n < sizes["jc1"] and all(
+        R._ft(per, "jc1", m, n, "accuracy") is not None for a in NESTED for m in runs[a]))
+    blocks = []
+    for k, title, ns in (("jc2", "JetClass-II", small + [sizes["jc2"]]), ("jc1", "JetClass", small1 + [sizes["jc1"]])):
+        blocks += [rf"\textit{{{title}}}\par\smallskip",
+                   *tab([(f"accuracy {n}", ftn(n, k)) for n in ns], four + scr,
+                        [" & " + " & ".join(R._power(f"{n:e}") for n in ns) + r" \\"]), r"\par\medskip"]
+    size = "\n".join([r"\begin{table}[t]", r"\centering",
+                       r"\caption{Fine-tuned accuracy (\%) on JetClass-II and JetClass against the number of training jets; "
+                       r"mean $\pm$ standard deviation over runs.}\label{tab:size}",
+                       r"\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{4pt}", *blocks[:-1], r"\end{table}", ""])
     xbx = got["summary_kw"].get("xbx") or {}
     XR, xfits, xscr = xbx.get("XR"), xbx.get("fits") or {}, xbx.get("scr") or {}
     eff = lambda sig: (lambda a: ([100 * x["eps_s_at_star"] for x in xscr.get(sig, [])] if a == S else   # noqa: E731

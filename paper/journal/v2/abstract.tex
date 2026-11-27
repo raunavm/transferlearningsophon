@@ -1,6 +1,6 @@
 % Ledger 35 (rewrite): the PI's arc of 26 Nov, rewritten. Every number is a build macro; each also appears in Results.
-When a network is pretrained by supervised classification, its classes decide which distinctions it must learn, but
-not how fine those classes should be.
+When a network is pretrained by supervised classification, its classes decide which distinctions it must learn, and it
+is not known how fine they need to be for the features to transfer.
 Simulated jets, the collimated sprays of particles produced in high-energy collisions, allow a controlled test,
 because each jet carries an exact label that can be coarsened without changing the data.
 We pretrain the Sophon jet-tagging network on the same simulated jets under four nested label sets, from \Kfull{}
@@ -9,11 +9,12 @@ groupings of the same size that cut across this hierarchy.
 A linear classifier on the frozen features identifies the \Kfull{} classes with \VAccFullPct\% accuracy for the
 finest labels and \VAccCoarsePct\% for the coarsest, while random groupings into \Kcoarse{} classes reach
 \VAccRandPct\%.
-Across \VSepNWord{} label sets the frozen accuracy follows the share of confusable class pairs that a label set keeps
-apart (Spearman $\rho=\RevSepRho$), so the loss depends on which classes are merged rather than on how many.
-Fine-tuning on a million labeled jets recovers about three quarters of the frozen gap, yet the coarsest labels still
-give up more than a third of the gain from pretraining.
-On top tagging and quark--gluon discrimination, whose inputs carry little flavor information, the label sets agree in
-fine-tuned accuracy to within \VFtQgAccRange{} percentage points.
-An auxiliary regression of the jet mass sharpens the mass resolution of the frozen features by about a quarter, at a cost of about half a point of
-fine-tuned accuracy.
+Across \VSepNWord{} label sets the frozen accuracy follows the share of the finest model's confusion between classes
+that a label set keeps apart (Spearman $\rho=\RevSepRho$), so the loss depends more on which classes are merged than on
+how many.
+Fine-tuning on a million labeled jets shrinks the gap to \VDFtJcTwoCoarse{} points, still more than a third of what
+pretraining gains.
+On top tagging and quark--gluon discrimination, whose inputs carry little flavor information and where pretraining
+itself adds at most \VDFtQgAccGain{} points, the four nested label sets agree in fine-tuned accuracy to within
+\VFtQgAccRange{} percentage points.
+An auxiliary regression of the jet mass sharpens the mass resolution of the frozen features by about a quarter, at a small cost in fine-tuned accuracy.

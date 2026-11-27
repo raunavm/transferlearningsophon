@@ -249,6 +249,18 @@ V4_ROWS = (
     ("JetClass-II accuracy, frozen", "17 + mass $-$ 17 classes", lambda: _row("l3_v5/" + LP, "17mass-17", "accuracy", False)),
     ("JetClass-II accuracy, fine-tuned", "162 + mass $-$ 162 classes", lambda: _row("l3_fixed/" + FT, "162mass-162", "accuracy", False)),
     ("JetClass-II accuracy, fine-tuned", "17 + mass $-$ 17 classes", lambda: _row("l3_fixed/" + FT, "17mass-17", "accuracy", False)),
+    # ledger 35, second pass (claims checker F6, F16): the further differences the text quotes
+    ("JetClass accuracy, fine-tuned", "162 + mass $-$ 162 classes",
+     lambda: _row("l3_fixed/ft_jc1_N1000000.json", "162mass-162", "accuracy", False)),
+    ("JetClass accuracy, fine-tuned", "17 + mass $-$ 17 classes",
+     lambda: _row("l3_fixed/ft_jc1_N1000000.json", "17mass-17", "accuracy", False)),
+    ("top tagging accuracy, frozen", "random grouping $-$ 17 classes",
+     lambda: _row("l3_bs3/go7_probe_top_N1200000.json", "rand-r16q1", "accuracy", False)),
+    (r"$X\to b\bar b$ vs $X\to c\bar c$, AUC, linear probe", "188 $-$ 43 classes",
+     lambda: _row("l3_v5/probe_jc2bal_pairs_bb_vs_cc.json", "r42q1-188", "auc", True)),
+    (r"$X\to b\bar bqq$ vs $X\to c\bar cqq$, AUC, linear probe", "188 $-$ 43 classes",
+     lambda: _row("l3_v5/probe_jc2bal_pairs_bbqq_vs_ccqq.json", "r42q1-188", "auc", True)),
+    ("mass resolution, MLP probe", "17 $-$ 188 classes", lambda: _mass_row(None, "17 classes - 188 classes", "mlp")),
     ("top tagging Rej$_{30\\%}$, fine-tuned", "188 classes $-$ from scratch",
      lambda: _row("l3/ft_top_N1200000.scratch.json", "188-scratch", "r30", False)),
     ("top tagging accuracy, fine-tuned", "188 classes $-$ from scratch",
@@ -309,6 +321,26 @@ def welch(r: dict) -> dict:
     return {"se": math.sqrt(se2), "nu": nu, "t": t, "t_crit": crit, "significant": abs(t) > crit}
 
 
+# ledger 35, second pass: rows the text quotes as Delta +- sigma; (macro suffix, scale to the text's unit)
+TEXT_ROWS = {("JetClass accuracy, frozen", "188 $-$ 17 classes"): ("LpJcOneCoarse", 100),
+             ("JetClass accuracy, fine-tuned", "188 $-$ 17 classes"): ("FtJcOneCoarse", 100),
+             (r"$X\to b\bar b$, signal efficiency (\%)", "188 $-$ 17 classes"): ("XbbCoarse", 1),
+             (r"$X\to bs$, signal efficiency (\%)", "188 $-$ 17 classes"): ("XbsCoarse", 1),
+             (r"$X\to b\bar b$, signal efficiency (\%)", "17 classes $-$ from scratch"): ("XbbScratch", 1),
+             (r"$X\to bs$, signal efficiency (\%)", "17 classes $-$ from scratch"): ("XbsScratch", 1),
+             ("JetClass-II accuracy, frozen", "162 + mass $-$ 162 classes"): ("LpMassRes", 100),
+             ("JetClass-II accuracy, fine-tuned", "162 + mass $-$ 162 classes"): ("FtMassRes", 100),
+             ("JetClass-II accuracy, fine-tuned", "17 + mass $-$ 17 classes"): ("FtMassCoarse", 100),
+             ("JetClass accuracy, fine-tuned", "17 + mass $-$ 17 classes"): ("FtJcOneMassCoarse", 100),
+             ("top tagging Rej$_{30\\%}$, fine-tuned", "188 classes $-$ from scratch"): ("FtTopRejGain", 1),
+             ("JetClass accuracy, frozen", "random grouping $-$ 17 classes"): ("LpJcOneRandCoarse", 100)}
+
+
+def welch_dagger(r: dict) -> bool:
+    """A row that passes |Delta/sigma| > 3 but not the Welch-Satterthwaite test: the text gives it as a size."""
+    return abs(r["z"]) > 3 and not r["welch"]["significant"]
+
+
 def v4() -> list[dict]:
     out = []
     for what, pair, f in V4_ROWS:
@@ -327,14 +359,17 @@ def table_v4(rows: list[dict]) -> str:
         last = r["what"]
         d, s = MT.fmt_pm(r["delta"], r["sigma"]).split(r"\,$\pm$\,")
         neg = lambda v: v.replace("-", "$-$", 1) if v.startswith("-") else v  # noqa: E731
-        body.append(f"{head} & {r['pair']} & {neg(d)} & {s} & {neg(f'{r[chr(122)]:.1f}')} & {r['n_first']}/{r['n_second']} \\\\")
+        dag = r"$^\dagger$" if welch_dagger(r) else ""
+        body.append(f"{head} & {r['pair']} & {neg(d)} & {s} & {neg(f'{r[chr(122)]:.1f}')}{dag} & {r['n_first']}/{r['n_second']} \\\\")
     return "\n".join([
         "% written by experiments/FIGS/rev35_stats.py (ledger 35, audit V4)",
         r"\begin{table}[t]\centering",
         r"\caption{Differences between models quoted in the text: $\Delta$, its combined uncertainty $\sigma$ (both "
         r"sides' run standard deviations and the paired test-jet bootstrap; for the resonance benchmark the binomial "
         r"term of the signal and background jets in place of the bootstrap), $\Delta/\sigma$, and the runs on each side. "
-        r"A difference is called resolved when $|\Delta/\sigma|>3$.}\label{tab:differences}",
+        r"A difference is called resolved when $|\Delta/\sigma|>3$; rows marked $\dagger$ exceed this but do not pass a "
+        r"Welch--Satterthwaite $t$ test on the means with two to five degrees of freedom, and the text does not call "
+        r"them resolved.}\label{tab:differences}",
         # ledger 35: the two label columns wrap, so the table fits the text width (it was 84 pt too wide at 9 pt)
         r"\small\setlength{\tabcolsep}{4pt}",
         r"\begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}p{4.3cm}ccrc@{}}",
@@ -399,6 +434,14 @@ def build() -> tuple[dict, str]:
         write_csv(a, buf)
         files["a1_separation.csv"] = buf.getvalue()
     mac = ["% written by experiments/FIGS/rev35_stats.py (ledger 35)"]
+    for r in rows:                         # second pass: the differences the text quotes, Delta +- sigma
+        key = TEXT_ROWS.get((r["what"], r["pair"]))
+        if key:
+            w, k = key
+            mac.append(rf"\newcommand{{\RevD{w}}}{{{MT.fmt_pm(abs(k * r['delta']), k * r['sigma'])}}}")
+    missing = set(TEXT_ROWS) - {(r["what"], r["pair"]) for r in rows}
+    if missing:
+        raise SystemExit(f"FATAL: rows the text quotes are missing from the differences table: {sorted(missing)}")
     pct = lambda x: f"{100 * x:.0f}"  # noqa: E731
     for key, v in v6().items():           # V6: the 3-sigma reach of the nested label sets on the benchmarks
         task, mode, met = key.split("|")

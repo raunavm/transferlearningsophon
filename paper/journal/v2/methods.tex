@@ -46,7 +46,7 @@ and the test jets from a further, separate set of files.
 
 \subsection{Label sets}\label{sec:labelsets}
 A label set maps the \Kfull{} classes onto fewer classes; a model pretrained with it learns only those.
-The four nested label sets are each obtained from the one before by merging classes that differ in one stated respect
+The four nested label sets are each obtained from the one before by merging classes along stated distinctions
 (table~\ref{tab:sets} and figure~\ref{fig:design}; the full map is table~\ref{tab:classmap}).
 The \Kres-class set merges the QCD classes into one and keeps every resonant class.
 The \Kmid-class set then labels a decay only by whether it contains a bottom quark, else a charm quark, else neither,
@@ -63,26 +63,16 @@ number of classes.
 set; a classifier is trained on its frozen features (a linear probe, or for $X\to b\bar b$ and $X\to bs$ a small
 network), or the network is fine-tuned.}{fig:design}
 
-A label set also limits what the output layer can provide.
-For a classifier at the minimum of the cross-entropy~\cite{richard}, the score $g_c$ of a merged class $c$, its softmax
-output, is the sum of the scores $g'_i$ that the \Kfull-class model gives the classes it contains,
-\begin{equation}
-  g_c(x) = \sum_{i\,\in\, c} g'_i(x) .
-  \label{eq:sum}
-\end{equation}
-A physics analysis selects jets on such a sum, and a label set's output layer can provide it only for unions of that
-set's own classes~\cite{sophon}.
-
 The random groupings separate the number of classes from their content.
-Each assigns the \LitJetClassTwoNResonantClasses{} resonant classes to \RandVtwoNResGroups{} groups whose shares of the
-training jets match those of the \Kcoarse-class set's groups, and keeps the QCD jets as one class.
-Of \RevPoolDraws{} such draws, \RevPoolRuleThree{} match every share to within \RandVtwoShareTol; from these, \VRandWord{}
-were drawn at random under the condition that each of seven pairs of classes is merged in two or three of them
-(appendix~\ref{app:flavor}).
-The \VRandWord{} share \RevPoolOverlapLoPct--\RevPoolOverlapHiPct\% of the merges of resonant classes that the
-\Kcoarse-class set makes, as is typical of the pool (median \RevPoolOverlapMedianPct\%).
-Three further \Kcoarse-class groupings, pretrained \RandFlavRuns{} times each, differ in where they place a single
-flavor boundary.
+Each assigns the \LitJetClassTwoNResonantClasses{} resonant classes at random to \RandVtwoNResGroups{} groups whose
+shares of the training jets match those of the \Kcoarse-class set's groups to within \RandVtwoShareTol, and keeps the
+QCD jets as one class.
+The \VRandWord{} groupings were drawn so that each of seven pairs of classes probed in section~\ref{sec:pairs} is merged
+in some of them and kept apart in others (appendix~\ref{app:flavor}); like typical draws, they share
+\RevPoolOverlapLoPct--\RevPoolOverlapHiPct\% of the \Kcoarse-class set's merges of resonant classes (pool median
+\RevPoolOverlapMedianPct\%).
+Three further \Kcoarse-class groupings, pretrained \RandFlavRuns{} times each, ask whether a single flavor boundary,
+placed within one family of decays, restores the flavor information lost at \Kcoarse{} classes.
 The grouping with no flavor boundary assigns whole families of decays that differ only in flavor to groups at random,
 so its groups mix decays of different structure and no group boundary separates two flavors of one family.
 The $b$-quark boundary grouping moves the four-quark decays that contain a bottom quark out of their family's group,
@@ -98,9 +88,9 @@ of the matched jet before detector effects, with the loss
   L = L_{\mathrm{cls}} + \lambda \log\cosh\bigl(\hat\theta(x) - \theta\bigr) ,
   \label{eq:massloss}
 \end{equation}
-where $L_{\mathrm{cls}}$ is the cross-entropy and $\lambda = \MlstMassLambda$, the weight of the mass-ratio term in the
-CMS Global Particle Transformer~\cite{glopartdp}; the CMS Particle Transformer tagger introduced the
-term~\cite{cmspart}.
+where $L_{\mathrm{cls}}$ is the cross-entropy and $\lambda = \MlstMassLambda$, as in the CMS Global Particle
+Transformer~\cite{glopartdp}.
+The term was introduced in the CMS Particle Transformer tagger~\cite{cmspart}.
 
 \subsection{Probes and fine-tuning}
 A linear probe~\cite{alain} is a multinomial logistic regression on the standardized frozen features, its L2 penalty
@@ -120,7 +110,8 @@ test jet of class $i$ to class $j$, the separation of a label set $L$ is
   \label{eq:separation}
 \end{equation}
 the share of the confusion that falls between classes the label set keeps apart.
-$S$ is one for the \Kfull-class set and zero for a single class; it was specified before it was evaluated.
+$S$ is one for the \Kfull-class set and zero for a single class, and it uses only the confusion of the \Kfull-class
+probe, not the accuracies of the other models.
 
 In fine-tuning every weight adapts, and the pretrained output layer is replaced by a new one of the same shape with
 random weights.
@@ -132,16 +123,16 @@ On JetClass-II and JetClass we fine-tune on \FtSizeESix{} approximately class-ba
 On top tagging and quark--gluon discrimination we fine-tune on the full training sets with the published recipe of the
 Particle Transformer~\cite{part}, and on smaller sets with one fixed schedule (appendix~\ref{app:training}).
 
-\subsection{Tasks and metrics}
+\subsection{Tasks and metrics}\label{sec:tasks}
 JetClass~\cite{part} has ten classes of jets from Higgs bosons, $W$ and $Z$ bosons, top quarks and QCD; it was
 simulated without pileup and in a narrower range of transverse momentum.
 The top-tagging~\cite{toptag,topdata} and quark--gluon~\cite{efn,qgpythia} data come from other simulations and lack
 inputs that the network was pretrained with: the first provides only the momenta of the particles, \FillTopNPresent{}
 of the \FillNFeatures{} inputs, and the second lacks the track displacements (table~\ref{tab:inputs}).
 In fine-tuning the absent inputs are set to zero.
-For the probes, which cannot adapt, they are filled with zero, the training mean or random draws of JetClass-II
-particles, whichever gives the lowest validation loss summed over all pretrained models and the untrained networks:
-\LpSubstitutionTop{} for top tagging and \LpSubstitutionQg{} for quark--gluon discrimination, applied to every model.
+For the probes, which cannot adapt, they are filled with \LpSubstitutionTop{} of JetClass-II particles for top tagging
+and with \LpSubstitutionQg{} for quark--gluon discrimination, the choices with the lowest validation loss over all models
+among zero, mean and random fills.
 
 We report the accuracy, the area under the receiver operating characteristic curve (AUC), averaged over
 one-versus-rest problems when a task has more than two classes, and the background rejection $\mathrm{Rej}_{30\%}$,
@@ -162,7 +153,17 @@ The resonance benchmark repeats Sophon's test~\cite{sophon}: a particle $X$ of m
 or to $bs$ is to be separated from QCD jets with a mass between \XbxWindowLo{} and \XbxWindowHi~GeV, and we quote the
 signal efficiency at a background efficiency of \VXbxEpsB\%.
 The signal jets are separate simulated samples from the authors of Sophon, not part of JetClass-II.
-Sophon selects $X\to b\bar b$ with a discriminant built from its output scores, and $X\to bs$, which is not among its
+
+A label set also limits what the output layer can provide.
+For a classifier at the minimum of the cross-entropy~\cite{richard}, the score $g_c$ of a merged class $c$, its softmax
+output, is the sum of the scores $g'_i$ that the \Kfull-class model gives the classes it contains,
+\begin{equation}
+  g_c(x) = \sum_{i\,\in\, c} g'_i(x) .
+  \label{eq:sum}
+\end{equation}
+A physics analysis selects jets on such a sum, and a label set's output layer can provide it only for unions of that
+set's own classes~\cite{sophon}.
+Sophon selects $X\to b\bar b$ with this sum over the signal classes, and $X\to bs$, which is not among its
 classes, with a classifier trained on the frozen features: a network with one hidden layer, started from that of the
 pretrained output layer.
 Because $X\to b\bar b$ is its own class only in the two finest sets, we use this classifier for both decays and all
@@ -179,5 +180,6 @@ For quantities that rest on few test jets, such as the background rejection, we 
 of the test sample, estimated by bootstrap~\cite{efron}.
 We call a difference between two models resolved when it exceeds three times its combined uncertainty, which adds both
 sides' run spreads and the paired bootstrap over the shared test jets.
-With two or three runs per side this spread is itself uncertain, so near the threshold we give sizes rather than
-verdicts; the differences the text quotes are listed in table~\ref{tab:differences}.
+With two or three runs per side this spread is itself uncertain, so near the threshold we quote the difference
+and its uncertainty.
+The differences the text quotes are listed in table~\ref{tab:differences}.
