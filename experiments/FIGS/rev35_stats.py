@@ -371,7 +371,7 @@ def table_v4(rows: list[dict]) -> str:
         r"Welch--Satterthwaite $t$ test on the means with two to five degrees of freedom, and the text does not call "
         r"them resolved.}\label{tab:differences}",
         # ledger 35: the two label columns wrap, so the table fits the text width (it was 84 pt too wide at 9 pt)
-        r"\small\setlength{\tabcolsep}{4pt}",
+        r"\footnotesize\setlength{\tabcolsep}{4pt}",   # 32 rows: at \small the table ran into the page foot
         r"\begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}p{4.3cm}ccrc@{}}",
         r"\toprule",
         r"Quantity & Difference & $\Delta$ & $\sigma$ & $\Delta/\sigma$ & Runs \\", r"\midrule",

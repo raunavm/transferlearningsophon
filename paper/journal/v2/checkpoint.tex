@@ -75,6 +75,11 @@
 \counterwithin{figure}{section}
 \renewcommand{\thetable}{\Alph{section}\arabic{table}}
 \renewcommand{\thefigure}{\Alph{section}\arabic{figure}}
+% In the appendix a float may also stand where it is cited (h), so no section heading is left alone on a page and
+% no page is half empty (ledger 35, review of draft 4c045c9).
+\let\AppOrigTable\table \let\AppOrigEndTable\endtable
+\renewenvironment{table}[1][]{\AppOrigTable[htbp]}{\AppOrigEndTable}
+\RenewDocumentCommand{\vfigtail}{m m}{\begin{figure}[htbp]\centering\vfigbody\caption{#1}\label{#2}\end{figure}}
 \input{appendix}
 
 \FloatBarrier

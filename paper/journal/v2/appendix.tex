@@ -19,7 +19,8 @@ set.
 
 \input{tables/table_classmap}
 
-\section{Data, training and evaluation}\label{app:training}
+% no float barrier here: the preceding section's floats may follow this heading
+{\let\FloatBarrier\relax \section{Data, training and evaluation}\label{app:training}}
 The JetClass-II jets are clustered with the anti-$k_{\mathrm T}$ algorithm~\cite{antikt,fastjet} from the particles of the
 simulated detector, with \LitJetClassTwoPileupMean{} pileup collisions on average.
 We keep jets with $p_{\mathrm T}$ between \DesignPtMin{} and \DesignPtMax~GeV and a soft-drop mass, computed at
@@ -114,7 +115,8 @@ compare only between models with the same number of classes. Lines are the mean 
 deviation; the shading marks the last ten epochs, among which each run's checkpoint is the one of highest validation
 accuracy (ticks).}{fig:validation}
 
-\section{Comparison with published taggers}\label{app:published}
+% no float barrier here: the preceding section's floats may follow this heading
+{\let\FloatBarrier\relax \section{Comparison with published taggers}\label{app:published}}
 \input{tables/table_published}
 Table~\ref{tab:published} places our fine-tuned and from-scratch networks beside published results on the three
 public tasks.
