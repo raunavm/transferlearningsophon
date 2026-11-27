@@ -117,9 +117,12 @@ def test_fig2_is_a_dot_plot_with_the_tables_values_and_no_joining_lines(figures)
             runs = sum(len(v) for v in vals[mode].values())
             assert sum(len(ln.get_xdata()) for ln in part.lines if ln.get_markersize() == V.RUN_DOT) == runs
     assert _legend(fig)[-1] == "trained from scratch"
-    # review of 4c045c9, F33: the flavor-boundary groupings named on their ticks
-    ticks = [t.get_text() for t in [o for o in fig.axes if o.get_label() == "<break>"][0].get_xticklabels()]
-    assert {"no boundary", "$b$ boundary", "random boundary"} <= set(ticks)
+    # draft_2ab77ad: short horizontal ticks under one family label (the caption names the three groupings)
+    ticks = [t for t in [o for o in fig.axes if o.get_label() == "<break>"][0].get_xticklabels()]
+    assert {"none", "$b$", "random"} <= {t.get_text() for t in ticks} and all(t.get_rotation() == 0 for t in ticks)
+    fam = [t for t in fig.texts if t.get_text() in ("nested", "random\ngrouping", "flavor\nboundary")]
+    assert len(fam) == 6 and len({round(t.get_position()[1], 6) for t in fam}) == 1        # one baseline
+    assert fig.get_figheight() / S.CM < 9.6
 
 
 def test_separation_figure_draws_the_twelve_label_sets_of_the_build(figures):
@@ -159,7 +162,8 @@ def test_fig3_shows_recall_by_merge_kind_and_the_pairs(figures):
     assert V.WITHIN_FADED not in _legend(fig)                    # ledger 35: not in the main figure
     # review of 4c045c9, F09: (a)'s legend lists only the 43- and 17-class markers, (b)'s the pair markers
     with V.names():
-        assert _legend(fig)[:2] == [S.LEGEND["R42_Q1"], S.LEGEND["R16_Q1"]] and len(fig.legends) == 2
+        assert [t.get_text() for t in a.get_legend().get_texts()] == [S.LEGEND["R42_Q1"], S.LEGEND["R16_Q1"]]
+    assert len(fig.legends) == 1 and fig.get_figheight() / S.CM < 15.5          # draft_2ab77ad: (a) across the width
     assert V.pair_status("bc_vs_bq_cs", "R42_Q1") == "partly"
     assert len([ln for ln in c.lines if ln.get_fillstyle() == "left"]) == sum(
         V.pair_status(k, n) == "partly" for k in V.PAIRS_C for n in errs[k])

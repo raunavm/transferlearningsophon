@@ -265,9 +265,8 @@ def fig1_words() -> int:
 # apart (nested; the random groupings, each draw a point beside their mean; the flavor-boundary groupings)
 ACC_COLS = (("L188", 0.0), ("L162", 1.0), ("R42_Q1", 2.0), ("R16_Q1", 3.0), ("RAND", 4.5), ("FLAV_F0", 6.0),
             ("FLAV_F1", 7.2), ("FLAV_F1R", 8.4))
-ACC_TICKS = ("188", "162", "43", "17", "random\ngrouping", "no boundary", "$b$ boundary", "random boundary")
-ACC_UPRIGHT = 90          # the flavor-boundary groupings named in full, upright (review of 4c045c9, F33)
-ACC_FAMILIES = (("nested", 0.0, 3.0),)
+ACC_TICKS = ("188", "162", "43", "17", "", "none", "$b$", "random")       # each flavor-boundary grouping's boundary
+ACC_FAMILIES = (("nested", 0.0, 3.0), ("random\ngrouping", 4.5, 4.5), ("flavor\nboundary", 6.0, 8.4))
 ACC_SEP = (3.75, 5.25)
 ACC_XLIM = (-0.55, 8.4 + 0.95)      # the last tick's label inside the text width
 ACC_PANELS = (("jc2", 1_000_000, "jc2_188", "JetClass-II"), ("jc1", 1_000_000, "jc1", "JetClass"))
@@ -308,7 +307,7 @@ def draw_fig2(path: pathlib.Path) -> None:
     (open, upper part) and the models fine-tuned on 10^6 jets (filled, lower part), each part its own range; the
     network trained from scratch a dashed line with its band in the fine-tuned part."""
     top = S.LEGEND_TOP + 0.5 * 2 + 0.55
-    H = top + 2 * ACC_SUB + ACC_GAP + 3.25
+    H = top + 2 * ACC_SUB + ACC_GAP + 1.75
     fig = S.figure_cm(S.PRINT_W, H)
     for k, (key, n, ds, title) in enumerate(ACC_PANELS):
         vals = accuracy_values(key, n, ds)
@@ -340,9 +339,6 @@ def draw_fig2(path: pathlib.Path) -> None:
             S.labels(ax, ylabel=ylabel)
         parts[0].tick_params(axis="x", which="both", labelbottom=False)
         parts[1].xaxis.set_major_formatter(ticker.FixedFormatter(ACC_TICKS))
-        for t, tick in zip(parts[1].get_xticklabels(), ACC_TICKS):
-            if "boundary" in tick:
-                t.set_rotation(ACC_UPRIGHT)
         S.clear_edge_labels(parts[0], low=True)
         S.clear_edge_labels(parts[1], high=True)
         S.title(parts[0], f"({'ab'[k]}) {title}")
@@ -563,7 +559,7 @@ def _pairs_panel(ax) -> list:
 
 
 # ------------------------------------------------------------------ Fig. 3: recall by merge kind, and pairs of classes
-MERGE_KINDS = (("Qcd", "QCD"), ("Quark", "quark\nflavor"), ("Lepton", "lepton\nflavor"), ("Both", "both"),
+MERGE_KINDS = (("Qcd", "QCD"), ("Quark", "quark flavor"), ("Lepton", "lepton flavor"), ("Both", "both"),
                ("Neither", "neither"))
 MERGE_ARMS = (("R42_Q1", -0.12), ("R16_Q1", 0.12))
 
@@ -627,35 +623,40 @@ def _merge_panel(ax) -> None:
     S.labels(ax, xlabel="Merged with", ylabel="Recall change (points)")
 
 
-FIG3_LEG_B = 2.35          # cm: the legend of (b), three columns, between (a) and (b)
+FIG3_LEG_B = 1.95          # cm: the legend of (b), four columns, between (a) and (b)
+FIG3_HA, FIG3_HB = 4.8, 4.9           # cm: the two panels' heights (draft_2ab77ad: shorter, (a) across the width)
+# the dot-plot panels of Fig. 3 are wide and short (figcheck's 0.7-1.3 height/width is for curve panels)
+FIG3_ASPECT = (0.3, 1.3)
+FIG3_B_NAMES = {"RAND_MERGED": "random grouping,\npair merged", "RAND_APART": "random grouping,\npair apart",
+                "open: labels merge the pair": "open: merged", "half: they merge part of it": "half: partly merged"}
 
 
 def draw_fig3(path: pathlib.Path) -> None:
-    """(a) the mean change of per-class recall by merge kind (_merge_panel), its legend (the 43- and 17-class markers)
-    beside it; (b) the pairs of classes (_pairs_panel), the row names left of it, its legend above it (review of
-    4c045c9, F09: each panel's legend lists only what the panel draws)."""
-    import textwrap
-    wa, ha = 6.1, 0.72 * 6.1
+    """(a) the mean change of per-class recall by merge kind (_merge_panel) across the width, its legend (the 43- and
+    17-class markers) inside its empty lower left; (b) the pairs of classes (_pairs_panel), the row names left of it,
+    its legend above it in two rows (review of 4c045c9, F09: each panel's legend lists only what the panel draws)."""
     top_a, left = 0.6, 1.5
-    y_leg = top_a + ha + 1.4
-    y_b = y_leg + FIG3_LEG_B + 0.6
+    wa, ha = S.PRINT_W - left - 0.15, FIG3_HA
+    y_leg = top_a + ha + 1.1
+    y_b = y_leg + FIG3_LEG_B + 0.55
     xb, wb = 6.4, S.PRINT_W - 6.4 - 0.15
-    hb = 0.72 * wb
-    H = y_b + hb + 1.0
+    H = y_b + FIG3_HB + 1.0
     fig = S.figure_cm(S.PRINT_W, H)
     a = S.axes_cm(fig, left, top_a, wa, ha)
     _merge_panel(a)
     S.title(a, "(a) Per-class recall")
     hand_a = [Line2D([], [], linestyle="none", marker=S.MARKERS[k], markersize=MEAN_DOT, color=S.SERIES[k],
                      label=S.LEGEND[k]) for k, _ in MERGE_ARMS]
-    x = left + wa + 0.5
-    S.slot_legend(fig, hand_a, x, top_a, S.PRINT_W - x - 0.1, ha)
-    b = S.axes_cm(fig, xb, y_b, wb, hb)
+    a.legend(handles=hand_a, loc="lower left", frameon=False, fontsize=S.LEGEND_PT5, borderpad=0.4, labelspacing=0.3,
+             handletextpad=0.4)
+    b = S.axes_cm(fig, xb, y_b, wb, FIG3_HB)
     hand_b = _pairs_panel(b)
     S.title(b, "(b) Pairs of classes")
-    fig.legend(handles=hand_b, labels=[textwrap.fill(h.get_label().replace("\n", " "), 28) for h in hand_b],
-               loc="upper center", bbox_to_anchor=(0.5, 1 - y_leg / H), ncol=3, frameon=False, fontsize=S.LEGEND_PT5,
-               borderpad=0.2, labelspacing=0.3, columnspacing=1.0, handletextpad=0.4)
+    names = [FIG3_B_NAMES.get(k, FIG3_B_NAMES.get(h.get_label(), h.get_label()))
+             for k, h in zip(list(PAIR_NETS) + [None, None], hand_b)]
+    fig.legend(handles=hand_b, labels=names, loc="upper center", bbox_to_anchor=(0.5, 1 - y_leg / H), ncol=4,
+               frameon=False, fontsize=S.LEGEND_PT5, borderpad=0.2, labelspacing=0.3, columnspacing=0.7,
+               handletextpad=0.3, handlelength=1.0)
     S.save(fig, path)
 
 
@@ -980,6 +981,7 @@ def main() -> int:
         import style_v3
         import style_v4
         figcheck.BOOK_MAX_H_CM = PAPER_MAX_H_CM      # the paper's page, not the results book's
+        figcheck.ASPECT_OF["fig3_classes"] = FIG3_ASPECT
         spec = {stem: (cm, least) for stem, _, cm, least in FIGURES}
         original = style_v3.save
 
