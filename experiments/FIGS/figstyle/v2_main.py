@@ -403,7 +403,8 @@ def draw_fig_separation(path: pathlib.Path) -> None:
     ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10]))
     S.labels(ax, xlabel=r"Confusion-weighted separation $S$", ylabel="Linear probe, JetClass-II (%)")
     handles = [Line2D([], [], linestyle="none", marker=S.MARKERS[k], markersize=MEAN_DOT, color=S.SERIES[k],
-                      label=S.LEGEND[k] + (",\none run each" if k == "RAND" else "")) for k in SEP_ORDER]
+                      label=("17 classes, random\ngrouping, one run each" if k == "RAND" else S.LEGEND[k]))
+               for k in SEP_ORDER]
     x = left + w + 0.5
     S.slot_legend(fig, handles, x, top, S.PRINT_W - x - 0.1, h)
     S.save(fig, path)

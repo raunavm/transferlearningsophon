@@ -129,7 +129,7 @@ def test_separation_figure_draws_the_twelve_label_sets_of_the_build(figures):
                  if len(ln.get_xdata()) == 1)
     assert pts == sorted((round(s, 6), round(a, 6)) for _, _, s, a, _ in V.separation_rows()) and len(pts) == 12
     with V.names():
-        assert [t.split(",\n")[0] for t in _legend(fig)] == [S.LEGEND[k] for k in V.SEP_ORDER]
+        assert [" ".join(t.split()).replace(", one run each", "") for t in _legend(fig)] == [S.LEGEND[k] for k in V.SEP_ORDER]
         assert _legend(fig)[V.SEP_ORDER.index("RAND")].endswith("one run each")       # review of 4c045c9
     assert not fig.texts and not [t for t in ax.texts]                     # rho is in the caption, not the plot
 
